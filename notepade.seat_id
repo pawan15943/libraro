@@ -1,0 +1,24 @@
+learner_detail.seat_id
+search , seat_id handle from seat_no
+
+getAvailableSeatsPlantype function
+
+
+$available_seat = $this->learnerService->getAvailableSeats();
+
+load menu -361 pageno
+
+Auth::user()->isNotGeneralBranch()
+
+@if(getSeatType() !='numbered')
+
+dataUpdate()
+
+userUpdate function
+
+
+
+ $plan_id = $request->input('plan_id');
+        $months = Plan::where('id', $plan_id)->value('plan_id');
+        $duration = $months ?? 0;
+getPlanType function ****
