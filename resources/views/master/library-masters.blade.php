@@ -52,9 +52,7 @@
 </div>
 @endif
 <!-- Masters -->
-@php
-// dd($iscomp);
-@endphp
+
 @if($iscomp)
 <div class="row g-4 mb-4">
     <div class="col-lg-12">
@@ -559,13 +557,18 @@
                         <input type="hidden" name="databasemodel" value="PlanPrice">
                         <div class="row g-3">
                             <div class="col-lg-12">
+                             
                                 <label for="">Plan Name <span>*</span></label>
                                 <select name="plan_id" id="price_plan_id" class="form-select @error('plan_id') is-invalid @enderror event">
                                     <option value="">Select Plan</option>
                                     @foreach ($plans as $value)
+                                    @if($value->plan_id==1)
+                                    
+                                   
                                     <option value="{{ $value->id }}" {{ isset($planPrice) && $planPrice->plan_id == $value->id ? 'selected' : '' }}>
                                         {{ $value->name }}
                                     </option>
+                                     @endif
                                     @endforeach
                                 </select>
                                 @error('plan_id')

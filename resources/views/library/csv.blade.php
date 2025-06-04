@@ -117,7 +117,7 @@
                     @foreach($plantypes as $key => $value)
                     
                     <tr>
-                        <td>{{$value->plan_type}}</td>
+                        <td>{{$value->plan_type }}<span> {{$value->start_time}}-{{$value->end_time}}</span></td>
                         <td>INR {{$value->plan_price}}</td>
                     </tr>
                     @endforeach

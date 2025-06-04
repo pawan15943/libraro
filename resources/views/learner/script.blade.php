@@ -1311,6 +1311,9 @@
             for (const fieldName in changes) {
                 const { oldValue, newValue } = changes[fieldName];
                 const swap_old_value=$('#swap_old_value').val();
+                if(swap_old_value=='swapseat'){
+                    swap_old_value='General';
+                }
                
                 if (formId === 'reactive') {
                 // Log changes only for the "seat_id" field

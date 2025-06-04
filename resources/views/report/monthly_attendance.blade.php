@@ -91,25 +91,28 @@ $currentMonth = date('m');
                 </thead>
 
                 <tbody>
-    @foreach($learnerAttendance as $value)
-        <tr>
-            <td>{{ $value['seat_no'] ?? 'G' }}</td>
-            <td>
-                <span class="uppercase truncate m-0" data-bs-toggle="tooltip"
-                      data-bs-title="{{ $value['name'] ?? '' }}" data-bs-placement="bottom">
-                    {{ $value['name'] ?? '' }}
-                </span>
-            </td>
+                    @foreach($learnerAttendance as $value)
+                        <tr>
+                            <td>{{ $value['seat_no'] ?? 'G' }}</td>
+                            <td>
+                                <span class="uppercase truncate m-0" data-bs-toggle="tooltip"
+                                    data-bs-title="{{ $value['name'] ?? '' }}" data-bs-placement="bottom">
+                                    {{ $value['name'] ?? '' }}
+                                </span>
+                            </td>
 
-            @foreach($value['daily'] ?? [] as $status)
-                <td>{{ $status }}</td>
-            @endforeach
+                           @foreach($value['daily'] ?? [] as $status)
+                                <td style="color: {{ $status === 'P' ? 'green' : ($status === 'A' ? 'red' : 'black') }};">
+                                    {{ $status }}
+                                </td>
+                            @endforeach
 
-            <td>{{ $value['present'] }}</td>
-            <td>{{ $value['absent'] }}</td>
-        </tr>
-    @endforeach
-</tbody>
+
+                            <td>{{ $value['present'] }}</td>
+                            <td>{{ $value['absent'] }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
 
             </table>
         </div>

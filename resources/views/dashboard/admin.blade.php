@@ -939,7 +939,7 @@
                     _token: '{{ csrf_token() }}' // CSRF token for security
                 },
                 success: function(response) {
-                    
+                    console.log(response.planTypeWiseRevenue.data);
                     if(response.revenu_expense.length===0){
                         $('#no-data').show();
                         

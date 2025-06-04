@@ -271,7 +271,7 @@
 
                             // Loop through each library and append it as a carousel item
                             $.each(data, function(index, library) {
-                               
+                                 
                                 let libraryHTML = `
                                     <div class="item">
                                         
@@ -298,7 +298,7 @@
                                                 </li>
                                                 <li>
                                                     <span>Avaialble Seats</span>
-                                                    <h5 class="text-success">${library.hour.seats}</h5>
+                                                    <h5 class="text-success">${library.seats ?? 'N/A'}</h5>
                                                 </li>
                                                 <li>
                                                     <h5 class="text-success">Verified</h5>

@@ -117,23 +117,28 @@ class Controller extends BaseController
         $library_id=$id;
         
         if($library_id==null){
-            $library_id=Auth::user()->id;
+            $library_id=getLibraryId();
         }
         
        $plans=Plan::withoutGlobalScopes()->where('library_id',$library_id)->get();
-       $plan_id_one=Plan::withoutGlobalScopes()->where('library_id',$library_id)->where('plan_id',1)->first();
-       if($plan_id_one){
-        $plantypes = PlanType::withoutGlobalScopes()
-        ->where('plan_types.library_id', $library_id)
-        ->where('plan_prices.plan_id', $plan_id_one->id)
-        ->leftJoin('plan_prices', 'plan_types.id', '=', 'plan_prices.plan_type_id')
-        ->select('plan_types.name as plan_type', 'plan_prices.price as plan_price') // Add specific columns to avoid unnecessary data
-        ->get();
-       }else{
-        $plantypes=null;
-       }
-
+       $plan_id_one=Plan::withoutGlobalScopes()->where('library_id',$library_id)->where('plan_id',1)->value('id');
        
+       if ($plan_id_one) {
+            $plantypesQuery = PlanPrice::withoutGlobalScopes()
+                ->leftJoin('plan_types', 'plan_prices.plan_type_id', '=', 'plan_types.id')
+                ->leftJoin('plans', 'plan_prices.plan_id', '=', 'plans.id')
+                ->where('plan_prices.plan_id', $plan_id_one)
+                ->where('plan_prices.library_id', $library_id)
+                ->select('plan_types.name as plan_type', 'plan_prices.price as plan_price','plan_types.start_time','plan_types.end_time');
+
+            if (getCurrentBranch() != 0) {
+                $plantypesQuery->where('branch_id', getCurrentBranch());
+            }
+            $plantypes = $plantypesQuery->get();
+        } else {
+            $plantypes = null;
+        }
+
       
            return view('library.csv', compact('library_id','plans','plantypes'));
     }
@@ -179,9 +184,13 @@ class Controller extends BaseController
         if($request->library_id){
             $library_id=$request->library_id;
         }elseif($request->library_import=='library_master'){
-            $library_id=Auth::user()->id;
+            $library_id=getLibraryId();
         }else{
-            $library_id=null; 
+            $library_id=getLibraryId(); 
+        }
+
+        if(getCurrentBranch() == 0 || getCurrentBranch()==null){
+            return redirect()->back()->withErrors('Branch not selected');
         }
         
      
@@ -301,8 +310,9 @@ class Controller extends BaseController
             'plan' => 'required',
             'plan_type' => 'required',
             'start_date' => 'required',
-            'seat_no' => 'required|int',
             'mobile' => 'required|max:10|min:10',
+            'paid_amount'=>'required|int',
+            'pending_amount'=>'required|int',
         ]);
 
         if ($validator->fails()) {
@@ -315,12 +325,9 @@ class Controller extends BaseController
 
         $dob = !empty($data['dob']) ? $this->parseDate(trim($data['dob'])) : now();
 
-        $start_date = $this->parseDate(trim($data['start_date']));
+        
 
-        if (!$start_date) {
-            $invalidRecords[] = array_merge($data, ['error' => 'Missing Start Date: Please ensure that the start date field is filled in before proceeding with the upload.']);
-            return;
-        }
+       
 
         if (!$dob) {
             $invalidRecords[] = array_merge($data, ['error' => 'Invalid Date of Birth Format: The date of birth (DOB) format is incorrect. Please enter it in the correct format (e.g., YYYY-MM-DD or as required).']);
@@ -342,7 +349,9 @@ class Controller extends BaseController
             $invalidRecords[] = array_merge($data, ['error' => 'Plan Type Not Found: The specified plan type is invalid or does not exist. Please check the plan type details and retry.']);
             return;
         }
-        $planPrice = PlanPrice::where('plan_id',$plan->id)->where('plan_type_id',$planType->id)->first();
+         
+       
+        $planPrice =getPlanPrice($plan->id, $planType->id);
         if ((!$user->can('has-permission', 'Full Day') && $planType->day_type_id==1) || (!$user->can('has-permission', 'First Half') && $planType->day_type_id==2) || (!$user->can('has-permission', 'Second Half') && $planType->day_type_id==3) || (!$user->can('has-permission', 'Hourly Slot 1') && $planType->day_type_id==4)|| (!$user->can('has-permission', 'Hourly Slot 2') && $planType->day_type_id==5)|| (!$user->can('has-permission', 'Hourly Slot 3') && $planType->day_type_id==6)|| (!$user->can('has-permission', 'Hourly Slot 4') && $planType->day_type_id==7)){
             $invalidRecords[] = array_merge($data, ['error' => $planType->name.'Plan Type Booking Restriction: The selected plan type does not have the necessary permissions for booking. Please check the plan type settings and try again.']);
             return;
@@ -356,33 +365,60 @@ class Controller extends BaseController
             $invalidRecords[] = array_merge($data, ['error' => 'Plan Price Not Found: The price for the selected plan is missing or not defined. Please confirm the correct pricing and re-upload the data.']);
             return;
         }
-        $data['plan_price']=$planPrice->price;
+        $data['plan_price']=$planPrice;
         $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : 0;
-        if($planPrice->price < $paid_amount){
-            $invalidRecords[] = array_merge($data, ['error' => 'Paid Amount Exceeds Plan Price: The entered paid amount is greater than the actual plan price. Please verify and enter the correct amount.']);
-            return;
+       
+      
+        // if($planPrice < $paid_amount){
+        //     $invalidRecords[] = array_merge($data, ['error' => 'Paid Amount Exceeds Plan Price: The entered paid amount is greater than the actual plan price. Please verify and enter the correct amount.']);
+        //     return;
+        // }
+        if(trim($data['seat_no'])){
+            $seat=trim($data['seat_no']);
+        }else{
+            $seat=null;
         }
 
-        $seat = Seat::where('seat_no', trim($data['seat_no']))->first();
-        if(!$seat){
-            $invalidRecords[] = array_merge($data, ['error' => 'The seat number provided does not exist in the system. Please check and enter a valid seat number.']);
-            return;
-        }
-       
         $payment_mode = !empty($data['payment_mode']) ? $this->getPaymentMode(trim($data['payment_mode'])) : 2;
         $hours = $planType->slot_hours;
-        $duration = $planexplode ?? 0;
+        $duration = Plan::where('id', $plan->id)->value('plan_id'); 
+        $type = Plan::where('id', $plan->id)->value('type'); 
+         $start_date = Carbon::parse(trim($data['start_date']));
+         if (!$start_date) {
+            $invalidRecords[] = array_merge($data, ['error' => 'Missing Start Date: Please ensure that the start date field is filled in before proceeding with the upload.']);
+            return;
+        }    
         $joinDate = isset($data['join_date']) ? $this->parseDate(trim($data['join_date'])) : $start_date;
         // Here we manage end date how it calculated.
-        $endDate = Carbon::parse($start_date)->addMonths($duration)->format('Y-m-d');
-        
+    //    $start_date = $this->parseDate(trim($data['start_date']));
+      
+        $duration = (int) $duration;
 
-        $pending_amount = $planPrice->price - $paid_amount;
+        switch (strtoupper($type)) {
+            case 'DAY':
+                $endDate = $start_date->copy()->addDays($duration);
+                break;
+            case 'WEEK':
+                $endDate = $start_date->copy()->addWeeks($duration);
+                break;
+            case 'MONTH':
+                $endDate = $start_date->copy()->addMonths($duration);
+                break;
+            case 'YEAR':
+                $endDate = $start_date->copy()->addYears($duration);
+                break;
+            default:
+                // Log or throw error if type is invalid
+                $endDate = $start_date;
+                break;
+        }
+
+        
+        $pending_amount =!empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
+        
         $paid_date = isset($data['paid_date']) ? $this->parseDate(trim($data['paid_date'])) : $start_date;
 
-        $extend_days=Hour::select('extend_days')->first();
-        $extendDay = $extend_days ? $extend_days->extend_days : 0;
-       
+        $extendDay = getExtendDays();
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
         $status = $inextendDate > Carbon::today() ? 1 : 0;
         if(empty($data['paid_amount']) || $paid_amount==0){
@@ -394,11 +430,11 @@ class Controller extends BaseController
         if ($status == 1) {
             \Log::info('Learner for updated', [ 'status1' => $status]);
             // Check if the learner already exists with active status
-            $alreadyLearner = Learner::where('library_id', Auth::user()->id)
+            $alreadyLearner = Learner::where('branch_id', getCurrentBranch())
                 ->where('email', encryptData(trim($data['email'])))
                 ->where('status', 1)
                 ->exists();
-            $exist_check = Learner::where('library_id', Auth::user()->id)
+            $exist_check = Learner::where('branch_id', getCurrentBranch())
             ->where('email', encryptData(trim($data['email'])))
             ->where('status', 0)
             ->exists();
@@ -410,9 +446,9 @@ class Controller extends BaseController
             } else {
                
                 // Check if seat is already occupied
-                if (Learner::where('library_id', Auth::user()->id)
+                if (Learner::where('branch_id', getCurrentBranch())
                     ->where('seat_no', trim($data['seat_no']))
-                    ->where('status', 1)
+                    ->where('status', 1)->whereNotNull('seat_no')
                     ->exists()) {
                         \Log::info('Learner occupide', [ 'status1' => $status]);
                     $first_record = Hour::first();
@@ -422,14 +458,18 @@ class Controller extends BaseController
 
 
                     $exists_data=Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                    ->where('learners.library_id', getAuthenticatedUser()->id)
+                    ->where('learners.library_id', getLibraryId())
+                    ->where('branch_id', getCurrentBranch())
                     ->where('learners.seat_no', trim($data['seat_no']))
+                    ->whereNotNull('seat_no')
                     ->where('learners.status', 1)
                     ->where('learner_detail.status', 1)->with('planType')->get();
 
                     $planTypeSame=Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                    ->where('learners.library_id', getAuthenticatedUser()->id)
+                    ->where('learners.library_id', getLibraryId())
+                    ->where('branch_id', getCurrentBranch())
                     ->where('learners.seat_no', trim($data['seat_no']))
+                    ->whereNotNull('seat_no')
                     ->where('learners.status', 1)
                     ->where('learner_detail.status', 1)->where('learner_detail.plan_type_id',$planType->id)->count();
                     if($planTypeSame > 0){
@@ -453,7 +493,7 @@ class Controller extends BaseController
                     }
                     // Check if total hours exceed allowed hours
                     if ((Learner::where('seat_no', trim($data['seat_no']))
-                         ->where('library_id', Auth::user()->id)
+                        ->where('branch_id', getCurrentBranch())
                         ->where('learners.status', 1)
                         ->sum('hours') + $hours) > $total_hour) {
                             \Log::info('plan type exceed');
@@ -461,7 +501,7 @@ class Controller extends BaseController
                         return;
                     }else {
                         // Create new learner and associated records
-                        if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours) || empty($seat) || empty($start_date) || empty($planPrice->price)) {
+                        if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours) ||  empty($start_date) ) {
                             $invalidRecords[] = array_merge($data, ['error' => 'Missing essential data for creating learner']);
                             return;
                         }
@@ -471,7 +511,7 @@ class Controller extends BaseController
                     }
                 } elseif($exist_check){
                     \Log::info('for renew data create learner detail and update learner DB', [ 'status1' => $status]);
-                    $learnerData = Learner::where('library_id', Auth::user()->id)
+                    $learnerData = Learner::where('branch_id', getCurrentBranch())
                     ->where('email', encryptData(trim($data['email'])))
                     ->where('status', 0)
                     ->first();
@@ -494,11 +534,11 @@ class Controller extends BaseController
         } else {
             \Log::info('When Status : 0 Previously Paid Seat info : Leaner', [ 'status0' => $status]);
             // Handling non-active status (status != 1)
-            $exist_check = Learner::where('library_id', Auth::user()->id)
+            $exist_check = Learner::where('branch_id', getCurrentBranch())
                 ->where('email', encryptData(trim($data['email'])))
                 ->exists();
         
-            if (Learner::where('library_id', Auth::user()->id)
+            if (Learner::where('branch_id', getCurrentBranch())
                 ->where('email', encryptData(trim($data['email'])))
                 ->where('status', 1)
                 ->exists()) {
@@ -508,7 +548,7 @@ class Controller extends BaseController
             } elseif ($exist_check) {
                 // Check if learner exists and update data
                 $already_data = LearnerDetail::where('plan_start_date', $start_date)->exists();
-                $learnerData = Learner::where('library_id', Auth::user()->id)
+                $learnerData = Learner::where('branch_id', getCurrentBranch())
                     ->where('email', encryptData(trim($data['email'])))
                     ->first();
                 if ($already_data) {
@@ -522,7 +562,7 @@ class Controller extends BaseController
                     $this->createLearnerDetail($learnerData->id, $plan,$status, $planType, $seat, $data, $start_date, $endDate, $joinDate, $hours, $is_paid, $planPrice, $pending_amount, $paid_date,$payment_mode);
                 } 
             } else {
-                if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours) || empty($seat) || empty($start_date) || empty($planPrice->price)) {
+                if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours)  || empty($start_date) || empty($planPrice)) {
                     $invalidRecords[] = array_merge($data, ['error' => 'Missing essential data for creating learner']);
                     return;
                 }
@@ -583,14 +623,25 @@ class Controller extends BaseController
     }
 
     function createLearner($data, $hours, $dob, $payment_mode, $status, $plan, $planType, $seat, $start_date, $endDate, $joinDate, $is_paid, $planPrice, $pending_amount, $paid_date) {
-   
+         
+        $yes = trim($data['locker'] ?? '');
+
+        if (strtolower($yes) === 'yes') {
+            $locker_amount = getLockerPrice($plan->id);
+        } else {
+            $locker_amount = 0;
+        }
+        $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+       $total=$planPrice+$locker_amount;
+       $discount_amount=$total-$paid_amount-$pending_amount;
         DB::beginTransaction();
     
         try {
             // Create learner entry
             \Log::info('Learner create function start');
             $learner = Learner::create([
-                'library_id' => Auth::user()->id,
+                'library_id' => getLibraryId(),
+                'branch_id'=>getCurrentBranch(),
                 'name' => trim($data['name']),
                 'email' => encryptData(trim($data['email'])),
                 'password' =>!empty($data['mobile']) ? bcrypt(trim($data['mobile'])) : bcrypt(trim('12345678')),
@@ -598,7 +649,6 @@ class Controller extends BaseController
                 'dob' => $dob,
                 'hours' => trim($hours),
                 'seat_no' => trim($data['seat_no']),
-                
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
             ]);
@@ -613,22 +663,27 @@ class Controller extends BaseController
                 'plan_end_date' => $endDate,
                 'join_date' => $joinDate,
                 'hour' => $hours,
-                'seat_id' => $seat->id,
-                'library_id' => Auth::user()->id,
+                'seat_no' => $seat,
+               'library_id' => getLibraryId(),
+                'branch_id'=>getCurrentBranch(),
                 'payment_mode' => $payment_mode,
                 'is_paid' => $is_paid,
                 'status' => $status,
             ]);
-            $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+            
             // Create learner transaction entry
             LearnerTransaction::create([
                 'learner_id' => $learner->id,
-                'library_id' => Auth::user()->id,
+                'library_id' => getLibraryId(),
+                'branch_id'=>getCurrentBranch(),
                 'learner_detail_id' => $learner_detail->id,  // Corrected column name
-                'total_amount' => $planPrice->price,
+                'total_amount' => $total,
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
+                
                 'paid_date' => $paid_date,
+                'locker_amount' => $locker_amount,
+                'discount_amount' => $discount_amount,
                 'is_paid' => 1,
             ]);
     
@@ -636,7 +691,7 @@ class Controller extends BaseController
             DB::commit();
     
             // Update seat availability and learner data
-            $this->seat_availablity_update_now($seat->id, $planType->id);
+          
             $this->dataUpdateNow($learner->id);
     
         } catch (\Exception $e) {
@@ -654,7 +709,8 @@ class Controller extends BaseController
 
     function createLearnerDetail($learner_id, $plan, $status, $planType, $seat, $data, $start_date, $endDate, $joinDate, $hours, $is_paid, $planPrice, $pending_amount, $paid_date,$payment_mode)
     {
-        
+
+     \Log::info('Learner detail id', ['learner_id' => $learner_id]);
         DB::beginTransaction();
 
         try {
@@ -677,29 +733,45 @@ class Controller extends BaseController
                 'plan_end_date' => $endDate,
                 'join_date' => $joinDate,
                 'hour' => $hours,
-                'seat_id' => $seat->id,
-                'library_id' => Auth::user()->id,
+                'seat_no' => $seat,
+                'library_id' => getLibraryId(),
+                'branch_id'=>getCurrentBranch(),
                 'payment_mode' => $payment_mode,
                 'is_paid' => $is_paid,
                 'status' => $status,
             ]);
-            $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+            $pending_amount =!empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
+        $yes = trim($data['locker'] ?? '');
+
+        if (strtolower($yes) === 'yes') {
+            $locker_amount = getLockerPrice($plan->id);
+        } else {
+            $locker_amount = 0;
+        }
+        $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+       $total=$planPrice+$locker_amount;
+       $discount_amount=$total-$paid_amount-$pending_amount;
             // Create learner transaction entry
             LearnerTransaction::create([
                 'learner_id' => $learner_id,
-                'library_id' => Auth::user()->id,
+                'library_id' => getLibraryId(),
+                'branch_id'=>getCurrentBranch(),
                 'learner_detail_id' => $learner_detail->id,
-                'total_amount' => $planPrice->price,
+               'total_amount' => $total,
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
+               
+                  'locker_amount' => $locker_amount,
+                'discount_amount' => $discount_amount,
                 'paid_date' => $paid_date,
                 'is_paid' => 1,
             ]);
+             
 
         
             DB::commit();
 
-            $this->seat_availablity_update_now($seat->id, $planType->id);
+            // $this->seat_availablity_update_now($seat->id, $planType->id);
             $this->dataUpdateNow($learner_id);
 
         } catch (\Exception $e) {
@@ -733,74 +805,28 @@ class Controller extends BaseController
                 'plan_end_date' => $endDate,
                 'join_date' => $joinDate,
                 'hour' => $hours,
-                'seat_id' => $seat->id,
+                'seat_no' => $seat,
                 'is_paid' => $is_paid,
                 'status' => $status,
                 'payment_mode' => $payment_mode,
             ]);
-            $this->seat_availablity_update_now($seat->id,$planType->id);
+            
             $this->dataUpdateNow($learnerData->id);
     }
 
-    function seat_availablity_update_now($seat_id,$plan_type_id){
-        $seat = Seat::where('id',$seat_id)->first();
-                 
-        $available=5;
-        $day_type_id=PlanType::where('id',$plan_type_id)->select('day_type_id')->first();
-        
-        if( $seat->is_available == 1 && $day_type_id->day_type_id==1 ){
-           
-            $available = 5;
-        }elseif($seat->is_available == 1 && $day_type_id->day_type_id==2 ){
-           
-            $available = 2;
-        }elseif($seat->is_available == 1 && $day_type_id->day_type_id==3 ){
-           
-            $available = 3;
-        }elseif($seat->is_available == 1 && ($day_type_id->day_type_id==4 || $day_type_id->day_type_id==5 ||$day_type_id->day_type_id==6 || $day_type_id->day_type_id==7) ){
-           
-            $available = 4;
-           
-        }elseif($seat->is_available == 2 && $day_type_id->day_type_id==3){
-           
-            $available = 5;
-        }elseif($seat->is_available == 2 && ($day_type_id->day_type_id==6 || $day_type_id->day_type_id==7)){
-           
-            $available = 4;
-        }elseif($seat->is_available == 3 && ($day_type_id->day_type_id==4 || $day_type_id->day_type_id==5)){
-           
-            $available = 4;
-        }elseif($seat->is_available == 3 && $day_type_id->day_type_id==2){
-           
-            $available = 5;
-        }elseif($seat->is_available == 4 && ($day_type_id->day_type_id==2|| $day_type_id->day_type_id==3||$day_type_id->day_type_id==4 || $day_type_id->day_type_id==5 || $day_type_id->day_type_id==6 || $day_type_id->day_type_id==5)){
-            $available = 4;
-            
-        }
-        
-        // Update seat availability
-        $update=Seat::where('id',$seat_id)->update(['is_available' => $available]);
-        
-    }
+   
 
     function dataUpdateNow($learner_id){
        
-        $seats = Seat::get();
- 
-        foreach($seats as $seat){
-            $total_hourse=Learner::where('library_id',Auth::user()->id)->where('status', 1)->where('seat_no',$seat->seat_no)->sum('hours');
-           
-            $updateseat=Seat::where('library_id',Auth::user()->id)->where('id', $seat->id)->update(['total_hours' => $total_hourse]);
-        
-        }
+       
     
-        $userUpdate = Learner::where('library_id',Auth::user()->id)->where('id',$learner_id)->where('status', 1)->first();
+        $userUpdate = Learner::where('branch_id',getCurrentBranch())->where('id',$learner_id)->where('status', 1)->first();
   
        
            $today = date('Y-m-d'); 
            $customerdatas=LearnerDetail::where('learner_id',$learner_id)->where('status',1)->get();
-           $extend_days_data = Hour::where('library_id', Auth::user()->id)->first();
-           $extend_day = $extend_days_data ? $extend_days_data->extend_days : 0;
+          
+           $extend_day = getExtendDays();
            foreach($customerdatas as $customerdata){
                 $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
                 $current_date = Carbon::today();
@@ -826,41 +852,7 @@ class Controller extends BaseController
            
       
 
-       //seat table update
-        $userS = $this->getLearnersByLibrary()->where('learners.status', 0)->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learners.*','plan_types.day_type_id')->get();
-      
-        foreach ($userS as $user) {
-        
-            $seatNo = $user->seat_no;
-            $seat = Seat::where('library_id', getAuthenticatedUser()->id)->where('seat_no', $seatNo)->first();
-            
-            $available = 1; 
-            
-            if ($seat->is_available == 5) {
-                $available = 1;
-            } elseif ($seat->is_available == 4 && ($user->day_type_id == 4 || $user->day_type_id==5 || $user->day_type_id==6 || $user->day_type_id==7)) {
-                $available = 1;
-            } elseif ($seat->is_available == 3 && $user->day_type_id == 3) {
-                $available = 1;
-            } elseif ($seat->is_available == 2 && $user->day_type_id == 2) {
-                $available = 1;
-            } elseif ($seat->is_available == 2 && $user->day_type_id == 3) {
-                $available = 2;
-            } elseif ($seat->is_available == 3 && $user->day_type_id == 2) {
-                $available = 3;
-            }elseif ($seat->is_available == 4 && $user->day_type_id == 3) {
-                    $available = 4;
-            } else {
-                $available = 1;
-            }
-            
-            Seat::where('library_id', getAuthenticatedUser()->id)->where('seat_no', $seatNo)->update(['is_available' => $available]);
-        }
-
-        foreach($seats as $seat){
-            Seat::where('library_id', getAuthenticatedUser()->id)->where('id',$seat->id)->where('total_hours',0)->where('is_available','!=',1)->update(['is_available' => 1]);
-   
-        }
+       
     }
     protected function parseDate($date)
     {
@@ -1004,17 +996,23 @@ class Controller extends BaseController
                     
                 }
 
-                if($branch_id && trim($data['locker_amount'])){
-                    Branch::updateOrCreate(
-                        [
-                            'id' => $branch_id
-                        ],
-                        [
-                            
-                            'locker_amount' => trim($data['locker_amount']),
-                        ]
-                    );
+               if ($branch_id && (trim($data['locker_amount']) || trim($data['extend_day']))) {
+                $updateData = [];
+
+                if (trim($data['locker_amount'])) {
+                    $updateData['locker_amount'] = trim($data['locker_amount']);
                 }
+
+                if (trim($data['extend_day'])) {
+                    $updateData['extend_days'] = trim($data['extend_day']);
+                }
+
+                Branch::updateOrCreate(
+                    ['id' => $branch_id],
+                    $updateData
+                );
+            }
+
           
             // Define slot configurations
             $slots = $this->defineSlots($start_time, $end_time, $totalHours,$allday);
@@ -1286,9 +1284,9 @@ class Controller extends BaseController
     }
 
     public function renewConfigration(){
-        $library_id=Auth::user()->id;
+        $library_id=getLibraryId();
         $today = date('Y-m-d');
-        $today_renew = LibraryTransaction::where('library_id', Auth::user()->id)
+        $today_renew = LibraryTransaction::where('library_id', getLibraryId())
             ->where('is_paid', 1)
             ->where('status', 0)
             ->where('start_date', '<=', $today)->first();

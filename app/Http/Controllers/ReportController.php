@@ -253,11 +253,13 @@ class ReportController extends Controller
                 ->where('ld2.plan_end_date', '>', $fiveDaysLater);
         })
         ->get();
-        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
-            $data->where('learner_detail.branch_id', getCurrentBranch());
+       if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
+            $data = $data->filter(function ($learner) {
+                return optional($learner->learnerDetails)->branch_id == getCurrentBranch();
+            });
         }
 
-        $learners = $data->get();
+        $learners = $data;
 
 
         return view('report.upcoming_payment',compact('learners'));

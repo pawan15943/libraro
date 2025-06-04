@@ -47,7 +47,7 @@
                             </div>
                             <div class="col-lg-6">
                                 <label for="">DOB </label>
-                                <input type="date" class="form-control" name="dob" id="dob">
+                                <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Mobile Number <span>*</span></label>
@@ -201,4 +201,6 @@
         </div>
     </div>
 </div>
+
+
 @endcan

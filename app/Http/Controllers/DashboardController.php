@@ -539,10 +539,9 @@ class DashboardController extends Controller
              ];
          }
 
-     
+        
            //plantype wise revenue
-         $planTypeWiseRevenue = LearnerDetail::withoutGlobalScopes()
-         ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+         $planTypeWiseRevenue = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
          ->where('learner_detail.is_paid', 1)
          ->where('learner_detail.library_id', getLibraryId())
          ->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
@@ -572,7 +571,7 @@ class DashboardController extends Controller
          ->selectRaw('ROUND(SUM(learner_detail.plan_price_id / plans.plan_id), 2) as revenue, learner_detail.plan_type_id')
          ->with('planType')
          ->get();
-       
+    
         // Prepare data for response for graph
    
         $bookinglabels = $plan_wise_booking->map(function ($booking) {

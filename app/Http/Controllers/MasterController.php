@@ -306,7 +306,7 @@ class MasterController extends Controller
            
         }
 
-       
+      
         
         $this->conditionFunction($request,$plan_type_name);
         try {
@@ -653,68 +653,81 @@ class MasterController extends Controller
 
   
 
-    public function getLibraries(Request $request)
-    {
-        Log::info("No request");
-        $query = $request->input('query');
-        $suggestion = $request->input('suggestion');
-        $city = $request->input('city');
-        Log::info("request", ['query' => $query ,'suggestion' => $suggestion,'city' => $city]);
-  
-      $libraries = Branch::with([
-        'library:id,library_type,is_paid,is_profile',
-        'library.library_transactions:id,library_id,month',
-        'hour:id,branch_id,seats'
-    ])
-    ->whereHas('library', function ($q) {
-        $q->where('is_paid', 1)->where('is_profile', 1);
-    })
-    ->select(
-        'id', 'library_id', 'library_address', 'name as library_name',
-        'google_map', 'state_id', 'city_id', 'library_logo', 'slug'
-    );
+   public function getLibraries(Request $request)
+{
+    Log::info("No request");
 
-        // Apply filters dynamically
-        if ($suggestion) {
-            $libraries->where(function ($queryBuilder) use ($suggestion) {
-                $queryBuilder->where('library_name', 'like', '%' . $suggestion . '%')
-                    ->orWhere('library_address', 'like', '%' . $suggestion . '%');
-            });
-        } elseif ($query) {
-            $libraries->where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('library_name', 'like', '%' . $query . '%')
-                    ->orWhere('library_address', 'like', '%' . $query . '%');
-            });
-        } elseif ($city) {
-            $libraries->where('city_id', '=', $city);
-        } else {
-            $libraries->take(15);
-        }
+    $query = $request->input('query');
+    $suggestion = $request->input('suggestion');
+    $city = $request->input('city');
 
-        $results = $libraries->get();
+    Log::info("request", ['query' => $query, 'suggestion' => $suggestion, 'city' => $city]);
 
-        // ✅ Fallback if no results and no filters
-        if ($results->isEmpty() && !$query && !$suggestion && !$city) {
-            $results = Branch::with([
-                    'library:id,library_type,is_paid,is_profile',
-                    'library.library_transactions:id,library_id,month',
-                    'hour:id,branch_id,seats'
-                ])
-                ->whereHas('library', function ($q) {
-                    $q->where('is_paid', 1)->where('is_profile', 1);
-                })
-                ->inRandomOrder()
-                ->take(5)
-                ->select(
-                    'id', 'library_id', 'library_address', 'name as library_name',
-                    'google_map', 'state_id', 'city_id', 'library_logo', 'slug'
-                )
-                ->get();
-        }
+    $libraries = DB::table('branches as b')
+        ->join('libraries as l', 'l.id', '=', 'b.library_id')
+        ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
+        ->where('l.is_paid', 1)
+        ->where('l.is_profile', 1)
+        ->select(
+            'b.id as id',
+            'b.library_id',
+            'b.library_address',
+            'b.name as library_name',
+            'b.google_map',
+            'b.state_id',
+            'b.city_id',
+            'b.library_logo',
+            'b.slug',
+            'h.seats'
+        );
 
-        return response()->json($results);
-
+    // Apply filters
+    if ($suggestion) {
+        $libraries->where(function ($q) use ($suggestion) {
+            $q->where('b.name', 'like', "%$suggestion%")
+              ->orWhere('b.library_address', 'like', "%$suggestion%");
+        });
+    } elseif ($query) {
+        $libraries->where(function ($q) use ($query) {
+            $q->where('b.name', 'like', "%$query%")
+              ->orWhere('b.library_address', 'like', "%$query%");
+        });
+    } elseif ($city) {
+        $libraries->where('b.city_id', $city);
+    } else {
+        $libraries->take(5);
     }
+
+    $results = $libraries->get();
+
+    // Fallback for completely empty search
+    if ($results->isEmpty() && !$query && !$suggestion && !$city) {
+        $results = DB::table('branches as b')
+            ->join('libraries as l', 'l.id', '=', 'b.library_id')
+            ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
+            ->where('l.is_paid', 1)
+            ->where('l.is_profile', 1)
+            ->inRandomOrder()
+            ->take(5)
+            ->select(
+                'b.id as id',
+                'b.library_id',
+                'b.library_address',
+                'b.name as library_name',
+                'b.google_map',
+                'b.state_id',
+                'b.city_id',
+                'b.library_logo',
+                'b.slug',
+                'h.seats'
+            )
+            ->get();
+    }
+
+   
+    return response()->json($results);
+}
+
 
    
     public function menu(){

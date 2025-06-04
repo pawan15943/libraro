@@ -306,16 +306,7 @@ class LearnerController extends Controller
             $hours = PlanType::where('id', $request->plan_type_id)->value('slot_hours');
         }
 
-      
-       
-        // if(LearnerDetail::where('plan_end_date', '>', Carbon::today()->copy()->addDays(5))->where('seat_no', $request->seat_no)->where('status', 0)->whereRaw('CAST(hour AS UNSIGNED) > ?', [(int) $hours])->exists()){
-        //       return response()->json([
-        //             'error' => true,
-        //             'message' => 'You can not select this plan type'
-        //         ], 422);
-        //         die;
-        // }
-      
+     
         if($request->seat_no){
             if (($this->getLearnersByLibrary()->where('learners.seat_no', $request->seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
 
