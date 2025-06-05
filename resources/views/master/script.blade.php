@@ -66,7 +66,7 @@
 <script>
     $(document).ready(function() {
         $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
-            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request', function(event) {
+            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker', function(event) {
             event.preventDefault(); 
             
             var formData = new FormData(this);
@@ -127,7 +127,7 @@
             return false; 
         });
 
-        $(document.body).on('click', '.plan_edit ,.plantype_edit, .hour_edit,.seat_edit,.extend_day_edit ,.planPrice_edit,.expense_edit', function() {
+        $(document.body).on('click', '.plan_edit ,.plantype_edit, .hour_edit,.seat_edit,.extend_day_edit ,.planPrice_edit,.expense_edit,.locker_amount_edit', function() {
             var id = $(this).data('id');
             $(this).closest('.master-box').find('.form-fields').toggle();
 

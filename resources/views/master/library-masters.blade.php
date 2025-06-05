@@ -93,7 +93,7 @@
                     <form id="operating_hour" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="databasemodel" value="Hour">
                         <div class="row g-3">
                             <div class="col-lg-12">
@@ -178,7 +178,7 @@
                     <form id="library_seat" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                          <input type="hidden" name="databasemodel" value="Hour">
 
                         <div class="row g-3">
@@ -246,8 +246,8 @@
                 <div class="form-fields">
                     <form id="extend_hour" class="validateForm" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                         <input type="hidden" name="id" value="{{getCurrentBranch()}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="databasemodel" value="Branch">
                         <div class="row g-3">
                             <div class="col-lg-12">
@@ -320,7 +320,7 @@
                         @method('PUT')
                         @endif
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="databasemodel" value="Plan">
                         <div class="row g-3">
                             <div class="col-lg-12">
@@ -407,7 +407,7 @@
                     <form id="planTypeForm" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="databasemodel" value="PlanType">
                         <div class="row g-3">
                             <div class="col-lg-12">
@@ -552,7 +552,7 @@
                     <form id="planPriceForm" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="branch_id" value="{{getCurrentBranch()}}">
                         <input type="hidden" name="databasemodel" value="PlanPrice">
                         <div class="row g-3">
@@ -639,6 +639,73 @@
         </div>
     </div>
     @endcan
+    @can('has-permission','Add Library Seats')
+    <div class="col-lg-4">
+        <div class="master-box">
+            <div class="d-flex">
+                <h4>Locker Amount
+                    <div class="info-container">
+                        <i class="fa-solid fa-circle-info info-icon"></i>
+                        <div class="info-card">
+                            <h3 class="info-title">Library Locker Amount</h3>
+                            <p class="info-details">
+                                <span class="d-block">This option lets you add a locker amount to your library. You can add the locker amount for the first time using this feature, so make sure to enter the correct amount.</span>
+                                <span class="d-block mt-2">इस विकल्प का उपयोग करके आप अपनी लाइब्रेरी में लॉकर राशि जोड़ सकते हैं। पहली बार आप इस विकल्प से लॉकर राशि जोड़ सकते हैं, इसलिए सही राशि जोड़ना सुनिश्चित करें।</span>
+                            </p>
+                        </div>
+                    </div>
+                </h4>
+               
+                <i class="fa fa-plus-circle toggle-button"></i>
+               
+            </div>
+            <div class="master-form mt-3">
+                <div class="form-fields">
+
+                    <form id="library_locker" enctype="multipart/form-data">
+                        @csrf
+                        
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
+                         <input type="hidden" name="id" value="{{getCurrentBranch()}}">
+                         <input type="hidden" name="databasemodel" value="Branch">
+
+                        <div class="row g-3">
+                            <div class="col-lg-12">
+                                <label for="">Library Locker Amount <span>*</span></label>
+                                <input type="text" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt.">
+                                @error('locker_amount')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-12">
+                                <button type="submit" class="btn btn-primary button"><i
+                                        class="fa fa-plus"></i>
+                                    Add Amount</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <ul>
+                     @foreach($branches as $key => $value)
+                    <li>
+                        <div class="d-flex">
+                            <h4>{{$value->locker_amount}} amt.</h4>
+                            <ul>
+                                
+                                <li><a href="javascript:void(0)" type="button" class="locker_amount_edit" data-id="{{$value->id}}" data-table="Branch"><i class="fa fa-edit"></i></a></li>
+                                
+                            </ul>
+                        </div>
+                    </li>
+                    @endforeach
+
+                </ul>
+            </div>
+        </div>
+    </div>
+    @endcan
     <!-- Add Expense -->
     @can('has-permission','Add Expense')
     <div class="col-lg-4">
@@ -664,7 +731,7 @@
                     <form id="library_expense" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" value="">
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
+                        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
                         <input type="hidden" name="databasemodel" value="Expense">
                         <div class="row g-3">
                             <div class="col-lg-12">

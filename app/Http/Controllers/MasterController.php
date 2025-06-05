@@ -307,7 +307,7 @@ class MasterController extends Controller
         }
 
       
-        
+       
         $this->conditionFunction($request,$plan_type_name);
         try {
            
@@ -317,10 +317,10 @@ class MasterController extends Controller
             unset($data['custom_plan_type']);
             if($request->databasemodel){
                 if (is_null($data['id'])) {
-               
+                       
                     $modelInstance = $modelClass::create($data);
                 } else {
-                  
+                    
                     $modelInstance = $modelClass::findOrFail($data['id']);
                     
                     $modelInstance->update($data);

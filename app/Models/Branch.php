@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasSeatType;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Branch extends Model
 {
     use HasFactory;
     use HasSeatType;
     protected $guarded = [];
-
+    use SoftDeletes;
     public function hour()
     {
         return $this->hasOne(Hour::class, 'branch_id'); // or hasMany if needed

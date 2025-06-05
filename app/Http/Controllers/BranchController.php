@@ -57,23 +57,65 @@ class BranchController extends Controller
             }
         return view('library.branch-list',compact('branches'));
     }
-  public function edit($id){
-     
-        
-        $branch = $id ? Branch::find($id) : null;
-       
+    public function branchForm($id = null)
+    {
+        $branch = $id ? Branch::findOrFail($id) : null;
         $states = State::where('is_active', 1)->get();
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();
 
-        return view('library.branch-update', compact('branch','states', 'cities', 'features'));
+        return view('library.branch-update', compact('branch', 'states', 'cities', 'features'));
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'mobile' => 'required|digits:10',
+            'working_days' => 'required|string',
+            'description' => 'required|string',
+            'library_category' => 'required|string',
+            'library_address' => 'required|string',
+            'state_id' => 'required|integer',
+            'city_id' => 'required|integer',
+            'library_zip' => 'required|digits:6',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+        ]);
+        $validated['library_id']=getLibraryId();
 
+        $branch = new Branch($validated);
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $branch->logo = $request->file('logo')->store('uploads/logo', 'public');
+        }
+
+        // Handle features (save as JSON)
+        if ($request->has('features')) {
+            $branch->features = json_encode($request->features);
+        }
+
+        // Google map
+        $branch->google_map = $request->google_map;
+
+        $branch->save();
+
+        // Handle multiple image uploads
+        if ($request->hasFile('library_images')) {
+            foreach ($request->file('library_images') as $image) {
+                $image->store('uploads/library_images', 'public');
+                // Save image path to related table if needed
+            }
+        }
+
+        return redirect()->route('branch.list')->with('success', 'Branch added successfully.');
+    }
 
    public function update(Request $request, $id)
     {
-       
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'library_category' => 'required',
@@ -92,7 +134,7 @@ class BranchController extends Controller
             'description'=>'nullable',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
-     
+        
         
         if ($request->hasFile('library_images')) {
             $uploadedFiles = [];
@@ -128,14 +170,14 @@ class BranchController extends Controller
             $library_logo->move(public_path('uploads'), $library_logoNewName);
             $validated['library_logo'] = 'uploads/' . $library_logoNewName;
         }
-       
+        
         $featuresJson = (isset($request->features) && $validated['features']) ? json_encode($validated['features']) : null;
-      
+        
         // $library = Library::where('id', getAuthenticatedUser()->id)->first();
         // $libraryCode = $this->generateLibraryCode();
-       
+        
         // $update=$library->update($validated);
-      
+        
         // if ($update) {
         //     $library->update(['is_profile' => 1]);
         //     if (empty($library->library_no)) {
@@ -146,7 +188,7 @@ class BranchController extends Controller
         //     }
         // }
         $branch = $id ? Branch::find($id) : null;
-       
+        
 
         if (!$branch) {
             return redirect()->back()->with('error', 'Branch not found.');
@@ -155,5 +197,27 @@ class BranchController extends Controller
 
         return redirect()->route('branch.list')->with('success', 'Profile updated successfully!');
     }
+
+public function destroy($id)
+{
+    $branch = Branch::findOrFail($id);
+
+    // Ensure there is more than one branch in the same library
+    $multipleBranches = Branch::where('library_id', $branch->library_id)->count() > 1;
+
+    // Ensure the current branch is NOT set as the library's current branch
+    $notCurrentBranch = !Library::where('id', $branch->library_id)
+                                ->where('current_branch', $id)
+                                ->exists();
+
+    if ($multipleBranches && $notCurrentBranch) {
+        $branch->delete();
+        return redirect()->route('branch.list')->with('success', 'Branch deleted successfully.');
+    }
+
+    return redirect()->route('branch.list')->with('error', 'Cannot delete this branch. It is either the only branch or the current active branch of the library.');
+}
+
+
     
 }

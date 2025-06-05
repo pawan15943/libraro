@@ -1,4 +1,4 @@
-@extends('layouts.library')
+@extends('layouts.learner')
 @section('content')
 
 
@@ -60,7 +60,7 @@
                                     <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
                                         <input type="hidden" id="custId" name="id" value="{{ $value->id }}">
-                                        <input type="hidden" name="type" value="library">
+                                        <input type="hidden" name="type" value="learner">
 
                                         <button type="submit">
                                             <i class="fa fa-print"></i>

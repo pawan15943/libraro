@@ -82,9 +82,12 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
 // Route::middleware(['auth:library','log.requests'])->group(function () {
   // 
     Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
-    Route::get('/branch/{id}/edit', [BranchController::class, 'edit'])->name('branch.edit');
+    Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
 
-
+    Route::post('/branch', [BranchController::class, 'store'])->name('branch.store');
+    Route::get('/branch/create', [BranchController::class, 'branchForm'])->name('branch.create');
+    // Edit form
+    Route::get('/branch/{id}/edit', [BranchController::class, 'branchForm'])->name('branch.edit');
     Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
 
     Route::get('/library-users', [LibraryUserController::class, 'index'])->name('library-users.index');

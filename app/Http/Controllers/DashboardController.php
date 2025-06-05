@@ -18,6 +18,7 @@ use App\Services\LibraryService;
 use App\Services\LearnerService;
 use App\Traits\LearnerQueryTrait;
 use App\Http\Middleware\LoadMenus;
+use App\Models\Branch;
 use App\Models\Feature;
 use App\Models\Learner;
 use App\Models\LearnerOperationsLog;
@@ -248,8 +249,9 @@ class DashboardController extends Controller
     public function learnerDashboard(){
         $user=Auth::user();
        
-        $learners = LearnerDetail::withoutGlobalScopes()->where('learner_id',getLibraryId())->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plans.name as plan_name','plan_types.name as plan_type_name','seats.seat_no')->get();
-       $library_name=Library::where('id',Auth::user()->library_id)->select('library_name','features')->first();
+        $learners = LearnerDetail::withoutGlobalScopes()->where('learner_id',$user->id)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plans.name as plan_name','plan_types.name as plan_type_name')->get();
+       
+       $library_name=Branch::where('id',Auth::user()->branch_id)->select('name as library_name','features')->first();
   
        $learner_request = DB::table('learner_request')->where('learner_id', getAuthenticatedUser()->id)->get();
        $featuresArray = $library_name->features ? (is_array($library_name->features) ? $library_name->features : json_decode($library_name->features, true)) : [];

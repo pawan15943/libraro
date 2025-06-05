@@ -1,4 +1,4 @@
-@extends('layouts.library')
+@extends('layouts.learner')
 @section('content')
 
 

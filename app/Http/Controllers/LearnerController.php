@@ -2459,8 +2459,9 @@ class LearnerController extends Controller
     /** Learner Guard and in front learner related function**/
 
     public function IdCard(){
-        $data=LearnerDetail::withoutGlobalScopes()->where('learner_id',getLibraryId())->where('learner_detail.status',1)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plan_types.name as plan_type_name','plans.name as plan_name','plan_types.start_time','plan_types.end_time')->first();
-        $library_name=Library::where('id',Auth::user()->library_id)->select('library_name','features')->first();
+        $data=LearnerDetail::withoutGlobalScopes()->where('learner_id',Auth::user()->id)->where('learner_detail.status',1)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plan_types.name as plan_type_name','plans.name as plan_name','plan_types.start_time','plan_types.end_time')->first();
+       
+        $library_name=Branch::where('id',Auth::user()->branch_id)->select('name as library_name','features')->first();
         
         return view('learner.idCard',compact('library_name','data'));
     }
@@ -2476,23 +2477,23 @@ class LearnerController extends Controller
         return view('learner.blog',compact('data'));
     }
     public function feadback(){
-        $is_feedback=LearnerFeedback::where('learner_id' ,getLibraryId())->exists();
+        $is_feedback=LearnerFeedback::where('learner_id' ,Auth::user()->id)->exists();
         return view('learner.feadback',compact('is_feedback'));
     }
     public function suggestions(){
-        $data=Suggestion::where('learner_id',getLibraryId())->get();
+        $data=Suggestion::where('learner_id',Auth::user()->id)->get();
         return view('learner.suggestions',compact('data'));
     }
     public function attendance(Request $request){
-        $dates = LearnerDetail::withoutGlobalScopes()->where('learner_id',getLibraryId())->select('plan_start_date', 'plan_end_date')->get();
-        $data=LearnerDetail::withoutGlobalScopes()->where('learner_id',getLibraryId())->where('learner_detail.status',1)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plan_types.name as plan_type_name','plans.name as plan_name','plan_types.start_time','plan_types.end_time')->first();
-        $my_attandance=Attendance::where('learner_id',getLibraryId())->get();
+        $dates = LearnerDetail::withoutGlobalScopes()->where('learner_id',Auth::user()->id)->select('plan_start_date', 'plan_end_date')->get();
+        $data=LearnerDetail::withoutGlobalScopes()->where('learner_id',Auth::user()->id)->where('learner_detail.status',1)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plan_types.name as plan_type_name','plans.name as plan_name','plan_types.start_time','plan_types.end_time')->first();
+        $my_attandance=Attendance::where('learner_id',Auth::user()->id)->get();
 
         if ($request->has('request_name') && !empty($request->request_name)) {
             $year = Carbon::parse($request->request_name)->year;
             $month = Carbon::parse($request->request_name)->month;
 
-            $my_attandance = Attendance::where('learner_id', getLibraryId())
+            $my_attandance = Attendance::where('learner_id', Auth::user()->id)
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
             ->get();
@@ -2524,11 +2525,11 @@ class LearnerController extends Controller
         return view('learner.my-attendance',compact('months','data','my_attandance'));
     }
     public function complaints(){
-        $data=Complaint::where('learner_id',getLibraryId())->get();
+        $data=Complaint::where('learner_id',Auth::user()->id)->get();
         return view('learner.complaints',compact('data'));
     }
     public function transactions(){
-        $transaction=LearnerTransaction::withoutGlobalScopes()->where('learner_transactions.learner_id',getLibraryId())->leftJoin('learner_detail','learner_transactions.learner_detail_id','=','learner_detail.id')->select('learner_transactions.*','learner_detail.plan_type_id','learner_detail.plan_id')->get();
+        $transaction=LearnerTransaction::withoutGlobalScopes()->where('learner_transactions.learner_id',Auth::user()->id)->leftJoin('learner_detail','learner_transactions.learner_detail_id','=','learner_detail.id')->select('learner_transactions.*','learner_detail.plan_type_id','learner_detail.plan_id')->get();
       
         return view('learner.transactions',compact('transaction'));
     }
@@ -2554,7 +2555,7 @@ class LearnerController extends Controller
             $attachment = null;
         }
         $data['attachment']=$attachment;
-        $data['learner_id']=getLibraryId();
+        $data['learner_id']=Auth::user()->id;
         $data['library_id']=Auth::user()->library_id;
         Suggestion::create($data);
 
@@ -2580,7 +2581,7 @@ class LearnerController extends Controller
              $attachment = null;
          }
          $data['attachment']=$attachment;
-         $data['learner_id']=getLibraryId();
+         $data['learner_id']=Auth::user()->id;
          $data['library_id']=Auth::user()->library_id;
          Complaint::create($data);
  
@@ -2601,9 +2602,9 @@ class LearnerController extends Controller
         ]);
     
         
-        $data['learner_id']=getLibraryId();
+        $data['learner_id']=Auth::user()->id;
         $data['library_id']=Auth::user()->library_id;
-        if(LearnerFeedback::where('learner_id',getLibraryId())->exists()){
+        if(LearnerFeedback::where('learner_id',Auth::user()->id)->exists()){
             return redirect()->route('learner.feadback')->with('error',' Your feedback already uploaded');
         }
         LearnerFeedback::create($data);

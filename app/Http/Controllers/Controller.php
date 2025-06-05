@@ -39,7 +39,7 @@ class Controller extends BaseController
     public function generateReceipt(Request $request)
     {
         if($request->type=='library'){
-         
+           
             $data = LibraryTransaction::where('id', $request->id)->first();
             $user = Library::where('id', $data->library_id)->where('status', 1)->first();
             $transactionDate=$data->transaction_date;
@@ -53,12 +53,12 @@ class Controller extends BaseController
             $library=$user;
         }
         if($request->type=='learner'){
-            $learnerDeatail = LearnerDetail::where('id', $request->id)
+           $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid',1)->first();
+
+            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $data->learner_detail_id)
             ->with(['plan', 'planType'])
             ->first();
-           
-            $data = LearnerTransaction::where('learner_detail_id', $learnerDeatail->id)->where('is_paid',1)->first();
-        
+          
             $user = Learner::where('id', $data->learner_id)->first();
           
             $transactionDate=$data->paid_date;

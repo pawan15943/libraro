@@ -7,9 +7,16 @@
 
 
 
-  <form action="{{ route('branch.update', $branch->id) }}" method="POST" class="validateForm profile" enctype="multipart/form-data">
-        @csrf
-        @method('PUT') <!-- Important! -->
+  <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 
+    method="POST" 
+    class="validateForm profile" 
+    enctype="multipart/form-data"
+>
+    @csrf
+
+    @if(isset($branch))
+        @method('PUT')  <!-- Use PUT for update -->
+    @endif
 
 
     <div class="row mb-4 g-4">
@@ -17,12 +24,15 @@
             <div class="card">
                 <h4 class="mb-4">Branch Details</h4>
                 <div class="row g-4">
-
-                    <!-- Branch Name -->
+                   <!-- Branch Name -->
                     <div class="col-lg-6">
                         <label for="name">Branch Name <span>*</span></label>
-                        <input type="text" id="name" class="form-control @error('name') is-invalid @enderror" name="name"
-                            value="{{ old('name', $branch->name ?? '') }}" placeholder="Enter Branch name" readonly>
+                        <input type="text" id="name"
+                               class="form-control @error('name') is-invalid @enderror"
+                               name="name"
+                               value="{{ old('name', $branch->name ?? '') }}"
+                               placeholder="Enter Branch name"
+                               {{ isset($branch) ? 'readonly' : '' }}>
                         @error('name')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -31,67 +41,65 @@
                     </div>
 
                     <!-- Branch Email -->
-                    <div class="col-lg-6">
+                   <div class="col-lg-6">
                         <label for="email">Email Id <span>*</span></label>
-                        <input type="email" id="email" class="form-control @error('email') is-invalid @enderror" name="email"
-                            value="{{ old('email', $branch->email ?? '') }}" >
+                        <input type="email" id="email"
+                               class="form-control @error('email') is-invalid @enderror"
+                               name="email"
+                               value="{{ old('email', $branch->email ?? '') }}">
                         @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
 
                     <!-- Branch Contact -->
                     <div class="col-lg-6">
                         <label for="mobile">Contact No (WhatsApp No.) <span>*</span></label>
-                        <input type="text" id="mobile" class="form-control digit-only @error('mobile') is-invalid @enderror" name="mobile" maxlength="10"
-                            value="{{ old('mobile', $branch->mobile ?? '') }}" >
+                        <input type="text" id="mobile"
+                               class="form-control digit-only @error('mobile') is-invalid @enderror"
+                               name="mobile" maxlength="10"
+                               value="{{ old('mobile', $branch->mobile ?? '') }}">
                         @error('mobile')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
 
                     <!-- Branch Working Days -->
-                    <div class="col-lg-6">
+                   <div class="col-lg-6">
                         <label for="working_days">Library Working Days <span>*</span></label>
-                        <textarea id="working_days" class="form-control @error('working_days') is-invalid @enderror"
-                            name="working_days"
-                            placeholder="Working Days">{{ old('working_days', $branch->working_days ?? 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday') }}</textarea>
+                        <textarea id="working_days"
+                                  class="form-control @error('working_days') is-invalid @enderror"
+                                  name="working_days"
+                                  placeholder="Working Days">{{ old('working_days', $branch->working_days ?? 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday') }}</textarea>
                         @error('working_days')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                         <span class="text-info">You can edit this according to your Library</span>
                     </div>
 
                     <!-- Branch Description -->
-                    <div class="col-lg-12">
+                     <div class="col-lg-12">
                         <label for="description">Library Description <span>*</span></label>
-                        <textarea id="description" class="form-control  @error('description') is-invalid @enderror" name="description" rows="5"
-                            placeholder="Enter Library Description">{{ old('description', $branch->description ?? '') }}</textarea>
+                        <textarea id="description"
+                                  class="form-control  @error('description') is-invalid @enderror"
+                                  name="description" rows="5"
+                                  placeholder="Enter Library Description">{{ old('description', $branch->description ?? '') }}</textarea>
                         @error('description')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
 
                     <!-- Library Category -->
-                    <div class="col-lg-12">
+                   <div class="col-lg-12">
                         <label for="library_category">Library Category <span>*</span></label>
-                        <select name="library_category" id="library_category" class="form-select @error('library_category') is-invalid @enderror">
+                        <select name="library_category" id="library_category"
+                                class="form-select @error('library_category') is-invalid @enderror">
                             <option value="">Select Category</option>
                             <option value="Public" {{ old('library_category', $branch->library_category ?? '') == 'Public' ? 'selected' : '' }}>Public</option>
                             <option value="Private" {{ old('library_category', $branch->library_category ?? '') == 'Private' ? 'selected' : '' }}>Private</option>
                         </select>
                         @error('library_category')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
 
@@ -224,26 +232,25 @@
         <div class="col-lg-4">
             <div class="card stick">
                 <h4 class="mb-4">Library Logo</h4>
-                <div class="row g-4">
+                 <div class="row g-4">
                     <div class="col-lg-12">
                         <div class="previewImage">
-                           <img id="image" src="{{ asset('public/' . (isset($branch) && $branch->logo ? $branch->logo : 'uploads/images/no-image.png')) }}" alt="Library Logo" class="img-fluid" style="max-width: 100%;">
-
+                            <img id="image" src="{{ asset('public/' . (isset($branch) && $branch->logo ? $branch->logo : 'uploads/images/no-image.png')) }}" alt="Library Logo" class="img-fluid" style="max-width: 100%;">
                         </div>
                         <label for="libraryLogo" class="uploadLogo">Upload Image
                             <input type="file" id="libraryLogo" class="form-control no-validate d-none @error('logo') is-invalid @enderror" name="logo" accept="image/*" onchange="document.getElementById('image').src = window.URL.createObjectURL(this.files[0])">
                             @error('logo')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </label>
                         <small class="text-info d-block mt-2">Image size should be 180*180 pixels (PNG, JPG, JPEG, SVG, WEBP).</small>
                     </div>
                 </div>
-                <div class="row mt-4">
+               <div class="row mt-4">
                     <div class="col-12">
-                        <button type="submit" class="btn btn-primary w-100">Update Profile</button>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ isset($branch) ? 'Update Profile' : 'Create Branch' }}
+                        </button>
                     </div>
                 </div>
             </div>
