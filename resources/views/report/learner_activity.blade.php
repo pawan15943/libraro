@@ -108,12 +108,12 @@ $currentMonth = date('m');
                 <thead>
                     <tr>
                         <th>Seat No.</th>
-                        <th>Learner Info</th>
+                        <th>Learner Name</th>
                         <th>Contact Info</th>
-                        <th>Activity</th>
-                        <th>Old Value</th>
+                        <th>Activity Name</th>
+                        <th>Previous Value</th>
                         <th>New Value</th>
-                        <th>Request Date</th>
+                        <th>Activity Date</th>
                        
                     </tr>
                 </thead>
@@ -128,7 +128,7 @@ $currentMonth = date('m');
                         </td>
                         <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
-                            <br> <small>{{$value->learner->dob}}</small>
+                           
                         </td>
                         <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->email }}" data-bs-placement="bottom"><i
@@ -137,8 +137,8 @@ $currentMonth = date('m');
                             <small> +91-{{$value->learner->mobile}}</small>
                         </td>
                        <td>{{$value->operation}}</td>
-                       <td>{{$value->old_value}}</td>
-                       <td>{{$value->new_value}}</td>
+                       <td class="text-danger">{{$value->old_value}}</td>
+                       <td class="text-success">{{$value->new_value}}</td>
                        <td>{{$value->created_at}}</td>
                      
                     </tr>

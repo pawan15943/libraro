@@ -23,6 +23,9 @@
                         <th style="width: 15%">Action</th>
                     </tr>
                 </thead>
+                @php
+                    // dd($seats);
+                @endphp
                 @if(!empty($seats) && count($seats) > 0)
                 
                 <tbody>
@@ -89,14 +92,16 @@
                     @endif
                     @endforeach
                     </tr>
+                   
                     @endif
+
                     @endforeach
                 </tbody>
                     
                 @else
                      <tbody>
                         <tr>
-                            <td colspan="5" class="text-center">No data available</td>
+                            <td colspan="8" class="text-center">No data available</td>
                         </tr>
                     </tbody>
                 @endif

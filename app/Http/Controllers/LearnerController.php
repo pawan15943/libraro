@@ -2147,6 +2147,7 @@ class LearnerController extends Controller
                 $learner_detail_id = LearnerDetail::where('learner_id', $validatedData['learner_id'])
                     ->orderBy('id', 'DESC')
                     ->value('id');
+
             } elseif ($validatedData['operation'] == 'closeSeat' || $validatedData['operation'] == 'deleteSeat') {
                 $learner_detail_id = LearnerDetail::where('learner_id', $validatedData['learner_id'])
                     ->whereNull('deleted_at')
@@ -2159,6 +2160,9 @@ class LearnerController extends Controller
             /*ALTER TABLE learner_operations_log
             ADD UNIQUE INDEX unique_learner_operation_created_at (learner_id, operation, created_at);
             */
+            if($old_value=='swapseat'){
+                $old_value="General";
+            }
 
             DB::table('learner_operations_log')->insert([
                 'learner_id' => $validatedData['learner_id'],
