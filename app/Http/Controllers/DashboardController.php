@@ -543,37 +543,40 @@ class DashboardController extends Controller
 
         
            //plantype wise revenue
-         $planTypeWiseRevenue = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-         ->where('learner_detail.is_paid', 1)
-         ->where('learner_detail.library_id', getLibraryId())
-         ->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
-             // Filter by year only
-                 $year = $request->year;
-                 return $query->where(function ($q) use ($year) {
-                     $q->whereYear('plan_start_date', '<=', $year)
-                     ->whereYear('plan_end_date', '>=', $year);
-                 });
-            
-         })
-         ->when($request->filled('year') && $request->filled('month'), function ($query) use ($request) {
-            
-            $year = $request->year;
-             $month = $request->month;
-             $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-             $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-         
-                 return $query->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                     $q->where('plan_start_date', '<=', $endOfMonth)
-                     ->where('plan_end_date', '>=', $startOfMonth);
-                 });
-            
-         })
-         
-         ->groupBy('plan_type_id')
-         ->selectRaw('ROUND(SUM(learner_detail.plan_price_id / plans.plan_id), 2) as revenue, learner_detail.plan_type_id')
-         ->with('planType')
-         ->get();
-    
+          $query = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+                ->where('learner_detail.is_paid', 1)
+                ->where('learner_detail.library_id', getLibraryId());
+
+            if (getCurrentBranch() != 0) {
+                $query->where('learner_detail.branch_id', getCurrentBranch());
+            }
+
+            $query->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
+                $year = $request->year;
+                return $query->where(function ($q) use ($year) {
+                    $q->whereYear('plan_start_date', '<=', $year)
+                    ->whereYear('plan_end_date', '>=', $year);
+                });
+            });
+
+            $query->when($request->filled('year') && $request->filled('month'), function ($query) use ($request) {
+                $year = $request->year;
+                $month = $request->month;
+                $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+                $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+                return $query->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                    $q->where('plan_start_date', '<=', $endOfMonth)
+                    ->where('plan_end_date', '>=', $startOfMonth);
+                });
+            });
+
+            $planTypeWiseRevenue = $query
+                ->groupBy('plan_type_id')
+                ->selectRaw('ROUND(SUM(learner_detail.plan_price_id / plans.plan_id), 2) as revenue, learner_detail.plan_type_id')
+                ->with('planType')
+                ->get();
+
         // Prepare data for response for graph
    
         $bookinglabels = $plan_wise_booking->map(function ($booking) {

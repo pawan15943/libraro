@@ -100,10 +100,10 @@ class LibraryController extends Controller
                   ->orWhere('libraries.email', 'LIKE', "%{$search}%");
             });
         }
-        // dd($query->get());
+        
         $libraries = $query->get();
         $plans = Subscription::get();
-    
+      
         return view('library.index', compact('libraries', 'plans'));
     }
     
