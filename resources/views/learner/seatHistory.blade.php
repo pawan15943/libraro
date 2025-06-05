@@ -1,8 +1,5 @@
 @extends('layouts.library')
 @section('content')
-
-
-
 <!-- Content Header (Page header) -->
 <!-- Main row -->
 <div class="row mb-4">
