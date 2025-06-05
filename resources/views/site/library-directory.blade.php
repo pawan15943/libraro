@@ -387,7 +387,7 @@
                                 @enderror
                             </div>
                             <div class="col-lg-6">
-                                <input type="date" name="preferred_date" class="form-control @error('preferred_date') is-invalid @enderror" id="preferred_date" placeholder="Date">
+                                <input type="date" name="preferred_date" class="form-control @error('preferred_date') is-invalid @enderror" id="preferred_date" placeholder="Date" min="<?= date('Y-m-d'); ?>">
                                 <small class="text-gray" style="font-size: .8rem;">Choose Preffered Slot Date</small>
 
                             </div>
