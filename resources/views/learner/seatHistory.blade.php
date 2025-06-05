@@ -26,7 +26,7 @@
                         <th style="width: 15%">Action</th>
                     </tr>
                 </thead>
-                 @if($seats->isNotEmpty())
+                @if(!empty($seats) && count($seats) > 0)
                 
                 <tbody>
                     
