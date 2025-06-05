@@ -21,6 +21,7 @@
                         <th>S.No.</th>
                         <th>Branch Name</th>
                         <th>Contact Info</th>
+                        <th>Email</th>
                         <th>Address</th>
                         <th style="width:30%">Action</th>
                     </tr>
@@ -31,7 +32,10 @@
                     <tr>
                         <td>{{$key+1}}</td>
                         <td>{{$value->name}}</td>
-                        <td>{{$value->mobile}}<span>{{$value->email}}</span>
+                        <td>{{$value->mobile}}
+                        </td>
+                        <td>
+                            <span>{{$value->email}}</span>
 
                         </td>
                         <td>{{$value->library_address}}</td>
