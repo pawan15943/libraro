@@ -13,7 +13,7 @@
             <b>Important :</b> The Seat History page displays a comprehensive list of all library seats, along with seat-specific booking details in a single view. If you need information about library seats, this section provides helpful details to guide you.
         </p>
         <div class="table-responsive">
-            <table class="table text-center datatable" id="datatable">
+            <table class="table text-center datatable" >
                 <thead>
                     <tr>
                         <th style="width: 10%">Seat No.</th>
@@ -26,6 +26,8 @@
                         <th style="width: 15%">Action</th>
                     </tr>
                 </thead>
+                @if($seats && count($seats) > 0)
+                
                 <tbody>
                     
                     @foreach($seats as $seat)
@@ -93,6 +95,14 @@
                     @endif
                     @endforeach
                 </tbody>
+                    
+                @else
+                     <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center">No data available</td>
+                        </tr>
+                    </tbody>
+                @endif
             </table>
 
         </div>
