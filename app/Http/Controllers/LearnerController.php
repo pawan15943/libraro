@@ -51,7 +51,7 @@ class LearnerController extends Controller
                 'required',
                 'email',
                 Rule::unique('learners')->where(function ($query) use ($request) {
-                    return $query->where('library_id', getLibraryId());
+                    return $query->where('branch_id', getCurrentBranch());
                 }),
             ],
             'name' => 'required',
@@ -247,6 +247,23 @@ class LearnerController extends Controller
         }
         
         $validator = $this->validateCustomer($request, $additionalRules);
+
+        $exists = Learner::where('branch_id', getCurrentBranch())
+            ->get()
+            ->filter(function ($learner) use ($request) {
+                return $learner->email === strtolower(trim($request->input('email')));
+            })
+            ->isNotEmpty();
+   
+        if ($exists) {
+             return response()->json([
+                    'error' => true,
+                    'message' => 'The email has already been taken.'
+                ], 422);
+                die;
+            
+        }
+
        
         $planPrice = (float) $request->input('plan_price_id', 0);
    

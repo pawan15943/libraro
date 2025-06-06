@@ -131,7 +131,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
 
       Route::post('/master/store', [MasterController::class, 'storemaster'])->name('master.store');
       Route::get('/master/edit', [MasterController::class, 'masterEdit'])->name('master.edit');
-      Route::post('/seats', [MasterController::class, 'seatsStore'])->name('seats.store');
+      
       Route::post('/extend-day', [MasterController::class, 'extendDay'])->name('extendDay.store');
       
       Route::delete('/activeDeactive/{id}/toggle', [MasterController::class, 'activeDeactive'])->name('activeDeactive');

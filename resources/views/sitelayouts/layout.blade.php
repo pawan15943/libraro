@@ -256,7 +256,7 @@
                         city: city,
                     },
                     success: function(data) {
-                        
+                        console.log('lib',data);
                         $('#library-list1').empty(); // Clear the previous library results
 
                         if (data.length > 0) {

@@ -321,7 +321,7 @@ class SiteController extends Controller
                 'plan_prices.price',
                 'plans.plan_id'
             )
-            ->where('plan_prices.library_id', $library->library_id) // Specify table name for library_id
+            ->where('plan_prices.branch_id', $library->id) // Specify table name for library_id
             ->where('plans.plan_id', 1)
             ->get();
 

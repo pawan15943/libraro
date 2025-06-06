@@ -20,6 +20,8 @@ $today = Carbon::today();
         transition: transform 0.5s ease, opacity 0.5s ease;
     }
 </style>
+@if(getCurrentBranch() !=0 )
+
 <div class="row mb-4">
     <div class="col-lg-12 text-end">
      
@@ -69,18 +71,6 @@ $today = Carbon::today();
                     $hourly = 1;
                     $x=1;
 
-                    if ($remainingHours ==($total_hour-($total_hour/4)) ) {
-                    $seatCount = 3;
-                    } elseif ($remainingHours == ($total_hour-(2*$total_hour/4)) ) {
-                    $seatCount = 2;
-                    } elseif ($remainingHours == ($total_hour-(3*$total_hour/4)) ) {
-                    $seatCount = 1;
-                    } elseif ($remainingHours == ($total_hour/2) ) {
-                    $seatCount = 1;
-                    } elseif ($remainingHours == 0) {
-                    $seatCount = 0;
-                    }
-                    
                 @endphp
 
                 @if($usersForSeat->count() > 0)
@@ -98,7 +88,7 @@ $today = Carbon::today();
                         }elseif($remainingHours != 0 && $hourlyBookings >0){
                         $seatCount = 4-$hourlyBookings;
                         }elseif($remainingHours != 0 && $halfDayBookings>0){
-                        $seatCount = 2-$halfDayBookings;
+                        $seatCount = 1;
                         }elseif($halldaybooking==1){
                             $seatCount = 0;
                         }elseif($nightbooking==1 && $remainingHours != 0){
@@ -297,7 +287,12 @@ $today = Carbon::today();
         </div>
     </div>
 </div>
-
+    
+@else
+ <p class="info-message mt-4 mb-0">
+    you dont select any branch
+ </p>
+@endif
 @can('has-permission', 'View Seat')
 <div class="modal fade" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
