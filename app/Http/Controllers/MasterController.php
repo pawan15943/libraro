@@ -300,21 +300,26 @@ class MasterController extends Controller
             $plan_type_name=$request->custom_plan_type;
            }
 
-            
             $data['name'] = $plan_type_name;
-           
-           
+          
         }
 
-      
-       
-        $this->conditionFunction($request,$plan_type_name);
         try {
+            if($request->day_type_id!=0){
+                $this->conditionFunction($request,$plan_type_name);
+            }
            
             unset($data['databasemodel']); 
             unset($data['databasetable']); 
             unset($data['_token']);
             unset($data['custom_plan_type']);
+            
+            if($request->redirect){
+                $redirectUrl=$request->redirect;
+            }else{
+                $redirectUrl=null;
+            }
+            unset($data['redirect']);
             if($request->databasemodel){
                 if (is_null($data['id'])) {
                        
@@ -330,7 +335,8 @@ class MasterController extends Controller
             return response()->json([
                 'success' => true, 
                 'message' => 'Data Added/Updated successfully',
-                'plan' => $modelInstance  
+                'plan' => $modelInstance , 
+                'redirect'=>$redirectUrl
             ]);
         }  catch (Exception $e) {
             return response()->json(['error' => true, 'message' => $e->getMessage()]);
@@ -395,6 +401,27 @@ class MasterController extends Controller
         }
         
     }
+    public function planTypeView()
+    {
+      
+        $data = PlanType::get(); 
+
+        return view('master.plantype-list', compact('data'));
+    }
+   public function planTypeCreate($id = null)
+    {
+        $planType = null;
+        if ($id) {
+            $planType = PlanType::find($id);  // Load existing record for edit
+            if (!$planType) {
+                return redirect()->route('planType.create')->with('error', 'Plan type not found.');
+            }
+        }
+        // Pass $planType to view, it will be null for add and model instance for edit
+        return view('master.plantype', compact('planType'));
+    }
+
+    
 
     public function activeDeactive(Request $request, $id)
     {

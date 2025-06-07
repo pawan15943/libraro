@@ -114,7 +114,9 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction'); 
       Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan'); 
       Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
-    
+      Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
+      Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');
+
       Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
       Route::get('/master/account', [LibraryController::class, 'sidebarRedirect'])->name('library.master.account');
       Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');

@@ -65,23 +65,16 @@
 
 <script>
     $(document).ready(function() {
+     
         $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
             .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker', function(event) {
             event.preventDefault(); 
-            
-            var formData = new FormData(this);
+            var form = this;
+            var formData = new FormData(form);
             var formId = $(this).attr('id');
             var url;
 
-          url = '{{ route('master.store') }}';
-            // if (formId === 'library_seat'){
-            //     url = '{{ route('seats.store') }}';
-            // } else if (formId === 'extend_hour'){
-            //     url = '{{ route('extendDay.store') }}';
-            // }else{
-            //     url = '{{ route('master.store') }}';
-            // }
-
+            url = "{{ route('master.store') }}";
             
             $.ajax({
                 url: url,
@@ -89,16 +82,15 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                dataType: 'json',
-                success: function(response) {
-                
-                    if (response.success) {
-
-                        $("#success-message").text(response.message).show();
-                        $("#error-message").hide();
-                        $('.form-fields').hide();
-                        $("#" + formId)[0].reset(); 
-                        
+                // dataType: 'json',
+                success: function (response) {
+                    console.log(response);
+                    if (response.success && response.redirect) {
+                        window.location.href = response.redirect; 
+                    }
+                    else if (response.success) {
+                        window.location.reload();
+                        toastr.success(response.message);
                     } else if (response.errors) {
                         $(".is-invalid").removeClass("is-invalid");
                         $(".invalid-feedback").remove();
@@ -111,29 +103,76 @@
                     } else {
                         $("#error-message").text(response.message).show();
                         $("#success-message").hide();
+                    } 
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        var errors = xhr.responseJSON.errors;
+
+                        $.each(errors, function (key, value) {
+                            let field = $(`[name="${key}"]`);
+
+                            if (key.includes('.')) {
+                                const [baseKey, index] = key.split('.');
+                                field = $(`[name="${baseKey}[]"]`).eq(index);
+                            }
+
+                            field.addClass('is-invalid');
+                            field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
+                        });
+                    } else {
+                        alert('An unexpected error occurred.');
                     }
+                }
+                // success: function(response) {
+                
+                //     if (response.success) {
+
+                //         $("#success-message").text(response.message).show();
+                //         $("#error-message").hide();
+                //         $('.form-fields').hide();
+                //         $("#" + formId)[0].reset(); 
+                        
+                //     } else if (response.errors) {
+                //         $(".is-invalid").removeClass("is-invalid");
+                //         $(".invalid-feedback").remove();
+
+                //         $.each(response.errors, function(key, value) {
+                //             var element = $("[name='" + key + "']");
+                //             element.addClass("is-invalid");
+                //             element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
+                //         });
+                //     } else {
+                //         $("#error-message").text(response.message).show();
+                //         $("#success-message").hide();
+                //     }
 
                     
-                },
-                error: function(xhr) {
-                    var response = JSON.parse(xhr.responseText);
-                    $('#error-message').text(response.message).show();
-                    $('#success-message').hide();
+                // },
+                // error: function(xhr) {
+                //     var response = JSON.parse(xhr.responseText);
+                //     $('#error-message').text(response.message).show();
+                //     $('#success-message').hide();
 
                 
-                }
+                // }
+
+              
             });
 
             return false; 
         });
 
         $(document.body).on('click', '.plan_edit ,.plantype_edit, .hour_edit,.seat_edit,.extend_day_edit ,.planPrice_edit,.expense_edit,.locker_amount_edit', function() {
+          
             var id = $(this).data('id');
+              
             $(this).closest('.master-box').find('.form-fields').toggle();
 
             var formId = $(this).attr('class');  
           
             var modeltable=$(this).data('table');
+            var redirect = $(this).data('redirect');
            
             $.ajax({
                 url: '{{ route('master.edit') }}',
@@ -149,7 +188,8 @@
 
                 dataType: 'json',
                 success: function(response) {
-                    console.log(response);
+                   
+                  
                     if(response.Plan){
                         $('input[name="id"]').val(response.Plan.id);
                 
@@ -160,6 +200,8 @@
                     }
             
                     if(response.PlanType){
+                       
+                     
                         $('input[name="id"]').val(response.PlanType.id);
                         
                         $('#plantype_name').val(response.PlanType.day_type_id);
@@ -178,6 +220,7 @@
 
 
                         $('#savePlanTypeBtn').text('Update Plan Type');
+                         
                     }
 
                     if(response.PlanPrice){
