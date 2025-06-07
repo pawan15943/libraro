@@ -8,9 +8,7 @@
 
 
   <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 
-    method="POST" 
-    class="validateForm profile" 
-    enctype="multipart/form-data"
+    method="POST"enctype="multipart/form-data"
 >
     @csrf
 
@@ -63,7 +61,12 @@
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
-
+                </div>
+            </div>
+            @if(isset($branch))
+            <div class="card mt-5">
+                <h4 class="mb-4">Branch Profile</h4>
+                <div class="row g-4">
                     <!-- Branch Working Days -->
                    <div class="col-lg-6">
                         <label for="working_days">Library Working Days <span>*</span></label>
@@ -105,7 +108,7 @@
 
                 </div>
             </div>
-
+            @endif 
             <!-- Library Address & Location -->
             <div class="card mt-5">
                 <h4 class="mb-4">Library Address & Location</h4>
@@ -167,11 +170,62 @@
                         </span>
                         @enderror
                     </div>
-
+                </div>
+            </div>
+             @if(!isset($branch))
+            <div class="card mt-5">
+                <h4 class="mb-4">Branch Master</h4>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <label for="">Locker Amount <span>*</span></label>
+                        <input type="text" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}">
+                        @error('locker_amount')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+                     <div class="col-lg-6">
+                        <label for="">Extend Days <span>*</span></label>
+                        <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" value="{{old('extend_days')}}">
+                        @error('extend_days')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+            @endif
+            @if(isset($branch))
+            <div class="card mt-5">
+                <h4 class="mb-4">Google Map</h4>
+                <div class="row g-4">
                     <div class="col-lg-12">
                         <label for="google_map">Google Map Embed URL</label>
                         <textarea name="google_map" id="google_map" class="form-control no-validate" rows="5" placeholder="Paste Google Map Embed Code here">{{ old('google_map', $branch->google_map ?? '') }}</textarea>
                         <span class="text-info"><b>Note</b>: Your provided library address will be shown to visitors on your listing, so please mention it correctly (Put Map Embed Code).</span>
+                    </div>
+                    <div class="col-lg-6">
+                        <label for="">Location Longitude </label>
+                        <input type="text" class="form-control  @error('longitude') is-invalid @enderror no-validate" name="longitude"
+                            value="{{ old('longitude', $branch->longitude ?? '') }}">
+                        @error('longitude')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label for="">Location Latitude </label>
+                        <input type="text" class="form-control  @error('latitude') is-invalid @enderror no-validate" name="latitude"
+                            value="{{ old('latitude', $branch->latitude ?? '') }}">
+                        @error('latitude')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -227,8 +281,9 @@
             </div>
 
         </div>
-
+        @endif
         <!-- Sidebar for Library Logo and Submit -->
+        @if(isset($branch))
         <div class="col-lg-4">
             <div class="card stick">
                 <h4 class="mb-4">Library Logo</h4>
@@ -248,13 +303,22 @@
                 </div>
                <div class="row mt-4">
                     <div class="col-12">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100 ">
                             {{ isset($branch) ? 'Update Profile' : 'Create Branch' }}
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+        @else 
+        <div class="row mt-4">
+            <div class="col-lg-4">
+                <button type="submit" class="btn btn-primary w-100 ">
+                    {{ isset($branch) ? 'Update Profile' : 'Create Branch' }}
+                </button>
+            </div>
+        </div>
+        @endif
     </div>
 </form>
 

@@ -23,6 +23,7 @@
                         <th>Contact Info</th>
                         <th>Email</th>
                         <th>Address</th>
+                        <th>Master</th>
                         <th style="width:30%">Action</th>
                     </tr>
                 </thead>
@@ -39,6 +40,18 @@
 
                         </td>
                         <td>{{$value->library_address}}</td>
+                        <td>
+                            
+                            <ul class="actionalbls">
+                                @if(getCurrentBranch() !=0)  
+                               
+                                <li><a href="{{route('seat.create',getCurrentBranch())}}" title="Seat Update "><i class="fas fa-edit"></i></a></li>
+                                <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fas fa-edit"></i></a></li>
+                                <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fas fa-edit"></i></a></li>
+                                <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fas fa-edit"></i></a></li>
+                                @endif
+                            </ul>
+                        </td>
                         <td>
                             
                             <ul class="actionalbls">

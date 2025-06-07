@@ -275,11 +275,14 @@
                 $.ajax({
                     url: url,
                     type: 'DELETE',
+                     headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'  // add CSRF token here
+                    },
                     data: {
-                        _token: '{{ csrf_token() }}',
                         dataTable: dataTable
                     },
                     success: function(response) {
+                        console.log(response.status);
                         if (response.status === 'success') {
                         
                             // Update the button text with an icon using .html() instead of .text()

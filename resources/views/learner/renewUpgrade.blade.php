@@ -176,7 +176,14 @@ $ids='learnerUpgrade';
                             @enderror
                         </div>
                      
-
+                        <div class="col-lg-4">
+                            <label for="discount_amount">Discount Type</label>
+                            <select id="discountType" class="form-select" name="discountType">
+                                <option value="">Select Discount Type</option>
+                                <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
+                                <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                            </select>
+                        </div>
                           <div class="col-lg-4">
                             <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                             <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"  name="discount_amount" id="discount_amount" value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}" >
@@ -186,14 +193,7 @@ $ids='learnerUpgrade';
                             </span>
                             @enderror
                         </div>
-                        <div class="col-lg-4">
-                            <label for="discount_amount">Discount Type</label>
-                            <select id="discountType" class="form-select" name="discountType">
-                                <option value="">Select Discount Type</option>
-                                <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
-                                <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                            </select>
-                        </div>
+                       
 
                         <div class="col-lg-4">
                             <label for="">Total Amount <span>*</span></label>

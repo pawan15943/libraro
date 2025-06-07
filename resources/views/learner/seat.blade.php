@@ -212,11 +212,12 @@ $today = Carbon::today();
 
         </div>
         <hr>
+        <h6>GENERAL SEAT</h6>
         <div class="seat-booking">
             
           @if(countWithoutSeatNo() >0)
-          @php
-          $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date')->where('learners.status',1)->where('learner_detail.status',1)->get();
+            @php
+            $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date')->where('learners.status',1)->where('learner_detail.status',1)->get();
        
             @endphp
             @foreach($usersForSeat as $user)

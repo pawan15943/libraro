@@ -116,7 +116,14 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
       Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
       Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');
-
+      Route::get('/plan/list', [MasterController::class, 'planView'])->name('plan.index');
+      Route::get('/plan/create/{id?}', [MasterController::class, 'planCreate'])->name('plan.create');
+      Route::get('/expense/list', [MasterController::class, 'expenseView'])->name('expense.index');
+      Route::get('/expense/create/{id?}', [MasterController::class, 'expenseCreate'])->name('expense.create');
+      Route::get('/seat/create/{id?}', [MasterController::class, 'seatCreate'])->name('seat.create');
+      Route::get('/hour/create/{id?}', [MasterController::class, 'hourCreate'])->name('hour.create');
+      Route::get('/extendDay/create/{id?}', [MasterController::class, 'extendDayCreate'])->name('extendDay.create');
+      Route::get('/lockeramount/create/{id?}', [MasterController::class, 'lockerAmountCreate'])->name('lockeramount.create');
       Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
       Route::get('/master/account', [LibraryController::class, 'sidebarRedirect'])->name('library.master.account');
       Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');

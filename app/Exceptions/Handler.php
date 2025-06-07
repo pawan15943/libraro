@@ -28,12 +28,9 @@ class Handler extends ExceptionHandler
         });
     }
 
-    public function render($request, Throwable $exception)
+public function render($request, Throwable $exception)
 {
-    if ($exception instanceof HttpException && $exception->getStatusCode() === 403) {
-        return redirect()->route('403.page');
-    }
-
     return parent::render($request, $exception);
 }
+
 }

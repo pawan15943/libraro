@@ -303,12 +303,13 @@ class MasterController extends Controller
             $data['name'] = $plan_type_name;
           
         }
-
+        
         try {
-            if($request->day_type_id!=0){
+            if($request->day_type_id!=0 || !isset($request->day_type_id) ){
+              
                 $this->conditionFunction($request,$plan_type_name);
             }
-           
+              
             unset($data['databasemodel']); 
             unset($data['databasetable']); 
             unset($data['_token']);
@@ -319,7 +320,14 @@ class MasterController extends Controller
             }else{
                 $redirectUrl=null;
             }
+            
+            if($request->databasemodel=='Hour' && $request->branch_id){
+                   $hour= DB::table('hour')->where('branch_id',$request->branch_id)->first();
+                  $data['id']=$hour->id;
+            }
+           
             unset($data['redirect']);
+          
             if($request->databasemodel){
                 if (is_null($data['id'])) {
                        
@@ -421,11 +429,103 @@ class MasterController extends Controller
         return view('master.plantype', compact('planType'));
     }
 
+    public function planView()
+    {
+      
+        $data = Plan::get(); 
+
+        return view('master.planlist', compact('data'));
+    }
+    public function planCreate($id = null)
+    {
+        $plan = null;
+        if ($id) {
+            $plan = Plan::find($id);  
+            if (!$plan) {
+                return redirect()->route('plan.create')->with('error', 'Plan not found.');
+            }
+        }
+       
+        return view('master.plan', compact('plan'));
+    }
+
+     public function expenseView()
+    {
+      
+        $data = Expense::get(); 
+
+        return view('master.expenselist', compact('data'));
+    }
+    public function expenseCreate($id = null)
+    {
+        $expense = null;
+        if ($id) {
+            $expense = Expense::find($id); 
+            if (!$expense) {
+                return redirect()->route('expense.create')->with('error', 'Expense not found.');
+            }
+        }
+       
+        return view('master.expense', compact('expense'));
+    }
+
+    public function seatCreate($id = null)
+    {
+       
+        $seats = null;
+        if ($id) {
+            $seats =DB::table('hour')->where('branch_id',$id)->first();  
+              
+            if (!$seats) {
+                return redirect()->route('branch.list')->with('error', 'Seats not found.');
+            }
+        }
+      
+        return view('master.seat-total', compact('seats'));
+    }
+     public function hourCreate($id = null)
+    {
+       
+        $hour = null;
+        if ($id) {
+            $hour =DB::table('hour')->where('branch_id',$id)->first();  
+              
+            if (!$hour) {
+                return redirect()->route('branch.list')->with('error', 'Hour not found.');
+            }
+        }
+      
+        return view('master.hour-total', compact('hour'));
+    }
+     public function extendDayCreate($id = null)
+    {
+        $extend = null;
+        if ($id) {
+            $extend = Branch::find($id);  
+            if (!$extend) {
+                return redirect()->route('branch.list')->with('error', 'Branch not found.');
+            }
+        }
+       
+        return view('master.extend-day', compact('extend'));
+    }
+    public function lockerAmountCreate($id = null)
+    {
+        $locker_amount = null;
+        if ($id) {
+            $locker_amount = Branch::find($id);  
+            if (!$locker_amount) {
+                return redirect()->route('branch.list')->with('error', 'Branch not found.');
+            }
+        }
+       
+        return view('master.locker-amount', compact('locker_amount'));
+    }
     
 
     public function activeDeactive(Request $request, $id)
     {
-       
+      
         $modelClass = 'App\\Models\\' . $request->dataTable;
 
         if (!class_exists($modelClass)) {
@@ -505,8 +605,12 @@ class MasterController extends Controller
             $query = $modelClass::where('plan_id', $request->plan_id)->where('plan_type_id',$request->plan_type_id)
             ->where('library_id', $request->library_id)->where('branch_id', $request->branch_id);
             
-        }elseif($request->databasetable=='hour'){
-            $query =DB::table('hour')->where('library_id', $request->library_id);
+        }elseif($request->databasemodel=='Hour'){
+            
+            $query =DB::table('hour')->where('branch_id', $request->branch_id);
+            if($request->hour <24 && (PlanType::where('day_type_id',1)->value('slot_hours') != $request->hour)){
+                throw new \Exception('Hour Not valid');
+            }
         }else{
             $query = $modelClass::where($check_from_id, $check_to_id)
             ->where('library_id', $request->library_id);

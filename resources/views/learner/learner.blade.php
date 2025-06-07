@@ -95,7 +95,7 @@
     <div class="col-lg-12 text-end">
           {{-- @can('has-permission', 'General Seat Booked') --}}
         <a href="javascript:;" class="btn btn-primary export noseat_popup">
-            <i class="fa-solid fa-check-circle available"></i> Seat Book
+            <i class="fa-solid fa-check-circle available"></i> Book a General Seat
         </a>
         
 
@@ -255,7 +255,12 @@
                                 <span></span>
                             @else
                             <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
-                                Pending : {{ learnerTransaction($value->id, $value->learner_detail_id)->pending_amount ?? '' }}
+                                     @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
+                                    <small class="text-danger"><strong>Overdue</strong></small>
+                                    @else
+                                        Pending :
+                                    @endif
+                                 {{ learnerTransaction($value->id, $value->learner_detail_id)->pending_amount ?? '' }}
                             </a>
                                                         
                             @endif

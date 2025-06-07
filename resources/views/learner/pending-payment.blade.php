@@ -101,13 +101,18 @@ $diffInDays = $today->diffInDays($endDate, false);
                             </div>
                                 
                             <div class="col-lg-4 col-6">
-                                <label for="">Due Date <span>*</span></label>
+                                <label for="">Due Date <span>*</span>
+                                      @if(\Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
+                                            <small class="text-danger"><strong>Overdue</strong></small>
+                                        @endif
+                                </label>
                                 <input type="date" class="form-control @error('due_date') is-invalid @enderror"  name="due_date" id="due_date" value="{{$pendingPayment->due_date}}" disabled>
                                 @error('due_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                                 @enderror
+                               
                             </div> 
                           
                         <div class="col-lg-4 col-6">

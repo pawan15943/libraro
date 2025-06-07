@@ -38,6 +38,7 @@
         });
 
         $('#discount_amount').on('input', function () {
+    
             autoCalculatePaidAmount(); // Recalculate if amount changes
         });
 
@@ -141,7 +142,7 @@
                     },
                     dataType: 'json',
                     success: function(html) {
-                          console.log('learner_detail_id',html.learner_detail_id);
+                          console.log('learner_detail_id',html);
                         $('#learner_detail_id').val(html.learner_detail_id);
                         $('#owner').text(html.name);
                         $('#learner_dob').text(html.dob);
@@ -173,7 +174,13 @@
                         $('#seat_name').text(html.seat_no);
                         $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
                         if(html.seat_no){
-                            $('#seat_details_info').text('Booking Details of Seat No. : ' + html.seat_no);
+                           $('#seat_details_info').html(
+                                'Booking Details of Seat No. : ' +
+                                html.seat_no + 
+                                ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
+                                '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
+                            );
+
                         }else{
                             $('#seat_details_info').text('Booking Details of Seat No. : General');
                         }
@@ -850,7 +857,7 @@
                     },
                     dataType: 'json',
                     success: function(html) {
-                          console.log('learner_detail_id',html);
+                          console.log('learner_detail_id',html.overdue);
                         $('#learner_detail_id').val(html.learner_detail_id);
                         $('#owner').text(html.name);
                         $('#learner_dob').text(html.dob);
@@ -883,7 +890,12 @@
                         $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
                        
                         if(html.seat_no){
-                            $('#seat_details_info').text('Booking Details of Seat No. : ' + html.seat_no);
+                             $('#seat_details_info').html(
+                                'Booking Details of Seat No. : ' +
+                                html.seat_no + 
+                                ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
+                                '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
+                            );
                         }else{
                             $('#seat_details_info').text('Booking Details of Seat No. : General');
                         }
@@ -1385,7 +1397,7 @@
 <script>
     
   function autoCalculatePaidAmount() {
-       
+   
         const planPrice = parseFloat($('#plan_price_id').val()) || 0;
         const lockerAmount = parseFloat($('#locker_amount').val()) || 0;
         const discountRaw = parseFloat($('#discount_amount').val()) || 0;
@@ -1407,19 +1419,24 @@
         const autoPaid = planPrice + lockerAmount - discountAmount;
         $('#paid_amount').val(autoPaid.toFixed(2));
 
-         var autoPaidnew;
-        if (planPrice && lockerAmount && discountAmt) {
-            autoPaidnew = planPrice + lockerAmount - discountAmt;
-        }else if(planPrice && lockerAmount && discountAmount){
-            autoPaidnew = planPrice + lockerAmount - discountAmount;
-        } else if (planPrice && lockerAmount) {
-            autoPaidnew = planPrice + lockerAmount;
-        }else if (planPrice && discountAmt) {
-            autoPaidnew = planPrice - discountAmt;
-        } else {
+      var autoPaidnew = 0;
+
+        if (planPrice) {
             autoPaidnew = planPrice;
+
+            if (lockerAmount) {
+                autoPaidnew += lockerAmount;
+            }
+
+            if (discountAmt) {
+                autoPaidnew -= discountAmt;
+            } else if (discountAmount) {
+                autoPaidnew -= discountAmount;
+            }
         }
-        var difference =   autoPaidnew - totalAmount;
+
+        var difference = autoPaidnew - totalAmount;
+
          $('#new_plan_price').val(autoPaidnew.toFixed(2));
         $('#diffrence_amount').val(difference.toFixed(2));
         calculatePendingAmount();

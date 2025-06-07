@@ -860,11 +860,7 @@ class LearnerController extends Controller
              return $query;
         } 
 
-       
-       
-
-        
-        
+     
         
     }
     public function learnerList(Request $request)
@@ -1325,6 +1321,16 @@ class LearnerController extends Controller
     
         
         $customer['renew_update'] = $is_renew_update;
+        if($transaction->pending_amount > 0 &&  overdue($customerId,$transaction->pending_amount)){
+            $customer['pending']=$transaction->pending_amount;
+           $customer['overdue']="Overdue";
+        }elseif($transaction->pending_amount > 0){
+            $customer['pending']=$transaction->pending_amount;
+            $customer['overdue']='';
+        }else{
+            $customer['pending']='';
+            $customer['overdue']='';
+        }
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 
@@ -1372,11 +1378,12 @@ class LearnerController extends Controller
             ->where('seat_no', $customer_detail->seat_no)
             ->where('status',1)
             ->pluck('plan_type_id');
-
+        
           if($customer_detail->seat_no){
                $bookings = $this->getLearnersByLibrary()
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $customer_detail->seat_no)
+                ->where('learner_detail.learner_id', '!=', $customerId)
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
                 ->where('learners.branch_id',getCurrentBranch())
@@ -1391,8 +1398,8 @@ class LearnerController extends Controller
 
             // Step 4: Calculate total booked hours for the seat
             $totalBookedHours = $bookings->sum('slot_hours');
-        
-            $nightseatBooked=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->exists();
+           
+            $nightseatBooked=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.learner_id', '!=', $customerId)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->exists();
         
             // Step 5: Determine conflicts based on plan_type_id and hours
             $planTypeId = null;
@@ -1415,6 +1422,7 @@ class LearnerController extends Controller
                 $planTypesRemovals[] = $planTypeId;
             
             }
+          
             if($nightseatBooked){
                 $planTypeid=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->value('plan_types.id') ?? 0;
                 $planTypesRemovals[] = $planTypeid;
@@ -1429,7 +1437,7 @@ class LearnerController extends Controller
             if ($totalBookedHours >= $total_hour) {
                 $planTypesRemovals = $planTypes->pluck('id')->toArray();
             }
-          
+           
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
             $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
                 return !in_array($planType->id, $planTypesRemovals);
@@ -1438,7 +1446,8 @@ class LearnerController extends Controller
             })->values();
           }else{
             $filteredPlanTypes=PlanType::select('id','name')->get();
-          }  
+          } 
+          
         // $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_id', '!=', $customerId)
         //     ->where('seat_no', $customer_detail->seat_no)
         //     ->where('learner_detail.status',1)
@@ -1447,7 +1456,7 @@ class LearnerController extends Controller
         // $remainingPlanTypes = $plantype->whereNotIn('id', $otherPlantype);
         // $nightseatBooked=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_id', '!=', $customerId)->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->exists();
         //  $planTypesRemovals = [];
-
+       
         //  $planTypeId = null;
         //     if($totalBookedHours < 24){
 
@@ -1489,8 +1498,10 @@ class LearnerController extends Controller
         //     })->values();
             
         if ($routeName == 'learners.upgrade.renew' || $routeName == 'learner.renew.plan') {
+     
             return view('learner.renewUpgrade', compact('customer',  'available_seat', 'showButton','is_renew','filteredPlanTypes','isalreadyRenew'));
         } else {
+         
             return view('learner.upgradePlantype', compact('customer',  'available_seat', 'showButton','filteredPlanTypes'));
         }
     }

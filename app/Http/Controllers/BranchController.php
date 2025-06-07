@@ -73,15 +73,17 @@ class BranchController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'mobile' => 'required|digits:10',
-            'working_days' => 'required|string',
-            'description' => 'required|string',
-            'library_category' => 'required|string',
+            'working_days' => 'nullable',
+            'description'=>'nullable',
+            'library_category' => 'nullable',
             'library_address' => 'required|string',
             'state_id' => 'required|integer',
             'city_id' => 'required|integer',
             'library_zip' => 'required|digits:6',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'locker_amount'=>'required',
+            'extend_days'=>'required',
         ]);
         $validated['library_id']=getLibraryId();
 
@@ -118,8 +120,8 @@ class BranchController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'library_category' => 'required',
-            'working_days' => 'required',
+            'library_category' => 'nullable',
+            'working_days' => 'nullable',
             'mobile' => 'required|string|max:10',
             'email' => 'required|email',
             'library_address' => 'required|string',
@@ -132,6 +134,10 @@ class BranchController extends Controller
             'features.*' => 'integer',
             'google_map'=>'nullable',
             'description'=>'nullable',
+            'locker_amount'=>'nullable',
+            'extend_days'=>'nullable',
+            'longitude'=>'nullable',
+            'latitude'=>'nullable',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
         
@@ -173,20 +179,7 @@ class BranchController extends Controller
         
         $featuresJson = (isset($request->features) && $validated['features']) ? json_encode($validated['features']) : null;
         
-        // $library = Library::where('id', getAuthenticatedUser()->id)->first();
-        // $libraryCode = $this->generateLibraryCode();
-        
-        // $update=$library->update($validated);
-        
-        // if ($update) {
-        //     $library->update(['is_profile' => 1]);
-        //     if (empty($library->library_no)) {
-        //         $libraryCode = $this->generateLibraryCode();
-        //         $library->library_no = $libraryCode;
-        //         $library->save();
-        //         $this->sendSuccessfulEmail($library);
-        //     }
-        // }
+      
         $branch = $id ? Branch::find($id) : null;
         
 
