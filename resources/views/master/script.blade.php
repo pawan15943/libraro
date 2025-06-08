@@ -65,7 +65,7 @@
 
 <script>
     $(document).ready(function() {
-     
+      let table = new DataTable('#datatable');
         $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
             .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker', function(event) {
             event.preventDefault(); 

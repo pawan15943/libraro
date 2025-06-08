@@ -268,7 +268,33 @@ class LoadMenus
            
         $libraryupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','library')->get();
         $learnerupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','learner')->get();
+        $plans =Plan::where('library_id', getLibraryId())->get();
+     
+         if(getCurrentBranch() !=0 || getCurrentBranch() !=null){
+            $totalSeats =  Hour::where('branch_id',getCurrentBranch())->value('seats');
+            $totalHour=Hour::where('branch_id',getCurrentBranch())->value('hour');
+        }else{
+            $totalSeats =  Hour::where('library_id',getLibraryId())->SUM('seats');
+             $totalHour=Hour::where('library_id',getLibraryId())->SUM('hour');
+        } 
+        $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                    ->whereNotNull('seat_no')
+                    ->groupBy('seat_no')
+                    ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
+        $availableSeats = collect();
+
+        // Step 2: Loop through all seat numbers and apply logic
+        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+            $usedHours = $usedSeats[$seatNo] ?? 0;
+
+            if ($usedHours < $totalHour) {
+                $availableSeats->push($seatNo);
+            }
+        }
+
+         
+        $exams=DB::table('exams')->get();
             View::share('primary_color', $primary_color);
             View::share('checkSub', $checkSub);
             View::share('checkSub', $checkSub);
@@ -293,10 +319,10 @@ class LoadMenus
             // View::share('fullday_count', $fullday_count);
             // View::share('firstHalfCount', $firstHalfCount);
             // View::share('secondHalfCount', $secondHalfCount);
-            // View::share('hourly1Count', $hourly1Count);
-            // View::share('hourly2Count', $hourly2Count);
-            // View::share('hourly3Count', $hourly3Count);
-            // View::share('hourly4Count', $hourly4Count);
+            View::share('availableseats', $availableSeats);
+            View::share('totalSeats', $totalSeats);
+            View::share('exams', $exams);
+            View::share('plans', $plans);
             View::share('extended_seats', $extended_seats);
             View::share('extendDay', $extendDay);
             View::share('diffExtendDay', $diffExtendDay);

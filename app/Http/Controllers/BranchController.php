@@ -10,6 +10,7 @@ use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DB;
+use Illuminate\Support\Str;
 class BranchController extends Controller
 {
     public function switch(Request $req)
@@ -71,6 +72,7 @@ class BranchController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'display_name' => 'required|string|max:255',
             'email' => 'required|email',
             'mobile' => 'required|digits:10',
             'working_days' => 'nullable',
@@ -98,9 +100,10 @@ class BranchController extends Controller
         if ($request->has('features')) {
             $branch->features = json_encode($request->features);
         }
-
+        $slug = Str::slug($request->name);
         // Google map
         $branch->google_map = $request->google_map;
+        $branch->slug = $slug;
 
         $branch->save();
 
@@ -120,6 +123,7 @@ class BranchController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'display_name' => 'required|string|max:255',
             'library_category' => 'nullable',
             'working_days' => 'nullable',
             'mobile' => 'required|string|max:10',

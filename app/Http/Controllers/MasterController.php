@@ -809,7 +809,30 @@ class MasterController extends Controller
     return response()->json($results);
 }
 
-
+  public function planPriceView()
+    {
+        
+        if(getCurrentBranch() !=0){
+           $data = PlanPrice::with(['plan','planType'])->get(); 
+        }else{
+            $data =[];
+        }
+        
+        
+        return view('master.planPricelist', compact('data'));
+    }
+    public function planPriceCreate($id = null)
+    {
+        $planPrice = null;
+        if ($id) {
+            $planPrice = PlanPrice::find($id);  
+            if (!$planPrice) {
+                return redirect()->route('plan.create')->with('error', 'Plan not found.');
+            }
+        }
+        $plantypes =PlanType::get();       
+        return view('master.planPrice', compact('planPrice','plantypes'));
+    }
    
     public function menu(){
         return view('master.menu');

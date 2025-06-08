@@ -50,7 +50,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if($learners)
+                
+                   @if($learners->isNotEmpty())
 
 
                     @foreach($learners as $key => $value)

@@ -876,7 +876,7 @@ class LearnerController extends Controller
 
         $learners = $this->fetchCustomerData(null, false, 1, 1, $filters);
         
-
+        
 
         return view('learner.learner', compact('learners'));
     }

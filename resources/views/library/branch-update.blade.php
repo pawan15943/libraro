@@ -24,7 +24,7 @@
                 <div class="row g-4">
                    <!-- Branch Name -->
                     <div class="col-lg-6">
-                        <label for="name">Branch Name <span>*</span></label>
+                        <label for="name"> Library Branch Name <span>*</span></label>
                         <input type="text" id="name"
                                class="form-control @error('name') is-invalid @enderror"
                                name="name"
@@ -32,6 +32,20 @@
                                placeholder="Enter Branch name"
                                {{ isset($branch) ? 'readonly' : '' }}>
                         @error('name')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+                     <div class="col-lg-6">
+                        <label for="name"> Display Library Branch Name <span>*</span></label>
+                        <input type="text" 
+                               class="form-control @error('display_name') is-invalid @enderror"
+                               name="display_name"
+                               value="{{ old('display_name', $branch->display_name ?? '') }}"
+                               placeholder="Enter Branch name"
+                               {{ isset($branch) ? 'readonly' : '' }}>
+                        @error('display_name')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>

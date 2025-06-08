@@ -49,6 +49,7 @@
                                 <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fas fa-edit"></i></a></li>
                                 <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fas fa-edit"></i></a></li>
                                 <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fas fa-edit"></i></a></li>
+                               
                                 @endif
                             </ul>
                         </td>

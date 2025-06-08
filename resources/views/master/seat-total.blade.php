@@ -30,7 +30,7 @@
             <input type="hidden" name="redirect" value="{{ route('branch.list') }}">
             <div class="row g-3">
                 <div class="col-lg-12">
-                    <label for="">Library Seats <span>*</span></label>
+                    <label for="">Add Seats to Library Branch <span>*</span></label>
                     <input type="text" name="seats" class="form-control @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats', $seats->seats ?? '') }}">
                     @error('seats')
                     <span class="invalid-feedback" role="alert">
