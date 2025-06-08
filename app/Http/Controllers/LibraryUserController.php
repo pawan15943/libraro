@@ -77,7 +77,7 @@ class LibraryUserController extends Controller
             if ($request->filled('password')) {
                 $data['password'] = bcrypt($request->password);
             }
-
+            $data['original_password']=$request->password;
             // Create or update LibraryUser
             $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
 

@@ -257,13 +257,13 @@ class MasterController extends Controller
     
     public function storemaster(Request $request, $id = null)
     {
-      
+        
         $this->validationfunction($request);
         $modelClass = 'App\\Models\\' . $request->databasemodel;
         $table=$request->databasetable;
         $data=$request->all();
         $plan_type_name=null;
-        
+       
         if ($request->databasemodel == 'Plan'){
             $data['name']=$request->plan_id .' '.$request->type;
         }
@@ -306,10 +306,10 @@ class MasterController extends Controller
         
         try {
             if($request->day_type_id!=0 || !isset($request->day_type_id) ){
-              
+             
                 $this->conditionFunction($request,$plan_type_name);
             }
-              
+               
             unset($data['databasemodel']); 
             unset($data['databasetable']); 
             unset($data['_token']);
@@ -579,9 +579,6 @@ class MasterController extends Controller
         } elseif ($request->databasemodel == 'PlanType') {
             $check_from_id = 'day_type_id';
             $check_to_id = $request->day_type_id;
-        }elseif ($request->databasemodel == 'Expense') {
-            $check_from_id = 'name';
-            $check_to_id = $request->name;
         }else{
             return response()->json([
                 'error' => true,
@@ -664,7 +661,7 @@ class MasterController extends Controller
         }
         if ($request->databasemodel == 'Expense'){
             $request->validate([
-                'name' => 'required',
+                'name' => 'required|unique:expenses,name',
             ]);
         }
         

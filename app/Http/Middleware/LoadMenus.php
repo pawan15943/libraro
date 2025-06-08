@@ -102,7 +102,7 @@ class LoadMenus
                 }
             }
 
-              if ($is_renew) {
+            if ($is_renew) {
                 $is_renew_val = LibraryTransaction::withoutGlobalScopes()->where('library_id',getLibraryId())
                     ->where('is_paid', 1)
                     ->where('status', 0)
@@ -119,7 +119,7 @@ class LoadMenus
                 $upcomingdiffInDays = null;
             }
 
-             $today_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
+            $today_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
                 ->where('is_paid', 1)
                 ->where('status', 0)
                 ->where('start_date', '<=', $today)
@@ -170,11 +170,9 @@ class LoadMenus
 
             $learnerExtendText = 'Extend Days are Active Now & Remaining Days are';
             
-          
-            // $availble_seats=Seat::where('total_hours','!=',16)->count(); 
-
-            $booked_seats = Seat::where('total_hours', '!=', 0)->count();
-            $availble_seats = $total_seats - $booked_seats;
+            $booked_seats = getUnavailableSeatCount();
+            $availble_seats = getAvailableSeatCount();
+            
             $active_seat_count =  Learner::where('library_id', getLibraryId())->where('status', 1)
                 ->distinct()
                 ->count();
@@ -187,48 +185,11 @@ class LoadMenus
                 ->count();
             $expired_seat = Learner::where('library_id', getLibraryId())->where('status', 0)->count();
 
-            // Initialize an array to hold the counts for each plan type
-            // $counts = [];
-         
-            // $dayTypeIds = [
-            //     1 => 'fullDayCount',
-            //     2 => 'firstHalfCount',
-            //     3 => 'secondHalfCount',
-            //     4 => 'hourly1Count',
-            //     5 => 'hourly2Count',
-            //     6 => 'hourly3Count',
-            //     7 => 'hourly4Count',
-            // ];
-
-            // foreach ($dayTypeIds as $dayTypeId => $countName) {
-                
-            //     $planType = PlanType::where('day_type_id', $dayTypeId)
-            //         ->withoutTrashed()
-            //         ->first();
-
-            //     if (!$planType) {
-            //         $planType = PlanType::where('day_type_id', $dayTypeId)
-            //             ->withTrashed()
-            //             ->first();
-            //     }
-            //     $planTypeId = $planType->id ?? 0;
-            //     $counts[$countName] = LearnerDetail::where('status', 1)
-            //         ->where('plan_type_id', $planTypeId)
-            //         ->count();
-            // }
-
-            
-            // $fullday_count = $counts['fullDayCount'];
-            // $firstHalfCount = $counts['firstHalfCount'];
-            // $secondHalfCount = $counts['secondHalfCount'];
-            // $hourly1Count = $counts['hourly1Count'];
-            // $hourly2Count = $counts['hourly2Count'];
-            // $hourly3Count = $counts['hourly3Count'];
-            // $hourly4Count = $counts['hourly4Count'];
+          
 
            $planTypeCounts = [];
 
-            $planTypes = PlanType::withTrashed()->get(); // Get all plan types including soft-deleted
+            $planTypes = PlanType::withTrashed()->get(); 
 
             foreach ($planTypes as $planType) {
                 // Count learners with active status assigned to this plan_type_id

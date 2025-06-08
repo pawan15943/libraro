@@ -31,7 +31,7 @@
             <div class="row g-3">
                 <div class="col-lg-12">
                     <label for="class_name"> Expense Name<sup class="text-danger">*</sup> </label>
-                    <input type="text" name="name"  class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $expense->name ?? '') }}">
+                    <input type="text" name="name"  class="form-control char-only @error('name') is-invalid @enderror" value="{{ old('name', $expense->name ?? '') }}">
                     @error('name')
                     <span class="invalid-feedback" role="alert">
                         {{ $message }}

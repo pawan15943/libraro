@@ -164,13 +164,7 @@ class LibraryController extends Controller
 
         $validated = $validatedData->validated();
         unset($validated['terms']);
-
-        // if ($request->hasFile('library_logo')) {
-        //     $library_logo = $request->file('library_logo');
-        //     $library_logoNewName = "library_logo_" . time() . '.' . $library_logo->getClientOriginalExtension();
-        //     $library_logo->move(public_path('uploads'), $library_logoNewName);
-        //     $validated['library_logo'] = 'uploads/' . $library_logoNewName;
-        // }
+        $validated['original_password'] = $validated['password'];
 
         $validated['password'] = bcrypt($validated['password']);
         $validated['slug']=Str::slug($validated['library_name']);
@@ -229,7 +223,8 @@ class LibraryController extends Controller
 
         // Hash the password
         $validated['password'] = Hash::make($validated['password']);
-
+        $validated['original_password'] = $validated['password'];
+        
         // Store the validated data in the Library model
         $library = Library::create($validated);
 

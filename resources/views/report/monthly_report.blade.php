@@ -19,6 +19,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                     @if(isset($reportData) && !empty($reportData))
                     @php
                     $x=1;
                     @endphp
@@ -46,6 +47,11 @@
 
                     </tr>
                     @endforeach
+                      @else
+                    <tr>
+                        <td colspan="7">No Data Avaiable to Show.</td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
         </div>

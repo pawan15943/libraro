@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\City;
+use App\Models\Hour;
 use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\State;
@@ -86,8 +87,14 @@ class BranchController extends Controller
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'locker_amount'=>'required',
             'extend_days'=>'required',
+            'hour'=>'required',
+            'seats'=>'required',
         ]);
         $validated['library_id']=getLibraryId();
+    // Extract hour and seats before creating branch
+        $hour = $validated['hour'];
+        $seats = $validated['seats'];
+        unset($validated['hour'], $validated['seats']); // remove from $validated
 
         $branch = new Branch($validated);
 
@@ -100,13 +107,19 @@ class BranchController extends Controller
         if ($request->has('features')) {
             $branch->features = json_encode($request->features);
         }
-        $slug = Str::slug($request->name);
+       
         // Google map
         $branch->google_map = $request->google_map;
-        $branch->slug = $slug;
+       $branch->slug = Str::slug($request->name);
 
         $branch->save();
-
+         // Save hour and seats in the hour table
+        Hour::create([
+            'branch_id' => $branch->id,
+            'library_id' => getLibraryId(),
+            'hour' => $request->hour,
+            'seats' => $request->seats,
+        ]);
         // Handle multiple image uploads
         if ($request->hasFile('library_images')) {
             foreach ($request->file('library_images') as $image) {
@@ -142,6 +155,7 @@ class BranchController extends Controller
             'extend_days'=>'nullable',
             'longitude'=>'nullable',
             'latitude'=>'nullable',
+             'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
         

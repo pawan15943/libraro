@@ -82,10 +82,10 @@
                 <h4 class="mb-4">Branch Profile</h4>
                 <div class="row g-4">
                     <!-- Branch Working Days -->
-                   <div class="col-lg-6">
+                   <div class="col-lg-12">
                         <label for="working_days">Library Working Days <span>*</span></label>
                         <textarea id="working_days"
-                                  class="form-control @error('working_days') is-invalid @enderror"
+                                  class="form-control char-only @error('working_days') is-invalid @enderror"
                                   name="working_days"
                                   placeholder="Working Days">{{ old('working_days', $branch->working_days ?? 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday') }}</textarea>
                         @error('working_days')
@@ -190,9 +190,35 @@
             <div class="card mt-5">
                 <h4 class="mb-4">Branch Master</h4>
                 <div class="row g-4">
+                     <div class="col-lg-6">
+                        <label for="">Add Seats to Library Branch <span>*</span></label>
+                        <input type="text" name="seats" class="form-control digit-only @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats') }}">
+                        @error('seats')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+                    <div class="col-lg-6">
+                        <label for="">Operating Hours <span>*</span></label>
+                        <select class="form-select @error('hour') is-invalid @enderror" name="hour" id="hour">
+                            <option value="">Select Hour</option>
+                            <option value="16" {{ old('hour', isset($hour) ? $hour->hour : '') == 16 ? 'selected' : '' }}>16</option>
+                            <option value="14" {{ old('hour', isset($hour) ? $hour->hour : '') == 14 ? 'selected' : '' }}>14</option>
+                            <option value="12" {{ old('hour', isset($hour) ? $hour->hour : '') == 12 ? 'selected' : '' }}>12</option>
+                            @can('has-permission','All Day')
+                            <option value="24" {{ old('hour', isset($hour) ? $hour->hour : '') == 24 ? 'selected' : '' }}>24</option>
+                            @endif
+                        </select>
+                        @error('hour')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
                     <div class="col-lg-6">
                         <label for="">Locker Amount <span>*</span></label>
-                        <input type="text" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}">
+                        <input type="text" name="locker_amount" class="form-control digit-only @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}">
                         @error('locker_amount')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -201,13 +227,14 @@
                     </div>
                      <div class="col-lg-6">
                         <label for="">Extend Days <span>*</span></label>
-                        <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" value="{{old('extend_days')}}">
+                        <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" placeholder="Enter Days" value="{{old('extend_days')}}">
                         @error('extend_days')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                         @enderror
                     </div>
+                    
                 </div>
             </div>
             @endif
@@ -222,7 +249,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label for="">Location Longitude </label>
-                        <input type="text" class="form-control  @error('longitude') is-invalid @enderror no-validate" name="longitude"
+                        <input type="text" class="form-control digit-only  @error('longitude') is-invalid @enderror no-validate" name="longitude"
                             value="{{ old('longitude', $branch->longitude ?? '') }}">
                         @error('longitude')
                         <span class="invalid-feedback" role="alert">
@@ -233,7 +260,7 @@
 
                     <div class="col-lg-6">
                         <label for="">Location Latitude </label>
-                        <input type="text" class="form-control  @error('latitude') is-invalid @enderror no-validate" name="latitude"
+                        <input type="text" class="form-control digit-only @error('latitude') is-invalid @enderror no-validate" name="latitude"
                             value="{{ old('latitude', $branch->latitude ?? '') }}">
                         @error('latitude')
                         <span class="invalid-feedback" role="alert">

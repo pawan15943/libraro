@@ -20,16 +20,7 @@ $current_route = Route::currentRouteName();
                     <div class="col-lg-4">
                         <input type="date" class="form-control" name="date" value="{{ request('date') ?: date('Y-m-d') }}" id="date">
                     </div>
-                    {{-- <div class="col-lg-4">
-                        <select name="learner_id" class="form-control">
-                            <option value="">Select Learner</option>
-                            @foreach($data as $key => $value)
-                                <option value="{{ $key }}" {{ request('learner_id') == $key ? 'selected' : '' }}>
-                                    {{ $value }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div> --}}
+                
                     
                     <div class="col-lg-2">
                         <button class="btn btn-primary button">
@@ -62,7 +53,7 @@ $current_route = Route::currentRouteName();
                     </tr>
                 </thead>
                 <tbody>
-                    @if($learners)
+                    @if(isset($learners) &&  $learners->isNotEmpty())
 
 
                     @foreach($learners as $key => $value)

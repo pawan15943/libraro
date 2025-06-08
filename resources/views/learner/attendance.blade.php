@@ -51,7 +51,7 @@
                 </thead>
                 <tbody>
                 
-                   @if($learners->isNotEmpty())
+                   @if(isset($learners)&&  $learners->isNotEmpty())
 
 
                     @foreach($learners as $key => $value)
