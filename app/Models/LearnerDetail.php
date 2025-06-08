@@ -14,11 +14,11 @@ class LearnerDetail extends Model
     use HasBranch;
     protected $guarded = []; 
     protected $table = 'learner_detail';
-    // protected static function booted()
-    // {
+    protected static function booted()
+    {
         
-    //     static::addGlobalScope(new LibraryScope());
-    // }
+        static::addGlobalScope(new LibraryScope());
+    }
     public function plan()
     {
         return $this->belongsTo(Plan::class, 'plan_id');

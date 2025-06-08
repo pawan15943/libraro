@@ -161,7 +161,7 @@ class ReportController extends Controller
 
     public function pendingPayment(Request $request){
         $plans = $this->learnerService->getPlans();
-        // $plan_type =$this->learnerService->getPlanTypes();
+        $planTypes =$this->learnerService->getPlanTypes();
         $dates = getLearnerMonthsAndYears();
         $dynamicyears =$dates['years'];
         $dynamicmonths = $dates['months'];
@@ -181,7 +181,7 @@ class ReportController extends Controller
         $extend_day = getExtendDays();
        
         $fiveDaysbetween = $today->copy()->addDays(5);
-        $query = LearnerDetail::with(['seat', 'plan', 'planType', 'learner'])
+        $query = LearnerDetail::where('library_id',getLibraryId())->with(['seat', 'plan', 'planType', 'learner'])
             ->where('is_paid', 1)
             ->where('status', 1)
             ->where('plan_end_date', '<', $today->format('Y-m-d'))
@@ -193,7 +193,7 @@ class ReportController extends Controller
                     ->where('ld2.plan_end_date', '>', $fiveDaysbetween->format('Y-m-d'));
             });
            
-        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
+        if (getCurrentBranch() != 0 ) {
                 $query->where('learner_detail.branch_id', getCurrentBranch());
             }
 
@@ -201,7 +201,7 @@ class ReportController extends Controller
        
         $learners = $this->fetchlearnerData( $filters,$query);
     
-        return view('report.pending_payment', compact('plans',  'dynamicyears', 'dynamicmonths', 'learners'));
+        return view('report.pending_payment', compact('plans','planTypes','dynamicyears', 'dynamicmonths', 'learners'));
 
     }
 
@@ -218,7 +218,10 @@ class ReportController extends Controller
             'search'  => $request->get('search'),
         ];
        
-        $query = LearnerDetail::with(['seat', 'plan', 'planType','learner']);
+        $query = LearnerDetail::where('library_id',getLibraryId())->with(['seat', 'plan', 'planType','learner']);
+        if(getCurrentBranch() !=0){
+            $query->where('branch_id',getCurrentBranch());
+        }
          
         $learners = $this->fetchlearnerData( $filters,$query);
        // Get the unique years and month
@@ -267,20 +270,25 @@ class ReportController extends Controller
 
     public function expiredLearner(Request $request){
        
-         $dates = getLearnerMonthsAndYears();
+        $dates = getLearnerMonthsAndYears();
         $dynamicyears =$dates['years'];
         $dynamicmonths = $dates['months'];
         $filters = [
             'expiredyear' => $request->get('expiredyear'),
             'expiredmonth' => $request->get('expiredmonth'),
         ];
-        $query = LearnerDetail::with(['seat', 'plan', 'planType','learner'])->where('status', 0)
+        $query = LearnerDetail::where('library_id',getLibraryId())->with(['plan', 'planType','learner'])->where('status', 0)
         ->whereHas('learner', function($query) {
             $query->where('status', 0);
         });
+
+        if(getCurrentBranch() !=0 ){
+            $query->where('branch_id',getCurrentBranch());
+        }
        
         $learners = $this->fetchlearnerData( $filters,$query);
-  
+        
+       
         return view('report.expired_learner', compact('dynamicyears', 'dynamicmonths', 'learners'));
 
     }
