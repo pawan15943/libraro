@@ -52,12 +52,7 @@ class SiteController extends Controller
     }
     public function home()
     {
-         $query= Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name');
-        if(getLibraryId()){
-           $happy_customers= $query->where('feedback.library_id', getLibraryId())->get();
-        }else{
-            $happy_customers= $query->get();
-        }
+        $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->get();
 
 
         $subscriptions = Subscription::with('permissions')->get();
