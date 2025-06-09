@@ -9,7 +9,8 @@ use App\Models\Scopes\LibraryScope;
 class Feedback extends Model
 {
     use HasFactory;
-    protected $guarded = []; 
+    protected $guarded = [];
+    protected $table = 'feedback';
     protected static function booted()
     {
         
