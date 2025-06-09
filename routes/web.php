@@ -120,6 +120,8 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/plan/create/{id?}', [MasterController::class, 'planCreate'])->name('plan.create');
       Route::get('/expense/list', [MasterController::class, 'expenseView'])->name('expense.index');
       Route::get('/expense/create/{id?}', [MasterController::class, 'expenseCreate'])->name('expense.create');
+      Route::get('/exam/list', [MasterController::class, 'examView'])->name('exam.index');
+      Route::get('/exam/create/{id?}', [MasterController::class, 'examCreate'])->name('exam.create');
       Route::get('/seat/create/{id?}', [MasterController::class, 'seatCreate'])->name('seat.create');
       Route::get('/hour/create/{id?}', [MasterController::class, 'hourCreate'])->name('hour.create');
       Route::get('/extendDay/create/{id?}', [MasterController::class, 'extendDayCreate'])->name('extendDay.create');

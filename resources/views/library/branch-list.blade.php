@@ -45,10 +45,10 @@
                             <ul class="actionalbls">
                                 @if(getCurrentBranch() !=0)  
                                
-                                <li><a href="{{route('seat.create',getCurrentBranch())}}" title="Seat Update "><i class="fas fa-edit"></i></a></li>
-                                <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fas fa-edit"></i></a></li>
-                                <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fas fa-edit"></i></a></li>
-                                <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fas fa-edit"></i></a></li>
+                                <li><a href="{{route('seat.create',getCurrentBranch())}}" title="Seat Update "><i class="fa-solid fa-chair"></i></a></li>
+                                <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fa-solid fa-clock-rotate-left"></i></a></li>
+                                <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fa-solid fa-calendar-plus"></i></a></li>
+                                <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fa-solid fa-lock"></i></a></li>
                                
                                 @endif
                             </ul>

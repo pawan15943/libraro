@@ -339,6 +339,7 @@ class MasterController extends Controller
                     $modelInstance->update($data);
                 }
             }
+         
           
             return response()->json([
                 'success' => true, 
@@ -520,6 +521,25 @@ class MasterController extends Controller
         }
        
         return view('master.locker-amount', compact('locker_amount'));
+    }
+        public function examView()
+    {
+      
+        $data = DB::table('exams')->get(); 
+
+        return view('master.examlist', compact('data'));
+    }
+    public function examCreate($id = null)
+    {
+        $exam = null;
+        if ($id) {
+            $exam = DB::table('exams')->find($id); 
+            if (!$exam) {
+                return redirect()->route('exam.create')->with('error', 'Exam not found.');
+            }
+        }
+       
+        return view('master.exam', compact('exam'));
     }
     
 

@@ -67,7 +67,7 @@
     $(document).ready(function() {
       let table = new DataTable('#datatable');
         $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
-            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker', function(event) {
+            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker,#library_exam', function(event) {
             event.preventDefault(); 
             var form = this;
             var formData = new FormData(form);

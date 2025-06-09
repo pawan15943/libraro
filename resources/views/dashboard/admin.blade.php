@@ -18,9 +18,18 @@
             </div>
         </div>
         <div class="col-lg-6">
+      
             <ul class="QuickAction">
-                <li><a href="{{ route('seats') }}"><i class="fa fa-plus"></i> Book A Seat</a></li>
-                <li><a href="{{ route('seats.history') }}"><i class="fa fa-chair"></i> View Seat Booking Matrix</a></li>
+                @can('has-permission', 'General Seat Booked')
+                <li>
+                    
+                <a href="javascript:;" class=" noseat_popup">
+                    <i class="fa-solid fa-check-circle available"></i> Book a General Seat
+                </a>
+               
+                </li>
+                 @endcan
+                <li><a href="{{ route('seats.history') }}"><i class="fa fa-book available"></i> Library Register</a></li>
             </ul>
         </div>
     </div>

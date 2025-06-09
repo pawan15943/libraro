@@ -23,9 +23,7 @@
                         <th style="width: 15%">Action</th>
                     </tr>
                 </thead>
-                @php
-                    // dd($seats);
-                @endphp
+              
                 @if(!empty($seats) && count($seats) > 0)
                 
                 <tbody>

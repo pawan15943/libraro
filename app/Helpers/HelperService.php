@@ -95,7 +95,7 @@ class HelperService
             case 'renewSeat':
                 $details['operation_type'] = 'Renew';
                 $details['field'] = 'Plan';
-                $details['old']=Plan::where('library_id',Auth::user()->id)->where('id',$operation->old_value)->value('name');
+                $details['old']=Plan::where('library_id',getLibraryId())->where('id',$operation->old_value)->value('name');
                 $details['new']=Plan::where('id',$operation->new_value)->value('name');
                 break;
 
@@ -109,15 +109,15 @@ class HelperService
             case 'reactive':
                 $details['operation_type'] = 'Reactive';
                 $details['field'] = 'Seat';
-                $details['old']=Seat::where('id',$operation->old_value)->value('seat_no');
-                $details['new']=Seat::where('id',$operation->new_value)->value('seat_no');
+                $details['old']=$operation->old_value;
+                $details['new']=$operation->new_value;
                 break;
 
             case 'swapseat':
                 $details['operation_type'] = 'Swap';
                 $details['field'] = 'Seat';
-                $details['old']=Seat::where('id',$operation->old_value)->value('seat_no');
-                $details['new']=Seat::where('id',$operation->new_value)->value('seat_no');
+                $details['old']=$operation->old_value;
+                $details['new']=$operation->new_value;
                 break;
 
             case 'closeSeat':

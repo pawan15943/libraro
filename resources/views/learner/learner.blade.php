@@ -93,13 +93,11 @@
 
 <div class="row">
     <div class="col-lg-12 text-end">
-          {{-- @can('has-permission', 'General Seat Booked') --}}
+        @can('has-permission', 'General Seat Booked')
         <a href="javascript:;" class="btn btn-primary export noseat_popup">
             <i class="fa-solid fa-check-circle available"></i> Book a General Seat
         </a>
-        
-
-        {{-- @endcan --}}
+        @endcan
         @can('has-permission', 'Export Library Seats')
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
         @endcan

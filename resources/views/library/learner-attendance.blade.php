@@ -66,7 +66,7 @@ $current_route = Route::currentRouteName();
                    
                     @endphp
                     <tr>
-                        <td>{{$value->seat_no}}<br>
+                        <td>{{$value->seat_no ?? 'G'}}<br>
                         </td>
                         <td>
                            {{$value->name}}
