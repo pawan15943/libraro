@@ -327,7 +327,7 @@ class LearnerController extends Controller
 
                 return response()->json([
                     'error' => true,
-                    'message' => 'You can not select this plan type'
+                    'message' => 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.'
                 ], 422);
                 die;
             }

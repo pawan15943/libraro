@@ -505,10 +505,12 @@ if (!function_exists('is_locker')) {
     function is_locker()
     {
         $data = Branch::where('id', getCurrentBranch())->select('locker_amount')->first();
-        if ($data->locker_amount == 0 || $data->locker_amount == null) {
+
+        if (!$data || $data->locker_amount == 0 || $data->locker_amount === null) {
             return false;
-        } else {
-            return true;
         }
+
+        return true;
     }
 }
+

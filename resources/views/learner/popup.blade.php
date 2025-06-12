@@ -4,14 +4,15 @@
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
 
         <div class="modal-content">
-            <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-            <div id="validation-error-message" class="alert alert-danger" style="display:none;"></div>
+           
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5" id="seat_no_head"></h1>
                 
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                 <div id="error-message" class="alert alert-danger" style="display:none;"></div>
+            <div id="validation-error-message" class="alert alert-danger" style="display:none;"></div>
                 <form id="seatAllotmentForm">
                     <div class="detailes">
                         {{-- <input type="hidden" name="seat_id" value="" id="seat_id"> --}}
