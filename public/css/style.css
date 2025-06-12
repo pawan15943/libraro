@@ -512,13 +512,7 @@ table td {
     width: 15% !important;
 }
 
-.heading-list {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    margin-top: 1.2rem;
-    align-items: center;
-}
+
 
 .d-flex.bradcrumb {
     justify-content: space-between;
@@ -2381,8 +2375,6 @@ table td {
 .heading-list {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 1rem;
-    margin-top: 1.2rem;
     align-items: center;
 }
 
@@ -5575,4 +5567,15 @@ button.btn.btn-danger.btn-sm.remove-existing-image {
     height: 150px;
     padding: 5px ! IMPORTANT;
     border-radius: 1rem;
+}
+
+/* Add User */
+
+.d-flex.flex-wrap.permissions .form-check {
+    width: calc(100% / 4 - 1rem);
+}
+
+.d-flex.flex-wrap.permissions {
+    gap: 1rem;
+    margin-top: 1.5rem;
 }

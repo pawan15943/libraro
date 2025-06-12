@@ -74,7 +74,7 @@ $today = Carbon::today();
                     $halfday = 1;
                     $hourly = 1;
                     $x=1;
-
+                    
                 @endphp
 
                 @if($usersForSeat->count() > 0)
@@ -86,13 +86,15 @@ $today = Carbon::today();
                         $nightbooking=$usersForSeat->where('day_type_id', 9)->count();
                         $fulldaybooking=$usersForSeat->where('day_type_id', 1)->count();
                         $custombooking=$usersForSeat->where('day_type_id', 0)->count();
-
-                        if ($halfDayBookings == 1 && $hourlyBookings == 1) {
-                        $seatCount = 1;
+                        if($remainingHours==0 || $remainingHours<0){
+                            $seatCount = 0;
+                        }
+                        elseif ($halfDayBookings == 1 && $hourlyBookings == 1) {
+                            $seatCount = 1;
                         }elseif($remainingHours != 0 && $hourlyBookings >0){
-                        $seatCount = 4-$hourlyBookings;
+                            $seatCount = 4-$hourlyBookings;
                         }elseif($remainingHours != 0 && $halfDayBookings>0){
-                        $seatCount = 1;
+                            $seatCount = 1;
                         }elseif($halldaybooking==1){
                             $seatCount = 0;
                         }elseif($nightbooking==1 && $remainingHours != 0){

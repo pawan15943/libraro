@@ -153,16 +153,10 @@ class LoadMenus
             ->where('plan_start_date', '>=', date('Y-m-d'))
             ->exists();
             //learner remainig days count
-           $first_record = Hour::where('branch_id',getCurrentBranch())->first(); 
+            $first_record = Hour::where('branch_id',getCurrentBranch())->first(); 
             $total_seats = $first_record ? $first_record->seats : 0;
             $total_hour=$first_record ? $first_record->hour : 0;
            
-            
-
-
-          
-
-
             $this->statusInactive();
             $this->updateLibraryStatus();
             // $this->dataUpdate();

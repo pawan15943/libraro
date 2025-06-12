@@ -32,7 +32,7 @@
                             {{-- Show Only Available Slots or Seat No. --}}
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select" id="seat_id" disabled>
+                                <select name="seat_no" class="form-select" id="seat_id" >
                                     <option value="" >Choose Seat No</option>
                                     @foreach($availableseats as $key => $value)
                                         <option value="{{$value}}">{{$value}}</option>
@@ -56,6 +56,7 @@
                             <div class="col-lg-6">
                                 <label for="">Email Id <span>*</span></label>
                                 <input type="text" class="form-control" name="email" id="email">
+                                <span class="text-danger" id="email-error"></span>
                             </div>
 
                             <div class="col-lg-4">
@@ -81,28 +82,27 @@
                                 <label for="">Plan Starts On <span>*</span></label>
                                 <input type="date" class="form-control" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
                             </div>
+                         
+                            {{-- <label for="">Plan Price <span>*</span></label> --}}
+                            <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                             
-                                {{-- <label for="">Plan Price <span>*</span></label> --}}
-                                <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
-                            
-                            <div class="col-lg-4">
-                                
-                                  
-                            <label for="toggleFieldCheckbox">Need a Locker ?</label>
-                            <select name="toggleFieldCheckbox" id="toggleFieldCheckbox" class="form-select">
-                                <option value="no">No</option>
-                                <option value="yes">Yes, I Need a Locker</option>
-                            </select>
-                                
-                            </div>
-                            <div class="col-lg-4" id="extraFieldContainer" readonly>
-                                <label for="locker_amount">Locker Amount</label>
-                                <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount" placeholder="Locker Amt." readonly>
-                            </div>
-                            <div class="col-lg-4" id="extraFieldContainer2" >
-                                <label for="locker_no">Locker No.</label>
-                                <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
-                            </div>
+                           
+
+                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                    <label for="toggleFieldCheckbox">Need a Locker ?</label>
+                                    <select name="toggleFieldCheckbox" id="toggleFieldCheckbox" class="form-select">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes, I Need a Locker</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                    <label for="locker_amount">Locker Amount</label>
+                                    <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount" placeholder="Locker Amt." readonly>
+                                </div>
+                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                    <label for="locker_no">Locker No.</label>
+                                    <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                                </div>
                             
                             
                             <div class="col-lg-4">
@@ -129,7 +129,7 @@
                             </div>
 
                         </div>
-                        <h4 class="py-4 m-0">Other Important Info
+                        <h4 class="py-4 m-0">Other Optional Fields
                             <i id="toggleIcon" class="fa fa-plus" style="cursor: pointer;"></i>
                         </h4>
 
@@ -143,7 +143,7 @@
                                         <option value="percentage">Percentage</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-6"  >
+                                <div class="col-lg-6">
                                     <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                                     <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
                                 </div>

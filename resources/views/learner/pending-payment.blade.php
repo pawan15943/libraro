@@ -95,18 +95,22 @@ $diffInDays = $today->diffInDays($endDate, false);
                             <div class="col-lg-4 col-6">
                                 <label for="">Pending Payment </label>
                                 
-                                <input  id="pending_amount" class="form-control @error('pending_amount') is-invalid @enderror" name="pending_amount" value="{{$pendingPayment->pending_amount}}">
-                                <input  type="hidden" name="transaction_id" value="{{$pendingPayment->id}}">
+                               <input id="pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
+                                name="pending_amount" value="{{ $pendingPayment->pending_amount ?? '' }}">
+
+                                <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
+
                             
                             </div>
                                 
                             <div class="col-lg-4 col-6">
                                 <label for="">Due Date <span>*</span>
-                                      @if(\Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
-                                            <small class="text-danger"><strong>Overdue</strong></small>
-                                        @endif
+                                   @if($pendingPayment?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
+                                        <small class="text-danger"><strong>Overdue</strong></small>
+                                    @endif
+
                                 </label>
-                                <input type="date" class="form-control @error('due_date') is-invalid @enderror"  name="due_date" id="due_date" value="{{$pendingPayment->due_date}}" disabled>
+                                <input type="date" class="form-control @error('due_date') is-invalid @enderror"  name="due_date" id="due_date" value="{{$pendingPayment->due_date ?? 0}}" disabled>
                                 @error('due_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -131,12 +135,14 @@ $diffInDays = $today->diffInDays($endDate, false);
                         </div>
                     </div>
                     
-
+                    @if($pendingPayment && $pendingPayment->pending_amount)
+    
                     <div class="row mt-4">
                         <div class="col-lg-3">
                             <input type="submit" class="btn btn-primary button" value="Make Payment">
                         </div>
                     </div>
+                    @endif
                     
 
                 </div>

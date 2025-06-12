@@ -29,11 +29,11 @@ class AppServiceProvider extends ServiceProvider
         foreach (array_keys(Config::get('auth.guards')) as $guard) {
             if (Auth::guard($guard)->check()) {
                 Config::set('auth.defaults.guard', $guard);
-               
+
                 break;
             }
         }
-       
+
         View::composer('*', function ($view) {
             $routeName = Route::currentRouteName();
             // Define breadcrumb and page title logic based on the route
@@ -46,8 +46,8 @@ class AppServiceProvider extends ServiceProvider
                 $data['planTypes'] = PlanType::where('library_id', getLibraryId())->get();
                 $data['plans'] = Plan::where('library_id', getLibraryId())->get();
                 $first_record = Hour::first();
-                $data['totalSeats']=$first_record ? $first_record->seats : null;
-                $data['total_hour']= $first_record ? $first_record->hour : null;
+                $data['totalSeats'] = $first_record ? $first_record->seats : null;
+                $data['total_hour'] = $first_record ? $first_record->hour : null;
 
 
                 if (!$first_record) return collect();
@@ -71,35 +71,33 @@ class AppServiceProvider extends ServiceProvider
                         $availableSeats->push($seatNo);
                     }
                 }
-                $exams=DB::table('exams')->get();
-                $data['exams']=$exams;
-                $data['availableseats']=$availableSeats;
+                $exams = DB::table('exams')->get();
+                $data['exams'] = $exams;
+                $data['availableseats'] = $availableSeats;
             }
 
             $view->with($data);
         });
-       View::composer('layouts.library', function ($view) {
+        View::composer('layouts.library', function ($view) {
             $branches = [];
 
             if (Auth::guard('library')->check()) {
                 $user = Auth::guard('library')->user();
                 $branches = $user->branches; // Assuming a 'branches' relationship exists
-            }elseif (Auth::guard('library_user')->check()) {
-                    $user = Auth::guard('library_user')->user();
+            } elseif (Auth::guard('library_user')->check()) {
+                $user = Auth::guard('library_user')->user();
 
-                    // Assuming $user->branch_id is already an array
-                    $branchIds = $user->branch_id;
+                // Assuming $user->branch_id is already an array
+                $branchIds = $user->branch_id;
 
-                    if (is_array($branchIds)) {
-                        $branches = Branch::whereIn('id', $branchIds)->get();
-                    }
+                if (is_array($branchIds)) {
+                    $branches = Branch::whereIn('id', $branchIds)->get();
                 }
+            }
 
 
             $view->with('branches', $branches);
         });
-
-      
     }
     public function register()
     {
@@ -251,6 +249,21 @@ class AppServiceProvider extends ServiceProvider
                 ]),
             ],
 
+            'plan.index' => [
+                'Dashboard' => route('library.home'),
+                'Plan List' => route('plan.index'),
+            ],
+            'plan.create' => [
+                'Dashboard' => route('library.home'),
+                'Plan List' => route('plan.index'),
+                'Add Plan' => route('plan.create'),
+            ],
+            'plan.create' => [
+                'Dashboard' => route('library.home'),
+                'Plan List' => route('plan.index'),
+                'Edit Plan' => route('plan.create', $parameters),
+            ],
+
             // Learner Bread crumb
 
             // Administrator Links
@@ -299,6 +312,7 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('learner.home'),
                 'Support' => route('support'),
             ],
+
         ];
 
         return $breadcrumbs[$routeName] ?? [];
@@ -347,6 +361,8 @@ class AppServiceProvider extends ServiceProvider
             'library.video-training' => 'Video Tutorials',
             'learner.expire' => 'Expired The Learner',
             'attendance' => 'Add Learner Attendace',
+            'plan.index' => 'Plan List',
+            'plan.create' => 'Add Plan',
 
             // leaner
             'learner.home' => 'Learner Dashboard',

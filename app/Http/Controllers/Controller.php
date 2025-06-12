@@ -420,7 +420,7 @@ class Controller extends BaseController
 
         $extendDay = getExtendDays();
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-        $status = $inextendDate > Carbon::today() ? 1 : 0;
+        $status = $inextendDate >= Carbon::today() ? 1 : 0;
         if(empty($data['paid_amount']) || $paid_amount==0){
             $is_paid =0;
         }else{
@@ -459,17 +459,17 @@ class Controller extends BaseController
 
                     $exists_data=Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                     ->where('learners.library_id', getLibraryId())
-                    ->where('branch_id', getCurrentBranch())
+                    ->where('learner_detail.branch_id', getCurrentBranch())
                     ->where('learners.seat_no', trim($data['seat_no']))
-                    ->whereNotNull('seat_no')
+                    ->whereNotNull('learner_detail.seat_no')
                     ->where('learners.status', 1)
                     ->where('learner_detail.status', 1)->with('planType')->get();
 
                     $planTypeSame=Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                     ->where('learners.library_id', getLibraryId())
-                    ->where('branch_id', getCurrentBranch())
+                    ->where('learner_detail.branch_id', getCurrentBranch())
                     ->where('learners.seat_no', trim($data['seat_no']))
-                    ->whereNotNull('seat_no')
+                    ->whereNotNull('learner_detail.seat_no')
                     ->where('learners.status', 1)
                     ->where('learner_detail.status', 1)->where('learner_detail.plan_type_id',$planType->id)->count();
                     if($planTypeSame > 0){
@@ -672,6 +672,7 @@ class Controller extends BaseController
             ]);
             
             // Create learner transaction entry
+           
             LearnerTransaction::create([
                 'learner_id' => $learner->id,
                 'library_id' => getLibraryId(),
@@ -680,11 +681,10 @@ class Controller extends BaseController
                 'total_amount' => $total,
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
-                
                 'paid_date' => $paid_date,
                 'locker_amount' => $locker_amount,
                 'discount_amount' => $discount_amount,
-                'is_paid' => 1,
+                'is_paid' => $pending_amount >0 ? 0 : 1,
             ]);
     
             // Commit the transaction if all inserts succeed
@@ -741,16 +741,16 @@ class Controller extends BaseController
                 'status' => $status,
             ]);
             $pending_amount =!empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
-        $yes = trim($data['locker'] ?? '');
+            $yes = trim($data['locker'] ?? '');
 
-        if (strtolower($yes) === 'yes') {
-            $locker_amount = getLockerPrice($plan->id);
-        } else {
-            $locker_amount = 0;
-        }
+            if (strtolower($yes) === 'yes') {
+                $locker_amount = getLockerPrice($plan->id);
+            } else {
+                $locker_amount = 0;
+            }
         $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
-       $total=$planPrice+$locker_amount;
-       $discount_amount=$total-$paid_amount-$pending_amount;
+        $total=$planPrice+$locker_amount;
+        $discount_amount=$total-$paid_amount-$pending_amount;
             // Create learner transaction entry
             LearnerTransaction::create([
                 'learner_id' => $learner_id,
@@ -760,11 +760,10 @@ class Controller extends BaseController
                'total_amount' => $total,
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
-               
-                  'locker_amount' => $locker_amount,
+                'locker_amount' => $locker_amount,
                 'discount_amount' => $discount_amount,
                 'paid_date' => $paid_date,
-                'is_paid' => 1,
+                 'is_paid' => $pending_amount >0 ? 0 : 1,
             ]);
              
 

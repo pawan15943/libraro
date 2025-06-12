@@ -19,16 +19,15 @@
 <!-- Masters -->
 
 
-<div class="card card-default">
-    <!-- Add Library User Form -->
-    <div class="card-body">
+<div class="card">
+    
         <form id="library_expense" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="id" value="{{ $expense->id ?? '' }}">
             
             <input type="hidden" name="databasemodel" value="Expense">
             <input type="hidden" name="redirect" value="{{ route('expense.index') }}">
-            <div class="row g-3">
+            <div class="row g-4">
                 <div class="col-lg-12">
                     <label for="class_name"> Expense Name<sup class="text-danger">*</sup> </label>
                     <input type="text" name="name"  class="form-control char-only @error('name') is-invalid @enderror" value="{{ old('name', $expense->name ?? '') }}">
@@ -38,15 +37,13 @@
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-12">
+                <div class="col-lg-3">
                     <button type="submit" class="btn btn-primary button"><i
                             class="fa fa-plus"></i>
                         Add Expense</button>
                 </div>
             </div>
         </form>
-    </div>
-
     
 </div>
 

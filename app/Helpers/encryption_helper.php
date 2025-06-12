@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LearnerController;
 use App\Models\Branch;
 use App\Models\Hour;
 use App\Models\Learner;
@@ -20,10 +21,9 @@ use Carbon\Carbon;
 if (!function_exists('getAuthenticatedUser')) {
     function getAuthenticatedUser()
     {
-       foreach (['library', 'library_user','web','learner'] as $guard) {
+        foreach (['library', 'library_user', 'web', 'learner'] as $guard) {
             if (Auth::guard($guard)->check()) {
                 return Auth::guard($guard)->user();
-                
             }
         }
 
@@ -50,7 +50,7 @@ if (!function_exists('decryptData')) {
         $iv_size = openssl_cipher_iv_length($cipher);
         $IV = substr(md5($key), 0, $iv_size);
         $data = str_replace([" ", "*"], ["+", "/"], $data);
-        $decrypted=openssl_decrypt($data, $cipher, $key, 0, $IV);
+        $decrypted = openssl_decrypt($data, $cipher, $key, 0, $IV);
         \Log::info("Decryption Successful: " . $data . " → " . $decrypted);
         return $decrypted;
     }
@@ -58,7 +58,7 @@ if (!function_exists('decryptData')) {
 if (!function_exists('getLibrary')) {
     function getLibrary()
     {
-       return Library::where('id',getLibraryId())->first();
+        return Library::where('id', getLibraryId())->first();
     }
 }
 
@@ -82,7 +82,7 @@ if (!function_exists('getLibraryData')) {
             ->orderBy('created_at', 'DESC')
             ->with('subscription')
             ->first();
-        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id) ->with('subscription')->get();
+        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscription')->get();
 
         return (object) [
             'library' => $library,
@@ -93,11 +93,11 @@ if (!function_exists('getLibraryData')) {
     }
 }
 
-if(!function_exists('learnerTransaction') ){
-    function learnerTransaction($id,$detail_id)
+if (!function_exists('learnerTransaction')) {
+    function learnerTransaction($id, $detail_id)
     {
-       $transaction=LearnerTransaction::where('learner_id',$id)->where('learner_detail_id',$detail_id)->first();
-       return  $transaction;
+        $transaction = LearnerTransaction::where('learner_id', $id)->where('learner_detail_id', $detail_id)->first();
+        return  $transaction;
     }
 }
 
@@ -116,8 +116,9 @@ if (!function_exists('getLibraryId')) {
     }
 }
 
-if (!function_exists('getCurrentBranch')){
-   function getCurrentBranch() {
+if (!function_exists('getCurrentBranch')) {
+    function getCurrentBranch()
+    {
         $currentBranch = null;
 
         if (Auth::guard('library')->check()) {
@@ -130,19 +131,17 @@ if (!function_exists('getCurrentBranch')){
 
         return $currentBranch;
     }
-
-
 }
 if (!function_exists('getPlanPrice')) {
     function getPlanPrice($plan_id, $plan_type_id)
     {
         $libraryId = getLibraryId();
         $branchId = getCurrentBranch();
-     
+
         $plan_price_all = PlanPrice::withoutGlobalScopes()
             ->leftJoin('plans', function ($join) {
                 $join->on('plan_prices.plan_id', '=', 'plans.id')
-                     ->where('plans.library_id', getLibraryId());
+                    ->where('plans.library_id', getLibraryId());
             })
             ->where('plans.plan_id', 1)
             ->where('plans.type', 'MONTH')
@@ -151,7 +150,7 @@ if (!function_exists('getPlanPrice')) {
             ->where('plan_prices.branch_id', getCurrentBranch())
             ->select('plan_prices.price')
             ->first();
-        
+
         $plan = Plan::where('id', $plan_id)->first();
 
         if ($plan_price_all && $plan) {
@@ -174,74 +173,74 @@ if (!function_exists('getPlanPrice')) {
 }
 
 
-if(!function_exists('getLockerPrice')){
-    function getLockerPrice(?int $planId = null){
+if (!function_exists('getLockerPrice')) {
+    function getLockerPrice(?int $planId = null)
+    {
         $branchId = getCurrentBranch();
-        if($branchId && $planId){
+        if ($branchId && $planId) {
             $plan = Plan::find($planId);
-           
-            $branch=Branch::where('id',$branchId)->select('locker_amount')->first();
-            if($plan->type=='YEAR'){
-                $locker_amount=$branch->locker_amount * 12 * $plan->plan_id;
-            }elseif($plan->type=='WEEK'){
-                $locker_amount=($branch->locker_amount/30 * 7) * $plan->plan_id;
-            }elseif($plan->type=='DAY'){
-                $locker_amount=($branch->locker_amount/30) * $plan->plan_id;
-            }elseif($plan->type=='MONTH'){
-               
-                $locker_amount=($branch->locker_amount) * $plan->plan_id;
-                
-            }else{
-                $locker_amount=0;
+
+            $branch = Branch::where('id', $branchId)->select('locker_amount')->first();
+            if ($plan->type == 'YEAR') {
+                $locker_amount = $branch->locker_amount * 12 * $plan->plan_id;
+            } elseif ($plan->type == 'WEEK') {
+                $locker_amount = ($branch->locker_amount / 30 * 7) * $plan->plan_id;
+            } elseif ($plan->type == 'DAY') {
+                $locker_amount = ($branch->locker_amount / 30) * $plan->plan_id;
+            } elseif ($plan->type == 'MONTH') {
+
+                $locker_amount = ($branch->locker_amount) * $plan->plan_id;
+            } else {
+                $locker_amount = 0;
             }
-            
-        }else if($branchId && !$planId){
-            $branch=Branch::where('id',$branchId)->select('locker_amount')->first();
-            $locker_amount=$branch->locker_amount;
-        }else{
-            $locker_amount=0;
+        } else if ($branchId && !$planId) {
+            $branch = Branch::where('id', $branchId)->select('locker_amount')->first();
+            $locker_amount = $branch->locker_amount;
+        } else {
+            $locker_amount = 0;
         }
-        
-      
+
+
         return $locker_amount;
     }
 }
-if(!function_exists('getExtendDays')){
+if (!function_exists('getExtendDays')) {
     function getExtendDays()
     {
         $branchId = getCurrentBranch();
-        if($branchId){
-            $branch=Branch::where('id',$branchId)->select('extend_days')->first();
-            $extend_days=$branch->extend_days;
-        }else{
-            $extend_days=0;
+        if ($branchId) {
+            $branch = Branch::where('id', $branchId)->select('extend_days')->first();
+            $extend_days = $branch->extend_days;
+        } else {
+            $extend_days = 0;
         }
-        
+
         return $extend_days ?? 0;
     }
 }
 
 if (!function_exists('getPlanStatusDetails')) {
-        // $today = Carbon::today();
-        // $endDate = Carbon::parse($user->plan_end_date);
-        // $diffInDays = $today->diffInDays($endDate, false);
-        // $inextendDate = $endDate->copy()->addDays($extendDay);
-        // $diffExtendDay= $today->diffInDays($inextendDate, false);
-        // $class='';
-        // if($diffInDays < 0 && $diffExtendDay>0){
-        //     $class='extedned';
-        // }
-        // if($diffInDays <=5 && $diffInDays>=0){
-        //     $class='expired';
-        // }
-    function getPlanStatusDetails($plan_end_date) {
+    // $today = Carbon::today();
+    // $endDate = Carbon::parse($user->plan_end_date);
+    // $diffInDays = $today->diffInDays($endDate, false);
+    // $inextendDate = $endDate->copy()->addDays($extendDay);
+    // $diffExtendDay= $today->diffInDays($inextendDate, false);
+    // $class='';
+    // if($diffInDays < 0 && $diffExtendDay>0){
+    //     $class='extedned';
+    // }
+    // if($diffInDays <=5 && $diffInDays>=0){
+    //     $class='expired';
+    // }
+    function getPlanStatusDetails($plan_end_date)
+    {
         $extendDay = getExtendDays(); // assume integer
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
-        
+
         $diffInDays = $today->diffInDays($endDate, false);
         if ($extendDay > 0) {
-        $inextendDate = $endDate->copy()->addDays($extendDay);
+            $inextendDate = $endDate->copy()->addDays($extendDay);
         } else {
             $inextendDate = $endDate; // fallback to original end date
         }
@@ -272,31 +271,34 @@ if (!function_exists('getPlanStatusDetails')) {
     }
 }
 
-if(!function_exists('getSeatType')){
-    function getSeatType(){
+if (!function_exists('getSeatType')) {
+    function getSeatType()
+    {
         $branchId = getCurrentBranch();
-        if($branchId){
-            $branch=Branch::where('id',$branchId)->select('seat_type')->first();
-            $seat_type=$branch->seat_type;
-        }else{
-            $seat_type=null;
+        if ($branchId) {
+            $branch = Branch::where('id', $branchId)->select('seat_type')->first();
+            $seat_type = $branch->seat_type;
+        } else {
+            $seat_type = null;
         }
-        
-        return $seat_type ;
+
+        return $seat_type;
     }
 }
-if(!function_exists('countWithoutSeatNo')){
-    function countWithoutSeatNo(){
+if (!function_exists('countWithoutSeatNo')) {
+    function countWithoutSeatNo()
+    {
         $branchId = getCurrentBranch();
-        if($branchId){
-            $count=Learner::where('branch_id',$branchId)->whereNull('seat_no')->count();
+        if ($branchId) {
+            $count = Learner::where('branch_id', $branchId)->whereNull('seat_no')->count();
         }
-        
-        return $count ?? 0 ;
+
+        return $count ?? 0;
     }
 }
-if(!function_exists('getUserStatusDetails')){
-    function getUserStatusDetails($plan_end_date) {
+if (!function_exists('getUserStatusDetails')) {
+    function getUserStatusDetails($plan_end_date)
+    {
         $extendDay = getExtendDays(); // assume this returns an integer like 3 or 7
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
@@ -307,80 +309,85 @@ if(!function_exists('getUserStatusDetails')){
 
         if ($diffInDays > 0) {
             return '<small class="text-success">Plan Expires in ' . $diffInDays . ' days</small>';
-        }  elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             // <span class="text-danger fs-10 d-block">{{$learnerExtendText}} {{ abs($customer->diffExtendDay) }} days.</span>
             return '<small class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</small>';
-        } elseif(($diffInDays < 0 && $diffExtendDay==0)){
+        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
             return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
-        }elseif ($diffInDays == 0) {
+        } elseif ($diffInDays == 0) {
             return '<small class="text-warning fs-10 d-block">Plan Expires today</small>';
         } else {
             return '<small class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</small>';
         }
     }
-
 }
 
-if(!function_exists('myLearner')){
-    function myLearner($learner_id){
-        $learner=Learner::where('id',$learner_id)->first();
-        return $learner ? $learner : null ;
+if (!function_exists('myLearner')) {
+    function myLearner($learner_id)
+    {
+        $learner = Learner::where('id', $learner_id)->first();
+        return $learner ? $learner : null;
     }
 }
 
-if(!function_exists('myPlan')){
-    function myPlan($plan_id){
-        $plan=Plan::where('id', $plan_id)->first();
-        return $plan ? $plan : null ;
+if (!function_exists('myPlan')) {
+    function myPlan($plan_id)
+    {
+        $plan = Plan::where('id', $plan_id)->first();
+        return $plan ? $plan : null;
     }
 }
 
-if(!function_exists('myPlanType')){
-    function myPlanType($plan_id){
-        $plan=PlanType::where('id', $plan_id)->first();
-        return $plan ? $plan : null ;
+if (!function_exists('myPlanType')) {
+    function myPlanType($plan_id)
+    {
+        $plan = PlanType::where('id', $plan_id)->first();
+        return $plan ? $plan : null;
     }
 }
-if(!function_exists('myPlanPrice')){
-    function myPlanPrice($learnerDeatilId){
-        $price=LearnerDetail::where('id', $learnerDeatilId)->value('plan_price_id') ?? 0;
-        return $price ? $price : 0 ;
-    }
-}
-
-if(!function_exists('countBranch')){
-    function countBranch(){
-       $count=Branch::where('library_id',getLibraryId())->count();
-       return $count ;
+if (!function_exists('myPlanPrice')) {
+    function myPlanPrice($learnerDeatilId)
+    {
+        $price = LearnerDetail::where('id', $learnerDeatilId)->value('plan_price_id') ?? 0;
+        return $price ? $price : 0;
     }
 }
 
-if(!function_exists('getUserStatusWithSpan')){
-    function getUserStatusWithSpan($plan_end_date) {
-        $extendDay = getExtendDays(); 
+if (!function_exists('countBranch')) {
+    function countBranch()
+    {
+        $count = Branch::where('library_id', getLibraryId())->count();
+        return $count;
+    }
+}
+
+if (!function_exists('getUserStatusWithSpan')) {
+    function getUserStatusWithSpan($plan_end_date)
+    {
+        $extendDay = getExtendDays();
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
 
-        $diffInDays = $today->diffInDays($endDate, false); 
+        $diffInDays = $today->diffInDays($endDate, false);
         $inextendDate = $endDate->copy()->addDays($extendDay);
-        $diffExtendDay = $today->diffInDays($inextendDate, false); 
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
 
         if ($diffInDays > 0) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
-        }  elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
-        } elseif(($diffInDays < 0 && $diffExtendDay==0)){
+        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
             return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
-        }elseif ($diffInDays == 0) {
+        } elseif ($diffInDays == 0) {
             return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } else {
             return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
         }
     }
-
 }
 if (!function_exists('getUnavailableSeatCount')) {
-    function getUnavailableSeatCount() {
+    function getUnavailableSeatCount()
+    {
         $totalHour = Hour::where('branch_id', getCurrentBranch())->value('hour');
 
         return LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
@@ -393,9 +400,10 @@ if (!function_exists('getUnavailableSeatCount')) {
 
 
 if (!function_exists('getAvailableSeatCount')) {
-    function getAvailableSeatCount() {
-        $totalHour =  Hour::where('branch_id',getCurrentBranch())->value('hour');
-        $totalSeats =  Hour::where('branch_id',getCurrentBranch())->value('seats') ?? 0;
+    function getAvailableSeatCount()
+    {
+        $totalHour =  Hour::where('branch_id', getCurrentBranch())->value('hour');
+        $totalSeats =  Hour::where('branch_id', getCurrentBranch())->value('seats') ?? 0;
 
         $unavailable = getUnavailableSeatCount();
 
@@ -404,8 +412,9 @@ if (!function_exists('getAvailableSeatCount')) {
 }
 
 if (!function_exists('seatRemainingHour')) {
-    function seatRemainingHour($seat) {
-        $totalHour =  Hour::where('branch_id',getCurrentBranch())->value('hour');
+    function seatRemainingHour($seat)
+    {
+        $totalHour =  Hour::where('branch_id', getCurrentBranch())->value('hour');
 
         // If total hour is not set, return 0
         if (!$totalHour) {
@@ -419,24 +428,26 @@ if (!function_exists('seatRemainingHour')) {
     }
 }
 
-if(!function_exists('currentTransaction')){
-    function currentTransaction($learner_detail){
-           $data= LearnerTransaction::where('learner_detail_id',$learner_detail)->first();
-           return $data ?? null ;
+if (!function_exists('currentTransaction')) {
+    function currentTransaction($learner_detail)
+    {
+        $data = LearnerTransaction::where('learner_detail_id', $learner_detail)->first();
+        return $data ?? null;
     }
 }
 
 if (!function_exists('totalSeat')) {
-    function totalSeat() {
-        if(getCurrentBranch() !=0 || getCurrentBranch() !=null){
-            $totalSeats =  Hour::where('branch_id',getCurrentBranch())->value('seats');
-        }else{
-            $totalSeats =  Hour::where('library_id',getLibraryId())->SUM('seats');
+    function totalSeat()
+    {
+        if (getCurrentBranch() != 0 || getCurrentBranch() != null) {
+            $totalSeats =  Hour::where('branch_id', getCurrentBranch())->value('seats');
+        } else {
+            $totalSeats =  Hour::where('library_id', getLibraryId())->SUM('seats');
         }
-        
-       
 
-        return $totalSeats ;
+
+
+        return $totalSeats;
     }
 }
 
@@ -462,29 +473,42 @@ if (!function_exists('getLearnerMonthsAndYears')) {
             'months' => $months,
         ];
     }
-
 }
 
 if (!function_exists('overdue')) {
-    function overdue($learner_id,$pending_amt){
-        $exists=DB::table('learner_pending_transaction')->where('learner_id',$learner_id)->where('status',0)->where('pending_amount',$pending_amt)->first();
-        if($exists && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($exists->due_date))){
-            return true ;
-        }else{
-            return false ;
+    function overdue($learner_id, $pending_amt)
+    {
+        $exists = DB::table('learner_pending_transaction')->where('learner_id', $learner_id)->where('status', 0)->where('pending_amount', $pending_amt)->first();
+        if ($exists && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($exists->due_date))) {
+            return true;
+        } else {
+            return false;
         }
     }
 }
 
+if (!function_exists('paylater')) {
+    function paylater($learner_detail_id)
+    {
+        return LearnerTransaction::where('learner_detail_id', $learner_detail_id)->where('is_paid', 0)->exists();
+    }
+}
 
+if (!function_exists('pending_amt')) {
+    function pending_amt($learner_detail_id)
+    {
+        return LearnerTransaction::where('learner_detail_id', $learner_detail_id)->where('is_paid', 1)->where('pending_amount', '>', 0)->exists();
+    }
+}
 
-
-
-
-
-
-
-
-
-
-
+if (!function_exists('is_locker')) {
+    function is_locker()
+    {
+        $data = Branch::where('id', getCurrentBranch())->select('locker_amount')->first();
+        if ($data->locker_amount == 0 || $data->locker_amount == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}

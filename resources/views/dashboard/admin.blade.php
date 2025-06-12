@@ -598,49 +598,56 @@
         <div class="seat-statistics ">
             <h4 class="mb-3 text-center">Avaialble Seats</h4>
             <ul class="contents">
+              
+                @if(getAvailableSeatCount() >0)
+               
+                    @foreach($available_seats as $seat)
+                        @if(count($seat['available_plan_types']) > 0)
+                        <li>
+                            <div class="d-flex">
+                                <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
+                                <div class="seat-content">
+                                    
+                                    <h6>Seat No. {{ $seat['seat_no'] }}</h6>
+                                    @if(count($seat['available_plan_types']) > 3)
+                                    <small>Available</small>
+                                    @else
+                                    @foreach($seat['available_plan_types'] as $planType)
+                                    @if($planType['name']=='First Half')
+                                    <small>FH </small>
+                                    @elseif($planType['name']=='Second Half')
+                                    <small>SH </small>
+                                    @elseif($planType['name']=='Hourly Slot 1')
+                                    <small>H1 </small>
+                                    @elseif($planType['name']=='Hourly Slot 2')
+                                    <small>H2 </small>
+                                    @elseif($planType['name']=='Hourly Slot 3')
+                                    <small>H3 </small>
+                                    @elseif($planType['name']=='Hourly Slot 4')
+                                    <small>H4 </small>
+                                    @elseif($planType['name']=='Full Day')
+                                    <small>FD </small>
+                                    @elseif($planType['name']=='Full Night')
+                                    <small>FN </small>
+                                    @else
+                                    <small>{{ $planType['name'] }}</small>
+                                    @endif
 
-                @foreach($available_seats as $seat)
-                @if(count($seat['available_plan_types']) > 0)
-                <li>
-                    <div class="d-flex">
-                        <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
-                        <div class="seat-content">
-                            
-                            <h6>Seat No. {{ $seat['seat_no'] }}</h6>
-                            @if(count($seat['available_plan_types']) > 3)
-                            <small>Available</small>
-                            @else
-                            @foreach($seat['available_plan_types'] as $planType)
-                            @if($planType['name']=='First Half')
-                            <small>FH </small>
-                            @elseif($planType['name']=='Second Half')
-                            <small>SH </small>
-                            @elseif($planType['name']=='Hourly Slot 1')
-                            <small>H1 </small>
-                            @elseif($planType['name']=='Hourly Slot 2')
-                            <small>H2 </small>
-                            @elseif($planType['name']=='Hourly Slot 3')
-                            <small>H3 </small>
-                            @elseif($planType['name']=='Hourly Slot 4')
-                            <small>H4 </small>
-                             @elseif($planType['name']=='Full Day')
-                            <small>FD </small>
-                              @elseif($planType['name']=='Full Night')
-                            <small>FN </small>
-                            @else
-                            <small>{{ $planType['name'] }}</small>
-                            @endif
+                                    @endforeach
+                                    @endif
 
-                            @endforeach
-                            @endif
-
-                        </div>
-                        <a href="javascript:;" data-bs-toggle="modal" class="first_popup book"
-                            data-bs-target="#seatAllotmentModal" data-id="{{ $seat['seat_id'] }}" data-seat_no="{{ $seat['seat_no'] }}">Book</a>
-                    </div>
-                </li>
+                                </div>
+                                <a href="javascript:;" data-bs-toggle="modal" class="first_popup book"
+                                    data-bs-target="#seatAllotmentModal" data-id="{{ $seat['seat_id'] }}" data-seat_no="{{ $seat['seat_no'] }}">Book</a>
+                            </div>
+                        </li>
+                    
+                        @endif
+                    @endforeach
+                     
+                @else
+                     <small class="text-center d-block text-success">Congratulations! All premium seats are fully booked. You can now  only <a href="javascript:;" class=" noseat_popup">Book General Seats. </a> to book.</small>
                 @endif
-                @endforeach
 
             </ul>
             <a href="{{route('seats')}}" class="view-full-info">View All Available Seats</a>

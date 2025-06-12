@@ -107,6 +107,7 @@
                     {{-- <option value="0" {{ $user->current_branch == 0 ? 'selected' : '' }}>
                         📚 All Branches
                     </option> --}}
+                    <option>Select Branch</option>
                     @foreach($branches as $b)
                         <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
                             {{ $b->name }}

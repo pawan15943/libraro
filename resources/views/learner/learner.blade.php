@@ -207,6 +207,7 @@
                         <th>Active Plan</th>
                         <th>Expired On</th>
                         <th>Status</th>
+                        <th>Operation</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -219,11 +220,13 @@
                     @foreach($learners as $key => $value)
                          @php
                             $planStatus = getPlanStatusDetails($value->plan_end_date);
+                            
                           
                         @endphp
                     <tr>
                         <td>{{$value->seat_no ? $value->seat_no : 'General'}}<br>
                             <small>{{$value->plan_type_name}}</small>
+                          
                         </td>
                         <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
@@ -251,46 +254,42 @@
                                 <span class="text-success d-block">Fully Paid</span>
                             @elseif(empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount))
                                 <span></span>
-                            @else
+                            @elseif( pending_amt($value->learner_detail_id))
                             <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
                                      @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
                                     <small class="text-danger"><strong>Overdue</strong></small>
                                     @else
                                         Pending :
                                     @endif
-                                 {{ learnerTransaction($value->id, $value->learner_detail_id)->pending_amount ?? '' }}
+                                 {{ (learnerTransaction($value->id, $value->learner_detail_id)->pending_amount)  ?? '' }}
                             </a>
-                                                        
+                            @elseif(paylater($value->learner_detail_id))
+                                  <span class="text-danger d-block">Pay Later</span>                      
                             @endif
 
                         </td>
                         <td>
 
                             <ul class="actionalbls">
-                                <!-- View Seat Info -->
-                                @can('has-permission', 'View Seat')
-                                <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                @endcan
+                              
 
                                 <!-- Edit Seat Info -->
                                 @if($planStatus['diff_extend_day']>0)
 
-                                    @can('has-permission', 'Edit Seat')
-                                    <li><a href="{{route('learners.edit',$value->id)}}" title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
-                                    @endcan
-                                    
                                     {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
 
                                     <!-- Make payment -->
+                                    @if(paylater($value->learner_detail_id) || pending_amt($value->learner_detail_id))
                                     @can('has-permission','Renew Seat')
-                                    <li><a href="{{route('learner.payment',$value->learner_detail_id)}}" title="Payment Lerners" class="payment-learner"><i class="fas fa-credit-card"></i></a></li>
+                                    <li><a href="{{route('learner.payment',$value->learner_detail_id)}}" title="Payment Lerners" class="payment-learner"><i class="fa-regular fa-credit-card"></i></a></li>
 
                                     @endcan
+                                     @endif
                                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day'] > 0 )
-                                    @can('has-permission','Renew Seat')
-                                    <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
+                                        @can('has-permission','Renew Seat')
+                                        <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan"><i class="fa-solid fa-money-check"></i></a></li>
 
-                                    @endcan
+                                        @endcan
                                     @endif
                                     <!-- Swap Seat-->
 
@@ -310,33 +309,30 @@
                                             @csrf
                                             <input type="hidden" id="custId" name="detail_id" value="{{ $value->learner_detail_id }}">
                                             <input type="hidden" name="learner_id" value="{{ $value->id }}">
-                                            <button type="submit"><i class="fa fa-print"></i></button>
+                                            <button type="submit"><i class="fa-solid fa-id-card-clip"></i></button>
                                         </form>
                                     </li>
-                                    <!-- upgrade Seat-->
-                                   @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day'] > 0 && $planStatus['diff_extend_day'] > 5)
+                                            <!-- upgrade Seat-->
+                                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day'] > 0 && $planStatus['diff_extend_day'] <= 5)
 
-                                        @can('has-permission', 'Upgrade Seat Plan')
-                                        <li><a href="{{route('learners.upgrade.renew',$value->id)}}" title="Upgrade Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
+                                            @can('has-permission', 'Upgrade Seat Plan')
+                                            <li><a href="{{route('learners.upgrade.renew',$value->id)}}" title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
+                                            @endcan
+
+                                        @endif
+                                        <!-- Close Seat -->
+
+                                        @can('has-permission', 'Close Seat')
+                                        <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{ $value->id }}" title="Close" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
                                         @endcan
-
-                                    @endif
-                                    <!-- Close Seat -->
-
-                                    @can('has-permission', 'Close Seat')
-                                    <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{ $value->id }}" title="Close" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
-                                    @endcan
-                                     @endif
-                                    <!-- Deletr Seat -->
-                                    @can('has-permission', 'Delete Seat')
-                                    <li><a href="#" data-id="{{$value->id}}" title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
-                                    @endcan
-                                    @can('has-permission', 'Reactive Seat')
+                                @endif
+                                   
+                                @can('has-permission', 'Reactive Seat')
                                     @if($value->status==0)
                                     <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
                                     @endif
-                                    @endcan
-                                    @if($diffExtendDay>0)
+                                @endcan
+                                @if($diffExtendDay>0)
                                     <!-- Sent Mail -->
 
                                     @can('has-permission', 'WhatsApp Notification')
@@ -351,7 +347,27 @@
                                             onclick="incrementMessageCount({{ $value->id }}, 'email')"
                                             class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i></a></li>
                                     @endcan
-                                    @endif
+                                @endif
+
+                            </ul>
+                        </td>
+                        <td>
+
+                            <ul class="actionalbls">
+                                <!-- View Seat Info -->
+                                @can('has-permission', 'View Seat')
+                                <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                                @endcan
+
+                                <!-- Deletr Seat -->
+                                
+                                @can('has-permission', 'Edit Seat')
+                                <li><a href="{{route('learners.edit',$value->id)}}" title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
+                                @endcan
+
+                                    @can('has-permission', 'Delete Seat')
+                                <li><a href="#" data-id="{{$value->id}}" title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
+                                @endcan
 
                             </ul>
                         </td>

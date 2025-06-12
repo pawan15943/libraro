@@ -34,7 +34,9 @@
                     <tr>
                         <th>S.No.</th>
                         <th>Plan type Name</th>
-                      
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Total Hour</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -43,6 +45,9 @@
                     <tr>
                         <td>{{ $key+1 }}</td>
                         <td>{{ $value->name }}</td>
+                        <td>{{ $value->start_time }}</td>
+                        <td>{{ $value->end_time }}</td>
+                        <td>{{ $value->slot_hours }}</td>
                        
 
                         <td>
@@ -56,7 +61,9 @@
                                         @endif
                                     </a>
                                 </li>
+                                  
                                  <li><a href="{{route('planType.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
+                              
                                 {{-- <li><a href="javascript:void(0)" type="button" class="plantype_edit" data-id="{{$value->id}}" data-table="PlanType" data-redirect="{{route('planType.create')}}"><i class="fa fa-edit"></i></a></li> --}}
                                 <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="PlanType" title="Delete"><i class="fa fa-trash"></i></a></li>
 

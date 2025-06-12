@@ -74,15 +74,9 @@
                     </div>
                     <div class="col-lg-6 col-6 col-6">
                         <span>Plan Expired In</span>
-                        @if ($customer->diffInDays > 0)
-                        <h5 class="text-success">Plan Expires in {{ $customer->diffInDays }} days</h5>
-                        @elseif ($customer->diffInDays < 0 && $customer->diffExtendDay>0)
-                            <h5 class="text-danger fs-10 d-block ">{{$learnerExtendText}} {{ abs($customer->diffExtendDay) }} days.</h5>
-                            @elseif ($customer->diffInDays < 0 && $customer->diffExtendDay==0)
-                                <h5 class="text-warning fs-10 d-block">Plan Expires today</h5>
-                                @else
-                                <h5 class="text-danger fs-10 d-block">Plan Expired {{ abs($customer->diffInDays) }} days ago</h5>
-                                @endif
+                        <h5>{!! getUserStatusWithSpan($customer->plan_end_date) !!}</h5>
+                        
+                      
 
                     </div>
                     <div class="col-lg-6 col-6 col-6">

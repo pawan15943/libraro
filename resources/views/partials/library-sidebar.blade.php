@@ -11,8 +11,8 @@ $user = getAuthenticatedUser();
         @foreach($menus as $menu)
      
             @php
-            $show = ($menu->name == 'Dashboard' || getLibrary()->is_paid != 0) ? 1 : 0;
-               
+            $show = ($menu->name == 'Dashboard' || getLibrary()->status == 1 || (getLibrary()->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
+            //    echo "<p class='text-white'>show ".$show .'</p>';
                
             @endphp
             
@@ -60,6 +60,7 @@ $user = getAuthenticatedUser();
                 @endif
                 {{-- @endcan --}}
             @endif
+            
         @endforeach
     </ul>
 </div>

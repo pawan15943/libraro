@@ -448,6 +448,7 @@
                 dataType: 'json',
                 success: function(response) {
                     console.log(response);
+                    
                     if (response.success) {
 
                         Swal.fire({
@@ -489,6 +490,8 @@
                         if (response.error) {
                             $("#error-message").text(response.message).show();
                             $("#success-message").hide();
+                        }else if (response.errors.email){
+                            $('#email-error').text(errors.email[0]);
                         } else if (response.errors) {
                             $(".is-invalid").removeClass("is-invalid");
                             $(".invalid-feedback").remove();
@@ -714,8 +717,10 @@
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
             } else {
-                $('#seat_id').prop('disabled', true).val('yes');
                 
+                $('#seat_id').val($('#seat_id option:first').val()); 
+                $('#seat_id').prop('disabled', true);
+
                 getTypeSeatwise('');
             }
            
@@ -1086,6 +1091,7 @@
                                 $("#error-message").hide();
                             } else {
                                 $("#plan_price_id").val("");
+                                $("#pending_amt").html("No Plan Price Added Yet.");
                                 $("#paid_amount").val("");
                             }
                         }
@@ -1417,7 +1423,7 @@
       
          
         const autoPaid = planPrice + lockerAmount - discountAmount;
-        $('#paid_amount').val(autoPaid.toFixed(2));
+        $('#paid_amount').val(autoPaid);
 
       var autoPaidnew = 0;
 
@@ -1437,8 +1443,8 @@
 
         var difference = autoPaidnew - totalAmount;
 
-         $('#new_plan_price').val(autoPaidnew.toFixed(2));
-        $('#diffrence_amount').val(difference.toFixed(2));
+         $('#new_plan_price').val(autoPaidnew);
+        $('#diffrence_amount').val(difference);
         calculatePendingAmount();
     }
 
@@ -1478,7 +1484,7 @@
         console.log('discountAmountt',discountAmountt);
         console.log('autoPaidnew',autoPaidnew);
         
-         $('#new_plan_price2').val(autoPaidnew.toFixed(2));
+         $('#new_plan_price2').val(autoPaidnew);
         calculatePendingAmount();
     }
 
@@ -1501,8 +1507,11 @@
 
         const effectivePaid = planPrice+lockerAmount - discountAmount;
         const pendingAmount =effectivePaid-paidAmount;
+        if(pendingAmount > 0){
+            $('#pending_amt').html('Pending Amount: ' + pendingAmount);
+        }
 
-        $('#pending_amt').html('Pending Amount: ' + pendingAmount.toFixed(2));
+        
 
         if (pendingAmount > 0) {
             $('#due_date').removeAttr('readonly');
