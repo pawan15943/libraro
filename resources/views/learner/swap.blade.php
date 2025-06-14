@@ -95,6 +95,7 @@
                             <label for="">Select Seat<span>*</span></label>
                             <select name="seat_id" id="new_seat_id" class="form-control form-select @error('seat_id') is-invalid @enderror">
                                 <option>Select Seat</option>
+                                <option value="">General</option>
                                 @foreach($availableseats as  $seat_no)
                                 <option value="{{ $seat_no }}"> {{ $seat_no }}</option>
                                 @endforeach

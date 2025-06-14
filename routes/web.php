@@ -91,6 +91,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
     Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
 
     Route::get('/library-users', [LibraryUserController::class, 'index'])->name('library-users.index');
+    Route::get('/library-users/create', [LibraryUserController::class, 'create'])->name('library-users.create');
     Route::post('/library-users/store', [LibraryUserController::class, 'store'])->name('library-users.store');
     Route::post('/library-users/toggle-status/{id}', [LibraryUserController::class, 'toggleStatus']);
 

@@ -188,7 +188,7 @@
                         <h5 class="text-success">{{$transaction->discount_amount ?? '0'}}</h5>
                     </div>
                     @endif
-                     @if(isset($transaction) && $transaction->locker_amount)
+                    @if(isset($transaction) && $transaction->locker_amount)
                      <div class="col-lg-6 col-6 col-6">
                         <span>Locker Amt.</span>
                         <h5> {{$transaction->locker_amount ?? '0'}}</h5>
@@ -199,7 +199,12 @@
                         <h5 class="text-success">{{ $transaction->paid_amount ?? 'NA'}}</h5>
                     </div>
                     <div class="col-lg-6 col-6 col-6">
-                        <span>Pending Amt.</span>
+                        <span>Pending Amt.
+                            {{-- @if(overdue($customer->id, $transaction->pending_amount))
+                           <small class="text-danger"><strong>Overdue</strong></small>
+                            @endif --}}
+                            
+                        </span>
                         <h5 class="text-danger">{{$transaction->pending_amount ?? '0'}}</h5>
                     </div>
 
@@ -323,11 +328,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-
+                                   
                                     @foreach ($seat_history as $learner)
                                     <tr>
                                         <td>{{ $learner->name }}<br>
-                                            <small>{{$learner->seat_no}}</small>
+                                            <small>{{$learner->seat_no ?? 'General'}}</small>
                                         </td> <!-- Owner Name -->
                                         <td>{{ $learner->mobile }}</td> <!-- Mobile -->
                                         <td>{{ $learner->email }}</td> <!-- Email -->
@@ -425,7 +430,9 @@
             {!! getUserStatusDetails($customer->plan_end_date) !!}
             <!-- End -->
         </div>
+      
         @if($learner_request->isNotEmpty())
+     
         <div class="request-logs mt-4">
             <h5>Learners Request</h5>
             <ul class="request_list">

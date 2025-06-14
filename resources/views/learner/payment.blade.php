@@ -107,7 +107,7 @@ $class=$planDetails['class'];
                  
                     </h4>
                 
-                    <p class="text-danger">Note : Here we are displaying the active plan Payment information that has been completed.</p>
+                    <p class="text-danger">Note : Here we are displaying the active plan Payment information that has been completed. You can also make payment of Pay Later and Pending Amount.</p>
                     <input type="hidden" name="learner_id" value="{{ $customer->learner->id}}">
                     <input  type="hidden" name="user_id" value="{{ $customer->learner->id}}">
                     <input id="library_id" type="hidden" name="library_id" value="{{ $customer->library_id}}">
@@ -235,21 +235,15 @@ $class=$planDetails['class'];
                             </span>
                             @enderror
                         </div>
-                    </div>
-                    
-
-                    <div class="row mt-3">
                         <div class="col-lg-3">
                             @if($is_payment_pending && $pending_payment->pending_amount)
-                            <input type="submit" class="btn btn-warning btn-block button" value="Make Payment">
+                            <input type="submit" class="btn btn-primary button" value="Make Payment">
                             @endif
-                            {{-- @if($diffInDays <= 5 && $diffExtendDay > 0 && !$isRenew)
-                                <input type="submit" class="btn btn-primary btn-block button" value="Renew">
-                            @elseif($is_payment_pending && $pending_payment->pending_amount)
-                                <input type="submit" class="btn btn-warning btn-block button" value="Make Payment">
-                            @endif --}}
-                        </div>
+                            
+                        </div>          
+
                     </div>
+            
                     
 
                 </div>

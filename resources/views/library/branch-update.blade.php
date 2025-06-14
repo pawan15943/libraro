@@ -5,6 +5,11 @@
 @section('content')
 <!-- Branch Selector -->
 
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
 
 
   <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 

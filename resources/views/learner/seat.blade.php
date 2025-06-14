@@ -62,7 +62,7 @@ $today = Carbon::today();
            
             <div class="seat">
                 @php
-                    $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                    $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id')->where('learners.status',1)->where('learner_detail.status',1)->get();
                     $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
                                     ->whereDate('plan_start_date', '<=', $today)
                                     ->whereDate('plan_end_date', '>=', $today)
@@ -111,7 +111,17 @@ $today = Carbon::today();
                         @foreach($usersForSeat as $user)
                                 @php
                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
-                                $class=$planDetails['class'];
+                                $pending_amt=pending_amt($user->learner_detail_id);
+                                
+                                
+                                if(overdue($user->id, $pending_amt)){
+                                    $class='orange_class';
+                                }elseif(paylater($user->learner_detail_id)){
+                                    $class='paylater_class';
+                                }else{
+                                    $class=$planDetails['class'];
+                                }
+                               
                                 @endphp
 
                                 @if($user->day_type_id == 1)
@@ -157,6 +167,16 @@ $today = Carbon::today();
                             @php
                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
                                 $class=$planDetails['class'];
+                                $pending_amt=pending_amt($user->learner_detail_id);
+                                
+                               
+                                if(overdue($user->id, $pending_amt)){
+                                    $class='orange_class';
+                                }elseif(paylater($user->learner_detail_id)){
+                                    $class='paylater_class';
+                                }else{
+                                     $class=$planDetails['class'];
+                                }
                             @endphp
 
                             @if($user->day_type_id == 1)
@@ -223,7 +243,7 @@ $today = Carbon::today();
             
           @if(countWithoutSeatNo() >0)
             @php
-            $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date')->where('learners.status',1)->where('learner_detail.status',1)->get();
+            $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id')->where('learners.status',1)->where('learner_detail.status',1)->get();
        
             @endphp
             @foreach($usersForSeat as $user)
@@ -477,7 +497,12 @@ $today = Carbon::today();
                     <div class="detailes">
                         <h3 id="seat_number_upgrades"></h3>
                         <input type="hidden" id="hidden_plan">
-                        <div class="row g-4 mt-1">
+                        <p class="text-danger mb-1"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
+
+                        <div class="row g-4">
+                            <div class="col-lg-12">
+                            </div>
+
                             <div class="col-lg-4">
                                 <label for="">Select Plan <span>*</span></label>
                                 
@@ -508,11 +533,7 @@ $today = Carbon::today();
                             <input type="text" class="form-control @error('locker_amount') is-invalid @enderror"  name="locker_amount" id="locker_amount2"  readonly>
                           
                             </div>
-                            <div class="col-lg-4">
-                                <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                                <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"  name="discount_amount" id="discount_amount3" value="" >
-                               
-                            </div>
+                           
                             <div class="col-lg-4">
                                 <label for="discount_type">Discount Type</label>
                                 <select id="discount_type" class="form-select" name="discountType">
@@ -521,7 +542,11 @@ $today = Carbon::today();
                                     <option value="percentage" >Percentage</option>
                                 </select>
                             </div>
-
+                            <div class="col-lg-4">
+                                <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
+                                <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"  name="discount_amount" id="discount_amount3" value="" >
+                               
+                            </div>
                             <div class="col-lg-4">
                                 <label for="">Total Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('total_amount') is-invalid @enderror"  name="total_amount" id="new_plan_price2" value="" readonly>
@@ -536,11 +561,7 @@ $today = Carbon::today();
                                     <option value="3">Pay Later</option>
                                 </select>
                             </div>
-                            <div class="col-lg-12">
-                                <span class="text-info">Your upcoming plan starts after your current plan expires.</span>
-                            </div>
-                            <div class="col-lg-4 mt-1">
-
+                            <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
                                 <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Renew Membership Now">

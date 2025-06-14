@@ -271,6 +271,7 @@
      
        
         $('#plan_type_id, #plan_type_id2').on('change', function(event) {
+            
            
             var plan_type_id = $(this).val();
             var plan_id = $('#plan_id').val();
@@ -279,7 +280,7 @@
             var plan_id3 = $('#plan_id3').val();
           
             if((plan_type_id && plan_id)||(plan_type_id && plan_id2)||(plan_type_id && plan_id3)|(plan_type_id && change_plan_plan_id)){
-            
+               
                 getPlanPrice(plan_type_id,plan_id);
                 getPlanPrice(plan_type_id,plan_id2);
                 getPlanPrice(plan_type_id,plan_id3);
@@ -1081,7 +1082,7 @@
                         dataType: 'json',
                         success: function(html) {
                             
-
+                            console.log('html',html);
                             if (html && html !== undefined) {
                             
                                 $("#plan_price_id").val(html);
@@ -1442,7 +1443,7 @@
         }
 
         var difference = autoPaidnew - totalAmount;
-
+        console.log('autoPaidnew',autoPaidnew);
          $('#new_plan_price').val(autoPaidnew);
         $('#diffrence_amount').val(difference);
         calculatePendingAmount();
@@ -1530,4 +1531,38 @@
 
 
 
+<script>
+    $(document).ready(function () {
+        function toggleDiscountAmount() {
+            if ($('#discountType').val()) {
+                $('#discount_amount').prop('disabled', false);
+            } else {
+                $('#discount_amount').prop('disabled', true).val('');
+            }
+        }
 
+        function toggleIdProofFile() {
+            if ($('#id_proof_name').val()) {
+                $('#id_proof_file').prop('disabled', false);
+            } else {
+                $('#id_proof_file').prop('disabled', true).val('');
+            }
+        }
+
+        // Bind events
+        $('#discountType').on('change', toggleDiscountAmount);
+        $('#id_proof_name').on('change', toggleIdProofFile);
+
+        // Initial state check
+        toggleDiscountAmount();
+        toggleIdProofFile();
+    });
+</script>
+
+<script>
+    $(document).ready(function () {
+        if (!$('#dob').val()) {
+            $('#dob').val('2010-01-01');
+        }
+    });
+</script>

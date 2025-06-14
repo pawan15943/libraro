@@ -71,6 +71,13 @@ class BranchController extends Controller
 
     public function store(Request $request)
     {
+         $validation = branchCountValidation();
+
+       if ($validation['success']) {
+            return back()->withInput()->with('error', $validation['message']);
+        }
+
+       
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'display_name' => 'required|string|max:255',

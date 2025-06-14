@@ -11,8 +11,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                 <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-            <div id="validation-error-message" class="alert alert-danger" style="display:none;"></div>
+                <div id="error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
+                <div id="validation-error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
                 <form id="seatAllotmentForm">
                     <div class="detailes">
                         {{-- <input type="hidden" name="seat_id" value="" id="seat_id"> --}}
@@ -144,6 +144,7 @@
                                         <option value="percentage">Percentage</option>
                                     </select>
                                 </div>
+
                                 <div class="col-lg-6">
                                     <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                                     <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
@@ -159,6 +160,7 @@
                                     </select>
                                     <span class="text-danger">Uploading ID proof is optional do it later.</span>
                                 </div>
+                                
                                 <div class="col-lg-6">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
                                     <input type="file" class="form-control" name="id_proof_file" id="id_proof_file"
@@ -175,7 +177,7 @@
 
                                 <div class="col-lg-12">
                                     <select name="exam_id" id="prepareFor" class="form-select">
-                                        <option value="">Prepare For</option>
+                                        <option value="">Learner is Prepare For Exam</option>
                                         @foreach($exams as $key => $value)
                                         <option value="{{$value->id}}">{{$value->name}}</option>   
                                         @endforeach
@@ -188,7 +190,7 @@
                         </div>
 
 
-                        <div class="row mt-2">
+                        <div class="row mt-4">
                             <div class="col-lg-4">
                                 <input type="submit" class="btn btn-primary btn-block button" id="submit"
                                     value="Book Library Seat Now" autocomplete="off">

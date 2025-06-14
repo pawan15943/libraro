@@ -92,7 +92,7 @@ $readonlyStyle = '';
                             </div>
                         </div>
                     </h4>
-                    <p class="text-danger"><b>important Note:</b> Seat Change Plan are allowed only if the learner's seat is newly booked, and the option is available only within 7 days of starting the current plan.</p>
+                    <p class="text-danger"><b>Note:</b> Seat Change Plan are allowed only if the learner's seat is newly booked, and the option is available only within 7 days of starting the current plan.</p>
                     <div class="row g-4">
                         <input id="edit_seat" type="hidden" name="seat_no" value="{{ old('seat_no', $customer->seat_no) }}">
                         <input type="hidden" name="user_id" value="{{ old('user_id', $customer->id) }}">
@@ -244,6 +244,8 @@ $readonlyStyle = '';
                         <div class="col-lg-3">
                             <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Update Seat Info">
                         </div>
+                        @else
+                            <p class="text-danger"><b>*</b>Button is available Within 7 Days of Seat Booking</p>
                         @endif
                     </div>
                 </div>

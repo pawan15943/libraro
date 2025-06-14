@@ -33,7 +33,7 @@ class LearnerService
 
         $totalHour = $firstRecord->hour;
         $totalSeats = $firstRecord->seats;
-
+       
         // Step 1: Get used hours for each seat
         $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
             ->whereNotNull('seat_no')

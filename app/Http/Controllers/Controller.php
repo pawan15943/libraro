@@ -236,6 +236,19 @@ class Controller extends BaseController
         $csvData = [];
         $header = null;
 
+        $newBranchCount = count($csvData);
+        // Validate branch count limit before processing
+        $validation = branchCountValidation();
+        $current = $validation['branch_count'];
+        $allowed = $validation['max_allowed'];
+
+        if ($current + $newBranchCount > $allowed) {
+            return redirect()->back()->withErrors([
+                'csv_file' => "You can only add " . ($allowed - $current) . " more branches. Your CSV contains $newBranchCount new branches, which exceeds the limit of $allowed."
+            ]);
+        }
+
+
         // Open the file and parse the CSV
         if (($handle = fopen($path, 'r')) !== false) {
             
@@ -648,7 +661,7 @@ class Controller extends BaseController
                 'mobile' =>!empty($data['mobile']) ? encryptData(trim($data['mobile'])) :null,
                 'dob' => $dob,
                 'hours' => trim($hours),
-                'seat_no' => trim($data['seat_no']),
+                'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
             ]);
@@ -719,7 +732,7 @@ class Controller extends BaseController
             Learner::where('id', $learner_id)->update([
                 'mobile' =>  !empty($data['mobile']) ? encryptData(trim($data['mobile'])) : null,
                 'hours' => trim($hours),
-                'seat_no' => trim($data['seat_no']),
+                'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
             ]);
@@ -789,7 +802,7 @@ class Controller extends BaseController
             'mobile' => !empty($data['mobile']) ? encryptData(trim($data['mobile'])) : null,
             'dob' => $dob,
             'hours' => trim($hours),
-            'seat_no' => trim($data['seat_no']),
+            'seat_no' => $seat,
             'address' => !empty($data['address']) ? trim($data['address']) : null,
             'status' => $status,
         ]);

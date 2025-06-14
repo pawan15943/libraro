@@ -96,10 +96,8 @@ $ids='learnerUpgrade';
                               Upgrade Plan
                         @endif
                       
-                        <p class="mt-2 text-danger"><b>Note:</b> Any learner can upgrade their plan only renewing seat in their extend period. If the seat not have that paln type available then first need to perform swap seat operation then you do change plan.</p>
-
-
                     </h4>
+                    <p class="text-danger"><b>Note:</b> Any learner can upgrade their plan only renewing seat in their extend period. If the seat not have that paln type available then first need to perform swap seat operation then you do change plan.</p>
                     <input id="learner_detail" type="hidden" name="learner_detail" value="{{$customer->learner_detail_id }}">
                     <input id="user_id" type="hidden" name="learner_id" value="{{ $customer->id}}">
                     <input id="user_id" type="hidden" name="user_id" value="{{ $customer->id}}">
@@ -224,11 +222,11 @@ $ids='learnerUpgrade';
 
                     </div>
                
-                    <div class="row mt-3">
+                    <div class="row mt-5">
                         <div class="col-lg-3">
                             @if($planDetails['diff_in_days'] <=5 && $planDetails['diff_extend_day'] > 0 && !$is_renew && !$isalreadyRenew)
 
-                                <input type="submit" class="btn btn-primary btn-block button" value="Renew Upgrade">
+                            <input type="submit" class="btn btn-primary btn-block button" value="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}">
 
                             @endif
                         </div>

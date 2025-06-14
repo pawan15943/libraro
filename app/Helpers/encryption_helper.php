@@ -514,3 +514,91 @@ if (!function_exists('is_locker')) {
     }
 }
 
+if (!function_exists('filterPlantypeFromseat')) {
+    function filterPlantypeFromseat($seat_no,$customerId)
+    {
+        
+       $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                ->where('learner_detail.seat_no', $seat_no)
+                ->where('learner_detail.learner_id', '!=', $customerId)
+                ->where('learners.status', 1)
+                ->where('learner_detail.status', 1)
+                ->where('learners.branch_id', getCurrentBranch())
+                ->where('learner_detail.branch_id', getCurrentBranch())
+                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+
+            // Step 2: Retrieve all plan types
+            $planTypes = PlanType::get();
+
+            // Step 3: Initialize an array to store the plan_type_ids to be removed
+            $planTypesRemovals = [];
+
+            // Step 4: Calculate total booked hours for the seat
+            $totalBookedHours = $bookings->sum('slot_hours');
+        
+            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.learner_id', '!=', $customerId)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
+
+            // Step 5: Determine conflicts based on plan_type_id and hours
+            $planTypeId = null;
+            if ($totalBookedHours <= 24) {
+
+                foreach ($bookings as $booking) {
+                    foreach ($planTypes as $planType) {
+                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                            $planTypesRemovals[] = $planType->id;
+                        }
+                    }
+                }
+            }
+            if ($totalBookedHours > 1) {
+                $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
+            }
+
+            if (!is_null($planTypeId)) {
+                $planTypesRemovals[] = $planTypeId;
+            }
+
+            if ($nightseatBooked) {
+                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+                $planTypesRemovals[] = $planTypeid;
+            }
+            // Remove duplicate entries in planTypesRemovals
+            $planTypesRemovals = array_unique($planTypesRemovals);
+
+            // If total booked hours >= 16, all plan types should be removed
+            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
+            $total_hour = $first_record ? $first_record->hour : null;
+
+            if ($totalBookedHours >= $total_hour) {
+                $planTypesRemovals = $planTypes->pluck('id')->toArray();
+            }
+
+            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
+          return  $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
+                return !in_array($planType->id, $planTypesRemovals);
+            })->map(function ($planType) {
+                return ['id' => $planType->id, 'name' => $planType->name];
+            })->values();
+    }
+}
+
+if (!function_exists('branchCountValidation')) {
+    function branchCountValidation()
+    {
+        $library=Library::findOrFail(getLibraryId());
+        $branch_count=Branch::where('library_id',getLibraryId())->count();
+        $message="You cannot add more branches. You already have $branch_count branches.";
+        $limits = [1 => 1, 2 => 2, 3 => 4]; // library_type => max branches
+        $maxAllowed = $limits[$library->library_type] ?? 0;
+
+        return [
+            'success' => $branch_count >= $maxAllowed,
+            'branch_count' => $branch_count,
+            'max_allowed' => $maxAllowed,
+            'message' =>$message
+        ];
+     
+    }
+}
+

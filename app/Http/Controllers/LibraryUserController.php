@@ -36,21 +36,31 @@ class LibraryUserController extends Controller
 
          
 
-         $subscriptions = Subscription::where('id', Auth::user()->library_type)->get();
-        $permissions = $subscriptions->flatMap(function ($subscription) {
-            return $subscription->permissions->pluck('id', 'name');
-        })->unique();
-
-
-         $branches=Branch::where('library_id',getLibraryId())->get();
          foreach ($users as $user) {
             $user->branch_names = Branch::whereIn('id', $user->branch_id)->pluck('name')->toArray();
             $user->permissions_array = $user->permissions->pluck('name')->toArray();
         }
      
-         return view('library_users.index', compact('users', 'permissions','branches'));
+         return view('library_users.index', compact('users'));
      }
-     
+     public function create(){
+        
+        $subscription = Subscription::find(Auth::user()->library_type);
+
+            $groupedPermissions = collect();
+
+            if ($subscription) {
+                $permissions = $subscription->permissions()->get();
+
+                $groupedPermissions = $permissions->groupBy('permission_category_id')->map(function ($group) {
+                    return $group->pluck('id', 'name');
+                });
+            }
+
+
+         $branches=Branch::where('library_id',getLibraryId())->get();
+         return view('library_users.create', compact('branches','groupedPermissions'));
+     }
     public function store(Request $request)
     {
         
@@ -97,6 +107,7 @@ class LibraryUserController extends Controller
 
             return response()->json([
                 'success' => false,
+                'redirect'=>route('library-users.index'),
                 'message' => 'Something went wrong. Please try again later.',
             ], 500);
         }
