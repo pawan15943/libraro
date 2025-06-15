@@ -21,50 +21,45 @@
 </div>
 @endif
 <!-- Masters -->
-  
-
-<div class="card card-default">
-    <div class="col-lg-4">
+<div class="heading-list justify-content-end">
     <a href="{{ route('expense.create') }}" class="btn btn-primary export">
-        <i class="fa-solid fa-plus "></i> Add Expense 
+        <i class="fa-solid fa-plus "></i> Add Expense
     </a>
 </div>
-    <!-- List of Users -->
-    <div class="card-body p-0">
-        <h4 class="px-3 py-2">Expense </h4>
-        <div class="table-responsive">
-            <table class="table table-hover dataTable m-0" id="datatable-plantype">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Name</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($data as $key => $value)
-                    <tr>
-                        <td>{{ $key+1 }}</td>
-                        <td>{{ $value->name }}</td>
-                       
 
-                        <td>
-                             <ul class="actionalbls">
-                                 <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="Expense" title="Active/Deactive">
-                                        @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
-                                        @else
-                                        <i class="fa fa-check"></i>
-                                        @endif</a></li>
-                                <li><a href="{{route('expense.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                       
-                            </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+<div class="card p-0 mb-4">
+    <div class="table-responsive">
+        <table class="table text-center" id="datatable-plantype">
+            <thead>
+                <tr>
+                    <th>S.No.</th>
+                    <th>Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($data as $key => $value)
+                <tr>
+                    <td>{{ $key+1 }}</td>
+                    <td>{{ $value->name }}</td>
+
+
+                    <td>
+                        <ul class="actionalbls">
+                            <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="Expense" title="Active/Deactive">
+                                    @if($value->deleted_at)
+                                    <i class="fas fa-cross"></i>
+                                    @else
+                                    <i class="fa fa-check"></i>
+                                    @endif</a></li>
+                            <li><a href="{{route('expense.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
+
+                        </ul>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </div>
 

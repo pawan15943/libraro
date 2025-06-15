@@ -17,19 +17,21 @@
 </div>
 @endif
 
+
+
 <!-- Masters -->
-<div class="heading-list align-items-center mb-4">
+<div class="heading-list justify-content-end">
     <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Plan
     </a>
 </div>
 
-<div class="card p-0">
+<div class="card p-0 mb-4 mt-3">
     <div class="table-responsive">
         <table class="table text-center datatable" id="datatable-plan">
             <thead>
                 <tr>
-                    <th >S.No.</th>
+                    <th>S.No.</th>
                     <th class="w-50">Plan Name</th>
                     <th class="w-25">Action</th>
                 </tr>
@@ -74,14 +76,13 @@
     (function($) {
         $(window).on("load", function() {
             $(".contents").mCustomScrollbar({
-                theme: "dark"
-                , scrollInertia: 300
-                , axis: "y"
-                , autoHideScrollbar: false, // Keeps
+                theme: "dark",
+                scrollInertia: 300,
+                axis: "y",
+                autoHideScrollbar: false, // Keeps
             });
         });
     })(jQuery);
-
 </script>
 
 

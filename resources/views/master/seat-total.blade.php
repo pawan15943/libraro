@@ -17,37 +17,44 @@
 @endif
 
 <!-- Masters -->
-
-
-<div class="card card-default">
-    <!-- Add Library User Form -->
-    <div class="card-body">
-        <form id="library_seat" enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="branch_id" value="{{getCurrentBranch()}}">
-            <input type="hidden" name="library_id" value="{{getLibraryId()}}">
-            <input type="hidden" name="databasemodel" value="Hour">
-            <input type="hidden" name="redirect" value="{{ route('branch.list') }}">
-            <div class="row g-3">
-                <div class="col-lg-12">
-                    <label for="">Add Seats to Library Branch <span>*</span></label>
-                    <input type="text" name="seats" class="form-control @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats', $seats->seats ?? '') }}">
-                    @error('seats')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                </div>
-                <div class="col-lg-12">
-                    <button type="submit" class="btn btn-primary button"><i
-                            class="fa fa-plus"></i>
-                        Add Seats</button>
-                </div>
-            </div>
-        </form>
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> You can add your library <em><b>Total Seats</b></em> here that will show in booking form automatically.
+            <br> <b>Note:</b> If you want to change the <em><b>Total Seats</b></em>, you can edit it here.
+        </p>
     </div>
+</div>
 
-    
+<div class="card ">
+
+    <form id="library_seat" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="branch_id" value="{{getCurrentBranch()}}">
+        <input type="hidden" name="library_id" value="{{getLibraryId()}}">
+        <input type="hidden" name="databasemodel" value="Hour">
+        <input type="hidden" name="redirect" value="{{ route('branch.list') }}">
+        <div class="row g-3">
+            <div class="col-lg-12">
+                <label for="">Add Seats to Library Branch <span>*</span></label>
+                <input type="text" name="seats" class="form-control @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats', $seats->seats ?? '') }}">
+                @error('seats')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                @enderror
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary button"><i
+                        class="fa fa-plus"></i>
+                    Add Seats</button>
+            </div>
+        </div>
+    </form>
+
+
+
 </div>
 
 

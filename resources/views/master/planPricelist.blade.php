@@ -17,44 +17,41 @@
 @endif
 
 <!-- Masters -->
-  
+<div class="heading-list justify-content-end">
+    @if(getCurrentBranch() !=0)
+    <a href="{{ route('planPrice.create') }}" class="btn btn-primary export">
+        <i class="fa-solid fa-plus "></i> Add Plan Price
+    </a>
+    @endif
+</div>
 
-<div class="card card-default">
-    <div class="col-lg-4">
-        @if(getCurrentBranch() !=0)
-        <a href="{{ route('planPrice.create') }}" class="btn btn-primary export">
-            <i class="fa-solid fa-plus "></i> Add Plan Price 
-        </a>
-        @endif
-    </div>
-    <!-- List of Users -->
-    <div class="card-body p-0">
-        <h4 class="px-3 py-2">Plan Price</h4>
-        <div class="table-responsive">
-            <table class="table table-hover dataTable m-0" id="datatable">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Plan Name</th>
-                        <th>Plan Type Name</th>
-                        <th>Plan Price</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-              
-                <tbody>
-                    @if(count($data) > 0)
-                    @foreach($data as $key => $value)
-                    <tr>
-                        <td>{{ $key+1 }}</td>
-                        <td>{{ $value->plan->name }}</td>
-                        <td>{{ $value->planType->name }}</td>
-                        <td>{{ $value->price }}</td>
-                       
+<!-- List of Users -->
+<div class="card p-0 mb-4">
+    <div class="table-responsive">
+        <table class="table text-center" id="datatable-plantype">
+            <thead>
+                <tr>
+                    <th>S.No.</th>
+                    <th>Plan Name</th>
+                    <th>Plan Type Name</th>
+                    <th>Plan Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
 
-                        <td>
-                             <ul class="actionalbls">
-                                 <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
+            <tbody>
+                @if(count($data) > 0)
+                @foreach($data as $key => $value)
+                <tr>
+                    <td>{{ $key+1 }}</td>
+                    <td>{{ $value->plan->name }}</td>
+                    <td>{{ $value->planType->name }}</td>
+                    <td>{{ $value->price }}</td>
+
+
+                    <td>
+                        <ul class="actionalbls">
+                           <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
                                         @if($value->deleted_at)
                                         <i class="fas fa-cross"></i>
                                         @else
@@ -62,17 +59,16 @@
                                         @endif</a></li>
                                 <li><a href="{{route('planPrice.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
                                 <li><a href="javascript:void(0)" class="delete-btn" data-id="{{ $value->id }}" data-table="PlanPrice" title="Delete"><i class="fa fa-trash"></i></a></li>
-
-                            </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                    @endif
-                </tbody>
-            </table>
-        </div>
+                        </ul>
+                    </td>
+                </tr>
+                @endforeach
+                @endif
+            </tbody>
+        </table>
     </div>
 </div>
+
 
 
 

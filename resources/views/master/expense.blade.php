@@ -16,35 +16,44 @@
 </div>
 @endif
 
-<!-- Masters -->
+
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif library daily and monthly expenses name.
+        </p>
+    </div>
+</div>
+
 
 
 <div class="card">
-    
-        <form id="library_expense" enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="id" value="{{ $expense->id ?? '' }}">
-            
-            <input type="hidden" name="databasemodel" value="Expense">
-            <input type="hidden" name="redirect" value="{{ route('expense.index') }}">
-            <div class="row g-4">
-                <div class="col-lg-12">
-                    <label for="class_name"> Expense Name<sup class="text-danger">*</sup> </label>
-                    <input type="text" name="name"  class="form-control char-only @error('name') is-invalid @enderror" value="{{ old('name', $expense->name ?? '') }}">
-                    @error('name')
-                    <span class="invalid-feedback" role="alert">
-                        {{ $message }}
-                    </span>
-                    @enderror
-                </div>
-                <div class="col-lg-3">
-                    <button type="submit" class="btn btn-primary button"><i
-                            class="fa fa-plus"></i>
-                        Add Expense</button>
-                </div>
+
+    <form id="library_expense" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="id" value="{{ $expense->id ?? '' }}">
+
+        <input type="hidden" name="databasemodel" value="Expense">
+        <input type="hidden" name="redirect" value="{{ route('expense.index') }}">
+        <div class="row g-4">
+            <div class="col-lg-12">
+                <label for="class_name"> Expense Name<sup class="text-danger">*</sup> </label>
+                <input type="text" name="name" class="form-control char-only @error('name') is-invalid @enderror" value="{{ old('name', $expense->name ?? '') }}">
+                @error('name')
+                <span class="invalid-feedback" role="alert">
+                    {{ $message }}
+                </span>
+                @enderror
             </div>
-        </form>
-    
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary button"><i
+                        class="fa fa-plus"></i>
+                    Add Expense</button>
+            </div>
+        </div>
+    </form>
+
 </div>
 
 
