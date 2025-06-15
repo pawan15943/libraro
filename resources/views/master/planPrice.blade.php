@@ -18,8 +18,16 @@
 
 <!-- Masters -->
 
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif the pricing details for all your plans and library shift schedules.
+        </p>
+    </div>
+</div>
 
-<div class="card">     
+<div class="card">
     <form id="planPriceForm" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{ $planPrice->id ?? '' }}">
@@ -27,20 +35,18 @@
         <input type="hidden" name="branch_id" value="{{getCurrentBranch()}}">
         <input type="hidden" name="redirect" value="{{ route('planPrice.index') }}">
         <input type="hidden" name="databasemodel" value="PlanPrice">
+
         <div class="row g-4">
             <div class="col-lg-4">
-                
                 <label for="">Plan Name <span>*</span></label>
                 <select name="plan_id" id="price_plan_id" class="form-select @error('plan_id') is-invalid @enderror event">
                     <option value="">Select Plan</option>
                     @foreach ($plans as $value)
                     @if($value->plan_id==1)
-                    
-                    
                     <option value="{{ $value->id }}" {{ isset($planPrice) && $planPrice->plan_id == $value->id ? 'selected' : '' }}>
                         {{ $value->name }}
                     </option>
-                        @endif
+                    @endif
                     @endforeach
                 </select>
                 @error('plan_id')
@@ -49,6 +55,7 @@
                 </span>
                 @enderror
             </div>
+
             <div class="col-lg-4">
                 <label> Plan Type<sup class="text-danger">*</sup></label>
                 <select name="plan_type_id" id="plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror event">
@@ -66,6 +73,7 @@
                 </span>
                 @enderror
             </div>
+
             <div class="col-lg-4">
                 <label for="">Plan Price <span>*</span></label>
                 <input type="text" name="price" class="form-control digit-only @error('price') is-invalid @enderror" id="price" placeholder="Enter Price" value="{{ old('price', isset($planPrice) ? $planPrice->price : '') }}">
@@ -75,10 +83,12 @@
                 </span>
                 @enderror
             </div>
-            <div class="col-lg-3">
+
+            <div class="col-lg-2">
                 <button type="submit" class="btn btn-primary button"><i
                         class="fa fa-plus"></i>
-                    Add Plan Price</button>
+                    @if(isset($plantypes)) Add Plan Price @else Edit Plan Price @endif
+                </button>
             </div>
         </div>
     </form>

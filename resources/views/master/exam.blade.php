@@ -17,7 +17,14 @@
 @endif
 
 <!-- Masters -->
-
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif library exams name.
+        </p>
+    </div>
+</div>
 
 <div class="card card-default">
 
@@ -37,7 +44,7 @@
                 </span>
                 @enderror
             </div>
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <button type="submit" class="btn btn-primary button"><i class="fa fa-plus"></i>
                     Add Exam</button>
             </div>
@@ -61,14 +68,13 @@
     (function($) {
         $(window).on("load", function() {
             $(".contents").mCustomScrollbar({
-                theme: "dark"
-                , scrollInertia: 300
-                , axis: "y"
-                , autoHideScrollbar: false, // Keeps
+                theme: "dark",
+                scrollInertia: 300,
+                axis: "y",
+                autoHideScrollbar: false, // Keeps
             });
         });
     })(jQuery);
-
 </script>
 
 

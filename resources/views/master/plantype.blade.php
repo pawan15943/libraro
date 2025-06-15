@@ -22,6 +22,15 @@
 @endif
 <!-- Masters -->
 
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif Plan Type / Shifts for your library.
+        </p>
+    </div>
+</div>
+
 
 <div class="card">
     <!-- Add Library User Form -->
@@ -31,27 +40,27 @@
         <input type="hidden" name="library_id" value="{{ getLibraryId() }}">
         <input type="hidden" name="databasemodel" value="PlanType">
         <input type="hidden" name="redirect" value="{{ route('plantype.index') }}">
-    
+
         <div class="row g-4">
             <div class="col-lg-4">
                 <label for="plantype_name">Plan Type Name <span>*</span></label>
                 <select class="form-select @error('day_type_id') is-invalid @enderror" name="day_type_id" id="plantype_name">
                     <option value="">Select Plan Type</option>
                     @can('has-permission', 'Full Day')
-                        <option value="1" {{ old('day_type_id', $planType->day_type_id ?? '') == 1 ? 'selected' : '' }}>Full Day</option>
+                    <option value="1" {{ old('day_type_id', $planType->day_type_id ?? '') == 1 ? 'selected' : '' }}>Full Day</option>
                     @endcan
                     @can('has-permission', 'First Half')
-                        <option value="2" {{ old('day_type_id', $planType->day_type_id ?? '') == 2 ? 'selected' : '' }}>First Half</option>
+                    <option value="2" {{ old('day_type_id', $planType->day_type_id ?? '') == 2 ? 'selected' : '' }}>First Half</option>
                     @endcan
                     @can('has-permission', 'Second Half')
-                        <option value="3" {{ old('day_type_id', $planType->day_type_id ?? '') == 3 ? 'selected' : '' }}>Second Half</option>
+                    <option value="3" {{ old('day_type_id', $planType->day_type_id ?? '') == 3 ? 'selected' : '' }}>Second Half</option>
                     @endcan
-                    
+
                     @can('has-permission', 'All Day')
-                        <option value="8" {{ old('day_type_id', $planType->day_type_id ?? '') == 8 ? 'selected' : '' }}>All Day</option>
+                    <option value="8" {{ old('day_type_id', $planType->day_type_id ?? '') == 8 ? 'selected' : '' }}>All Day</option>
                     @endcan
                     @can('has-permission', 'Full Night')
-                        <option value="9" {{ old('day_type_id', $planType->day_type_id ?? '') == 9 ? 'selected' : '' }}>Full Night</option>
+                    <option value="9" {{ old('day_type_id', $planType->day_type_id ?? '') == 9 ? 'selected' : '' }}>Full Night</option>
                     @endcan
                     <option value="0" {{ old('day_type_id', $planType->day_type_id ?? '') == 0 ? 'selected' : '' }}>Custom</option>
                 </select>
@@ -60,9 +69,9 @@
                     <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->custom_plan_type ?? '') }}">
                 </div>
                 @error('day_type_id')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
                 @enderror
             </div>
 
@@ -70,9 +79,9 @@
                 <label for="start_time">Start Time <span>*</span></label>
                 <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time">
                 @error('start_time')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
                 @enderror
             </div>
 
@@ -80,9 +89,9 @@
                 <label for="end_time">End Time <span>*</span></label>
                 <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" name="end_time" value="{{ old('end_time', $planType->end_time ?? '') }}" placeholder="Select end time">
                 @error('end_time')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
                 @enderror
             </div>
 
@@ -90,9 +99,9 @@
                 <label for="slot_hours">Slot Duration <span>*</span></label>
                 <input type="text" id="slot_hours" class="form-control @error('slot_hours') is-invalid @enderror no-validate" name="slot_hours" readonly value="{{ old('slot_hours', $planType->slot_hours ?? '') }}" placeholder="Slot duration">
                 @error('slot_hours')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
                 @enderror
             </div>
 
@@ -107,7 +116,7 @@
                 </select>
             </div>
 
-            
+
         </div>
         <div class="row mt-4">
             <div class="col-lg-3">
@@ -116,7 +125,7 @@
                 </button>
             </div>
         </div>
-    </form>    
+    </form>
 </div>
 
 

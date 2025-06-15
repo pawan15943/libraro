@@ -790,12 +790,7 @@ ul.plan-features li+li {
 }
 
 /* Seat Assignment */
-.seat-booking {
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: .8rem;
-    column-gap: 7.6px;
-}
+
 
 .seat {
     flex: 0 0 calc(100% / 9);
@@ -2721,7 +2716,7 @@ a.btn.btn-primary.button.box-shadow.disabled.renew {
 
 .seat-booking {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 10px;
 }
 
@@ -2733,6 +2728,9 @@ a.btn.btn-primary.button.box-shadow.disabled.renew {
     position: relative;
     background: var(--c5);
     box-shadow: 1px 0 5px #00000017;
+    padding: 1rem .5rem;
+    transition: transform 0.3s ease;
+    cursor: pointer;
 }
 
 
@@ -5582,4 +5580,19 @@ button.btn.btn-danger.btn-sm.remove-existing-image {
 
 .form-select:disabled {
     background-color: #f5f5f5;
+}
+
+ul#pills-tab {
+    justify-content: right;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show>.nav-link {
+    background-color: #000000;
+}
+
+.nav-pills .nav-link,
+.nav-pills .show>.nav-link {
+    background-color: #fff;
+    margin-left: 1rem;
 }

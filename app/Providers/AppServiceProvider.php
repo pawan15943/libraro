@@ -258,11 +258,84 @@ class AppServiceProvider extends ServiceProvider
                 'Plan List' => route('plan.index'),
                 'Add Plan' => route('plan.create'),
             ],
+            'branch.list' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+            ],
             'plan.create' => [
                 'Dashboard' => route('library.home'),
                 'Plan List' => route('plan.index'),
                 'Edit Plan' => route('plan.create', $parameters),
             ],
+
+            'planType.create' => [
+                'Dashboard' => route('library.home'),
+                'Plantype List' => route('plantype.index'),
+                'Add Plan Type' => route('planType.create', $parameters),
+            ],
+            'planPrice.create' => [
+                'Dashboard' => route('library.home'),
+                'Plantype Price List' => route('planPrice.index'),
+                'Add Plantype Price' => route('planPrice.create', $parameters),
+            ],
+
+            'expense.create' => [
+                'Dashboard' => route('library.home'),
+                'Expense List' => route('expense.index'),
+                'Add Expense' => route('expense.create', $parameters),
+            ],
+            'exam.create' => [
+                'Dashboard' => route('library.home'),
+                'Exams List' => route('exam.index'),
+                'Add Exam' => route('exam.create', $parameters),
+            ],
+            'branch.create' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+                'Add Branch' => route('branch.create', $parameters),
+            ],
+            'seat.create' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+                'Add Seat to Library' => route('seat.create', $parameters),
+            ],
+            'hour.create' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+                'Add Library Operating Hours' => route('hour.create', $parameters),
+            ],
+            'extendDay.create' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+                'Add Library Extend Period' => route('extendDay.create', $parameters),
+            ],
+            'lockeramount.create' => [
+                'Dashboard' => route('library.home'),
+                'Branch List' => route('branch.list', $parameters),
+                'Add Library Locker Amount' => route('lockeramount.create', $parameters),
+            ],
+
+            'plantype.index' => [
+                'Dashboard' => route('library.home'),
+                'Plantype List ' => route('plantype.index'),
+            ],
+            'planPrice.index' => [
+                'Dashboard' => route('library.home'),
+                'Plantype Price List ' => route('planPrice.index'),
+            ],
+            'expense.index' => [
+                'Dashboard' => route('library.home'),
+                'Expense List ' => route('expense.index'),
+            ],
+            'exam.index' => [
+                'Dashboard' => route('library.home'),
+                'Exams List ' => route('exam.index'),
+            ],
+            'learner.search' => [
+                'Dashboard' => route('library.home'),
+                'Find a Learner' => route('learner.search'),
+            ],
+
 
             // Learner Bread crumb
 
@@ -377,7 +450,18 @@ class AppServiceProvider extends ServiceProvider
             'books-library' => 'Library Books',
             'learner.feadback' => 'Feedback',
             'support' => 'Support',
+            'seat.create' => 'Add Seats to Library',
 
+            'branch.list' => 'Branche List',
+            'plan.create' => 'Plan List',
+            'plantype.index' => 'Plantype | Shifts List',
+            'planPrice.index' => 'Plan Type | Shifts Price List',
+            'expense.index' => 'Expense List',
+            'exam.index' => 'Exams List',
+            'learner.search' => 'Find a Learner',
+            'hour.create' => 'Add Library Operating Hours',
+            'extendDay.create' => 'Add Library Extend Period',
+            'lockeramount.create' => 'Add Library Locker Amount',
         ];
 
         return $titles[$routeName] ?? ucfirst(str_replace('.', ' ', $routeName));

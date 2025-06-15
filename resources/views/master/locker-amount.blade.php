@@ -17,17 +17,25 @@
 @endif
 
 <!-- Masters -->
+<div class="row">
+    <div class="col-lg-12">
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            <b>Important :</b> You can add your library <em><b>Locker Amount</b></em> here that will show in booking form automatically.
+            <br> <b>Note:</b> If you want to change the <em><b>Locker Amount</b></em>, you can edit it here.
+        </p>
+    </div>
+</div>
 
 
-<div class="card card-default">
-    <!-- Add Library User Form -->
-    <div class="card-body">
-       <form id="extend_hour" class="validateForm" enctype="multipart/form-data">
+<div class="card">
+
+    <form id="extend_hour" class="validateForm" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{$locker_amount->id}}">
         <input type="hidden" name="library_id" value="{{getLibraryId()}}">
         <input type="hidden" name="databasemodel" value="Branch">
-         <input type="hidden" name="redirect" value="{{ route('branch.list') }}">
+        <input type="hidden" name="redirect" value="{{ route('branch.list') }}">
         <div class="row g-3">
             <div class="col-lg-12">
                 <label for="">Library Locker Amount <span>*</span></label>
@@ -38,16 +46,16 @@
                 </span>
                 @enderror
             </div>
-            <div class="col-lg-12">
+            <div class="col-lg-2">
                 <button type="submit" class="btn btn-primary button"><i
                         class="fa fa-plus"></i>
                     Add Amount</button>
             </div>
-        </div>
+
     </form>
 </div>
 
-    
+
 </div>
 
 
