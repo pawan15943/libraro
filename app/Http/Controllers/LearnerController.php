@@ -104,23 +104,12 @@ class LearnerController extends Controller
 
         foreach ($userUpdates as $userUpdate) {
             $today = date('Y-m-d');
-
-            \Log::info("Processing Learner ID: {$userUpdate->id} for status update.");
-
             $customerdatas = LearnerDetail::where('learner_id', $userUpdate->id)->where('status', 1)->get();
 
-            \Log::info("Customer Details for Learner ID {$userUpdate->id}: ", $customerdatas->toArray());
-
-
             $extend_day = getExtendDays();
-            \Log::info("Extend days: {$extend_day} for Library ID: " . getLibraryId());
-
-
             foreach ($customerdatas as $customerdata) {
                 $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
-                \Log::info("Learner ID {$userUpdate->id} Plan End Date with Extension: {$planEndDateWithExtension}. Today's Date: {$today}");
-
-                // Check if learner has a future plan_end_date and a past plan_end_date
+               
                 $current_date = Carbon::today();
                 $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
                     ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
@@ -130,10 +119,6 @@ class LearnerController extends Controller
                     ->exists();
 
                 $isRenewed = $hasFuturePlan && $hasPastPlan;
-
-                // Log the renewal status
-                \Log::info("Renewal Status for Learner ID {$userUpdate->id}: " . ($isRenewed ? 'Renewed' : 'Not Renewed'));
-
 
                 if ($planEndDateWithExtension->lte($today)) {
                     $userUpdate->update(['status' => 0]);
@@ -154,64 +139,6 @@ class LearnerController extends Controller
             }
         }
     }
-
-
-
-    protected function seat_availablity(Request $request)
-    {
-
-        $plan_type_id = $request->plan_type_id;
-        $seat_id = $request->seat_id;
-
-        if (!$seat_id) {
-            $learnerData = Learner::where('id', $request->user_id)->first();
-            $library_id = $learnerData->library_id;
-            $seat = Seat::where('library_id', $library_id)->where('seat_no', $request->seat_no)->first();
-            $seat_id = $seat->id;
-        }
-
-
-        $this->seat_availablity_update($seat_id, $plan_type_id);
-    }
-    protected function seat_availablity_update($seat_id, $plan_type_id)
-    {
-        $seat = Seat::where('id', $seat_id)->first();
-
-        $available = 5;
-        $day_type_id = PlanType::where('id', $plan_type_id)->select('day_type_id')->first();
-
-        if ($seat->is_available == 1 && $day_type_id->day_type_id == 1) {
-
-            $available = 5;
-        } elseif ($seat->is_available == 1 && $day_type_id->day_type_id == 2) {
-
-            $available = 2;
-        } elseif ($seat->is_available == 1 && $day_type_id->day_type_id == 3) {
-
-            $available = 3;
-        } elseif ($seat->is_available == 1 && ($day_type_id->day_type_id == 4 || $day_type_id->day_type_id == 5 || $day_type_id->day_type_id == 6 || $day_type_id->day_type_id == 7)) {
-
-            $available = 4;
-        } elseif ($seat->is_available == 2 && $day_type_id->day_type_id == 3) {
-
-            $available = 5;
-        } elseif ($seat->is_available == 2 && ($day_type_id->day_type_id == 6 || $day_type_id->day_type_id == 7)) {
-
-            $available = 4;
-        } elseif ($seat->is_available == 3 && ($day_type_id->day_type_id == 4 || $day_type_id->day_type_id == 5)) {
-
-            $available = 4;
-        } elseif ($seat->is_available == 3 && $day_type_id->day_type_id == 2) {
-
-            $available = 5;
-        } elseif ($seat->is_available == 4 && ($day_type_id->day_type_id == 2 || $day_type_id->day_type_id == 3 || $day_type_id->day_type_id == 4 || $day_type_id->day_type_id == 5 || $day_type_id->day_type_id == 6 || $day_type_id->day_type_id == 5)) {
-            $available = 4;
-        }
-
-        // Update seat availability
-        $update = Seat::where('id', $seat_id)->update(['is_available' => $available]);
-    }
-
 
     public function index()
     {
@@ -566,17 +493,7 @@ class LearnerController extends Controller
             return redirect()->route('learners')->with('success', 'Learner updated successfully.');
         }
     }
-    public function getPricePlanwiseUpgrade(Request $request)
-    {
-        // if ($request->update_plan_type_id && $request->update_plan_id) {
-
-        //     $planId = $request->update_plan_type_id;
-
-        //     $PlanpPrice = PlanPrice::where('plan_type_id', $planId)->where('plan_id', $request->update_plan_id)->pluck('price', 'id');
-
-        //     return response()->json($PlanpPrice);
-        // }
-    }
+ 
 
     public function getPlanTypeSeatWise(Request $request)
     {
@@ -1240,6 +1157,9 @@ class LearnerController extends Controller
             }
             if ($status == 1) {
                 $customer->hours = $hours;
+               LearnerDetail::where('learner_id', $customer->id)
+                ->where('id', '!=', $learner_detail->id)
+                ->update(['status' => 0]);
             }
             $customer->save();
             DB::commit();
@@ -1736,7 +1656,7 @@ class LearnerController extends Controller
            
             
 
-            // $this->seat_availablity($request);
+         
             // learner log table update
             DB::table('learner_operations_log')->insert([
                 'learner_id' => $customer->id,
@@ -2091,7 +2011,7 @@ class LearnerController extends Controller
         $LearnerDetail->save();
         $LearnerDetail = LearnerDetail::where('learner_id', $customer->id)->first();
         $LearnerDetail->save();
-        // $this->seat_availablity($request);
+     
 
         $this->dataUpdate();
         return redirect()->route('learners')->with('success', 'Learner updated successfully.');
@@ -2099,10 +2019,7 @@ class LearnerController extends Controller
 
     public function learnerLog(Request $request)
     {
-        // Log the incoming request data
-        Log::info('Incoming Request Data:', $request->all());
-
-        // Validate the request and catch any validation errors
+        
         try {
             $validatedData = $request->validate([
                 'learner_id' => 'required|integer',
@@ -2114,7 +2031,7 @@ class LearnerController extends Controller
                 'operation' => 'required',
             ]);
 
-            Log::info('Validation Successful:', $validatedData);
+           
 
             $updated_user = $validatedData['updated_by'] ?? getLibraryId();
             $old_value = $validatedData['old_value'] ? $validatedData['old_value'] : $validatedData['operation'];
@@ -2694,4 +2611,61 @@ class LearnerController extends Controller
             return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
         }
     }
+
+    // public function dataTestStatus()
+    // {
+    //     $today = Carbon::today();
+    //     $futureCheckDate = $today->copy()->addDays(5);
+
+    //     $customerdatas = LearnerDetail::where('status', 1)->get();
+
+    //     foreach ($customerdatas as $customerdata) {
+    //         $branchId = $customerdata->branch_id;
+    //         $branch = $branchId ? Branch::find($branchId) : null;
+    //         $extend_day = $branch ? $branch->extend_days : 0;
+
+    //         $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+
+    //         $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+    //             ->where('plan_end_date', '>', $futureCheckDate)
+    //             ->where('status', 0)
+    //             ->exists();
+
+    //         $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+    //             ->where('plan_end_date', '<', $futureCheckDate)
+    //             ->exists();
+
+    //         $isRenewed = $hasFuturePlan && $hasPastPlan;
+
+    //         if ($planEndDateWithExtension->lte($today)) {
+    //             Learner::where('id', $customerdata->learner_id)
+    //                 ->where('status', '!=', 0)
+    //                 ->update(['status' => 0]);
+
+    //             $customerdata->update(['status' => 0]);
+    //         } elseif ($isRenewed) {
+    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
+    //                 ->where('plan_start_date', '<=', $today)
+    //                 ->where('plan_end_date', '>', $futureCheckDate)
+    //                 ->update(['status' => 1]);
+
+    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
+    //                 ->where('plan_end_date', '<', $today)
+    //                 ->update(['status' => 0]);
+    //         } else {
+    //             Learner::where('id', $customerdata->learner_id)
+    //                 ->where('status', '!=', 1)
+    //                 ->update(['status' => 1]);
+
+    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
+    //                 ->where('status', 0)
+    //                 ->where('plan_start_date', '<=', $today)
+    //                 ->where('plan_end_date', '>', $today)
+    //                 ->update(['status' => 1]);
+    //         }
+           
+            
+    //     }
+    //      echo 'Learner statuses updated successfully.' ;
+    // }
 }

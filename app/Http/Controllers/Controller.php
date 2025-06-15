@@ -1238,52 +1238,7 @@ class Controller extends BaseController
         }
     }
 
-    private function handelSeats($library_id, $total_seats)
-    {
-        // Get the current seat count and the highest seat number for the library
-        $lastSeatNo = Seat::withoutGlobalScopes()->where('library_id', $library_id)
-            ->orderBy('seat_no', 'desc')
-            ->value('seat_no');
     
-        $current_seat_count = Seat::withoutGlobalScopes()->where('library_id', $library_id)->count();
-    
-        // If current seats are less than total seats, add missing seats
-        if ($current_seat_count < $total_seats) {
-            $startSeatNo = $lastSeatNo ? $lastSeatNo + 1 : 1; 
-            $seatsToAdd = [];
-          
-            // Calculate how many seats need to be added
-            $seatsToAddCount = $total_seats - $current_seat_count;
-    
-            for ($i = 0; $i < $seatsToAddCount; $i++) {
-                $seatsToAdd[] = [
-                    'seat_no' => $startSeatNo + $i,
-                    'library_id' => $library_id,
-                    'is_available' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-    
-            // Insert new seats into the database
-            Seat::withoutGlobalScopes()->where('library_id', $library_id)->insert($seatsToAdd);
-        }else{
-            return;
-        }
-    
-        // // If current seats are more than total seats, delete the excess seats
-        // if ($current_seat_count > $total_seats) {
-           
-        //     // Get the excess seat count to be removed
-        //     $seatsToRemoveCount = $current_seat_count - $total_seats;
-    
-        //     // Find the seat numbers to delete, ordering by seat_no in descending order
-        //     Seat::withoutGlobalScopes()->where('library_id', $library_id)->where('library_id', $library_id)
-        //         ->orderBy('seat_no', 'desc')
-        //         ->take($seatsToRemoveCount)
-        //         ->delete();
-        // }
-    }
 
     private function expenseAdd($library_id){
         $data=['Electricity Bill','Water Camper','Internet Wi-Fi','Papers','Repair & Maintenance','Tea & Snacks','Petrol','Flex Oreinting'];

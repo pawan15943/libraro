@@ -98,7 +98,7 @@ class BranchController extends Controller
             'seats'=>'required',
         ]);
         $validated['library_id']=getLibraryId();
-    // Extract hour and seats before creating branch
+   
         $hour = $validated['hour'];
         $seats = $validated['seats'];
         unset($validated['hour'], $validated['seats']); // remove from $validated
@@ -200,6 +200,11 @@ class BranchController extends Controller
             $library_logoNewName = "library_logo_" . time() . '.' . $library_logo->getClientOriginalExtension();
             $library_logo->move(public_path('uploads'), $library_logoNewName);
             $validated['library_logo'] = 'uploads/' . $library_logoNewName;
+        }
+        if(($request->longitude && $request->latitude) || $request->google_map){
+                $validated['is_profile'] =1;         
+        }else{
+            $validated['is_profile'] =0; 
         }
         
         $featuresJson = (isset($request->features) && $validated['features']) ? json_encode($validated['features']) : null;

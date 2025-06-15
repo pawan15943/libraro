@@ -810,13 +810,6 @@ class LibraryController extends Controller
                     ->withTrashed()
                     ->forceDelete();
     
-                // Step 3: Update the seat availability
-                Seat::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->update([
-                        'is_available' => 1,
-                        'total_hours' => 0,
-                    ]);
             });
     
             return response()->json(['message' => 'All learners and related data have been successfully deleted.']);
@@ -878,11 +871,7 @@ class LibraryController extends Controller
                     Log::info("No plans deleted.");
                 }
 
-                // Step 4: Delete records from Seat
-                Seat::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->forceDelete();
-
+             
                 // Step 5: Delete records from Hour
                 Hour::withoutGlobalScopes()
                     ->where('library_id', $libraryId)

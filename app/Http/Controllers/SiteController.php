@@ -18,6 +18,7 @@ use App\Models\Page;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Models\Setting;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -64,12 +65,12 @@ class SiteController extends Controller
         $cities = City::pluck('city_name', 'id');
         $topLibraries = Library::take(5)->get();
         $library_count = Library::count();
-        $learner_count = Learner::count();
+        $learner_counter = Learner::count();
         $city_count = City::count();
         $feedback_count = Feedback::count();
         $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->where('feedback.library_id', getLibraryId())->get();
 
-        return view('site.library-directory', compact('cities', 'topLibraries', 'learner_count', 'library_count', 'city_count', 'happy_customers', 'feedback_count'));
+        return view('site.library-directory', compact('cities', 'topLibraries', 'learner_counter', 'library_count', 'city_count', 'happy_customers', 'feedback_count'));
     }
     public function listPage()
     {
@@ -394,5 +395,28 @@ class SiteController extends Controller
             'status' => 'success',
             'message' => 'Inquiry submitted successfully!'
         ]);
+    }
+
+    public function videoIndex()
+    {
+        $videos = Setting::latest()->get();
+        return view('administrator.video-upload', compact('videos'));
+    }
+
+    public function videoStore(Request $request)
+    {
+        $data = $request->validate([
+            'video_titel' => 'required|string|max:255',
+            'youtube_link' => 'nullable|url',
+            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:20480', // 20MB max
+        ]);
+
+        if ($request->hasFile('video')) {
+            $data['video_path'] = $request->file('video')->store('videos', 'public');
+        }
+
+        Setting::create($data);
+
+        return redirect()->back()->with('success', 'Video uploaded!');
     }
 }

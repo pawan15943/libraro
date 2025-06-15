@@ -49,7 +49,7 @@
                                name="display_name"
                                value="{{ old('display_name', $branch->display_name ?? '') }}"
                                placeholder="Enter Branch name"
-                               {{ isset($branch) ? 'readonly' : '' }}>
+                               >
                         @error('display_name')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
