@@ -54,14 +54,14 @@
 
                         <td>
                              <ul class="actionalbls">
-                                 <li><a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Active/Deactive">
+                                 <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
                                         @if($value->deleted_at)
                                         <i class="fas fa-cross"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
                                 <li><a href="{{route('planPrice.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                                <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="Plan" title="Delete"><i class="fa fa-trash"></i></a></li>
+                                <li><a href="javascript:void(0)" class="delete-btn" data-id="{{ $value->id }}" data-table="PlanPrice" title="Delete"><i class="fa fa-trash"></i></a></li>
 
                             </ul>
                         </td>

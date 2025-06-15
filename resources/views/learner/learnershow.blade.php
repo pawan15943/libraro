@@ -279,7 +279,7 @@
                                             <ul class="actionalbls" style="width: 90px;">
                                                 {{-- @can('has-permission', 'View Seat')
                                                 <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                                @endcan --}}
+                                                @endcan  --}}
 
                                                 @can('has-permission', 'Receipt Generation')
                                                 @if($value->is_paid==1)
@@ -310,7 +310,7 @@
                         </div>
                     </div>
                 </div>
-                @if($seat_history->isNotEmpty())
+                @if(!is_null($seat_history) && $seat_history->isNotEmpty())
                 <h4 class="mt-4"> History of Previous Seat Owners</h4>
                 <div class="row g-4">
                     <div class="col-lg-12">
@@ -328,26 +328,27 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                   
+                                 
                                     @foreach ($seat_history as $learner)
+                                  
                                     <tr>
                                         <td>{{ $learner->name }}<br>
                                             <small>{{$learner->seat_no ?? 'General'}}</small>
-                                        </td> <!-- Owner Name -->
-                                        <td>{{ $learner->mobile }}</td> <!-- Mobile -->
-                                        <td>{{ $learner->email }}</td> <!-- Email -->
+                                        </td> 
+                                        <td>{{ $learner->mobile }}</td>
+                                        <td>{{ $learner->email }}</td>
 
-                                        <!-- Loop through learner details and display Plan, Start Date, End Date -->
+                                       
                                         @if ($learner->learnerDetails->isNotEmpty())
-                                        @php
-                                        $firstDetail = $learner->learnerDetails->first();
-                                        @endphp
-                                        <!-- Display the first learner detail in the same row -->
-                                        <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td> <!-- Plan Name -->
-                                        <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td> <!-- Start Date -->
-                                        <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td> <!-- End Date -->
+                                            @php
+                                            $firstDetail = $learner->learnerDetails->first();
+                                            @endphp
+                                        
+                                        <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
+                                        <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td> 
+                                        <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td> 
                                         <td>
-                                            <!-- Action buttons for the first learner detail -->
+                                           
                                             <ul class="actionalbls" style="width: 90px;">
                                                 @can('has-permission', 'View Seat')
                                                 <li><a href="{{route('learners.show',$firstDetail->learner_id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
@@ -363,18 +364,20 @@
                                                     </form>
                                                 </li>
                                                 @endcan
-                                                {{-- <li><a href="" title="Download Receipt"><i class="fa-solid fa-download"></i></a></li> --}}
+                                               
                                             </ul>
                                         </td>
                                     </tr>
 
-                                    <!-- Display additional learner details in new rows (if any) -->
+                                  
                                     @foreach ($learner->learnerDetails->skip(1) as $detail)
                                     <tr>
-                                        <td colspan="3"></td> <!-- Empty columns for owner name, mobile, and email -->
-                                        <td>{{ $detail->plan->name ?? 'N/A' }}</td> <!-- Plan Name -->
-                                        <td>{{ $detail->start_date ?? 'N/A' }}</td> <!-- Start Date -->
-                                        <td>{{ $detail->end_date ?? 'N/A' }}</td> <!-- End Date -->
+                                        <td ></td> 
+                                        <td ></td> 
+                                        <td ></td> 
+                                        <td>{{ $detail->plan->name ?? 'N/A' }}</td> 
+                                        <td>{{ $detail->plan_start_date ?? 'N/A' }}</td> 
+                                        <td>{{ $detail->plan_end_date ?? 'N/A' }}</td> 
                                         <td>
                                             <ul class="actionalbls" style="width: 90px;">
                                                 @can('has-permission', 'View Seat')
@@ -399,7 +402,7 @@
                                     </tr>
                                     @endforeach
                                     @else
-                                    <!-- If no learner details are available, show 'N/A' -->
+                                    
                                     <td colspan="4">No details available</td>
                                     </tr>
                                     @endif

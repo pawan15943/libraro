@@ -59,7 +59,7 @@
 
                                 <li><a href="{{route('branch.edit',$value->id)}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i></a>
                                 </li>
-                                <li>
+                                {{-- <li>
                                     <form action="{{ route('branch.destroy', $value->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this branch?');" style="display:inline-block;">
                                         @csrf
                                         @method('DELETE')
@@ -67,7 +67,7 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                </li>
+                                </li> --}}
 
 
                             </ul>

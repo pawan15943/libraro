@@ -413,7 +413,7 @@ class MasterController extends Controller
     public function planTypeView()
     {
       
-        $data = PlanType::get(); 
+        $data = PlanType::withTrashed()->get(); 
 
         return view('master.plantype-list', compact('data'));
     }
@@ -433,7 +433,7 @@ class MasterController extends Controller
     public function planView()
     {
       
-        $data = Plan::get(); 
+        $data = Plan::withTrashed()->get(); 
 
         return view('master.planlist', compact('data'));
     }
@@ -582,6 +582,35 @@ class MasterController extends Controller
             }
         }
     }
+     public function deleteMaster(Request $request, $id){
+        $table = $request->input('table');
+        $modelClass = 'App\\Models\\' . $table;
+      
+
+        if (!class_exists($modelClass)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
+        }
+         $data = $modelClass::withTrashed()->find($id);
+
+        if ($data) {
+            if ($data->trashed()) {
+                $data->restore();
+                $status = 'activated';
+            } else {
+                $data->delete();
+                $status = 'deactivated';
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data successfully ' . $status,
+                'data_status' => $status
+            ]);
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+        }
+     }
+    
 
 
     protected function conditionFunction(Request $request, $day_type = null)
@@ -751,62 +780,21 @@ class MasterController extends Controller
 
   
 
-   public function getLibraries(Request $request)
-{
-    Log::info("No request");
+    public function getLibraries(Request $request)
+    {
+        Log::info("No request");
 
-    $query = $request->input('query');
-    $suggestion = $request->input('suggestion');
-    $city = $request->input('city');
+        $query = $request->input('query');
+        $suggestion = $request->input('suggestion');
+        $city = $request->input('city');
 
-    Log::info("request", ['query' => $query, 'suggestion' => $suggestion, 'city' => $city]);
+        Log::info("request", ['query' => $query, 'suggestion' => $suggestion, 'city' => $city]);
 
-    $libraries = DB::table('branches as b')
-        ->join('libraries as l', 'l.id', '=', 'b.library_id')
-        ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
-        ->where('l.is_paid', 1)
-        ->where('l.is_profile', 1)
-        ->select(
-            'b.id as id',
-            'b.library_id',
-            'b.library_address',
-            'b.name as library_name',
-            'b.google_map',
-            'b.state_id',
-            'b.city_id',
-            'b.library_logo',
-            'b.slug',
-            'h.seats'
-        );
-
-    // Apply filters
-    if ($suggestion) {
-        $libraries->where(function ($q) use ($suggestion) {
-            $q->where('b.name', 'like', "%$suggestion%")
-              ->orWhere('b.library_address', 'like', "%$suggestion%");
-        });
-    } elseif ($query) {
-        $libraries->where(function ($q) use ($query) {
-            $q->where('b.name', 'like', "%$query%")
-              ->orWhere('b.library_address', 'like', "%$query%");
-        });
-    } elseif ($city) {
-        $libraries->where('b.city_id', $city);
-    } else {
-        $libraries->take(5);
-    }
-
-    $results = $libraries->get();
-
-    // Fallback for completely empty search
-    if ($results->isEmpty() && !$query && !$suggestion && !$city) {
-        $results = DB::table('branches as b')
+        $libraries = DB::table('branches as b')
             ->join('libraries as l', 'l.id', '=', 'b.library_id')
             ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
             ->where('l.is_paid', 1)
             ->where('l.is_profile', 1)
-            ->inRandomOrder()
-            ->take(5)
             ->select(
                 'b.id as id',
                 'b.library_id',
@@ -818,19 +806,68 @@ class MasterController extends Controller
                 'b.library_logo',
                 'b.slug',
                 'h.seats'
-            )
-            ->get();
+            );
+
+        // Apply filters
+        if ($suggestion) {
+            $libraries->where(function ($q) use ($suggestion) {
+                $q->where('b.name', 'like', "%$suggestion%")
+                ->orWhere('b.library_address', 'like', "%$suggestion%");
+            });
+        } elseif ($query) {
+            $libraries->where(function ($q) use ($query) {
+                $q->where('b.name', 'like', "%$query%")
+                ->orWhere('b.library_address', 'like', "%$query%");
+            });
+        } elseif ($city) {
+            $libraries->where('b.city_id', $city);
+        } else {
+            $libraries->take(5);
+        }
+
+        $results = $libraries->get();
+
+        // Fallback for completely empty search
+        if ($results->isEmpty() && !$query && !$suggestion && !$city) {
+            $results = DB::table('branches as b')
+                ->join('libraries as l', 'l.id', '=', 'b.library_id')
+                ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
+                ->where('l.is_paid', 1)
+                ->where('l.is_profile', 1)
+                ->inRandomOrder()
+                ->take(5)
+                ->select(
+                    'b.id as id',
+                    'b.library_id',
+                    'b.library_address',
+                    'b.name as library_name',
+                    'b.google_map',
+                    'b.state_id',
+                    'b.city_id',
+                    'b.library_logo',
+                    'b.slug',
+                    'h.seats'
+                )
+                ->get();
+        }
+
+    
+        return response()->json($results);
     }
 
-   
-    return response()->json($results);
-}
-
-  public function planPriceView()
+    public function planPriceView()
     {
         
         if(getCurrentBranch() !=0){
-           $data = PlanPrice::with(['plan','planType'])->get(); 
+            $data = PlanPrice::with([
+            'plan' => function ($query) {
+                $query->withTrashed();
+            },
+            'planType' => function ($query) {
+                $query->withTrashed();
+            }
+        ])->withTrashed()->get();
+
         }else{
             $data =[];
         }
@@ -850,7 +887,7 @@ class MasterController extends Controller
         $plantypes =PlanType::get();       
         return view('master.planPrice', compact('planPrice','plantypes'));
     }
-   
+
     public function menu(){
         return view('master.menu');
     }

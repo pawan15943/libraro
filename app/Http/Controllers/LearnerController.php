@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Auth;
 use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+
 class LearnerController extends Controller
 {
     use LearnerQueryTrait;
@@ -1301,14 +1302,18 @@ class LearnerController extends Controller
         $renew_detail = LearnerDetail::where('learner_detail.learner_id', $customerId)
             ->with(['plan', 'planType'])
             ->get();
-
-
-
+            
         //seat history
-        $seat_history = $this->getAllLearnersByLibrary()
+
+        if($customer->seat_no){
+            $seat_history = $this->getAllLearnersByLibrary()
             ->where('seat_no', $customer->seat_no)
             ->where('id', '!=', $customerId)
             ->get();
+        }else{
+            $seat_history=null;
+        }
+       
 
         $transaction = LearnerTransaction::where('learner_id', $customerId)->where('learner_detail_id', $customer->learner_detail_id)
             ->orderBy('id', 'DESC')

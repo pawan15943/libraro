@@ -149,6 +149,9 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::post('/extend-day', [MasterController::class, 'extendDay'])->name('extendDay.store');
       
       Route::delete('/activeDeactive/{id}/toggle', [MasterController::class, 'activeDeactive'])->name('activeDeactive');
+      Route::delete('/delete-master/{id}', [MasterController::class, 'deleteMaster'])->name('master.delete');
+   
+
       //Report menu
       Route::get('monthly/create', [ReportController::class, 'monthlyReport'])->name('report.monthly');
       Route::get('report/expense/{year}/{month}', [ReportController::class, 'monthlyExpenseCreate'])->name('report.expense');

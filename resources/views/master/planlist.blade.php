@@ -1,6 +1,7 @@
 @extends('layouts.library')
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}" />
+
 <!-- Main content -->
 
 
@@ -25,7 +26,7 @@
 
 <div class="card p-0">
     <div class="table-responsive">
-        <table class="table text-center" id="datatable-plantype">
+        <table class="table text-center datatable" id="datatable-plan">
             <thead>
                 <tr>
                     <th >S.No.</th>
@@ -42,15 +43,15 @@
 
                     <td>
                         <ul class="actionalbls">
-                            <li><a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Active/Deactive">
+                            <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Active/Deactive">
                                     @if($value->deleted_at)
                                     <i class="fas fa-cross"></i>
                                     @else
                                     <i class="fa fa-check"></i>
                                     @endif</a></li>
                             <li><a href="{{route('plan.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                            <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="Plan" title="Delete"><i class="fa fa-trash"></i></a></li>
-
+                            <li><a href="javascript:void(0)" class="delete-btn" data-id="{{ $value->id }}" data-route="{{ route('master.delete', $value->id) }}" data-table="Plan" title="Delete"><i class="fa fa-trash"></i></a></li>
+                          
                         </ul>
                     </td>
                 </tr>

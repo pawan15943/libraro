@@ -258,7 +258,7 @@
 
         });
 
-        $(document).on('click', '.active-deactive , .delete', function(e) {
+        $(document).on('click', '.active-deactive1 , .delete1', function(e) {
             e.preventDefault();
             
             var dataId = $(this).data('id');
@@ -303,7 +303,59 @@
             }
 
         });
+
+
     });
+   
+    $(document).on('click', '.active-deactive ,.delete-btn', function (e) {
+        e.preventDefault();
+
+        let btn = $(this);
+        let dataId = btn.data('id');
+        let routeUrl ='{{ route("master.delete", ":id") }}'.replace(':id', dataId);;
+        let table = btn.data('table');
+        let row = $('#row-' + dataId); 
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `you want to change the status?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: routeUrl,
+                    type: 'DELETE',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        table: table
+                    },
+                    success: function (response) {
+                    Swal.fire({
+                            icon: 'success',
+                            title: 'Changed!',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Something went wrong while deleting.'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
 
 </script>
 
