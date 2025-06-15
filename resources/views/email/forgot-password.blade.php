@@ -17,19 +17,19 @@
         <!-- Content -->
         <div style="padding: 20px; color: #333333;">
             <!-- OTP Message -->
-            <div style="text-align: center; margin-bottom: 30px;">
+            <div style=" margin-bottom: 30px;">
                 <h2
                     style="font-size: 26px; font-weight: 600; font-family: 'Outfit', sans-serif; color: #000; margin-bottom: 15px;">
                     Reset Your Password – Action Required</h2>
                 <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">
-                    Dear [User's Name],
+                    Dear {{$name}},
                     <br>
-                    We received a request to reset your password for your [Your Platform Name] account. If you made this request, please click the link below to set a new password:
+                    We received a request to reset your password for your Libraro account. If you made this request, please click the link below to set a new password:
                 </p>
 
-                <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">🔗 <a href="" target="_blank">Reset Password</a></p>
+                <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">🔗 <a href="{{$resetLink}}" target="_blank">Reset Password</a></p>
 
-                <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">This link will expire in [X] hours for security reasons. If you didn’t request a password reset, please ignore this email—your account remains secure.</p>
+                <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">If you didn’t request a password reset, please ignore this email—your account remains secure.</p>
 
                 <p style="font-size: 16px; line-height: 1.8; font-family: 'Mulish', sans-serif;">If you need further assistance, feel free to contact our support team.</p>
 

@@ -123,14 +123,14 @@ $currentMonth = date('m');
                     @foreach($learners as $value)
                    
                     <tr>
-                        <td>{{$value->learner->seat_no}}<br>
+                        <td>{{$value->learner->seat_no ?? 'General'}}<br>
                             
                         </td>
-                        <td class="text-uppercase">{{$value->learner->name}}</td>
+                        <td class="text-uppercase">{{$value->learner->name ?? ''}}</td>
                      
-                       <td>{{$value->operation}}</td>
-                       <td class="text-danger">{{$value->old_value}}</td>
-                       <td class="text-success">{{$value->new_value}}</td>
+                       <td>{{$value->operation ?? ''}}</td>
+                       <td class="text-danger">{{$value->old_value ?? ''}}</td>
+                       <td class="text-success">{{$value->new_value ?? ''}}</td>
                        <td>{{$value->created_at}}</td>
                      
                     </tr>

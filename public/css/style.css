@@ -5569,6 +5569,12 @@ button.btn.btn-danger.btn-sm.remove-existing-image {
 
 /* Add User */
 
+.plan-description{
+        font-weight: 500 !important;
+    margin-bottom: .4rem ! IMPORTANT;
+    color: #ffffffa3 !important;
+}
+
 .d-flex.flex-wrap.permissions .form-check {
     width: calc(100% / 4 - 1rem);
 }

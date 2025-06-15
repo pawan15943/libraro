@@ -73,6 +73,7 @@
             
             <h1 id="subscription_fees_{{$subscription->id}}"></h1> 
             <h4>{{$subscription->name}}</h4>
+            <p class="m-0 text-white py-2 px-3 text-center plan-description" >{{$subscription->plan_description}}</p>
             <ul class="plan-features contents">
                 @foreach($premiumSub->permissions as $permission)
                 @if(in_array($permission->name, $subscribedPermissions))

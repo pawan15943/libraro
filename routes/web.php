@@ -43,6 +43,8 @@ Route::post('logout', [LoginController::class, 'logout'])->name('logout')->witho
 Route::group(['prefix' => 'library'], function () {
   Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request.library');
   Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email.library');
+
+  
   Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset.library');
   Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update.library');
 });

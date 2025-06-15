@@ -218,7 +218,7 @@ class ReportController extends Controller
             'search'  => $request->get('search'),
         ];
        
-        $query = LearnerDetail::where('library_id',getLibraryId())->with(['seat', 'plan', 'planType','learner']);
+        $query = LearnerDetail::where('library_id',getLibraryId())->with(['plan', 'planType','learner']);
         if(getCurrentBranch() !=0){
             $query->where('branch_id',getCurrentBranch());
         }
@@ -390,9 +390,7 @@ class ReportController extends Controller
             }
            
         }
-        // \DB::enableQueryLog();
-        // $learners = $query->get();
-        // dd(\DB::getQueryLog());
+      
        
         return $query->get();
     }

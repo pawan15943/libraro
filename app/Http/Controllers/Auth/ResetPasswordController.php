@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Helpers\HelperService;
 use App\Models\Library;
 use Illuminate\Support\Facades\Hash;
+use DB;
 
 class ResetPasswordController extends Controller
 {
@@ -29,7 +30,7 @@ class ResetPasswordController extends Controller
 
     public function showResetForm($token)
     {
-        return view('auth.library.passwords.reset')->with(['token' => $token]);
+        return view('auth.passwords.reset')->with(['token' => $token]);
     }
 
     public function reset(Request $request)
