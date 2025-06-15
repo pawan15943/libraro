@@ -5578,6 +5578,11 @@ button.btn.btn-danger.btn-sm.remove-existing-image {
     margin-top: 1.5rem;
 }
 
+h5.role-category-heading {
+    background: #f5f5f5;
+    padding: .5rem .8rem;
+}
+
 .form-select:disabled {
     background-color: #f5f5f5;
 }

@@ -48,48 +48,55 @@
                 </select>
             </div>
         </div>
-        <h4 class="py-4">Branch Permissions</h4>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <h4 class="py-4">Branch Permissions</h4>
+            <!-- Check All Option -->
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="checkAllPermissions">
+                <label class="form-check-label fw-bold" for="checkAllPermissions">
+                    Check All
+                </label>
+            </div>
+        </div>
+
 
         <div class="row ">
             <div class="col-lg-12">
-             
-                <!-- Check All Option -->
-                <div class="form-check mb-2 ">
-                    <input class="form-check-input" type="checkbox" id="checkAllPermissions">
-                    <label class="form-check-label fw-bold" for="checkAllPermissions">
-                        Check All
-                    </label>
-                </div>
+
+
 
                 <!-- Permissions List -->
-                <div class="d-flex flex-wrap permissions">
-                   @foreach($groupedPermissions as $categoryId => $permissions)
-                    <h5 class='role-category-heading'>
-                        {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
-                    </h5>
-                        
-                        <div class="row">
-                            @foreach($permissions as $name => $id)
-                                <div class="col-md-4">
-                                    <div class="form-check mb-2">
-                                        <input 
-                                            class="form-check-input permission" 
-                                            type="checkbox" 
-                                            name="permissions[]" 
-                                            value="{{ $id }}" 
-                                            id="perm_{{ $id }}" 
-                                            data-permission-name="{{ $name }}"
-                                        >
-                                        <label class="form-check-label" for="perm_{{ $id }}">
-                                            {{ strtoupper($name) }}
-                                        </label>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endforeach
 
+                @foreach($groupedPermissions as $categoryId => $permissions)
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h5 class='role-category-heading'>
+                            {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
+                        </h5>
+                    </div>
                 </div>
+
+                <div class="row g-3 mt-1 mb-3">
+                    @foreach($permissions as $name => $id)
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input
+                                class="form-check-input permission"
+                                type="checkbox"
+                                name="permissions[]"
+                                value="{{ $id }}"
+                                id="perm_{{ $id }}"
+                                data-permission-name="{{ $name }}">
+                            <label class="form-check-label" for="perm_{{ $id }}">
+                                {{ strtoupper($name) }}
+                            </label>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endforeach
+
+
             </div>
         </div>
 
@@ -113,13 +120,12 @@
     $('#checkAllPermissions').on('change', function() {
         $('.permission').prop('checked', this.checked);
     });
-
 </script>
 <script>
     $(document).ready(function() {
         $('#branch_id').select2({
-            placeholder: "Select branches"
-            , allowClear: true
+            placeholder: "Select branches",
+            allowClear: true
         });
 
         // Edit user
@@ -160,27 +166,26 @@
             var formData = new FormData(form);
 
             $.ajax({
-                url: "{{ route('library-users.store') }}"
-                , method: "POST"
-                , data: formData
-                , contentType: false
-                , processData: false
-                , success: function(response) {
-                     if (response.success && response.redirect) {
-                        window.location.href = response.redirect; 
+                url: "{{ route('library-users.store') }}",
+                method: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    if (response.success && response.redirect) {
+                        window.location.href = response.redirect;
                         toastr.success(response.message);
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
-                    }
-                    else if (response.success) {
+                    } else if (response.success) {
                         toastr.success(response.message);
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else {
                         toastr.error(response.message);
                     }
-                }
-                , error: function(xhr) {
+                },
+                error: function(xhr) {
                     if (xhr.status === 422) {
                         var errors = xhr.responseJSON.errors;
 
@@ -214,6 +219,5 @@
             });
         });
     });
-
 </script>
 @endsection

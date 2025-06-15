@@ -22,7 +22,7 @@
         <p class="info-message">
             <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
             <b>Important :</b> You can add your library <em><b>Total Seats</b></em> here that will show in booking form automatically.
-            <br> <b>Note:</b> If you want to change the <em><b>Total Seats</b></em>, you can edit it here.
+            <br> <b>Note:</b> If you want to change the <em>Total Seats</em>, you can edit it here.
         </p>
     </div>
 </div>
