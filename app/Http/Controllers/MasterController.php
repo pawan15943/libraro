@@ -794,7 +794,7 @@ class MasterController extends Controller
             ->join('libraries as l', 'l.id', '=', 'b.library_id')
             ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
             ->where('l.is_paid', 1)
-            ->where('l.is_profile', 1)
+            ->where('b.is_profile', 1)
             ->select(
                 'b.id as id',
                 'b.library_id',
@@ -833,7 +833,7 @@ class MasterController extends Controller
                 ->join('libraries as l', 'l.id', '=', 'b.library_id')
                 ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
                 ->where('l.is_paid', 1)
-                ->where('l.is_profile', 1)
+                ->where('b.is_profile', 1)
                 ->inRandomOrder()
                 ->take(5)
                 ->select(

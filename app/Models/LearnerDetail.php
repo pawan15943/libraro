@@ -28,10 +28,7 @@ class LearnerDetail extends Model
     {
         return $this->belongsTo(PlanType::class, 'plan_type_id');
     }
-    public function seat()
-    {
-        return $this->belongsTo(Seat::class, 'seat_id');
-    }
+ 
     public function learner()
     {
         return $this->belongsTo(Learner::class);

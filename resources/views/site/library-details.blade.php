@@ -324,7 +324,7 @@
 
         <div class="row">
             <div class="col-lg-12">
-                <div class="owl-carousel" id="library-list">
+                <div class="owl-carousel" id="library-list1">
                 </div>
             </div>
 

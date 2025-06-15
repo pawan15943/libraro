@@ -70,7 +70,7 @@
                 <p>Library Enrolled</p>
             </div>
             <div class="col-lg-3 col-md-6 col-6">
-                <h1 class="counter" data-count="{{$learner_count}}">0</h1>
+                <h1 class="counter" data-count="{{$learner_counter}}">0</h1>
                 <p>Learner Enrolled</p>
             </div>
             <div class="col-lg-3 col-md-6 col-6">
