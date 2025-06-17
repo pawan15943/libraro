@@ -41,6 +41,24 @@ return [
             'provider' => 'library_user',
              'session' => 'session_library_user',
         ],
+
+            // New API guards
+        'web_api' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
+        'library_api' => [
+            'driver' => 'sanctum',
+            'provider' => 'libraries',
+        ],
+        'learner_api' => [
+            'driver' => 'sanctum',
+            'provider' => 'learners',
+        ],
+        'library_user_api' => [
+            'driver' => 'sanctum',
+            'provider' => 'library_user',
+        ],
     ],
 
 

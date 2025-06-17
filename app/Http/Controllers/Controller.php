@@ -228,7 +228,7 @@ class Controller extends BaseController
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt,xlsx,xls',
         ]);
-
+        
         // Get the file and its real path
         $file = $request->file('csv_file');
         $path = $file->getRealPath();
@@ -236,18 +236,7 @@ class Controller extends BaseController
         $csvData = [];
         $header = null;
 
-        $newBranchCount = count($csvData);
-        // Validate branch count limit before processing
-        $validation = branchCountValidation();
-        $current = $validation['branch_count'];
-        $allowed = $validation['max_allowed'];
-
-        if ($current + $newBranchCount > $allowed) {
-            return redirect()->back()->withErrors([
-                'csv_file' => "You can only add " . ($allowed - $current) . " more branches. Your CSV contains $newBranchCount new branches, which exceeds the limit of $allowed."
-            ]);
-        }
-
+       
 
         // Open the file and parse the CSV
         if (($handle = fopen($path, 'r')) !== false) {
@@ -270,7 +259,18 @@ class Controller extends BaseController
             }
             fclose($handle);
         }
-
+        $newBranchCount = count($csvData);
+                // Validate branch count limit before processing
+                $validation = branchCountValidation();
+                $current = $validation['branch_count'];
+                $allowed = $validation['max_allowed'];
+                \Log::info('Learner occupide', [ 'current' => $current,'allowed'=>$allowed,'newBranchCount'=>$newBranchCount]);
+                if ($current + $newBranchCount > $allowed) {
+                    return redirect()->back()->withErrors([
+                        'csv_file' => "You can only add " . ($allowed - $current) . " more branches. Your CSV contains $newBranchCount new branches, which exceeds the limit of $allowed."
+                    ]);
+                }
+       
         // Invalid and success records
         $invalidRecords = [];
         $successRecords = [];
@@ -916,7 +916,7 @@ class Controller extends BaseController
             'fullday_price' => 'required|integer',
             'halfday_price' => 'required|integer',
             
-            
+             
         ]);
       
         if ($validator->fails()) {
@@ -934,18 +934,28 @@ class Controller extends BaseController
         }
        
         $libraryData = Library::where('id', $library_id)->first();
-
-        if ($libraryData) {
-            $seatLimit = ($libraryData->library_type == 1) ? 50 : (($libraryData->library_type == 2) ? 100 : null);
-        
-            if ($seatLimit !== null && trim($data['total_seat']) > $seatLimit) {
-                $invalidRecords[] = array_merge($data, ['error' => 'Total seats not your Subscription according']);
-                return;  
-            }
-        } else {
-          
+        if (!$libraryData){
             $invalidRecords[] = array_merge($data, ['error' => 'Library not found']);
         }
+        $slug = Str::slug(trim($data['branch_name']));
+        $exists = Branch::where('slug', $slug)
+                ->exists();
+
+        if ($exists) {
+             $invalidRecords[] = array_merge($data, ['error' => 'A branch with this name already exists.']);
+            return; 
+        }
+        // if ($libraryData) {
+        //     $seatLimit = ($libraryData->library_type == 1) ? 200 : (($libraryData->library_type == 2) ? 500 : null);
+        
+        //     if ($seatLimit !== null && trim($data['total_seat']) > $seatLimit) {
+        //         $invalidRecords[] = array_merge($data, ['error' => 'Total seats not your Subscription according']);
+        //         return;  
+        //     }
+        // } else {
+          
+        //     $invalidRecords[] = array_merge($data, ['error' => 'Library not found']);
+        // }
         
         $start_time = Carbon::createFromFormat('H:i', trim($data['start_time']));
         $end_time = Carbon::createFromFormat('H:i', trim($data['end_time']));
@@ -956,12 +966,17 @@ class Controller extends BaseController
         }
         
         $totalHours = $start_time->diffInHours($end_time);
-        
+        if (trim($data['Operating_hour']) > 16) {
+           
+            $invalidRecords[] = array_merge($data, ['error' => 'Operating hour does not greater then fullday plan']);
+            return;
+        }
         if ($totalHours != trim($data['Operating_hour'])) {
            
             $invalidRecords[] = array_merge($data, ['error' => 'Operating hour does not match the difference between start and end times.']);
             return;
         }
+        
        
         // Using database transaction for atomic operations
         DB::transaction(function () use ($data, $library_id,$start_time, $end_time, $totalHours,&$invalidRecords,&$successRecords) {
@@ -1182,7 +1197,7 @@ class Controller extends BaseController
                 // Handle any exceptions and log the error
                 Log::error('Error updating or creating plan', ['plan' => $plan, 'error' => $e->getMessage()]);
                 
-                // Add to invalid records for later use
+                // Add to invalid records for later usech
                 $invalidRecords[] = [
                     'library_id' => $library_id,
                     'plan_id' => $plan['plan_id'],

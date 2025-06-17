@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Crypt;
 use App\Helpers\HelperService;
 use App\Models\Library;
+use App\Models\LibraryUser;
 use Illuminate\Support\Facades\Hash;
 use DB;
 
@@ -49,8 +50,14 @@ class ResetPasswordController extends Controller
         }
 
         // Update the password
-        $user = Library::where('email', $request->email)->first();
+         $user = Library::where('email', $request->email)->first()
+         ?? LibraryUser::where('email', $request->email)->first();
+
+        if (!$user) {
+            return back()->withErrors(['email' => 'User not found.']);
+        }
         $user->password = Hash::make($request->password);
+        $user->original_password = $request->password;
         $user->save();
 
         // Delete the token
