@@ -43,11 +43,12 @@ class Kernel extends HttpKernel
            
         ],
 
-        'api' => [
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+       'api' => [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+
     ];
 
     /**
@@ -80,5 +81,7 @@ class Kernel extends HttpKernel
         'log.requests' => \App\Http\Middleware\LoggerMiddleware::class,
         'auth.library_or_user' => \App\Http\Middleware\AuthenticateLibraryOrUser::class,
          'verified.library' => \App\Http\Middleware\EnsureLibraryEmailIsVerified::class,
+         'check.app.version' => \App\Http\Middleware\CheckAppVersion::class,
+
     ];
 }

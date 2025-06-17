@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Scopes\LibraryScope;
+use Laravel\Sanctum\HasApiTokens;
 
 class Library extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory , Notifiable;
+    use HasApiTokens, HasFactory , Notifiable;
     use HasRoles;
     protected $guard = 'library';
     protected $guarded = []; 
