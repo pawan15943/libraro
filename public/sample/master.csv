@@ -1,4 +1,4 @@
-branch_name,Operating_hour,start_time,end_time,extend_day,general_learner,total_seat,fullday_price,halfday_price,allday_price,fullnight_price,allday,locker_amount
-Main kaushar Branch,16,06:00,22:00,4,30,50,500,250,1000,500,yes,100
-Second kaushar Library,16,06:00,22:00,5,,70,800,350,1100,800,yes,110
-Third kaushar  Library,14,07:00,21:00,6,,20,1000,300,1200,1000,yes,120
+branch_name,display_name,Operating_hour,start_time,end_time,extend_day,total_seat,fullday_price,halfday_price,allday_price,fullnight_price,locker_amount
+Main kaushar Branch,,16,06:00,22:00,4,50,500,250,1000,500,100
+Second kaushar Library,,16,06:00,22:00,5,70,800,350,1100,800,110
+Third kaushar  Library,,14,07:00,21:00,6,20,1000,300,1200,1000,120

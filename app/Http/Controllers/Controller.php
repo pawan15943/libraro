@@ -267,7 +267,8 @@ class Controller extends BaseController
                 \Log::info('Learner occupide', [ 'current' => $current,'allowed'=>$allowed,'newBranchCount'=>$newBranchCount]);
                 if ($current + $newBranchCount > $allowed) {
                     return redirect()->back()->withErrors([
-                        'csv_file' => "You can only add " . ($allowed - $current) . " more branches. Your CSV contains $newBranchCount new branches, which exceeds the limit of $allowed."
+                       
+                        'csv_file' => "Your current plan allows you to create $allowed branches. However, the CSV file you attempted to upload contains more than $newBranchCount branches, so we are unable to process it. Please update your file to include only max $allowed branches and try uploading again."
                     ]);
                 }
        
@@ -396,14 +397,15 @@ class Controller extends BaseController
         $hours = $planType->slot_hours;
         $duration = Plan::where('id', $plan->id)->value('plan_id'); 
         $type = Plan::where('id', $plan->id)->value('type'); 
-         $start_date = Carbon::parse(trim($data['start_date']));
+         $start_date = Carbon::createFromFormat('d/m/Y', trim($data['start_date']));
+
          if (!$start_date) {
             $invalidRecords[] = array_merge($data, ['error' => 'Missing Start Date: Please ensure that the start date field is filled in before proceeding with the upload.']);
             return;
         }    
         $joinDate = isset($data['join_date']) ? $this->parseDate(trim($data['join_date'])) : $start_date;
         // Here we manage end date how it calculated.
-    //    $start_date = $this->parseDate(trim($data['start_date']));
+        //    $start_date = $this->parseDate(trim($data['start_date']));
       
         $duration = (int) $duration;
 
@@ -912,9 +914,16 @@ class Controller extends BaseController
                     $fail($attribute.' must be a valid time (HH:MM format).');
                 }
             }],
-            'total_seat' => 'required|integer',
-            'fullday_price' => 'required|integer',
-            'halfday_price' => 'required|integer',
+            'total_seat'      => 'required|integer|min:1',
+            'fullday_price'   => 'required|integer|min:0',
+            'halfday_price'   => 'required|integer|min:0',
+            'allday_price'    => [
+                'nullable',
+                'regex:/^\d+$/', 
+            ],
+            'locker_amount'   => 'nullable|integer|min:0',
+            'extend_day'   => 'nullable|integer|min:0',
+            'display_name'   => 'nullable|string',
             
              
         ]);
@@ -976,23 +985,42 @@ class Controller extends BaseController
             $invalidRecords[] = array_merge($data, ['error' => 'Operating hour does not match the difference between start and end times.']);
             return;
         }
+      if ( isset($data['fullday_price'], $data['halfday_price']) &&
+            is_numeric($data['fullday_price']) &&
+            is_numeric($data['halfday_price']) &&
+            ($data['halfday_price'] >= $data['fullday_price'])
+        ){
+              $invalidRecords[] = array_merge($data, ['error' => 'Half Day price must be less than Full Day price.']);
+            return;
+        }
+        if ( isset($data['fullday_price'], $data['allday_price']) &&
+            is_numeric($data['fullday_price']) &&
+            is_numeric($data['allday_price']) &&
+            ( $data['fullday_price'] >= $data['allday_price'])
+        ){
+              $invalidRecords[] = array_merge($data, ['error' => 'Full Day price must be less than All Day price.']);
+            return;
+        }
         
-       
+   
         // Using database transaction for atomic operations
         DB::transaction(function () use ($data, $library_id,$start_time, $end_time, $totalHours,&$invalidRecords,&$successRecords) {
           
               // Update or create the operating hours
-                if(isset($data['allday']) && (trim($data['allday'])=='yes')){
-                    $operatinghour=24;
-                    $allday=true;
-                }else{
-                    $operatinghour=trim($data['Operating_hour']);
-                    $allday=false;
+               $allday_price = trim($data['allday_price'] ?? '');
+
+                if ($allday_price !== '') {
+                    $operatinghour = 24;
+                    $allday = true;
+                } else {
+                    $operatinghour = (int) trim($data['Operating_hour']);
+                    $allday = false;
                 }
+
                 $branch_name=trim($data['branch_name']);
                 $slug = Str::slug($branch_name);
                 $branch = Branch::updateOrCreate(
-                    ['name' => $branch_name, 'library_id' => $library_id],
+                    ['name' => $branch_name, 'library_id' => $library_id,'display_name'=> trim($data['display_name']) ?? null],
                     ['slug' => $slug]
                 );
                             
