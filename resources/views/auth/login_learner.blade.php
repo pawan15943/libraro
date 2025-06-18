@@ -60,9 +60,9 @@
                     <input type="hidden" name="user_type" value="learner">
                     <div class="row g-3 mt-1">
                         <div class="col-lg-12">
-                            <label for="">Email Address</label>
-                            <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
-                            @error('email')
+                            <label for="">Learner No.</label>
+                            <input id="learner_no" type="text" class="form-control @error('learner_no') is-invalid @enderror" name="learner_no" value="{{ old('learner_no') }}" autocomplete="learner_no" autofocus>
+                            @error('learner_no')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>

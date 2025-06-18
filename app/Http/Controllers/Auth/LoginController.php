@@ -48,11 +48,13 @@ class LoginController extends Controller
     // Handle Login
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+       $request->validate([
             'user_type' => 'required',
+            'email' => 'required_unless:user_type,learner|email',
+            'password' => 'required',
+            'learner_no' => 'required_if:user_type,learner',
         ]);
+
 
         $credentials = $request->only('email', 'password');
         $remember = $request->has('remember');
@@ -113,37 +115,38 @@ class LoginController extends Controller
                 break;
 
            
-            case 'learner':
+           case 'learner':
 
-                $enteredEmail = $request->email;
-                $password = $request->password;
+                $request->validate([
+                    'user_type'   => 'required',
+                    'learner_no'  => 'required',
+                    'password'    => 'required',
+                ]);
+
+                $credentials = [
+                    'learner_no' => $request->learner_no,
+                    'password'   => $request->password,
+                ];
+
                 $remember = $request->has('remember');
 
-                // 🔍 Manually find the user by decrypting stored emails
-                $user = Learner::get()->first(function ($learner) use ($enteredEmail) {
-                    return $learner->email === $enteredEmail;
-                });
+                // ✅ Attempt login using learner guard
+                if (Auth::guard('learner')->attempt($credentials, $remember)) {
+                    $user = Auth::guard('learner')->user();
 
-                if (!$user) {
-                    return redirect()->back()->withErrors(['error' => 'Invalid email or password']);
+                    // 🔐 Assign learner role if not already assigned
+                    if (!$user->hasRole('learner')) {
+                        $user->assignRole('learner');
+                    }
+
+                    return redirect()->intended(route('learner.home'));
                 }
 
-                // 🛑 Auth::attempt() won't work since email is encrypted, manually verify password
-                if (!Hash::check($password, $user->password)) {
-                    return redirect()->back()->withErrors(['error' => 'Invalid email or password']);
-                }
-
-                // ✅ Manually log in the user
-                Auth::guard('learner')->login($user, $remember);
-
-                // 🏆 Assign role if not already assigned
-                if (!$user->hasRole('learner')) {
-                    $user->assignRole('learner');
-                }
-
-                return redirect()->intended(route('learner.home'));
+                return redirect()->back()->withErrors(['error' => 'Invalid learner number or password']);
 
                 break;
+
+
 
 
             default:

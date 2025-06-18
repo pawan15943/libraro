@@ -39,7 +39,7 @@
         <div class="row g-3">
             <div class="col-lg-12">
                 <label for="">Library Locker Amount <span>*</span></label>
-                <input type="text" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{ old('locker_amount', $locker_amount->locker_amount ?? '') }}">
+                <input type="text" name="locker_amount" class="form-control digit-only @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{ old('locker_amount', $locker_amount->locker_amount ?? '') }}">
                 @error('locker_amount')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>

@@ -181,6 +181,10 @@
         });
 
 
+
+
+
+
         $('.char-only').keydown(function(e) {
             if (e.ctrlKey || e.altKey) {
                 e.preventDefault();

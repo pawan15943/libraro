@@ -25,6 +25,7 @@ use DB;
 use Yajra\DataTables\Facades\DataTables;
 use Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class MasterController extends Controller
 {
@@ -257,7 +258,7 @@ class MasterController extends Controller
     
     public function storemaster(Request $request, $id = null)
     {
-        
+       
         $this->validationfunction($request);
         $modelClass = 'App\\Models\\' . $request->databasemodel;
         $table=$request->databasetable;
@@ -303,6 +304,8 @@ class MasterController extends Controller
             $data['name'] = $plan_type_name;
           
         }
+
+      
         
         try {
             if($request->day_type_id!=0 || !isset($request->day_type_id) ){
@@ -675,6 +678,7 @@ class MasterController extends Controller
 
 
     protected function validationfunction(Request $request){
+     
         if ($request->databasemodel == 'Plan'){
             $request->validate([
                 'plan_id' => 'required|integer',
@@ -697,17 +701,21 @@ class MasterController extends Controller
                 'branch_id' => ['required','not_in:0'],
             ]);
         }
-        if($request->databasetable == 'hour'){
+         if($request->databasemodel == 'Branch'){
             $request->validate([
-                'hour' => 'required|integer',
+                'extend_days' => 'nullable|integer',
+                'locker_amount' => 'nullable|integer',
+               
             ]);
         }
-        if($request->databasetable == 'seats'){
-            $request->validate([
-                'total_seats' => 'required|integer',
+        if($request->databasemodel == 'Hour'){
+           $validator = Validator::make($request->all(), [
+                'hour' => 'nullable|integer',
+                'seats' => 'nullable|integer',
             ]);
-            
+            return $validator->validated();
         }
+        
         if ($request->databasemodel == 'Expense'){
             $request->validate([
                 'name' => 'required|unique:expenses,name',

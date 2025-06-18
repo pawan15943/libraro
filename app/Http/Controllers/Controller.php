@@ -319,29 +319,29 @@ class Controller extends BaseController
     
 
         $validator = Validator::make($data, [
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s]+$/'],
             'email' => 'required|email',
             'plan' => 'required',
             'plan_type' => 'required',
-            'start_date' => 'required',
-            'mobile' => 'required|max:10|min:10',
-            'paid_amount'=>'required|int',
-            'pending_amount'=>'required|int',
-        ]);
+            'start_date' => 'required|date',
+             'mobile' => ['required', 'digits:10'],
+            'paid_amount' => 'required|integer|min:0',
+            'pending_amount' => 'required|integer|min:0',
+            'seat_no' => 'nullable|integer|min:0',
+            'locker_no' => 'nullable|integer|min:0',
+  
+         ]);
 
         if ($validator->fails()) {
             $invalidRecords[] = array_merge($data, ['error' => 'Validation failed']);
             \Log::info('Validation failed');
             return;
         }
-
+       
         $user = Auth::user();
 
         $dob = !empty($data['dob']) ? $this->parseDate(trim($data['dob'])) : now();
 
-        
-
-       
 
         if (!$dob) {
             $invalidRecords[] = array_merge($data, ['error' => 'Invalid Date of Birth Format: The date of birth (DOB) format is incorrect. Please enter it in the correct format (e.g., YYYY-MM-DD or as required).']);
@@ -383,10 +383,7 @@ class Controller extends BaseController
         $paid_amount=!empty($data['paid_amount']) ? trim($data['paid_amount']) : 0;
        
       
-        // if($planPrice < $paid_amount){
-        //     $invalidRecords[] = array_merge($data, ['error' => 'Paid Amount Exceeds Plan Price: The entered paid amount is greater than the actual plan price. Please verify and enter the correct amount.']);
-        //     return;
-        // }
+       
         if(trim($data['seat_no'])){
             $seat=trim($data['seat_no']);
         }else{
@@ -430,6 +427,13 @@ class Controller extends BaseController
 
         
         $pending_amount =!empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
+        if ($paid_amount < $pending_amount) {
+            $invalidRecords[] = array_merge($data, [
+                'error' => 'Invalid Amounts: Pending amount cannot be greater than the paid amount. Please verify and enter the correct values.'
+            ]);
+            return;
+        }
+
         
         $paid_date = isset($data['paid_date']) ? $this->parseDate(trim($data['paid_date'])) : $start_date;
 
@@ -666,6 +670,8 @@ class Controller extends BaseController
                 'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
+                'locker_no' => trim($data['locker_no']) ?? null,
+                'learner_no'=>$this->generateLearnerCode()
             ]);
     
             // Create learner detail entry
@@ -737,6 +743,7 @@ class Controller extends BaseController
                 'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
+                 'locker_no' => trim($data['locker_no']) ?? null,
             ]);
             // Create learner detail entry
             $learner_detail = LearnerDetail::create([
@@ -776,6 +783,7 @@ class Controller extends BaseController
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
                 'locker_amount' => $locker_amount,
+                
                 'discount_amount' => $discount_amount,
                 'paid_date' => $paid_date,
                  'is_paid' => $pending_amount >0 ? 0 : 1,
@@ -1543,6 +1551,24 @@ class Controller extends BaseController
             Log::error("Error occurred in CSV export.", ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to export CSV'], 500);
         }
+    }
+
+     function generateLearnerCode() {
+        $prefix = "LN";
+        $lastlearner = Learner::orderBy('id', 'DESC')
+                              ->whereNotNull('learner_no')
+                              ->first();
+                              
+        if ($lastlearner) {
+            
+            $lastNumber = intval(substr($lastlearner->learner_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
     }
 
    

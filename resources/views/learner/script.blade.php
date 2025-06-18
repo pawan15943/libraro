@@ -146,7 +146,10 @@
                         $('#learner_detail_id').val(html.learner_detail_id);
                         $('#owner').text(html.name);
                         $('#learner_dob').text(html.dob);
+                        if(html.email){
                         $('#learner_email').text(html.email);
+                        }
+                        
                         $('#learner_mobile').text(html.mobile);
                         if (html.id_proof_name == 1) {
                             var proof = 'Aadhar';
@@ -379,11 +382,12 @@
                 errors.mobile = 'Mobile number must be exactly 10 digits.';
             }
 
-            if (!email) {
-                errors.email = 'Email Id is required.';
-            } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-                errors.email = 'Please enter a valid email address.';
+           if (email) {
+                if (!/^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+                    errors.email = 'Please enter a valid email address.';
+                }
             }
+
            
             if (!plan_id) {
                 errors.plan_id = 'Plan is required.';

@@ -46,8 +46,8 @@ class LearnerController extends Controller
 
         $baseRules = [
 
-            'email' => [
-                'required',
+           'email' => [
+                'nullable',
                 'email',
                 Rule::unique('learners')->where(function ($query) use ($request) {
                     return $query->where('branch_id', getCurrentBranch());
@@ -187,7 +187,6 @@ class LearnerController extends Controller
             die;
         }
 
-
         $planPrice = (float) $request->input('plan_price_id', 0);
 
         $paid_amount = (float) $request->input('paid_amount', 0);
@@ -313,7 +312,7 @@ class LearnerController extends Controller
             'seat_no' => $seat_no,
             'name' => $request->input('name'),
             'mobile' => encryptData($request->input('mobile')),
-            'email' => encryptData($request->input('email')),
+            'email' => $request->input('email') ? encryptData($request->input('email')) : null,
             'dob' => $request->input('dob'),
             'id_proof_name' => $request->input('id_proof_name'),
             'id_proof_file' => $id_proof_file,
@@ -322,7 +321,7 @@ class LearnerController extends Controller
             'library_id' => getLibraryId(),
             'password' => bcrypt($request->mobile),
             'branch_id' => getCurrentBranch(),
-
+            'learner_no'=>$this->generateLearnerCode(),
         ]);
 
         $learner_detail = LearnerDetail::create([
@@ -2610,6 +2609,23 @@ class LearnerController extends Controller
             \Log::error('Payment Error: ' . $e->getMessage());
             return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
         }
+    }
+    function generateLearnerCode() {
+        $prefix = "LN";
+        $lastlearner = Learner::orderBy('id', 'DESC')
+                              ->whereNotNull('learner_no')
+                              ->first();
+                              
+        if ($lastlearner) {
+            
+            $lastNumber = intval(substr($lastlearner->learner_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
     }
 
     // public function dataTestStatus()

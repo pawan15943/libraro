@@ -55,7 +55,7 @@
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
                             <div class="col-lg-6">
-                                <label for="">Email Id <span>*</span></label>
+                                <label for="">Email Id </label>
                                 <input type="text" class="form-control" name="email" id="email">
                                 <span class="text-danger" id="email-error"></span>
                             </div>

@@ -1,3 +1,3 @@
-seat_no,name,email,mobile,plan,plan_type,start_date ,paid_amount,pending_amount,locker
-3,user 7,user7@gmail.com,1234567898,1 month,full day,17-02-2025,700,200,yes
-2,user 8,user8@gmail.com,2547859874,1 month,first half,01-03-2025,350,50,no
+seat_no,name,email,mobile,plan,plan_type,start_date ,paid_amount,pending_amount,locker,locker_no
+3,user 7,user7@gmail.com,1234567898,1 month,full day,17-02-2025,700,200,yes,
+2,user 8,user8@gmail.com,2547859874,1 month,first half,01-03-2025,350,50,no,
