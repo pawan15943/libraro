@@ -83,80 +83,60 @@
                 processData: false,
                 contentType: false,
                 // dataType: 'json',
-                success: function (response) {
-                    console.log(response);
-                    if (response.success && response.redirect) {
-                        window.location.href = response.redirect; 
-                    }
-                    else if (response.success) {
-                        window.location.reload();
-                        toastr.success(response.message);
-                    } else if (response.errors) {
-                        $(".is-invalid").removeClass("is-invalid");
-                        $(".invalid-feedback").remove();
+               success: function (response) {
+                
+                // Clear old validation errors
+                $(".is-invalid").removeClass("is-invalid");
+                $(".invalid-feedback").remove();
+                $("#error-message").hide().text('');
+                $("#success-message").hide().text('');
 
-                        $.each(response.errors, function(key, value) {
-                            var element = $("[name='" + key + "']");
-                            element.addClass("is-invalid");
-                            element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
-                        });
-                    } else {
-                        $("#error-message").text(response.message).show();
-                        $("#success-message").hide();
-                    } 
-                },
-                error: function (xhr) {
-                    if (xhr.status === 422) {
-                        var errors = xhr.responseJSON.errors;
-
-                        $.each(errors, function (key, value) {
-                            let field = $(`[name="${key}"]`);
-
-                            if (key.includes('.')) {
-                                const [baseKey, index] = key.split('.');
-                                field = $(`[name="${baseKey}[]"]`).eq(index);
-                            }
-
-                            field.addClass('is-invalid');
-                            field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
-                        });
-                    } else {
-                        alert('An unexpected error occurred.');
-                    }
+                if (response.success && response.redirect) {
+                    window.location.href = response.redirect;
                 }
-                // success: function(response) {
-                
-                //     if (response.success) {
+                else if (response.success) {
+                    toastr.success(response.message);
+                    window.location.reload();
+                } 
+                else if (response.errors) {
+                    $.each(response.errors, function(key, value) {
+                        var element = $("[name='" + key + "']");
+                        element.addClass("is-invalid");
+                        element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
+                    });
+                } else {
+                    $("#error-message").text(response.message).show();
+                }
+            },
 
-                //         $("#success-message").text(response.message).show();
-                //         $("#error-message").hide();
-                //         $('.form-fields').hide();
-                //         $("#" + formId)[0].reset(); 
-                        
-                //     } else if (response.errors) {
-                //         $(".is-invalid").removeClass("is-invalid");
-                //         $(".invalid-feedback").remove();
+            error: function (xhr) {
+                // Clear old validation errors
+                $(".is-invalid").removeClass("is-invalid");
+                $(".invalid-feedback").remove();
+                $("#error-message").hide().text('');
+                $("#success-message").hide().text('');
 
-                //         $.each(response.errors, function(key, value) {
-                //             var element = $("[name='" + key + "']");
-                //             element.addClass("is-invalid");
-                //             element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
-                //         });
-                //     } else {
-                //         $("#error-message").text(response.message).show();
-                //         $("#success-message").hide();
-                //     }
+                if (xhr.status === 422) {
+                    var errors = xhr.responseJSON.errors;
 
-                    
-                // },
-                // error: function(xhr) {
-                //     var response = JSON.parse(xhr.responseText);
-                //     $('#error-message').text(response.message).show();
-                //     $('#success-message').hide();
+                    $.each(errors, function (key, value) {
+                        let field = $(`[name="${key}"]`);
 
-                
-                // }
+                        // Handle fields like name.0, name.1, etc.
+                        if (key.includes('.')) {
+                            const [baseKey, index] = key.split('.');
+                            field = $(`[name="${baseKey}[]"]`).eq(index);
+                        }
 
+                        field.addClass('is-invalid');
+                        field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
+                    });
+                } else {
+                    alert('An unexpected error occurred.');
+                }
+            }
+
+       
               
             });
 

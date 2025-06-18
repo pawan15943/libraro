@@ -166,7 +166,7 @@ class LoadMenus
             
             $booked_seats = getUnavailableSeatCount();
             $availble_seats = getAvailableSeatCount();
-            
+            $genral_seat=LearnerDetail::where('is_paid',1)->whereNull('seat_no')->count();
             $active_seat_count =  Learner::where('library_id', getLibraryId())->where('status', 1)
                 ->distinct()
                 ->count();
@@ -271,7 +271,7 @@ class LoadMenus
             View::share('availble_seats', $availble_seats);
             View::share('booked_seats', $booked_seats);
             View::share('planTypeCounts', $planTypeCounts);
-            // View::share('fullday_count', $fullday_count);
+            View::share('genral_seat', $genral_seat);
             // View::share('firstHalfCount', $firstHalfCount);
             // View::share('secondHalfCount', $secondHalfCount);
             View::share('availableseats', $availableSeats);

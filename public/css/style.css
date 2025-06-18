@@ -5591,6 +5591,12 @@ h5.role-category-heading {
 
 .form-select:disabled {
     background-color: #f5f5f5;
+    
+}
+
+.form-select,textarea{
+    font-weight: 500 !important;
+    font-size: .9rem;
 }
 
 ul#pills-tab {
@@ -5606,4 +5612,8 @@ ul#pills-tab {
 .nav-pills .show>.nav-link {
     background-color: #fff;
     margin-left: 1rem;
+}
+
+span.invalid-feedback strong {
+    font-weight: 400;
 }

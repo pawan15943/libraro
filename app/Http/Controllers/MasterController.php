@@ -305,6 +305,18 @@ class MasterController extends Controller
           
         }
 
+       if ($request->seats) {
+        $existingSeats = Hour::where('branch_id', $request->branch_id)->value('seats');
+
+        if ($existingSeats !== null && $existingSeats > $request->seats) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Once you have created the seats, you can only increase the seat count; decreasing the number of seats is not allowed. Reducing the seat count after some seats have been booked may affect the system\'s functionality.'
+            ]);
+        }
+    }
+
+
       
         
         try {
@@ -703,7 +715,7 @@ class MasterController extends Controller
         }
          if($request->databasemodel == 'Branch'){
             $request->validate([
-                'extend_days' => 'nullable|integer',
+                'extend_days' => 'nullable|integer|max:30',
                 'locker_amount' => 'nullable|integer',
                
             ]);

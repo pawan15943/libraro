@@ -392,9 +392,10 @@ if (!function_exists('getUnavailableSeatCount')) {
 
         return LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
             ->whereNotNull('seat_no')
-            ->groupBy('seat_no')
-            ->havingRaw('SUM(hour) >= ?', [$totalHour])
-            ->count();
+            ->where('is_paid',1)
+            ->distinct('seat_no')
+            // ->havingRaw('SUM(hour) >= ?', [$totalHour])
+            ->count('seat_no');
     }
 }
 

@@ -28,7 +28,7 @@
 <!-- List of Users -->
 <div class="card p-0 mb-4">
     <div class="table-responsive">
-        <table class="table text-center" id="datatable-plantype">
+        <table class="table text-center datatable" id="datatable">
             <thead>
                 <tr>
                     <th>S.No.</th>
@@ -53,7 +53,7 @@
                         <ul class="actionalbls">
                            <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>

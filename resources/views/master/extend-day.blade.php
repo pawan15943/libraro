@@ -30,7 +30,7 @@
 <div class="card">
     <!-- Add Library User Form -->
 
-    <form id="extend_hour" class="validateForm" enctype="multipart/form-data">
+    <form id="extend_hour"  enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{$extend->id}}">
         <input type="hidden" name="library_id" value="{{getLibraryId()}}">

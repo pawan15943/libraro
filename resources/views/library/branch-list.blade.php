@@ -11,7 +11,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="table-responsive">
-                <table class="table text-center" id="datatable">
+                <table class="table text-center  " id="datatable">
                     <thead>
                         <tr>
                             <th>S.No.</th>
@@ -29,13 +29,13 @@
                         <tr>
                             <td>{{$key+1}}</td>
                             <td>{{$value->name}}</td>
-                            <td>{{$value->mobile}}
+                            <td>{{$value->mobile ?? 'Not updated yet'}}
                             </td>
                             <td>
-                                <span>{{$value->email}}</span>
+                                <span>{{$value->email ?? 'Not updated yet'}}</span>
 
                             </td>
-                            <td>{{$value->library_address}}</td>
+                            <td>{{$value->library_address ?? 'Not updated yet'}}</td>
                             <td>
 
                                 <ul class="actionalbls">
@@ -45,7 +45,7 @@
                                     <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fa-solid fa-clock-rotate-left"></i></a></li>
                                     <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fa-solid fa-calendar-plus"></i></a></li>
                                     <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fa-solid fa-lock"></i></a></li>
-
+                                  
                                     @endif
                                 </ul>
                             </td>

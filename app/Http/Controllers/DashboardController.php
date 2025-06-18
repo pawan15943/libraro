@@ -779,15 +779,8 @@ class DashboardController extends Controller
         $type = $request->get('type');
         $dateRange = $request->get('date_range');
 
-        $extend_days_data = Hour::where('library_id',getLibraryId())->first();
-        $extend_day = $extend_days_data ? $extend_days_data->extend_days : 0;
-        $extend_days=Hour::select('extend_days')->first();
-        if($extend_days){
-            $extendDay=$extend_days->extend_days;
-        }else{
-            $extendDay=0;
-        }
-        
+        $extend_day=getExtendDays();
+        $extendDay=getExtendDays();
         if ($request->filled('year') && $request->filled('month')) {
             $year = $request->year;
             $month = $request->month;

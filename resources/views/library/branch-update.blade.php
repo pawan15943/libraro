@@ -191,6 +191,7 @@
                     </div>
                 </div>
             </div>
+
              @if(!isset($branch))
             <div class="card mt-5">
                 <h4 class="mb-4">Branch Master</h4>
@@ -243,6 +244,7 @@
                 </div>
             </div>
             @endif
+
             @if(isset($branch))
             <div class="card mt-5">
                 <h4 class="mb-4">Google Map</h4>
@@ -322,51 +324,61 @@
                         </label>
                     </div>
                     <small class="text-info d-block">Multiple images upload and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP. Image Size must be in 1024 * 1024 px</small>
+                    <small class="text-danger d-block">You can only allow to upload 4 images of your library</small>
                     <div id="imagePreview" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
                 </div>
             </div>
 
+            @endif
         </div>
-        @endif
+
         <!-- Sidebar for Library Logo and Submit -->
-        @if(isset($branch))
+       
         <div class="col-lg-4">
+             
             <div class="card stick">
                 <h4 class="mb-4">Library Logo</h4>
-                 <div class="row g-4">
+                <div class="row g-4">
                     <div class="col-lg-12">
-                        <div class="previewImage">
-                            <img id="image" src="{{ asset('public/' . (isset($branch) && $branch->logo ? $branch->logo : 'uploads/images/no-image.png')) }}" alt="Library Logo" class="img-fluid" style="max-width: 100%;">
+                    <div class="preview" id="preview">
+                        @if(old('library_logo'))
+                            <img src="{{ asset('public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        @elseif(isset($library) && $library->library_logo)
+                            <img src="{{ asset('public/' . $library->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        @else
+                            <!-- Show empty preview or placeholder -->
+                            <p class="text-muted">No logo uploaded</p>
+                        @endif
+                    </div>
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar"></div>
                         </div>
-                        <label for="libraryLogo" class="uploadLogo">Upload Image
-                            <input type="file" id="libraryLogo" class="form-control no-validate d-none @error('logo') is-invalid @enderror" name="logo" accept="image/*" onchange="document.getElementById('image').src = window.URL.createObjectURL(this.files[0])">
-                            @error('logo')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                        <p class="status-message" id="statusMessage"></p>
+                        <label class="upload-lable">Library Logo (Optional)
+                            <input type="file" class="form-control d-none no-validate @error('library_logo') is-invalid @enderror" name="library_logo" id="fileInput" accept="image/jpeg, image/png, image/webp">
+                            @error('library_logo')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
                             @enderror
                         </label>
-                        <small class="text-info d-block mt-2">Image size should be 180*180 pixels (PNG, JPG, JPEG, SVG, WEBP).</small>
+                        <small class="text-info d-block">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
                     </div>
-                </div>
-               <div class="row mt-4">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary w-100 ">
-                            {{ isset($branch) ? 'Update Profile' : 'Create Branch' }}
+
+                   <div class="col-lg-12">
+                        <button type="submit" class="btn btn-primary button">
+                            {{ isset($branch) ? 'Update' : 'Create' }}
                         </button>
                     </div>
+
                 </div>
             </div>
+        
         </div>
-        @else 
-        <div class="row mt-4">
-            <div class="col-lg-4">
-                <button type="submit" class="btn btn-primary w-100 ">
-                    {{ isset($branch) ? 'Update Profile' : 'Create Branch' }}
-                </button>
-            </div>
-        </div>
-        @endif
+       
     </div>
 </form>
+
 
 
 

@@ -129,7 +129,7 @@
                             <ul>
                                 <li><a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="Hour" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
@@ -276,7 +276,7 @@
                             <ul>
                                 <li><a href="#">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
@@ -366,7 +366,7 @@
                             <ul>
                                 <li><a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
@@ -509,7 +509,7 @@
                                 <li>
                                     <a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanType" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif
@@ -622,7 +622,7 @@
                             <ul>
                                 <li><a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
@@ -760,7 +760,7 @@
                             <ul>
                                 <li><a href="#" class="delete" data-id="{{ $value->id }}" data-table="Expense" title="Active/Deactive">
                                         @if($value->deleted_at)
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-ban"></i>
                                         @else
                                         <i class="fa fa-check"></i>
                                         @endif</a></li>
