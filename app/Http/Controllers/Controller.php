@@ -31,6 +31,7 @@ use App\Models\Expense;
 use App\Models\Subscription;
 use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Str;
+use Carbon\Exceptions\InvalidFormatException;
 
 class Controller extends BaseController
 {
@@ -323,7 +324,7 @@ class Controller extends BaseController
             'email' => 'required|email',
             'plan' => 'required',
             'plan_type' => 'required',
-            'start_date' => 'required|date',
+            'start_date' => ['required', 'date'],
              'mobile' => ['required', 'digits:10'],
             'paid_amount' => 'required|integer|min:0',
             'pending_amount' => 'required|integer|min:0',
@@ -332,12 +333,16 @@ class Controller extends BaseController
   
          ]);
 
-        if ($validator->fails()) {
-            $invalidRecords[] = array_merge($data, ['error' => 'Validation failed']);
-            \Log::info('Validation failed');
+       if ($validator->fails()) {
+            $errors = implode(', ', $validator->errors()->all());
+
+            $invalidRecords[] = array_merge($data, ['error' => $errors]);
+
+            \Log::info('Validation failed: ' . $errors);
             return;
         }
-       
+
+      
         $user = Auth::user();
 
         $dob = !empty($data['dob']) ? $this->parseDate(trim($data['dob'])) : now();
@@ -357,6 +362,7 @@ class Controller extends BaseController
         $planexplode = $matches[0] ?? 1;
       
         $plan = Plan::where('plan_id',$planexplode)->first();
+       
         $planType = PlanType::whereRaw('LOWER(REPLACE(name, " ", "")) = ?', [strtolower(str_replace(' ', '', trim($data['plan_type'])))])->first();
       
         if (!$planType ) {
@@ -366,6 +372,7 @@ class Controller extends BaseController
          
        
         $planPrice =getPlanPrice($plan->id, $planType->id);
+       
         if ((!$user->can('has-permission', 'Full Day') && $planType->day_type_id==1) || (!$user->can('has-permission', 'First Half') && $planType->day_type_id==2) || (!$user->can('has-permission', 'Second Half') && $planType->day_type_id==3) || (!$user->can('has-permission', 'Hourly Slot 1') && $planType->day_type_id==4)|| (!$user->can('has-permission', 'Hourly Slot 2') && $planType->day_type_id==5)|| (!$user->can('has-permission', 'Hourly Slot 3') && $planType->day_type_id==6)|| (!$user->can('has-permission', 'Hourly Slot 4') && $planType->day_type_id==7)){
             $invalidRecords[] = array_merge($data, ['error' => $planType->name.'Plan Type Booking Restriction: The selected plan type does not have the necessary permissions for booking. Please check the plan type settings and try again.']);
             return;
@@ -394,7 +401,20 @@ class Controller extends BaseController
         $hours = $planType->slot_hours;
         $duration = Plan::where('id', $plan->id)->value('plan_id'); 
         $type = Plan::where('id', $plan->id)->value('type'); 
-         $start_date = Carbon::createFromFormat('d/m/Y', trim($data['start_date']));
+        $type = strtoupper($type);
+        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y', 'd.m.Y', 'd M Y', 'd F Y'];
+        $rawDate = trim($data['start_date']);
+        $start_date = null;
+
+        foreach ($formats as $format) {
+            try {
+                $start_date = Carbon::createFromFormat($format, $rawDate);
+                break;
+            } catch (InvalidFormatException $e) {
+                continue;
+            }
+        }
+
 
          if (!$start_date) {
             $invalidRecords[] = array_merge($data, ['error' => 'Missing Start Date: Please ensure that the start date field is filled in before proceeding with the upload.']);
@@ -425,7 +445,7 @@ class Controller extends BaseController
                 break;
         }
 
-        
+       
         $pending_amount =!empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
         if ($paid_amount < $pending_amount) {
             $invalidRecords[] = array_merge($data, [
@@ -680,8 +700,8 @@ class Controller extends BaseController
                 'plan_id' => $plan->id,
                 'plan_type_id' => $planType->id,
                 'plan_price_id' => trim($data['plan_price']),
-                'plan_start_date' => $start_date,
-                'plan_end_date' => $endDate,
+                'plan_start_date' => $start_date->format('Y-m-d'),
+                'plan_end_date' => $endDate->format('Y-m-d'),
                 'join_date' => $joinDate,
                 'hour' => $hours,
                 'seat_no' => $seat,
@@ -730,6 +750,7 @@ class Controller extends BaseController
 
     function createLearnerDetail($learner_id, $plan, $status, $planType, $seat, $data, $start_date, $endDate, $joinDate, $hours, $is_paid, $planPrice, $pending_amount, $paid_date,$payment_mode)
     {
+        
 
      \Log::info('Learner detail id', ['learner_id' => $learner_id]);
         DB::beginTransaction();
@@ -751,9 +772,9 @@ class Controller extends BaseController
                 'plan_id' => $plan->id,
                 'plan_type_id' => $planType->id,
                 'plan_price_id' => trim($data['plan_price']),
-                'plan_start_date' => $start_date,
-                'plan_end_date' => $endDate,
-                'join_date' => $joinDate,
+                'plan_start_date' =>  $start_date->format('Y-m-d'),
+                'plan_end_date' => $endDate->format('Y-m-d'),
+                'join_date' => $joinDate->format('Y-m-d'),
                 'hour' => $hours,
                 'seat_no' => $seat,
                 'library_id' => getLibraryId(),
@@ -937,12 +958,11 @@ class Controller extends BaseController
         ]);
       
         if ($validator->fails()) {
-          
-            $errors = $validator->errors()->all();
-        
-            $errorMessages = implode(', ', $errors);
-        
-            $invalidRecords[] = array_merge($data, ['error' => $errorMessages]);
+            $errors = implode(', ', $validator->errors()->all());
+
+            $invalidRecords[] = array_merge($data, ['error' => $errors]);
+
+            \Log::info('Validation failed: ' . $errors);
             return;
         }
         if (!trim($data['total_seat']) || trim($data['total_seat']) <= 0) {
