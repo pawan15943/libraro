@@ -102,9 +102,9 @@ class LibraryController extends Controller
         }
         
         $libraries = $query->get();
-        $plans = Subscription::get();
-      
-        return view('library.index', compact('libraries', 'plans'));
+        $planslibrary = Subscription::get();
+       
+        return view('administrator.index', compact('libraries', 'planslibrary'));
     }
     
   
@@ -786,12 +786,14 @@ class LibraryController extends Controller
 
     // from superadmin side
     public function showLibrary($id){
+      
         $library=Library::findOrFail($id);
         $plan=Subscription::where('id',$library->library_type)->with('permissions')->first();
-        $library_transaction=LibraryTransaction::where('library_id',$library->library_id)->where('is_paid',1) ->orderBy('created_at', 'DESC')->first();
-        $library_all_transaction=LibraryTransaction::where('library_id',$library->library_id)->get();
         
-        return view('library.view',compact('library','plan','library_transaction','library_all_transaction'));
+        $library_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->where('is_paid',1)->first();
+        $library_all_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->get();
+       
+        return view('administrator.library-view',compact('library','plan','library_transaction','library_all_transaction'));
     }
 
     public function destroyLearners($id)

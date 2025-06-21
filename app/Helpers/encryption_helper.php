@@ -93,6 +93,32 @@ if (!function_exists('getLibraryData')) {
     }
 }
 
+if (!function_exists('getLibraryDataFromId')) {
+    function getLibraryDataFromId($id)
+    {
+      
+
+        $library = Library::find($id);
+        if (!$library) {
+            return null; // Invalid library ID
+        }
+
+        $plan = Subscription::where('id', $library->library_type)->with('permissions')->first();
+        $library_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)
+            ->where('is_paid', 1)
+            ->orderBy('created_at', 'DESC')
+            ->with('subscription')
+            ->first();
+        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscription')->get();
+
+        return (object) [
+            'library' => $library,
+            'plan' => $plan,
+            'latest_transaction' => $library_transaction,
+            'all_transactions' => $library_all_transaction,
+        ];
+    }
+}
 if (!function_exists('learnerTransaction')) {
     function learnerTransaction($id, $detail_id)
     {
@@ -232,6 +258,7 @@ if (!function_exists('getPlanStatusDetails')) {
     // if($diffInDays <=5 && $diffInDays>=0){
     //     $class='expired';
     // }
+    // for learner Plan detail
     function getPlanStatusDetails($plan_end_date)
     {
         $extendDay = getExtendDays(); // assume integer
