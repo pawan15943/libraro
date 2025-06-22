@@ -181,7 +181,7 @@ class ReportController extends Controller
         $extend_day = getExtendDays();
        
         $fiveDaysbetween = $today->copy()->addDays(5);
-        $query = LearnerDetail::where('library_id',getLibraryId())->with(['seat', 'plan', 'planType', 'learner'])
+        $query = LearnerDetail::where('library_id',getLibraryId())->with([ 'plan', 'planType', 'learner'])
             ->where('is_paid', 1)
             ->where('status', 1)
             ->where('plan_end_date', '<', $today->format('Y-m-d'))
@@ -258,8 +258,9 @@ class ReportController extends Controller
         ->get();
        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
             $data = $data->filter(function ($learner) {
-                return optional($learner->learnerDetails)->branch_id == getCurrentBranch();
+                return optional($learner->learnerDetails->first())->branch_id == getCurrentBranch();
             });
+
         }
 
         $learners = $data;

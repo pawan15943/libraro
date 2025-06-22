@@ -1,4 +1,4 @@
-@extends('layouts.library')
+@extends('layouts.admin')
 
 @section('content')
 <div class="row">
@@ -18,7 +18,8 @@
                     </div>
                     <div class="col-lg-6">
                         <span>Library Join Date </span>
-                        <h5>{{$library->join_date}}</h5>
+                        <h5>{{ \Carbon\Carbon::parse($library->created_at)->format('d-m-Y') }}</h5>
+
                     </div>
                     <div class="col-lg-6">
                         <span>Library Number</span>
@@ -39,14 +40,14 @@
                     </div>
                     <div class="col-lg-4">
                         <span>Plan Type</span>
-                        <h5>BASIC PLAN</h5>
+                        <h5>{{$plan->name}}</h5>
                     </div>
                     <div class="col-lg-4">
                         <span>Plan Price</span>
                         <h5>{{$library_transaction->amount ?? ''}}</h5>
                     </div>
                     <div class="col-lg-4">
-                        <span>Seat Booked On</span>
+                        <span>Library Booked On</span>
                         <h5>{{$library_transaction->transaction_date ?? ''}}</h5>
                     </div>
                     <div class="col-lg-4">
@@ -77,19 +78,7 @@
                 </div>
                 <h4 class="mt-4"> Library Other Info :</h4>
                 <div class="row g-4">
-                    <div class="col-lg-4">
-                        <span>Id Proof Name</span>
-                        <h5>
-                            Driving License
-
-                        </h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Id Proof Document</span>
-                        <h5>
-                            NA
-                        </h5>
-                    </div>
+                  
                     <div class="col-lg-4">
                         <span>Library Created At</span>
                         <h5>{{$library->created_at}}</h5>
@@ -114,19 +103,20 @@
                     
                     <div class="col-lg-6">
                         <span>Library Number</span>
-                        <h5>+91-{{$library->library_owner_contact ?? ''}}</h5>
+                        <h5>+91-{{$library->library_mobile ?? ''}}</h5>
                     </div>
                     <div class="col-lg-6">
                         <span>Library Email Id</span>
-                        <h5>{{$library->library_owner_email ?? ''}}</h5>
+                        <h5>{{$library->email ?? ''}}</h5>
                     </div>
                 </div>
                 <h4 class="mt-4"> Library Payment Info :</h4>
                 @foreach($library_all_transaction as  $value)
+               
                     <div class="row g-4">
                         <div class="col-lg-4">
                             <span>Payment Mode</span>
-                            <h5>{{$value->payment_mode}}</h5>
+                            <h5>{{$value->payment_mode==1 ? 'Online' : 'Offline'}}</h5>
                         </div>
                         <div class="col-lg-4">
                             <span>Payment Status</span>
@@ -161,7 +151,7 @@
                                         <th>Plan </th>
                                         <th>Start Date</th>
                                         <th>End Date</th>
-                                        <th>Amount</th>
+                                        <th>Paid Amount</th>
                                         <th>Payment Mode</th>
                                         <th>Paid On</th>
                                         <th>Action</th>
@@ -169,14 +159,18 @@
                                 </thead>
                                 <tbody>
                                     @foreach($library_all_transaction as  $value)
+                                     @php
+                                        $data_pr=getLibraryDataFromId($value->library_id);
+                                       
+                                    @endphp
                                     <tr>
-                                        <td>1 MONTHLY <br> <small class="text-success">FULL
-                                                DAY</small></td>
-                                        <td>2024-09-08</td>
-                                        <td>2024-09-09</td>
-                                        <td>600</td>
-                                        <td>Cash</td>
-                                        <td>2024-09-09</td>
+                                        <td>{{$data_pr->latest_transaction->month}} MONTHLY <br> </td>
+                                        <td>{{$data_pr->latest_transaction->start_date}}</td>
+                                        <td>{{$data_pr->latest_transaction->end_date}}</td>
+                                        <td>{{$data_pr->latest_transaction->paid_amount}}</td>
+                                        <td>{{$data_pr->latest_transaction->payment_mode==1 ? 'Online' : 'Offline'}}</td>
+                                       
+                                        <td>{{$data_pr->latest_transaction->transaction_date}}</td>
                                         <td>
                                             <ul class="actionalbls" style="width: 90px;">
                                                 <li><a href="javascript:;" data-toggle="modal"
@@ -197,60 +191,16 @@
                         </div>
                     </div>
                 </div>
-                <h4 class="mt-4"> Library Previous Plan History</h4>
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <div class="table-responsive">
-                            <table class="table text-center">
-                                <thead>
-                                    <tr>
-                                        <th>Owner Name</th>
-                                        <th>Mobile</th>
-                                        <th>Email</th>
-                                        <th>Plan</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Pawan Rathore</td>
-                                        <td>+91-811447968</td>
-                                        <td>info@gmail.com</td>
-                                        <td>1 MONTHLY <br> <small class="text-success">FULL
-                                                DAY</small></td>
-                                        <td>2024-09-08</td>
-                                        <td>2024-09-09</td>
-                                        <td>
-                                            <ul class="actionalbls" style="width: 90px;">
-                                                <li><a href="javascript:;" data-toggle="modal"
-                                                        data-target="#bookingDetailsModal"
-                                                        title="View Transaction Details"><i
-                                                            class="fa-solid fa-eye"></i></a></li>
-                                                <li><a href="" title="Print Receipt"><i
-                                                            class="fa-solid fa-print"></i></a></li>
-                                                <li><a href="" title="Download Receipt"><i
-                                                            class="fa-solid fa-download"></i></a>
-                                                </li>
-                                            </ul>
-                                        </td>
-                                    </tr>
-
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+               
             </div>
         </div>
     </div>
     <div class="col-lg-3">
-        <div class="seat--info">
+        {{-- <div class="seat--info">
             <img src="assets/images/plan.avif" alt="plan" class="img-fluid">
-        </div>
+        </div> --}}
 
-        <div class="request-logs mt-4">
+        {{-- <div class="request-logs mt-4">
             <h5>Library Request</h5>
             <ul class="request_list">
                 <li>
@@ -286,7 +236,7 @@
                     </div>
                 </li>
             </ul>
-        </div>
+        </div> --}}
     </div>
 </div>
 

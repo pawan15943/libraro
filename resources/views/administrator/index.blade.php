@@ -8,6 +8,7 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="filter-box bg-white">
+        
             <h4 class="mb-3">Filter Library By</h4>
             <form action="{{ route('library') }}" method="GET">
                 <div class="row">
@@ -15,7 +16,8 @@
                         <label for="">Filter By Plan</label>
                         <select name="plan_id" id="plan_id" class="form-select">
                             <option value="">Choose Plan</option>
-                            @foreach($plans as $plan)
+                           
+                            @foreach($planslibrary as $plan)
                                 <option value="{{ $plan->id }}" {{ old('plan_id', request('plan_id')) == $plan->id ? 'selected' : '' }}>
                                     {{ $plan->name }}
                                 </option>
@@ -53,11 +55,11 @@
         </div>
         
         
-        <div class="heading-list">
+        <div class="heading-list py-4">
             <h4 class="">Library List </h4>
             <a href="{{route('library.create')}}" class="btn btn-primary button w-15"><i class="fa-solid fa-plus"></i> Add Library</a>
         </div>
-        <div class="table-responsive mt-4">
+        <div class="table-responsive mb-4">
             <table class="table text-center" id="datatable">
                 <thead>
                     <tr>
@@ -151,14 +153,11 @@
                                 <li><a href="{{route('library.show',$value->id)}}" data-bs-toggle="tooltip" data-bs-title="View Library Details" data-bs-placement="bottom"><i class="fas fa-eye"></i></a>
                                 </li>
 
-                                <!-- Edit Library Info -->
-                                <li><a href="#" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Library Edit" data-bs-title="Edit Library Info"><i class="fas fa-edit"></i></a></li>
-
+                               
                                 <!-- Upgrde Plan-->
                                 {{-- <li><a href="{{route('library.upgrade',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Upgrade Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li> --}}
 
-                                <!-- Close Seat -->
-                                <li><a href="#;" class="link-close-plan" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Close Seat"><i class="fas fa-times"></i></a></li>
+                              
 
                                 <!-- Deletr learners -->
                                 <li><a href="#" data-id="{{$value->id}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete learners" class="delete-learners" data-original-title="Delete learners"><i class="fas fa-trash"></i></a></li>
@@ -171,10 +170,10 @@
                                 <!-- Make Payment -->
                                 <li><a href="{{ route('library.payment', $value->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Make Payment"> <i class="fas fa-credit-card"></i> </a></li>
 
-                                <!-- Sent Mail -->
+                                {{-- <!-- Sent Mail -->
                                 <li><a href="#" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Library-message"><i class="fas fa-envelope"></i></a></li>
                                 <!-- Sent Mail -->
-                                <li><a href="#" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Library-message-whatsapp"><i class="fa-brands fa-whatsapp"></i></a></li>
+                                <li><a href="#" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Library-message-whatsapp"><i class="fa-brands fa-whatsapp"></i></a></li> --}}
                                 {{-- <li><a href="{{ route('configration.upload', $value->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="upload library configration" class="configration" data-original-title="upload library configration"> <i class="fas fa-upload"></i> </a></li> --}}
                             </ul>
                         </td>
