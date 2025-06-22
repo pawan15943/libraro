@@ -193,7 +193,7 @@ use App\Helpers\HelperService;
 
     <!-- Daily Collection -->
     <h4 class="my-4">Daily Transections</h4>
-    <div class="row">
+    <div class="row g-4">
         <div class="col-lg-2 col-md-4 col-sm-6 col-6">
             <div class="booking-count bg-3">
                 <h6>Todays Collection</h6>

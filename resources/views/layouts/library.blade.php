@@ -106,6 +106,9 @@
                     <a href=""><i class="fa fa-cog fa-2x fa-spin"></i></a>
                 </li>
             </ul>
+            <div class="control-right-sidebar">
+                <i class="fa fa-angle-right" id="sidebar_mob"></i>
+            </div>
         </div>
 
     </div>
@@ -289,6 +292,14 @@
     <script>
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('.control-right-sidebar').on('click', function() {
+                $('.right-sidebar').toggleClass('hide-right-sidebar');
+                $(this).find('#sidebar_mob').toggleClass('rotate-180');
+            });
+        });
     </script>
 </body>
 

@@ -2384,6 +2384,7 @@ nav ol {
 .library-dashbaord {
     display: flex;
     min-height: 100vh;
+    overflow: hidden;
 }
 
 .library-dashbaord .sidebar {
@@ -5629,6 +5630,7 @@ span.invalid-feedback strong {
     width: 80px;
     position: relative;
     box-shadow: 1px 0 5px #00000024;
+    margin-right: -80px;
 }
 
 .right-sidebar h4 {
@@ -5643,6 +5645,7 @@ span.invalid-feedback strong {
     padding: 0;
     margin-top: .8rem;
     border-radius: 5rem;
+    position: relative;
 }
 
 .right-sidebar ul li+li {
@@ -5717,4 +5720,29 @@ p.text-danger.font-weight-bold,
     background: linear-gradient(312deg, #fffae4, #ffdcdc);
     border-radius: .4rem;
     font-size: .8rem;
+}
+
+.control-right-sidebar {
+    position: absolute;
+    left: -32px;
+    bottom: 85px;
+    background: #d8d8d8;
+    width: 20px;
+    padding: .5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem .0rem 0 1rem;
+    z-index: 1111;
+}
+
+.hide-right-sidebar {
+    background: #fff;
+    z-index: 0;
+    width: 80;
+    margin-right: 0;
+}
+
+.rotate-180 {
+    transform: rotate(180deg);
 }
