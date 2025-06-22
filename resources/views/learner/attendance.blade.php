@@ -35,8 +35,8 @@
 
 <div class="row mb-4">
     <div class="col-lg-12">
-        <div class="text-danger pb-3"><b>Note :</b> If you don't provide an out time, then learner's  closing shift time will be used as the out time.</div>
-        <div class="table-responsive ">
+        <div class="text-danger pb-3"><b>Note :</b> If you don't provide an out time, then learner's closing shift time will be used as the out time.</div>
+        <div class="table-responsive mt-4">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
                     <tr>
@@ -50,12 +50,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                
-                   @if(isset($learners)&&  $learners->isNotEmpty())
+
+                    @if(isset($learners)&& $learners->isNotEmpty())
 
 
                     @foreach($learners as $key => $value)
-                  
+
                     <tr>
                         <td>{{$value->seat_no ?? 'GENERAL'}}<br>
                             <small>{{$value->plan_type_name}}</small>
@@ -165,8 +165,7 @@
                             };
                             toastr.success(response.message);
                             console.log(response.message); // Success message
-                        } 
-                        else if (response.absent) {
+                        } else if (response.absent) {
                             toastr.options = {
                                 positionClass: "toast-bottom-right", // Change position as needed
                                 timeOut: 5000, // Auto close after 5 seconds
@@ -175,8 +174,7 @@
                             };
                             toastr.error(response.message);
                             console.log(response.message); // Success message
-                        } 
-                        else if (response.success) {
+                        } else if (response.success) {
                             toastr.options = {
                                 positionClass: "toast-bottom-right", // Change position as needed
                                 timeOut: 5000, // Auto close after 5 seconds
@@ -185,8 +183,7 @@
                             };
                             toastr.success(response.message);
                             console.log(response.message); // Success message
-                        } 
-                        else {
+                        } else {
                             alert('Error updating attendance');
                         }
                     },

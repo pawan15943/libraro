@@ -25,17 +25,17 @@
 </head>
 
 <body>
-<!-- New Design Dahsbard Library -->
-<div class="support-container">
-    <div class="support-icon" onclick="toggleSupportCard()">
-        <i class="fa-solid fa-phone-volume"></i>
+    <!-- New Design Dahsbard Library -->
+    <div class="support-container">
+        <div class="support-icon" onclick="toggleSupportCard()">
+            <i class="fa-solid fa-phone-volume"></i>
+        </div>
+        <div class="support-card" id="supportCard">
+            <p style="color: var(--c1);"><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
+            <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
+            <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
+        </div>
     </div>
-    <div class="support-card" id="supportCard">
-        <p style="color: var(--c1);"><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
-        <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
-        <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
-    </div>
-</div>
 
     <div class="library-dashbaord">
         <!-- Sidebar -->
@@ -53,7 +53,11 @@
                     @yield('content')
                     <script>
                         // Session expiration popup logic here
-                        const sessionLifetime = {{config('session.lifetime')}}* 60; // Convert to seconds
+                        const sessionLifetime = {
+                            {
+                                config('session.lifetime')
+                            }
+                        }* 60; // Convert to seconds
                         const warningTime = sessionLifetime - 60; // Show popup 1 minute before expiration
 
                         setTimeout(function() {
@@ -76,10 +80,26 @@
             <!-- Footer  -->
             @include('partials.footer')
         </div>
-
+        <div class="right-sidebar">
+            <h4> QUICK ACTION</h4>
+            <ul>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat">
+                    <a href=""><i class="fa fa-chair fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seart">
+                    <a href=""><i class="fa fa-search fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seart">
+                    <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
+                    <a href=""><i class="fa fa-comment fa-2x"></i></a>
+                </li>
+            </ul>
+        </div>
 
     </div>
-   
+
 
 
 
@@ -90,12 +110,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  
+
     <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js"></script>
-        
+
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
@@ -104,7 +124,7 @@
 
     <script src="{{ url('public/js/main-scripts.js') }}"></script>
     <script src="{{ url('public/js/main-validation.js') }}"></script>
-   
+
 
 
     <script>
@@ -167,14 +187,14 @@
                 $('.sidebar').toggleClass('w-120');
             });
 
-            
+
         });
         $(document).ready(function() {
             $('#sidebar_mob').on('click', function() {
                 $('.sidebar').toggleClass('w-120');
             });
 
-            
+
         });
     </script>
     <script>
@@ -243,19 +263,23 @@
         });
     </script>
 
-<script>
-    $(document).ready(function(){
-    function toggleSupportCard() {
-        $('#supportCard').toggle();
-    }
+    <script>
+        $(document).ready(function() {
+            function toggleSupportCard() {
+                $('#supportCard').toggle();
+            }
 
-    $('.support-icon').on('click', function() {
-        toggleSupportCard();
-    });
-});
+            $('.support-icon').on('click', function() {
+                toggleSupportCard();
+            });
+        });
 
-</script>
-
+        $(element).tooltip("show");
+    </script>
+    <script>
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+    </script>
 </body>
 
 </html>

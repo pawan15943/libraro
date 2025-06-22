@@ -4,9 +4,27 @@
 
 @section('content')
 @php
-    use App\Helpers\HelperService; 
+use App\Helpers\HelperService;
 @endphp
 
+<!-- <div class="alert alert-success alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
+    <i class="fa-solid fa-circle-check me-3 text-success"></i>
+    <div>
+        <h5 class="mb-1">Profile Updated Successfully!</h5>
+        <p class="mb-0">Your profile details were saved. Thank you for keeping your info current.</p>
+    </div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div> -->
+
+<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
+    <i class="fa-solid fa-clock me-3 text-warning"></i>
+    <div>
+        <strong>Profile Update Pending</strong><br>
+        Your profile changes are under review. You'll be notified once approved.
+    </div>
+    <!-- This button is show when profile is updated successfully -->
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
 
 
 <div class="dashboard learner">
@@ -18,17 +36,17 @@
             </div>
         </div>
         <div class="col-lg-6">
-      
+
             <ul class="QuickAction">
                 @can('has-permission', 'General Seat Booked')
                 <li>
-                    
-                <a href="javascript:;" class=" noseat_popup">
-                    <i class="fa-solid fa-check-circle available"></i> Book a General Seat
-                </a>
-               
+
+                    <a href="javascript:;" class=" noseat_popup">
+                        <i class="fa-solid fa-check-circle available"></i> Book a General Seat
+                    </a>
+
                 </li>
-                 @endcan
+                @endcan
                 <li><a href="{{ route('seats.history') }}"><i class="fa fa-book available"></i> Library Register</a></li>
             </ul>
         </div>
@@ -56,18 +74,18 @@
             @endswitch">
                 <div class="top-content">
                     <h4>{{$plan->name}}
-                       
+
                     </h4>
                     <label for="">
-                    @if((isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile))
-                    <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
-                    @else
-                    Active 
-                    @endif    
-                    
+                        @if((isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile))
+                            <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
+                            @else
+                            Active
+                            @endif
+
                     </label>
                 </div>
-              
+
                 <div class="d-flex">
                     <ul class="plann-info">
                         <li>Total Seat : <a href="{{route('seats')}}">{{$total_seats ?? 0}}</a> </li>
@@ -133,7 +151,7 @@
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="main-count cardbg-1">
                 <span>Total Seats</span>
-                <h2 id="total_seat" >0</h2>
+                <h2 id="total_seat">0</h2>
                 <small>As Today {{date('d-m-Y')}}</small>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
             </div>
@@ -159,7 +177,7 @@
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
             </div>
         </div>
-       @endcan
+        @endcan
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="main-count cardbg-4">
                 <span>Expired Seats</span>
@@ -169,7 +187,7 @@
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
             </div>
         </div>
-       
+
     </div>
     <!-- End -->
 
@@ -181,12 +199,12 @@
 
             <div class="v-content">
                 <ul class="revenue-box scroll-x " id="monthlyData">
-                   
+
                     <li class="not-data" style="display: none; " id="no-data">
                         <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
                         <span>No Data Available</span>
                     </li>
-                 
+
                 </ul>
             </div>
         </div>
@@ -195,17 +213,17 @@
             <h4 class="my-4">Recent Activity</h4>
             <ul class="activity contents">
                 @foreach($recent_activitys as $key => $value)
-                    @php
-                        $seat_no=App\Models\Learner::where('id',$value->learner_id)->value('seat_no');
-                        $operationDetails = HelperService::getOperationDetails($value);
-                        
-                    @endphp
-                    
-                    <li>Seat {{$seat_no ?? ''}} {{$operationDetails['operation_type']}} {{$operationDetails['field']}} {{$operationDetails['old']}} to {{$operationDetails['new']}}
-                        <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
-                    </li>
+                @php
+                $seat_no=App\Models\Learner::where('id',$value->learner_id)->value('seat_no');
+                $operationDetails = HelperService::getOperationDetails($value);
+
+                @endphp
+
+                <li>Seat {{$seat_no ?? ''}} {{$operationDetails['operation_type']}} {{$operationDetails['field']}} {{$operationDetails['old']}} to {{$operationDetails['new']}}
+                    <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
+                </li>
                 @endforeach
-               
+
             </ul>
         </div>
     </div>
@@ -221,7 +239,7 @@
 
 
     <div class="row g-4">
-        
+
         @can('has-permission', 'Total Bookings')
         <div class="col-lg-2 col-md-4 col-sm-6 col-6">
             <div class="booking-count bg-3">
@@ -461,7 +479,7 @@
 <h4 class="my-4">Plan Wise Count</h4>
 <!-- Plan Wise Booking Counts -->
 <div class="row g-4 planwisecount">
-   
+
     <div class="col-lg-2 col-md-4 col-sm-6 col-6">
         <div class="booking-count bg-4">
             <h6>Full Day</h6>
@@ -471,7 +489,7 @@
             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
         </div>
     </div>
-   
+
     <div class="col-lg-2 col-md-4 col-sm-6 col-6">
         <div class="booking-count bg-4">
             <h6>First Half</h6>
@@ -556,14 +574,14 @@
         <div class="card chart">
             <h5 class="mb-3">Planwise Revenue</h5>
             <div class="record-not-found">
-               
+
                 <canvas id="revenueChart" style="max-height:340px;"></canvas>
-              
+
                 <div class="not-data" style="display: none;" id="no-data2">
                     <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
                     <span>No Data Available</span>
                 </div>
-               
+
             </div>
         </div>
     </div>
@@ -571,14 +589,14 @@
         <div class="card chart">
             <h5 class="mb-3">Planwise Booking</h5>
             <div class="record-not-found">
-               
+
                 <canvas id="bookingCountChart"></canvas>
-                
+
                 <div class="not-data" style="display: none; " id="no-data3">
                     <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
                     <span>No Data Available</span>
                 </div>
-              
+
             </div>
         </div>
     </div>
@@ -587,72 +605,72 @@
 
 <!-- Available Seats -->
 @if(getCurrentBranch() !=0 || getCurrentBranch() !=null)
- 
+
 
 <div class="row g-4 mt-2 mb-4">
     @can('has-permission', 'Avaialble Seats List')
     <div class="col-lg-4">
 
         <!-- Show 10 availble Seats -->
-       
+
         <div class="seat-statistics ">
             <h4 class="mb-3 text-center">Avaialble Seats</h4>
             <ul class="contents">
-              
+
                 @if(getAvailableSeatCount() >0)
-               
-                    @foreach($available_seats as $seat)
-                        @if(count($seat['available_plan_types']) > 0)
-                        <li>
-                            <div class="d-flex">
-                                <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
-                                <div class="seat-content">
-                                    
-                                    <h6>Seat No. {{ $seat['seat_no'] }}</h6>
-                                    @if(count($seat['available_plan_types']) > 3)
-                                    <small>Available</small>
-                                    @else
-                                    @foreach($seat['available_plan_types'] as $planType)
-                                    @if($planType['name']=='First Half')
-                                    <small>FH </small>
-                                    @elseif($planType['name']=='Second Half')
-                                    <small>SH </small>
-                                    @elseif($planType['name']=='Hourly Slot 1')
-                                    <small>H1 </small>
-                                    @elseif($planType['name']=='Hourly Slot 2')
-                                    <small>H2 </small>
-                                    @elseif($planType['name']=='Hourly Slot 3')
-                                    <small>H3 </small>
-                                    @elseif($planType['name']=='Hourly Slot 4')
-                                    <small>H4 </small>
-                                    @elseif($planType['name']=='Full Day')
-                                    <small>FD </small>
-                                    @elseif($planType['name']=='Full Night')
-                                    <small>FN </small>
-                                    @else
-                                    <small>{{ $planType['name'] }}</small>
-                                    @endif
 
-                                    @endforeach
-                                    @endif
+                @foreach($available_seats as $seat)
+                @if(count($seat['available_plan_types']) > 0)
+                <li>
+                    <div class="d-flex">
+                        <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
+                        <div class="seat-content">
 
-                                </div>
-                                <a href="javascript:;" data-bs-toggle="modal" class="first_popup book"
-                                    data-bs-target="#seatAllotmentModal" data-id="{{ $seat['seat_id'] }}" data-seat_no="{{ $seat['seat_no'] }}">Book</a>
-                            </div>
-                        </li>
-                    
-                        @endif
-                    @endforeach
-                     
+                            <h6>Seat No. {{ $seat['seat_no'] }}</h6>
+                            @if(count($seat['available_plan_types']) > 3)
+                            <small>Available</small>
+                            @else
+                            @foreach($seat['available_plan_types'] as $planType)
+                            @if($planType['name']=='First Half')
+                            <small>FH </small>
+                            @elseif($planType['name']=='Second Half')
+                            <small>SH </small>
+                            @elseif($planType['name']=='Hourly Slot 1')
+                            <small>H1 </small>
+                            @elseif($planType['name']=='Hourly Slot 2')
+                            <small>H2 </small>
+                            @elseif($planType['name']=='Hourly Slot 3')
+                            <small>H3 </small>
+                            @elseif($planType['name']=='Hourly Slot 4')
+                            <small>H4 </small>
+                            @elseif($planType['name']=='Full Day')
+                            <small>FD </small>
+                            @elseif($planType['name']=='Full Night')
+                            <small>FN </small>
+                            @else
+                            <small>{{ $planType['name'] }}</small>
+                            @endif
+
+                            @endforeach
+                            @endif
+
+                        </div>
+                        <a href="javascript:;" data-bs-toggle="modal" class="first_popup book"
+                            data-bs-target="#seatAllotmentModal" data-id="{{ $seat['seat_id'] }}" data-seat_no="{{ $seat['seat_no'] }}">Book</a>
+                    </div>
+                </li>
+
+                @endif
+                @endforeach
+
                 @else
-                     <small class="text-center d-block text-success">Congratulations! All premium seats are fully booked. You can now  only <a href="javascript:;" class=" noseat_popup">Book General Seats. </a> to book.</small>
+                <small class="text-center d-block text-success">Congratulations! All premium seats are fully booked. You can now only <a href="javascript:;" class=" noseat_popup">Book General Seats. </a> to book.</small>
                 @endif
 
             </ul>
             <a href="{{route('seats')}}" class="view-full-info">View All Available Seats</a>
         </div>
-        
+
     </div>
     @endcan
     @can('has-permission', 'Seat About to Expire List')
@@ -660,7 +678,7 @@
         <div class="seat-statistics">
             <h4 class="mb-3 text-center">Seat About to Expire</h4>
             <ul class="contents">
-               
+
                 @if(!$renewSeats->isEmpty())
 
                 @foreach($renewSeats as $key => $value)
@@ -715,7 +733,7 @@
                             <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p>
                             @can('has-permission', 'Plan Renews')
                             <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew Plan</a></small>
-                             @endcan
+                            @endcan
                         </div>
 
                         <ul class="d-flex inner">
@@ -773,49 +791,49 @@
                                     @foreach($plans as $key => $value)
                                     <option value="{{$value->id}}">{{$value->name}}</option>
 
-                                    @endforeach
+@endforeach
 
-                                </select>
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Plan Type <span>*</span></label>
-                                <select id="updated_plan_type_id" class="form-control" name="plan_type_id" @readonly(true)>
+</select>
+</div>
+<div class="col-lg-6">
+    <label for="">Plan Type <span>*</span></label>
+    <select id="updated_plan_type_id" class="form-control" name="plan_type_id" @readonly(true)>
 
-                                </select>
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Plan Price <span>*</span></label>
-                                <input id="updated_plan_price_id" class="form-control" placeholder="Plan Price" name="plan_price_id" @readonly(true)>
+    </select>
+</div>
+<div class="col-lg-6">
+    <label for="">Plan Price <span>*</span></label>
+    <input id="updated_plan_price_id" class="form-control" placeholder="Plan Price" name="plan_price_id" @readonly(true)>
 
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Plan Ends On <span>*</span></label>
-                                <input type="date" class="form-control" placeholder="Plan Ends On" id="update_plan_end_date" value="" readonly>
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Payment Mode <span>*</span></label>
-                                <select name="payment_mode" id="payment_mode" class="form-select">
-                                    <option value="">Select Payment Mode</option>
-                                    <option value="1">Online</option>
-                                    <option value="2">Offline</option>
-                                    <option value="3">Pay Later</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-12">
-                                <span class="text-info text-center">Your upcoming plan starts after your current plan expires.</span>
-                            </div>
-                            <div class="col-lg-5 mt-3">
+</div>
+<div class="col-lg-6">
+    <label for="">Plan Ends On <span>*</span></label>
+    <input type="date" class="form-control" placeholder="Plan Ends On" id="update_plan_end_date" value="" readonly>
+</div>
+<div class="col-lg-6">
+    <label for="">Payment Mode <span>*</span></label>
+    <select name="payment_mode" id="payment_mode" class="form-select">
+        <option value="">Select Payment Mode</option>
+        <option value="1">Online</option>
+        <option value="2">Offline</option>
+        <option value="3">Pay Later</option>
+    </select>
+</div>
+<div class="col-lg-12">
+    <span class="text-info text-center">Your upcoming plan starts after your current plan expires.</span>
+</div>
+<div class="col-lg-5 mt-3">
 
-                                <input type="hidden" class="form-control char-only" name="seat_no" value="" id="update_seat_no">
-                                <input type="hidden" class="form-control char-only" name="user_id" value="" id="update_user_id">
-                                <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Renew Membership Now">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <input type="hidden" class="form-control char-only" name="seat_no" value="" id="update_seat_no">
+    <input type="hidden" class="form-control char-only" name="user_id" value="" id="update_user_id">
+    <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Renew Membership Now">
+</div>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
 </div> --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -956,29 +974,29 @@
                 },
                 success: function(response) {
                     console.log(response.planTypeWiseRevenue.data);
-                    if(response.revenu_expense.length===0){
+                    if (response.revenu_expense.length === 0) {
                         $('#no-data').show();
-                        
-                    }else{
+
+                    } else {
                         $('#no-data').hide();
                         updateRevenue(response.revenu_expense);
                     }
-                    if(response.planTypeWiseRevenue.data.length==0){
+                    if (response.planTypeWiseRevenue.data.length == 0) {
                         $('#no-data2').show();
-                    }else{
+                    } else {
                         $('#no-data2').hide();
                     }
-                    if(response.planTypeWiseCount.data.length==0){
+                    if (response.planTypeWiseCount.data.length == 0) {
                         $('#no-data3').show();
-                    }else{
+                    } else {
                         $('#no-data3').hide();
                     }
-                  
+
                     updateHighlights(response.highlights);
-                 
+
 
                     var planWiseBookings = response.plan_wise_booking;
-                   
+
                     $('.row.g-4.planwisecount').empty(); // Clear existing data
 
                     planWiseBookings.forEach(function(booking) {
@@ -999,7 +1017,7 @@
                     if (response.planTypeWiseRevenue && Array.isArray(response.planTypeWiseRevenue.labels) && Array.isArray(response.planTypeWiseRevenue.data)) {
                         renderRevenueChart(response.planTypeWiseRevenue.labels, response.planTypeWiseRevenue.data);
                     } else {
-                        
+
                         console.error('Invalid data format for planTypeWiseRevenue:', response.planTypeWiseRevenue);
                     }
 
@@ -1016,7 +1034,7 @@
                 }
             });
         }
-      
+
         // Function to update highlights
         function updateHighlights(highlights) {
             console.log('highlights', highlights);
@@ -1196,66 +1214,66 @@
         if (Chart.getChart("bookingCountChart")) {
             Chart.getChart("bookingCountChart").destroy();
         }
-       
-        if(data){
 
-      
-        var ctx1 = document.getElementById('bookingCountChart').getContext('2d');
-        var bookingCountChart = new Chart(ctx1, {
-            type: 'pie',
-            data: {
-                labels: labels.map((label, index) => `${label}: ${data[index]} bookings`), // Add counts to labels
-                datasets: [{
-                    label: 'Plan Type Wise Booking Count',
-                    data: data,
-                    backgroundColor: [
-                        '#001f3f', // Dark Navy for Full Day
-                        '#85144b', // Maroon for First Half
-                        '#FF4136', // Red for Second Half
-                        '#3D9970', // Dark Green for Hourly 1
-                        '#FF851B', // Orange for Hourly 2
-                        '#0074D9', // Blue for Hourly 3
-                        '#7FDBFF' // Light Blue for Hourly 4
-                    ],
-                    borderColor: 'rgba(255, 255, 255, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
+        if (data) {
 
-                        position: 'top',
-                        labels: {
-                            color: '#000', // Legend text color
+
+            var ctx1 = document.getElementById('bookingCountChart').getContext('2d');
+            var bookingCountChart = new Chart(ctx1, {
+                type: 'pie',
+                data: {
+                    labels: labels.map((label, index) => `${label}: ${data[index]} bookings`), // Add counts to labels
+                    datasets: [{
+                        label: 'Plan Type Wise Booking Count',
+                        data: data,
+                        backgroundColor: [
+                            '#001f3f', // Dark Navy for Full Day
+                            '#85144b', // Maroon for First Half
+                            '#FF4136', // Red for Second Half
+                            '#3D9970', // Dark Green for Hourly 1
+                            '#FF851B', // Orange for Hourly 2
+                            '#0074D9', // Blue for Hourly 3
+                            '#7FDBFF' // Light Blue for Hourly 4
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+
+                            position: 'top',
+                            labels: {
+                                color: '#000', // Legend text color
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    const label = tooltipItem.label || '';
+                                    const value = tooltipItem.raw || 0;
+                                    return `${label}: ${value} bookings`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: '#fff', // Label text color
+                            display: true,
+                            formatter: (value) => value, // Show count directly on the chart
                             font: {
-                                size: 12
+                                size: 20,
+                                weight: 'regular'
                             }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                const label = tooltipItem.label || '';
-                                const value = tooltipItem.raw || 0;
-                                return `${label}: ${value} bookings`;
-                            }
-                        }
-                    },
-                    datalabels: {
-                        color: '#fff', // Label text color
-                        display: true,
-                        formatter: (value) => value, // Show count directly on the chart
-                        font: {
-                            size: 20,
-                            weight: 'regular'
                         }
                     }
-                }
-            },
-            plugins: [ChartDataLabels] // Register ChartDataLabels plugin
-        });
+                },
+                plugins: [ChartDataLabels] // Register ChartDataLabels plugin
+            });
 
         }
     }
