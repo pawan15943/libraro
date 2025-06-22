@@ -191,6 +191,71 @@ use App\Helpers\HelperService;
     </div>
     <!-- End -->
 
+    <!-- Daily Collection -->
+    <h4 class="my-4">Daily Transections</h4>
+    <div class="row">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-3">
+                <h6>Todays Collection</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-3">
+                <h6>Todays Expense</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-3">
+                <h6>Todays Balence</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-5">
+                <h6>TOTAL INCOME</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-5">
+                <h6>TOTAL EXPENSE</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="booking-count bg-5">
+                <h6>TOTAL BALENCE</h6>
+                <div class="d-flex">
+                    <h4 id="totalBookings">0</h4>
+                </div>
+                <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Library Revenue -->
     <div class="row g-4">
         @can('has-permission', 'Monthly Revenues')
@@ -212,6 +277,8 @@ use App\Helpers\HelperService;
         <div class="col-lg-4">
             <h4 class="my-4">Recent Activity</h4>
             <ul class="activity contents">
+                @if($recent_activitys->count() > 0)
+
                 @foreach($recent_activitys as $key => $value)
                 @php
                 $seat_no=App\Models\Learner::where('id',$value->learner_id)->value('seat_no');
@@ -223,7 +290,9 @@ use App\Helpers\HelperService;
                     <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
                 </li>
                 @endforeach
-
+                @else
+                <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
+                @endif
             </ul>
         </div>
     </div>
@@ -239,7 +308,6 @@ use App\Helpers\HelperService;
 
 
     <div class="row g-4">
-
         @can('has-permission', 'Total Bookings')
         <div class="col-lg-2 col-md-4 col-sm-6 col-6">
             <div class="booking-count bg-3">

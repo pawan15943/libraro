@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Libraro : Library Management Software</title>
-    
+
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"
@@ -93,8 +93,17 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seart">
                     <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
                 </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
+                    <a href=""><i class="fa fa-user-tie fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
+                    <a href=""><i class="fa fa-list-check fa-2x"></i></a>
+                </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href=""><i class="fa fa-comment fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
+                    <a href=""><i class="fa fa-cog fa-2x fa-spin"></i></a>
                 </li>
             </ul>
         </div>

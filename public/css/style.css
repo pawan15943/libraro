@@ -1143,11 +1143,6 @@ a.btn.btn-primary.button {
     padding: 0 !important;
 }
 
-.upper-box h5,
-.action-box h5 {
-    font-size: 1rem !important;
-}
-
 .actions {
     background: var(--c5);
     border-radius: .8rem;
@@ -1953,13 +1948,7 @@ a.text-white.text-decoration-none:hover i.fa-long-arrow-right {
 }
 
 
-.booking-count img {
-    width: 40px;
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%)
-}
+
 
 .dashboard .booking-count h6 {
     margin: 0px;
@@ -3103,7 +3092,18 @@ a.btn.btn-primary.button {
 
 .upper-box h5,
 .action-box h5 {
-    font-size: 1rem !important;
+    font-size: .8rem !important;
+}
+
+.bg-white.p-2.rounded-2 {
+    height: 265px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    justify-content: center;
+    font-size: .8rem;
+    color: #909090;
+    border-radius: 1.5rem ! IMPORTANT;
 }
 
 .actions {
@@ -3877,7 +3877,7 @@ ul.revenue-box {
 }
 
 .booking-count img {
-    width: 40px;
+    width: 30px;
     position: absolute;
     right: 15px;
     top: 50%;
@@ -3886,11 +3886,13 @@ ul.revenue-box {
 
 .dashboard .booking-count h6 {
     margin: 0px;
-    font-size: .9rem !important;
+    font-size: .7rem !important;
     color: #ffffffd1 !important;
-    font-weight: 400;
+    font-weight: 5 00;
     margin-bottom: 1rem;
     padding: 0 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 
