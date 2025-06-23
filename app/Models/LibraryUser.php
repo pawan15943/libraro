@@ -36,5 +36,9 @@ class LibraryUser extends Authenticatable
         return $this->belongsToMany(Permission::class, 'library_user_permissions');
     }
 
+    public function devices()
+    {
+        return $this->morphMany(\App\Models\DeviceToken::class, 'user');
+    }
 
 }

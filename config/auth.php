@@ -112,11 +112,18 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
-        'library' => [
+         'library' => [
             'provider' => 'library',
-            'table' => 'password_resets',
-            'expire' => 60,
+            'table' => 'password_reset_tokens',
+             'expire' => 60,
+            'throttle' => 60,
         ],
+        // 'library' => [
+        //     'provider' => 'library',
+        //     'table' => 'password_resets',
+        //     'expire' => 60,
+        // ],
+
     ],
 
     /*

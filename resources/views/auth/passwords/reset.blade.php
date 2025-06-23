@@ -59,7 +59,8 @@
                     @csrf
                     <div class="row g-3 mt-1">
                     <input type="hidden" name="token" value="{{ $token }}">
-                    <div class="col-lg-12">
+                    <input type="hidden" name="email" value="{{ $email }}">
+                    {{-- <div class="col-lg-12">
                         <label for="">Email Address</label>
                         <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
                         @error('email')
@@ -67,7 +68,7 @@
                             <strong>{{ $message }}</strong>
                         </span>
                         @enderror
-                    </div>
+                    </div> --}}
                     <div class="col-lg-12">
                         <label for="">Password</label>
                         <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">

@@ -8,10 +8,12 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Scopes\LibraryScope;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Notifications\ResetPassword;
 
 class Library extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory , Notifiable;
+    use HasApiTokens, HasFactory , Notifiable;
     use HasRoles;
     protected $guard = 'library';
     protected $guarded = []; 
@@ -52,24 +54,30 @@ class Library extends Authenticatable implements MustVerifyEmail
     }
 
     public function isNotGeneralBranch()
-{
-    $branchId = session('branch_id', 0); // session branch_id
+    {
+        $branchId = session('branch_id', 0); // session branch_id
 
-    // If specific branch is selected
-    if ($branchId > 0) {
-        $branch = $this->branches->where('id', $branchId)->first();
-        return $branch && $branch->seat_type != 'general';
+        // If specific branch is selected
+        if ($branchId > 0) {
+            $branch = $this->branches->where('id', $branchId)->first();
+            return $branch && $branch->seat_type != 'general';
+        }
+
+        // If "All Branches" selected (branch_id = 0)
+        // Check if ANY branch is not 'general'
+        return $this->branches->contains(function($branch) {
+            return $branch->seat_type != 'general';
+        });
     }
 
-    // If "All Branches" selected (branch_id = 0)
-    // Check if ANY branch is not 'general'
-    return $this->branches->contains(function($branch) {
-        return $branch->seat_type != 'general';
-    });
-}
-
-
+    public function devices()
+    {
+        return $this->morphMany(\App\Models\DeviceToken::class, 'user');
+    }
  
-  
+        // public function sendPasswordResetNotification($token)
+        // {
+        //     $this->notify(new ResetPassword($token));
+        // }
     
 }
