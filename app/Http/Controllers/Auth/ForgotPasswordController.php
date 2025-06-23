@@ -37,9 +37,30 @@ class ForgotPasswordController extends Controller
         return view('auth.passwords.email');
     }
 
+    // public function sendResetLinkEmail(Request $request)
+    // {
+    //     $request->validate(['email' => 'required|email|exists:libraries,email']);
+
+    //     $status = Password::broker('library')->sendResetLink(
+    //         $request->only('email')
+    //     );
+
+    //     return $status === Password::RESET_LINK_SENT
+    //         ? response()->json([
+    //             'status' => true,
+    //             'message' => 'Reset link sent to your email',
+    //             'data' => []
+    //         ])
+    //         : response()->json([
+    //             'status' => false,
+    //             'message' => 'Failed to send reset link',
+    //             'data' => []
+    //         ], 500);
+    // }
+
     public function sendResetLinkEmail(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+         $request->validate(['email' => 'required|email|exists:libraries,email']);
 
         $user = Library::where('email', $request->email)->select('library_name as name','email')->first();
         if (!$user) {
