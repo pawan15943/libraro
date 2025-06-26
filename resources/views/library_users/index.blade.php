@@ -1,22 +1,18 @@
 @extends('layouts.library')
-<!-- CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 @section('content')
 
 
- <div class="col-lg-4">
-        
-        <a href="{{ route('library-users.create') }}" class="btn btn-primary export">
-            <i class="fa-solid fa-plus "></i> Add Library User 
-        </a>
-        
-    </div>
-<h4 class="py-4">All Library Users</h4>
+
+<div class="heading-list justify-content-end">
+    <a href="{{ route('library-users.create') }}" class="btn btn-primary export">
+        <i class="fa-solid fa-plus "></i> Add Library User
+    </a>
+</div>
 <div class="card p-0">
     <!-- List of Users -->
-
-    <div class="table-responsive mb-4">
-        <table class="table text-center datatable" id="datatable">
+    <div class="table-responsive">
+        <table class="table text-center" id="datatable">
             <thead>
                 <tr>
                     <th>S.No.</th>
@@ -30,6 +26,8 @@
                 </tr>
             </thead>
             <tbody>
+
+
                 @foreach($users as $key => $user)
                 <tr>
                     <td>{{ $key+1 }}</td>
@@ -61,22 +59,21 @@
                     </td>
                 </tr>
                 @endforeach
+
             </tbody>
         </table>
     </div>
 
 </div>
 <!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $('#checkAllPermissions').on('change', function() {
         $('.permission').prop('checked', this.checked);
     });
-
 </script>
 <script>
     $(document).ready(function() {
-      
+
         // Edit user
         $('.edit_user').on('click', function() {
             let user = $(this).data('user');
@@ -115,6 +112,7 @@
             });
         });
     });
-
 </script>
+@include('library.script')
+
 @endsection

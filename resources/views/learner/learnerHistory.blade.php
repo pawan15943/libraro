@@ -82,14 +82,14 @@ $current_route = Route::currentRouteName();
 </style>
 
 @if (session('error'))
-    <div class="alert alert-danger">
-        {{ session('error') }}
-    </div>
+<div class="alert alert-danger">
+    {{ session('error') }}
+</div>
 @endif
 @if (session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
+<div class="alert alert-success">
+    {{ session('success') }}
+</div>
 @endif
 @can('has-permission', 'Filter')
 <div class="row d-none">
@@ -154,9 +154,10 @@ $current_route = Route::currentRouteName();
 @endcan
 <div class="row">
     <div class="col-lg-12">
-    <p class="info-message">
-    <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>    
-    <b>Important: </b>This section displays a list of all closed plans and expired seats. If a seat owner does not renew their plan within a month or specified extension period, the seat will automatically expire and become available for others to book.However, if a user wishes to rebook their seat at a later time, we offer an option to reactivate the seat under a different seat number using the reactivation feature. In this case, we will not collect personal information again; instead, we will use the existing information on file.</p>
+        <p class="info-message">
+            <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
+            <b>Important: </b>This section displays a list of all closed plans and expired seats. If a seat owner does not renew their plan within a month or specified extension period, the seat will automatically expire and become available for others to book.However, if a user wishes to rebook their seat at a later time, we offer an option to reactivate the seat under a different seat number using the reactivation feature. In this case, we will not collect personal information again; instead, we will use the existing information on file.
+        </p>
         <div class="table-responsive">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
@@ -170,17 +171,17 @@ $current_route = Route::currentRouteName();
                     </tr>
                 </thead>
 
-               
+
                 <tbody>
                     @foreach($learnerHistory as $key => $value)
-                  
+
                     <tr>
                         <td>{{$value->seat_no}}<br>
                             <small>{{$value->plan_type_name}}</small>
                         </td>
                         <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
-                            <br> <small>{{$value->dob}}</small>
+                            <br> <small>{{$value->plan_type_name}}</small>
                         </td>
                         <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->email }}" data-bs-placement="bottom"><i
@@ -192,13 +193,13 @@ $current_route = Route::currentRouteName();
                             <small>{{$value->plan_name}}</small>
                         </td>
                         <td>{{$value->plan_end_date}}<br>
-                        
-                        {!! getUserStatusDetails($value->plan_end_date) !!}
+
+                            {!! getUserStatusDetails($value->plan_end_date) !!}
                         </td>
                         <td>
                             <ul class="actionalbls">
-                            <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                            <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
+                                <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                                <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
                             </ul>
                         </td>
 
@@ -206,9 +207,9 @@ $current_route = Route::currentRouteName();
 
                     @endforeach
                 </tbody>
-              
+
             </table>
-         
+
         </div>
     </div>
 </div>
@@ -219,7 +220,8 @@ $current_route = Route::currentRouteName();
 <script>
     $(document).on('click', '.delete-customer', function() {
         var id = $(this).data('id');
-        var url = '{{ route('learners.destroy', ': id ') }}';
+        var url = '{{ route('
+        learners.destroy ', ': id ') }}';
         url = url.replace(':id', id);
 
         Swal.fire({
@@ -280,7 +282,8 @@ $current_route = Route::currentRouteName();
 <script>
     $(document).on('click', '.link-close-plan', function() {
         const learner_id = this.getAttribute('data-id');
-        var url = '{{ route('learners.close') }}'; // Adjust the route as necessary
+        var url = '{{ route('
+        learners.close ') }}'; // Adjust the route as necessary
 
         Swal.fire({
             title: 'Are you sure?',
@@ -322,7 +325,6 @@ $current_route = Route::currentRouteName();
 </script>
 
 <script>
-     
     $(document).ready(function() {
         let table = new DataTable('#datatable');
 

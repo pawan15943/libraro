@@ -90,9 +90,9 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seart">
                     <a href="{{route('learner.search')}}"><i class="fa fa-search fa-2x"></i></a>
                 </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seat">
+                <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seat">
                     <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
-                </li>
+                </li> -->
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
                     <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>
                 </li>
@@ -101,6 +101,9 @@
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Video Tutorial">
+                    <a href="{{route('library.feedback')}}"><i class="fa fa-video fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
@@ -294,7 +297,9 @@
         [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
     </script>
     <script>
+        $('.right-sidebar').removeClass('hide-right-sidebar');
         $(document).ready(function() {
+
             $('.control-right-sidebar').on('click', function() {
                 $('.right-sidebar').toggleClass('hide-right-sidebar');
                 $(this).find('#sidebar_mob').toggleClass('rotate-180');

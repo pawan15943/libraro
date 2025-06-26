@@ -20,7 +20,7 @@
         list-style: none;
         padding: 0;
         display: flex;
-        gap: 3.5rem;
+        gap: 1.5rem;
         justify-content: space-between;
         padding: 1.2rem;
         border: 1px solid #dcdcdc;
@@ -29,8 +29,11 @@
         margin: 0;
         z-index: 2;
         position: relative;
-        align-items: center;
-        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    ul.learner-info li {
+        width: calc(100% / 7);
     }
 
     ul.learner-info .d-flex {
@@ -50,7 +53,7 @@
     ul.learner-info h5 {
         font-weight: 700;
         margin: 0;
-        font-size: 1rem;
+        font-size: .8rem;
     }
 
     .action {
@@ -179,7 +182,7 @@
                                         <h5>{{$value->seat_no ? $value->seat_no : 'General'}}</h5>
                                     </div>
                                 </li>
-                                <li style="flex:1;">
+                                <li>
                                     <div class="d-flex ">
                                         <span>Name</span>
                                         <h5>{{$value->name}}</h5>
@@ -200,7 +203,7 @@
                                 <li>
                                     <div class="d-flex">
                                         <span>Plan Expired on</span>
-                                        <h5>{{$value->plan_end_date}} {!! getUserStatusDetails($value->plan_end_date) !!}</h5>
+                                        <h5>{{$value->plan_end_date}}<br> {!! getUserStatusDetails($value->plan_end_date) !!}</h5>
                                     </div>
                                 </li>
                                 <li>

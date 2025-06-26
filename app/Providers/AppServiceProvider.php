@@ -385,6 +385,15 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('learner.home'),
                 'Support' => route('support'),
             ],
+            'library-users.create' => [
+                'Dashboard' => route('learner.home'),
+                'Users List' => route('library-users.index', $parameters),
+                'Create Library User' => route('library-users.create'),
+            ],
+            'library-users.index' => [
+                'Dashboard' => route('learner.home'),
+                'Library Users List' => route('library-users.index'),
+            ],
 
         ];
 
@@ -462,6 +471,8 @@ class AppServiceProvider extends ServiceProvider
             'hour.create' => 'Add Library Operating Hours',
             'extendDay.create' => 'Add Library Extend Period',
             'lockeramount.create' => 'Add Library Locker Amount',
+            'library-users.create' => 'Create Library User',
+            'library-users.index' => 'Library Users List',
         ];
 
         return $titles[$routeName] ?? ucfirst(str_replace('.', ' ', $routeName));
