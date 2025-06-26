@@ -15,8 +15,22 @@ use App\Helpers\HelperService;
     </div>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
 </div> -->
+@php
+    $completion = getProfileCompletionPercentage();
+    $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning';
+@endphp
 
-<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
+@if ($completion < 100)
+    <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
+        <i class="fa-solid fa-clock me-3 {{ $alertClass == 'alert-danger' ? 'text-danger' : 'text-warning' }}"></i>
+        <div>
+            <strong>Profile Update Pending ({{ $completion }}%)</strong><br>
+            Your profile is only {{ $completion }}% complete. Kindly update to access full features.
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+{{-- <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
     <i class="fa-solid fa-clock me-3 text-warning"></i>
     <div>
         <strong>Profile Update Pending</strong><br>
@@ -24,7 +38,7 @@ use App\Helpers\HelperService;
     </div>
     <!-- This button is show when profile is updated successfully -->
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+</div> --}}
 
 
 <div class="dashboard learner">
@@ -198,7 +212,7 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-3">
                 <h6>Todays Collection</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                    <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -208,7 +222,8 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-3">
                 <h6>Todays Expense</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                    <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
+                  
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -218,7 +233,8 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-3">
                 <h6>Todays Balence</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                      <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
+                    
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -228,7 +244,7 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-5">
                 <h6>TOTAL INCOME</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                    <h4 id="total_income">0</h4>
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -238,7 +254,7 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-5">
                 <h6>TOTAL EXPENSE</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                    <h4 id="total_expense">0</h4>
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -248,7 +264,7 @@ use App\Helpers\HelperService;
             <div class="booking-count bg-5">
                 <h6>TOTAL BALENCE</h6>
                 <div class="d-flex">
-                    <h4 id="totalBookings">0</h4>
+                    <h4 id="total_balance">0</h4>
                 </div>
                 <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -1048,6 +1064,12 @@ use App\Helpers\HelperService;
                     } else {
                         $('#no-data').hide();
                         updateRevenue(response.revenu_expense);
+                       
+                        $('#total_income').text(response.revenu_expense[0].monthlyRevenue);
+                        $('#total_expense').text(response.revenu_expense[0].totalExpense);
+                        $('#total_balance').text(response.revenu_expense[0].netProfit);
+
+
                     }
                     if (response.planTypeWiseRevenue.data.length == 0) {
                         $('#no-data2').show();

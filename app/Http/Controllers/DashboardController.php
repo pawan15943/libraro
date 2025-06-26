@@ -222,6 +222,19 @@ class DashboardController extends Controller
                 }
             }
 
+              //Daily Transaction
+            $todayCollection = LearnerTransaction::where('branch_id', getCurrentBranch())
+            ->whereDate('paid_date', $today)
+            ->sum('paid_amount'); 
+
+            $todayExpense = DB::table('monthly_expense')
+                ->where('library_id', getLibraryId())
+                ->where('branch_id', getCurrentBranch())
+                ->whereDate('created_at', $today)
+                ->sum('amount'); 
+           
+            $todayBalance = $todayCollection - $todayExpense;
+
             $recent_activitys=DB::table('learner_operations_log')->where('library_id',getLibraryId())->where('created_at', '>=', Carbon::now()->subDays(5))->get();
 
             if($is_expire && $user->hasRole('admin')){
@@ -229,7 +242,7 @@ class DashboardController extends Controller
                 return redirect()->route('library.myplan');
             }elseif($iscomp){
                
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys'));
+                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection'));
             }else{
               
                 return redirect($redirectUrl);
@@ -723,7 +736,8 @@ class DashboardController extends Controller
                 'netProfit' => $netProfit,
             ];
         }
-        
+
+      
         
         return response()->json([
             'highlights' => [
@@ -769,6 +783,7 @@ class DashboardController extends Controller
             ],
 
             'revenu_expense' => $revenu_expense,
+          
         ]);
     }
 

@@ -85,25 +85,25 @@
             <h4> QUICK ACTION</h4>
             <ul>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat">
-                    <a href=""><i class="fa fa-chair fa-2x"></i></a>
+                    <a href="javascript:;" class=" noseat_popup"><i class="fa fa-chair fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seart">
-                    <a href=""><i class="fa fa-search fa-2x"></i></a>
+                    <a href="{{route('learner.search')}}"><i class="fa fa-search fa-2x"></i></a>
                 </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seart">
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seat">
                     <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
-                    <a href=""><i class="fa fa-user-tie fa-2x"></i></a>
+                    <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
-                    <a href=""><i class="fa fa-list-check fa-2x"></i></a>
+                    <a href="{{ route('seats.history') }}"><i class="fa fa-list-check fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
-                    <a href=""><i class="fa fa-comment fa-2x"></i></a>
+                    <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
-                    <a href=""><i class="fa fa-cog fa-2x fa-spin"></i></a>
+                    <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
                 </li>
             </ul>
             <div class="control-right-sidebar">

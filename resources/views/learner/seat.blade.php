@@ -80,10 +80,11 @@ $today = Carbon::today();
                                     @php
                                         $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
                                         $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
+                                        ->where('status',1)
                                         ->whereDate('plan_start_date', '<=', $today)
-                                            ->whereDate('plan_end_date', '>=', $today)
-                                            ->where('branch_id',getCurrentBranch())
-                                            ->sum('hour');
+                                        // ->whereDate('plan_end_date', '>=', $today)
+                                        ->where('branch_id',getCurrentBranch())
+                                        ->sum('hour');
                                             $remainingHours = $total_hour - $sumofhourseat;
 
                                             $seatCount = 0;
@@ -233,38 +234,40 @@ $today = Carbon::today();
             <div class="seat-booking">
 
                 @if(countWithoutSeatNo() >0)
-                @php
-                $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
-
-                @endphp
-                @foreach($usersForSeat as $user)
-
-                <div class="seat">
-
                     @php
-                    $planDetails = getPlanStatusDetails($user->plan_end_date);
-                    $class=$planDetails['class'];
-                    $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN'];
+                    $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+
                     @endphp
+                    @foreach($usersForSeat as $user)
 
-                    <ul>
-                        <li>
-                            <a href="javascript:;" data-bs-toggle="modal" class="second_popup_without_seat" data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}"><i class="fa-solid fa-check-circle booked {{$class}}"></i></a>
-                        </li>
-                    </ul>
-                    <small class="text-dark d-inline {{ $class }}">
-                        @if($user->day_type_id == 0)
-                            {{ strtoupper(substr($user->plan_type_name, 0, 2)) }}
-                        @elseif(isset($dayTypes[$user->day_type_id]))
-                            {{ $dayTypes[$user->day_type_id] }}
-                        @endif
-                    </small>
+                    <div class="seat">
 
-                    <img src="{{ asset($user->image) }}" class="booked {{$class}}" alt="book">
+                        @php
+                        $planDetails = getPlanStatusDetails($user->plan_end_date);
+                        $class=$planDetails['class'];
+                        $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN'];
+                        @endphp
 
-                    <small class="text-dark">General</small>
-                </div>
-                @endforeach
+                        <ul>
+                            <li>
+                                <a href="javascript:;" data-bs-toggle="modal" class="second_popup_without_seat" data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}"><i class="fa-solid fa-check-circle booked {{$class}}"></i></a>
+                            </li>
+                        </ul>
+                        <small class="text-dark d-inline {{ $class }}">
+                            @if($user->day_type_id == 0)
+                                {{ strtoupper(substr($user->plan_type_name, 0, 2)) }}
+                            @elseif(isset($dayTypes[$user->day_type_id]))
+                                {{ $dayTypes[$user->day_type_id] }}
+                            @endif
+                        </small>
+
+                        <img src="{{ asset($user->image) }}" class="booked {{$class}}" alt="book">
+
+                        <small class="text-dark">General</small>
+                    </div>
+                    @endforeach
+                @else
+                 <h4 class="mb-4">No any General Seat Booked</h4>
 
                 @endif
 

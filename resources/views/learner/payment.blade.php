@@ -198,7 +198,7 @@ $class=$planDetails['class'];
      
                         <div class="col-lg-4">
                              <label for="">Pending Payment<span>*</span></label>
-                            <input type="text" class="form-control " name="paid_amount"  value="{{ old('pending_amount', $pending_payment->pending_amount ?? 0) }}" >
+                            <input type="text" class="form-control " name="paid_amount"  value="{{ old('pending_amount', $pending_payment->pending_amount ?? 0) }}" readonly>
                             {{-- @if($diffInDays < 0 && $diffExtendDay>0 && !$isRenew)
                             <label for="">Plan Price <span>*</span></label>
                            

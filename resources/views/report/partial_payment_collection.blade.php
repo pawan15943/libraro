@@ -98,16 +98,11 @@ $today = \Carbon\Carbon::today();
                     @foreach($learners as $value)
                  
                     <tr>
-                        <td>{{$value->seat_no ?? 'General'}}<br> 
-                         
-                        </td>
-                        <td>{{$value->name}}</span>
-                            
-                        </td>
+                        <td>{{$value->seat_no ?? 'General'}}</td>
+                        <td class="uppercase">{{$value->name}}</td>
                         <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title=" {{ decryptData($value->email)}}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ decryptData($value->email)}}</span> <br>
+                                data-bs-title=" {{ decryptData($value->email) ?? 'Email ID Not Avaialble'}}" data-bs-placement="bottom">
+                                {{ $value->email ? decryptData($value->email) : 'Email ID Not Avaialble'}}</span> <br>
                             <small> +91-{{decryptData($value->mobile)}}</small>
                         </td>
                       

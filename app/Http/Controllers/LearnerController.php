@@ -1951,9 +1951,10 @@ class LearnerController extends Controller
                 if (DB::table('learner_pending_transaction')->where('learner_id', $request->learner_id)->exists()) {
                     DB::table('learner_pending_transaction')->where('learner_id', $request->learner_id)->where('pending_amount', '>=', $request->paid_amount)
                         ->update([
-                            'pending_amount' => $data['pending_amount'],
+                            
                             'paid_date' => date('Y-m-d'),
-                            'status' => $data['is_paid']
+                            'status' => $data['is_paid'],
+                            'payment_mode'=> $request->payment_mode,
                         ]);
                 } elseif ($data['pending_amount'] > 0) {
                     DB::table('learner_pending_transaction')->insert(
@@ -2579,14 +2580,6 @@ class LearnerController extends Controller
         $total_paid_amount = $transaction->paid_amount + $transaction->pending_amount;
         $new_pending_amount = $total_amount - $total_paid_amount;
 
-        // if ($request->hasFile('transaction_image')) {
-        //     $transaction_image = $request->file('transaction_image');
-        //     $transaction_imageNewName = 'transaction_image_' . time() . '_' . $transaction_image->getClientOriginalName();
-        //     $transaction_image->move(public_path('uploads'), $transaction_imageNewName);
-        //     $transaction_image = 'uploads/' . $transaction_imageNewName;
-        // } else {
-        //     $transaction_image = null;
-        // }
 
         try {
 
@@ -2601,6 +2594,8 @@ class LearnerController extends Controller
 
                         'status' => 1,
                         'payment_mode' => $request->payment_mode ?? null,
+                        'paid_date'=>date('Y-m-d'),
+                        
                     ]);
             }
 

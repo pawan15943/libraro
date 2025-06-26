@@ -630,3 +630,32 @@ if (!function_exists('branchCountValidation')) {
     }
 }
 
+if (!function_exists('getProfileCompletionPercentage')) {
+    function getProfileCompletionPercentage()
+    {
+        $branch=Branch::find(getCurrentBranch());
+        $fields = [
+            'name','display_name',
+            'email',
+            'mobile',
+            'library_address',
+            'state_id','city_id',
+            'library_zip','google_map',
+            'extend_days','locker_amount','library_category','working_days','longitude',
+            'latitude','description','library_logo','library_images'
+          
+        ];
+
+        $filled = 0;
+        foreach ($fields as $field) {
+            if (!empty($branch->$field)) {
+                $filled++;
+            }
+        }
+
+        $percentage = ($filled / count($fields)) * 100;
+        return round($percentage, 2);
+    }
+}
+
+

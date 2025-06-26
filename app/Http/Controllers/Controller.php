@@ -400,7 +400,7 @@ class Controller extends BaseController
         $type = strtoupper($type);
         $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y', 'd.m.Y', 'd M Y', 'd F Y'];
         $rawDate = trim($data['start_date']);
-        // dd($rawDate);
+        
         $start_date = null;
 
         foreach ($formats as $format) {
@@ -457,6 +457,7 @@ class Controller extends BaseController
         $extendDay = getExtendDays();
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
         $status = $inextendDate >= Carbon::today() ? 1 : 0;
+         
         if (empty($data['paid_amount']) || $paid_amount == 0) {
             $is_paid = 0;
         } else {
@@ -688,7 +689,7 @@ class Controller extends BaseController
                 'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
-                'locker_no' => trim($data['locker_no']) ?? null,
+                 'locker_no' => trim($data['locker_no']) === '' ? null : (int)trim($data['locker_no']),
                 'learner_no' => $this->generateLearnerCode()
             ]);
 
@@ -706,7 +707,7 @@ class Controller extends BaseController
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
                 'payment_mode' => $payment_mode,
-                'is_paid' => $is_paid,
+                'is_paid' => 1,
                 'status' => $status,
             ]);
 
@@ -725,6 +726,16 @@ class Controller extends BaseController
                 'discount_amount' => $discount_amount,
                 'is_paid' => $pending_amount > 0 ? 0 : 1,
             ]);
+
+             if ($pending_amount ) {
+                $tran = [
+                    'learner_id' => $learner->id,
+                    'due_date' => date('Y-m-d'),
+                    'pending_amount' => $pending_amount,
+                    'created_at' => now(),
+                ];
+                DB::table('learner_pending_transaction')->insert($tran);
+            }
 
             // Commit the transaction if all inserts succeed
             DB::commit();
@@ -761,7 +772,8 @@ class Controller extends BaseController
                 'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
-                'locker_no' => trim($data['locker_no']) ?? null,
+                'locker_no' => trim($data['locker_no']) === '' ? null : (int)trim($data['locker_no']),
+
             ]);
             // Create learner detail entry
             $learner_detail = LearnerDetail::create([
@@ -777,7 +789,7 @@ class Controller extends BaseController
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
                 'payment_mode' => $payment_mode,
-                'is_paid' => $is_paid,
+                'is_paid' => 1,
                 'status' => $status,
             ]);
             $pending_amount = !empty($data['pending_amount']) ? trim($data['pending_amount']) : 0;
@@ -801,7 +813,6 @@ class Controller extends BaseController
                 'paid_amount' => $paid_amount,
                 'pending_amount' => $pending_amount,
                 'locker_amount' => $locker_amount,
-
                 'discount_amount' => $discount_amount,
                 'paid_date' => $paid_date,
                 'is_paid' => $pending_amount > 0 ? 0 : 1,

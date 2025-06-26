@@ -13,12 +13,11 @@
 
 
   <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 
-    method="POST"enctype="multipart/form-data"
->
+    method="POST"enctype="multipart/form-data"  id="branchUpdate">
     @csrf
 
     @if(isset($branch))
-        @method('PUT')  <!-- Use PUT for update -->
+        @method('PUT')  
     @endif
 
 
@@ -324,7 +323,7 @@
                         </label>
                     </div>
                     <small class="text-info d-block">Multiple images upload and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP. Image Size must be in 1024 * 1024 px</small>
-                    <small class="text-danger d-block">You can only allow to upload 4 images of your library</small>
+                    <small class="text-danger d-block">You can only allow to upload 4 images of your library</small><small id="fileUploadError" class="text-danger mt-2"></small>
                     <div id="imagePreview" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
                 </div>
             </div>
@@ -363,6 +362,8 @@
                             @enderror
                         </label>
                         <small class="text-info d-block">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
+                        <div id="logoUploadError" class="text-danger mt-2"></div>
+
                     </div>
 
                    <div class="col-lg-12">
@@ -383,6 +384,9 @@
 
 
 <script>
+    $('#branchUpdate').on('submit', function (e){
+        console.log("sd");
+    });
     $(document).ready(function() {
         // Show existing images if available
         let existingImages = @json(json_decode($branch -> library_images ?? '[]'));
@@ -469,6 +473,105 @@
             reader.readAsDataURL(file);
         });
     });
+    $(document).ready(function () {
+        const maxSize = 2 * 1024 * 1024; // 2 MB
+        const maxFiles = 4;
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/svg+xml', 'image/webp'];
+
+        $('#libraryImages').on('change', function () {
+            const files = this.files;
+            const previewContainer = $('#imagePreview');
+            previewContainer.empty(); // Clear previous previews
+            $("#fileUploadError").html('');
+            let error = '';
+
+            if (files.length > maxFiles) {
+                error = `You can upload only up to ${maxFiles} images.`;
+            }
+
+            Array.from(files).forEach((file, index) => {
+                if (!allowedTypes.includes(file.type)) {
+                    error = `File type ${file.type} is not allowed.`;
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    error = `File "${file.name}" exceeds 2 MB size limit.`;
+                    return;
+                }
+
+                // Show preview if valid
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = $('<img>').attr('src', e.target.result).css({
+                        width: '100px',
+                        height: '100px',
+                        objectFit: 'cover',
+                        border: '1px solid #ccc',
+                        borderRadius: '5px'
+                    });
+                    previewContainer.append(img);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            if (error !== '') {
+                $("#fileUploadError").html(`<span class="text-danger">${error}</span>`);
+                $('#branchUpdate button[type="submit"]').prop('disabled', true);
+            } else {
+                $('#branchUpdate button[type="submit"]').prop('disabled', false);
+            }
+        });
+
+        
+        $('#fileInput').on('change', function () {
+            const file = this.files[0];
+            if (file && file.size <= maxSize) {
+                $("#logoUploadError").html('');
+                $('#branchUpdate button[type="submit"]').prop('disabled', false); 
+            
+            }
+        });
+
+        $('#branchUpdate').on('submit', function (e) {
+
+            const files = $('#libraryImages')[0].files;
+            let hasError = false;
+            let errorMsg = '';
+            const fileInput = $('#fileInput')[0];
+                
+                if (fileInput.files.length > 0) {
+                    const fileSize = fileInput.files[0].size;
+
+                    if (fileSize > maxSize) {
+                        $("#logoUploadError").html('Image size should not exceed 2 MB.');
+                        e.preventDefault();
+                    }
+                }
+            if (files.length > maxFiles) {
+                errorMsg = `You can upload only up to ${maxFiles} images.`;
+                hasError = true;
+            }
+
+            Array.from(files).forEach(file => {
+                if (!allowedTypes.includes(file.type)) {
+                    errorMsg = `File type ${file.type} is not allowed.`;
+                    hasError = true;
+                }
+
+                if (file.size > maxSize) {
+                    errorMsg = `File "${file.name}" exceeds 2 MB size limit.`;
+                    hasError = true;
+                }
+            });
+
+            if (hasError) {
+                $("#fileUploadError").html(`<span class="text-danger">${errorMsg}</span>`);
+                e.preventDefault();
+            }
+        });
+    });
+
 </script>
 
 

@@ -115,16 +115,16 @@ class ReportController extends Controller
         $validatedData = $request->validate([
             'year' => 'required|integer',
             'month' => 'required|integer',
-            'expense_id' => 'required|array|min:1', // Ensure at least one expense ID is provided
-            'expense_id.*' => 'required|integer|exists:expenses,id', // Validate each expense ID element
-            'amount' => 'required|array|min:1', // Ensure at least one amount is provided
-            'amount.*' => 'required|numeric|min:0', // Validate each amount element
+            'expense_id' => 'required|array|min:1', 
+            'expense_id.*' => 'required|integer|exists:expenses,id', 
+            'amount' => 'required|array|min:1', 
+            'amount.*' => 'required|numeric|min:0', 
         ]);
 
         $year = $validatedData['year'];
         $month = $validatedData['month'];
-        // delete request id's
-        $existingExpenseIds = DB::table('monthly_expense')->where('library_id',getLibraryId())
+       
+        $existingExpenseIds = DB::table('monthly_expense')->where('library_id',getLibraryId())->where('branch_id',getCurrentBranch())
             ->where('year', $year)
             ->where('month', $month)
             ->pluck('expense_id')
@@ -143,7 +143,8 @@ class ReportController extends Controller
 
             DB::table('monthly_expense')->updateOrInsert(
                 [
-                    'library_id' =>getLibraryId(), // Include library_id
+                    'library_id' =>getLibraryId(), 
+                    'branch_id' =>getCurrentBranch(), 
                     'year' => $year,
                     'month' => $month,
                     'expense_id' => $expenseId,
