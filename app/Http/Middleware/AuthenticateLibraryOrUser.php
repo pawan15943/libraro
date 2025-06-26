@@ -14,20 +14,39 @@ class AuthenticateLibraryOrUser
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle($request, Closure $next)
+   public function handle($request, Closure $next)
     {
-       
-
         if (Auth::guard('library')->check()) {
-            Auth::shouldUse('library'); // 👈 sets default guard for Gate and Auth::user()
+            Auth::shouldUse('library');
+            
         } elseif (Auth::guard('library_user')->check()) {
-            Auth::shouldUse('library_user'); // 👈 sets default guard
+            Auth::shouldUse('library_user');
         } else {
-            abort(404, 'Unauthorized');
+            // If the request expects JSON (e.g. from AJAX)
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            // Redirect to appropriate login route
+            return $this->redirectTo($request);
         }
 
         return $next($request);
+    }
 
-        return redirect()->route('login')->with('error', 'Please login to access this page.');
+    protected function redirectTo(Request $request)
+    {
+        if ($request->is('administrator/*')) {
+            return redirect()->route('login.administrator');
+        } elseif ($request->is('library/*')) {
+
+            // return redirect()->route('login.library');
+            return redirect()->route('login.library')->with('info', 'Your session has expired. Please login again.');
+
+        } elseif ($request->is('learner/*')) {
+            return redirect()->route('login.learner');
+        }
+
+        return redirect()->route('login.learner');
     }
 }

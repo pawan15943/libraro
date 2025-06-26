@@ -72,6 +72,10 @@
                 <div class="alert alert-success mb-0 mt-1">
                     {{ session('success') }}
                 </div>
+                @elseif(session('info'))
+                <div class="alert alert-info mb-0 mt-1">
+                    {{ session('info') }}
+                </div>
                 @elseif($errors->has('error'))
                 <div class="alert alert-danger mb-0 mt-1">
                     {{ $errors->first('error') }}
