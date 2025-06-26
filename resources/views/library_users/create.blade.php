@@ -1,6 +1,7 @@
 @extends('layouts.library')
 <!-- CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
 @section('content')
 <div class="card">
     <!-- Add Library User Form -->
@@ -12,7 +13,7 @@
         <div class="row">
             <div class="col-lg-4">
                 <label>Name <sup class="text-danger">*</sup></label>
-                <input type="text" name="name" id="name" class="form-control char-only">
+                <input type="text" name="name" id="name" class="form-control char-only my-input">
             </div>
             <div class="col-lg-4">
                 <label>Email <sup class="text-danger">*</sup></label>
@@ -33,7 +34,7 @@
 
             <div class="col-lg-4">
                 <label>Select Branch</label>
-                <select name="branch_id[]" id="branch_id" class="form-select" multiple>
+                <select name="branch_id[]" id="my-select" class="form-select" multiple>
                     @foreach($branches as $branch)
                     <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                     @endforeach
@@ -217,6 +218,26 @@
                 alert(res.message);
                 location.reload();
             });
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // For select
+        const selectElement = document.getElementById('my-select');
+        const choicesSelect = new Choices(selectElement, {
+            removeItemButton: true,
+        });
+
+        // For input (tags-like input)
+        const inputElement = document.getElementById('my-input');
+        const choicesInput = new Choices(inputElement, {
+            delimiter: ',',
+            editItems: true,
+            maxItemCount: 5,
+            removeItemButton: true,
         });
     });
 </script>

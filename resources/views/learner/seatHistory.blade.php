@@ -10,7 +10,7 @@
             <b>Important :</b> The Seat History page displays a comprehensive list of all library seats, along with seat-specific booking details in a single view. If you need information about library seats, this section provides helpful details to guide you.
         </p>
         <div class="table-responsive">
-            <table class="table text-center datatable" >
+            <table class="table text-center datatable">
                 <thead>
                     <tr>
                         <th style="width: 10%">Seat No.</th>
@@ -23,21 +23,21 @@
                         <th style="width: 15%">Action</th>
                     </tr>
                 </thead>
-              
+
                 @if(!empty($seats) && count($seats) > 0)
-                
+
                 <tbody>
-                    
+
                     @foreach($seats as $seat)
                     @php
                     // First, check if there are any customers with status 1 for the given seat
                     $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->get();
                     // If no learners with status 1 are found, check for learners with status 0
                     if ($usersForSeat->isEmpty()) {
-                        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->get();
+                    $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->get();
 
                     }
-                    
+
                     @endphp
                     @if($usersForSeat->count() > 0)
 
@@ -50,18 +50,18 @@
                         @if (!$loop->first)
                     <tr>
                         @endif
-                        <td><span class="uppercase">{{ $learner->name }}</span><br><small>{{ $learner->dob }}</small></td>
+                        <td><span class="uppercase">{{ $learner->name }}</span></td>
                         <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{($learner->email) }}" data-bs-placement="bottom"><i
                                     class="fa-solid fa-times text-danger"></i></i>
-                                    {{($learner->email) }}</span> <br>
+                                {{($learner->email) }}</span> <br>
                             <small> +91-{{($learner->mobile)}}</small>
                         </td>
                         <td>
                             {{ optional(myPlanType($user->plan_type_id))->name }}<br>
                             <small>{{ optional(myPlan($user->plan_id))->name }}</small>
                         </td>
-                        
+
                         <td>{{ $user->join_date }}
                             @if(isset($user->is_paid) && $user->is_paid==1)
                             <small class="fs-10 d-block ">Paid</small>
@@ -72,7 +72,7 @@
                         <td>{{ $user->plan_start_date }}</td>
                         <td>{{ $user->plan_end_date }}<br>
                             {!! getUserStatusDetails($user->plan_end_date) !!}
-                       
+
                         </td>
                         @if ($loop->first)
                         <td rowspan="{{ $usersForSeat->count()  }}">
@@ -90,18 +90,18 @@
                     @endif
                     @endforeach
                     </tr>
-                   
+
                     @endif
 
                     @endforeach
                 </tbody>
-                    
+
                 @else
-                     <tbody>
-                        <tr>
-                            <td colspan="8" class="text-center">No data available</td>
-                        </tr>
-                    </tbody>
+                <tbody>
+                    <tr>
+                        <td colspan="8" class="text-center">No data available</td>
+                    </tr>
+                </tbody>
                 @endif
             </table>
 

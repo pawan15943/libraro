@@ -956,6 +956,12 @@ span.truncate {
     margin-bottom: -1.2rem;
 }
 
+span.name {
+    text-transform: uppercase !important;
+}
+
+
+
 .tooltip .tooltip-inner {
     font-size: 11px;
     /* Adjust the font size as needed */
@@ -3105,6 +3111,7 @@ a.btn.btn-primary.button {
     font-size: .8rem;
     color: #909090;
     border-radius: 1.5rem ! IMPORTANT;
+    border: 1px solid #e5e5e5;
 }
 
 .actions {
@@ -5630,7 +5637,7 @@ span.invalid-feedback strong {
     width: 80px;
     position: relative;
     box-shadow: 1px 0 5px #00000024;
-    margin-right: -80px;
+    /* margin-right: -80px; */
 }
 
 .right-sidebar h4 {
@@ -5733,7 +5740,13 @@ p.text-danger.font-weight-bold,
     align-items: center;
     justify-content: center;
     border-radius: 1rem .0rem 0 1rem;
-    z-index: 1111;
+    z-index: 2;
+}
+
+.choices__inner {
+    height: 45px;
+    border-radius: .4rem;
+    background: #fff;
 }
 
 .hide-right-sidebar {
@@ -5741,6 +5754,7 @@ p.text-danger.font-weight-bold,
     z-index: 0;
     width: 80;
     margin-right: 0;
+    margin-right: -80px;
 }
 
 .rotate-180 {
