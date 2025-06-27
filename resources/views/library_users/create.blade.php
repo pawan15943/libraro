@@ -8,20 +8,20 @@
 
     <form id="submit">
         @csrf
-        <input type="hidden" name="id" id="user_id">
-        <h4 class="pb-4">Branch Details</h4>
+        <input type="hidden" name="id" id="user_id"  value="{{ $editUser->id ?? '' }}">
+        <h4 class="pb-4">User Details</h4>
         <div class="row">
             <div class="col-lg-4">
                 <label>Name <sup class="text-danger">*</sup></label>
-                <input type="text" name="name" id="name" class="form-control char-only my-input">
+                <input type="text" name="name" id="name" class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
             </div>
             <div class="col-lg-4">
                 <label>Email <sup class="text-danger">*</sup></label>
-                <input type="email" name="email" id="email" class="form-control" autocomplete="off">
+                <input type="email" name="email" id="email" class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
             </div>
             <div class="col-lg-4">
                 <label>Mobile</label>
-                <input type="text" name="mobile" id="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8">
+                <input type="text" name="mobile" id="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
             </div>
         </div>
 
@@ -34,23 +34,31 @@
 
             <div class="col-lg-4">
                 <label>Select Branch</label>
+               
                 <select name="branch_id[]" id="my-select" class="form-select" multiple>
-                    @foreach($branches as $branch)
-                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                    @endforeach
+                        @php
+                            $selectedBranches = $editUser?->branch_id ?? [];
+                        @endphp
+
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}"
+                                {{ in_array($branch->id, $selectedBranches) ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
                 </select>
             </div>
 
             <div class="col-lg-4">
                 <label>Status</label>
                 <select name="status" id="status" class="form-select">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
+                    <option value="1" {{ (old('status', $editUser->status ?? '') == 1) ? 'selected' : '' }}>Active</option>
+                    <option value="0" {{ (old('status', $editUser->status ?? '') == 0) ? 'selected' : '' }}>Inactive</option>
                 </select>
             </div>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <h4 class="py-4">Branch Permissions</h4>
+            <h4 class="py-4">User Permissions</h4>
             <!-- Check All Option -->
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="checkAllPermissions">
@@ -68,7 +76,7 @@
 
                 <!-- Permissions List -->
 
-                @foreach($groupedPermissions as $categoryId => $permissions)
+                {{-- @foreach($groupedPermissions as $categoryId => $permissions)
                 <div class="row">
                     <div class="col-lg-12">
                         <h5 class='role-category-heading'>
@@ -95,13 +103,44 @@
                     </div>
                     @endforeach
                 </div>
-                @endforeach
+                @endforeach --}}
 
+            @php
+                $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
+            @endphp
+
+            @foreach($groupedPermissions as $categoryId => $permissions)
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h5 class='role-category-heading'>
+                            {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1 mb-3">
+                    @foreach($permissions as $name => $id)
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input
+                                class="form-check-input permission"
+                                type="checkbox"
+                                name="permissions[]"
+                                value="{{ $id }}"
+                                id="perm_{{ $id }}"
+                                data-permission-name="{{ $name }}"
+                                {{ in_array($id, $selectedPermissionIds) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="perm_{{ $id }}">
+                                {{ strtoupper($name) }}
+                            </label>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endforeach
 
             </div>
         </div>
-
-
 
         <div class="row mt-3">
             <div class="col-lg-3">
@@ -109,7 +148,6 @@
             </div>
         </div>
     </form>
-
 
 </div>
 
@@ -132,6 +170,8 @@
         // Edit user
         $('.edit_user').on('click', function() {
             let user = $(this).data('user');
+           
+
             console.log('user', user);
             $('#user_id').val(user.id);
             $('#name').val(user.name);
@@ -173,13 +213,21 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
+                    console.log("res",response);
                     if (response.success && response.redirect) {
+                        if (response.message) {
+                            sessionStorage.setItem('flash_message', response.message);
+                            sessionStorage.setItem('flash_type', 'success'); // or error, info, etc.
+                        }
                         window.location.href = response.redirect;
-                        toastr.success(response.message);
+                      
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else if (response.success) {
-                        toastr.success(response.message);
+                        if (response.message) {
+                                showFlashMessage(response.message, 'success');
+                            }
+                                            
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else {

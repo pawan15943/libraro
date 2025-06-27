@@ -33,9 +33,6 @@ class LibraryUserController extends Controller
                 ->get();
         }
 
-
-         
-
          foreach ($users as $user) {
             $user->branch_names = Branch::whereIn('id', $user->branch_id)->pluck('name')->toArray();
             $user->permissions_array = $user->permissions->pluck('name')->toArray();
@@ -43,8 +40,13 @@ class LibraryUserController extends Controller
      
          return view('library_users.index', compact('users'));
      }
-     public function create(){
-        
+    public function create($id = null){
+         $editUser = null;
+
+        if ($id) {
+            $editUser = LibraryUser::with('permissions')->findOrFail($id);
+        }
+
         $subscription = Subscription::find(Auth::user()->library_type);
 
             $groupedPermissions = collect();
@@ -59,11 +61,11 @@ class LibraryUserController extends Controller
 
 
          $branches=Branch::where('library_id',getLibraryId())->get();
-         return view('library_users.create', compact('branches','groupedPermissions'));
+         return view('library_users.create', compact('branches','groupedPermissions','editUser'));
      }
     public function store(Request $request)
     {
-        
+       
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:library_users,email,' . $request->id,
@@ -71,6 +73,7 @@ class LibraryUserController extends Controller
             'branch_id' => 'required|array|min:1',
             'status' => 'required|in:0,1',
             'permissions' => 'required|array|min:1',
+             'mobile' => 'required|digits:10',
         ]);
 
         DB::beginTransaction();
@@ -88,15 +91,23 @@ class LibraryUserController extends Controller
                 $data['password'] = bcrypt($request->password);
             }
             $data['original_password']=$request->password;
+            
             // Create or update LibraryUser
             $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
 
+            if (!$user) {
+                throw new \Exception('User creation failed');
+            }
+
+
            $user->permissions()->sync($request->permissions); // pivot table
+
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
+                  'redirect'=>route('library-users.index'),
                 'message' => 'User saved successfully.',
             ]);
 

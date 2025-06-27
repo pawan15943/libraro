@@ -3,7 +3,7 @@
 @section('content')
 
 
-
+<div id="flash-message-placeholder"></div>
 <div class="heading-list justify-content-end">
     <a href="{{ route('library-users.create') }}" class="btn btn-primary export">
         <i class="fa-solid fa-plus "></i> Add Library User
@@ -49,6 +49,7 @@
                     </td>
                     <td>
                         <ul class="actionalbls">
+                            <li><a href="{{route('library-users.create',$user->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
                             <li><a href="javascript:void(0)" class="edit_user" data-user='@json($user)'><i class="fas fa-edit"></i></a></li>
                             <li>
                                 <a href="#" class="toggle-status" data-id="{{ $user->id }}">
@@ -70,6 +71,21 @@
     $('#checkAllPermissions').on('change', function() {
         $('.permission').prop('checked', this.checked);
     });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const message = sessionStorage.getItem('flash_message');
+    const type = sessionStorage.getItem('flash_type') || 'success';
+
+    if (message) {
+        const div = document.createElement('div');
+        div.className = 'alert alert-' + type;
+        div.innerText = message;
+        document.getElementById('flash-message-placeholder').appendChild(div);
+        sessionStorage.removeItem('flash_message');
+        sessionStorage.removeItem('flash_type');
+    }
+});
 </script>
 <script>
     $(document).ready(function() {

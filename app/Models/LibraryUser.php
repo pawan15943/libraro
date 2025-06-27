@@ -33,7 +33,7 @@ class LibraryUser extends Authenticatable
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'library_user_permissions');
+        return $this->belongsToMany(Permission::class, 'library_user_permissions', 'library_user_id', 'permission_id');
     }
 
     public function devices()
