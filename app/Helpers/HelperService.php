@@ -133,6 +133,12 @@ class HelperService
                 
                 $details['new']=$operation->new_value;
                 break;
+            case 'changePlan':
+                $details['operation_type'] = 'Change Plan Type';
+                $details['field'] = 'Plan Type' ?? null;
+                $details['old']=PlanType::where('id',$operation->old_value)->value('name');
+                $details['new']=PlanType::where('id',$operation->new_value)->value('name');
+                break;
 
             default:
                 break;

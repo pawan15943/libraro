@@ -536,6 +536,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
         </div>
     </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+        <div class="booking-count bg-3">
+            <h6>CHANGE PLAN</h6>
+            <div class="d-flex">
+                <h4 id="change_plan_seat">0</h4>
+            </div>
+            <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+            <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+        </div>
+    </div>
     <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
         <div class="booking-count bg-4">
             <h6>WhatsApp Sended</h6>
@@ -1149,6 +1159,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 $('#thismonth_total_book').text(highlights.thismonth_total_book);
                 $('#renew_seat').text(highlights.renew_seat);
                 $('#delete_seat').text(highlights.delete_seat);
+                $('#change_plan_seat').text(highlights.change_plan_seat);
             }
 
             function updateAllViewLinks(year, month, dateRange) {

@@ -979,12 +979,13 @@ class LearnerController extends Controller
     //learner  Upgrade and renew store
     public function learnerUpgradeRenew(Request $request)
     {
-
+        
         $rules = [
 
             'plan_id' => 'required',
             'plan_type_id' => 'required',
             'plan_price_id' => 'required',
+            'payment_mode' => 'required',
             'user_id' => 'required',
             'discountType' => 'nullable',
             'discount_amount' => [
@@ -1003,6 +1004,12 @@ class LearnerController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
+        }
+         if ($request->ajax() && $validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
         if (!Auth::user()->can('has-permission', 'Renew Seat')) {
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
@@ -1034,16 +1041,11 @@ class LearnerController extends Controller
             $endTime = $planType->end_time;
             $hours = $planType->slot_hours;
             if ($customer->seat_no) {
-
-
                 // Fetch existing bookings for the same seat
                 $existingBookings = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $customer->seat_no)
                     ->where('learners.id', '!=', $customer->id) // Exclude the current booking
                     ->where('learner_detail.status', 1)
                     ->get();
-
-
-
                 // Check for overlaps with existing bookings
                 foreach ($existingBookings as $booking) {
                     $bookingPlanType = PlanType::find($booking->plan_type_id);
@@ -1051,7 +1053,6 @@ class LearnerController extends Controller
                     if ($bookingPlanType) {
                         $bookingStartTime = $bookingPlanType->start_time;
                         $bookingEndTime = $bookingPlanType->end_time;
-
 
                         if (
                             ($startTime < $bookingEndTime && $endTime > $bookingStartTime) ||

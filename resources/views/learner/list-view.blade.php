@@ -41,6 +41,8 @@
         $text='Close Seats';
     }elseif(request('type') === 'delete_seat'){
         $text='Delete Seats';
+    }elseif(request('type') === 'change_plan_seat'){
+        $text='Change Plan';
     }else{
         $text='';
     }
@@ -74,7 +76,7 @@
                            
                         @endphp
                          <tr>
-                            <td>{{ $learner->seat_no }}<br>{{$operationDetails['field']}}{{$operationDetails['old']}}-{{$operationDetails['new']}}</td> <!-- Seat No -->
+                            <td>{{ $learner->seat_no }}<br>{{$operationDetails['field']}} <code> ({{$operationDetails['old']}} to  {{$operationDetails['new']}})<code></td> <!-- Seat No -->
                            
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"

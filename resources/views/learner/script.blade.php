@@ -673,7 +673,7 @@
                 contentType: false,
                 dataType: 'json',
                 success: function(response) {
-                    
+                    console.log('response',response);
                     if (response.success) {
                         logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
                         $("#success-message").text('Form submission successful').show();
@@ -683,40 +683,39 @@
                             location.reload(true); // Force reload from the server
                         }, 2000); // Delay for 2 seconds before redirecting
                     } else if (response.errors) {
-                        $(".is-invalid").removeClass("is-invalid");
-                        $(".invalid-feedback").remove();
-                        $("#error-message").hide();
-
-                        $.each(response.errors, function(key, value) {
-                            var inputField = $("input[name='" + key + "'], select[name='" + key + "']");
-                            inputField.addClass("is-invalid");
-                            inputField.after('<div class="invalid-feedback">' + value[0] + '</div>');
-                        });
-                    } else {
+                        showFormErrors(response.errors);
+                    }  else {
                         $("#error-message").text(response.message).show();
                         $("#success-message").hide();
                     }
                 },
-                error: function(xhr, status, error) {
-
-                    if (xhr.status === 422) {
-                        var response = xhr.responseJSON;
-                        $(".is-invalid").removeClass("is-invalid");
-                        $(".invalid-feedback").remove();
-                        $("#error-message").hide();
-
-                        $.each(response.errors, function(key, value) {
-                            var inputField = $("input[name='" + key + "'], select[name='" + key + "']");
-                            inputField.addClass("is-invalid");
-                            inputField.after('<div class="invalid-feedback">' + value[0] + '</div>');
-                        });
-                    } else {
-                        $("#error-message").text('Something went wrong. Please try again.').show();
-                        $("#success-message").hide();
-                    }
+               error: function(xhr, status, error) {
+                console.log('AJAX error response:', xhr);         // Full response object
+                console.log('Status:', status);                   // e.g., "error"
+                console.log('Error:', error);                     // e.g., "Unprocessable Entity"
+                
+                if (xhr.status === 422) {
+                    const errors = xhr.responseJSON.errors;
+                    console.log('Validation Errors:', errors);    // <- See the validation errors
+                    showFormErrors(errors);                       // Your function to highlight fields
+                } else {
+                    $("#error-message").text("Something went wrong. Please try again.").show();
+                    $("#success-message").hide();
                 }
+            }
+
             });
         });
+        function showFormErrors(errors) {
+            $(".is-invalid").removeClass("is-invalid");
+            $(".invalid-feedback").remove();
+
+            $.each(errors, function(key, value) {
+                const field = $("[name='" + key + "']");
+                field.addClass("is-invalid");
+                field.after('<div class="invalid-feedback">' + value[0] + '</div>');
+            });
+        }
         $('#general_seat').on('change', function () {
            
             if ($(this).val() === 'no') {

@@ -177,7 +177,7 @@ class LibraryController extends Controller
                 $library->email_otp = $otp;
                 $library->save();
                 
-                $this->sendVerificationEmail($library);
+                // $this->sendVerificationEmail($library);
                 session(['library_email' => $library->email]);
 
                 return redirect()->route('verification.notice')
@@ -756,7 +756,7 @@ class LibraryController extends Controller
                 $libraryCode = $this->generateLibraryCode();
                 $library->library_no = $libraryCode;
                 $library->save();
-                $this->sendSuccessfulEmail($library);
+                // $this->sendSuccessfulEmail($library);
             }
         }
         

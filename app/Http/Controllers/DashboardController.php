@@ -511,6 +511,11 @@ class DashboardController extends Controller
         ->where('operation', 'deleteSeat')
         ->get()
         ->count();
+         $change_plan_seat = (clone $baseQuery)
+        ->where('operation', 'changePlan')
+        ->get()
+        ->count();
+        
         $paidQuery=Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
         ->where('learners.library_id',getLibraryId())->where('learner_detail.is_paid',1)
         ->where(function ($subQuery) use ( $month , $year) {
@@ -771,6 +776,7 @@ class DashboardController extends Controller
                 'swap_seat' => $swap_seat,
                 'learnerUpgrade' => $learnerUpgrade,
                 'reactive' => $reactive,
+                'change_plan_seat' => $change_plan_seat,
               
             ],
         
@@ -1120,6 +1126,9 @@ class DashboardController extends Controller
                 break;
             case 'delete_seat':
                 $result = (clone $baseQuery)->where('operation', 'deleteSeat')->get();
+                break;
+            case 'change_plan_seat':
+                $result = (clone $baseQuery)->where('operation', 'changePlan')->get();
                 break;
             
         }
