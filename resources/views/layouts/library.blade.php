@@ -51,33 +51,27 @@
             <div class="content">
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
-                    <div id="session-timer" style=" background: #f3f4f6; padding: 10px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #111; z-index: 999;">
-                        Session time left: <span id="timer">--:--</span>
-                        {{-- {{Auth::guard('library')->check()}} --}}
-                    </div>
+                    
                     @yield('content')
                    <script>
-                        // const sessionLifetime = @json(config('session.lifetime') * 60); // convert to seconds
-                        // const warningTime = sessionLifetime - 60; // popup 1 min before session ends
+                        const sessionLifetime = @json(config('session.lifetime') * 60); // convert to seconds
+                        const warningTime = sessionLifetime - 60; // popup 1 min before session ends
 
-                        // console.log("Session lifetime:", sessionLifetime);
-                        // console.log("Warning in:", warningTime, "seconds");
+                        console.log("Session lifetime:", sessionLifetime);
+                        console.log("Warning in:", warningTime, "seconds");
 
-                        // setTimeout(function () {
-                        //     Swal.fire({
-                        //         title: 'Session Expiring Soon',
-                        //         text: 'Your session will expire in 1 minute. Please save your work or stay active.',
-                        //         icon: 'warning',
-                        //         confirmButtonText: 'Stay Logged In'
-                        //     }).then((result) => {
-                        //         if (result.isConfirmed) {
-                        //             location.reload(); // refresh session
-                        //         }
-                        //     });
-                        // }, warningTime * 1000);
-
-
-
+                        setTimeout(function () {
+                            Swal.fire({
+                                title: 'Session Expiring Soon',
+                                text: 'Your session will expire in 1 minute. Please save your work or stay active.',
+                                icon: 'warning',
+                                confirmButtonText: 'Stay Logged In'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    location.reload(); // refresh session
+                                }
+                            });
+                        }, warningTime * 1000);
 
                         
                     </script>
@@ -89,6 +83,9 @@
             <!-- Footer  -->
             @include('partials.footer')
         </div>
+        @if(getLibrary()->is_paid == 1  && getLibrary()->status == 1)
+        
+        
         <div class="right-sidebar">
             <h4> QUICK ACTION</h4>
             <ul>
@@ -121,7 +118,7 @@
                 <i class="fa fa-angle-right" id="sidebar_mob"></i>
             </div>
         </div>
-
+        @endif
     </div>
 
 
@@ -153,44 +150,44 @@
 
     <script>
 // Session Login manager
-document.addEventListener("DOMContentLoaded", function () {
-    // Get session lifetime in seconds
-    let sessionLifetime = @json(config('session.lifetime') * 60); // e.g. 2 min = 120
-    let warningTime = Math.max(sessionLifetime - 60, 0); // 1 min before expiry
+// document.addEventListener("DOMContentLoaded", function () {
+//     // Get session lifetime in seconds
+//     let sessionLifetime = @json(config('session.lifetime') * 60); // e.g. 2 min = 120
+//     let warningTime = Math.max(sessionLifetime - 60, 0); // 1 min before expiry
 
-    const timerElement = document.getElementById("timer");
+//     const timerElement = document.getElementById("timer");
 
-    // ⏳ Start countdown timer
-    const countdown = setInterval(function () {
-        let minutes = Math.floor(sessionLifetime / 60);
-        let seconds = sessionLifetime % 60;
+//     // ⏳ Start countdown timer
+//     const countdown = setInterval(function () {
+//         let minutes = Math.floor(sessionLifetime / 60);
+//         let seconds = sessionLifetime % 60;
 
-        // Pad with zeros
-        timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+//         // Pad with zeros
+//         timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-        sessionLifetime--;
+//         sessionLifetime--;
 
-        // ⏰ Show popup 1 minute before expiry
-        if (sessionLifetime === warningTime) {
-            Swal.fire({
-                title: 'Session Expiring Soon',
-                text: 'Your session will expire in 1 minute. Click below to stay logged in.',
-                icon: 'warning',
-                confirmButtonText: 'Stay Logged In'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    location.reload(); // refreshes session
-                }
-            });
-        }
+//         // ⏰ Show popup 1 minute before expiry
+//         if (sessionLifetime === warningTime) {
+//             Swal.fire({
+//                 title: 'Session Expiring Soon',
+//                 text: 'Your session will expire in 1 minute. Click below to stay logged in.',
+//                 icon: 'warning',
+//                 confirmButtonText: 'Stay Logged In'
+//             }).then((result) => {
+//                 if (result.isConfirmed) {
+//                     location.reload(); // refreshes session
+//                 }
+//             });
+//         }
 
-        // 🔒 Auto-logout or redirect after session expires
-        if (sessionLifetime < 0) {
-            clearInterval(countdown);
+//         // 🔒 Auto-logout or redirect after session expires
+//         if (sessionLifetime < 0) {
+//             clearInterval(countdown);
             
-        }
-    }, 1000);
-});
+//         }
+//     }, 1000);
+// });
 
 
 

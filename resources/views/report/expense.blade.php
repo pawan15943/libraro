@@ -9,7 +9,8 @@
             <h4>Current Month Revenue for {{ $dt->format('F') }}, {{ $year }}</h4>
         </div>
         <div class="col-lg-6">
-            <h4><i class="fa fa-inr"></i> {{ number_format($library_revenue->monthly_revenue, 2) }}</h4>
+            <h4><i class="fa fa-inr"></i> {{ number_format($library_revenue->monthly_revenue ?? 0, 2) }}</h4>
+
         </div>
     </div>
     <form id="expense-form" action="{{ route('report.expense.store') }}" method="POST">
@@ -74,39 +75,6 @@
         </div>
     </form>
 
-    {{-- <div class="row">
-        <div class="col-lg-12">
-            <h5 class="mb-4 mt-4">Monthly Expenses List</h5>
-            <div class="table-responsive">
-                <table class="table text-center datatable" id="datatable">
-                    <thead>
-                        <tr>
-                            <th>S.No.</th>
-                            <th>Month</th>
-                            <th>Expense Name</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                        $x=1;
-                        @endphp
-                        @foreach($monthlyExpenses as $expense)
-                        @php
-                        $dt = DateTime::createFromFormat('!m', $month);
-                        @endphp
-                        <tr>
-                            <td class="text-center">{{$x++}}</td>
-                            <td class="text-center">{{ $dt->format('F') }}, {{$year }} </td>
-                            <td class="text-center">{{ $expense->name }}</td>
-                            <td class="text-center"><i class="fa fa-inr"></i> {{ $expense->amount }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div> --}}
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

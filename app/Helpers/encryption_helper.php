@@ -234,16 +234,20 @@ if (!function_exists('getExtendDays')) {
     function getExtendDays()
     {
         $branchId = getCurrentBranch();
+        $extend_days = 0;
+
         if ($branchId) {
             $branch = Branch::where('id', $branchId)->select('extend_days')->first();
-            $extend_days = $branch->extend_days;
-        } else {
-            $extend_days = 0;
+
+            if ($branch) {
+                $extend_days = $branch->extend_days;
+            }
         }
 
-        return $extend_days ?? 0;
+        return $extend_days;
     }
 }
+
 
 if (!function_exists('getPlanStatusDetails')) {
     // $today = Carbon::today();

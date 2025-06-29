@@ -51,26 +51,42 @@ class ReportController extends Controller
 
     // Initialize an array to hold the final report data
     $reportData = [];
-
-    foreach ($monthlyRevenues as $monthlyRevenue) {
-        // Fetch corresponding monthly expenses with MIN(id)
-        $monthlyExpenses = DB::table('monthly_expense')->where('library_id',getLibraryId())
-            ->selectRaw('MIN(id) as expense_id, year, month, SUM(amount) as total_expenses')
-            ->where('year', $monthlyRevenue->year)
-            ->where('month', $monthlyRevenue->month)
-            ->groupBy('year', 'month')
-            ->first();
-
-        // Prepare the report data
-        $reportData[] = [
-            'year' => $monthlyRevenue->year,
-            'month' => $monthlyRevenue->month,
-            'total_revenue' => $monthlyRevenue->total_revenue,
-            'id' => $monthlyExpenses->expense_id ?? null, 
-            'total_expenses' => $monthlyExpenses->total_expenses ?? 0, 
-            'monthly_revenue' => $monthlyRevenue->monthly_revenue, 
+   
+    if ($monthlyRevenues->isNotEmpty()) {
+      
+   
+        foreach ($monthlyRevenues as $monthlyRevenue) {
+            // Fetch corresponding monthly expenses with MIN(id)
+            $monthlyExpenses = DB::table('monthly_expense')->where('library_id',getLibraryId())
+                ->selectRaw('MIN(id) as expense_id, year, month, SUM(amount) as total_expenses')
+                ->where('year', $monthlyRevenue->year)
+                ->where('month', $monthlyRevenue->month)
+                ->groupBy('year', 'month')
+                ->first();
             
-        ];
+
+            // Prepare the report data
+            $reportData[] = [
+                'year' => $monthlyRevenue->year,
+                'month' => $monthlyRevenue->month,
+                'total_revenue' => $monthlyRevenue->total_revenue,
+                'id' => $monthlyExpenses->expense_id ?? null, 
+                'total_expenses' => $monthlyExpenses->total_expenses ?? 0, 
+                'monthly_revenue' => $monthlyRevenue->monthly_revenue, 
+                
+            ];
+        }
+
+     } else {
+          $reportData[] = [
+                'year' =>date("Y"),
+                'month' => date("m"),
+                'total_revenue' => null,
+                'id' => null, 
+                'total_expenses' =>  0, 
+                'monthly_revenue' => 0, 
+                
+            ];
     }
 
 
@@ -112,9 +128,10 @@ class ReportController extends Controller
     }
     public function monthlyExpenseStore(Request $request, $id = null)
     {
+
         $validatedData = $request->validate([
-            'year' => 'required|integer',
-            'month' => 'required|integer',
+            'year' => 'required',
+            'month' => 'required',
             'expense_id' => 'required|array|min:1', 
             'expense_id.*' => 'required|integer|exists:expenses,id', 
             'amount' => 'required|array|min:1', 

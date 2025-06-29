@@ -606,18 +606,18 @@ class DashboardController extends Controller
 
         //recenue expense div
 
-        $expense_query = DB::table('monthly_expense')
-        ->where('library_id',getLibraryId());
-        
+            $expense_query = DB::table('monthly_expense')
+            ->where('library_id', getLibraryId());
+
         if ($request->filled('year') && !$request->filled('month')) {
-            // If year is selected, filter by year
-            $expense_query->whereYear('year', $request->year);
+            $expense_query->where('year', $request->year);
         } elseif ($request->filled('year') && $request->filled('month')) {
-            // If year and month are selected, filter by both year and month
-            $expense_query->whereYear('year', $request->year)
-                ->whereMonth('month', $request->month);
+            $expense_query->where('year', $request->year)
+                        ->where('month', $request->month);
         }
-        
+
+
+
         $expenses = $expense_query->selectRaw('year, month, SUM(amount) as total_expense')
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
@@ -651,6 +651,7 @@ class DashboardController extends Controller
         }
         
         $learners = $revenue_query->select('plan_start_date', 'plan_end_date', 'plan_price_id', 'plans.plan_id as planId')->get();
+        
         // Calculate Revenue
         $revenues = [];
         foreach ($learners as $learner) {
@@ -658,7 +659,7 @@ class DashboardController extends Controller
             $end_date = Carbon::parse($learner->plan_end_date);
         
             $monthly_revenue = $learner->plan_price_id /  $learner->planId; // planID is a month duration.
-        
+       
             while ($start_date <= $end_date) {
                 $year = $start_date->year;
                 $month = $start_date->month;
@@ -682,6 +683,7 @@ class DashboardController extends Controller
 
                         // $revenues[$key]['total_revenue'] += $learner->plan_price_id;
                     }
+                    
                 } elseif ($request->filled('year') && !$request->filled('month')) {
                     // If only year is selected, filter by year
                     if ($year == $request->year) {
@@ -939,14 +941,17 @@ class DashboardController extends Controller
                 // ')
                 // ->orderBy('max_plan_start_date', 'asc');
                 // $result=$query_total->get();
-                $query_total = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                ->with(['plan', 'planType', 'learnerDetails'])
-                ->where('learners.library_id', getLibraryId())
-                ->where(function ($subQuery) use ($startOfGivenMonth, $endOfGivenMonth) {
-                    $subQuery->where('plan_start_date', '<=', $endOfGivenMonth)
-                             ->where('plan_end_date', '>=', $startOfGivenMonth);
-                })
-                ->selectRaw('
+               $query_total = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                    ->with(['plan', 'planType', 'learnerDetails'])
+                    ->where('learners.library_id', getLibraryId());
+
+                if (isset($startOfGivenMonth) && isset($endOfGivenMonth)) {
+                    $query_total = $query_total->where(function ($subQuery) use ($startOfGivenMonth, $endOfGivenMonth) {
+                        $subQuery->where('plan_start_date', '<=', $endOfGivenMonth)
+                                ->where('plan_end_date', '>=', $startOfGivenMonth);
+                    });
+                }
+              $query_total = $query_total->selectRaw('
                     learner_detail.learner_id,
                     learners.id,
                     learners.name,

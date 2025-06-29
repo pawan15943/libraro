@@ -1055,7 +1055,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         _token: '{{ csrf_token() }}' // CSRF token for security
                     },
                     success: function(response) {
-                        console.log(response.planTypeWiseRevenue.data);
+                        console.log(response.revenu_expense);
                         if (response.revenu_expense.length === 0) {
                             $('#no-data').show();
 
