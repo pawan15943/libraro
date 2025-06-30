@@ -220,7 +220,7 @@ $current_route = Route::currentRouteName();
 <script>
     $(document).on('click', '.delete-customer', function() {
         var id = $(this).data('id');
-        var url = '{{ route('learners.destroy ', ': id ') }}';
+        var url = '{{ route('learners.destroy', ': id ') }}';
         url = url.replace(':id', id);
 
         Swal.fire({
@@ -281,7 +281,7 @@ $current_route = Route::currentRouteName();
 <script>
     $(document).on('click', '.link-close-plan', function() {
         const learner_id = this.getAttribute('data-id');
-        var url = '{{ route('learners.close ') }}'; // Adjust the route as necessary
+        var url = '{{ route('learners.close') }}'; // Adjust the route as necessary
 
         Swal.fire({
             title: 'Are you sure?',
