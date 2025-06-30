@@ -32,16 +32,16 @@ h6.text-center.bg-white {
 *::-webkit-scrollbar {
     width: .3em;
     border-radius: 1rem;
+    height: 5px;
 }
 
 *::-webkit-scrollbar-track {
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 0 6px rgba(193, 193, 193, 0.3);
     border-radius: 1rem;
 }
 
 *::-webkit-scrollbar-thumb {
-    background-color: rgba(169, 169, 169, 0.671);
-    outline: 1px solid slategrey;
+    background-color: rgba(168, 168, 168, 0.671);
     border-radius: 1rem;
 }
 
@@ -3941,7 +3941,7 @@ ul.revenue-box {
 }
 
 .seat-statistics .d-flex h6 {
-    font-size: 1rem;
+    font-size: .8rem;
     font-weight: 600;
     margin: 0;
 }
@@ -4545,7 +4545,7 @@ li.active {
 }
 
 .alert.alert-danger li:before {
-    content: "⚠️ ";
+    content: "âš ï¸ ";
     margin-right: 5px;
 }
 
@@ -4556,7 +4556,7 @@ li.active {
 }
 
 .alert.alert-success:before {
-    content: "✅ ";
+    content: "âœ… ";
     font-weight: bold;
     margin-right: 10px;
     font-size: 20px;
@@ -4695,6 +4695,42 @@ h6.text-center.bg-white {
 }
 
 @media screen and (max-width:480px) {
+    .content .card {
+        overflow: hidden;
+    }
+
+    .d-flex.bradcrumb h4 {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    table#datatable {
+        display: block;
+        width: 100%;
+        overflow: auto;
+    }
+
+    p.info-message.mt-4.mb-0 {
+        display: none;
+    }
+
+    .col-lg-12.text-end {
+        display: none;
+    }
+
+    ul#pills-tab {
+        justify-content: center !important;
+    }
+
+    .records {
+        display: none;
+    }
+
+    span.icon {
+        margin-right: 0px !important;
+    }
+
     nav {
         display: none;
     }
@@ -4742,10 +4778,17 @@ h6.text-center.bg-white {
         padding: .5rem 1.5rem !important;
     }
 
-    .w-120 {
-        width: 0 !important;
-        overflow: hidden;
+    .sidebar.scroll {
+        width: 270px ! important;
+        margin-left: 0px ! important;
     }
+
+    .sidebar.scroll.w-120 {
+        width: 270px !important;
+        margin-left: -270px !important;
+        box-shadow: none !important;
+    }
+
 
     .dashboard h1,
     .dashboard h1 * {

@@ -2,11 +2,10 @@
     <div class="spinner"></div>
 </div>
 <style>
-        @php  if(!empty($primary_color)) @endphp
-        :root {
-            --c1: {{ $primary_color ? $primary_color : '#151F38'  }};
-        }
-        </style>
+    @php if( !empty($primary_color)) @endphp :root {
+        --c1: {{ $primary_color ? $primary_color : '#151F38' }};
+    }
+</style>
 
 
 <div class="header">
@@ -14,11 +13,11 @@
         <div class="conatent flex" style="flex: 1;">
             <i class="fa fa-bars mr-2" id="sidebar"></i>
         </div>
-        
+
         <!--Notifications -->
         @if(isset(auth()->user()->unreadNotifications))
-            
-        
+
+
         <div class="notification">
             <div class="dropdown">
                 @php
@@ -30,9 +29,9 @@
                 } elseif (Auth::guard('learner')->check()) {
                 $guard = 'learner';
                 }
-               
+
                 $unreadNotifications = auth()->user()->unreadNotifications->where('data.guard', $guard);
-               
+
                 @endphp
                 <a class="dropdown-toggle uppercase" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-bell fa-fw"></i>
@@ -68,18 +67,18 @@
 
         </div>
         @else
-            
+
         @endif
         <div class="profile">
             <div class="dropdown">
-                
+
                 @if(Auth::user()->library_nam !="")
                 <span class="icon">{{ strtoupper(substr(Auth::user()->library_name, 0, 2)) }}</span>
                 @endif
                 Welcome
                 <a class="dropdown-toggle uppercase" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                {{Auth::user()->library_name}}
-                {{Auth::user()->name}}
+                    {{Auth::user()->library_name}}
+                    {{Auth::user()->name}}
                 </a>
                 <ul class="dropdown-menu">
 
@@ -91,17 +90,17 @@
                         <a class="dropdown-item text-center" href="javascript:;">
                             <small class="text-danger">Library Unique Id</small><br>
                             {{Auth::user()->library_no ?? ''}}</a>
-                    </li> 
-                      <!-- Change Password -->
-                      <li>
+                    </li>
+                    <!-- Change Password -->
+                    <li>
                         <a class="dropdown-item" href="{{route('change.password')}}">
                             <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
                             Change Library Password
                         </a>
                     </li>
                     @endif
-                   
-                  
+
+
                     <!-- Logout -->
                     <li>
                         <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -158,7 +157,7 @@
         @endif
 
     </div>
-   
+
 </div>
 
 <script>
