@@ -101,20 +101,21 @@ $user = getAuthenticatedUser();
         </div>
 
         @if(countBranch() > 0)
-        <form action="{{ route('branch.switch') }}" method="POST">
-            @csrf
-            <select name="branch_id" onchange="this.form.submit()" class="form-control-sm form-select">
-                {{-- <option value="0" {{ $user->current_branch == 0 ? 'selected' : '' }}>
-                📚 All Branches
-                </option> --}}
-                <option>Select Branch</option>
-                @foreach($branches as $b)
-                <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
-                    {{ $b->name }}
-                </option>
-                @endforeach
-            </select>
-        </form>
+            <form action="{{ route('branch.switch') }}" method="POST" >
+                @csrf
+                <select name="branch_id" onchange="this.form.submit()" class="form-control-sm form-select">
+                    {{-- <option value="0" {{ $user->current_branch == 0 ? 'selected' : '' }}>
+                        📚 All Branches
+                    </option> --}}
+                    <option>Select Branch</option>
+                    @foreach($branches as $b)
+                        <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
+                            {{ $b->display_name ?? $b->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
+
         @endif
 
         @if(isset($user->unreadNotifications))
