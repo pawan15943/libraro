@@ -110,7 +110,7 @@
                     <option>Select Branch</option>
                     @foreach($branches as $b)
                         <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
-                            {{ $b->name }}
+                            {{ $b->display_name ?? $b->name }}
                         </option>
                     @endforeach
                 </select>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class LibraryAuthController extends Controller
 {
@@ -39,53 +40,76 @@ class LibraryAuthController extends Controller
             
         ]);
     }
-
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:libraries,email',
-            'mobile' => 'required|string|max:15|unique:libraries,library_mobile',
-            'password' => 'required|min:6|confirmed', 
-        ]);
-       
-        $otp = Str::random(6);
-
-        $library = Library::create([
-            'library_name' => $request->name,
-            'email' => $request->email,
-            'library_mobile' => $request->mobile,
-            'password' => Hash::make($request->password),
-            'email_otp'=>$otp
-        ]);
-        
-
-         $data = [
-            'name' => $library->library_name,
-            'email' => $library->email,
-            'otp' => $library->email_otp,
-        ];
-
-        Mail::send('email.verify-email', $data, function($message) use ($data) {
-            $message->to($data['email'], $data['name'])->subject('Verify Your Email Address');
-        });
-
-        // $token = $library->createToken('library_token')->plainTextToken;
-         return response()->json([
-            'status'=>true,
-            'message' => 'OTP sent to email.',
-            'library_id' => $library->id
+            'mobile' => 'required|digits:10',
+            'password' => 'required|min:6|confirmed',
         ]);
 
-        
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        $otp = rand(100000, 999999);
+
+
+       try {
+            $library = Library::create([
+                'library_name' => $validated['name'],
+                'email' => $validated['email'],
+                'library_mobile' => $validated['mobile'],
+                'password' => Hash::make($validated['password']),
+                'email_otp' => $otp,
+            ]);
+
+            $data = [
+                'name' => $library->library_name,
+                'email' => $library->email,
+                'otp' => $otp,
+            ];
+                Mail::send('email.verify-email', $data, function ($message) use ($data) {
+                $message->to($data['email'], $data['name'])
+                        ->subject('Verify Your Email Address');
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'OTP sent to email.',
+                'library_id' => $library->id
+            ]);
+
+        } catch (\Exception $e) {
+             return response()->json([
+                'status' => false,
+                'message' => 'Failed to send OTP email. Please try again later.',
+                'error' => app()->environment('production') ? null : $e->getMessage(), // show message only in dev
+            ], 500);
+        }
+
     }
 
     public function verifyEmailOtp(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'library_id' => 'required|exists:libraries,id',
             'otp' => 'required|digits:6'
         ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $library = Library::find($request->library_id);
 
@@ -123,10 +147,20 @@ class LibraryAuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
+            'device_type' => 'required',
+            'device_id' => 'required',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $user = Library::where('email', $request->email)->first();
 

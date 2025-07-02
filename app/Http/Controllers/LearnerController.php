@@ -2608,9 +2608,10 @@ class LearnerController extends Controller
     }
     function generateLearnerCode() {
         $prefix = "LN";
-        $lastlearner = Learner::orderBy('id', 'DESC')
-                              ->whereNotNull('learner_no')
-                              ->first();
+      $lastlearner = Learner::withoutGlobalScope()
+                      ->whereNotNull('learner_no')
+                      ->orderBy('id', 'DESC')
+                      ->first();
                               
         if ($lastlearner) {
             
