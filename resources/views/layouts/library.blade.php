@@ -257,8 +257,6 @@
             $('#sidebar_mob').on('click', function() {
                 $('.sidebar').toggleClass('w-120');
             });
-
-
         });
     </script>
     <script>
@@ -345,8 +343,14 @@
         [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
     </script>
     <script>
-        $('.right-sidebar').removeClass('hide-right-sidebar');
+        
         $(document).ready(function() {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                $('.right-sidebar').addClass('hide-right-sidebar');
+            } else {
+                $('.right-sidebar').removeClass('hide-right-sidebar');
+            }
 
             $('.control-right-sidebar').on('click', function() {
                 $('.right-sidebar').toggleClass('hide-right-sidebar');
