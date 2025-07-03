@@ -159,6 +159,7 @@ class LearnerController extends Controller
     //learner store seat and without seat
     public function learnerStore(Request $request)
     {
+        
         $additionalRules = [
             'payment_mode'     => 'required',
             'plan_start_date'  => 'required|date',
@@ -2608,7 +2609,7 @@ class LearnerController extends Controller
     }
     function generateLearnerCode() {
         $prefix = "LN";
-      $lastlearner = Learner::withoutGlobalScope()
+      $lastlearner = Learner::withoutGlobalScopes()
                       ->whereNotNull('learner_no')
                       ->orderBy('id', 'DESC')
                       ->first();

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Library;
+use App\Models\LibraryUser;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use DB;
 
 class LibraryAuthController extends Controller
 {
@@ -174,7 +176,7 @@ class LibraryAuthController extends Controller
 
 
 
-   public function login(Request $request)
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -240,11 +242,142 @@ class LibraryAuthController extends Controller
     }
 
 
+    public function sendResetLinkEmail(Request $request)
+    {
+        
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:libraries,email'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'code' => 422,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+                'data' => (object)[]
+            ], 422);
+        }
+
+        $user = Library::where('email', $request->email)
+            ->select('library_name as name', 'email')
+            ->first();
+           
+         if (!$user) {
+            $user = LibraryUser::where('email', $request->email)
+                ->select('name', 'email') 
+                ->first();
+        }
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'code' => 404,
+                'message' => 'Email not found.',
+                'data' => (object)[]
+            ], 404);
+        }
+
+        $token = Str::random(60); 
+
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => $token, 'created_at' => now()]
+        );
+
+        try {
+            Mail::send('email.forgot-password', [
+                'token' => $token,
+                'email' => $user->email,
+                'name' => $user->name,
+                'resetLink'=>'link'
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Reset Your Account Password');
+            });
+
+            return response()->json([
+                'status' => true,
+                'code' => 200,
+                'message' => 'Reset token sent to your email.',
+                'token'=>$token,
+                'data' => (object)[]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'code' => 500,
+                'message' => 'Failed to send email.',
+                'error' => app()->environment('production') ? null : $e->getMessage(),
+                'data' => (object)[]
+            ], 500);
+        }
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+            'token' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'code' => 422,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+                'data' => (object)[]
+            ], 422);
+        }
+
+        $record = DB::table('password_resets')->where('email', $request->email)->first();
+
+        if (!$record || !hash_equals($record->token, $request->token)) {
+            return response()->json([
+                'status' => false,
+                'code' => 401,
+                'message' => 'Invalid or expired token.',
+                'data' => (object)[]
+            ], 401);
+        }
+
+        $user = Library::where('email', $request->email)->first()
+            ?? LibraryUser::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'code' => 404,
+                'message' => 'User not found.',
+                'data' => (object)[]
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->original_password = $request->password;
+        $user->save();
+
+        DB::table('password_resets')->where('email', $request->email)->delete();
+
+        return response()->json([
+            'status' => true,
+            'code' => 200,
+            'message' => 'Password has been reset successfully.',
+            'data' => [
+                'user_id' => $user->id,
+                'user_type' => $user instanceof Library ? 'library' : 'library_user'
+            ]
+        ], 200);
+    }
 
 
 
 
-    
+
+
+
 
 
     public function profile(Request $request)

@@ -8,6 +8,10 @@ Route::get('app-settings', [LibraryAuthController::class, 'setting']);
 Route::get('library-plan', [LibraryAuthController::class, 'libraryPlan']);
 Route::post('library/register', [LibraryAuthController::class, 'register']);
 Route::post('library/verify-email', [LibraryAuthController::class, 'verifyEmailOtp']);
+Route::post('forgot-password', [LibraryAuthController::class, 'sendResetLinkEmail']);
+Route::post('reset-password', [LibraryAuthController::class, 'resetPassword']);
+
+
 
 // Library login
 Route::post('library/login', [LibraryAuthController::class, 'login']);
