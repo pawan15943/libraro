@@ -115,11 +115,12 @@
         font-size: 1rem 16px !important;
     }
 
-    .content{
-        background: url("{{ asset('public/img/search-bg.webp') }}") no-repeat !important;    
-        background-position: bottom !important;
-        background-size: 100% !important;
-    }
+.content {
+    background: linear-gradient(180deg, #eafdff, transparent),
+                url("http://localhost/genrate/public/img/search-bg.webp") no-repeat !important;
+    background-position: bottom !important;
+    background-size: 100% !important;
+}
 </style>
 
 <!-- Content Header (Page header) -->
