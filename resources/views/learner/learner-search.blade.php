@@ -114,6 +114,12 @@
         height: 50px !important;
         font-size: 1rem 16px !important;
     }
+
+    .content{
+        background: url("{{ asset('public/img/search-bg.webp') }}") no-repeat !important;    
+        background-position: bottom !important;
+        background-size: 100% !important;
+    }
 </style>
 
 <!-- Content Header (Page header) -->
@@ -138,12 +144,12 @@
         <section>
             <div class="container">
                 <div class="row justify-content-center mt-5">
-                    <div class="col-lg-6 text-center">
+                    <div class="col-lg-4 text-center">
                         <h2 class="font-weight-700">Search Here</h2>
                         <form action="{{ route('learner.search') }}" method="GET">
                             <div class="row g-4">
                                 <div class="col-lg-12">
-                                    <input type="text" name="search" class="form-control form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No">
+                                    <input type="text" name="search" class="form-control form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No" id="search-input">
                                 </div>
                             </div>
 
@@ -169,10 +175,9 @@
                         $permissions = $user->subscription ? $user->subscription->permissions : null;
                         @endphp
                         @foreach($learners ?? [] as $key => $value)
-                        @php
-                        $planStatus = getPlanStatusDetails($value->plan_end_date);
-
-                        @endphp
+                            @php
+                            $planStatus = getPlanStatusDetails($value->plan_end_date);
+                            @endphp
 
                         <div class="record mt-3">
                             <ul class="learner-info">
@@ -407,6 +412,41 @@
         }
     });
 </script>
+
+<script>
+const input = document.getElementById("search-input");
+const texts = ["Search by Learner Name", "Search by Learner Mobile Number", "Search by Learner Seat No"];
+let currentText = 0;
+let charIndex = 0;
+let typing = true;
+
+function typeEffect() {
+  let current = texts[currentText];
+  
+  if (typing) {
+    input.setAttribute("placeholder", current.substring(0, charIndex++));
+    if (charIndex > current.length) {
+      typing = false;
+      setTimeout(typeEffect, 300);
+    } else {
+      setTimeout(typeEffect, 100);
+    }
+  } else {
+    charIndex--;
+    input.setAttribute("placeholder", current.substring(0, charIndex));
+    if (charIndex === 0) {
+      typing = true;
+      currentText = (currentText + 1) % texts.length;
+      setTimeout(typeEffect, 300);
+    } else {
+      setTimeout(typeEffect, 50);
+    }
+  }
+}
+
+typeEffect();
+</script>
+
 @include('learner.popup')
 @include('learner.script')
 @endsection
