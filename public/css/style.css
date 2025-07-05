@@ -1560,11 +1560,6 @@ ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li a.active {
     justify-content: center;
 }
 
-.actionIcons {
-    display: none;
-    opacity: 0;
-}
-
 .boxes.mb-4 {
     position: relative;
     border-radius: 1rem;
@@ -4665,7 +4660,7 @@ h6.text-center.bg-white {
         width: 100% !important;
     }
 
-    ul.learner-info li small {
+    ul.learner-info li small{
         width: 100% !important;
     }
 
