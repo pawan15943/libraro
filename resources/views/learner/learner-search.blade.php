@@ -40,7 +40,9 @@
         flex-direction: column;
 
     }
-
+    ul.learner-info small{
+        margin: 0 !important;
+    }
 
 
     ul.learner-info span {
@@ -49,11 +51,15 @@
         font-weight: 500;
         color: #ababab;
     }
-
+    .text-warning {
+        --bs-text-opacity: 1;
+        color: rgb(213 160 0) !important;
+    }
     ul.learner-info h5 {
         font-weight: 700;
         margin: 0;
         font-size: .8rem;
+        text-transform: uppercase;
     }
 
     .action {
@@ -196,49 +202,49 @@
 
                         <div class="record mt-3">
                             <ul class="learner-info">
-                                <li>
+                                <li style="width: 6%;">
                                     <div class="d-flex">
                                         <span>Seat No.</span>
                                         <h5>{{$value->seat_no ? $value->seat_no : 'General'}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 20%;">
                                     <div class="d-flex ">
                                         <span>Name</span>
                                         <h5>{{$value->name}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan</span>
-                                        <h5>{{$value->plan_type_name}} {{$value->plan_name}}</h5>
+                                        <h5>{{$value->plan_type_name}}<br> {{$value->plan_name}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan Starts on</span>
                                         <h5>{{$value->plan_start_date}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan Expired on</span>
                                         <h5>{{$value->plan_end_date}}<br> {!! getUserStatusDetails($value->plan_end_date) !!}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 10%;">
                                     <div class="d-flex">
                                         <span>Status</span>
                                         <h5 class="text-success">ACTIVE</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 5%;">
                                     <div class="d-flex">
                                         <h5><i class="fa fa-angle-right action-items"></i></h5>
                                     </div>
                                 </li>
                             </ul>
-                            <div class="action actionIcon">
+                            <div class="action actionIcons">
                                 <!-- View Seat Info -->
                                 @can('has-permission', 'View Seat')
 
@@ -408,9 +414,9 @@
 
 
 <script>
-    $('.actionIcon').hide();
+    $('.actionIcons').hide();
     $('.action-items').on('click', function() {
-        $(this).closest('.record').find('.actionIcon').stop(true, true).slideToggle('slow');
+        $(this).closest('.record').find('.actionIcons').toggle();
     });
 
     $(document).ready(function() {

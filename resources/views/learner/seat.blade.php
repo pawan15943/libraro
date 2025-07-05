@@ -285,7 +285,7 @@ $today = Carbon::today();
 @endif
 @can('has-permission', 'View Seat')
 <div class="modal fade" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="seat_details_info">Book Seat</h1>
@@ -299,19 +299,19 @@ $today = Carbon::today();
                             <div class="upper-box">
                                 <h4 class="mb-4">Leraners Info</h4>
                                 <div class="row g-4">
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-6 col-6">
                                         <span>Seat Owner Name</span>
                                         <h5 id="owner" class="uppercase">NA</h5>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-6 col-6">
                                         <span>Date Of Birth </span>
                                         <h5 id="learner_dob">NA</h5>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-6 col-6">
                                         <span>Mobile Number</span>
                                         <h5 id="learner_mobile">NA</h5>
                                     </div>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-6 col-6">
                                         <span>Email Id</span>
                                         <h5 id="learner_email">NA</h5>
                                     </div>
@@ -320,35 +320,35 @@ $today = Carbon::today();
                             <div class="action-box">
                                 <h4>Other Seat Info</h4>
                                 <div class="row g-4">
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Plan</span>
                                         <h5 id="planName">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Plan Type</span>
                                         <h5 id="planTypeName">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Plan Price</span>
                                         <h5 id="price">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Seat Booked On</span>
                                         <h5 id="joinOn">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Plan Starts On</span>
                                         <h5 id="startOn">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Plan Ends On</span>
                                         <h5 id="endOn">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Payment Mode</span>
                                         <h5 id="paymentmode">NA</h5>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-4 col-6">
                                         <span>Id Proof</span>
                                         <h5 id="proof"><a class="">View Docuemnt</a></h5>
                                     </div>
@@ -381,7 +381,7 @@ $today = Carbon::today();
 {{-- <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div id="success-message" class="alert alert-success" style="display:none;"></div>
     <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5" id="seat_number_upgrades">Re-New Lerners Plan</h1>
@@ -449,7 +449,7 @@ $today = Carbon::today();
 <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div id="success-message" class="alert alert-success" style="display:none;"></div>
     <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5" id="seat_number_upgrades">Re-New Lerners Plan</h1>
