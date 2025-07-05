@@ -50,11 +50,11 @@
                         @if (!$loop->first)
                     <tr>
                         @endif
-                        <td><span class="uppercase">{{ $learner->name }}</span></td>
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{($learner->email) }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{($learner->email) }}</span> <br>
+                        <td><span class="uppercase truncate name mt-0 mb-0" data-bs-toggle="tooltip"
+                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span></td>
+                        <td><span class="truncate" >
+                            {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                            </span> <br>
                             <small> +91-{{($learner->mobile)}}</small>
                         </td>
                         <td>

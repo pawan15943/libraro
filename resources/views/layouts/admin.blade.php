@@ -25,6 +25,7 @@
 </head>
 
 <body>
+    
     <!-- New Design Dahsbard Library -->
     <div class="support-container">
         <div class="support-icon" onclick="toggleSupportCard()">

@@ -99,10 +99,11 @@ $today = \Carbon\Carbon::today();
                  
                     <tr>
                         <td>{{$value->seat_no ?? 'General'}}</td>
-                        <td class="uppercase">{{$value->name}}</td>
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title=" {{ decryptData($value->email) ?? 'Email ID Not Avaialble'}}" data-bs-placement="bottom">
-                                {{ $value->email ? decryptData($value->email) : 'Email ID Not Avaialble'}}</span> <br>
+                        <td class="uppercase"><span class="uppercase truncate name my-0" data-bs-toggle="tooltip"
+                                data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span></td>
+                        <td><span class="truncate" >
+                            {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                            </span> <br>
                             <small> +91-{{decryptData($value->mobile)}}</small>
                         </td>
                       

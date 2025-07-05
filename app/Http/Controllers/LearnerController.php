@@ -803,17 +803,14 @@ class LearnerController extends Controller
     {
 
         $filters = [
-
             'search'  => $request->get('search'),
-
         ];
 
         $learners = $this->fetchLearnerData(null, false, 1, 1, $filters);
 
-
-
         return view('learner.learner-search', compact('learners'));
     }
+    
     public function learnerHistory(Request $request)
     {
         $filters = [

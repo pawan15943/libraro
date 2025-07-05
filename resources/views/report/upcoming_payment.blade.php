@@ -51,14 +51,13 @@ $currentMonth = date('m');
                         <td>{{$value->seat_no}}<br>
                             <small>{{$detail->planType->name}}</small>
                         </td>
-                        <td><span class="uppercase truncate" data-bs-toggle="tooltip"
+                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
                             <br> <small>{{$value->dob}}</small>
                         </td>
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{$value->email }}</span> <br>
+                        <td><span class="truncate" >
+                            {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                            </span> <br>
                             <small> +91-{{$value->mobile}}</small>
                         </td>
                         <td>{{$detail->plan_start_date}}<br>

@@ -1,6 +1,3 @@
-<div id="loader">
-    <div class="spinner"></div>
-</div>
 
 @php
 $user = getAuthenticatedUser();

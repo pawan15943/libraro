@@ -150,7 +150,13 @@
                         <form action="{{ route('learner.search') }}" method="GET">
                             <div class="row g-4">
                                 <div class="col-lg-12">
-                                    <input type="text" name="search" class="form-control form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No" id="search-input">
+                                    <input type="text" name="search" class="form-control @error('search') is-invalid @enderror form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No" id="search-input">
+                                    @error('search')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                    
                                 </div>
                             </div>
 
@@ -162,19 +168,27 @@
                                 </div>
                             </div>
                         </form>
-
+                        @if(isset($learners) && $learners->isEmpty())
+                        <div class="row mt-3">
+                            <div class="col-lg-12">
+                                <h4>No results found.</h4>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
+
                 <div class="row mb-4 ">
 
 
                     <div class="col-lg-12">
 
                         @php
-
+                        
                         $user = Auth::user();
                         $permissions = $user->subscription ? $user->subscription->permissions : null;
                         @endphp
+                        
                         @foreach($learners ?? [] as $key => $value)
                             @php
                             $planStatus = getPlanStatusDetails($value->plan_end_date);

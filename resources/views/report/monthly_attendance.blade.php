@@ -95,10 +95,8 @@ $currentMonth = date('m');
                         <tr>
                             <td>{{ $value['seat_no'] ?? 'G' }}</td>
                             <td>
-                                <span class="uppercase truncate m-0" data-bs-toggle="tooltip"
-                                    data-bs-title="{{ $value['name'] ?? '' }}" data-bs-placement="bottom">
-                                    {{ $value['name'] ?? '' }}
-                                </span>
+                                <span class="uppercase truncate name" data-bs-toggle="tooltip"
+                                data-bs-title="{{ $value['name'] ?? '' }}" data-bs-placement="bottom">{{ $value['name'] ?? '' }}</span>
                             </td>
 
                            @foreach($value['daily'] ?? [] as $status)
