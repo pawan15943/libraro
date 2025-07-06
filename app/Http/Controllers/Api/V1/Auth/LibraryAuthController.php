@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\Subscription;
@@ -20,28 +21,20 @@ class LibraryAuthController extends Controller
     {
         return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Settings fetched successfully.',
             'data' => [
                 'app_version' => 'v1',
                 'force_update' => false,
-                'social_login_url' => [
-                    'youtube' => 'https://www.youtube.com/@Libraroindia',
-                    'linkedin' => 'https://www.linkedin.com/in/libraro/',
-                    'instagram' => 'https://www.instagram.com/libraro.in/',
-                    'facebook' => 'https://www.facebook.com/libraro.in'
-                ],
-                'upload_csv_url' => [
-                    'master' => url('public/sample/master.csv'),
-                    'learner' => url('public/sample/learner.csv')
-                ],
+                 'youtube' => 'https://www.youtube.com/@Libraroindia',
+                'linkedin' => 'https://www.linkedin.com/in/libraro/',
+                'instagram' => 'https://www.instagram.com/libraro.in/',
+                'facebook' => 'https://www.facebook.com/libraro.in',
+                'master_sample' => url('public/sample/master.csv'),
+                'learner_sample' => url('public/sample/learner.csv'),
                 'privacy_policy' => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
-                'email' => [
-                    'support1' => 'support@libraro.in',
-                    'support2' => 'support@libraro.in'
-                ],
+                'contact_email' => ['support@libraro.in'],
                 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
@@ -230,13 +223,14 @@ class LibraryAuthController extends Controller
             ]
         );
 
+
         return response()->json([
             'status' => true,
             'code' => 200,
             'message' => 'Login successful.',
             'data' => [
                 'token' => $token,
-                'user' => $user
+                'user' => cleanNull($user->toArray())
             ]
         ], 200);
     }
@@ -373,7 +367,33 @@ class LibraryAuthController extends Controller
     }
 
 
+    public function branchDetail(Request $request){
+         $validator = Validator::make($request->all(), [
+            'branch_id' => 'required|int',
+       
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'code' => 422,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+                'data' => (object)[]
+            ], 422);
+        }
+
+        $branch = Branch::where('id', $request->branch_id)->get();
+
+          return response()->json([
+            'status' => true,
+            'code' => 200,
+            'message' => 'Branch detail fetched successfully.',
+            'data' => [
+                'branch' => $branch
+            ]
+        ], 200);
+    }
 
 
 

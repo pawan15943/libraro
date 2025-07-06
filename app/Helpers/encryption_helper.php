@@ -662,4 +662,12 @@ if (!function_exists('getProfileCompletionPercentage')) {
     }
 }
 
+function cleanNull($array)
+{
+    return array_map(function ($value) {
+        return $value === null ? (is_numeric($value) ? 0 : '') : $value;
+    }, $array);
+}
+
+
 
