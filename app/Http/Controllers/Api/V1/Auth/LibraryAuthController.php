@@ -48,29 +48,30 @@ class LibraryAuthController extends Controller
             'status' => true,
             'code' => 200,
             'message' => 'Subscription plans fetched successfully.',
-            'data' => [
-                'subscription' => $plans
-            ]
+            'subscription' => $plans
         ], 200);
     }
 
     public function register(Request $request)
     {
+        // one message in validation, code 200, devicetype and device token, smtp email check verify valid
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:libraries,email',
             'mobile' => 'required|digits:10',
-            'password' => 'required|min:6|confirmed',
+            'password' => 'required|min:6',
+            'device_type' => 'required',
+            'device_id' => 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'code' => 422,
+                'code' => 200,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
-                'data' => (object)[]
-            ], 422);
+               
+            ], 200);
         }
 
         $validated = $validator->validated();
@@ -84,6 +85,14 @@ class LibraryAuthController extends Controller
                 'password' => Hash::make($validated['password']),
                 'email_otp' => $otp,
             ]);
+
+             $library->devices()->updateOrCreate(
+                ['device_id' => $validated['device_id']],
+                [
+                    'device_type' => $validated['device_type'],
+                    'guard_name' => 'library',
+                ]
+            );
 
             $data = [
                 'name' => $library->library_name,
@@ -111,7 +120,7 @@ class LibraryAuthController extends Controller
                 'code' => 500,
                 'message' => 'Failed to register or send OTP email.',
                 'error' => app()->environment('production') ? null : $e->getMessage(),
-                'data' => (object)[]
+                
             ], 500);
         }
     }
@@ -127,11 +136,11 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'code' => 422,
+                'code' => 200,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
-                'data' => (object)[]
-            ], 422);
+                
+            ], 200);
         }
 
         $library = Library::find($request->library_id);
@@ -139,19 +148,19 @@ class LibraryAuthController extends Controller
         if ($library->email_verified_at) {
             return response()->json([
                 'status' => false,
-                'code' => 400,
+                'code' => 200,
                 'message' => 'Email already verified.',
-                'data' => (object)[]
-            ], 400);
+                
+            ], 200);
         }
 
         if ($library->email_otp !== $request->otp) {
             return response()->json([
                 'status' => false,
-                'code' => 401,
+                'code' => 200,
                 'message' => 'Invalid OTP. Please try again.',
-                'data' => (object)[]
-            ], 401);
+                
+            ], 200);
         }
 
         $library->email_verified_at = now();
@@ -161,6 +170,7 @@ class LibraryAuthController extends Controller
             'status' => true,
             'code' => 200,
             'message' => 'Email verified successfully.',
+            // 'token' => $token,
             'data' => [
                 'library_id' => $library->id
             ]
@@ -181,11 +191,11 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'code' => 422,
+                'code' => 200,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
                 'data' => (object)[]
-            ], 422);
+            ], 200);
         }
 
         $user = Library::where('email', $request->email)->first();
@@ -193,19 +203,19 @@ class LibraryAuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => false,
-                'code' => 401,
-                'message' => 'Invalid email or password.',
-                'data' => (object)[]
-            ], 401);
+                'code' => 200,
+                'message' => 'User Not Register',
+               'registration' => 0
+            ], 200);
         }
 
         if (is_null($user->email_verified_at)) {
             return response()->json([
-                'status' => false,
-                'code' => 403,
+                'status' => true,
+                'code' => 200,
                 'message' => 'Please verify your email before logging in.',
-                'data' => (object)[]
-            ], 403);
+                'is_email_verified' => 0
+            ], 200);
         }
 
         if (!$user->hasAnyRole(['admin', 'library'])) {
@@ -223,15 +233,20 @@ class LibraryAuthController extends Controller
             ]
         );
 
-
+        // registration=> 0=>user not register,1=> email not verify,2=>
+        //suceess is_email_verified
         return response()->json([
             'status' => true,
             'code' => 200,
             'message' => 'Login successful.',
-            'data' => [
-                'token' => $token,
-                'user' => cleanNull($user->toArray())
-            ]
+            'is_email_verified' => 0,
+            'token' => $token,
+            // 'data' => [
+            //     'token' => $token,
+            //     // id, name, email,contact, role 
+            //     'library' => cleanNull($user->toArray())
+            // ],
+           
         ], 200);
     }
 

@@ -251,7 +251,7 @@ class LibraryController extends Controller
     public function verifyOtp(Request $request)
     {
        
-        // Validate the input
+        // Validate the input  login detail all
         $request->validate([
             'email' => 'required|email',
             'email_otp' => 'required',
