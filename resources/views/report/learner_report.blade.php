@@ -126,14 +126,13 @@ $currentMonth = date('m');
                         <td>{{$value->learner->seat_no}}<br>
                             <small>{{$value->planType->name}}</small>
                         </td>
-                        <td><span class="uppercase truncate" data-bs-toggle="tooltip"
+                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
                             <br> <small>{{$value->learner->dob}}</small>
                         </td>
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{$value->learner->email }}</span> <br>
+                        <td><span class="truncate" >
+                            {!! $value->learner->email ? $value->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                            </span> <br>
                             <small> +91-{{$value->learner->mobile}}</small>
                         </td>
                         <td>{{$value->plan_start_date}}<br>

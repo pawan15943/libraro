@@ -7,38 +7,24 @@
 use App\Helpers\HelperService;
 @endphp
 
-<!-- <div class="alert alert-success alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
-    <i class="fa-solid fa-circle-check me-3 text-success"></i>
-    <div>
-        <h5 class="mb-1">Profile Updated Successfully!</h5>
-        <p class="mb-0">Your profile details were saved. Thank you for keeping your info current.</p>
-    </div>
-    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-</div> -->
+
 @php
 $completion = getProfileCompletionPercentage();
 $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
     @endphp
 
-    @if ($completion < 75)
+    @if ($completion < 70)
     <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
     <i class="fa-solid fa-clock me-3 {{ $alertClass == 'alert-danger' ? 'text-danger' : 'text-warning' }}"></i>
     <div>
         <strong>Update your Branch Profile to complete your registration with us. ({{ $completion }}%)</strong><br>
-        Your profile is only {{ $completion }}% complete. Kindly update to access full features.
+        Your profile is only {{ $completion }}% complete. Kindly update to access full features. <a href="{{route('branch.edit',getCurrentBranch())}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i>Update Branch Profile</a>
     </div>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     @endif
-    {{-- <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
-    <i class="fa-solid fa-clock me-3 text-warning"></i>
-    <div>
-        <strong>Profile Update Pending</strong><br>
-        Your profile changes are under review. You'll be notified once approved.
-    </div>
-    <!-- This button is show when profile is updated successfully -->
-    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-</div> --}}
+
+
 
 
     <div class="dashboard learner">
@@ -325,7 +311,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @can('has-permission', 'Total Bookings')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
-                    <h6>Total Slots Bookings</h6>
+                    <h6>Total Slots</h6>
                     <div class="d-flex">
                         <h4 id="totalBookings">0</h4>
                     </div>
@@ -364,7 +350,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @can('has-permission', 'Total Booked Seats Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
-                    <h6>This Month Total</h6>
+                    <h6>Total</h6>
                     <div class="d-flex">
                         <h4 id="thismonth_total_book">0</h4>
                     </div>
@@ -375,7 +361,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @endcan
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-4">
-                    <h6>This Month Booked</h6>
+                    <h6>Booked</h6>
                     <div class="d-flex">
                         <h4 id="month_total_active_book">0</h4>
                     </div>
@@ -385,7 +371,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             {{-- <div class="col-lg-2 col-md-4 col-sm-6 col-6">
             <div class="booking-count bg-4">
-                <h6>Previous Month Booked</h6>
+                <h6>Booked</h6>
                 <div class="d-flex">
                     <h4 id="till_previous_book">0</h4>
                 </div>
@@ -1339,9 +1325,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             $icon.toggleClass('fa-eye-slash fa-eye');
         });
     </script>
-
-
-
+    
     @include('learner.script')
     @include('learner.popup')
 

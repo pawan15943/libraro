@@ -40,7 +40,9 @@
         flex-direction: column;
 
     }
-
+    ul.learner-info small{
+        margin: 0 !important;
+    }
 
 
     ul.learner-info span {
@@ -49,11 +51,15 @@
         font-weight: 500;
         color: #ababab;
     }
-
+    .text-warning {
+        --bs-text-opacity: 1;
+        color: rgb(213 160 0) !important;
+    }
     ul.learner-info h5 {
         font-weight: 700;
         margin: 0;
         font-size: .8rem;
+        text-transform: uppercase;
     }
 
     .action {
@@ -114,6 +120,13 @@
         height: 50px !important;
         font-size: 1rem 16px !important;
     }
+
+.content {
+    background: linear-gradient(180deg, #eafdff, transparent),
+                url("http://localhost/genrate/public/img/search-bg.webp") no-repeat !important;
+    background-position: bottom !important;
+    background-size: 100% !important;
+}
 </style>
 
 <!-- Content Header (Page header) -->
@@ -138,12 +151,18 @@
         <section>
             <div class="container">
                 <div class="row justify-content-center mt-5">
-                    <div class="col-lg-6 text-center">
+                    <div class="col-lg-4 text-center">
                         <h2 class="font-weight-700">Search Here</h2>
                         <form action="{{ route('learner.search') }}" method="GET">
                             <div class="row g-4">
                                 <div class="col-lg-12">
-                                    <input type="text" name="search" class="form-control form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No">
+                                    <input type="text" name="search" class="form-control @error('search') is-invalid @enderror form-control-lg text-center" value="{{ request()->get('search') }}" placeholder="Search Here by Name | Mobile | Seat No" id="search-input">
+                                    @error('search')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                    
                                 </div>
                             </div>
 
@@ -155,70 +174,77 @@
                                 </div>
                             </div>
                         </form>
-
+                        @if(isset($learners) && $learners->isEmpty())
+                        <div class="row mt-3">
+                            <div class="col-lg-12">
+                                <h4>No results found.</h4>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
+
                 <div class="row mb-4 ">
 
 
                     <div class="col-lg-12">
 
                         @php
-
+                        
                         $user = Auth::user();
                         $permissions = $user->subscription ? $user->subscription->permissions : null;
                         @endphp
+                        
                         @foreach($learners ?? [] as $key => $value)
-                        @php
-                        $planStatus = getPlanStatusDetails($value->plan_end_date);
-
-                        @endphp
+                            @php
+                            $planStatus = getPlanStatusDetails($value->plan_end_date);
+                            @endphp
 
                         <div class="record mt-3">
                             <ul class="learner-info">
-                                <li>
+                                <li style="width: 6%;">
                                     <div class="d-flex">
                                         <span>Seat No.</span>
                                         <h5>{{$value->seat_no ? $value->seat_no : 'General'}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 20%;">
                                     <div class="d-flex ">
                                         <span>Name</span>
                                         <h5>{{$value->name}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan</span>
-                                        <h5>{{$value->plan_type_name}} {{$value->plan_name}}</h5>
+                                        <h5>{{$value->plan_type_name}}<br> {{$value->plan_name}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan Starts on</span>
                                         <h5>{{$value->plan_start_date}}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 15%;">
                                     <div class="d-flex">
                                         <span>Plan Expired on</span>
                                         <h5>{{$value->plan_end_date}}<br> {!! getUserStatusDetails($value->plan_end_date) !!}</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 10%;">
                                     <div class="d-flex">
                                         <span>Status</span>
                                         <h5 class="text-success">ACTIVE</h5>
                                     </div>
                                 </li>
-                                <li>
+                                <li  style="width: 5%;">
                                     <div class="d-flex">
                                         <h5><i class="fa fa-angle-right action-items"></i></h5>
                                     </div>
                                 </li>
                             </ul>
-                            <div class="action actionIcon">
+                            <div class="action actionIcons">
                                 <!-- View Seat Info -->
                                 @can('has-permission', 'View Seat')
 
@@ -388,9 +414,9 @@
 
 
 <script>
-    $('.actionIcon').hide();
+    $('.actionIcons').hide();
     $('.action-items').on('click', function() {
-        $(this).closest('.record').find('.actionIcon').stop(true, true).slideToggle('slow');
+        $(this).closest('.record').find('.actionIcons').toggle();
     });
 
     $(document).ready(function() {
@@ -407,6 +433,41 @@
         }
     });
 </script>
+
+<script>
+const input = document.getElementById("search-input");
+const texts = ["Search by Learner Name", "Search by Learner Mobile Number", "Search by Learner Seat No"];
+let currentText = 0;
+let charIndex = 0;
+let typing = true;
+
+function typeEffect() {
+  let current = texts[currentText];
+  
+  if (typing) {
+    input.setAttribute("placeholder", current.substring(0, charIndex++));
+    if (charIndex > current.length) {
+      typing = false;
+      setTimeout(typeEffect, 300);
+    } else {
+      setTimeout(typeEffect, 100);
+    }
+  } else {
+    charIndex--;
+    input.setAttribute("placeholder", current.substring(0, charIndex));
+    if (charIndex === 0) {
+      typing = true;
+      currentText = (currentText + 1) % texts.length;
+      setTimeout(typeEffect, 300);
+    } else {
+      setTimeout(typeEffect, 50);
+    }
+  }
+}
+
+typeEffect();
+</script>
+
 @include('learner.popup')
 @include('learner.script')
 @endsection

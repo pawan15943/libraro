@@ -26,6 +26,10 @@
 </head>
 
 <body>
+    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+    <div id="loaderone">
+        <dotlottie-player src="https://lottie.host/db22cec8-bed8-4ce9-8993-e2c88bff2231/qJmiiH5Orw.lottie" background="transparent" speed="1" style="width: 150px; height: 150px" loop autoplay></dotlottie-player>
+    </div>
     <!-- New Design Dahsbard Library -->
     <div class="support-container">
         <div class="support-icon" onclick="toggleSupportCard()">
@@ -356,6 +360,20 @@
                 $('.right-sidebar').toggleClass('hide-right-sidebar');
                 $(this).find('#sidebar_mob').toggleClass('rotate-180');
             });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Ensure loader is visible first
+            $('#loaderone').show();
+
+            // Hide loader after a short delay or once content is ready
+            setTimeout(function() {
+                $('#loaderone').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 1000); // adjust delay as needed
         });
     </script>
 </body>

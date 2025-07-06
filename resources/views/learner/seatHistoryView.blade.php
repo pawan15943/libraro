@@ -39,9 +39,12 @@ $today = Carbon::today();
                     @if($detail->status==0)
                     <tr>
                         <td>{{ $learner->seat_no }}</td>
-                        <td><span class="uppercase truncate m-auto text-center d-block">{{ $learner->name }}</span></td>
+                        <td><span class="uppercase truncate name mt-0 mb-0" data-bs-toggle="tooltip"
+                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span></td>
                         <td> +91-{{ $learner->mobile }}</td>
-                        <td> {{ $learner->email }}</td>
+                        <td> 
+                            {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                            </td>
                         <td> {{ $detail->plan->name ?? 'N/A' }}</td>
                         <td> {{ $detail->planType->name ?? 'N/A' }}</td>
                         <td> {{ $detail->plan_start_date }}</td>

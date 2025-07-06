@@ -1547,57 +1547,18 @@ ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li a.active {
     color: var(--c8);
 }
 
-/* Loader wrapper */
-#loader {
+#loaderone {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    background-color: #ffffff;
     z-index: 9999;
-    background: var(--c5);
     display: flex;
-    justify-content: center;
     align-items: center;
-    display: none;
-    /* Initially hidden */
+    justify-content: center;
 }
-
-/* Center the spinner from top and left */
-#loader .spinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border: 6px solid #f3f3f3;
-    border-radius: 50%;
-    border-top: 6px solid #3498db;
-    /* You can change the color */
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-
-
-/* img#imageDisplay {
-    width: 180px;
-    height: 80px ! IMPORTANT;
-    border-radius: .4;
-    box-shadow: 1px 0 5px #00000020;
-    margin-left: 1rem;
-    margin-top: 1rem;
-} */
 
 .boxes.mb-4 {
     position: relative;
@@ -4695,6 +4656,14 @@ h6.text-center.bg-white {
 }
 
 @media screen and (max-width:480px) {
+    ul.learner-info li {
+        width: 100% !important;
+    }
+
+    ul.learner-info li small{
+        width: 100% !important;
+    }
+
     .content .card {
         overflow: hidden;
     }
