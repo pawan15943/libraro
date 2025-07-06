@@ -241,6 +241,16 @@ class DashboardController extends Controller
             
                 return redirect()->route('library.myplan');
             }elseif($iscomp){
+               if (getCurrentBranch() === null || getCurrentBranch() == 0) {
+                    $firstBranch = Branch::where('library_id', getLibraryId())->select('id')->first();
+
+                    if ($firstBranch && $firstBranch->id) {
+                        Library::where('id', getLibraryId())->update([
+                            'current_branch' => $firstBranch->id
+                        ]);
+                    }
+                }
+
                
                 return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection'));
             }else{

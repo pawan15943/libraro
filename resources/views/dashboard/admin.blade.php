@@ -11,14 +11,20 @@ use App\Helpers\HelperService;
 @php
 $completion = getProfileCompletionPercentage();
 $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
-    @endphp
+
+@endphp
 
     @if ($completion < 70)
     <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
     <i class="fa-solid fa-clock me-3 {{ $alertClass == 'alert-danger' ? 'text-danger' : 'text-warning' }}"></i>
     <div>
         <strong>Update your Branch Profile to complete your registration with us. ({{ $completion }}%)</strong><br>
-        Your profile is only {{ $completion }}% complete. Kindly update to access full features. <a href="{{route('branch.edit',getCurrentBranch())}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i>Update Branch Profile</a>
+        Your profile is only {{ $completion }}% complete. Kindly update to access full features. 
+        @if(getCurrentBranch())
+           
+      
+        <a href="{{route('branch.edit',getCurrentBranch())}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i>Update Branch Profile</a>
+          @endif
     </div>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
