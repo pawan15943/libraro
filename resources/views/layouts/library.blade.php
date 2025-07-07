@@ -166,7 +166,10 @@
         flatpickr(".datepicker",{
             disableMobile: "true"
         });
-        
+        flatpickr(".duedate", {
+            disableMobile: "true",        
+            minDate: "today",             
+        });
     </script>
 
     <script>

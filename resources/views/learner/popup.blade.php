@@ -115,7 +115,7 @@
 
                             <div class="col-lg-4 col-6">
                                 <label for="">Choose Due Date<span>*</span></label>
-                                <input type="date" class="form-control" placeholder="Plan Starts On" name="due_date" id="due_date" readonly>
+                                <input type="date" class="form-control duedate" placeholder="Plan Starts On" name="due_date" id="due_date" readonly>
                             </div>
                          
                           
