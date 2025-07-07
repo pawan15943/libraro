@@ -413,30 +413,60 @@ class ReportController extends Controller
        
         return $query->get();
     }
+    // public function paymentCollection(Request $request)
+    // {
+    //     $dates = getLearnerMonthsAndYears();
+    //     $dynamicyears = $dates['years'];
+    //     $dynamicmonths = $dates['months'];
+       
+    //     $year = $request->get('year');
+    //     $month = $request->get('month');
+
+    //     // Base query
+    //     $query = LearnerTransaction::where('library_id', getLibraryId())
+    //         ->where('paid_amount', '!=', 0)
+    //         ->with('learner');
+
+    //     // Apply filters based on request
+    //     if ($year && $month) {
+    //         $query->whereYear('paid_date', $year)->whereMonth('paid_date', $month);
+    //     } elseif ($year) {
+    //         $query->whereYear('paid_date', $year);
+    //     } elseif ($month) {
+    //         $query->whereMonth('paid_date', $month);
+    //     }
+
+    //     // Filter by branch
+    //     if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
+    //         $query->where('branch_id', getCurrentBranch());
+    //     }
+
+    //     $learners = $query->get();
+
+    //     return view('report.payment_collection', compact('dynamicyears', 'dynamicmonths', 'learners'));
+    // }
+
     public function paymentCollection(Request $request)
     {
         $dates = getLearnerMonthsAndYears();
         $dynamicyears = $dates['years'];
         $dynamicmonths = $dates['months'];
-       
-        $year = $request->get('year');
-        $month = $request->get('month');
 
-        // Base query
+        $start_date = $request->get('start_date');
+        $end_date = $request->get('end_date');
+
         $query = LearnerTransaction::where('library_id', getLibraryId())
             ->where('paid_amount', '!=', 0)
             ->with('learner');
 
-        // Apply filters based on request
-        if ($year && $month) {
-            $query->whereYear('paid_date', $year)->whereMonth('paid_date', $month);
-        } elseif ($year) {
-            $query->whereYear('paid_date', $year);
-        } elseif ($month) {
-            $query->whereMonth('paid_date', $month);
+        if ($start_date && $end_date) {
+            $query->whereBetween('paid_date', [$start_date, $end_date]);
+        } elseif ($start_date) {
+            $query->whereDate('paid_date', $start_date);
+        } elseif ($end_date) {
+            $query->whereDate('paid_date', $end_date);
         }
 
-        // Filter by branch
         if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
             $query->where('branch_id', getCurrentBranch());
         }
@@ -445,6 +475,7 @@ class ReportController extends Controller
 
         return view('report.payment_collection', compact('dynamicyears', 'dynamicmonths', 'learners'));
     }
+
 
     public function partialPaymentCollection(Request $request)
     {

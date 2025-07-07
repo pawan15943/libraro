@@ -30,7 +30,7 @@ $currentMonth = date('m');
             <form action="{{ route('payment.collection.report') }}" method="GET">
                 <div class="row g-4">
                         <!-- Filter By Payment Status -->
-                        <div class="col-lg-2">
+                        {{-- <div class="col-lg-2">
                             <label for="year">Filter By Year</label>
                             <select id="year" class="form-select " name="year">
                                 <option value="">Select Year</option>
@@ -55,6 +55,15 @@ $currentMonth = date('m');
                                     </option>
                                 @endforeach
                             </select>
+                        </div> --}}
+                        <div class="col-lg-2">
+                            <label for="year">Filter By Start Date</label>
+                           <input type="date" class="form-control" name="start_date" value="{{ request('start_date') ?: date('Y-m-d') }}" >
+                        </div>
+                        
+                        <div class="col-lg-2">
+                            <label for="month">End Date</label>
+                             <input type="date" class="form-control" name="end_date" value="{{ request('end_date') ?: date('Y-m-d') }}" >
                         </div>
                    
                 </div>

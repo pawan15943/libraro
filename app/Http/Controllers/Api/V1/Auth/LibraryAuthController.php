@@ -25,7 +25,7 @@ class LibraryAuthController extends Controller
             'data' => [
                 'app_version' => 'v1',
                 'force_update' => false,
-                 'youtube' => 'https://www.youtube.com/@Libraroindia',
+                'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
                 'facebook' => 'https://www.facebook.com/libraro.in',
@@ -54,7 +54,7 @@ class LibraryAuthController extends Controller
 
     public function register(Request $request)
     {
-        // one message in validation, code 200, devicetype and device token, smtp email check verify valid
+        //  smtp email check verify valid remaining
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:libraries,email',
@@ -65,14 +65,15 @@ class LibraryAuthController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $firstError = collect($validator->errors()->all())->first(); 
+
             return response()->json([
                 'status' => false,
-                'code' => 200,
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-               
+                'message' => $firstError,
+                
             ], 200);
         }
+
 
         $validated = $validator->validated();
         $otp = rand(100000, 999999);
@@ -107,7 +108,6 @@ class LibraryAuthController extends Controller
 
             return response()->json([
                 'status' => true,
-                'code' => 200,
                 'message' => 'OTP sent to registered email.',
                 'data' => [
                     'library_id' => $library->id
@@ -130,15 +130,17 @@ class LibraryAuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'library_id' => 'required|exists:libraries,id',
-            'otp' => 'required|digits:6'
+            'otp' => 'required|digits:6',
+            'device_type' => 'required',
+            'device_id' => 'required',
         ]);
 
         if ($validator->fails()) {
+            $firstError = collect($validator->errors()->all())->first(); 
+
             return response()->json([
                 'status' => false,
-                'code' => 200,
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
+                'message' => $firstError,
                 
             ], 200);
         }
@@ -148,7 +150,6 @@ class LibraryAuthController extends Controller
         if ($library->email_verified_at) {
             return response()->json([
                 'status' => false,
-                'code' => 200,
                 'message' => 'Email already verified.',
                 
             ], 200);
@@ -157,7 +158,6 @@ class LibraryAuthController extends Controller
         if ($library->email_otp !== $request->otp) {
             return response()->json([
                 'status' => false,
-                'code' => 200,
                 'message' => 'Invalid OTP. Please try again.',
                 
             ], 200);
@@ -165,12 +165,22 @@ class LibraryAuthController extends Controller
 
         $library->email_verified_at = now();
         $library->save();
+        $token = $library->createToken('library_token')->plainTextToken;
 
+        if ($request->device_id && $request->device_type) {
+            $library->devices()->updateOrCreate(
+                ['device_id' => $request->device_id],
+                [
+                    'device_type' => $request->device_type,
+                    'token' => $token,
+                    'guard_name' => 'library_api',
+                ]
+            );
+        }
         return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Email verified successfully.',
-            // 'token' => $token,
+            'token' => $token,
             'data' => [
                 'library_id' => $library->id
             ]

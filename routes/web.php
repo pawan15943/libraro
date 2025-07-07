@@ -223,6 +223,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
     });
     Route::get('seat/history/list', [LearnerController::class, 'seatHistory'])->name('seats.history');
     Route::get('seats/history/{id?}', [LearnerController::class, 'history'])->name('seats.history.show');
+    Route::get('general/seats/history', [LearnerController::class, 'generalSeathistory'])->name('general.seat.history');
     Route::post('change-password', [UserController::class, 'changePassword'])->name('change-password');
     Route::get('change/password', [UserController::class, 'changePasswordView'])->name('change.password');
     

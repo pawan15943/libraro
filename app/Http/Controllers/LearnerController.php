@@ -810,6 +810,8 @@ class LearnerController extends Controller
 
         return view('learner.learner-search', compact('learners'));
     }
+
+    
     
     public function learnerHistory(Request $request)
     {
@@ -819,11 +821,26 @@ class LearnerController extends Controller
             'status'  => $request->get('status'),
             'search'  => $request->get('search'),
         ];
+        if (array_filter($filters, fn($val) => !is_null($val) && $val !== '')) {
+           
+            $learnerHistory = $this->fetchCustomerData(null, null, $status = 0, $detailStatus = 0, $filters);
 
+        }else{
 
-
-        $learnerHistory = $this->fetchCustomerData(null, null, $status = 0, $detailStatus = 0, $filters);
-
+            $learnerHistory = Learner::where('library_id', getLibraryId())->where('learners.status', 0)
+      
+            ->with([
+                'learnerDetails' => function ($query) {
+                    $query->with(['plan', 'planType']);
+                }
+            ])
+            ->whereHas('learnerDetails', function ($query) {
+                $query->where('learner_detail.status', 0);
+            })
+            
+            ->get();
+        }
+       
         return view('learner.learnerHistory', compact('learnerHistory'));
     }
 
@@ -1418,26 +1435,71 @@ class LearnerController extends Controller
             $seats[] = $seat;
         }
 
+        $generalLearners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', getCurrentBranch())
+            ->whereNull('learner_detail.seat_no')
+            ->select('learners.*', 'learner_detail.*')
+            ->get();
 
-        return view('learner.seatHistory', ['learners_seats' => $learners_seats->toArray(), 'seats' => $seats]);
+        $activeGeneral = $generalLearners->where('status', 1);
+        $expiredGeneral = $generalLearners->where('status', 0)->take(1); // only one expired
+        $finalGeneralLearners = $activeGeneral->isNotEmpty() ? $activeGeneral : $expiredGeneral;
+         
+        return view('learner.seatHistory', ['learners_seats' => $learners_seats->toArray(), 'seats' => $seats,'finalGeneralLearners'=>$finalGeneralLearners]);
     }
+    // public function history($id)
+    // {
+    //     // Get the learners with their details, plans, and seat information
+    //     $learners = Learner::where('library_id', getLibraryId())
+    //         ->with([
+    //             'learnerDetails' => function ($query) {
+    //                 $query->with(['plan', 'planType']);
+    //             }
+    //         ])
+    //         ->whereHas('learnerDetails', function ($query) use ($id) {
+    //             $query->where('learner_id', $id)->where('learner_detail.status', 0);
+    //         })
+
+    //         ->get();
+
+    //     return view('learner.seatHistoryView', compact('learners'));
+    // }
     public function history($id)
     {
         // Get the learners with their details, plans, and seat information
-        $learners = Learner::where('library_id', getLibraryId())
+        $learners = Learner::where('library_id', getLibraryId())->where('learners.status', 0)
             ->with([
                 'learnerDetails' => function ($query) {
                     $query->with(['plan', 'planType']);
                 }
             ])
             ->whereHas('learnerDetails', function ($query) use ($id) {
-                $query->where('learner_id', $id)->where('learner_detail.status', 0);
+                $query->where('seat_no', $id)->where('learner_detail.status', 0);
             })
-
+            
             ->get();
-
+            
         return view('learner.seatHistoryView', compact('learners'));
     }
+    public function generalSeathistory()
+    {
+        // Get the learners with their details, plans, and seat information
+        $learners = Learner::where('library_id', getLibraryId())->where('learners.status', 0)
+        ->whereNull('learners.seat_no')
+            ->with([
+                'learnerDetails' => function ($query) {
+                    $query->with(['plan', 'planType']);
+                }
+            ])
+            ->whereHas('learnerDetails', function ($query) {
+                $query->whereNull('seat_no')->where('learner_detail.status', 0);
+            })
+            
+            ->get();
+            
+        return view('learner.genaralSeatHistoryView', compact('learners'));
+    }
+    
 
     public function reactiveUser(Request $request, $id = null)
     {

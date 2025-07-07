@@ -80,7 +80,9 @@ class UserController extends Controller
         }
 
         // Update the password
+        $user->original_password=$request->new_password;
         $user->password = Hash::make($request->new_password);
+       
         $user->save();
 
         return redirect()->back()->with('success', 'Password updated successfully');
