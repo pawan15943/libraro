@@ -158,9 +158,10 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         flatpickr(".dob",{
-            maxDate: "2010-01-01"
+            maxDate: "2010-01-01",
+            disableMobile: "true"
         });
-        
+
         flatpickr(".datepicker",{
         });
         

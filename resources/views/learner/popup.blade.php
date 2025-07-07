@@ -62,10 +62,10 @@
                             </div>
 
                             <div class="col-lg-4 col-6">
-                                <label for="">Select Plan <span>*</span></label>
+                                <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id" class="form-select" name="plan_id">
                                 {{-- <select name="plan_id" id="plan_id3" class="form-select" name="plan_id"> --}}
-                                    <option value="">Select Plan</option>
+                                    <option value="">Choose</option>
                                     @foreach($plans as $key => $value)
                                     <option value="{{$value->id}}">{{$value->name}}</option>
                                     @endforeach
@@ -73,9 +73,9 @@
                             </div>
 
                             <div class="col-lg-4 col-6">
-                                <label for="">Plan Type <span>*</span></label>
+                                <label for="">Plan Type / Shift <span>*</span></label>
                                 <select id="plan_type_id" class="form-select" name="plan_type_id">
-                                    <option value="">Select Plan Type</option>
+                                    <option value="">Choose</option>
                                    
                                 </select>
                             </div>
@@ -123,7 +123,7 @@
                             <div class="col-lg-4 col-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select">
-                                    <option value="">Select Payment Mode</option>
+                                    <option value="">Choose</option>
                                     <option value="1">Online</option>
                                     <option value="2">Offline</option>
                                     <option value="3">Pay Later</option>

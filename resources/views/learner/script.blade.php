@@ -1021,7 +1021,7 @@
                                 $("#plan_type_id2").append('<option value="' + key + '">' + value + '</option>');
                             });
                         } else {
-                            $("#plan_type_id2").append('<option value="">Select Plan Type</option>');
+                            $("#plan_type_id2").append('<option value="">Choose</option>');
                         }
                        
 
@@ -1065,7 +1065,7 @@
                 });
             } else {
                 $("#plan_type_id2").empty();
-                $("#plan_type_id2").append('<option value="">Select Plan Type</option>');
+                $("#plan_type_id2").append('<option value="">Choose Shift</option>');
             }
         }
         function getPlanPrice(plan_type_id,plan_id){
@@ -1110,7 +1110,7 @@
        
         function getTypeSeatwise(seatId) {
             
-            $('#plan_type_id').empty().append('<option value="">Select Plan Type</option>');
+            $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
             $.ajax({
                 url: '{{ route('gettypeSeatwise') }}',
                 headers: {
@@ -1131,7 +1131,7 @@
 
                         // Empty the dropdown but keep the default option
                         $("#plan_type_id").empty();
-                        $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                        $("#plan_type_id").append('<option value="">Choose Shift</option>');
 
                         // Re-add the previously selected option
                         if (selectedOption.val() !== "") {
