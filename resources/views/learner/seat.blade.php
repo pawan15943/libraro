@@ -589,6 +589,5 @@ $today = Carbon::today();
     });
 </script> --}}
 
-
-@endsection
 @include('learner.popup')
+@endsection
