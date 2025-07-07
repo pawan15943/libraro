@@ -418,7 +418,7 @@ $today = Carbon::today();
 </div>
 <div class="col-lg-6">
     <label for="">Plan Ends On <span>*</span></label>
-    <input type="date" class="form-control" placeholder="Plan Ends On" id="update_plan_end_date" value="" readonly>
+    <input type="date" class="form-control " placeholder="Plan Ends On" id="update_plan_end_date" value="" readonly>
 </div>
 <div class="col-lg-6">
     <label for="">Payment Mode <span>*</span></label>
@@ -466,38 +466,38 @@ $today = Carbon::today();
                             <div class="col-lg-12">
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Select Plan <span>*</span></label>
 
                                 <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)>
 
                                 </select>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Plan Type <span>*</span></label>
                                 <select id="plan_type_id2" class="form-control" name="plan_type_id" @readonly(true)>
 
                                 </select>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Plan Price <span>*</span></label>
                                 <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id">
 
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="locker">Locker?</label>
                                 <select name="locker" id="locker" class="form-select">
                                     <option value="no">No</option>
                                     <option value="yes">Yes, I Need a Locker</option>
                                 </select>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Locker Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
 
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="discount_type">Discount Type</label>
                                 <select id="discount_type" class="form-select" name="discountType">
                                     <option value="">Select Discount Type</option>
@@ -505,12 +505,12 @@ $today = Carbon::today();
                                     <option value="percentage">Percentage</option>
                                 </select>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                                 <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
 
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Total Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price2" value="" readonly>
 

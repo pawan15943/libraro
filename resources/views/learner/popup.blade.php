@@ -1,6 +1,6 @@
 @can('has-permission', 'Seat Booking')
 <div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
 
         <div class="modal-content">
@@ -23,7 +23,7 @@
                         <div class="row g-4">
                               
                             {{--Seat Concept======================================================================  --}}
-                            <div class="col-lg-6">
+                            <div class="col-lg-6 col-6">
                                 <label for="general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
                                     <option value="yes">No</option>
@@ -31,7 +31,7 @@
                                 </select>
                             </div>
                             {{-- Show Only Available Slots or Seat No. --}}
-                            <div class="col-lg-6">
+                            <div class="col-lg-6 col-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id" >
                                     <option value="" >Choose Seat No</option>
@@ -46,21 +46,22 @@
                                 <label for="">Full Name <span>*</span></label>
                                 <input type="text" class="form-control char-only" name="name" id="name">
                             </div>
-                            <div class="col-lg-6">
-                                <label for="">DOB </label>
-                                <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
-                            </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-6 col-6">
                                 <label for="">Mobile Number <span>*</span></label>
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
+                            <div class="col-lg-6 col-6">
+                                <label for="">DOB </label>
+                                <input type="date" class="form-control dob" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
+                            </div>
+                           
                             <div class="col-lg-6">
                                 <label for="">Email Id </label>
                                 <input type="text" class="form-control" name="email" id="email">
                                 <span class="text-danger" id="email-error"></span>
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Select Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id" class="form-select" name="plan_id">
                                 {{-- <select name="plan_id" id="plan_id3" class="form-select" name="plan_id"> --}}
@@ -71,7 +72,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Plan Type <span>*</span></label>
                                 <select id="plan_type_id" class="form-select" name="plan_type_id">
                                     <option value="">Select Plan Type</option>
@@ -79,9 +80,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" class="form-control" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
                             </div>
                          
                             {{-- <label for="">Plan Price <span>*</span></label> --}}
@@ -89,37 +90,37 @@
                             
                            
 
-                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
                                     <label for="toggleFieldCheckbox">Need a Locker ?</label>
                                     <select name="toggleFieldCheckbox" id="toggleFieldCheckbox" class="form-select">
                                         <option value="no">No</option>
                                         <option value="yes">Yes, I Need a Locker</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
                                     <label for="locker_amount">Locker Amount</label>
                                     <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount" placeholder="Locker Amt." readonly>
                                 </div>
-                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
                                     <label for="locker_no">Locker No.</label>
                                     <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
                                 </div>
                             
                             
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
                                 <span id="pending_amt" class="text-danger"></span>
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Choose Due Date<span>*</span></label>
                                 <input type="date" class="form-control" placeholder="Plan Starts On" name="due_date" id="due_date" readonly>
                             </div>
                          
                           
                             
-                            <div class="col-lg-4">
+                            <div class="col-lg-4 col-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select">
                                     <option value="">Select Payment Mode</option>
@@ -136,16 +137,16 @@
 
                         <div id="idProofFields" style="display: none;">
                             <div class="row g-4">
-                                <div class="col-lg-6"  >
+                                <div class="col-lg-6 col-6"  >
                                     <label for="discountType">Discount Type</label>
                                     <select id="discountType" class="form-select" name="discountType">
-                                        <option value="">Select Discount Type</option>
+                                        <option value="">Discount Type</option>
                                         <option value="amount">Amount</option>
                                         <option value="percentage">Percentage</option>
                                     </select>
                                 </div>
 
-                                <div class="col-lg-6">
+                                <div class="col-lg-6 col-6">
                                     <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                                     <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
                                 </div>
@@ -175,7 +176,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-12">
+                                <div class="col-lg-12 ">
                                     <select name="exam_id" id="prepareFor" class="form-select">
                                         <option value="">Learner is Prepare For Exam</option>
                                         @foreach($exams as $key => $value)

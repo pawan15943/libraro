@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <body>
@@ -126,7 +126,12 @@
     </div>
 
 
-
+   
+    <ul class="mobile-actions d-md-none">
+        <li><a href="javascript:;" class=" noseat_popup">Book Seat</a></li>
+        <li><a href="{{route('learner.search')}}">Search</a></li>
+    </ul>
+   
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -150,7 +155,16 @@
     <script src="{{ url('public/js/main-scripts.js') }}"></script>
     <script src="{{ url('public/js/main-validation.js') }}"></script>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        flatpickr(".dob",{
+            maxDate: "2010-01-01"
+        });
+        
+        flatpickr(".datepicker",{
+        });
+        
+    </script>
 
     <script>
 // Session Login manager
