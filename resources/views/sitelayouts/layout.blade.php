@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
 
     <title>{{$page->meta_title ?? ''}}</title>
@@ -612,6 +612,24 @@
 
             type();
         });
+    </script>
+    <script>
+        // Prevent pinch zoom
+        document.addEventListener('touchstart', function (e) {
+            if (e.touches.length > 1) {
+            e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (e) {
+            const now = new Date().getTime();
+            if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 
