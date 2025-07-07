@@ -510,7 +510,7 @@ $today = Carbon::today();
                                 <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
 
                             </div>
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Total Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price2" value="" readonly>
 
@@ -538,7 +538,7 @@ $today = Carbon::today();
 </div>
 @endcan
 
-
+@include('learner.popup')
 @include('learner.script')
 <script>
     $(document).ready(function() {
@@ -589,5 +589,5 @@ $today = Carbon::today();
     });
 </script> --}}
 
-@include('learner.popup')
+
 @endsection
