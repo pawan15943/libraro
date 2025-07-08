@@ -41,20 +41,19 @@ $user = getAuthenticatedUser();
 <!-- Expiry Warning Ends -->
 
 <div class="modal" tabindex="-1" id="todayrenew">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="planExpiryLabel">Renew Plan</h5>
+            <!-- <div class="modal-header">
+                
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div> -->
+            <div class="modal-body text-center p-4">
+                <h5 class="modal-title text-center mb-3">🎉 Congratulations, Library Owner!</h5>
+                <p>
+Your upcoming plan is ready. Activate it now to keep enjoying all our services!</p>
+                <button id="renewButton" type="button" class="btn btn-primary button w-50" onclick="renewPlan()">Activate Now</button>
             </div>
-            <div class="modal-body">
-                <h4>Your library Renew today. Please consider renewing your plan!</h4>
-                <button id="renewButton" type="button" class="btn btn-primary" onclick="renewPlan()">Configure Plan</button>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
+           
         </div>
     </div>
 </div>
@@ -156,85 +155,81 @@ $user = getAuthenticatedUser();
         <div class="profile">
             <div class="dropdown">
                 @if(!empty($user->library_name))
-<div class="dropdown">
-    {{-- Mobile view: icon dropdown --}}
-    <div class="d-block d-md-none">
-        <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
-        </a>
-        <ul class="dropdown-menu">
-                    <li>
-                        <img src="{{ url('public/img/user.png') }}" alt="profile" class="LibraryProfile">
-                    </li>
+                <div class="dropdown">
+                    {{-- Mobile view: icon dropdown --}}
+                    <div class="d-block d-md-none">
+                        <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                                    <li>
+                                        <img src="{{ url('public/img/user.png') }}" alt="profile" class="LibraryProfile">
+                                    </li>
 
-                    @if(Auth::guard('library')->user() || Auth::guard('library_user')->user())
-                    <li>
-                        <a class="dropdown-item text-center" href="javascript:;">
-                            <small class="text-danger">Library Unique Id</small><br>
-                            {{ $user->library_no ?? '' }}
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('change.password') }}">
-                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Change Library Password
-                        </a>
-                    </li>
-                    @endif
-                    <li>
-                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Logout
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </a>
-                    </li>
-                </ul>
-    </div>
+                                    @if(Auth::guard('library')->user() || Auth::guard('library_user')->user())
+                                    <li>
+                                        <a class="dropdown-item text-center" href="javascript:;">
+                                            <small class="text-danger">Library Unique Id</small><br>
+                                            {{ $user->library_no ?? '' }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('change.password') }}">
+                                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Change Library Password
+                                        </a>
+                                    </li>
+                                    @endif
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Logout
+                                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                                @csrf
+                                            </form>
+                                        </a>
+                                    </li>
+                                </ul>
+                    </div>
 
-    {{-- Desktop view: icon and text dropdown --}}
-    <div class="d-none d-md-flex align-items-center gap-2">
-        <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
-        <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            {{ $user->library_name }} {{ $user->name }}
-        </a>
-         <ul class="dropdown-menu">
-                    <li>
-                        <img src="{{ url('public/img/user.png') }}" alt="profile" class="LibraryProfile">
-                    </li>
+                    {{-- Desktop view: icon and text dropdown --}}
+                    <div class="d-none d-md-flex align-items-center gap-2">
+                        <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
+                        <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ $user->library_name }} {{ $user->name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                                    <li>
+                                        <img src="{{ url('public/img/user.png') }}" alt="profile" class="LibraryProfile">
+                                    </li>
 
-                    @if(Auth::guard('library')->user() || Auth::guard('library_user')->user())
-                    <li>
-                        <a class="dropdown-item text-center" href="javascript:;">
-                            <small class="text-danger">Library Unique Id</small><br>
-                            {{ $user->library_no ?? '' }}
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('change.password') }}">
-                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Change Library Password
-                        </a>
-                    </li>
-                    @endif
-                    <li>
-                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Logout
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </a>
-                    </li>
-                </ul>
-    </div>
-</div>
-@endif
-
-                
-                
-               
+                                    @if(Auth::guard('library')->user() || Auth::guard('library_user')->user())
+                                    <li>
+                                        <a class="dropdown-item text-center" href="javascript:;">
+                                            <small class="text-danger">Library Unique Id</small><br>
+                                            {{ $user->library_no ?? '' }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('change.password') }}">
+                                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Change Library Password
+                                        </a>
+                                    </li>
+                                    @endif
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Logout
+                                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                                @csrf
+                                            </form>
+                                        </a>
+                                    </li>
+                                </ul>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 

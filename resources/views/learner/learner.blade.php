@@ -411,6 +411,6 @@
         }
     });
 </script>
-@include('learner.popup')
-@include('learner.script')
+<!-- @include('learner.popup')
+@include('learner.script') -->
 @endsection

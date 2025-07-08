@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Libraro : Library Management Software</title>
 
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
@@ -22,10 +23,11 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <body>
+    @include('learner.popup')
     <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
     <div id="loaderone">
         <dotlottie-player src="https://lottie.host/db22cec8-bed8-4ce9-8993-e2c88bff2231/qJmiiH5Orw.lottie" background="transparent" speed="1" style="width: 150px; height: 150px" loop autoplay></dotlottie-player>
@@ -126,7 +128,12 @@
     </div>
 
 
-
+   
+    <ul class="mobile-actions d-md-none">
+        <li><a href="javascript:;" class=" noseat_popup">Book Seat</a></li>
+        <li><a href="{{route('learner.search')}}">Search</a></li>
+    </ul>
+   
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -150,7 +157,22 @@
     <script src="{{ url('public/js/main-scripts.js') }}"></script>
     <script src="{{ url('public/js/main-validation.js') }}"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
+    <script>
+        flatpickr(".dob",{
+            maxDate: "2010-01-01",
+            disableMobile: "true"
+        });
+
+        flatpickr(".datepicker",{
+            disableMobile: "true"
+        });
+        flatpickr(".duedate", {
+            disableMobile: "true",        
+            minDate: "today",             
+        });
+    </script>
 
     <script>
 // Session Login manager
@@ -376,6 +398,27 @@
             }, 1000); // adjust delay as needed
         });
     </script>
+
+    <script>
+        // Prevent pinch zoom
+        document.addEventListener('touchstart', function (e) {
+            if (e.touches.length > 1) {
+            e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (e) {
+            const now = new Date().getTime();
+            if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+        @include('learner.script')
+
 </body>
 
 </html>

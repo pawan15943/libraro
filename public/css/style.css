@@ -4649,6 +4649,10 @@ h6.text-center.bg-white {
     border-radius: .5rem .5rem 0 0;
 }
 
+/* ul.mobile-actions{
+    display: none;
+} */
+
 @media screen and (max-width:840px) {
     .dashboard-Header h1 * {
         font-size: 1.5rem !important;
@@ -4656,11 +4660,46 @@ h6.text-center.bg-white {
 }
 
 @media screen and (max-width:480px) {
+
+    /* Mobile Seat Icon */
+    ul.mobile-actions {
+        display: flex;
+        background: linear-gradient(345deg, #3F51B5, #253279);
+        width: 220px;
+        position: absolute;
+        left: 50%;
+        margin-left: -110px;
+        bottom: 16px;
+        list-style: none;
+        padding: 0;
+        border-radius: 2rem;
+        box-shadow: 1px 0 5px #00000015;
+    }
+
+    ul.mobile-actions li a {
+        display: inline-block;
+        padding: .8rem;
+        text-align: center;
+        color: #fff;
+        width: 100px;
+        margin: 0 auto;
+    }
+
+    ul.mobile-actions li {
+        flex: 1;
+        text-align: center;
+        width: 100px;
+    }
+
+    ul.mobile-actions li+li {
+        border-left: 1px solid #ffffff63;
+    }
+
     ul.learner-info li {
         width: 100% !important;
     }
 
-    ul.learner-info li small{
+    ul.learner-info li small {
         width: 100% !important;
     }
 
