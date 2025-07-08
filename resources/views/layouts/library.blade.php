@@ -27,6 +27,7 @@
 </head>
 
 <body>
+    @include('learner.popup')
     <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
     <div id="loaderone">
         <dotlottie-player src="https://lottie.host/db22cec8-bed8-4ce9-8993-e2c88bff2231/qJmiiH5Orw.lottie" background="transparent" speed="1" style="width: 150px; height: 150px" loop autoplay></dotlottie-player>
@@ -157,6 +158,7 @@
     <script src="{{ url('public/js/main-validation.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script>
         flatpickr(".dob",{
             maxDate: "2010-01-01",
@@ -415,6 +417,8 @@
             lastTouchEnd = now;
         }, false);
     </script>
+        @include('learner.script')
+
 </body>
 
 </html>

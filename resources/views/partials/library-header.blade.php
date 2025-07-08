@@ -41,20 +41,19 @@ $user = getAuthenticatedUser();
 <!-- Expiry Warning Ends -->
 
 <div class="modal" tabindex="-1" id="todayrenew">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="planExpiryLabel">Renew Plan</h5>
+            <!-- <div class="modal-header">
+                
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div> -->
+            <div class="modal-body text-center p-4">
+                <h5 class="modal-title text-center mb-3">🎉 Congratulations, Library Owner!</h5>
+                <p>
+Your upcoming plan is ready. Activate it now to keep enjoying all our services!</p>
+                <button id="renewButton" type="button" class="btn btn-primary button w-50" onclick="renewPlan()">Activate Now</button>
             </div>
-            <div class="modal-body">
-                <h4>Your library Renew today. Please consider renewing your plan!</h4>
-                <button id="renewButton" type="button" class="btn btn-primary" onclick="renewPlan()">Configure Plan</button>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
+           
         </div>
     </div>
 </div>

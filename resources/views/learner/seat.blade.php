@@ -1,5 +1,6 @@
 @extends('layouts.library')
 @section('content')
+<!-- @include('learner.popup') -->
 
 @php
 use App\Models\Learner;
@@ -538,8 +539,7 @@ $today = Carbon::today();
 </div>
 @endcan
 
-@include('learner.popup')
-@include('learner.script')
+<!-- @include('learner.script') -->
 <script>
     $(document).ready(function() {
         // Check if the animation has already been run in the current session
@@ -591,3 +591,4 @@ $today = Carbon::today();
 
 
 @endsection
+
