@@ -113,8 +113,10 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Video Tutorial">
-                    <a href="{{route('library.feedback')}}"><i class="fa fa-video fa-2x"></i></a>
+               <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title }}">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#videoModal{{ videoGet()->id }}">
+                        <i class="fa fa-video fa-2x"></i>
+                    </a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
@@ -133,7 +135,26 @@
         <li><a href="javascript:;" class=" noseat_popup">Book Seat</a></li>
         <li><a href="{{route('learner.search')}}">Search</a></li>
     </ul>
-   
+    <div class="modal fade" id="videoModal{{ videoGet()->id }}" tabindex="-1" aria-labelledby="videoModalLabel{{ videoGet()->id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ videoGet()->video_titel }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            @if(videoGet()->video)
+                <video width="100%" height="auto" controls>
+                    <source src="{{ asset('public/uploade/' . videoGet()->video) }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            @else
+                <p>No video uploaded.</p>
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

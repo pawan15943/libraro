@@ -83,11 +83,11 @@
                 </video><br>
             @endif
 
-            <form action="{{ route('videos.destroy', $video) }}" method="POST" style="display:inline;">
+            {{-- <form action="{{ route('videos.destroy', $video) }}" method="POST" style="display:inline;">
                 @csrf
                 @method('DELETE')
                 <button type="submit" onclick="return confirm('Delete this video?')">Delete</button>
-            </form>
+            </form> --}}
         </div>
     @endforeach
 

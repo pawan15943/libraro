@@ -197,11 +197,11 @@
                         
                     </tr>
                     @elseif($data->max_plan_start_date)
-                    @php
-                         $learner_detail=App\Models\LearnerDetail::where('learner_id',$data->learner_id)->where('plan_start_date',$data->max_plan_start_date)->first();
-                        $plan=App\Models\Plan::where('id',$learner_detail->plan_id)->first();
-                        $planType=App\Models\planType::where('id',$learner_detail->plan_type_id)->first();
-                    @endphp
+                        @php
+                            $learner_detail=App\Models\LearnerDetail::where('learner_id',$data->learner_id)->where('plan_start_date',$data->max_plan_start_date)->first();
+                            $plan=App\Models\Plan::where('id',$learner_detail->plan_id)->first();
+                            $planType=App\Models\planType::where('id',$learner_detail->plan_type_id)->first();
+                        @endphp
                         <tr>
                             <td>{{ $data->seat_no }}</td> <!-- Seat No -->
                             

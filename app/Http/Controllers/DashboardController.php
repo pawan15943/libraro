@@ -948,15 +948,7 @@ class DashboardController extends Controller
         switch ($type) {
             case 'total_booking':
                 // till total slot
-                // $query_total->groupBy('learner_detail.learner_id')
-                // ->selectRaw('
-                //     learner_detail.learner_id,
-                //     learners.*,
-                //     MAX(plan_start_date) as max_plan_start_date,
-                //     MAX(plan_end_date) as max_plan_end_date
-                // ')
-                // ->orderBy('max_plan_start_date', 'asc');
-                // $result=$query_total->get();
+               
                $query_total = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                     ->with(['plan', 'planType', 'learnerDetails'])
                     ->where('learners.library_id', getLibraryId());
@@ -1140,6 +1132,12 @@ class DashboardController extends Controller
             case 'change_plan_seat':
                 $result = (clone $baseQuery)->where('operation', 'changePlan')->get();
                 break;
+            // case 'todays_collection':
+            //      $todayCollection = LearnerTransaction::where('branch_id', getCurrentBranch())
+            //         ->whereDate('paid_date', $today)
+            //         ->select('paid_amount')->get();
+
+            //     break;
             
         }
        

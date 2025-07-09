@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\PlanPrice;
 use App\Models\Plan;
 use App\Models\PlanType;
+use App\Models\Setting;
 use Carbon\Carbon;
 
 if (!function_exists('getAuthenticatedUser')) {
@@ -669,5 +670,9 @@ function cleanNull($array)
     }, $array);
 }
 
+function videoGet(){
+    $video=Setting::first();
+    return $video;
+}
 
 
