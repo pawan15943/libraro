@@ -417,7 +417,7 @@
             lastTouchEnd = now;
         }, false);
     </script>
-        @include('learner.script')
+    @include('learner.script')
 
 </body>
 
