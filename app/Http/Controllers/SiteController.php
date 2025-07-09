@@ -405,14 +405,20 @@ class SiteController extends Controller
 
     public function videoStore(Request $request)
     {
+        
         $data = $request->validate([
             'video_titel' => 'required|string|max:255',
-            'youtube_link' => 'nullable|url',
-            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:20480', // 20MB max
+            // 'youtube_link' => 'nullable|url',
+             'youtube_link' => 'nullable',
+            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:51200', // 50MB max
         ]);
 
         if ($request->hasFile('video')) {
-            $data['video_path'] = $request->file('video')->store('videos', 'public');
+            $videio = $request->file('video');
+            $videioName = "library_video" . time() . '.' . $videio->getClientOriginalExtension();
+            $videio->move(public_path('uploade'), $videioName);
+            $data['video'] = $videioName;
+
         }
 
         Setting::create($data);

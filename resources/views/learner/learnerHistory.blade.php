@@ -176,7 +176,7 @@ $current_route = Route::currentRouteName();
                     @foreach($learnerHistory as $key => $value)
 
                     <tr>
-                        <td>{{$value->seat_no}}<br>
+                        <td>{{$value->seat_no ?? 'GEN'}}<br>
                             <small>{{$value->plan_type_name}}</small>
                         </td>
                         <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
