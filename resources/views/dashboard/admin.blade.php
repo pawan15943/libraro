@@ -205,7 +205,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'todays_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                    <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
