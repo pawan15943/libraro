@@ -4669,7 +4669,7 @@ h6.text-center.bg-white {
         position: absolute;
         left: 50%;
         margin-left: -110px;
-        bottom: 16px;
+        bottom: 0px;
         list-style: none;
         padding: 0;
         border-radius: 2rem;
