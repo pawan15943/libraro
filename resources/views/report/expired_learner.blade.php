@@ -103,23 +103,23 @@ $currentMonth = date('m');
                     @endphp
 
                     <tr>
-                        <td>{{$value->learner->seat_no}}<br>
-                            <small>{{$value->planType->name}}</small>
+                        <td>{{$value->learner->seat_no ?? 'GEN'}}<br>
+                            <small>{{$value->planType->name ?? ''}}</small>
                         </td>
                         <td> <span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
-                            <br> <small>{{$value->learner->dob}}</small>
+                                data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>
+                            <br> <small>{{$value->learner->dob ?? ''}}</small>
                         </td>
                         <td><span class="truncate" >
                             {!! $value->learner->email ? $value->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
                             </span>  <br>
-                            <small> +91-{{$value->learner->mobile}}</small>
+                            <small> +91-{{$value->learner->mobile ?? ''}}</small>
                         </td>
-                        <td>{{$value->plan_start_date}}<br>
-                            <small>{{$value->plan->name}}</small>
+                        <td>{{$value->plan_start_date ?? ''}}<br>
+                            <small>{{$value->plan->name ?? ''}}</small>
                         </td>
                        
-                        <td>{{$value->plan_end_date}}<br>
+                        <td>{{$value->plan_end_date ?? ''}}<br>
                            
                             @if ($diffInDays > 0)
                             <small class="text-success fs-10 d-block">Expires in {{ $diffInDays }} days</small>
