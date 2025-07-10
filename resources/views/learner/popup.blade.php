@@ -2,12 +2,9 @@
 <div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
-
         <div class="modal-content">
-           
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5" id="seat_no_head"></h1>
-                
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -15,7 +12,6 @@
                 <div id="validation-error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
                 <form id="seatAllotmentForm">
                     <div class="detailes">
-                        {{-- <input type="hidden" name="seat_id" value="" id="seat_id"> --}}
                     
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no"
                             autocomplete="off">
@@ -85,7 +81,6 @@
                                 <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
                             </div>
                          
-                            {{-- <label for="">Plan Price <span>*</span></label> --}}
                             <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                             
                            

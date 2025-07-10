@@ -68,6 +68,7 @@
 </form>
     
     <h3>All Videos</h3>
+
     @foreach($videos as $video)
         <div style="margin-bottom: 20px;">
             <strong>{{ $video->title }}</strong><br>
@@ -76,18 +77,13 @@
                 <a href="{{ $video->youtube_link }}" target="_blank">YouTube Link</a><br>
             @endif
 
-            @if($video->video_path)
+            @if($video->video)
                 <video width="320" height="240" controls>
-                    <source src="{{ asset('storage/' . $video->video_path) }}" type="video/mp4">
+                    <source src="{{ asset('storage/' . $video->video) }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video><br>
             @endif
 
-            {{-- <form action="{{ route('videos.destroy', $video) }}" method="POST" style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" onclick="return confirm('Delete this video?')">Delete</button>
-            </form> --}}
         </div>
     @endforeach
 

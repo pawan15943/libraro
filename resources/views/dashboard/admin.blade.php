@@ -696,12 +696,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             </div>
 
                             <ul class="d-flex inner">
-                                <!-- <li><a href="https://wa.me/{{ $value->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
                                 <li>
-                                    <a target="_blank" href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode('Dear ' . $seat->name . ',\n\nYour plan expired on ' . $seat->plan_end_date . '.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library Seat.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro') }}">
+                                    <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
                                         <i class="fab fa-whatsapp"></i>
                                     </a>
                                 </li>
+
+                                
                                 <li><a href="mailto:{{ $value->email }}"><i class="fa fa-envelope"></i></a></li>
                             </ul>
                         </div>
@@ -742,12 +743,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                             <ul class="d-flex inner">
                                 <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
-                                 <li>
-                                    <a target="_blank" href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode('Dear ' . $seat->name . ',\n\nYour plan expired on ' . $seat->plan_end_date . '.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro') }}">
+                                <li>
+                                    <a target="_blank" href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode("Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
                                         <i class="fab fa-whatsapp"></i>
                                     </a>
-
-                                 </li>
+                                </li>                                
                                 <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li>
                             </ul>
                         </div>
@@ -778,73 +778,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
     </div>
     <!-- End -->
-    <!-- seat book poup -->
-
-    {{-- <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div id="success-message" class="alert alert-success" style="display:none;"></div>
-    <div id="error-message" class="alert alert-danger" style="display:none;"></div>
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title px-2 fs-5" id="seat_number_upgrades">Re-New Lerners Plan</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body m-0">
-                <form id="upgradeForm" class="m-0">
-                    <input type="hidden" id="hidden_plan">
-                    <div class="">
-                        <div class="row g-4 m-0">
-                            <div class="col-lg-6">
-                                <label for="">Select Plan <span>*</span></label>
-                                <select id="update_plan_id" class="form-control" name="plan_id">
-                                    <option value="">Select Plan</option>
-                                    @foreach($plans as $key => $value)
-                                    <option value="{{$value->id}}">{{$value->name}}</option>
-
-    @endforeach
-
-    </select>
-    </div>
-    <div class="col-lg-6">
-        <label for="">Plan Type <span>*</span></label>
-        <select id="updated_plan_type_id" class="form-control" name="plan_type_id" @readonly(true)>
-
-        </select>
-    </div>
-    <div class="col-lg-6">
-        <label for="">Plan Price <span>*</span></label>
-        <input id="updated_plan_price_id" class="form-control" placeholder="Plan Price" name="plan_price_id" @readonly(true)>
-
-    </div>
-    <div class="col-lg-6">
-        <label for="">Plan Ends On <span>*</span></label>
-        <input type="date" class="form-control" placeholder="Plan Ends On" id="update_plan_end_date" value="" readonly>
-    </div>
-    <div class="col-lg-6">
-        <label for="">Payment Mode <span>*</span></label>
-        <select name="payment_mode" id="payment_mode" class="form-select">
-            <option value="">Select Payment Mode</option>
-            <option value="1">Online</option>
-            <option value="2">Offline</option>
-            <option value="3">Pay Later</option>
-        </select>
-    </div>
-    <div class="col-lg-12">
-        <span class="text-info text-center">Your upcoming plan starts after your current plan expires.</span>
-    </div>
-    <div class="col-lg-5 mt-3">
-
-        <input type="hidden" class="form-control char-only" name="seat_no" value="" id="update_seat_no">
-        <input type="hidden" class="form-control char-only" name="user_id" value="" id="update_user_id">
-        <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Renew Membership Now">
-    </div>
-    </div>
-    </div>
-    </form>
-    </div>
-    </div>
-    </div>
-    </div> --}}
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
@@ -1343,7 +1277,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
     </script>
     
-    @include('learner.script')
-    @include('learner.popup')
+   
+
 
     @endsection

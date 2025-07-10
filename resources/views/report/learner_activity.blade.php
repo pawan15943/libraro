@@ -113,6 +113,7 @@ $currentMonth = date('m');
                         <th>Activity Name</th>
                         <th>Previous Value</th>
                         <th>New Value</th>
+                        <th>Status</th>
                         <th>Activity Date</th>
                        
                     </tr>
@@ -131,6 +132,7 @@ $currentMonth = date('m');
                        <td>{{$value->operation ?? ''}}</td>
                        <td class="text-danger">{{$value->old_value ?? ''}}</td>
                        <td class="text-success">{{$value->new_value ?? ''}}</td>
+                       <td class="text-success">{{$value->status}}</td>
                        <td>{{$value->created_at}}</td>
                      
                     </tr>

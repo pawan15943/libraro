@@ -109,7 +109,7 @@ $currentMonth = date('m');
                         <td>{{$value->learner->seat_no ?? 'General'}}<br> 
                          
                         </td>
-                        <td><span class="uppercase truncate" data-bs-toggle="tooltip"
+                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
                             <br> <small>{{$value->learner->dob}}</small>
                         </td>

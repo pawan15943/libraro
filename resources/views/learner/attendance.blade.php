@@ -1,9 +1,14 @@
 @extends('layouts.library')
 @section('content')
 
-
-<!-- Bootstrap Toggle CSS -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<style>
+    div#datatable_wrapper input,
+    div#datatable_wrapper select {
+        height: auto !important;
+        margin: .5rem;
+        border-color: #e7e7e7;
+    }
+</style>
 
 
 
@@ -50,49 +55,39 @@
                     </tr>
                 </thead>
                 <tbody>
-
-                    @if(isset($learners)&& $learners->isNotEmpty())
-
-
                     @foreach($learners as $key => $value)
-
                     <tr>
-                        <td>{{$value->seat_no ?? 'GENERAL'}}<br>
-                            <small>{{$value->plan_type_name}}</small>
+                        <td>{{ $value->seat_no ?? 'GENERAL' }}<br><small>{{ $value->plan_type_name }}</small></td>
+                        <td>
+                            <span class="uppercase truncate name">
+                                {{ $value->name }}
+                            </span><br>
+                            <small>{{ $value->dob }}</small>
                         </td>
-                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
-                            <br> <small>{{$value->dob}}</small>
+                        <td>
+                            <span class="truncate">
+                                {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
+                            </span><br>
+                            <small>+91-{{ $value->mobile }}</small>
                         </td>
-                        <td><span class="truncate" >
-                            {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
-                            </span> <br>
-                            <small> +91-{{$value->mobile}}</small>
-                        </td>
-                        <td>{{$value->plan_start_date}}<br>
-                            <small>{{$value->plan_name}}</small>
-                        </td>
-                        <td>{{$value->plan_end_date}}<br>
-                            {!!getUserStatusDetails($value->plan_end_date)!!}
+                        <td>{{ $value->plan_start_date }}<br><small>{{ $value->plan_name }}</small></td>
+                        <td>{{ $value->plan_end_date }}<br>{!! getUserStatusDetails($value->plan_end_date) !!}</td>
                         <td>
                             <div class="form-check form-switch justify-content-center">
-                                <input class="form-check-input toggle" type="checkbox" id="myToggle{{$value->learner_id}}" data-learner="{{$value->learner_id}}" {{ $value->attendance == 1 ? 'checked' : '' }}>
+                                <input class="form-check-input toggle" type="checkbox" id="myToggle{{ $value->learner_id }}"
+                                    data-learner="{{ $value->learner_id }}" {{ $value->attendance == 1 ? 'checked' : '' }}>
                             </div>
                         </td>
                         <td>
                             <div class="form-check form-switch justify-content-center">
-                                <input class="form-check-input outToggle" type="checkbox" id="outToggle{{$value->learner_id}}" data-learner="{{$value->learner_id}}">
+                                <input class="form-check-input outToggle" type="checkbox" id="outToggle{{ $value->learner_id }}"
+                                    data-learner="{{ $value->learner_id }}">
                             </div>
                         </td>
                     </tr>
                     @endforeach
-
-                    @else
-                    <tr>
-                        <td colspan="7">Please select a date to view the student list. No date is currently selected.</td>
-                    </tr>
-                    @endif
                 </tbody>
+
 
 
             </table>

@@ -2372,7 +2372,7 @@ class LearnerController extends Controller
                 ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'))
                 ->get();
         } else {
-            $learners = null;
+             $learners = collect();
         }
 
 

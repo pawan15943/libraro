@@ -5811,3 +5811,7 @@ p.text-danger.font-weight-bold,
 .rotate-180 {
     transform: rotate(180deg);
 }
+
+.nav-pills .nav-link, .nav-pills .show>.nav-link {
+    box-shadow: 1px 0 5px #00000024;
+}

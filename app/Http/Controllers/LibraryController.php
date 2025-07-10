@@ -19,6 +19,7 @@ use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Models\Setting;
 use App\Models\State;
 use App\Models\Subscription;
 use App\Models\Suggestion;
@@ -992,7 +993,8 @@ class LibraryController extends Controller
     }
 
     public function videoTraining(){
-        return view('library.video-recording');
+        $video_list=Setting::get();
+        return view('library.video-recording',compact('video_list'));
     }
 
     public function learnerComplaints(){

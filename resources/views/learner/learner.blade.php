@@ -379,12 +379,6 @@
 
 
             </table>
-            <!-- Add pagination links -->
-            {{-- <div class="d-flex justify-content-center">
-                <div class="pagination-container">
-                    {{ $learners->links('vendor.pagination.default') }}
-        </div>
-    </div> --}}
 
 </div>
 </div>
@@ -411,6 +405,4 @@
         }
     });
 </script>
-<!-- @include('learner.popup')
-@include('learner.script') -->
 @endsection

@@ -309,7 +309,8 @@ Route::middleware(['auth:web'])->group(function () {
         Route::get('inquery/get', [AdminController::class, 'contactInqueryGet'])->name('inquery.list');
         Route::get('demo/request/get', [AdminController::class, 'demoRequestGet'])->name('demo.list');
         Route::get('library/upgrade/{id?}', [AdminController::class, 'libraryUpgrade'])->name('library.upgrade');
-        Route::get('videos', [SiteController::class, 'videoIndex'])->name('videos.index');
+        
+        Route::get('php', [SiteController::class, 'videoIndex'])->name('videos.index');
         Route::post('videos', [SiteController::class, 'videoStore'])->name('videos.store');   
       
         });

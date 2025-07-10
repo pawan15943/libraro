@@ -24,6 +24,9 @@
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Bootstrap Toggle CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+
 </head>
 
 <body>
@@ -115,10 +118,10 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
+                
                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#videoModal{{ videoGet()->id ?? '' }}">
-                        <i class="fa fa-video fa-2x"></i>
-                    </a>
+                 
+                     <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
@@ -165,27 +168,23 @@
 @endif
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> <!-- Keep jQuery first -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<script src="https://cdn.datatables.net/2.1.6/js/dataTables.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js" defer></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{{ url('public/js/main-scripts.js') }}" defer></script>
+<script src="{{ url('public/js/main-validation.js') }}" defer></script>
 
-    <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js"></script>
-
-    <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
@@ -205,47 +204,6 @@
     </script>
 
     <script>
-// Session Login manager
-// document.addEventListener("DOMContentLoaded", function () {
-//     // Get session lifetime in seconds
-//     let sessionLifetime = @json(config('session.lifetime') * 60); // e.g. 2 min = 120
-//     let warningTime = Math.max(sessionLifetime - 60, 0); // 1 min before expiry
-
-//     const timerElement = document.getElementById("timer");
-
-//     // ⏳ Start countdown timer
-//     const countdown = setInterval(function () {
-//         let minutes = Math.floor(sessionLifetime / 60);
-//         let seconds = sessionLifetime % 60;
-
-//         // Pad with zeros
-//         timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-//         sessionLifetime--;
-
-//         // ⏰ Show popup 1 minute before expiry
-//         if (sessionLifetime === warningTime) {
-//             Swal.fire({
-//                 title: 'Session Expiring Soon',
-//                 text: 'Your session will expire in 1 minute. Click below to stay logged in.',
-//                 icon: 'warning',
-//                 confirmButtonText: 'Stay Logged In'
-//             }).then((result) => {
-//                 if (result.isConfirmed) {
-//                     location.reload(); // refreshes session
-//                 }
-//             });
-//         }
-
-//         // 🔒 Auto-logout or redirect after session expires
-//         if (sessionLifetime < 0) {
-//             clearInterval(countdown);
-            
-//         }
-//     }, 1000);
-// });
-
-
 
 
         $(document).ready(function() {
@@ -392,12 +350,9 @@
             });
         });
 
-        $(element).tooltip("show");
+       
     </script>
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
-    </script>
+    
     <script>
         
         $(document).ready(function() {
@@ -448,7 +403,10 @@
         }, false);
     </script>
     @include('learner.script')
-
+<script>
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+    </script>
 </body>
 
 </html>
