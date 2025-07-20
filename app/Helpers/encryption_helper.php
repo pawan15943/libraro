@@ -663,16 +663,36 @@ if (!function_exists('getProfileCompletionPercentage')) {
     }
 }
 
-function cleanNull($array)
-{
-    return array_map(function ($value) {
-        return $value === null ? (is_numeric($value) ? 0 : '') : $value;
-    }, $array);
+if (!function_exists('cleanNull')) {
+
+    function cleanNull($array)
+    {
+        return array_map(function ($value) {
+            return $value === null ? (is_numeric($value) ? 0 : '') : $value;
+        }, $array);
+    }
 }
 
-function videoGet(){
-    $video=Setting::first();
-    return $video;
+if (!function_exists('videoGet')) {
+
+    function videoGet(){
+        $video=Setting::first();
+        return $video;
+    }
+}
+
+if (!function_exists('toggleHideField')) {
+     function toggleHideField(){
+        $branch = Branch::where('id', getCurrentBranch())->first();
+        $hiddenFields = [];
+
+        if ($branch && $branch->hide_field) {
+            $hiddenFields = json_decode($branch->hide_field, true);
+        }
+
+        return $hiddenFields;
+
+     }
 }
 
 

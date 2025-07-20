@@ -34,10 +34,10 @@ trait HasBranch
                 );
             }
 
-            \Log::info('HasBranch Scope Applied', [
-                'Model' => get_class($builder->getModel()),
-                'BranchID' => $branchId,
-            ]);
+            // \Log::info('HasBranch Scope Applied', [
+            //     'Model' => get_class($builder->getModel()),
+            //     'BranchID' => $branchId,
+            // ]);
         });
 
         static::creating(function ($model) {

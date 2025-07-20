@@ -103,7 +103,7 @@ $currentMonth = date('m');
                     @endphp
 
                     <tr>
-                        <td>{{$value->learner->seat_no}}<br>
+                        <td>{{$value->learner->seat_no ?? "GEN"}}<br>
                             <small>{{$value->planType->name}}</small>
                         </td>
                         <td> <span class="uppercase truncate name" data-bs-toggle="tooltip"
@@ -151,5 +151,4 @@ $currentMonth = date('m');
     });
 </script>
 
-@include('learner.script')
 @endsection

@@ -178,6 +178,7 @@
                 </ul>
          
                 @endif
+               
                 <!-- Library Plans -->
                 <h4 class="mt-5">Our Library Packages</h4>
                 <div class="row g-4">
@@ -433,7 +434,7 @@
     
                             // Loop through each library and append it as a carousel item
                             $.each(data, function(index, library) {
-                                console.log("totalseata",library.hour.seats);
+                                // console.log("totalseata",library.hour.seats);
                                 let libraryHTML = `
                                     <div class="item">
                                         <div class="featured-library">

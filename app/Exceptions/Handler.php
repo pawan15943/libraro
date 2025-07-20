@@ -30,6 +30,12 @@ class Handler extends ExceptionHandler
 
 public function render($request, Throwable $exception)
 {
+    //  if ($exception instanceof \Illuminate\Session\TokenMismatchException) {
+    //     dd([
+    //         'expected_token' => csrf_token(),
+    //         'actual_token' => $request->input('_token'),
+    //     ]);
+    // }
     return parent::render($request, $exception);
 }
 

@@ -16,22 +16,11 @@ $readonlyStyle = '';
 }
 @endphp
 
-@if (session('error'))
-    <div class="alert alert-danger">
-        {{ session('error') }}
-    </div>
-@endif
-@if (session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
-
-
 
 <form action="{{ route('learners.update.changePlan', $customer->id) }}" method="POST" enctype="multipart/form-data" id="changePlan">
     @csrf
     @method('PUT')
+   
     <input type="hidden" value="{{$customer->learner_detail_id}}" name="learner_detail_id">
     <div class="row">
         <div class="col-lg-9">
@@ -132,7 +121,7 @@ $readonlyStyle = '';
                         </div>
                         <div class="col-lg-4">
                             <label for="">Plan Price <span>*</span></label>
-                            <input id="plan_price_id" class="form-control @error('plan_price_id') is-invalid @enderror"  value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly name="plan_price_id">
+                            <input id="plan_price" class="form-control @error('plan_price_id') is-invalid @enderror"  value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly name="plan_price_id">
                             @error('plan_price_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -173,7 +162,7 @@ $readonlyStyle = '';
                         </div>
                         @endif
                         <div class="col-lg-4">
-                            <label for="">Total Amount <span>*</span></label>
+                            <label for="">Last paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('total_amount') is-invalid @enderror"  name="total_amount" id="total_amount2" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" readonly>
                             @error('total_amount')
                             <span class="invalid-feedback" role="alert">
@@ -194,7 +183,7 @@ $readonlyStyle = '';
                         </div>
                         
                          
-                          <div class="col-lg-4 col-6">
+                        <div class="col-lg-4 col-6">
                             <label for="">Payment Mode</label>
                             <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                 <option value="">Select Payment Mode</option>
@@ -242,7 +231,7 @@ $readonlyStyle = '';
                     <div class="row mt-4">
                         @if(!$today->greaterThanOrEqualTo($oneWeekLater))
                         <div class="col-lg-3">
-                            <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Update Seat Info">
+                            <input type="submit" class="btn btn-primary btn-block button" value="Update Seat Info">
                         </div>
                         @else
                             <p class="text-danger"><b>*</b>Button is available Within 7 Days of Seat Booking</p>
@@ -276,5 +265,5 @@ $readonlyStyle = '';
     });
 </script>
 
-@include('learner.script')
+
 @endsection

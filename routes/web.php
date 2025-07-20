@@ -21,10 +21,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-
-
-
-
+use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::get('/get-libraries', [MasterController::class, 'getLibraries'])->name('get-libraries');
 
@@ -142,7 +139,8 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update');
       Route::post('/payment/success', [LibraryController::class, 'handleSuccess'])->name('library.payment.success');
       Route::get('/payment/error', [LibraryController::class, 'handleError'])->name('library.payment.error');
-      
+      Route::get('/toggle/feature/list', [MasterController::class, 'toggleFeature'])->name('toggle.feature');
+      Route::post('/branch/update/hidefield', [MasterController::class, 'updateHidefield'])->name('branch.update.hidefield');
 
 
       Route::post('/master/store', [MasterController::class, 'storemaster'])->name('master.store');
@@ -219,7 +217,10 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/suggestions', [LibraryController::class, 'learnerSuggestions'])->name('library.learner.suggestions');
       Route::get('/feedback', [LibraryController::class, 'learnerFeedback'])->name('library.learner.feedback');
       Route::post('/clarification/submit/status', [LibraryController::class, 'clarificationStatus'])->name('clarification.submit.status');
-
+      Route::get('/library/transaction/view', [DashboardController::class, 'libraryTran'])->name('library.transaction.view');
+      Route::get('/refresh-csrf', function () {
+          return response()->json(['token' => csrf_token()]);
+      });
     });
     Route::get('seat/history/list', [LearnerController::class, 'seatHistory'])->name('seats.history');
     Route::get('seats/history/{id?}', [LearnerController::class, 'history'])->name('seats.history.show');
@@ -241,6 +242,8 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
         'price' => getLockerPrice($req->query('plan_id'))
         ]);
     })->name('locker.price');
+    
+
         
 });
 // Routes for superadmin and admin users

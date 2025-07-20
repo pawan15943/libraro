@@ -2,6 +2,7 @@
 $current_route = Route::currentRouteName();
 $user = getAuthenticatedUser();
 
+
 @endphp
 
 <div class="sidebar scroll">
@@ -12,11 +13,18 @@ $user = getAuthenticatedUser();
      
             @php
             $show = ($menu->name == 'Dashboard' || getLibrary()->status == 1 || (getLibrary()->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
+            $toggleHidden = toggleHideField(); // Dynamic hidden toggle
+            $toglleCategory="Menu";
+            $predefinedHidden =DB::table('toggle_features')->where('category', $toglleCategory)->pluck('id')->toArray();
+            $finalHidden = array_intersect($toggleHidden, $predefinedHidden);
+            $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
+                        ->pluck('name') 
+                        ->toArray();
+           
             //    echo "<p class='text-white'>show ".$show .'</p>';
-               
             @endphp
             
-            @if(is_null($menu->parent_id) && $show==1  && ($menu->guard === null || $menu->guard == 'library'))
+            @if(is_null($menu->parent_id) && $show==1  && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
                
                  {{-- @can('has-permission', [$menu->has_permissions]) --}}
                  @if($user)
@@ -42,7 +50,7 @@ $user = getAuthenticatedUser();
                              
                                         @if($submenu->guard === null || $submenu->guard == 'library')
                                        
-                                            @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp))
+                                            @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp) && !in_array($submenu->has_permissions, $finalHiddenName))
                                              
                                                 <li>
                                                     <a href="{{ route($submenu->url) }}"

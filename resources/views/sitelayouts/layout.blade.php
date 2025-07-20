@@ -252,7 +252,7 @@
             function fetchLibraries(query = '', city = '') {
                 var baseUrl = "{{ url('/') }}";
                 $.ajax({
-                    url: '{{ route("get-libraries") }}', // Laravel route to get libraries
+                    url: '{{ route("get-libraries") }}', 
                     method: 'GET',
                     data: {
                         query: query,
@@ -260,8 +260,8 @@
                         city: city,
                     },
                     success: function(data) {
-                        console.log('lib',data);
-                        $('#library-list1').empty(); // Clear the previous library results
+                        
+                        $('#library-list1').empty(); 
 
                         if (data.length > 0) {
                             // Initialize Owl Carousel (destroy if already initialized)
@@ -281,7 +281,7 @@
                                         
                                         <div class="featured-library">
                                             <img src="{{url('public/img/libraryImg.jpg')}}" class="library-image">
-                                            <h4>${library.library_name}</h4>
+                                            <h4>${library.display_name || library.library_name}</h4>
                                             <span>${library.library_address || ''}</span>
                                             <ul class="star-ratings">
                                                 <li><i class="fa fa-star"></i></li>

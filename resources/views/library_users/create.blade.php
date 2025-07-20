@@ -6,22 +6,22 @@
 <div class="card">
     <!-- Add Library User Form -->
 
-    <form id="submit">
+    <form id="userSubmitForm">
         @csrf
-        <input type="hidden" name="id" id="user_id"  value="{{ $editUser->id ?? '' }}">
+        <input type="hidden" name="id"   value="{{ $editUser->id ?? '' }}">
         <h4 class="pb-4">User Details</h4>
         <div class="row">
             <div class="col-lg-4">
                 <label>Name <sup class="text-danger">*</sup></label>
-                <input type="text" name="name" id="name" class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
+                <input type="text" name="name"  class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
             </div>
             <div class="col-lg-4">
                 <label>Email <sup class="text-danger">*</sup></label>
-                <input type="email" name="email" id="email" class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
+                <input type="email" name="email"  class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
             </div>
             <div class="col-lg-4">
                 <label>Mobile</label>
-                <input type="text" name="mobile" id="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
+                <input type="text" name="mobile"  class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
             </div>
         </div>
 
@@ -29,7 +29,7 @@
 
             <div class="col-lg-4">
                 <label>Password</label>
-                <input type="password" name="password" id="password" class="form-control" autocomplete="off">
+                <input type="password" name="password"  class="form-control" autocomplete="off">
             </div>
 
             <div class="col-lg-4">
@@ -74,36 +74,6 @@
 
 
 
-                <!-- Permissions List -->
-
-                {{-- @foreach($groupedPermissions as $categoryId => $permissions)
-                <div class="row">
-                    <div class="col-lg-12">
-                        <h5 class='role-category-heading'>
-                            {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
-                        </h5>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-1 mb-3">
-                    @foreach($permissions as $name => $id)
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input
-                                class="form-check-input permission"
-                                type="checkbox"
-                                name="permissions[]"
-                                value="{{ $id }}"
-                                id="perm_{{ $id }}"
-                                data-permission-name="{{ $name }}">
-                            <label class="form-check-label" for="perm_{{ $id }}">
-                                {{ strtoupper($name) }}
-                            </label>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @endforeach --}}
 
             @php
                 $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
@@ -151,10 +121,10 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 
 <!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $('#checkAllPermissions').on('change', function() {
         $('.permission').prop('checked', this.checked);
@@ -197,7 +167,7 @@
 
 
         // Form submit
-        $('#submit').on('submit', function(e) {
+        $('#userSubmitForm').on('submit', function(e) {
             e.preventDefault();
 
             $('.is-invalid').removeClass('is-invalid');
@@ -270,7 +240,6 @@
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // For select

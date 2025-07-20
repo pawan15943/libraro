@@ -19,17 +19,6 @@ $ids='learnerUpgrade';
 }
 
 @endphp
-
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
 <input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
 <div class="row g-4">
@@ -144,7 +133,7 @@ $ids='learnerUpgrade';
                         </div>
                         <div class="col-lg-4">
                             <label for="">Plan Price <span>*</span></label>
-                            <input id="plan_price_id" class="form-control @error('plan_price_id') is-invalid @enderror"  value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly name="plan_price_id">
+                            <input id="plan_price" class="form-control @error('plan_price_id') is-invalid @enderror"  value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly name="plan_price_id">
                             @error('plan_price_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -176,7 +165,7 @@ $ids='learnerUpgrade';
                      
                         <div class="col-lg-4">
                             <label for="discount_amount">Discount Type</label>
-                            <select id="discountType" class="form-select" name="discountType">
+                            <select id="discountType2" class="form-select" name="discountType">
                                 <option value="">Select Discount Type</option>
                                 <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
                                 <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
@@ -184,7 +173,7 @@ $ids='learnerUpgrade';
                         </div>
                           <div class="col-lg-4">
                             <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                            <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"  name="discount_amount" id="discount_amount" value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}" >
+                            <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"  name="discount_amount" id="discount_amount2" value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}" >
                             @error('discount_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -216,8 +205,6 @@ $ids='learnerUpgrade';
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
-
-
                         </div>
 
                     </div>
@@ -231,15 +218,12 @@ $ids='learnerUpgrade';
                             @endif
                         </div>
                     </div>
-
-
                 </div>
             </form>
         </div>
     </div>
     <div class="col-lg-3 order-1 order-md-2">
         <div class="seat--info">
-          
             @if($customer->seat_no)
             <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
             @endif
@@ -265,6 +249,5 @@ $ids='learnerUpgrade';
 
 
 
-@include('learner.script')
 
 @endsection

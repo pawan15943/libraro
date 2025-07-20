@@ -4506,7 +4506,7 @@ li.active {
 }
 
 .alert.alert-danger li:before {
-    content: "âš ï¸ ";
+    content: "⚠️";
     margin-right: 5px;
 }
 
@@ -4517,7 +4517,7 @@ li.active {
 }
 
 .alert.alert-success:before {
-    content: "âœ… ";
+    content: "✅";
     font-weight: bold;
     margin-right: 10px;
     font-size: 20px;

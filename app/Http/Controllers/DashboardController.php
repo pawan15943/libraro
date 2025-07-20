@@ -146,9 +146,10 @@ class DashboardController extends Controller
                    
             })
             ->with('planType')
+            ->select('learner_detail.seat_no','learner_detail.plan_end_date','learner_detail.status','learner_detail.learner_id','learner_detail.id as learner_detail_id','learners.name','learners.email','learners.mobile')
             ->get();
         
-         
+
             $extend_sets = $this->getLearnersByLibrary()
             ->where('learner_detail.is_paid', 1) 
             ->where('learner_detail.status', 1)  
@@ -234,6 +235,7 @@ class DashboardController extends Controller
                 ->sum('amount'); 
            
             $todayBalance = $todayCollection - $todayExpense;
+           
 
             $recent_activitys=DB::table('learner_operations_log')->where('library_id',getLibraryId())->where('created_at', '>=', Carbon::now()->subDays(5))->get();
 
@@ -754,7 +756,21 @@ class DashboardController extends Controller
             ];
         }
 
-      
+        $monthlyIncome=LearnerTransaction::with(['learner'])
+            ->where('branch_id', getCurrentBranch())
+            ->whereYear('paid_date', $year)
+            ->whereMonth('paid_date', $month)
+            ->sum('paid_amount');
+        $monthlyExpense=DB::table("monthly_expense")
+                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
+                    ->where('monthly_expense.branch_id', getCurrentBranch())
+                    ->whereYear('monthly_expense.created_at', $year)
+                    ->whereMonth('monthly_expense.created_at', $month)
+                    ->sum('amount');   
+        $monthlyBalance= $monthlyIncome- $monthlyExpense;   
+        $monthly_ncome  = $this->formatNumber($monthlyIncome);
+        $monthly_expense = $this->formatNumber($monthlyExpense);
+        $monthly_balance= $this->formatNumber($monthlyBalance);
         
         return response()->json([
             'highlights' => [
@@ -787,6 +803,9 @@ class DashboardController extends Controller
                 'learnerUpgrade' => $learnerUpgrade,
                 'reactive' => $reactive,
                 'change_plan_seat' => $change_plan_seat,
+                'monthly_income'=>$monthly_ncome,
+                'monthly_expense'=>$monthly_expense,
+                'monthly_balance'=>$monthly_balance,
               
             ],
         
@@ -1132,12 +1151,7 @@ class DashboardController extends Controller
             case 'change_plan_seat':
                 $result = (clone $baseQuery)->where('operation', 'changePlan')->get();
                 break;
-            // case 'todays_collection':
-            //      $todayCollection = LearnerTransaction::where('branch_id', getCurrentBranch())
-            //         ->whereDate('paid_date', $today)
-            //         ->select('paid_amount')->get();
-
-            //     break;
+      
             
         }
        
@@ -1235,6 +1249,140 @@ class DashboardController extends Controller
       
         ]);
     }
+
+    public function libraryTran(Request $request)
+    {
+      
+        $type = $request->get('type');
+      
+        $today = Carbon::today();
+        
+        $data = [
+            'todayCollection' => collect(),
+            'totalPaid' => 0,
+            'todayExpense' => collect(),
+            'monthlyExpense' => collect(),
+        ];
+
+        if ($request->filled('year') && $request->filled('month')) {
+            $year = $request->year;
+            $month = $request->month;
+        } elseif ($request->filled('year') && !$request->filled('month')) {
+            $year = $request->year;
+            $month = date('m'); 
+        } elseif (!$request->filled('year') && $request->filled('month')) {
+            $year = date('Y'); 
+            $month = $request->month;
+        } else {
+            $year = date('Y');
+            $month = date('m');
+        }
+
+       
+        switch ($type) {
+            case 'today_collection':
+                $collection = LearnerTransaction::with(['learner'])
+                    ->where('branch_id', getCurrentBranch())
+                    ->whereDate('paid_date', now()->toDateString())
+                    ->get();
+
+                $data['collection'] = $collection;
+                $data['totalPaid'] = $collection->sum('paid_amount');
+                $data['label'] = 'Today Collection';
+                break;
+
+            case 'monthly_collection':
+                $collection = LearnerTransaction::with(['learner'])
+                    ->where('branch_id', getCurrentBranch())
+                    ->whereYear('paid_date', $year)
+                    ->whereMonth('paid_date', $month)
+                    ->get();
+
+                $data['collection'] = $collection;
+                $data['totalPaid'] = $collection->sum('paid_amount');
+                $data['label'] = 'Monthly Collection';
+                break;
+            case 'today_expense':
+                $todayExpense = DB::table("monthly_expense")
+                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
+                    ->where('monthly_expense.branch_id', getCurrentBranch())
+                    ->whereDate('monthly_expense.created_at', $today)
+                    ->select('expenses.name as expense_name', 'monthly_expense.*')
+                    ->get();
+
+        
+                $data['expenses'] = $todayExpense;
+                $data['totalExpense'] = $todayExpense->sum('amount');
+                $data['label'] = 'Today Expense';
+                break;
+
+            case 'monthly_expense':
+                $monthlyExpense = DB::table("monthly_expense")
+                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
+                    ->where('monthly_expense.branch_id', getCurrentBranch())
+                    ->whereYear('monthly_expense.created_at', $year)
+                    ->whereMonth('monthly_expense.created_at', $month)
+                    ->select('expenses.name as expense_name', 'monthly_expense.*')
+                    ->get();
+
+                
+                $data['expenses'] = $monthlyExpense;
+                $data['totalExpense'] = $monthlyExpense->sum('amount');
+                $data['label'] = 'Today Expense';
+                break;
+           case 'today_balance':
+           
+
+                $collection = LearnerTransaction::where('branch_id', getCurrentBranch())
+                    ->whereDate('paid_date', $today)
+                    ->get();
+
+                $expense = DB::table("monthly_expense")
+                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
+                    ->where('monthly_expense.branch_id', getCurrentBranch())
+                    ->whereDate('monthly_expense.created_at', $today)
+                    ->select('expenses.name as expense_name', 'monthly_expense.*')
+                    ->get();
+
+                $data['todayCollection'] = $collection;
+                $data['todayExpense'] = $expense;
+                $data['label'] = 'Today Balance';
+
+            break;
+
+
+            case 'monthly_balance':
+                $collection = LearnerTransaction::with(['learner'])
+                    ->where('branch_id', getCurrentBranch())
+                    ->whereYear('paid_date', $year)
+                    ->whereMonth('paid_date', $month)
+                    ->get();
+                $monthlyExpense = DB::table("monthly_expense")
+                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
+                    ->where('monthly_expense.branch_id', getCurrentBranch())
+                    ->whereYear('monthly_expense.created_at', $year)
+                    ->whereMonth('monthly_expense.created_at', $month)
+                    ->select('expenses.name as expense_name', 'monthly_expense.*')
+                    ->get();
+                 $data['collection'] = $collection;
+                $data['expenses'] = $monthlyExpense;
+                $data['label'] = 'Monthly Balance';
+
+                break;
+              
+
+         
+
+               
+        }
+
+        return view('dashboard.library_daily_tran', $data);
+    }
+
+    function formatNumber($value) {
+    return (intval($value) == $value) ? intval($value) : number_format($value, 2);
+}
+
     
     
 

@@ -186,5 +186,4 @@ $currentMonth = date('m');
   });
 </script>
 
-@include('learner.script')
 @endsection

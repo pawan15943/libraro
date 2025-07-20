@@ -468,6 +468,5 @@ function typeEffect() {
 typeEffect();
 </script>
 
-<!-- @include('learner.popup')
-@include('learner.script') -->
+
 @endsection

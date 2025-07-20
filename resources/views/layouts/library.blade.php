@@ -26,7 +26,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Bootstrap Toggle CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-
+  
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body>
@@ -123,9 +124,11 @@
                  
                      <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
                 </li>
+                 @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
                 </li>
+                @endif
             </ul>
             <div class="control-right-sidebar">
                 <i class="fa fa-angle-right" id="sidebar_mob"></i>

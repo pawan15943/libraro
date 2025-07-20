@@ -40,18 +40,6 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
-    public function libraryPlan()
-    {
-        $plans = Subscription::all();
-
-        return response()->json([
-            'status' => true,
-            'code' => 200,
-            'message' => 'Subscription plans fetched successfully.',
-            'subscription' => $plans
-        ], 200);
-    }
-
     public function register(Request $request)
     {
         //  smtp email check verify valid remaining
@@ -187,8 +175,6 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
-
-
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -257,6 +243,18 @@ class LibraryAuthController extends Controller
             //     'library' => cleanNull($user->toArray())
             // ],
            
+        ], 200);
+    }
+
+    public function libraryPlan()
+    {
+        $plans = Subscription::all();
+      
+        return response()->json([
+            'status' => true,
+            'code' => 200,
+            'message' => 'Subscription plans fetched successfully.',
+            'data' => $plans
         ], 200);
     }
 

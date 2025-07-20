@@ -825,7 +825,8 @@ class MasterController extends Controller
                 'b.city_id',
                 'b.library_logo',
                 'b.slug',
-                'h.seats'
+                'h.seats',
+                'b.display_name'
             );
 
         // Apply filters
@@ -910,6 +911,37 @@ class MasterController extends Controller
 
     public function menu(){
         return view('master.menu');
+    }
+
+    public function toggleFeature(){
+        $data=DB::table('toggle_features')->get();
+        $branch = Branch::where('id', getCurrentBranch())->first();
+        $hiddenFields = [];
+
+        if ($branch && $branch->hide_field) {
+            $hiddenFields = json_decode($branch->hide_field, true) ?? [];
+        }
+       return view('master.hide_field', compact('data', 'hiddenFields'));
+    }
+
+    public function updateHidefield(Request $request)
+    {
+       
+        $branch = Branch::where('id', getCurrentBranch())->first(); 
+
+        if ($branch  ) {
+            if($request->hidden_ids){
+                  $branch->hide_field = json_encode($request->hidden_ids);
+            }else{
+                $branch->hide_field=null;
+            }
+          
+            $branch->save();
+
+            return response()->json(['status' => true, 'message' => 'Updated successfully']);
+        }
+
+        return response()->json(['status' => false, 'message' => 'Branch not found'], 404);
     }
     
 }

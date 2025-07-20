@@ -6,16 +6,6 @@ $current_route = Route::currentRouteName();
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class=$planDetails['class'];
 @endphp
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
 
 @if($current_route=='learners.edit')
 <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
@@ -67,7 +57,7 @@ $class=$planDetails['class'];
                         </div>
                         <div class="col-lg-6 col-6">
                             <label for="">Email Id <span>*</span></label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}" readonly>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}" >
                             @error('email')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -582,5 +572,5 @@ $class=$planDetails['class'];
 
 @endif
 
-@include('learner.script')
+
 @endsection

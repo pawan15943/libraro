@@ -3,297 +3,235 @@
 
 <!-- Content Header (Page header) -->
 @php
-    use Carbon\Carbon;
-    use App\Helpers\HelperService; 
-    if(request('type') === 'total_booking'){
-        $text='Total Slots Bookings';
-
-    }elseif(request('type') === 'change_plan_seat'){
-        $text='Change Plan';
-    }else{
-        $text='';
-    }
+     use Carbon\Carbon;
 @endphp
+
 <div class="row mb-4">
+     <b class="d-block pb-3">{{$label}}</b>
     <div class="col-lg-12">
-        <b class="d-block pb-3">{{$text}} for  {{ request('month') }}/{{ request('year') }}: [{{$result->count()}}]</b>
+       
         <div class="table-responsive">
-            <table class="table text-center datatable border-bottom" id="datatable">
+            @if(request('type') === 'today_collection' || request('type') === 'monthly_collection' )
+                <table class="table text-center datatable border-bottom f-width" id="datatable-collection">
+                    <thead>
+                        <tr>
+                            <th>Seat No.</th>
+                            <th>Learner Info</th>
+                            <th>Contact Info</th>
+                            <th>Plan Info</th>
+                            <th>Amount received</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if($collection->isNotEmpty())
+                        @foreach ($collection as $data)
+                            @php
+                            $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->first();
+                            @endphp
+                        
+                        
+                            <tr>
+                                <td>{{ $data->learner->seat_no ?? 'GENERAL'}}</td> 
+                                
+                                <td><span class="uppercase truncate" data-bs-toggle="tooltip"
+                                    data-bs-title="{{$data->learner->name ?? ''}}" data-bs-placement="bottom">{{$data->learner->name ?? ''}}</span>
+                                <br> <small>{{$data->dob}}</small>
+                                </td>
+                            
+                            <td><span class="truncate" >
+                                    {!! $data->learner->email ? $data->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                                    </span> <br>
+                                    <small> +91-{{$data->learner->mobile}}</small>
+                                </td>
+                                <td>
+                                {{  myPlanType($learner_detail->plan_type_id)->name  ?? 'N/A' }}<br>
+                                        <small>{{ myPlan($learner_detail->plan_id)->name  ?? 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    {{ $data->paid_amount ?? 'N/A' }}<br>
+                                    
+                                </td>
+                                <td>
+                                    {{ $data->paid_date ?? 'N/A' }}<br>
+                                    
+                                </td>
+                                
+                                
+                            </tr>
+                    
+                        @endforeach
+                        @endif
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="text-end"><strong>Total Collection</strong></td>
+                            <td colspan="2"><strong>₹{{ number_format($totalPaid, 2) }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
+            @if(request('type') === 'today_expense' || request('type') === 'monthly_expense' )
+                <table class="table text-center datatable border-bottom f-width" id="datatable-expense">
+                    
+                    <thead>
+                        <tr>
+                            <th>S.N</th>
+                            <th>Expense Name</th>
+                            <th>Expense Amount</th>
+                            <th>Expense Date</th>
+                        </tr>
+                    </thead>
+                    @if($expenses->isNotEmpty() )
+                    <tbody>
+                        
+
+                        @foreach ($expenses as $index => $expense)
+                            
+                            <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td>{{ $expense->expense_name ?? 'N/A' }}</td>
+                                <td>₹{{ number_format($expense->amount, 2) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($expense->created_at)->format('d-m-Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="text-end"><strong>Total Expense</strong></td>
+                            <td colspan="2"><strong>₹{{ number_format($totalExpense, 2) }}</strong></td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            @endif
+            @if(request('type') === 'monthly_balance' )
+                @php
+                   
+
+                    $collectionsByDate = $collection->groupBy(function ($item) {
+                        return Carbon::parse($item->paid_date)->toDateString();
+                    });
+
+                    $expensesByDate = $expenses->groupBy(function ($item) {
+                        return Carbon::parse($item->created_at)->toDateString();
+                    });
+
+                    $allDates = collect($collectionsByDate->keys())
+                        ->merge($expensesByDate->keys())
+                        ->unique()
+                        ->sort();
+
+                    $finalBalance = 0;
+                @endphp
+
+             <table class="table text-center datatable border-bottom f-width" id="datatable-balance">
                 <thead>
                     <tr>
-                        <th>Seat No.</th>
-                        <th>Learner Info</th>
-                        <th>Contact Info</th>
-                        <th>Active Plan</th>
-                        <th>Expired On</th>
-                        <th>Status</th>
-                       
+                        <th>Date</th>
+                        <th>Collection</th>
+                        <th>Expense</th>
+                        <th>Balance</th>
+                        <th>Final Balance</th>
                     </tr>
                 </thead>
                 <tbody>
-                    
-                    @foreach ($result as $data)
-                    @if($data->operation_date)
+                    @foreach($allDates as $date)
                         @php
-                            $learner=App\Models\Learner::where('id',$data->learner_id)->first();
-                            $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->with(['plan','planType'])->first();
-                           
-                            $operation = DB::table('learner_operations_log')->where('learner_id',$data->learner_id)->where('learner_detail_id',$data->learner_detail_id)->where('operation',$data->operation)->whereDate('created_at',$data->operation_date)->first();
-                            $operationDetails = HelperService::getOperationDetails($operation);
-                           
-                        @endphp
-                         <tr>
-                            <td>{{ $learner->seat_no }}<br>{{$operationDetails['field']}} <code> ({{$operationDetails['old']}} to  {{$operationDetails['new']}})<code></td> <!-- Seat No -->
-                           
-                            
-                            <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span>
-                            <br> <small>{{$learner->dob}}</small>
-                            </td>
-                           
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $learner->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $learner->email }}</span> <br>
-                                <small> +91-{{$learner->mobile}}</small>
-                            </td>
-                            <td>
-                                {{ $learner_detail->plan_start_date ?? 'N/A' }}<br>
-                                    <small>{{ $learner_detail->plan->name ?? 'N/A' }}</small>
-                            </td>
-                            <td>
-                                {{ $learner_detail->plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $learner_detail->planType->name ?? 'N/A' }}</small> 
-                            </td>
-                            <td>
-                                    @php
-                                        
-                                        $today = Carbon::today();
-                                    
-                                        if (isset($learner_detail) && $learner_detail->plan_end_date) {
-                                            $endDate = Carbon::parse($learner_detail->plan_end_date);
-                                            $diffInDays = $today->diffInDays($endDate, false);
-                                    
-                                            $inextendDate = $endDate->copy()->addDays($extendDay ?? 0); 
-                                            $diffExtendDay = $today->diffInDays($inextendDate, false);
-                                        } else {
-                                            $endDate = null;
-                                            $diffInDays = null;
-                                            $inextendDate = null;
-                                            $diffExtendDay = null;
-                                        }
-                                   @endphp
-                                
-                                    
-                                    @if (isset($learner_detail) && $learner_detail->status == 1)
-                                        Active <small>{{$learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
-                                    @else
-                                        Inactive <small>{{isset($learner_detail) && $learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                    @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                        <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
-                            </td>
-                            
-                            
-                        </tr>
-                    @elseif($data->learner)
-                    <tr>
-                        <td>{{ $data->learner->seat_no }}</td> <!-- Seat No -->
-                        
-                        <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                            data-bs-title="{{$data->learner->name}}" data-bs-placement="bottom">{{$data->learner->name}}</span>
-                        <br> <small>{{$data->dob}}</small>
-                        </td>
-                       
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                            data-bs-title="{{ $data->learner->email }}" data-bs-placement="bottom"><i
-                                class="fa-solid fa-times text-danger"></i></i>
-                            {{ $data->learner->email }}</span> <br>
-                            <small> +91-{{$data->learner->mobile}}</small>
-                        </td>
-                        <td>
-                            {{ $data->plan_start_date ?? 'N/A' }}<br>
-                                <small>{{ $data->plan->name ?? 'N/A' }}</small>
-                        </td>
-                        <td>
-                            {{ $data->plan_end_date ?? 'N/A' }}<br>
-                                <small>{{ $data->planType->name ?? 'N/A' }}</small> 
-                        </td>
-                        <td>
-                            @php
-                                    
-                                    $today = Carbon::today();
-                                    if($data->plan_end_date){
-                                        $endDate =$data->plan_end_date;
-                                    }elseif($data->learner->plan_end_date){
-                                        $endDate =$data->learner->plan_end_date;
-                                    }
-                                    $endDate = Carbon::parse($endDate);
-                                    $diffInDays = $today->diffInDays($endDate, false);
-                                    $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                    
-                                    $diffExtendDay= $today->diffInDays($inextendDate, false);
-                                   
-                                @endphp
-                                
-                                @if ($data->status == 1 || $data->learner->status == 1)
-                                    Active
-                                @else
-                                    Inactive
-                                @endif
-                                <br>
-                                @if ($diffInDays > 0)
-                                    <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $data->status == 1)
-                                    <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                    <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                @else
-                                    <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                @endif
-                        </td>
-                        
-                        
-                    </tr>
-                    @elseif($data->max_plan_start_date)
-                        @php
-                            $learner_detail=App\Models\LearnerDetail::where('learner_id',$data->learner_id)->where('plan_start_date',$data->max_plan_start_date)->first();
-                            $plan=App\Models\Plan::where('id',$learner_detail->plan_id)->first();
-                            $planType=App\Models\planType::where('id',$learner_detail->plan_type_id)->first();
+                            $collectionAmount = $collectionsByDate->get($date, collect())->sum('paid_amount');
+                            $expenseAmount = $expensesByDate->get($date, collect())->sum('amount');
+                            $balance = $collectionAmount - $expenseAmount;
+                            $finalBalance += $balance;
                         @endphp
                         <tr>
-                            <td>{{ $data->seat_no }}</td> <!-- Seat No -->
-                            
-                            <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$data->name}}" data-bs-placement="bottom">{{$data->name}}</span>
-                            <br> <small>{{$data->dob}}</small>
-                            </td>
-                        
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email }}</span> <br>
-                                <small> +91-{{$data->mobile}}</small>
-                            </td>
-                            <td>
-                                {{ $data->max_plan_start_date ?? 'N/A' }}<br>
-                                    <small>{{ $plan->name ?? 'N/A' }}</small>
-                            </td>
-                            <td>
-                                {{ $data->max_plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $planType->name ?? 'N/A' }}</small> 
-                            </td>
-                            <td>
-                                @php
-                                        
-                                        $today = Carbon::today();
-                                        if($data->max_plan_end_date){
-                                            $endDate =$data->max_plan_end_date;
-                                        }
-                                        $endDate = Carbon::parse($endDate);
-                                        $diffInDays = $today->diffInDays($endDate, false);
-                                        $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                        
-                                        $diffExtendDay= $today->diffInDays($inextendDate, false);
-                                    
-                                    @endphp
-                                    
-                                    @if ($learner_detail->status == 1)
-                                        Active
-                                    @else
-                                        Inactive
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $learner_detail->status == 1)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                   
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
-                            </td>
-                            
-                            
+                            <td>{{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}</td>
+                            <td>{{ number_format($collectionAmount) }}</td>
+                            <td>{{ number_format($expenseAmount) }}</td>
+                            <td>{{ number_format($balance) }}</td>
+                            <td>{{ number_format($finalBalance) }}</td>
                         </tr>
-                    @else
-                        <tr>
-                            <td>{{ $data->seat_no }}</td> <!-- Seat No -->
-                            
-                            <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$data->name}}" data-bs-placement="bottom">{{$data->name}}</span>
-                            <br> <small>{{$data->dob}}</small>
-                            </td>
-                        
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email }}</span> <br>
-                                <small> +91-{{$data->mobile}}</small>
-                            </td>
-                            <td>
-                                {{ $data->plan_start_date ?? 'N/A' }}<br>
-                                    <small>{{ $data->plan->name ?? 'N/A' }}</small>
-                            </td>
-                            <td>
-                                {{ $data->plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $data->planType->name ?? 'N/A' }}</small> 
-                            </td>
-                            <td>
-                                @php
-                                        
-                                        $today = Carbon::today();
-                                        if($data->plan_end_date){
-                                            $endDate =$data->plan_end_date;
-                                        }elseif($data->learner->plan_end_date){
-                                            $endDate =$data->learner->plan_end_date;
-                                        }
-                                        $endDate = Carbon::parse($endDate);
-                                        $diffInDays = $today->diffInDays($endDate, false);
-                                        $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                        
-                                        $diffExtendDay= $today->diffInDays($inextendDate, false);
-                                    
-                                    @endphp
-                                    
-                                    @if ($data->status == 1)
-                                        Active
-                                    @else
-                                        Inactive
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $data->status == 1)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                    @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                        <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
-                            </td>
-                            
-                            
-                        </tr>
-                    @endif
-                    
                     @endforeach
                 </tbody>
             </table>
+
+            @endif
+           @if(request('type') === 'today_balance')
+                @php
+                    $rows = [];
+                    $seq = 0;
+
+                    // Add collections (ordered as they appear)
+                    foreach ($todayCollection as $txn) {
+                        $rows[] = [
+                            'collection' => (float) $txn->paid_amount,
+                            'expense' => 0,
+                            'date' => $txn->paid_date,
+                            'order' => $seq++,
+                        ];
+                    }
+                    
+                    // Add expenses (ordered as they appear)
+                    foreach ($todayExpense as $exp) {
+                        $rows[] = [
+                            'collection' => 0,
+                            'expense' => (float) $exp->amount,
+                            'date' => \Carbon\Carbon::parse($exp->created_at)->format('Y-m-d'),
+                            'order' => $seq++,
+                        ];
+                    }
+
+                    // Sort by date, then by entry order
+                    $rows = collect($rows)->sortBy([
+                        ['date', 'asc'],
+                        ['order', 'asc']
+                    ])->values();
+
+                    $finalBalance = 0;
+                @endphp
+
+                <table class="table text-center datatable border-bottom" id="datatable-today-balance">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th>Collection</th>
+                            <th>Expense</th>
+                            <th>Balance</th>
+                            <th>Final Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($rows as $row)
+                        
+                            @php
+                           
+                                $balance = $row['collection'] - $row['expense'];
+                                $finalBalance += $balance;
+                            @endphp
+                            <tr>
+                                <td>{{ number_format($row['collection']) }}</td>
+                                <td>{{ number_format($row['expense']) }}</td>
+                                <td>{{ number_format($balance) }}</td>
+                                <td>{{ number_format($finalBalance) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+
+
           
         </div>
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        $('#datatable-collection').DataTable();
+        $('#datatable-expense').DataTable();
+        $('#datatable-balance').DataTable();
+        // $('#datatable-today-balance').DataTable();
+    });
+</script>
 
 
 
-@include('learner.script')
 @endsection

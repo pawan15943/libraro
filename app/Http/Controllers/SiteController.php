@@ -337,10 +337,10 @@ class SiteController extends Controller
                     'plan_prices.price',
                     'plans.plan_id'
                 )
-                ->where('plan_prices.branch_id', $library->id) // Specify table name for library_id
+                ->where('plan_prices.branch_id', $library->id) 
                 ->where('plans.plan_id', 1)
                 ->get();
-
+               
 
             $total_seat = Hour::withoutGlobalScopes()->where('branch_id', $library->id)->value('seats') ?? 0;
 

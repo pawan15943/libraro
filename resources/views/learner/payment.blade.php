@@ -4,31 +4,13 @@
 @php
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class=$planDetails['class'];
-@endphp
 
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
-@php
-     $route=route('learner.payment.store');
-        $id='payment';
-    $transaction = currentTransaction($customer->learner_detail_id);
-    $hasLocker = ($transaction && $transaction->locker_amount > 0) ? 'yes' : 'no';
-    $transaction = currentTransaction($customer->learner_detail_id);
-    // if(($diffInDays <= 5 && $diffExtendDay>0 && !$isRenew)){
-    //     $id='renewSeat';
-    //     $route=route('learners.renew');
-    // }else{
-    //     $route=route('learner.payment.store');
-    //     $id='payment';
-    // }
+$route=route('learner.payment.store');
+$id='payment';
+$transaction = currentTransaction($customer->learner_detail_id);
+$hasLocker = ($transaction && $transaction->locker_amount > 0) ? 'yes' : 'no';
+$transaction = currentTransaction($customer->learner_detail_id);
+   
 @endphp
 <input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
@@ -98,13 +80,7 @@ $class=$planDetails['class'];
                             new one.</p>
                         </div>
                     </div>
-                    {{-- @if($diffInDays < 0 && $diffExtendDay>0 && !$isRenew)
-                    <h4 class="mb-4 d-block">Renew your Plan
-                    <p class="mt-2 text-danger"><b>Note:</b> You can easily renew your plan!</p>
-                    @else
-                 
-                    @endif --}}
-                 
+                  
                     </h4>
                 
                     <p class="text-danger">Note : Here we are displaying the active plan Payment information that has been completed. You can also make payment of Pay Later and Pending Amount.</p>
@@ -116,35 +92,12 @@ $class=$planDetails['class'];
                         <div class="col-lg-4 ">
                             <label for="">Plan <span>*</span></label>
                              <input type="text" class="form-control" value="{{ $customer->plan->name }}" readonly>
-                            {{-- @if($diffInDays < 0 && $diffExtendDay>0 && !$isRenew)
-                            <select  id="update_plan_id" class="form-control @error('plan_id') is-invalid @enderror" name="plan_id" >
-                                <option value="">Select Plan</option>
-                                @foreach($plans as $key => $value)
-                                <option value="{{ $value->id }}" {{ old('plan_id', $customer->plan_id) == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('plan_id')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                            @else
-                           <input type="text" class="form-control" value="{{ $customer->plan->name }}" readonly>
-                            @endif --}}
+                       
                         </div>
                         <div class="col-lg-4">
                             <label for="">Plan Type <span>*</span></label>
                              <input type="text" class="form-control" value="{{ $customer->planType->name  }}" readonly >
-                            {{-- @if($diffInDays < 0 && $diffExtendDay>0 && !$isRenew)
-                            <select  id="updated_plan_type_id" class="form-control @error('plan_type_id') is-invalid @enderror" name="plan_type_id" readonly>
-                                
-                                <option value="{{ $customer->plan_type_id }}">{{ $customer->planType->name }}</option>
-                                
-                            </select>
-                            @else
-                            <input type="text" class="form-control" value="{{ $customer->planType->name  }}" readonly >
-
-                            @endif --}}
+                         
                            
                         </div>
                          <div class="col-lg-4">
@@ -199,16 +152,7 @@ $class=$planDetails['class'];
                         <div class="col-lg-4">
                              <label for="">Pending Payment<span>*</span></label>
                             <input type="text" class="form-control " name="paid_amount"  value="{{ old('pending_amount', $pending_payment->pending_amount ?? 0) }}" readonly>
-                            {{-- @if($diffInDays < 0 && $diffExtendDay>0 && !$isRenew)
-                            <label for="">Plan Price <span>*</span></label>
-                           
-                            <input id="updated_plan_price_id" class="form-control" placeholder="Plan Price" name="plan_price_id" value="{{ old('plan_price_id', $customer->plan_price_id ) }}" @readonly(true)>
 
-                            @else
-                            <label for="">Pending Payment<span>*</span></label>
-                            <input type="text" class="form-control " name="paid_amount"  value="{{ old('pending_amount', $pending_payment->pending_amount ?? 0) }}" >
-
-                            @endif --}}
                         </div>
                          <div class="col-lg-4 ">
                             <label for="">Payment Mode</label>
@@ -244,8 +188,6 @@ $class=$planDetails['class'];
 
                     </div>
             
-                    
-
                 </div>
             </form>
         </div>
@@ -275,7 +217,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
-
-@include('learner.script')
 
 @endsection

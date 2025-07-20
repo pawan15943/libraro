@@ -510,5 +510,5 @@
 
 
 
-@include('learner.script')
+
 @endsection

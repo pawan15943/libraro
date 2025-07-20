@@ -383,7 +383,7 @@ class LearnerController extends Controller
 
     public function getPlanType(Request $request)
     {
-
+       
         $seatNo = $request->seat_no;
 
 
@@ -1255,7 +1255,7 @@ class LearnerController extends Controller
                     'message' => 'Learner Renew successfully!',
                 ], 200);
             } else {
-                return redirect()->back()->with('success', 'Learner updated successfully!');
+                return redirect()->route('learners')->with('success', 'Learner updated successfully!');
             }
         } catch (\Exception $e) {
             DB::rollBack(); // Something went wrong, rollback
@@ -1394,55 +1394,6 @@ class LearnerController extends Controller
         } else {
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
-
-        // $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_id', '!=', $customerId)
-        //     ->where('seat_no', $customer_detail->seat_no)
-        //     ->where('learner_detail.status',1)
-        //    ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-        // $totalBookedHours = $bookings->sum('slot_hours');
-        // $remainingPlanTypes = $plantype->whereNotIn('id', $otherPlantype);
-        // $nightseatBooked=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_id', '!=', $customerId)->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->exists();
-        //  $planTypesRemovals = [];
-
-        //  $planTypeId = null;
-        //     if($totalBookedHours < 24){
-
-        //         foreach ($bookings as $booking) {
-        //             foreach ($remainingPlanTypes as $planType) {
-        //                 if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
-        //                     $planTypesRemovals[] = $planType->id;
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     if($totalBookedHours > 1){
-        //         $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
-
-        //     }
-
-        //     if (!is_null($planTypeId)) {
-        //         $planTypesRemovals[] = $planTypeId;
-
-        //     }
-        //     if($nightseatBooked){
-        //         $planTypeid=LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no',$customer_detail->seat_no)->where('learner_detail.status',1)->where('plan_types.day_type_id',9)->value('plan_types.id') ?? 0;
-        //         $planTypesRemovals[] = $planTypeid;
-        //     }
-        //     // Remove duplicate entries in planTypesRemovals
-        //     $planTypesRemovals = array_unique($planTypesRemovals);
-        //      $first_record = Hour::first();
-        //     $total_hour = $first_record ? $first_record->hour : null;
-
-        //     if ($totalBookedHours >= $total_hour) {
-        //         $planTypesRemovals = $remainingPlanTypes->pluck('id')->toArray();
-        //     }
-
-        //     // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
-        //     $filteredPlanTypes = $remainingPlanTypes->filter(function ($planType) use ($planTypesRemovals) {
-        //         return !in_array($planType->id, $planTypesRemovals);
-        //     })->map(function ($planType) {
-        //         return ['id' => $planType->id, 'name' => $planType->name];
-        //     })->values();
 
         if ($routeName == 'learners.upgrade.renew' || $routeName == 'learner.renew.plan') {
 
@@ -1956,7 +1907,7 @@ class LearnerController extends Controller
         $planType = PlanType::where('id', $request->plan_type_id)->first();
 
         $status_array = [];
-
+       
         foreach ($bookings as $booking) {
 
             if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
@@ -2000,7 +1951,10 @@ class LearnerController extends Controller
                     LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
 
                     $lastLearnerDetail->delete();
+                     $customer->status = 0;
+                    $customer->save();
                     $customer->delete();
+                   
                 } else {
 
                     throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
@@ -2020,9 +1974,8 @@ class LearnerController extends Controller
     {
 
         $customer = Learner::findOrFail($request->learner_id);
-
         $today = date('Y-m-d');
-        LearnerDetail::where('learner_id', $customer->id)->where('status', 1)->update(['plan_end_date' => $today, 'status' => 0]);
+        LearnerDetail::where('id', $request->learner_detail_id)->where('status', 1)->update(['plan_end_date' => $today, 'status' => 0]);
         $customer->status = 0;
         $customer->save();
         return response()->json(['message' => 'Learner closed successfully.']);
@@ -2159,7 +2112,6 @@ class LearnerController extends Controller
                 'old_value' => 'nullable|string',
                 'new_value' => 'nullable|string',
                 'updated_by' => 'required|integer',
-
                 'operation' => 'required',
             ]);
 
@@ -2168,15 +2120,17 @@ class LearnerController extends Controller
             $updated_user = $validatedData['updated_by'] ?? getLibraryId();
             $old_value = $validatedData['old_value'] ? $validatedData['old_value'] : $validatedData['operation'];
             if ($validatedData['operation'] == 'renewSeat' || $validatedData['operation'] == 'reactive' || $validatedData['operation'] == 'learnerUpgrade' || $validatedData['operation'] == 'swapseat' || $validatedData['operation'] == 'changePlan') {
+                Log::info('Learner Deatail First');
                 $learner_detail_id = LearnerDetail::where('learner_id', $validatedData['learner_id'])
                     ->orderBy('id', 'DESC')
                     ->value('id');
             } elseif ($validatedData['operation'] == 'closeSeat' || $validatedData['operation'] == 'deleteSeat') {
+                Log::info('Learner Deatail Delete');
                 $learner_detail_id = LearnerDetail::where('learner_id', $validatedData['learner_id'])
-                    ->whereNull('deleted_at')
                     ->orderBy('id', 'DESC')
                     ->value('id');
             } else {
+                 Log::info('Learner Deatail Null');
                 $learner_detail_id = null;
             }
 
@@ -2186,6 +2140,20 @@ class LearnerController extends Controller
             if ($old_value == 'swapseat') {
                 $old_value = "General";
             }
+
+            Log::info('Learner Field Update Info', [
+            'learner_id'        => $validatedData['learner_id'],
+            'learner_detail_id' => $learner_detail_id,
+            'library_id'        => getLibraryId(),
+            'field_updated'     => $validatedData['field_updated'],
+            'old_value'         => $old_value,
+            'new_value'         => $validatedData['new_value'],
+            'updated_by'        => $updated_user,
+            'operation'         => $validatedData['operation'],
+            'branch_id'         => getCurrentBranch(),
+            'created_at'        => now(),
+        ]);
+
 
             DB::table('learner_operations_log')->insert([
                 'learner_id' => $validatedData['learner_id'],

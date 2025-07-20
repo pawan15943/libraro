@@ -3,20 +3,10 @@
 @php
     $planDetails = getPlanStatusDetails($customer->plan_end_date);
     $class=$planDetails['class'];
+   
 @endphp
-
-@if (session('error'))
-    <div class="alert alert-danger">
-        {{ session('error') }}
-    </div>
-@endif
-@if (session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
-               
-<input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
+             
+<input id="swap_plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
@@ -128,28 +118,28 @@
     </div>
     <div class="col-lg-3 order-1 order-md-2">
         <div class="seat--info">
-              
             @if($customer->seat_no)
             <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
+            @else
+            <span class="d-block ">General</span>
             @endif
             <img src="{{ asset($customer->image) }}" alt="Seat" class="seat py-3 {{$class}}">
             <p>{{ $customer->plan_name}}</p>
             <button class="mb-3"> Booked for <b>{{ $customer->plan_type_name}}</b></button>
             {!! getUserStatusWithSpan($customer->plan_end_date) !!}
             
-        </div>
+        </div>  
     </div>
 </div>
 
   
 <script>
     document.getElementById("swapsubmit").disabled = true;
-     // Call the handleFormChanges function for the specific form when the DOM is fully loaded
-  document.addEventListener('DOMContentLoaded', function() {
+   
+    document.addEventListener('DOMContentLoaded', function() {
         handleFormChanges('swapseat', {{$customer->id}});
     });
    
 </script>
-@include('learner.script')
 
 @endsection

@@ -155,5 +155,5 @@ $today = \Carbon\Carbon::today();
     });
 </script>
 
-@include('learner.script')
+
 @endsection

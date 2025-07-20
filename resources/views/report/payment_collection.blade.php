@@ -92,8 +92,8 @@ $currentMonth = date('m');
                         {{-- <th>Contact Info</th> --}}
                         <th>Plan Price</th>
                          <th>Locker Amt</th>
+                         <th>Discount</th>
                         <th>Total Amt</th>
-                        <th>Discount</th>
                          <th>Paid Amt</th>
                         <th>Pending Amt</th>
                         <th>Paid On</th>
@@ -106,9 +106,7 @@ $currentMonth = date('m');
                     @foreach($learners as $value)
                  
                     <tr>
-                        <td>{{$value->learner->seat_no ?? 'General'}}<br> 
-                         
-                        </td>
+                        <td>{{$value->learner->seat_no ?? 'General'}}<br> </td>
                         <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
                             <br> <small>{{$value->learner->dob}}</small>
@@ -122,16 +120,12 @@ $currentMonth = date('m');
                         </td> --}}
                         <td>₹ {{myPlanPrice($value->learner_detail_id)}}</td>
                          <td>₹ {{$value->locker_amount}} </td>
+                         <td>₹ {{$value->discount_amount}} </td>
                         <td>₹ {{$value->total_amount}} </td>
-                          <td>₹ {{$value->discount_amount}} </td>
                         <td><span class="text-success">₹ {{$value->paid_amount}}</span> </td>
                         <td><span class="text-danger">₹ {{$value->pending_amount}}</span> </td>
                         <td>{{$value->paid_date}} </td>
-                       
-                      
                         <td>{{$value->transaction_id ?? 'NA'}} </td>
-                       
-                       
                         <td>
                             <ul class="actionalbls">
                             @can('has-permission', 'Receipt Generation')
@@ -154,8 +148,6 @@ $currentMonth = date('m');
                             @endcan
                             </ul>
                         </td>
-                        
-
                     </tr>
                     @endforeach
                  
@@ -176,5 +168,4 @@ $currentMonth = date('m');
     });
 </script>
 
-@include('learner.script')
 @endsection

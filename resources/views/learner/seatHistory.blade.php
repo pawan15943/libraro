@@ -105,11 +105,14 @@
                     @endforeach
                     @if($finalGeneralLearners->count())
                     <tr>
-                        <td rowspan="{{ $finalGeneralLearners->count() }}">General</td>
+                      
                         @foreach($finalGeneralLearners as $user)
+                         
                             @php $learner = myLearner($user->learner_id); @endphp
                             @if(!$loop->first)<tr>@endif
-                            <td>{{ $learner->name }}</td>
+                             <td >GEN</td>
+                            <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
+                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span></td>
                             <td><span class="truncate" >
                                 {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
                                 </span> <br>
@@ -153,6 +156,5 @@
     </div>
 </div>
 
-@include('learner.script')
 <!-- /.row (main row) -->
 @endsection
