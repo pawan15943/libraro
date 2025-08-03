@@ -197,9 +197,6 @@ class LearnerController extends Controller
         $effectivePaid = $planPrice + $locker - $discount;
         $pending_amount =  $effectivePaid - $paid_amount;
 
-
-
-
         $first_record = Hour::first();
 
         $total_hour = $first_record ? $first_record->hour : null;
@@ -240,6 +237,15 @@ class LearnerController extends Controller
             $id_proof_file = 'public/uploade/' . $id_proof_fileNewName;
         } else {
             $id_proof_file = null;
+        }
+         if ($request->hasFile('profile_picture')) {
+            $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+            $profile_picture = $request->profile_picture;
+            $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+            $profile_picture->move('public/uploade/', $profile_pictureNewName);
+            $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+        } else {
+            $profile_picture = null;
         }
 
 
@@ -323,6 +329,11 @@ class LearnerController extends Controller
             'password' => bcrypt($request->mobile),
             'branch_id' => getCurrentBranch(),
             'learner_no'=>$this->generateLearnerCode(),
+            'father_name' => $request->input('father_name'),
+            'alternate_mobile' => $request->input('alternate_mobile'),
+            'remark' => $request->input('remark'),
+            'profile_picture'=>$profile_picture,
+            'address' => $request->input('address'),
         ]);
 
         $learner_detail = LearnerDetail::create([
@@ -811,8 +822,6 @@ class LearnerController extends Controller
         return view('learner.learner-search', compact('learners'));
     }
 
-    
-    
     public function learnerHistory(Request $request)
     {
         $filters = [
@@ -1300,6 +1309,7 @@ class LearnerController extends Controller
 
         $available_seat = $this->learnerService->getAvailableSeats();
         $customer_status = learner::where('id', $customerId)->first();
+     
         $status = $customer_status->status;
         $detailStatus = $customer_status->status;
         $customer = $this->fetchCustomerData($customerId, $is_renew, $status, $detailStatus);
@@ -1521,8 +1531,6 @@ class LearnerController extends Controller
             
         return view('learner.genaralSeatHistoryView', compact('learners'));
     }
-    
-
     public function reactiveUser(Request $request, $id = null)
     {
 
@@ -1931,7 +1939,6 @@ class LearnerController extends Controller
 
         return response()->json($status);
     }
-
 
     public function destroy($id)
     {
@@ -2453,8 +2460,9 @@ class LearnerController extends Controller
 
     /** Learner Guard and in front learner related function**/
 
-    public function IdCard()
+    public function IdCard(Request $request)
     {
+        
         $data = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
 
         $library_name = Branch::where('id', Auth::user()->branch_id)->select('name as library_name', 'features')->first();
@@ -2724,60 +2732,78 @@ class LearnerController extends Controller
         return $prefix . $randomNumber;
     }
 
-    // public function dataTestStatus()
-    // {
-    //     $today = Carbon::today();
-    //     $futureCheckDate = $today->copy()->addDays(5);
+   public function makeOtherPayment(Request $request)
+    {
 
-    //     $customerdatas = LearnerDetail::where('status', 1)->get();
+        $customer_detail_id = $request->id;
+        $customer = LearnerDetail::where('id', $customer_detail_id)->with('learner', 'plan', 'plantype')->first();
+        
+        $tokenMoney = token_money();
+        
+        return view('learner.other_payment', compact('customer','tokenMoney'));
+    }
+    
+   public function otherPaymentStore(Request $request)
+    {
+      
+        $request->validate([
+            'learner_id'    => 'required|exists:learner_transactions,learner_id',
+            'payment_type'  => 'required|in:token_money,miscellaneous',
+            'fees'          => 'required|numeric|min:1',
+        ]);
 
-    //     foreach ($customerdatas as $customerdata) {
-    //         $branchId = $customerdata->branch_id;
-    //         $branch = $branchId ? Branch::find($branchId) : null;
-    //         $extend_day = $branch ? $branch->extend_days : 0;
+        try {
+            // Step 2: Find transaction record
+            $transaction = LearnerTransaction::where('learner_id', $request->learner_id)->first();
 
-    //         $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+            if (!$transaction) {
+                return redirect()->back()->with('error', 'Learner transaction record not found.');
+            }
 
-    //         $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
-    //             ->where('plan_end_date', '>', $futureCheckDate)
-    //             ->where('status', 0)
-    //             ->exists();
+            // Step 3: Update based on payment type
+            if ($request->payment_type === 'token_money') {
+                $transaction->token_money = $request->fees;
+            } elseif ($request->payment_type === 'miscellaneous') {
+                $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
+            }
 
-    //         $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
-    //             ->where('plan_end_date', '<', $futureCheckDate)
-    //             ->exists();
+            $transaction->save(); // Automatically updates `updated_at`
 
-    //         $isRenewed = $hasFuturePlan && $hasPastPlan;
+            return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
+        } catch (\Exception $e) {
+            // Log the error if needed: Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred while processing payment.');
+        }
+    }
 
-    //         if ($planEndDateWithExtension->lte($today)) {
-    //             Learner::where('id', $customerdata->learner_id)
-    //                 ->where('status', '!=', 0)
-    //                 ->update(['status' => 0]);
+    
 
-    //             $customerdata->update(['status' => 0]);
-    //         } elseif ($isRenewed) {
-    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
-    //                 ->where('plan_start_date', '<=', $today)
-    //                 ->where('plan_end_date', '>', $futureCheckDate)
-    //                 ->update(['status' => 1]);
+    public function learnerIdCard($id){
+        $learner_detail = LearnerDetail::where('id', $id)->with([ 'learner'])->first();
+        $branch=Branch::where('id',$learner_detail->branch_id)->with('city','state')->first();
+        // $filename = 'qr_' . $learner_detail->learner_id . '.png';
+        // Storage::put("public/qr/$filename", QrCode::format('png')->size(300)->generate($learner_detail->learner->learner_no));
+        return view('learner.id_card_template', compact('learner_detail','branch'));
+    }
+    public function printBulkIdCard(Request $request)
+    {
+        $learnerIds = $request->input('learner_ids', []);
+        
+        if (empty($learnerIds)) {
+            return back()->with('error', 'Please select at least one learner.');
+        }
 
-    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
-    //                 ->where('plan_end_date', '<', $today)
-    //                 ->update(['status' => 0]);
-    //         } else {
-    //             Learner::where('id', $customerdata->learner_id)
-    //                 ->where('status', '!=', 1)
-    //                 ->update(['status' => 1]);
+        $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status',1)->with(['learner'])->get();
 
-    //             LearnerDetail::where('learner_id', $customerdata->learner_id)
-    //                 ->where('status', 0)
-    //                 ->where('plan_start_date', '<=', $today)
-    //                 ->where('plan_end_date', '>', $today)
-    //                 ->update(['status' => 1]);
-    //         }
-           
-            
-    //     }
-    //      echo 'Learner statuses updated successfully.' ;
-    // }
+        $branch=Branch::where('id',getCurrentBranch())->with('city','state')->first();
+        return view('learner.bulk-idcards', compact('learner_details','branch'));
+    }
+
+    public function learnerChecklist(){
+        $learners=Learner::where('status',1)->where('branch_id',getCurrentBranch())->get();
+        return view('learner.checklist', compact('learners'));
+
+    }
+
+   
 }

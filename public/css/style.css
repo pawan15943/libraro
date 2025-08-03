@@ -232,6 +232,9 @@ a.go-back {
     font-weight: 600 !important;
 }
 
+.detailes textarea{
+    height: auto !important;
+}
 
 
 .modal-lg,

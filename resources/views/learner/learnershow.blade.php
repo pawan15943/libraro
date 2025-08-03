@@ -94,6 +94,23 @@
                 </div>
                 <h4 class="mt-4"> Seat Other Info :</h4>
                 <div class="row g-4">
+                    <div class="col-lg-6 col-6 col-6">
+                        <span>Father Name</span>
+                        <h5>{{ $customer->father_name }}</h5>
+                    </div>
+                     <div class="col-lg-6 col-6 col-6">
+                        <span>Alternate Mobile No.</span>
+                        <h5>{{ $customer->alternate_mobile }}</h5>
+                    </div>
+                    <div class="col-lg-6 col-6 col-6">
+                        <span>Address</span>
+                        <h5>{{ $customer->address }}</h5>
+                    </div>
+                     <div class="col-lg-6 col-6 col-6">
+                        <span>Remark</span>
+                        <h5>{{ $customer->remark }}</h5>
+                    </div>
+
 
                     <div class="col-lg-6 col-6 col-6">
                         <span>Id Proof</span>
@@ -194,6 +211,7 @@
                         <h5> {{$transaction->locker_amount ?? '0'}}</h5>
                     </div>
                     @endif
+            
                     <div class="col-lg-6 col-6 col-6">
                         <span>Paid Amt.</span>
                         <h5 class="text-success">{{ $transaction->paid_amount ?? 'NA'}}</h5>
@@ -207,8 +225,18 @@
                         </span>
                         <h5 class="text-danger">{{$transaction->pending_amount ?? '0'}}</h5>
                     </div>
-
-
+                     @if(isset($transaction) && $transaction->token_money)
+                     <div class="col-lg-6 col-6 col-6">
+                        <span>Token Money</span>
+                        <h5> {{$transaction->token_money ?? '0'}}</h5>
+                    </div>
+                    @endif
+                    @if(isset($transaction) && $transaction->miscellaneous)
+                     <div class="col-lg-6 col-6 col-6">
+                        <span>Miscellaneous</span>
+                        <h5> {{$transaction->miscellaneous ?? '0'}}</h5>
+                    </div>
+                    @endif
 
                     <div class="col-lg-6 col-6 col-6">
                         <span>Payment Status</span>
@@ -424,7 +452,7 @@
 
             @endphp
             
-            <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
+            <span class="d-block ">Seat No : {{ $customer->seat_no ?? 'GEN'}}</span>
            
             <img src="{{ asset($customer->image) }}" alt="Seat" class="seat py-3 {{ $planDetails['class']}}">
             <p>{{ $customer->plan_name}}</p>

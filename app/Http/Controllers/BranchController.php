@@ -93,6 +93,7 @@ class BranchController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'locker_amount'=>'required',
+            'token_money'=>'nullable',
             'extend_days'=>'required',
             'hour'=>'required',
             'seats'=>'required',
@@ -102,7 +103,7 @@ class BranchController extends Controller
         $hour = $validated['hour'];
         $seats = $validated['seats'];
         unset($validated['hour'], $validated['seats']); // remove from $validated
-
+        
         $branch = new Branch($validated);
 
         // Handle logo upload
@@ -159,6 +160,7 @@ class BranchController extends Controller
             'google_map'=>'nullable',
             'description'=>'nullable',
             'locker_amount'=>'nullable',
+            'token_money'=>'nullable',
             'extend_days'=>'nullable',
             'longitude'=>'nullable',
             'latitude'=>'nullable',

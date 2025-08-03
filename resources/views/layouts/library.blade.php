@@ -15,11 +15,12 @@
     <link rel="stylesheet" href="{{ asset('public/css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.6/css/dataTables.dataTables.css" />
+   
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <!-- Include DataTables CSS -->
+     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.6/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
@@ -27,6 +28,7 @@
     <!-- Bootstrap Toggle CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
   
+      
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
@@ -63,12 +65,12 @@
                     @include('partials.breadcrumbs')
                     
                     @yield('content')
-                   <script>
+                    <script>
                         const sessionLifetime = @json(config('session.lifetime') * 60); // convert to seconds
                         const warningTime = sessionLifetime - 60; // popup 1 min before session ends
 
-                        console.log("Session lifetime:", sessionLifetime);
-                        console.log("Warning in:", warningTime, "seconds");
+                        // console.log("Session lifetime:", sessionLifetime);
+                        // console.log("Warning in:", warningTime, "seconds");
 
                         setTimeout(function () {
                             Swal.fire({
@@ -97,7 +99,6 @@
      
         @if(getLibrary()->is_paid == 1  && getLibrary()->status == 1)
         
-        
         <div class="right-sidebar">
             <h4> QUICK ACTION</h4>
             <ul>
@@ -113,11 +114,15 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
                     <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>
                 </li>
+               
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
                     <a href="{{ route('seats.history') }}"><i class="fa fa-list-check fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
+                </li>
+                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="ID CARD">
+                    <a href="{{ route('learner.checklist') }}"><i class="fa fa-user-tie fa-2x"></i></a>
                 </li>
                 
                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">
@@ -145,30 +150,30 @@
     </ul>
     @php
     $video = videoGet();
-@endphp
+    @endphp
 
-@if($video)
-<div class="modal fade" id="videoModal{{ $video->id }}" tabindex="-1" aria-labelledby="videoModalLabel{{ $video->id }}" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ $video->video_titel ?? 'Untitled Video' }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        @if(!empty($video->video))
-          <video width="100%" height="auto" controls>
-            <source src="{{ asset('public/uploade/' . $video->video) }}" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-        @else
-          <p>No video uploaded.</p>
-        @endif
-      </div>
+    @if($video)
+    <div class="modal fade" id="videoModal{{ $video->id }}" tabindex="-1" aria-labelledby="videoModalLabel{{ $video->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">{{ $video->video_titel ?? 'Untitled Video' }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+            @if(!empty($video->video))
+            <video width="100%" height="auto" controls>
+                <source src="{{ asset('public/uploade/' . $video->video) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            @else
+            <p>No video uploaded.</p>
+            @endif
+        </div>
+        </div>
     </div>
-  </div>
-</div>
-@endif
+    </div>
+    @endif
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> <!-- Keep jQuery first -->
@@ -180,11 +185,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-<script src="https://cdn.datatables.net/2.1.6/js/dataTables.js" defer></script>
+{{-- <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js" defer></script> --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js" defer></script>
-
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<!-- DataTables Buttons -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
 <script src="{{ url('public/js/main-validation.js') }}" defer></script>
 
@@ -239,7 +248,6 @@
             });
         });
     </script>
-
 
     <!-- jQuery -->
     <script>
@@ -406,7 +414,7 @@
         }, false);
     </script>
     @include('learner.script')
-<script>
+    <script>
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
     </script>

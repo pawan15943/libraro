@@ -191,9 +191,6 @@ class ReportController extends Controller
             'search'  => $request->get('search'),
         ];
 
-
-
-
         $today = Carbon::today();
         
         $extend_day = getExtendDays();
@@ -211,14 +208,14 @@ class ReportController extends Controller
                     ->where('ld2.plan_end_date', '>', $fiveDaysbetween->format('Y-m-d'));
             });
            
-        if (getCurrentBranch() != 0 ) {
+            if (getCurrentBranch() != 0 ) {
                 $query->where('learner_detail.branch_id', getCurrentBranch());
             }
 
      
        
         $learners = $this->fetchlearnerData( $filters,$query);
-    
+            
         return view('report.pending_payment', compact('plans','planTypes','dynamicyears', 'dynamicmonths', 'learners'));
 
     }
@@ -589,7 +586,7 @@ class ReportController extends Controller
 
         $dynamicyears = $collection->pluck('year')->unique()->values();
         $dynamicmonths = $collection->pluck('month')->unique()->values();
-        
+       
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
         $daymonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);

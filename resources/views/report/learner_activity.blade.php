@@ -103,6 +103,7 @@ $currentMonth = date('m');
 <div class="row mb-4 mt-4">
    
     <div class="col-lg-12">
+        <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
@@ -149,12 +150,28 @@ $currentMonth = date('m');
 </div>
 
 <script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable', {
-            searching: false // This option hides the search bar
+    $(document).ready(function () {
+       var table= $('#datatable').DataTable({
+           
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    text: 'Export CSV',
+                    exportOptions: {
+                        columns: ':visible'
+                    },
+                    title: 'LearnerActivityReport'
+                }
+            ],
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10
         });
+         // Move export button to a custom container
+        table.buttons().container().appendTo('#export');
     });
 </script>
+
+
 <script>
     // Year or month dropdown
   const yearDropdown = document.getElementById('year');

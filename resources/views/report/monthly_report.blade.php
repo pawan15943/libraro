@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-lg-12">
-
+        <div id="export" class="mb-3"></div>
         <div class="table-responsive tableRemove_scroll mt-2">
             <table class="table text-center datatable" id="datatable" style="display: table !important;">
                 <thead>
@@ -58,6 +58,26 @@
     </div>
 </div>
 
-
+<script>
+    $(document).ready(function () {
+        var table =$('#datatable').DataTable({
+         
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    text: 'Export CSV',
+                    title: 'MonthlyRevenueReport',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ],
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10
+        });
+         // Move export button to a custom container
+    table.buttons().container().appendTo('#export');
+    });
+</script>
 
 @endsection

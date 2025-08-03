@@ -23,9 +23,7 @@
                 <thead>
                     <tr>
                         <th>S.N</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Description</th>
+                        <th>Option Name</th>
                         <th>Hide</th>
                     </tr>
                 </thead>
@@ -36,11 +34,11 @@
                         </tr>
                         @foreach($items as $index => $value)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $value->name }}</td>
-                                <td>{{ $value->category }}</td>
-                                <td class="w-25">{{ $value->description }}</td>
-                                <td>
+                                <td style="width: 10%;">{{ $index + 1 }}</td>
+                                <td style="text-align: left !important;">{{ $value->name }}<br>
+                                    <code>{{ $value->description }}</code>
+                                </td>
+                                <td style="width: 10%;">
                                     <div class="form-check form-switch justify-content-center">
                                         <input class="form-check-input toggle_hide" type="checkbox"
                                             id="myToggle{{ $value->id }}"

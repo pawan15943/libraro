@@ -74,7 +74,7 @@
 </div>
 <div class="row">
     <div class="col-lg-12">
-        @php
+    @php
     // Group permissions by their category
     $groupedPermissions = $permissions->groupBy('permission_category_id');
     $x = 1; // Initialize serial number
@@ -84,12 +84,11 @@
         <p>No permissions available.</p>
     @else
         <div class="table-responsive">
-            <table class="table text-center datatable dataTable" id="datatable">
+            <table class="table text-center" >
                 <thead>
                     <tr>
                         <th>S.No.</th>
                         <th>Permission Name</th>
-                        <th>Permission Category</th>
                         <th>About Permission</th>
                         <th>Action</th>
                     </tr>
@@ -97,31 +96,24 @@
                 <tbody>
                     @foreach($groupedPermissions as $categoryId => $permissions)
                         <tr>
-                            <td colspan="5" class="text-start">
+                            <td colspan="5" class="text-start text-center">
                                 <h6 class='role-category-heading'>
-                                    {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
+                                    {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)?->name ?? 'No Category' : 'No Category' }}
+
                                 </h6>
                             </td>
                         </tr>
 
                         @foreach($permissions as $permission)
                             <tr>
-                                <td>{{ $x++ }}</td>
+                                <td style="width:10%;">{{ $x++ }}</td>
 
-                                <td>
-                                    {{ $permission->name }}
-                                    <small>{{ $permission->slug }}</small>
+                                <td style="text-align: left !important;">
+                                    {{ $permission->name }}<br>
+                                     <code>{{ $permission->description }}</code>
                                 </td>
 
-                                <td>
-                                    {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
-                                </td>
-
-                                <td class="w-25">
-                                    <code>{{ $permission->description }}</code>
-                                </td>
-
-                                <td>
+                                <td style="width:10%;">
                                     <ul class="actionalbls">
                                         <li><a href="{{ route('permissions.storeOrUpdate', $permission->id) }}"><i class="fa fa-edit"></i></a></li>
                                         <li>

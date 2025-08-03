@@ -89,30 +89,29 @@ class DashboardController extends Controller
             ->where('status', 1)
             ->first();
             $today = Carbon::today();
-            if ($value) {
+            // if ($value) {
                
-                $endDate = Carbon::parse($value->end_date);
-                $diffInDays = $today->diffInDays($endDate, false);
-                    if ($diffInDays < 0){
-                        $library = Library::where('id', getLibraryId())->first();
-                        if ($library) {
-                            $library->is_paid = 0;
-                            $library->save(); 
-                        }
-                    }
+            //     $endDate = Carbon::parse($value->end_date);
+            //     $diffInDays = $today->diffInDays($endDate, false);
+            //         if ($diffInDays < 0){
+            //             $library = Library::where('id', getLibraryId())->first();
+            //             if ($library) {
+            //                 $library->is_paid = 0;
+            //                 $library->save(); 
+            //             }
+            //         }
                  
-                    if ($diffInDays == -5) {
-                    // Update the transaction status to inactive
-                    $value->status = 0;
-                    $value->save();
+            //         if ($diffInDays == -5) {
+            //         $value->status = 0;
+            //         $value->save();
 
-                    $library = Library::where('id', getLibraryId())->first();
-                    if ($library) {
-                    $library->status = 0;
-                    $library->save(); 
-                    }
-                }
-            }
+            //         $library = Library::where('id', getLibraryId())->first();
+            //         if ($library) {
+            //         $library->status = 0;
+            //         $library->save(); 
+            //         }
+            //     }
+            // }
 
             // redirect check library  
             $iscomp = Library::where('id', getLibraryId())->where('status', 1)->exists();

@@ -305,20 +305,18 @@ class MasterController extends Controller
           
         }
 
-       if ($request->seats) {
-        $existingSeats = Hour::where('branch_id', $request->branch_id)->value('seats');
+        if ($request->seats) {
+            $existingSeats = Hour::where('branch_id', $request->branch_id)->value('seats');
 
-        if ($existingSeats !== null && $existingSeats > $request->seats) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Once you have created the seats, you can only increase the seat count; decreasing the number of seats is not allowed. Reducing the seat count after some seats have been booked may affect the system\'s functionality.'
-            ]);
+            if ($existingSeats !== null && $existingSeats > $request->seats) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Once you have created the seats, you can only increase the seat count; decreasing the number of seats is not allowed. Reducing the seat count after some seats have been booked may affect the system\'s functionality.'
+                ]);
+            }
         }
-    }
-
 
       
-        
         try {
             if($request->day_type_id!=0 || !isset($request->day_type_id) ){
              
@@ -731,6 +729,12 @@ class MasterController extends Controller
         if ($request->databasemodel == 'Expense'){
             $request->validate([
                 'name' => 'required|unique:expenses,name',
+            ]);
+        }
+        if ($request->databasemodel == 'BooksCategory'){
+            $request->validate([
+                'category_name' => 'required',
+                'sub_category_name' => 'required',
             ]);
         }
         

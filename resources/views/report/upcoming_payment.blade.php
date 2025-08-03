@@ -23,57 +23,64 @@ $currentMonth = date('m');
 <div class="row mb-4">
    
     <div class="col-lg-12">
+        <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
-                    <tr>
-                        <th>Seat No.</th>
-                        <th>Learner Info</th>
-                        <th>Contact Info</th>
-                        <th>Active Plan</th>
-                        <th>Due date</th>
-                        <th>Make Payment</th>
-                        <th>Action</th>
+                    <tr>         
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="merged-display">Seat No.</th>
+                        <th class="merged-display">Learner Info</th>
+                        <th class="merged-display">Contact Info</th>
+                        <th class="merged-display">Active Plan</th>
+                        <th class="merged-display">Due date</th>
+                        <th class="merged-display">Make Payment</th>
+                        <th class="merged-display">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach($learners as $value)
                     @foreach ($value->learnerDetails as $detail)
-                    @php
-                   
-                    $today = Carbon::today();
-                    $endDate = Carbon::parse($detail->plan_end_date);
-                    $diffInDays = $today->diffInDays($endDate, false);
-                    @endphp
-
+          
                     <tr>
-                        <td>{{$value->seat_no}}<br>
-                            <small>{{$detail->planType->name}}</small>
+                        <td class="d-none export-seat-no">{{$value->seat_no ?? "GEN" }}</td>
+                        <td class="d-none export-plan-type">{{ $detail->planType->name ?? '' }}</td>
+                        <td class="d-none export-name">{{ $value->name ?? '' }}</td>
+                        <td class="d-none export-email">{{ $value->email ?? 'Email ID Not Available' }}</td>
+                        <td class="d-none export-mobile">{{ $value->mobile ?? '' }}</td>
+                        <td class="d-none export-start-date">{{ $detail->plan_start_date ?? '' }}</td>
+                        <td class="d-none export-plan-name">{{ $detail->plan->name ?? '' }}</td>
+                        <td class="d-none export-end-date">{{ $detail->plan_end_date }}</td>
+                        <td class="d-none export-expiry-status">
+                         {!! getUserStatusDetails($detail->plan_end_date) !!}
                         </td>
-                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
+                        <td class="merged-display">{{$value->seat_no ?? 'GEN'}}<br>
+                            <small>{{$detail->planType->name ?? ''}}</small>
+                        </td>
+                        <td class="merged-display"><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
-                            <br> <small>{{$value->dob}}</small>
+                            <br> <small>{{$value->dob ?? ''}}</small>
                         </td>
-                        <td><span class="truncate" >
+                        <td class="merged-display"><span class="truncate" >
                             {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
                             </span> <br>
-                            <small> +91-{{$value->mobile}}</small>
+                            <small> +91-{{$value->mobile ?? ''}}</small>
                         </td>
-                        <td>{{$detail->plan_start_date}}<br>
+                        <td class="merged-display">{{$detail->plan_start_date}}<br>
                             <small>{{$detail->plan->name}}</small>
                         </td>
                        
-                        <td>{{$detail->plan_end_date}}<br>
-                            
-                        
-                            @if ($diffInDays > 0)
-                            <small class="text-success fs-10 d-block">Expires in {{ $diffInDays }} days</small>
-                            @elseif ($diffInDays < 0)
-                            <small class="text-danger fs-10 d-block">Expired {{ abs($diffInDays) }} days ago</small>
-                            @else
-                            <small class="text-warning fs-10 d-block">Expires today</small>
-                            @endif
+                        <td class="merged-display">{{$detail->plan_end_date}}<br>
+                             {!! getUserStatusDetails($detail->plan_end_date) !!}
                         </td>
                       
                         <td>
@@ -108,9 +115,58 @@ $currentMonth = date('m');
 </div>
 
 <script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable');
-       
+    $(document).ready(function () {
+        var table =$('#datatable').DataTable({
+           
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    text: 'Export CSV',
+                    title: 'UpcomingPaymentReport',
+                    exportOptions: {
+                        columns: function (idx, data, node) {
+                             return $(node).hasClass('d-none'); // export only hidden columns
+                        },
+                        format: {
+                            body: function (data) {
+                                return data.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+                            },
+                             header: function (data, columnIdx) {
+                                const headers = [
+                                    'Seat No',
+                                    'Plan Type',
+                                    'Name',
+                                    'Email',
+                                    'Mobile',
+                                    'Start Date',
+                                    'Plan Name',
+                                    'Due Date',
+                                    'Expiry Status',
+                                ];
+                                return headers[columnIdx] ?? '';
+                            }
+                        }
+                    }
+
+                }
+            ],
+             columnDefs: [
+                { targets: 'export-seat-no', visible: false },
+                { targets: 'export-plan-type', visible: false },
+                { targets: 'export-name', visible: false },
+                { targets: 'export-email', visible: false },
+                { targets: 'export-mobile', visible: false },
+                { targets: 'export-start-date', visible: false },
+                { targets: 'export-plan-name', visible: false },
+                { targets: 'export-end-date', visible: false },
+                { targets: 'export-expiry-status', visible: false },
+                { targets: 'merged-display', visible: true }
+            ],
+           
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10
+        });
+         table.buttons().container().appendTo('#export');
     });
 </script>
 

@@ -23,7 +23,7 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
-
+use Illuminate\Support\Facades\Mail;
 class SiteController extends Controller
 {
     public function aboutUs()
@@ -54,8 +54,6 @@ class SiteController extends Controller
     public function home()
     {
         $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->get();
-
-
         $subscriptions = Subscription::with('permissions')->get();
         $premiumSub = Subscription::orderBy('id', 'DESC')->first();
         return view('site.home', compact('subscriptions', 'premiumSub', 'happy_customers'));
@@ -424,5 +422,45 @@ class SiteController extends Controller
         Setting::create($data);
 
         return redirect()->back()->with('success', 'Video uploaded!');
+    }
+
+    public function libraryManagmentLandingPage(){
+        $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->get();
+        $subscriptions = Subscription::with('permissions')->get();
+        $premiumSub = Subscription::orderBy('id', 'DESC')->first();
+        return view('site.library-managment-portal',compact('premiumSub','subscriptions','happy_customers'));
+    }
+
+    public function leadstore(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'library_name' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:15',
+            'email' => 'required|email|max:255',
+            'terms' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        unset($data['terms']);
+        DB::table('lp_lead')->insert($data);
+        $this->landingPageSuccessMail($data);
+       
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Inquiry submitted successfully!'
+        ]);
+    }
+
+     public function landingPageSuccessMail($data){
+          Mail::send('email.lending-page-response-mail', $data, function($message) use ($data) {
+            $message->to($data['email'], $data['library_name'])->subject('Welcome to Libraro – Thank You for Connecting With Us');
+        });
     }
 }

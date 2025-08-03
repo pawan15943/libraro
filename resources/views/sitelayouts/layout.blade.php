@@ -18,6 +18,7 @@
     <meta name="description" content="{{ $page->meta_description ?? '' }}">
 
     <meta name="keywords" content="{{$page->meta_keyword ?? ''}}">
+    <link rel="canonical" href="{{$page->canonical ?? ''}}" />
 
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">

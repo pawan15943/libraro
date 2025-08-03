@@ -230,7 +230,7 @@
                         </span>
                         @enderror
                     </div>
-                     <div class="col-lg-6">
+                    <div class="col-lg-6">
                         <label for="">Extend Days <span>*</span></label>
                         <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" placeholder="Enter Days" value="{{old('extend_days')}}">
                         @error('extend_days')
@@ -239,7 +239,15 @@
                         </span>
                         @enderror
                     </div>
-                    
+                    <div class="col-lg-6">
+                        <label for="">Token Money(optional) </label>
+                        <input type="text" class="form-control digit-only @error('token_money') is-invalid @enderror no-validate" name="token_money" placeholder="Enter Days" value="{{old('token_money')}}">
+                        @error('token_money')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
                 </div>
             </div>
             @endif

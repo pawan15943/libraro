@@ -5,6 +5,9 @@
         var today = new Date();
         var formattedDate = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
         $('#plan_start_date').val(formattedDate); 
+
+       
+  
     });
   
    

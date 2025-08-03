@@ -115,7 +115,6 @@ class LoadMenus
                     $upcomingdiffInDays = null;
                 }
             } else {
-
                 $upcomingdiffInDays = null;
             }
 
@@ -247,8 +246,18 @@ class LoadMenus
                 $availableSeats->push($seatNo);
             }
         }
-
-         
+        if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
+              $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
+                $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
+                $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
+                $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false); // can be negative
+                $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
+        }else{
+            $diffInExtensionDays='';
+            $inExtension_lib='';
+            $lib_extenday='';
+        }
+      
         $exams=DB::table('exams')->get();
             View::share('primary_color', $primary_color);
             View::share('checkSub', $checkSub);
@@ -284,7 +293,10 @@ class LoadMenus
             View::share('learner_is_renew', $learner_is_renew);
             View::share('diffInDays', $diffInDays);
             View::share('libraryupdates', $libraryupdates);
-            View::share('learnerupdates', $learnerupdates);
+            View::share('diffInExtensionDays', $diffInExtensionDays);
+            View::share('inExtension_lib', $inExtension_lib);
+            View::share('lib_extenday', $lib_extenday);
+          
         }
         if (getAuthenticatedUser() && Auth::guard('library')->check()) {
             $user = getAuthenticatedUser();
@@ -329,61 +341,42 @@ class LoadMenus
 
     public function statusInactive()
     {
+        \Log::info('Start library statusInactive');
         $userId = getAuthenticatedUser()->id;
-        $today = Carbon::today();
-        $yesterday = $today->subDay();
-        $statuscheck = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryData())->where('is_paid', 1)->where('end_date', '<=', $yesterday->format('Y-m-d'))->exists();
-        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryData())->where('is_paid', 1)->where('end_date', '>', $today->format('Y-m-d'))->exists();
-        if ($statuscheck && ($is_renew == false)) {
+         $today = Carbon::now('Asia/Kolkata')->startOfDay();
+       
+        $extenday=Library::where('id', $userId)->value('extend_days') ?? 0;
+        $enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', $userId)->where('is_paid', 1)->value('end_date')??0;
+        $planEndDateWithExtension = Carbon::parse($enddate)->addDays($extenday);
+        
+     
+        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryData())->where('is_paid', 1)->where('end_date', '>', $planEndDateWithExtension->format('Y-m-d'))->exists();
+       
+
+        \Log::info([
+        'planEndDateWithExtension' => $planEndDateWithExtension->toDateString(),
+        'today' => $today->toDateString(),
+        'is_renew' => $is_renew,
+        'app_timezone' => config('app.timezone'),
+    ]);
+         if ($planEndDateWithExtension->lt($today) && !$is_renew) {
+            \Log::info('Start library statusInactive condition');
             Library::where('id', $userId)
-                ->where('status', 1)
+                ->where('status', 1) 
                 ->update(['status' => 0, 'is_paid' => 0]);
 
             // Mark the expired transaction status as inactive
-            LibraryTransaction::withoutGlobalScopes()->where('library_id', $userId)
-                ->where('is_paid', 1)
-                ->where('status', 1)
-                ->whereDate('end_date', '=', $yesterday->format('Y-m-d'))
-                ->orWhere('end_date', '<', $today->format('Y-m-d'))
-                ->update(['status' => 0]);
+           LibraryTransaction::withoutGlobalScopes()
+            ->where('library_id', $userId)
+            ->where('is_paid', 1)
+            ->where('status', 1)
+            ->where(function ($query) use ($planEndDateWithExtension, $today) {
+                $query->whereDate('end_date', '=', $planEndDateWithExtension->format('Y-m-d'))
+                    ->orWhereDate('end_date', '<', $planEndDateWithExtension->format('Y-m-d'));
+            })
+            ->update(['status' => 0]);
+
         }
     }
-    // public function dataUpdate()
-    // {
-    //     $userUpdates = Learner::where('library_id',getLibraryId())->where('status', 1)->get();
-
-    //     foreach ($userUpdates as $userUpdate) {
-    //         $today = date('Y-m-d');
-    //         $customerdatas = LearnerDetail::where('learner_id', $userUpdate->id)->where('status', 1)->get();
-
-    //         $extend_days_data = Hour::where('library_id', getLibraryId())->first();
-    //         $extend_day = $extend_days_data ? $extend_days_data->extend_days : 0;
-    //         foreach ($customerdatas as $customerdata) {
-    //             $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
-
-    //             $current_date = Carbon::today();
-    //             $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //                 ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
-    //                 ->exists();
-    //             $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //                 ->where('plan_end_date', '<', $current_date->copy()->addDays(5))
-    //                 ->exists();
-
-
-    //             $isRenewed = $hasFuturePlan && $hasPastPlan;
-    //             if ($planEndDateWithExtension->lte($today)) {
-    //                 $userUpdate->update(['status' => 0]);
-    //                 $customerdata->update(['status' => 0]);
-    //             } elseif ($isRenewed) {
-    //                 LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
-    //                 LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
-    //             } else {
-    //                 $userUpdate->update(['status' => 1]);
-    //                 LearnerDetail::where('learner_id', $userUpdate->learner_id)->where('status', 0)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $today)->update(['status' => 1]);
-    //             }
-    //         }
-    //     }
-
-      
-    // }
+ 
 }

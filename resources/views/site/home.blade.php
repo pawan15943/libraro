@@ -577,7 +577,7 @@
                 <h2 class="mb-4">Would you like to <br><span>Schedule a free Demo?</span></h2>
                 <form class="me-3" id="demoRequest">
                     @csrf
-                    <input type="hidden" name="databasemodel" value="DemoRequest">
+                    <input type="hidden" name="databasemodel" value="">
                     <div class="form-box">
                         <div class="row g-4">
                             <div class="col-lg-12">

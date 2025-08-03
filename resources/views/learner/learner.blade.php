@@ -306,9 +306,9 @@
 
 
                                     @can('has-permission', 'Change Plan')
-                                     @if(!in_array('14', toggleHideField()))
-                                    <li><a href="{{route('learner.change.plan',$value->id)}}" title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
-                                    @endif
+                                        @if(!in_array('14', toggleHideField()))
+                                        <li><a href="{{route('learner.change.plan',$value->id)}}" title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
+                                        @endif
                                     @endcan
                                     <!---ID Card generate-->
                                      @if(!in_array('15', toggleHideField()))
@@ -321,6 +321,7 @@
                                         </form>
                                     </li>
                                     @endif
+                                    <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class=""><i class="fa-solid fa-printer "></i> </a></li>
                                     <!-- upgrade Seat-->
                                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 && $planStatus['diff_extend_day'] <= 5)
 
@@ -360,8 +361,8 @@
                                             onclick="incrementMessageCount({{ $value->id }}, 'email')"
                                             class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i></a></li>
                                     @endcan
-                                    @endif
-
+                                @endif
+                                <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-regular fa-credit-card"></i></a></li>
                             </ul>
                         </td>
                         <td>

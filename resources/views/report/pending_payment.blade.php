@@ -106,19 +106,29 @@ $currentMonth = date('m');
 <div class="row mb-4 mt-4">
    
     <div class="col-lg-12">
+        <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
                     <tr>
-                        <th>Seat No.</th>
-                        <th>Learner Info</th>
-                        <th>Contact Info</th>
-                        <th>Active Plan</th>
-                        <th>Due date</th>
-                       
-                        <th>is_Extended </th>
-                        <th>Make Payment</th>
-                        <th>Action</th>
+                         <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="d-none"></th>
+                        <th class="merged-display">Seat No.</th>
+                        <th class="merged-display">Learner Info</th>
+                        <th class="merged-display">Contact Info</th>
+                        <th class="merged-display">Active Plan</th>
+                        <th class="merged-display">Due date</th>
+                        <th class="merged-display">is_Extended </th>
+                        <th class="merged-display">Make Payment</th>
+                        <th class="merged-display">Action</th>
                     </tr>
                 </thead>
 
@@ -135,48 +145,56 @@ $currentMonth = date('m');
                     @endphp
 
                     <tr>
-                        <td>{{$value->learner->seat_no}}<br>
-                            <small>{{$value->planType->name}}</small>
+                        <td class="d-none export-seat-no">{{ $value->learner->seat_no ?? "GEN" }}</td>
+                        <td class="d-none export-plan-type">{{ $value->planType->name ?? '' }}</td>
+                        <td class="d-none export-name">{{ $value->learner->name ?? '' }}</td>
+                        <td class="d-none export-email">{{ $value->learner->email ?? 'Email ID Not Available' }}</td>
+                        <td class="d-none export-mobile">{{ $value->learner->mobile ?? '' }}</td>
+                        <td class="d-none export-start-date">{{ $value->plan_start_date }}</td>
+                        <td class="d-none export-plan-name">{{ $value->plan->name ?? '' }}</td>
+                        <td class="d-none export-end-date">{{ $value->plan_end_date }}</td>
+                        <td class="d-none export-expiry-status">
+                         {!! getUserStatusDetails($value->plan_end_date) !!}
                         </td>
-                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
-                            <br> <small>{{$value->learner->dob}}</small>
+                        <td class="d-none export-is_extended">
+                             @if ($diffInDays <= 0 && $diffExtendDay>0)
+                                Yes
+                            @else
+                                 No
+                            @endif</td>
+                        <td class="merged-display">{{$value->learner->seat_no ?? 'GEN'}}<br>
+                            <small>{{$value->planType->name ?? ''}}</small>
                         </td>
-                        <td><span class="truncate" >
+                        <td class="merged-display"> <span class="uppercase truncate name" data-bs-toggle="tooltip"
+                                data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>
+                            <br> <small>{{$value->learner->dob ?? ''}}</small>
+                        </td>
+                        <td class="merged-display"><span class="truncate" >
                             {!! $value->learner->email ? $value->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
-                            </span> <br>
-                            <small> +91-{{$value->learner->mobile}}</small>
+                            </span>  <br>
+                            <small> +91-{{$value->learner->mobile ?? ''}}</small>
                         </td>
-                        <td>{{$value->plan_start_date}}<br>
-                            <small>{{$value->plan->name}}</small>
+                        <td class="merged-display">{{$value->plan_start_date ?? ''}}<br>
+                            <small>{{$value->plan->name ?? ''}}</small>
                         </td>
                        
-                        <td>{{$value->plan_end_date}}<br>
-                            @if ($diffInDays > 0)
-                            <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                        @elseif ($diffInDays <= 0 && $diffExtendDay>0)
-                            <small class="text-danger fs-10 d-block">Extension active! {{ abs($diffExtendDay) }} days Left.</small>
-                        @elseif ($diffInDays < 0 && $diffExtendDay==0)
-                            <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                        @else
-                            <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                        @endif
-
+                        <td class="merged-display">{{$value->plan_end_date}}<br>
+                          {!! getUserStatusDetails($value->plan_end_date) !!}
                         </td>
-                        <td>
+                        <td class="merged-display">
                             @if ($diffInDays <= 0 && $diffExtendDay>0)
                                 Yes
                             @else
                                  No
                             @endif
                         </td>
-                        <td>
+                        <td class="merged-display">
                             <ul class="actionalbls">
                             <!-- Make payment -->
                             <li><a href="{{route('learner.payment',$value->id)}}" title="Payment Lerners" class="payment-learner"><i class="fas fa-credit-card"></i></a></li>
                             </ul>
                         </td>
-                        <td>
+                        <td class="merged-display">
                             <ul class="actionalbls">
                              <!-- Sent Mail -->
                              <li>
@@ -205,9 +223,61 @@ $currentMonth = date('m');
 </div>
 
 <script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable');
-       
+    $(document).ready(function () {
+       var table = $('#datatable').DataTable({
+           
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    text: 'Export CSV',
+                    title: 'PendingPaymentReport',
+                    exportOptions: {
+                        columns: function (idx, data, node) {
+                             return $(node).hasClass('d-none'); // export only hidden columns
+                        },
+                        format: {
+                            body: function (data) {
+                                return data.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+                            },
+                             header: function (data, columnIdx) {
+                                const headers = [
+                                    'Seat No',
+                                    'Plan Type',
+                                    'Name',
+                                    'Email',
+                                    'Mobile',
+                                    'Start Date',
+                                    'Plan Name',
+                                    'Due Date',
+                                    'Expiry Status',
+                                    'IS Extended',
+                                ];
+                                return headers[columnIdx] ?? '';
+                            }
+                        }
+                    }
+
+                }
+            ],
+             columnDefs: [
+                { targets: 'export-seat-no', visible: false },
+                { targets: 'export-plan-type', visible: false },
+                { targets: 'export-name', visible: false },
+                { targets: 'export-email', visible: false },
+                { targets: 'export-mobile', visible: false },
+                { targets: 'export-start-date', visible: false },
+                { targets: 'export-plan-name', visible: false },
+                { targets: 'export-end-date', visible: false },
+                { targets: 'export-expiry-status', visible: false },
+                { targets: 'export-is_extended', visible: false },
+                { targets: 'merged-display', visible: true }
+            ],
+           
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10
+        });
+         // Move export button to a custom container
+        table.buttons().container().appendTo('#export');
     });
 </script>
 

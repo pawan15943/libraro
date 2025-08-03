@@ -600,7 +600,7 @@ if (!function_exists('filterPlantypeFromseat')) {
             $planTypesRemovals = array_unique($planTypesRemovals);
 
             // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
+            $first_record = Hour::where('branch_id', getCurrentBranch())->select('hour')->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($totalBookedHours >= $total_hour) {
@@ -683,7 +683,7 @@ if (!function_exists('videoGet')) {
 
 if (!function_exists('toggleHideField')) {
      function toggleHideField(){
-        $branch = Branch::where('id', getCurrentBranch())->first();
+        $branch = Branch::where('id', getCurrentBranch())->select('hide_field')->first();
         $hiddenFields = [];
 
         if ($branch && $branch->hide_field) {
@@ -693,6 +693,19 @@ if (!function_exists('toggleHideField')) {
         return $hiddenFields;
 
      }
+}
+
+if (!function_exists('token_money')) {
+    function token_money(){
+        $token_money = 0;
+
+        $branch = Branch::where('id', getCurrentBranch())->select('token_money')->first();
+
+        if ($branch) {
+            $token_money = $branch->token_money;
+        }
+        return $token_money;
+    }
 }
 
 

@@ -181,16 +181,47 @@
                                     </div>
                                 </div>
                                 @endif
-                                 @if(!in_array('4', toggleHideField()))
-                                <div class="col-lg-12 ">
+                                @if(!in_array('8', toggleHideField()))
+                                <div class="col-lg-6">
+                                    <label for="profile_picture">Upload Profile Photo</label>
+                                    <input type="file" class="form-control" name="profile_picture" id="profile_picture"
+                                        autocomplete="off" accept=".jpeg, .jpg, .png, .webp">
+
+                                </div> 
+                                @endif
+                                @if(!in_array('29', toggleHideField()))
+                                <div class="col-lg-6 ">
+                                    <label for="father_name">Father Name</label>
+                                    <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name">
+                                </div>
+                                @endif
+                                 @if(!in_array('30', toggleHideField()))
+                                <div class="col-lg-6 ">
+                                    <label for="alternate_mobile">Alternate Mobile No.</label>
+                                    <input type="text" class="form-control digit-only" name="alternate_mobile" id="alternate_mobile" maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No.">
+                                </div>
+                                @endif
+                                @if(!in_array('4', toggleHideField()))
+                                <div class="col-lg-6 ">
+                                    <label for="prepareFor">Prepare For</label>
                                     <select name="exam_id" id="prepareFor" class="form-select">
                                         <option value="">Learner is Prepare For Exam</option>
                                         @foreach($exams as $key => $value)
                                         <option value="{{$value->id}}">{{$value->name}}</option>   
                                         @endforeach
-                                        
-                                      
                                     </select>
+                                </div>
+                                @endif
+                                 @if(!in_array('32', toggleHideField()))
+                                <div class="col-lg-12 ">
+                                    <label for="address">Address</label>
+                                    <textarea class="form-control" name="address" id="address" rows="3" placeholder="Enter address"></textarea>
+                                </div>
+                                @endif
+                                 @if(!in_array('31', toggleHideField()))
+                                <div class="col-lg-12 ">
+                                    <label for="remark">Remark</label>
+                                    <textarea class="form-control" name="remark" id="remark" rows="3" placeholder="Enter Remark"></textarea>
                                 </div>
                                 @endif
                             </div>
@@ -241,7 +272,6 @@
 
                             <div class="col-lg-4 col-6">
                                 <label for="">Select Plan <span>*</span></label>
-
                                 <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)>
 
                                 </select>
@@ -310,3 +340,5 @@
     </div>
 </div>
 @endcan
+
+

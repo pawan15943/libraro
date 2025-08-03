@@ -83,13 +83,13 @@ $currentMonth = date('m');
 <div class="row mb-4 mt-4">
    
     <div class="col-lg-12">
+        <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
                     <tr>
                         <th>Seat No.</th>
                         <th>Learner Info</th>
-                        {{-- <th>Contact Info</th> --}}
                         <th>Plan Price</th>
                          <th>Locker Amt</th>
                          <th>Discount</th>
@@ -108,16 +108,10 @@ $currentMonth = date('m');
                     <tr>
                         <td>{{$value->learner->seat_no ?? 'General'}}<br> </td>
                         <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name}}</span>
-                            <br> <small>{{$value->learner->dob}}</small>
+                                data-bs-title="{{$value->learner->name ?? ''}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>
+                            {{-- <br> <small>{{$value->learner->dob ?? ''}}</small> --}}
                         </td>
                         
-                        {{-- <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{$value->learner->email }}</span> <br>
-                            <small> +91-{{$value->learner->mobile}}</small>
-                        </td> --}}
                         <td>₹ {{myPlanPrice($value->learner_detail_id)}}</td>
                          <td>₹ {{$value->locker_amount}} </td>
                          <td>₹ {{$value->discount_amount}} </td>
@@ -162,10 +156,28 @@ $currentMonth = date('m');
 </div>
 
 <script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable');
-       
+    $(document).ready(function () {
+        var table =$('#datatable').DataTable({
+            
+           buttons: [
+                {
+                    extend: 'csvHtml5',
+                    text: 'Export CSV',
+                    bom: true, 
+                    exportOptions: {
+                        columns: ':visible'
+                    },
+                    title: 'PaymentCollection' 
+                }
+            ],
+
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10
+        });
+        // Move export button to a custom container
+        table.buttons().container().appendTo('#export');
     });
 </script>
+
 
 @endsection

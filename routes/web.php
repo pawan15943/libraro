@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\BookManagementController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\DashboardController;
@@ -57,7 +58,8 @@ Route::get('cityGetStateWise', [MasterController::class, 'stateWiseCity'])->name
 Route::get('library/create', [LibraryController::class, 'create'])->name('library.create');
 Route::post('library/store', [LibraryController::class, 'store'])->name('library.store');
 Route::post('/fee/generate-receipt', [Controller::class, 'generateReceipt'])->name('fee.generateReceipt');
-
+Route::get('library-managment-software', [SiteController::class, 'libraryManagmentLandingPage'])->name('library.managment.software');
+Route::post('lead/store', [SiteController::class, 'leadstore'])->name('lead.store');
 Route::get('about-us', [SiteController::class, 'aboutUs'])->name('about-us');
 Route::get('blog', [SiteController::class, 'blog'])->name('blog');
 Route::get('contact-us', [SiteController::class, 'contactUs'])->name('contact-us');
@@ -176,8 +178,9 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification'); 
       Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
       Route::get('enquiry', [LibraryController::class, 'getEnquiry'])->name('library.enquiry');
-  
       Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
+      Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
+      Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
       
     });
    
@@ -218,9 +221,11 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/feedback', [LibraryController::class, 'learnerFeedback'])->name('library.learner.feedback');
       Route::post('/clarification/submit/status', [LibraryController::class, 'clarificationStatus'])->name('clarification.submit.status');
       Route::get('/library/transaction/view', [DashboardController::class, 'libraryTran'])->name('library.transaction.view');
-      Route::get('/refresh-csrf', function () {
-          return response()->json(['token' => csrf_token()]);
-      });
+      Route::get('other/payment/{id?}', [LearnerController::class, 'makeOtherPayment'])->name('learner.other.payment');
+      Route::post('other/payment/store', [LearnerController::class, 'otherPaymentStore'])->name('learner.other.payment.store');
+      Route::get('learner/checklist', [LearnerController::class, 'learnerChecklist'])->name('learner.checklist');
+      Route::post('/learner/idcard/bulk', [LearnerController::class, 'printBulkIdCard'])->name('learner.idcard.bulk');
+
     });
     Route::get('seat/history/list', [LearnerController::class, 'seatHistory'])->name('seats.history');
     Route::get('seats/history/{id?}', [LearnerController::class, 'history'])->name('seats.history.show');
@@ -236,7 +241,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
     Route::get('getPrice', [LearnerController::class, 'getPrice'])->name('getPricePlanwise');
     Route::get('getPricePlanwiseUpgrade', [LearnerController::class, 'getPricePlanwiseUpgrade'])->name('getPricePlanwiseUpgrade');
     Route::post('generateIdCard', [LearnerController::class, 'generateIdCard'])->name('generateIdCard');
-
+    Route::get('idCard/{id}', [LearnerController::class, 'learnerIdCard'])->name('idCard');
     Route::get('/locker-price', function (\Illuminate\Http\Request $req) {
     return response()->json([
         'price' => getLockerPrice($req->query('plan_id'))

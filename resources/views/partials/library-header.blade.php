@@ -26,14 +26,29 @@ $user = getAuthenticatedUser();
             <div class="modal-body">
                 <button type="button" class="btn-close align-self-right" data-bs-dismiss="modal" aria-label="Close"></button>
                 <img src="{{ url('public/img/plan-expire.png') }}" alt="plan-expire" class="plan-expire img-fluid">
-                @if(isset($librarydiffInDays) && $librarydiffInDays < 0)
-                    <p class="text-danger text-center">Your library plan expired {{ abs($librarydiffInDays) }} days. Please consider renewing your plan!</p>
-                    @elseif(isset($librarydiffInDays) && $librarydiffInDays > 0)
-                    <p class="text-danger text-center">Your library plan will expire in {{ $librarydiffInDays }} days. Please consider renewing your plan!</p>
-                    @else
-                    <p class="text-danger text-center text-bold">Your library plan expires today. Please consider renewing your plan!</p>
-                    @endif
-                    <button type="button" class="btn btn-primary button m-auto w-100" data-bs-dismiss="modal" aria-label="Close">Renew your Subscription</button>
+                @if(isset($librarydiffInDays) && $librarydiffInDays > 0)
+                    <p class="text-success text-center">
+                        Your library plan will expire in {{ $librarydiffInDays }} day{{ $librarydiffInDays > 1 ? 's' : '' }}. Please consider renewing your plan!
+                    </p>
+                @elseif(isset($librarydiffInDays) && $librarydiffInDays == 0)
+                    <p class="text-warning text-center text-bold">
+                        Your library plan expires today. Please consider renewing your plan!
+                    </p>
+                @elseif(isset($inExtension_lib) && $inExtension_lib && $diffInExtensionDays > 0)
+                    <p class="text-warning text-center">
+                        Your plan has expired. Your {{$lib_extenday}}-day extension is active and will end in {{ $diffInExtensionDays }} day{{ $diffInExtensionDays > 1 ? 's' : '' }}.
+                    </p>
+                @elseif(isset($inExtension_lib) && $inExtension_lib && $diffInExtensionDays == 0)
+                    <p class="text-danger text-center">
+                        Your plan has expired. Your {{$lib_extenday}}-day extension ends today. Please renew your plan to avoid deactivation.
+                    </p>
+                @else
+                    <p class="text-danger text-center">
+                        Your library plan and extension expired {{ abs($diffInExtensionDays) }} day{{ abs($diffInExtensionDays) > 1 ? 's' : '' }} ago. Please renew your plan to regain access.
+                    </p>
+                @endif
+
+                <button type="button" class="btn btn-primary button m-auto w-100" data-bs-dismiss="modal" aria-label="Close">Renew your Subscription</button>
             </div>
         </div>
     </div>
@@ -50,7 +65,7 @@ $user = getAuthenticatedUser();
             <div class="modal-body text-center p-4">
                 <h5 class="modal-title text-center mb-3">🎉 Congratulations, Library Owner!</h5>
                 <p>
-Your upcoming plan is ready. Activate it now to keep enjoying all our services!</p>
+                    Your upcoming plan is ready. Activate it now to keep enjoying all our services!</p>
                 <button id="renewButton" type="button" class="btn btn-primary button w-50" onclick="renewPlan()">Activate Now</button>
             </div>
            
@@ -63,37 +78,52 @@ Your upcoming plan is ready. Activate it now to keep enjoying all our services!<
         <div class="conatent flex" style="flex: 1;">
             <i class="fa fa-bars mr-2" id="sidebar"></i>
             @if(isset($upcomingdiffInDays) && $user && $is_renew && $isProfile)
-            <small class="text-danger ml-2"> <i class="fa fa-clock"></i>
-                @if($upcomingdiffInDays > 0)
-                Upcoming Plan after {{$upcomingdiffInDays}} days
-                @endif
-            </small>
+                <small class="text-danger ml-2"> <i class="fa fa-clock"></i>
+                    @if($upcomingdiffInDays > 0)
+                    Upcoming Plan after {{$upcomingdiffInDays}} days
+                    @endif
+                </small>
             @endif
 
             @if(isset($librarydiffInDays) && $user && !$is_renew && $isProfile)
-            @if($librarydiffInDays > 0)
-            <small class="text-success ml-2"> <i class="fa fa-clock"></i> Enjoy your plan for the next {{$librarydiffInDays}} days!</small>
-            @elseif($librarydiffInDays < 0)
-                <small class="text-danger ml-2"><i class="fa fa-clock"></i> Plan expired {{ abs($librarydiffInDays) }} days ago </small>
+               @if ($librarydiffInDays > 0)
+                    <small class="text-success ml-2">
+                        <i class="fa fa-clock"></i> Enjoy your plan for the next {{ $librarydiffInDays }} day{{ $librarydiffInDays > 1 ? 's' : '' }}!
+                    </small>
+                @elseif ($librarydiffInDays == 0)
+                    <small class="text-warning ml-2">
+                        <i class="fa fa-clock"></i> Plan expires today
+                    </small>
+                @elseif ($inExtension_lib && $diffInExtensionDays > 0)
+                    <small class="text-warning ml-2">
+                        <i class="fa fa-clock"></i> Library expired. {{$lib_extenday}}-day extension ends in {{ $diffInExtensionDays }} day{{ $diffInExtensionDays > 1 ? 's' : '' }}.
+                    </small>
+                @elseif ($inExtension_lib && $diffInExtensionDays == 0)
+                    <small class="text-danger ml-2">
+                        <i class="fa fa-clock"></i> Library expired. {{$lib_extenday}}-day extension ends today.
+                    </small>
                 @else
-                <small class="text-danger ml-2"> <i class="fa fa-clock"></i> Plan expires today </small>
+                    <small class="text-danger ml-2">
+                        <i class="fa fa-clock"></i> Plan expired {{ abs($diffInExtensionDays) }} day{{ abs($diffInExtensionDays) > 1 ? 's' : '' }} ago
+                    </small>
                 @endif
+
 
                 @if(($librarydiffInDays <= 5 && !$is_renew && $isProfile))
                     <script>
-                    window.onload = function() {
-                    if (!sessionStorage.getItem("planExpiryModalShown")) {
-                    setTimeout(function() {
-                    var modal = new bootstrap.Modal(document.getElementById('planExpiryModal'));
-                    modal.show();
-                    sessionStorage.setItem("planExpiryModalShown", "true");
-                    }, 1000);
-                    }
-                    };
+                        window.onload = function() {
+                        if (!sessionStorage.getItem("planExpiryModalShown")) {
+                        setTimeout(function() {
+                        var modal = new bootstrap.Modal(document.getElementById('planExpiryModal'));
+                        modal.show();
+                        sessionStorage.setItem("planExpiryModalShown", "true");
+                        }, 1000);
+                        }
+                        };
                     </script>
                     <a href="{{ route('subscriptions.choosePlan') }}" type="button" class="btn btn-primary button">Renew your plan</a>
-                    @endif
-                    @endif
+                @endif
+            @endif
         </div>
 
         @if(countBranch() > 0)
