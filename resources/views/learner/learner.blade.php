@@ -321,7 +321,9 @@
                                         </form>
                                     </li>
                                     @endif
-                                    <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class=""><i class="fa-solid fa-printer "></i> </a></li>
+                                    @if(!in_array('15', toggleHideField()))
+                                    <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class=""><i class="fa-solid fa-id-card-clip"></i> </a></li>
+                                    @endif
                                     <!-- upgrade Seat-->
                                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 && $planStatus['diff_extend_day'] <= 5)
 

@@ -75,7 +75,7 @@
 
         .card.back,
         .card.front {
-            background: url('images/bg-id-card.webp');
+             background: url('../public/img/bg-id-card.webp');
             background-size: cover;
             background-repeat: no-repeat;
         }

@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -37,9 +38,9 @@ class AdminController extends Controller
             $data = Library::where('id', $library_id)
             ->with('subscription.permissions')  
             ->first();
-            $plans=Subscription::pluck('name','id');
-         
-            return view('administrator.library-payment',compact('plans','library_id'));
+            $subscriptionPlans=Subscription::pluck('name','id');
+            
+            return view('administrator.library-payment',compact('subscriptionPlans','library_id'));
     }
 
     public function libraryPaymentStore(Request $request)
@@ -131,17 +132,27 @@ class AdminController extends Controller
         ];
        
         if ($library_tra && in_array($request->payment, ['pending', 'new'])) {
-           
+           Log::info('Updating existing library transaction', ['transaction_id' => $library_tra->id, 'data' => $data]);
             $library_tra->update($data);
         } else {
-           
+            Log::info('Creating new library transaction', ['data' => $data]);
             LibraryTransaction::create($data);
         }
     
         if ($request->payment == 'new') {
+            Log::info('NEW payment detected, updating status');
             Library::where('id', $request->library_id)->update([
                 'library_type' => $subscription,
                 'is_paid' => 1,
+            ]);
+        }
+
+        if ($request->payment == 'renew') {
+            Log::info('Renewal payment detected, updating status');
+            Library::where('id', $request->library_id)->update([
+                'library_type' => $subscription,
+                'is_paid' => 1,
+                'status' => 1,
             ]);
         }
     
@@ -150,7 +161,7 @@ class AdminController extends Controller
 
 
     public function getSubscriptionFees(Request $request){
-       
+     
         if(isset($request->library_type) && isset($request->month) && !empty($request->library_type) && !empty($request->month)){
         
             $data=Subscription::where('id',$request->library_type)->first();

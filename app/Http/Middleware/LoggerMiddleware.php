@@ -24,7 +24,7 @@ class LoggerMiddleware
                 $this->logAction($request, $response, $user);
             }
 
-            $this->logSuccess($request, $response);
+            // $this->logSuccess($request, $response);
 
             return $response;
         } catch (\Exception $ex) {

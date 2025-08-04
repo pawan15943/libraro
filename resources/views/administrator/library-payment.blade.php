@@ -22,8 +22,8 @@
     <div class="row mb-4">
         <div class="col-lg-12">
             <div class="card">
-                <div class="row g-4">
-                    <div class="col-lg-6">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-4">
                         <label for="">Payment<span>*</span></label>
                         <select name="payment" class="form-select @error('payment') is-invalid @enderror">
                             <option value="">Select Payment</option>
@@ -39,7 +39,7 @@
                         </span>
                         @enderror
                     </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-4">
                         <label for="">Subscription Type <span>*</span></label>
                         <select name="month" class="form-select @error('month') is-invalid @enderror" id="month">
                             <option value="">Select</option>
@@ -53,12 +53,13 @@
                         </span>
                         @enderror
                     </div>
+                    
                     <div class="col-lg-4">
                         <label for="">Plan <span>*</span></label>
                         <select name="library_type" class="form-select @error('library_type') is-invalid @enderror" id="library_type">
                          
                             <option value="">Select</option>
-                            @foreach($plans as $key => $value)
+                            @foreach($subscriptionPlans as $key => $value)
                             <option value="{{$key}}">{{$value}}</option>  
                             @endforeach
                           
@@ -71,7 +72,7 @@
                     </div>
                 </div>
                 
-                <div class="row justify-content-center mb-4">
+                <div class="row g-4 justify-content-center">
                 
                     <div class="col-lg-7">
                         <div class="card">
@@ -117,7 +118,7 @@
                         
                     </div> 
                     <div class="col-lg-5">
-                        <div class="card mt-4">
+                        <div class="card">
                             <h4 class="mb-3 text-center">Transaction Summery</h4>
                             <div class="row g-4">
                                 <div class="col-lg-6">
@@ -185,6 +186,7 @@
             },
             dataType: 'json',
             success: function(response) {
+               
                 if (response.status === 'success') {
                     // Populate order summary
                     $('#amount_paid').text(response.fees);
@@ -209,7 +211,7 @@
         $(document.body).on('change', '#library_type, #month', function () {
             var library_type = $('#library_type').val();
             var month = $('#month').val();
-            
+          
             if (library_type && month) {
                 getFees(library_type, month);
             }

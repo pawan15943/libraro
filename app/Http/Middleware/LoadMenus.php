@@ -156,8 +156,7 @@ class LoadMenus
             $total_seats = $first_record ? $first_record->seats : 0;
             $total_hour=$first_record ? $first_record->hour : 0;
            
-            $this->statusInactive();
-            $this->updateLibraryStatus();
+            
             // $this->dataUpdate();
            
 
@@ -247,6 +246,8 @@ class LoadMenus
             }
         }
         if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
+            $this->statusInactive();
+            $this->updateLibraryStatus();
               $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
                 $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
                 $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
@@ -311,9 +312,7 @@ class LoadMenus
     public function updateLibraryStatus()
     {
         
-            \Log::info('Start library status');
-        
-      
+        \Log::info('Start library status');
         $today = Carbon::today();
         $hourexist = Hour::withoutGlobalScopes()->where('library_id', getLibraryId())->count();
         $extendexist = Branch::where('library_id',getLibraryId())->whereNotNull('extend_days')->count();
@@ -341,16 +340,16 @@ class LoadMenus
 
     public function statusInactive()
     {
-        \Log::info('Start library statusInactive');
+        
         $userId = getAuthenticatedUser()->id;
-         $today = Carbon::now('Asia/Kolkata')->startOfDay();
+        $today = Carbon::now('Asia/Kolkata')->startOfDay();
        
         $extenday=Library::where('id', $userId)->value('extend_days') ?? 0;
         $enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', $userId)->where('is_paid', 1)->value('end_date')??0;
         $planEndDateWithExtension = Carbon::parse($enddate)->addDays($extenday);
         
      
-        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryData())->where('is_paid', 1)->where('end_date', '>', $planEndDateWithExtension->format('Y-m-d'))->exists();
+        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->where('end_date', '>', $planEndDateWithExtension->format('Y-m-d'))->exists();
        
 
         \Log::info([
@@ -358,7 +357,7 @@ class LoadMenus
         'today' => $today->toDateString(),
         'is_renew' => $is_renew,
         'app_timezone' => config('app.timezone'),
-    ]);
+        ]);
          if ($planEndDateWithExtension->lt($today) && !$is_renew) {
             \Log::info('Start library statusInactive condition');
             Library::where('id', $userId)

@@ -52,28 +52,7 @@
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
                     @yield('content')
-                    <script>
-                        // Session expiration popup logic here
-                        const sessionLifetime = {
-                            {
-                                config('session.lifetime')
-                            }
-                        }* 60; // Convert to seconds
-                        const warningTime = sessionLifetime - 60; // Show popup 1 minute before expiration
-
-                        setTimeout(function() {
-                            Swal.fire({
-                                title: 'Session Expiring Soon',
-                                text: 'Your session will expire in 1 minute. Please save your work or stay active.',
-                                icon: 'warning',
-                                confirmButtonText: 'Stay Logged In'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    location.reload(); // Refresh to reset session
-                                }
-                            });
-                        }, warningTime * 1000);
-                    </script>
+                    
                 </div>
             </div>
 
