@@ -48,10 +48,11 @@ class AdminController extends Controller
         $library_id = (int) trim($request->library_id);
 
         $subscription = $request->library_type;
+        Log::info('library_id',['library_id'=>$request->library_id]);
         $library_tra =LibraryTransaction::withoutGlobalScopes()->where('library_id', $request->library_id)
             ->orderBy('id', 'DESC')
             ->first();
-    
+        Log::info('NEW payment detected, updating status',['library_tra'=>$library_tra]);
         $status = 1; // Default status
         $month = null;
         $start_date = Carbon::now()->format('Y-m-d'); // Default start date

@@ -83,7 +83,7 @@ $class=$planDetails['class'];
                     <input id="learner_id" type="hidden" name="learner_id" value="{{ $customer->learner_id}}">
                     
                     <div class="row g-4">
-                        <div class="col-lg-4 ">
+                        <div class="col-lg-6 ">
                             <label for="">Payment Type</label>
                            
                             <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror"
@@ -102,7 +102,7 @@ $class=$planDetails['class'];
                             
                         </div>
                          
-                         <div class="col-lg-4">
+                         <div class="col-lg-6">
                             <label for="">Fees <span>*</span></label>
                             <input type="text" class="form-control @error('fees') is-invalid @enderror" placeholder="Enter Fees" name="fees" id="fees" value="">
                             @error('fees')

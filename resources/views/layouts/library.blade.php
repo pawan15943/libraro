@@ -121,8 +121,8 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
-                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="ID CARD">
-                    <a href="{{ route('learner.checklist') }}"><i class="fa fa-user-tie fa-2x"></i></a>
+                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Bulk ID CARD">
+                    <a href="{{ route('learner.checklist') }}"><i class="fa fa-id-card-clip fa-2x"></i></a>
                 </li>
                 
                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">

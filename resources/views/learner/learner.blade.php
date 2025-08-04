@@ -311,7 +311,7 @@
                                         @endif
                                     @endcan
                                     <!---ID Card generate-->
-                                     @if(!in_array('15', toggleHideField()))
+                                     {{-- @if(!in_array('15', toggleHideField()))
                                     <li>
                                         <form action="{{ route('generateIdCard') }}" method="POST" enctype="multipart/form-data">
                                             @csrf
@@ -320,7 +320,7 @@
                                             <button type="submit"><i class="fa-solid fa-id-card-clip"></i></button>
                                         </form>
                                     </li>
-                                    @endif
+                                    @endif --}}
                                     @if(!in_array('15', toggleHideField()))
                                     <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class=""><i class="fa-solid fa-id-card-clip"></i> </a></li>
                                     @endif
@@ -364,7 +364,7 @@
                                             class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i></a></li>
                                     @endcan
                                 @endif
-                                <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-regular fa-credit-card"></i></a></li>
+                                <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                             </ul>
                         </td>
                         <td>
