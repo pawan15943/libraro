@@ -6,80 +6,7 @@
 
 $current_route = Route::currentRouteName();
 @endphp
-<style>
-    /* Pagination container styling */
-    .pagination-container nav {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-    }
 
-    /* Styling for the pagination links */
-    .pagination-container a,
-    .pagination-container span {
-        text-decoration: none;
-        padding: 8px 12px;
-        margin: 0 4px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-        color: #151f38;
-        transition: background-color 0.3s, color 0.3s;
-        height: 41px ! IMPORTANT;
-        display: inline-flex;
-        border-radius: 2rem;
-        justify-content: center;
-        align-items: center;
-    }
-
-    /* Hover effect for pagination links */
-    .pagination-container a:hover {
-        background-color: #007bff;
-        /* Blue background on hover */
-        color: white;
-        /* White text on hover */
-    }
-
-    /* Disabled state styling */
-    .pagination-container span.cursor-not-allowed {
-        background-color: #ffffff;
-        color: #000000;
-        cursor: not-allowed;
-        height: 41px !important;
-        display: inline-block;
-        font-size: 1rem;
-        border-radius: 3rem;
-    }
-
-    /* Active page styling */
-    .pagination-container .bg-blue-500 {
-        background-color: #151f38;
-        color: white;
-        font-weight: bold;
-        border-color: #151f38;
-    }
-
-    .pagination-container a:hover {
-        background-color: #e1e9ff ! important;
-        color: #000000;
-    }
-
-    /* Adjusting spacing for the Previous and Next links */
-    .pagination-container .flex {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    /* Styling for the Previous and Next buttons */
-    .pagination-container .pagination-container a:hover,
-    .pagination-container .pagination-container .bg-blue-500 {
-        text-decoration: none;
-        color: white;
-        /* Make sure the text color stays white on hover */
-    }
-</style>
 
 @if (session('error'))
 <div class="alert alert-danger">
@@ -152,68 +79,157 @@ $current_route = Route::currentRouteName();
     </div>
 </div>
 @endcan
+
+
+<p><b>{{ $learnerHistory->total() }} Records for {{ $learnerHistory->perPage() }} per page</b></p>
+@foreach($learnerHistory as $key => $value)
+
+@php
+$planStatus = getPlanStatusDetails($value->plan_end_date);
+$transaction = learnerTransaction($value->id, $value->learner_detail_id);
+
+if ($transaction && isset($transaction->pending_amount)) {
+    $due_date = DB::table('learner_pending_transaction')
+        ->where('learner_id', $value->id)
+        ->where('status', 0)
+        ->where('pending_amount', $transaction->pending_amount)
+        ->select('due_date')
+        ->first();
+} else {
+    $due_date = null;
+}
+@endphp
 <div class="row">
     <div class="col-lg-12">
-        <p class="info-message">
-            <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
-            <b>Important: </b>This section displays a list of all closed plans and expired seats. If a seat owner does not renew their plan within a month or specified extension period, the seat will automatically expire and become available for others to book.However, if a user wishes to rebook their seat at a later time, we offer an option to reactivate the seat under a different seat number using the reactivation feature. In this case, we will not collect personal information again; instead, we will use the existing information on file.
-        </p>
-        <div class="table-responsive">
-            <table class="table text-center datatable border-bottom" id="datatable">
-                <thead>
-                    <tr>
-                        <th>Seat No.</th>
-                        <th>Learner Info</th>
-                        <th>Contact Info</th>
-                        <th>Active Plan</th>
-                        <th>Expired On</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+        <div class="seat-info bg-white">
+            <div class="seat-no">
+
+                @if($value->seat_no )
+                <span> Seat No. {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                @else
+                <span> {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                @endif
+
+                {!! getUserStatusDetails($value->plan_end_date) !!}
+
+            </div>
+            <div class="seat-actions">
+                <ul>
+                    <!-- View Seat Info -->
+                    @can('has-permission', 'View Seat')
+                    <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                    @endcan
+                    @can('has-permission', 'Reactive Seat')
+                    <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>          
+                    @endcan              
+                </ul>
+            </div>
+
+            <div class="seat-informarion">
+                <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                <div class="information">
+                    <h4>{{$value->name}}
+                        <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
+
+                    </h4>
+                    <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
+                    <span class="d-block">E: <a href="mailto:{{$value->email}}"> {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                </div>
+            </div>
+            <div class="plan-info">
+                <ul>
+                    <li>
+                        <span>Plan</span>
+                        <p>{{$value->plan_name??''}}</p>
+                    </li>
+                    <li>
+                        <span>Plan Type</span>
+                        <p>{{$value->plan_type_name ?? ''}}</p>
+                    </li>
+                    <li>
+                        <span>Plan Start Date</span>
+                        <p>{{ $value->plan_start_date ? date('j M Y', strtotime($value->plan_start_date)) : '' }}</p>
+
+                    </li>
+                    <li>
+                        <span>Plan End Date</span>
+                        <p>{{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</p>
+                    </li>
+                    <li>
+                        <span>Payment Status</span>
+                        <div class="d-flex g-1">
+                            @if(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
+                            <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
+
+                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
+                                <input type="hidden" name="type" value="learner">
+                                <button type="submit">
+                                    <i class="fa fa-download receipt"></i>
+                                </button>
+                            </form>
+
+                            @elseif(empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount))
+                            <span></span>
+                            @elseif( pending_amt($value->learner_detail_id))
+                            <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
+                                @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
+                                @else
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?"> {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{$due_date->due_date}})</span>
+                                @endif
+                            </a>
+
+                            @elseif(paylater($value->learner_detail_id))
+                            <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span>
+                            @endif
+                        </div>
+                    </li>
+                    <li>
+                        <span>Locker</span>
+                        @if(optional($transaction)->locker_amount)
+                            <p>Yes – #{{ $transaction->locker_amount }} Paid</p>
+                        @else
+                            <p>No</p>
+                        @endif
 
 
-                <tbody>
-                    @foreach($learnerHistory as $key => $value)
-
-                    <tr>
-                        <td>{{$value->seat_no ?? 'GEN'}}<br>
-                            <small>{{$value->plan_type_name}}</small>
-                        </td>
-                        <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>
-                            <br> <small>{{$value->plan_type_name}}</small>
-                        </td>
-                        <td><span class="truncate" >
-                            {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
-                            </span> <br>
-                            <small> +91-{{$value->mobile}}</small>
-                        </td>
-                        <td>{{$value->plan_start_date}}<br>
-                            <small>{{$value->plan_name}}</small>
-                        </td>
-                        <td>{{$value->plan_end_date}}<br>
-
-                            {!! getUserStatusDetails($value->plan_end_date) !!}
-                        </td>
-                        <td>
-                            <ul class="actionalbls">
-                                <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
-                            </ul>
-                        </td>
-
-                    </tr>
-
-                    @endforeach
-                </tbody>
-
-            </table>
-
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
+@endforeach
 
+{{-- Pagination --}}
+@if ($learnerHistory->lastPage() > 1)
+<ul class="paginations">
+    {{-- Prev Button --}}
+    <li>
+        <a href="{{ $learnerHistory->onFirstPage() ? '#' : $learnerHistory->previousPageUrl() }}" class="w-auto px-3 text-muted {{ $learnerHistory->onFirstPage() ? 'disabled' : '' }}">
+            Prev
+        </a>
+    </li>
 
+    {{-- Page Numbers --}}
+    @for ($i = 1; $i <= $learnerHistory->lastPage(); $i++)
+        <li>
+            <a href="{{ $learnerHistory->url($i) }}" class="{{ $learnerHistory->currentPage() == $i ? 'active' : '' }}">
+                {{ $i }}
+            </a>
+        </li>
+        @endfor
+
+        {{-- Next Button --}}
+        <li>
+            <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted {{ $learnerHistory->hasMorePages() ? '' : 'disabled' }}">
+                Next
+            </a>
+        </li>
+</ul>
+@endif
 <!-- /.content -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>

@@ -1668,6 +1668,7 @@ span.d-block.mt-2 {
     font-size: 1.2rem;
     color: #333;
     margin-right: 10px;
+    
 }
 
 
@@ -1683,6 +1684,7 @@ span.d-block.mt-2 {
     color: #dc3545;
     display: inline-block;
     margin-top: .5rem;
+    font-weight: 600;
 }
 
 .master-box ul .contents li {
@@ -1951,8 +1953,7 @@ a.text-white.text-decoration-none:hover i.fa-long-arrow-right {
     margin: 0;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Outfit:wght@100..900&display=swap');
+
 
 * {
     margin: 0;
@@ -2081,7 +2082,7 @@ body {
 }
 
 
-label {
+.right label {
     font-weight: 700;
     font-size: .8rem;
     margin-bottom: .2rem;
@@ -3608,14 +3609,14 @@ span.d-block.mt-2 {
     color: #000;
 }
 
-.records {
+.records
+ {
     font-size: 1.1rem;
     background-color: var(--c5);
-    /* Light background for contrast */
     padding: 1.5rem;
     border-radius: 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    /* Subtle shadow for depth */
+    box-shadow: none;
+    border: 1px solid #dedede;
 }
 
 .records b {
@@ -3625,7 +3626,6 @@ span.d-block.mt-2 {
 }
 
 .records span {
-    font-weight: 600;
     padding: 4px 8px;
     border-radius: 12px;
 }
@@ -5817,4 +5817,14 @@ p.text-danger.font-weight-bold,
 
 .nav-pills .nav-link, .nav-pills .show>.nav-link {
     box-shadow: 1px 0 5px #00000024;
+}
+
+span.w-auto.px-3.text-muted {
+    background: #eaeaea;
+    height: 35px ! IMPORTANT;
+    display: inline-flex
+;
+    justify-content: center;
+    align-items: center;
+    border-radius: 2rem;
 }

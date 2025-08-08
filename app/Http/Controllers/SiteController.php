@@ -288,7 +288,11 @@ class SiteController extends Controller
     {
 
         $data = Blog::where('page_slug', $slug)->first();
-        return view('site.blog-details', compact('data'));
+        $data->tags = json_decode($data->tags, true);
+        $categoryIds = json_decode($data->categories_id, true) ?? [];
+
+        $categories = Category::whereIn('id', $categoryIds)->get();
+        return view('site.blog-details', compact('data','categories'));
     }
     // public function getLibrariesLocations()
     // {

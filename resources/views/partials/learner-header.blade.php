@@ -1,6 +1,10 @@
 <div id="loader">
     <div class="spinner"></div>
 </div>
+@php
+$user = getAuthenticatedUser();
+
+@endphp
 <style>
         @php  if(!empty($primary_color)) @endphp
         :root {
@@ -40,12 +44,14 @@
         
         
         <!--Notifications -->
-        @if(isset(getAuthenticatedUser()->unreadNotifications))
+      
+        @if(isset($user->unreadNotifications))
             
         
         <div class="notification">
             <div class="dropdown">
                 @php
+           
                 $guard = null;
                 if (Auth::guard('web')->check()) {
                 $guard = 'web';
@@ -55,7 +61,7 @@
                 $guard = 'learner';
                 }
                
-                $unreadNotifications = getAuthenticatedUser()->unreadNotifications->where('data.guard', $guard);
+               $unreadNotifications = $user->unreadNotifications->where('data.guard', $guard);
                
                 @endphp
                 <a class="dropdown-toggle uppercase" type="button" data-bs-toggle="dropdown" aria-expanded="false">

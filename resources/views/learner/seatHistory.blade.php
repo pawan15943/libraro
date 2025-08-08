@@ -2,159 +2,124 @@
 @section('content')
 <!-- Content Header (Page header) -->
 <!-- Main row -->
-<div class="row mb-4">
-    <!-- Main Info -->
-    <div class="col-lg-12">
-        <p class="info-message">
-            <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
-            <b>Important :</b> The Seat History page displays a comprehensive list of all library seats, along with seat-specific booking details in a single view. If you need information about library seats, this section provides helpful details to guide you.
-        </p>
-        <div class="table-responsive">
-            <table class="table text-center datatable">
-                <thead>
-                    <tr>
-                        <th style="width: 10%">Seat No.</th>
-                        <th style="width: 20%">Seat Owner Name</th>
-                        <th style="width: 20%">Contact Info</th>
-                        <th style="width: 10%">Plan Info</th>
-                        <th style="width: 10%">Join On</th>
-                        <th style="width: 10%">Start On</th>
-                        <th style="width: 10%">Ends On</th>
-                        <th style="width: 15%">Action</th>
-                    </tr>
-                </thead>
 
-               
 
-                @if(count($seats) == 0 && $finalGeneralLearners->count()==0)
-                      <tbody>
-                    <tr>
-                        <td colspan="8" class="text-center">No data available</td>
-                    </tr>
-                </tbody>
-                @else
-                
-                <tbody>
+@foreach($seats as $seat)
+    @php
+        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->limit(1)->get();
+        if ($usersForSeat->isEmpty()) {
+            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->limit(1)->get();
+        }
+    @endphp
 
-                    @foreach($seats as $seat)
-                        @php
-                        // First, check if there are any customers with status 1 for the given seat
-                        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->get();
-                        // If no learners with status 1 are found, check for learners with status 0
-                        if ($usersForSeat->isEmpty()) {
-                            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->limit(1)->get();
-                
-                        }
-                        
-                        @endphp
-    
-                        @if($usersForSeat->count() > 0)
+    @if($usersForSeat->count() > 0)
+        @foreach($usersForSeat as $user)
+            @php
+                $learner = myLearner($user->learner_id);
+                $planStatus = getPlanStatusDetails($user->plan_end_date);
+            @endphp
 
-                        <tr>
-                            <td rowspan="{{ $usersForSeat->count() }}">{{ $seat->seat_no }}</td>
-                            @foreach($usersForSeat as $user)
-                            @php
-                            $learner=myLearner($user->learner_id);
-                            @endphp
-                        @if (!$loop->first)
-                        <tr>
-                        @endif
-                            <td><span class="uppercase truncate name mt-0 mb-0" data-bs-toggle="tooltip"
-                                    data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span></td>
-                            <td><span class="truncate" >
-                                {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
-                                </span> <br>
-                                <small> +91-{{($learner->mobile)}}</small>
-                            </td>
-                            <td>
-                                {{ optional(myPlanType($user->plan_type_id))->name }}<br>
-                                <small>{{ optional(myPlan($user->plan_id))->name }}</small>
-                            </td>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="seat-info bg-white">
+                        <div class="seat-no">
+                            <span>Seat No. {{ $seat->seat_no }}</span>
+                            {!! getUserStatusDetails($user->plan_end_date) !!}
+                        </div>
 
-                            <td>{{ $user->join_date }}
-                                @if(isset($user->is_paid) && $user->is_paid==1)
-                                <small class="fs-10 d-block ">Paid</small>
+                        <div class="seat-actions">
+                            <ul>
+                                <li><a href="{{ url('seats/history', $seat->seat_no) }}" title="View Seat History" class="w-auto px-2"><i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="seat-informarion">
+                            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                            <div class="information">
+                                <h4>{{ $learner->name }}
+                                    <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
+                                </h4>
+                                <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
+                                <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                            </div>
+                        </div>
+
+                        <div class="plan-info">
+                            <ul>
+                                <li><span>Plan</span><p>{{ optional(myPlan($user->plan_id))->name }}</p></li>
+                                <li><span>Plan Type</span><p>{{ optional(myPlanType($user->plan_type_id))->name }}</p></li>
+                                <li><span>Join On</span><p>{{ $user->join_date }}</p></li>
+                                <li><span>Start On</span><p>{{ $user->plan_start_date }}</p></li>
+                                <li><span>Ends On</span><p>{{ $user->plan_end_date }}</p></li>
+                                <li><span>Payment</span>
+                                    @if(isset($user->is_paid) && $user->is_paid == 1)
+                                        <p>Paid</p>
+                                    @else
+                                        <p>Unpaid</p>
+                                    @endif
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
+@endforeach
+@if($finalGeneralLearners->count())
+    @foreach($finalGeneralLearners as $user)
+        @php
+            $learner = myLearner($user->learner_id);
+            $planStatus = getPlanStatusDetails($user->plan_end_date);
+        @endphp
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="seat-info bg-white">
+                    <div class="seat-no">
+                        <span>Seat No. GEN</span>
+                        {!! getUserStatusDetails($user->plan_end_date) !!}
+                    </div>
+
+                    <div class="seat-actions">
+                        <ul>
+                             <li><a href="{{ route('general.seat.history') }}" title="View General Seat History" class="w-auto px-2"><i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History</a></li>
+                          
+                        </ul>
+                    </div>
+
+                    <div class="seat-informarion">
+                        <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                        <div class="information">
+                            <h4>{{ $learner->name }}{{$learner->email}}
+                                <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
+                            </h4>
+                            <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
+                            <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                        </div>
+                    </div>
+
+                    <div class="plan-info">
+                        <ul>
+                            <li><span>Plan</span><p>{{ optional(myPlan($user->plan_id))->name }}</p></li>
+                            <li><span>Plan Type</span><p>{{ optional(myPlanType($user->plan_type_id))->name }}</p></li>
+                            <li><span>Join On</span><p>{{ $user->join_date }}</p></li>
+                            <li><span>Start On</span><p>{{ $user->plan_start_date }}</p></li>
+                            <li><span>Ends On</span><p>{{ $user->plan_end_date }}</p></li>
+                            <li><span>Payment</span>
+                                @if(isset($user->is_paid) && $user->is_paid == 1)
+                                    <p>Paid</p>
                                 @else
-                                <small class="fs-10 d-block ">Unpaid</small>
+                                    <p>Unpaid</p>
                                 @endif
-                            </td>
-                            <td>{{ $user->plan_start_date }}</td>
-                            <td>{{ $user->plan_end_date }}<br>
-                                {!! getUserStatusDetails($user->plan_end_date) !!}
-
-                            </td>
-                            @if ($loop->first)
-                            <td rowspan="{{ $usersForSeat->count()  }}">
-
-                                <ul class="actionalbls">
-                                    <li>
-                                        <a href="{{ url('seats/history', $seat->seat_no) }}" title="View Seat Previous Booking " class="disabled"><i class="fa-solid fa-clock-rotate-left"></i></a>
-                                    </li>
-                                </ul>
-
-                            </td>
-                            @endif
-                            @if (!$loop->first)
-                        </tr>
-                        @endif
-                        @endforeach
-                        </tr>
-
-                        @endif
-
-                    @endforeach
-                    @if($finalGeneralLearners->count())
-                    <tr>
-                      
-                        @foreach($finalGeneralLearners as $user)
-                         
-                            @php $learner = myLearner($user->learner_id); @endphp
-                            @if(!$loop->first)<tr>@endif
-                             <td >GEN</td>
-                            <td><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span></td>
-                            <td><span class="truncate" >
-                                {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
-                                </span> <br>
-                                <small> +91-{{($learner->mobile)}}</small>
-                            </td>
-                              <td>
-                                {{ optional(myPlanType($user->plan_type_id))->name }}<br>
-                                <small>{{ optional(myPlan($user->plan_id))->name }}</small>
-                            </td>
-                            <td>{{ $user->join_date }}
-                                 @if(isset($user->is_paid) && $user->is_paid==1)
-                                <small class="fs-10 d-block ">Paid</small>
-                                @else
-                                <small class="fs-10 d-block ">Unpaid</small>
-                                @endif
-                            </td>
-                            <td>{{ $user->plan_start_date }}</td>
-                            <td>{{ $user->plan_end_date }}<br>
-                                 {!! getUserStatusDetails($user->plan_end_date) !!}
-                            </td>
-                            @if($loop->first)
-                                <td rowspan="{{ $finalGeneralLearners->count() }}">
-                                      <ul class="actionalbls">
-                                    <li>
-                                        <a href="{{route('general.seat.history')}}" title="View General Seat History" class="disabled"><i class="fa-solid fa-clock-rotate-left"></i></a>
-                                    </li>
-                                </ul>
-                                </td>
-                            @endif
-                            @if(!$loop->first)</tr>@endif
-                        @endforeach
-                    </tr>
-                    @endif
-
-
-                </tbody>
-                @endif
-            </table>
-
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+    @endforeach
+@endif
 
 <!-- /.row (main row) -->
 @endsection

@@ -325,7 +325,7 @@ Route::middleware(['auth:web'])->group(function () {
 });
 
 Route::middleware(['auth:learner'])->group(function () {
-  // Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
+  Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
   Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home');//learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');
   Route::get('learner/request', [LearnerController::class, 'learnerRequest'])->name('learner.request');

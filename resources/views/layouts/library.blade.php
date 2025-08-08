@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Bootstrap Toggle CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-  
+    <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
       
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>

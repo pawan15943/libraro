@@ -10,10 +10,11 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\HasBranch;
 use App\Traits\HasSeatType;
-
+use Illuminate\Notifications\Notifiable;
 
 class Learner extends Authenticatable
 {
+    use Notifiable;
     use HasRoles;
     use HasFactory,SoftDeletes;
     use HasBranch;

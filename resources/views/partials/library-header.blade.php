@@ -143,13 +143,25 @@ $user = getAuthenticatedUser();
             </form>
 
         @endif
+      
 
         @if(isset($user->unreadNotifications))
         <div class="notification">
             <div class="dropdown">
+                
                 @php
-                $guard = $user->guard ?? null;
+              
+              
+                if(Auth::guard('library')->user()){
+                    $guard='library';
+                }elseif(Auth::guard('library_user')->user()){
+                    $guard='library_user';
+                }else{
+                    $guard =null;
+                }
+                
                 $unreadNotifications = $user->unreadNotifications->where('data.guard', $guard);
+                
                 @endphp
                 <a class="dropdown-toggle uppercase" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-bell fa-fw"></i>

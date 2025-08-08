@@ -115,46 +115,7 @@
             </div>
 
         </div>
-        @if($today_renew)
-        <script>
-            window.onload = function() {
-                setTimeout(function() {
-                    var modal = new bootstrap.Modal(document.getElementById('todayrenew'));
-                    modal.show();
-                }, 1000);
-            };
-
-            // Function to call renewConfigration via AJAX
-            function renewPlan() {
-                // Disable the button to avoid multiple clicks
-                document.getElementById('renewButton').disabled = true;
-
-                // Call the renew configuration function via AJAX
-                $.ajax({
-                    url: "{{ route('renew.configration') }}",
-                    type: 'GET', // Change this to 'POST' if using POST method
-                    success: function(response) {
-                        // Show success message
-                        alert("Plan successfully renewed!");
-
-                        // Optionally close the modal after success
-                        var modal = bootstrap.Modal.getInstance(document.getElementById('todayrenew'));
-                        modal.hide();
-                        location.reload();
-                    },
-                    error: function(xhr, status, error) {
-                        // Handle error
-                        console.error("Error renewing plan:", error);
-                        alert("Failed to renew the plan. Please try again later.");
-                    },
-                    complete: function() {
-                        // Re-enable the button
-                        document.getElementById('renewButton').disabled = false;
-                    }
-                });
-            }
-        </script>
-        @endif
+       
 
     </div>
 

@@ -129,9 +129,14 @@ $class=$planDetails['class'];
             @if($customer->seat_no)
             <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
             @endif
-            <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{$class}}">
+            @if($customer->planType && $customer->planType->image)
+                <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{ $class }}">
+            @else
+                <img src="{{ asset('public/img/booked.png') }}" alt="Seat" class="seat py-3 {{ $class }}">
+            @endif
+
             <p>{{ $customer->plan->name}}</p>
-            <button>Booked for <b>{{ $customer->planType->name}}</b></button>
+            <button>Booked for <b>{{ optional($customer->planType)->name }}</b></button>        
             {!! getUserStatusWithSpan($customer->plan_end_date) !!}
         </div>
     </div>

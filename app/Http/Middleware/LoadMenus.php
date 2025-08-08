@@ -219,47 +219,48 @@ class LoadMenus
           
 
            
-        $libraryupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','library')->get();
-        $learnerupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','learner')->get();
-        $plans =Plan::where('library_id', getLibraryId())->get();
-     
-         if(getCurrentBranch() !=0 || getCurrentBranch() !=null){
-            $totalSeats =  Hour::where('branch_id',getCurrentBranch())->value('seats');
-            $totalHour=Hour::where('branch_id',getCurrentBranch())->value('hour');
-        }else{
-            $totalSeats =  Hour::where('library_id',getLibraryId())->SUM('seats');
-             $totalHour=Hour::where('library_id',getLibraryId())->SUM('hour');
-        } 
-        $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
-                    ->whereNotNull('seat_no')
-                    ->groupBy('seat_no')
-                    ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
+            $libraryupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','library')->get();
+            $learnerupdates=DB::table('updates')->whereNull('deleted_at')->where('guard','learner')->get();
+            $plans =Plan::where('library_id', getLibraryId())->get();
+        
+            if(getCurrentBranch() !=0 || getCurrentBranch() !=null){
+                $totalSeats =  Hour::where('branch_id',getCurrentBranch())->value('seats');
+                $totalHour=Hour::where('branch_id',getCurrentBranch())->value('hour');
+            }else{
+                $totalSeats =  Hour::where('library_id',getLibraryId())->SUM('seats');
+                $totalHour=Hour::where('library_id',getLibraryId())->SUM('hour');
+            } 
+            $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                        ->whereNotNull('seat_no')
+                        ->groupBy('seat_no')
+                        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
-        $availableSeats = collect();
+            $availableSeats = collect();
 
-        // Step 2: Loop through all seat numbers and apply logic
-        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-            $usedHours = $usedSeats[$seatNo] ?? 0;
+            // Step 2: Loop through all seat numbers and apply logic
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
 
-            if ($usedHours < $totalHour) {
-                $availableSeats->push($seatNo);
+                if ($usedHours < $totalHour) {
+                    $availableSeats->push($seatNo);
+                }
             }
-        }
-        if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
-            $this->statusInactive();
-            $this->updateLibraryStatus();
-              $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
-                $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
-                $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
-                $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false); // can be negative
-                $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
-        }else{
-            $diffInExtensionDays='';
-            $inExtension_lib='';
-            $lib_extenday='';
-        }
-      
-        $exams=DB::table('exams')->get();
+            if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
+                $this->statusInactive();
+                $this->updateLibraryStatus();
+                $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
+                    $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
+                    $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
+                    $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false); // can be negative
+                    $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
+            }else{
+                $diffInExtensionDays='';
+                $inExtension_lib='';
+                $lib_extenday='';
+            }
+        
+            $exams=DB::table('exams')->get();
+
             View::share('primary_color', $primary_color);
             View::share('checkSub', $checkSub);
             View::share('checkSub', $checkSub);
@@ -282,7 +283,7 @@ class LoadMenus
             View::share('booked_seats', $booked_seats);
             View::share('planTypeCounts', $planTypeCounts);
             View::share('genral_seat', $genral_seat);
-            // View::share('firstHalfCount', $firstHalfCount);
+            View::share('learnerupdates', $learnerupdates);
             // View::share('secondHalfCount', $secondHalfCount);
             View::share('availableseats', $availableSeats);
             View::share('totalSeats', $totalSeats);

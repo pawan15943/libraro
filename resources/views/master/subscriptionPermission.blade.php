@@ -42,7 +42,12 @@
         @foreach($groupedPermissions as $categoryId => $permissionsInCategory)
             <div class="col-12">
                 <h5 class='role-category-heading'>
-                    {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
+                    @php
+                        $category = $categoryId ? \App\Models\PermissionCategory::find($categoryId) : null;
+                    @endphp
+
+                    {{ $category ? $category->name : 'No Category' }}
+
                 </h5>
             </div>
         

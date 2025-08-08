@@ -279,17 +279,18 @@ if (!function_exists('getPlanStatusDetails')) {
         $diffExtendDay = $today->diffInDays($inextendDate, false);
 
         // Default status & class
-        $status = 'active';
-        $class = '';
+        $status = 'Active';
+        $class = 'actives';
 
         if ($diffInDays < 0 && $diffExtendDay > 0) {
-            $status = 'extended';
-            $class = 'extedned';
-        } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
-            $status = 'expiring';
+             $status = 'In Extension';
             $class = 'expired';
+        } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
+           
+            $status = 'About to Expire';
+            $class = 'aboutToExpire';
         } elseif ($diffExtendDay < 0) {
-            $status = 'expired';
+            $status = 'Expired';
             $class = 'expired';
         }
 
@@ -340,16 +341,18 @@ if (!function_exists('getUserStatusDetails')) {
         $diffExtendDay = $today->diffInDays($inextendDate, false); // negative if beyond extension
 
         if ($diffInDays > 0) {
-            return '<small class="text-success">Plan Expires in ' . $diffInDays . ' days</small>';
+            return '<span class="actives">🟢 Plan is Active ('. $diffInDays .' Days Left)</span>';
+            
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            // <span class="text-danger fs-10 d-block">{{$learnerExtendText}} {{ abs($customer->diffExtendDay) }} days.</span>
-            return '<small class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</small>';
+            return '</span> <span class="extended"> Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
+            return '</span> <span class="extended"> 🔴 Expired today</span>';
+            
         } elseif ($diffInDays == 0) {
-            return '<small class="text-warning fs-10 d-block">Plan Expires today</small>';
+             return '</span> <span class="extended"> 🔴 Expired today</span>';
         } else {
-            return '<small class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</small>';
+             return '</span> <span class="extended"> 🔴 Expired ' . abs($diffInDays) . ' days ago</span>';
+           
         }
     }
 }

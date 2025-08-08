@@ -7,8 +7,7 @@
     <title>Libraro : Library Management Software</title>
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"
-        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
     <link rel="stylesheet" href="{{ asset('public/css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -21,11 +20,13 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+    <link href="https://www.richtexteditor.com/rte/themes/default/rte.css" rel="stylesheet" />
 
 </head>
 
 <body>
-    
+
     <!-- New Design Dahsbard Library -->
     <div class="support-container">
         <div class="support-icon" onclick="toggleSupportCard()">
@@ -52,7 +53,7 @@
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
                     @yield('content')
-                    
+
                 </div>
             </div>
 
@@ -90,6 +91,8 @@
     <script src="{{ url('public/js/main-validation.js') }}"></script>
 
 
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+
 
     <script>
         $(document).ready(function() {
@@ -121,6 +124,7 @@
                 }
             });
         });
+
     </script>
     <!-- jQuery -->
     <script>
@@ -135,6 +139,7 @@
                 }
             });
         });
+
     </script>
 
     <script>
@@ -158,31 +163,33 @@
 
 
         });
+
     </script>
     <script>
-        $(document).ready(function() {
-            $(document).on('selectstart', function(e) {
-                if (!$(e.target).is('input, select, textarea')) {
-                    e.preventDefault();
-                }
-            });
+        // $(document).ready(function() {
+        //     $(document).on('selectstart', function(e) {
+        //         if (!$(e.target).is('input, select, textarea, [contenteditable="true"], .cke_editable, .ck-editor__editable')) {
+        //             e.preventDefault();
+        //         }
+        //     });
 
-            $(document).on('mousedown', function(e) {
-                if (!$(e.target).is('input, select, textarea')) {
-                    e.preventDefault();
-                }
-            });
-        });
+        //     $(document).on('mousedown', function(e) {
+        //         if (!$(e.target).is('input, select, textarea, [contenteditable="true"], .cke_editable, .ck-editor__editable')) {
+        //             e.preventDefault();
+        //         }
+        //     });
+        // });
+
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // Function to show a popup
             function showOfflinePopup() {
                 Swal.fire({
-                    title: 'No Internet Connection',
-                    text: 'Your internet connection is lost. Please check your connection.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+                    title: 'No Internet Connection'
+                    , text: 'Your internet connection is lost. Please check your connection.'
+                    , icon: 'error'
+                    , confirmButtonText: 'OK'
                 });
             }
 
@@ -198,10 +205,10 @@
 
             window.addEventListener('online', function() {
                 Swal.fire({
-                    title: 'Back Online',
-                    text: 'Your internet connection has been restored.',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
+                    title: 'Back Online'
+                    , text: 'Your internet connection has been restored.'
+                    , icon: 'success'
+                    , confirmButtonText: 'OK'
                 });
             });
         });
@@ -223,6 +230,7 @@
             // Initial check when the page loads
             addClassOnResize();
         });
+
     </script>
 
     <script>
@@ -235,6 +243,7 @@
                 toggleSupportCard();
             });
         });
+
     </script>
 
 </body>
