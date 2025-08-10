@@ -278,7 +278,7 @@
                             </div>
                             <div class="col-lg-4 col-6">
                                 <label for="">Plan Type <span>*</span></label>
-                                <select id="plan_type_id2" class="form-control" name="plan_type_id" @readonly(true)>
+                                <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)>
 
                                 </select>
                             </div>

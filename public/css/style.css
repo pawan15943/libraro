@@ -2375,14 +2375,17 @@ nav ol {
 }
 
 
-
+div#datatable_length {
+    margin-left: 0.5rem;
+}
 
 .content .card {
     background: var(--c5);
     padding: 1.5rem;
     border-radius: 1rem;
-    box-shadow: 1px 0 36px #0000001c;
-    border: 1px solid #dedede;
+    /* box-shadow: 1px 0 36px #0000001c;
+    border: 1px solid #dedede; */
+    border: none;
 }
 
 label.permission {

@@ -106,6 +106,81 @@
             }
         }
 
+           // Get Plan Type at All Forms wherever is needed
+        function fetchPlanTypesRenew(seat_no, user_id,learner_detail_id) {
+           
+            if ((seat_no && user_id) || learner_detail_id) {
+                $.ajax({
+                    url: '{{ route('gettypePlanwise') }}',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                    },
+                    type: 'GET',
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        "seat_no": seat_no,
+                        "user_id": user_id,
+                        "learner_detail_id": learner_detail_id,
+                    },
+                    dataType: 'json',
+                    success: function (html) {
+                        console.log("renew",html);
+                        $("#plan_type_id_renew").empty(); 
+                        $("#plan_id2").empty(); 
+
+                        if (html[0]) {
+                            $.each(html[0], function (key, value) {
+                                $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
+                            });
+                        } else {
+                            $("#plan_type_id_renew").append('<option value="">Choose</option>');
+                        }
+                       
+
+                        if (html[1]) {
+                             $.each(html[1], function (key, value) {
+                                $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
+                            });
+                        }
+
+                        if (html[2]){
+                           $("#plan_price_id2").val(html[2].plan_price_id);      
+                        }
+
+                        if(html[3]){
+                            $("#locker_amount2").val(html[3].locker_amount);  
+                            $("#discount_amount3").val(html[3].discount_amount);  
+                            $("#new_plan_price").val(html[3].discount_amount);  
+
+                            if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
+                                $("#locker").val('yes');
+                                $("#locker_amount2").val(html[3].locker_amount);
+                            } else {
+                                $("#locker").val('no');
+                                $("#locker_amount2").val('');
+                            }
+
+                            if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
+                                $("#discount_type").val('amount');
+                                $("#discount_amount3").val(html[3].discount_amount);
+                            } else {
+                                $("#discount_type").val('');
+                                $("#discount_amount3").val('');
+                            }
+                        }
+                        
+                        popupautoCalculatePaidAmount(); 
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX error:", status, error); // Log any errors
+                    }
+                });
+            } else {
+                $("#plan_type_id_renew").empty();
+                $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
+            }
+        }
+
        
        
         // Get Plan Type seatwise at All Forms wherever is needed
@@ -205,7 +280,6 @@
                         },
                         dataType: 'json',
                         success: function(html) {
-                            console.log("heena",html);
                             if (html && html !== undefined) {
 
                                 if ($("#plan_price").length) {
@@ -218,6 +292,46 @@
                             } else {
                                 
                                  $("#plan_price").val("");
+                                $("#pending_amt").html("No Plan Price Added Yet.");
+                                $("#paid_amount").val("");
+                            }
+                        }
+
+                    });
+            } else {
+               
+                $("#plan_price").empty();
+                $("#paid_amount").empty();
+            
+            }
+        }
+
+           // Get Plan Price at Renew popup Forms wherever is needed
+        function getPlanPriceRenew(plan_type_id,plan_id){
+          
+            if (plan_type_id && plan_id) {
+                    $.ajax({
+                        url: '{{ route('getPricePlanwise') }}',
+                        type: 'GET',
+                        data: {
+                            "_token": "{{ csrf_token() }}",
+                            "plan_type_id": plan_type_id,
+                            "plan_id": plan_id,
+                        },
+                        dataType: 'json',
+                        success: function(html) {
+                            if (html && html !== undefined) {
+
+                                if ($("#plan_price_id2").length) {
+                                   
+                                    $("#plan_price_id2").val(html);
+                                    autoCalculatePaidAmount2();
+                                    $("#error-message").hide();
+                                }
+                                $("#error-message").hide();
+                            } else {
+                                
+                                 $("#plan_price_id2").val("");
                                 $("#pending_amt").html("No Plan Price Added Yet.");
                                 $("#paid_amount").val("");
                             }
@@ -492,7 +606,7 @@
           
             // Show the second modal
             $('#seatAllotmentModal3').modal('show');
-            fetchPlanTypes(seat_no,user_id,learner_detail_id);
+            fetchPlanTypesRenew(seat_no,user_id,learner_detail_id);
         });
 
 
@@ -506,13 +620,13 @@
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
             $('#update_plan_end_date').val(end_date);
-            fetchPlanTypes(seat_no, user_id,learner_detail_id);
+            fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);
         });
      
 
         // Oncahnge of Plantype get Plan Price and use at each form wherever is needed 
         $('#plan_type_id').on('change', function(event) {
-            
+          
             var plan_type_id = $(this).val();
             var plan_id = $('#plan_id').val();
             var change_plan_plan_id = $('#change_plan_plan_id').val();
@@ -551,6 +665,17 @@
                 getPlanPrice(plan_type_id,plan_id3);
                 getPlanPrice(plan_type_id,plan_id4);
                 getPlanPrice(plan_type_id,change_plan_plan_id);
+            }else{
+                $("#plan_price").val('');
+            }
+           
+        });
+        $('#plan_type_id_renew').on('change', function(event) {
+            
+            var plan_type_id = $(this).val();
+            var plan_id2 = $('#plan_id2').val();
+            if((plan_type_id && plan_id2)){
+                getPlanPriceRenew(plan_type_id,plan_id2);
             }else{
                 $("#plan_price").val('');
             }
@@ -783,7 +908,7 @@
             var formData = new FormData(this);
             var user_id = $('#update_user_id').val();
             var plan_id = $('#plan_id2').val();
-            var plan_type_id = $('#plan_type_id2').val();
+            var plan_type_id = $('#plan_type_id_renew').val();
             var plan_price_id = $('#plan_price_id2').val();
             var errors = {};
 

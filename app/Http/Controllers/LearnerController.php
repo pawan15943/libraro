@@ -128,7 +128,10 @@ class LearnerController extends Controller
                     LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
                     LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
                 } else {
-                    $userUpdate->update(['status' => 1]);
+                    // $userUpdate->update(['status' => 1]);
+                     Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 1)
+                    ->update(['status' => 1]);
                     LearnerDetail::where('learner_id', $userUpdate->learner_id)
                         ->where('status', 0)
                         ->where('plan_start_date', '<=', $today)
@@ -657,9 +660,8 @@ class LearnerController extends Controller
                         ->where('learner_detail.status', 1);
                 } elseif ($filters['status'] === 'expired') {
                     // Only select expired learners or details
-                    $query->where(function ($q) {
-                        $q->where('learner_detail.status', 0);
-                    });
+                     $query->where('learners.status', 0)
+                        ->where('learner_detail.status', 0);
                 }
             } else {
                 // Apply default status conditions if no status filter is provided
@@ -897,7 +899,7 @@ class LearnerController extends Controller
                 } elseif ($filters['status'] === 'expired') {
                     // Only select expired learners or details
                     $query->where(function ($q) {
-                        $q->where('learner_detail.status', 0);
+                        $q->where('learner_detail.status', 0)->where('learners.status', 0);
                     });
                 }
             } else {

@@ -144,12 +144,9 @@
 
 
 
-<div class="row">
+
 
     @can('has-permission', 'Filter')
-    <div class="col-lg-12">
-        <section>
-            <div class="container">
                 <div class="row justify-content-center mt-5 mb-4">
                     <div class="col-lg-6 text-center">
                         <h2 class="font-weight-700">Search Here</h2>
@@ -387,7 +384,7 @@
                     <ul class="paginations">
                         {{-- Prev Button --}}
                         <li>
-                            <a href="{{ $learners->onFirstPage() ? '#' : $learners->appends(request()->all())->previousPageUrl() }}">
+                            <a href="{{ $learners->onFirstPage() ? '#' : $learners->appends(request()->all())->previousPageUrl() }}" class="w-auto px-3 text-muted">
                                 Prev
                             </a>
                         </li>
@@ -403,7 +400,7 @@
 
                             {{-- Next Button --}}
                             <li>
-                                <a href="{{ $learners->hasMorePages() ? $learners->appends(request()->all())->nextPageUrl() : '#' }}">
+                                <a href="{{ $learners->hasMorePages() ? $learners->appends(request()->all())->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">
                                     Next
                                 </a>
                             </li>
@@ -411,13 +408,8 @@
                     @endif
                 
                 @endif
-               
-            </div>
-        </section>
-
-    </div>
     @endcan
-</div>
+
 
 
 

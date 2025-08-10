@@ -319,34 +319,7 @@
             </div>
         </div>
      </div>
-    {{-- <div class="receipt_wrapper">
-        <!-- header -->
-        <div class="receipt_header">
-            <div class="logo">
-                <img src="{{ asset('img/logo.png') }}" alt="Library Logo">
-            </div>
-            <div class="address_header text-right">
-                <h5>Library Management System Headquarters:</h5>
-                <div class="address">
-                    123 Library Road, Knowledge City<br>
-                    Near BookHub Station, Cityville, Countryland
-                </div>
-                <a href="www.librarysystem.com" title="Library System">Website: www.librarysystem.com</a><br>
-                <a href="mailto:support@librarysystem.com" title="Library System">Email: support@librarysystem.com</a>
-            </div>
-        </div>
-
-        <!-- Main content-->
-        <div class="seat--info">
-            
-        <span class="d-block ">Seat No : {{ $learner_detail->seat_no}}</span>
-        
-        <p>{{ $learner_detail->plan->name}}</p>
-        <p>{{ $learner_detail->plan_start_date}}</p>
-        <p>{{ $learner_detail->plan_end_date}}</p>
-        <button class="mb-3"> Booked for <b>{{ $learner_detail->planType->name}}</b></button>
-        </div>
-    </div> --}}
+ 
 </body>
  <script>
         function printCards() {

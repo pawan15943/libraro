@@ -19,13 +19,13 @@ $current_route = Route::currentRouteName();
 </div>
 @endif
 @can('has-permission', 'Filter')
-<div class="row d-none">
+<div class="row mb-3">
     <div class="col-lg-12">
-        <div class="filter-box">
-            <h4 class="mb-3">Filter Box</h4>
+        <div class="filter p-3 bg-white">
+            <h4><i class="fa fa-filter"></i> Filter Learners</h4>
 
             <form action="{{ route('learnerHistory') }}" method="GET">
-                <div class="row">
+                <div class="row g-4">
                     <!-- Filter By Plan -->
                     <div class="col-lg-3">
                         <label for="plan_id">Filter By Plan</label>
@@ -65,10 +65,9 @@ $current_route = Route::currentRouteName();
                         <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email"
                             value="{{ request()->get('search') }}">
                     </div>
-                </div>
+                
 
-                <div class="row mt-3">
-                    <div class="col-lg-2">
+                    <div class="col-lg-3 align-self-end">
                         <button class="btn btn-primary button">
                             <i class="fa fa-search"></i> Search Records
                         </button>
@@ -204,11 +203,11 @@ if ($transaction && isset($transaction->pending_amount)) {
 @endforeach
 
 {{-- Pagination --}}
-@if ($learnerHistory->lastPage() > 1)
+ @if ($learnerHistory->lastPage() > 1)
 <ul class="paginations">
     {{-- Prev Button --}}
     <li>
-        <a href="{{ $learnerHistory->onFirstPage() ? '#' : $learnerHistory->previousPageUrl() }}" class="w-auto px-3 text-muted {{ $learnerHistory->onFirstPage() ? 'disabled' : '' }}">
+        <a href="{{ $learnerHistory->onFirstPage() ? '#' : $learnerHistory->appends(request()->all())->previousPageUrl() }}" class="w-auto px-3 text-muted">
             Prev
         </a>
     </li>
@@ -216,7 +215,7 @@ if ($transaction && isset($transaction->pending_amount)) {
     {{-- Page Numbers --}}
     @for ($i = 1; $i <= $learnerHistory->lastPage(); $i++)
         <li>
-            <a href="{{ $learnerHistory->url($i) }}" class="{{ $learnerHistory->currentPage() == $i ? 'active' : '' }}">
+            <a href="{{ $learnerHistory->appends(request()->all())->url($i) }}" class="{{ $learnerHistory->currentPage() == $i ? 'active' : '' }}">
                 {{ $i }}
             </a>
         </li>
@@ -224,7 +223,7 @@ if ($transaction && isset($transaction->pending_amount)) {
 
         {{-- Next Button --}}
         <li>
-            <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted {{ $learnerHistory->hasMorePages() ? '' : 'disabled' }}">
+            <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->appends(request()->all())->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">
                 Next
             </a>
         </li>

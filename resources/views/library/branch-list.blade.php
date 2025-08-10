@@ -14,13 +14,13 @@
                 <table class="table text-center  " id="datatable">
                     <thead>
                         <tr>
-                            <th>S.No.</th>
-                            <th>Branch Name</th>
+                            <th style="width:10%">S.No.</th>
+                            <th style="width:15%">Branch Name</th>
                             <th>Contact Info</th>
                             <th>Email</th>
-                            <th>Address</th>
-                            <th>Master</th>
-                            <th style="width:30%">Action</th>
+                            <th style="width:15%">Address</th>
+                            <th>Configuration</th>
+                            <th >Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,7 +29,7 @@
                         <tr>
                             <td>{{$key+1}}</td>
                             <td>{{$value->name}}</td>
-                            <td>{{$value->mobile ?? 'Not updated yet'}}
+                            <td>+91-{{$value->mobile ?? 'Not updated yet'}}
                             </td>
                             <td>
                                 <span>{{$value->email ?? 'Not updated yet'}}</span>
