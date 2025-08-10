@@ -274,7 +274,8 @@ $user = getAuthenticatedUser();
                 @endif
             </div>
         </div>
-
+        <div id="success-message" class="alert alert-success" style="display:none;"></div>
+        <div id="error-message" class="alert alert-danger" style="display:none;"></div> 
         @if(isset($today_renew) && $today_renew==true)
         <script>
             window.onload = function() {

@@ -250,9 +250,15 @@ class LoadMenus
                 $this->updateLibraryStatus();
                 $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
                     $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
-                    $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
-                    $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false); // can be negative
-                    $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
+                  
+                     if ($lib_enddate) { // only if there is an end date
+                        $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
+                        $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
+                        $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
+                    } else {
+                        $diffInExtensionDays = null;
+                        $inExtension_lib = false;
+                    }
             }else{
                 $diffInExtensionDays='';
                 $inExtension_lib='';

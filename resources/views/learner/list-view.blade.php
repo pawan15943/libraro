@@ -76,7 +76,7 @@
                            
                         @endphp
                          <tr>
-                            <td>{{ $learner->seat_no }}<br>{{$operationDetails['field']}} <code> ({{$operationDetails['old']}} to  {{$operationDetails['new']}})<code></td> <!-- Seat No -->
+                            <td>{{ $learner->seat_no ?? 'GEN'}}<br>{{$operationDetails['field']}} <code> ({{$operationDetails['old']}} to  {{$operationDetails['new']}})<code></td> <!-- Seat No -->
                            
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"
@@ -87,7 +87,7 @@
                             <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{ $learner->email }}" data-bs-placement="bottom"><i
                                     class="fa-solid fa-times text-danger"></i></i>
-                                {{ $learner->email }}</span> <br>
+                                {{ $learner->email ?? 'Email ID Not Available'}}</span> <br>
                                 <small> +91-{{$learner->mobile}}</small>
                             </td>
                             <td>
@@ -139,7 +139,7 @@
                         </tr>
                     @elseif($data->learner)
                     <tr>
-                        <td>{{ $data->learner->seat_no }}</td> <!-- Seat No -->
+                        <td>{{ $data->learner->seat_no ?? 'GEN'}}</td> <!-- Seat No -->
                         
                         <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                             data-bs-title="{{$data->learner->name}}" data-bs-placement="bottom">{{$data->learner->name}}</span>
@@ -149,7 +149,7 @@
                         <td><span class="truncate" data-bs-toggle="tooltip"
                             data-bs-title="{{ $data->learner->email }}" data-bs-placement="bottom"><i
                                 class="fa-solid fa-times text-danger"></i></i>
-                            {{ $data->learner->email }}</span> <br>
+                            {{ $data->learner->email ?? 'Email ID Not Available'}}</span> <br>
                             <small> +91-{{$data->learner->mobile}}</small>
                         </td>
                         <td>
@@ -203,7 +203,7 @@
                             $planType=App\Models\planType::where('id',$learner_detail->plan_type_id)->first();
                         @endphp
                         <tr>
-                            <td>{{ $data->seat_no }}</td> <!-- Seat No -->
+                            <td>{{ $data->seat_no ?? 'GEN' }}</td> <!-- Seat No -->
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$data->name}}" data-bs-placement="bottom">{{$data->name}}</span>
@@ -213,7 +213,7 @@
                             <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
                                     class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email }}</span> <br>
+                                {{ $data->email ?? 'Email ID Not Available'}}</span> <br>
                                 <small> +91-{{$data->mobile}}</small>
                             </td>
                             <td>
@@ -259,7 +259,7 @@
                         </tr>
                     @else
                         <tr>
-                            <td>{{ $data->seat_no }}</td> <!-- Seat No -->
+                            <td>{{ $data->seat_no ?? 'GEN'}}</td> <!-- Seat No -->
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{$data->name}}" data-bs-placement="bottom">{{$data->name}}</span>
@@ -269,7 +269,7 @@
                             <td><span class="truncate" data-bs-toggle="tooltip"
                                 data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
                                     class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email }}</span> <br>
+                                {{ $data->email ?? 'Email ID Not Available'}}</span> <br>
                                 <small> +91-{{$data->mobile}}</small>
                             </td>
                             <td>

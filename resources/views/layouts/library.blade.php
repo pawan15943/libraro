@@ -7,7 +7,7 @@
 
     <title>Libraro : Library Management Software</title>
 
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
+ 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"
         rel="stylesheet">
@@ -28,7 +28,7 @@
     <!-- Bootstrap Toggle CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
-      
+    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
