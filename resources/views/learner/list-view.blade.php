@@ -69,8 +69,8 @@
                     @foreach ($result as $data)
                     @if($data->operation_date)
                         @php
-                            $learner=App\Models\Learner::where('id',$data->learner_id)->first();
-                            $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->with(['plan','planType'])->first();
+                            $learner=App\Models\Learner::withTrashed()->where('id',$data->learner_id)->first();
+                            $learner_detail=App\Models\LearnerDetail::withTrashed()->where('id',$data->learner_detail_id)->with(['plan','planType'])->first();
                            
                             $operation = DB::table('learner_operations_log')->where('learner_id',$data->learner_id)->where('learner_detail_id',$data->learner_detail_id)->where('operation',$data->operation)->whereDate('created_at',$data->operation_date)->first();
                             $operationDetails = HelperService::getOperationDetails($operation);
@@ -88,10 +88,10 @@
                             <td>
                             <span class="truncate"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-title="{{ $learner->email ?? 'Email ID Not Available' }}"
                                 data-bs-placement="bottom">
-                                @if(isset($data->email) && $data->email)
-                                     {{ $data->email }}
+                                @if(isset($learner->email) && $learner->email)
+                                     {{ $learner->email }}
                                 @else
                                     <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
                                 @endif
@@ -124,7 +124,7 @@
                                             $inextendDate = null;
                                             $diffExtendDay = null;
                                         }
-                                   @endphp
+                                    @endphp
                                 
                                     
                                     @if (isset($learner_detail) && $learner_detail->status == 1)
