@@ -81,8 +81,8 @@
                            
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$learner->name}}" data-bs-placement="bottom">{{$learner->name}}</span>
-                            <br> <small>{{$learner->dob}}</small>
+                                data-bs-title="{{$learner->name ?? ''}}" data-bs-placement="bottom">{{$learner->name ?? ''}}</span>
+                            <br> <small>{{$learner->dob ?? ''}}</small>
                             </td>
                            
                             <td>
@@ -108,40 +108,15 @@
                                     <small>{{ $learner_detail->planType->name ?? 'N/A' }}</small> 
                             </td>
                             <td>
-                                    @php
-                                        
-                                        $today = Carbon::today();
-                                    
-                                        if (isset($learner_detail) && $learner_detail->plan_end_date) {
-                                            $endDate = Carbon::parse($learner_detail->plan_end_date);
-                                            $diffInDays = $today->diffInDays($endDate, false);
-                                    
-                                            $inextendDate = $endDate->copy()->addDays($extendDay ?? 0); 
-                                            $diffExtendDay = $today->diffInDays($inextendDate, false);
-                                        } else {
-                                            $endDate = null;
-                                            $diffInDays = null;
-                                            $inextendDate = null;
-                                            $diffExtendDay = null;
-                                        }
-                                    @endphp
-                                
-                                    
-                                    @if (isset($learner_detail) && $learner_detail->status == 1)
-                                        Active <small>{{$learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
-                                    @else
-                                        Inactive <small>{{isset($learner_detail) && $learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                    @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                        <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
+                                  
+                                @if (isset($learner_detail) && $learner_detail->status == 1)
+                                    Active <small>{{$learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
+                                @else
+                                    Inactive <small>{{isset($learner_detail) && $learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
+                                @endif
+                                <br>
+                                {!! getUserStatusWithSpan($learner_detail->plan_end_date) !!}
+                                   
                             </td>
                             
                             
@@ -178,20 +153,13 @@
                                 <small>{{ $data->planType->name ?? 'N/A' }}</small> 
                         </td>
                         <td>
-                            @php
-                                    
-                                    $today = Carbon::today();
+                                @php
                                     if($data->plan_end_date){
                                         $endDate =$data->plan_end_date;
                                     }elseif($data->learner->plan_end_date){
                                         $endDate =$data->learner->plan_end_date;
                                     }
-                                    $endDate = Carbon::parse($endDate);
-                                    $diffInDays = $today->diffInDays($endDate, false);
-                                    $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                    
-                                    $diffExtendDay= $today->diffInDays($inextendDate, false);
-                                   
+                                  
                                 @endphp
                                 
                                 @if ($data->status == 1 || $data->learner->status == 1)
@@ -200,15 +168,7 @@
                                     Inactive
                                 @endif
                                 <br>
-                                @if ($diffInDays > 0)
-                                    <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $data->status == 1)
-                                    <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                    <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                @else
-                                    <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                @endif
+                               {!! getUserStatusWithSpan($endDate) !!}
                         </td>
                         
                         
@@ -252,33 +212,20 @@
                             </td>
                             <td>
                                 @php
-                                        
-                                        $today = Carbon::today();
-                                        if($data->max_plan_end_date){
-                                            $endDate =$data->max_plan_end_date;
-                                        }
-                                        $endDate = Carbon::parse($endDate);
-                                        $diffInDays = $today->diffInDays($endDate, false);
-                                        $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                        
-                                        $diffExtendDay= $today->diffInDays($inextendDate, false);
+                                    if($data->max_plan_end_date){
+                                        $endDate =$data->max_plan_end_date;
+                                    }
+                                    $endDate = Carbon::parse($endDate);
                                     
-                                    @endphp
-                                    
-                                    @if ($learner_detail->status == 1)
-                                        Active
-                                    @else
-                                        Inactive
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $learner_detail->status == 1)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                   
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
+                                @endphp
+                                
+                                @if ($learner_detail->status == 1)
+                                    Active
+                                @else
+                                    Inactive
+                                @endif
+                                <br>
+                                {!! getUserStatusWithSpan($endDate) !!}
                             </td>
                             
                             
@@ -316,36 +263,21 @@
                             </td>
                             <td>
                                 @php
-                                        
-                                        $today = Carbon::today();
-                                        if($data->plan_end_date){
-                                            $endDate =$data->plan_end_date;
-                                        }elseif($data->learner->plan_end_date){
-                                            $endDate =$data->learner->plan_end_date;
-                                        }
-                                        $endDate = Carbon::parse($endDate);
-                                        $diffInDays = $today->diffInDays($endDate, false);
-                                        $inextendDate = $endDate->copy()->addDays($extendDay); 
-                                        
-                                        $diffExtendDay= $today->diffInDays($inextendDate, false);
+                                    if($data->plan_end_date){
+                                        $endDate =$data->plan_end_date;
+                                    }elseif($data->learner->plan_end_date){
+                                        $endDate =$data->learner->plan_end_date;
+                                    }
                                     
-                                    @endphp
-                                    
-                                    @if ($data->status == 1)
-                                        Active
-                                    @else
-                                        Inactive
-                                    @endif
-                                    <br>
-                                    @if ($diffInDays > 0)
-                                        <small class="text-success">Plan Expires in {{ $diffInDays }} days</small>
-                                    @elseif ($diffInDays <= 0 && $diffExtendDay > 0 && $data->status == 1)
-                                        <small class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are {{ abs($diffExtendDay) }} days.</small>
-                                    @elseif ($diffInDays < 0 && $diffExtendDay == 0)
-                                        <small class="text-warning fs-10 d-block">Plan Expires today</small>
-                                    @else
-                                        <small class="text-danger fs-10 d-block">Plan Expired {{ abs($diffInDays) }} days ago</small>
-                                    @endif
+                                @endphp
+                                
+                                @if ($data->status == 1)
+                                    Active
+                                @else
+                                    Inactive
+                                @endif
+                                <br>
+                                {!! getUserStatusWithSpan($endDate) !!}
                             </td>
                             
                             
