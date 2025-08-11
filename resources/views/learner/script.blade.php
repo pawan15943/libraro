@@ -954,8 +954,19 @@
                     
                     if (response.success) {
                         logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
-                        $("#success-message").text('Form submission successful').show();
-                        $("#error-message").hide();
+                     
+                       Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Renew successful',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '{{ route('seats') }}';
+                                location.reload(true);
+                            }
+                        });
+
                         setTimeout(function() {
                             window.location.href = '{{ route('seats') }}';
                             location.reload(true); 
@@ -963,8 +974,11 @@
                     } else if (response.errors) {
                         showFormErrors(response.errors);
                     }  else {
-                        $("#error-message").text(response.message).show();
-                        $("#success-message").hide();
+                       Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message || 'Something went wrong. Please try again.'
+                        });
                     }
                 },
                error: function(xhr, status, error) {
@@ -973,8 +987,11 @@
                     const errors = xhr.responseJSON.errors;
                     showFormErrors(errors);                       
                 } else {
-                    $("#error-message").text("Something went wrong. Please try again.").show();
-                    $("#success-message").hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Something went wrong. Please try again.'
+                    });
                 }
             }
 

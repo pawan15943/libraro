@@ -3,21 +3,6 @@
 
 <!-- Content Header (Page header) -->
 
-
-
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
-
-
-
 <div class="row">
     <div class="col-lg-12 text-end">
         @can('has-permission', 'General Seat Booked')
@@ -178,7 +163,8 @@ if ($transaction && isset($transaction->pending_amount)) {
 
                     @endcan
                     @endif
-                    @if($planStatus['diff_extend_day'] > 0)
+                  
+                    @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                         <!-- Sent Mail -->
 
                         @can('has-permission', 'WhatsApp Notification')

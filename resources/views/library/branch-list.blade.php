@@ -1,81 +1,88 @@
 @extends('layouts.library')
 @section('content')
-
+ @if (session('error'))
+<div class="alert alert-danger">
+    {{ session('error') }}
+</div>
+@endif
+@if (session('success'))
+<div class="alert alert-success">
+    {{ session('success') }}
+</div>
+@endif
 <!-- Breadcrumb -->
 <div class="heading-list justify-content-end">
     <a href="{{ route('branch.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Branch
     </a>
 </div>
-<div class="card p-0 mt-3">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="table-responsive">
-                <table class="table text-center  " id="datatable">
-                    <thead>
-                        <tr>
-                            <th style="width:10%">S.No.</th>
-                            <th style="width:15%">Branch Name</th>
-                            <th>Contact Info</th>
-                            <th>Email</th>
-                            <th style="width:15%">Address</th>
-                            <th>Configuration</th>
-                            <th >Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($branches as $key => $value)
+@if($branches->isEmpty())
+  <p class="not-found info-message">
+<span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
 
-                        <tr>
-                            <td>{{$key+1}}</td>
-                            <td>{{$value->name}}</td>
-                            <td>+91-{{$value->mobile ?? 'Not updated yet'}}
-                            </td>
-                            <td>
-                                <span>{{$value->email ?? 'Not updated yet'}}</span>
+There is currently no Data available </p>  
+@else
+<div class="row g-4 mt-4">
+    @foreach($branches as $key => $value)
+        <div class="col-lg-4 col-md-6">
+            <div class="planBox">
+                <div class="heading d-flex justify-content-between align-items-center">
+                    <h4>Branch {{ $key+1 }}</h4>
+                    <span class="active">Active</span>
+                </div>
 
-                            </td>
-                            <td>{{$value->library_address ?? 'Not updated yet'}}</td>
-                            <td>
+                <div class="plan border-top mt-2">
+                    <div class="branchInfo mb-2">
+                        <h4>{{ $value->name }}</h4>
+                        <span>{{ $value->library_address ?? 'Not updated yet' }}</span>
+                    </div>
+                    <ul>
+                        <li>
+                            <span>Contact</span>
+                            <p class="m-0">+91-{{ $value->mobile ?? 'Not updated yet' }}</p>
+                        </li>
+                        <li class="w-100">
+                            <span>Email ID</span>
+                            <p class="m-0">{{ $value->email ?? 'Not updated yet' }}</p>
+                        </li>
+                    </ul>
+                </div>
 
-                                <ul class="actionalbls">
-                                    @if(getCurrentBranch() !=0)
-
-                                    <li><a href="{{route('seat.create',getCurrentBranch())}}" title="Seat Update "><i class="fa-solid fa-chair"></i></a></li>
-                                    <li><a href="{{route('hour.create',getCurrentBranch())}}" title="Hour Update "><i class="fa-solid fa-clock-rotate-left"></i></a></li>
-                                    <li><a href="{{route('extendDay.create',$value->id)}}" title="Extend Day"><i class="fa-solid fa-calendar-plus"></i></a></li>
-                                    <li><a href="{{route('lockeramount.create',$value->id)}}" title="Locker Amount"><i class="fa-solid fa-lock"></i></a></li>
-                                  
-                                    @endif
-                                </ul>
-                            </td>
-                            <td>
-
-                                <ul class="actionalbls">
-
-                                    <li><a href="{{route('branch.edit',$value->id)}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i></a>
-                                    </li>
-                                    {{-- <li>
-                                        <form action="{{ route('branch.destroy', $value->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this branch?');" style="display:inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" style="border: none; background: none; padding: 0;" data-bs-toggle="tooltip" data-bs-title="Delete Branch" data-bs-placement="bottom">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </li> --}}
-
-
-                                </ul>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <ul class="actionalbles mt-3">
+                    @if(getCurrentBranch() != 0)
+                        <li>
+                            <a href="{{ route('seat.create', getCurrentBranch()) }}" title="Seat Update">
+                                <i class="fa-solid fa-chair"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('hour.create', getCurrentBranch()) }}" title="Hour Update">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('extendDay.create', $value->id) }}" title="Extend Day">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('lockeramount.create', $value->id) }}" title="Locker Amount">
+                                <i class="fa-solid fa-lock"></i>
+                            </a>
+                        </li>
+                    @endif
+                    <li>
+                        <a href="{{ route('branch.edit', $value->id) }}" title="Branch Profile Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
+    @endforeach
 </div>
+@endif
+
 @include('library.script')
 
 @endsection

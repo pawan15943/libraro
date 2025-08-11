@@ -338,6 +338,7 @@ class LoadMenus
             $id = getLibraryId();
             $library = Library::findOrFail($id);
            
+          
             if ($library->status != 1) {
                 $library->status = 1;
                 $library->save();

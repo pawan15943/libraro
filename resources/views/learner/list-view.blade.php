@@ -46,6 +46,7 @@
     }else{
         $text='';
     }
+   
 @endphp
 <div class="row mb-4">
     <div class="col-lg-12">
@@ -84,11 +85,19 @@
                             <br> <small>{{$learner->dob}}</small>
                             </td>
                            
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $learner->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $learner->email ?? 'Email ID Not Available'}}</span> <br>
-                                <small> +91-{{$learner->mobile}}</small>
+                            <td>
+                            <span class="truncate"
+                                data-bs-toggle="tooltip"
+                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-placement="bottom">
+                                @if($data->email)
+                                     {{ $data->email }}
+                                @else
+                                    <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
+                                @endif
+                            </span>
+                            <br>
+                            <small>+91-{{ $data->mobile }}</small>
                             </td>
                             <td>
                                 {{ $learner_detail->plan_start_date ?? 'N/A' }}<br>
@@ -146,11 +155,19 @@
                         <br> <small>{{$data->dob}}</small>
                         </td>
                        
-                        <td><span class="truncate" data-bs-toggle="tooltip"
-                            data-bs-title="{{ $data->learner->email }}" data-bs-placement="bottom"><i
-                                class="fa-solid fa-times text-danger"></i></i>
-                            {{ $data->learner->email ?? 'Email ID Not Available'}}</span> <br>
-                            <small> +91-{{$data->learner->mobile}}</small>
+                         <td>
+                            <span class="truncate"
+                                data-bs-toggle="tooltip"
+                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-placement="bottom">
+                                @if($data->email)
+                                     {{ $data->email }}
+                                @else
+                                    <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
+                                @endif
+                            </span>
+                            <br>
+                            <small>+91-{{ $data->mobile }}</small>
                         </td>
                         <td>
                             {{ $data->plan_start_date ?? 'N/A' }}<br>
@@ -210,12 +227,21 @@
                             <br> <small>{{$data->dob}}</small>
                             </td>
                         
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email ?? 'Email ID Not Available'}}</span> <br>
-                                <small> +91-{{$data->mobile}}</small>
-                            </td>
+                          <td>
+                            <span class="truncate"
+                                data-bs-toggle="tooltip"
+                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-placement="bottom">
+                                @if($data->email)
+                                     {{ $data->email }}
+                                @else
+                                    <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
+                                @endif
+                            </span>
+                            <br>
+                            <small>+91-{{ $data->mobile }}</small>
+                        </td>
+
                             <td>
                                 {{ $data->max_plan_start_date ?? 'N/A' }}<br>
                                     <small>{{ $plan->name ?? 'N/A' }}</small>
@@ -266,11 +292,19 @@
                             <br> <small>{{$data->dob}}</small>
                             </td>
                         
-                            <td><span class="truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email }}" data-bs-placement="bottom"><i
-                                    class="fa-solid fa-times text-danger"></i></i>
-                                {{ $data->email ?? 'Email ID Not Available'}}</span> <br>
-                                <small> +91-{{$data->mobile}}</small>
+                            <td>
+                            <span class="truncate"
+                                data-bs-toggle="tooltip"
+                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-placement="bottom">
+                                @if($data->email)
+                                     {{ $data->email }}
+                                @else
+                                    <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
+                                @endif
+                            </span>
+                            <br>
+                            <small>+91-{{ $data->mobile }}</small>
                             </td>
                             <td>
                                 {{ $data->plan_start_date ?? 'N/A' }}<br>

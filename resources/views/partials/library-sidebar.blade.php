@@ -51,7 +51,11 @@ $user = getAuthenticatedUser();
                                         @if($submenu->guard === null || $submenu->guard == 'library')
                                        
                                             @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp) && !in_array($submenu->has_permissions, $finalHiddenName))
-                                             
+                                                    {{-- If submenu is toggle.feature, only show if status == 1 --}}
+                                                    @if($submenu->url == 'toggle.feature' && !$iscomp)
+                                                        @continue
+                                                    @endif
+
                                                 <li>
                                                     <a href="{{ route($submenu->url) }}"
                                                        class="{{ $current_route == $submenu->url ? 'active' : '' }}">

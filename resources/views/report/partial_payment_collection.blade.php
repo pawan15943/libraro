@@ -11,18 +11,6 @@ $today = \Carbon\Carbon::today();
 
 @endphp
 
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
-
-
 <div class="row">
    
     <div class="col-lg-12">
@@ -99,7 +87,7 @@ $today = \Carbon\Carbon::today();
                         <th class="merged-display">Payment Status</th>
                         <th class="merged-display">Payment Mode</th>
                         <th class="merged-display">Payment Date</th>
-                     
+                         <th class="merged-display">Action</th>
                     </tr>
                 </thead>
 
@@ -166,6 +154,14 @@ $today = \Carbon\Carbon::today();
                         </td>
                         <td class="merged-display">{{ $value->payment_mode ?? 'Not Yet'}} </td>
                         <td class="merged-display">{{  $value->paid_date ?? 'Not Paid Yet'}} </td>
+                        <td  class="merged-display">
+                            <ul class="actionalbls">
+                                  @can('has-permission', 'WhatsApp Notification')
+                                    <li><a href="https://web.whatsapp.com/send?phone=91{{$value->mobile}}&text=Hey!%20🌟%0A%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0A%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'whatsapp')" class="whatsapp w-auto px-2" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send WhatsApp Reminder"><i class="fa-brands fa-whatsapp pe-1"></i> </a></li>
+
+                                @endcan
+                            </ul>
+                        </td>
                      
                     </tr>
                     @endforeach

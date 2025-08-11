@@ -93,6 +93,7 @@
 
                 if (response.success && response.redirect) {
                     window.location.href = response.redirect;
+                    toastr.success(response.message);
                 }
                 else if (response.success) {
                     toastr.success(response.message);

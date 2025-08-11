@@ -66,7 +66,7 @@
                 </select>
                 <div id="custom_plan_type_input" style="margin-top: 10px; {{ (old('day_type_id', $planType->day_type_id ?? '') == 0) ? 'display:block;' : 'display:none;' }}">
                     <label for="custom_plan_type">Custom Plan Type Name</label>
-                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->custom_plan_type ?? '') }}">
+                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->name ?? '') }}">
                 </div>
                 @error('day_type_id')
                 <span class="invalid-feedback" role="alert">

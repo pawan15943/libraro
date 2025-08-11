@@ -63,7 +63,16 @@
             <div class="content">
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
-                    
+                    @if (session('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                    @endif
+                    @if (session('success'))
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
+                    @endif
                     @yield('content')
                     <script>
                         const sessionLifetime = @json(config('session.lifetime') * 60); // convert to seconds

@@ -130,15 +130,14 @@ $user = getAuthenticatedUser();
             <form action="{{ route('branch.switch') }}" method="POST" >
                 @csrf
                 <select name="branch_id" onchange="this.form.submit()" class="form-control-sm form-select">
-                    {{-- <option value="0" {{ $user->current_branch == 0 ? 'selected' : '' }}>
-                        📚 All Branches
-                    </option> --}}
+               
                     <option>Select Branch</option>
-                    @foreach($branches as $b)
+                   @foreach($branches as $b)
                         <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
-                            {{ $b->display_name ?? $b->name }}
+                            {{ trim($b->display_name) !== '' ? $b->display_name : $b->name }}
                         </option>
                     @endforeach
+
                 </select>
             </form>
 
@@ -274,8 +273,7 @@ $user = getAuthenticatedUser();
                 @endif
             </div>
         </div>
-        <div id="success-message" class="alert alert-success" style="display:none;"></div>
-        <div id="error-message" class="alert alert-danger" style="display:none;"></div> 
+        
         @if(isset($today_renew) && $today_renew==true)
         <script>
             window.onload = function() {

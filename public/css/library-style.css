@@ -855,3 +855,103 @@ button.dt-button.buttons-csv.buttons-html5 {
     box-shadow: 1px 0 5px #00000045;
     border: none;
 }
+
+ /* Master CSS Starts Here */
+    .planBox {
+      border: 1px solid #dedede;
+      border-radius: 1rem;
+      background: #fff;
+    }
+
+    .planBox h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 1rem;
+      margin: 0;
+      color: navy;
+    }
+
+    ul.actionalbles {
+      list-style: none;
+      display: flex;
+      gap: .5rem;
+      padding: .5rem;
+      border-top: 1px solid #dedede;
+      margin: 0;
+      justify-content: center;
+    }
+
+    ul.actionalbles li a {
+      border: 1px solid #d9d3d3;
+      width: 30px;
+      height: 30px;
+      border-radius: 2rem;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      color: #000;
+      font-size: .8rem;
+    }
+
+    ul.actionalbles li a:hover {
+      background: navy;
+      border-color: navy;
+      color: #fff;
+    }
+
+    .planBox .heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .planBox .heading span {
+      display: block;
+      font-size: .8rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #50bb00;
+      padding-right: 1rem;
+    }
+
+    .plan.border-top ul {
+      list-style: none;
+      margin: 0;
+      padding: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      display: flex;
+    }
+
+    .plan.border-top ul li {
+      width: calc(100% / 2 - 1rem);
+    }
+
+    .plan.border-top ul li span {
+      font-size: .8rem;
+      color: #ababab;
+      display: block;
+    }
+
+    .plan.border-top ul li p {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .branchInfo h4 {
+      padding: 0;
+    }
+
+    .branchInfo {
+      padding: 1rem;
+      background: #f0f0ff;
+    }
+
+    .branchInfo span {
+      line-height: 17px;
+      display: block;
+      font-size: .8rem;
+      color: #787878;
+    }
+    /* Master CSS Ends Here */

@@ -26,53 +26,72 @@
 </div>
 
 <!-- List of Users -->
-<div class="card p-0 mb-4">
-    <div class="table-responsive">
-        <table class="table text-center datatable" id="datatable">
-            <thead>
-                <tr>
-                    <th>S.No.</th>
-                    <th>Plan Name</th>
-                    <th>Plan Type Name</th>
-                    <th>Plan Price</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+@if(collect($data)->isEmpty())
+  <p class="not-found info-message">
+<span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
 
-            <tbody>
-                @if(count($data) > 0)
-                @foreach($data as $key => $value)
-                <tr>
-                    <td>{{ $key+1 }}</td>
-                    <td>{{ $value->plan->name }}</td>
-                    <td>{{ $value->planType->name }}</td>
-                    <td>{{ $value->price }}</td>
+There is currently no Data available </p>  
+@else
+<div class="row g-4 mt-4">
+    @foreach($data as $key => $value)
+        <div class="col-lg-4 col-md-6">
+            <div class="planBox">
+                <div class="heading d-flex justify-content-between align-items-center">
+                    <h4>Plan {{ $key + 1 }} Price</h4>
+                    @if($value->deleted_at)
+                        <span class="inactive text-danger" >Inactive</span>
+                    @else
+                        <span class="active">Active</span>
+                    @endif
+                </div>
 
+                <div class="plan border-top mt-2">
+                    <ul>
+                        <li>
+                            <span>Plan</span>
+                            <p class="m-0">{{ $value->plan->name ?? '-' }}</p>
+                        </li>
+                        <li>
+                            <span>Shift Name</span>
+                            <p class="m-0">{{ $value->planType->name ?? '-' }}</p>
+                        </li>
+                        <li>
+                            <span>Plan Price</span>
+                            <p class="m-0">{{ $value->price ?? '-' }}</p>
+                        </li>
+                    </ul>
+                </div>
 
-                    <td>
-                        <ul class="actionalbls">
-                           <li><a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanPrice" title="Active/Deactive">
-                                        @if($value->deleted_at)
-                                        <i class="fas fa-ban"></i>
-                                        @else
-                                        <i class="fa fa-check"></i>
-                                        @endif</a></li>
-                                <li><a href="{{route('planPrice.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                                <li><a href="javascript:void(0)" class="delete-btn" data-id="{{ $value->id }}" data-table="PlanPrice" title="Delete"><i class="fa fa-trash"></i></a></li>
-                        </ul>
-                    </td>
-                </tr>
-                @endforeach
-                @endif
-            </tbody>
-        </table>
-    </div>
+                <ul class="actionalbles mt-3">
+                    <li>
+                        <a href="javascript:void(0)"  class="active-deactive"  data-id="{{ $value->id }}"  data-table="PlanPrice"  title="Active/Deactive">
+                            @if($value->deleted_at)
+                                <i class="fas fa-ban"></i>
+                            @else
+                                <i class="fa fa-check"></i>
+                            @endif
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('planPrice.create', $value->id) }}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:void(0)" 
+                           class="delete-btn" 
+                           data-id="{{ $value->id }}" 
+                           data-table="PlanPrice" 
+                           title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    @endforeach
 </div>
-
-
-
-
-
+@endif
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

@@ -24,55 +24,80 @@
     </a>
 
 </div>
-<div class="card p-0 mb-4">
-    <div class="table-responsive">
-        <table class="table text-center datatable" id="datatable">
-            <thead>
-                <tr>
-                    <th>S.No.</th>
-                    <th>Plan type Name</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Total Hour</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($data as $key => $value)
-                <tr>
-                    <td>{{ $key+1 }}</td>
-                    <td>{{ $value->name }}</td>
-                    <td>{{ $value->start_time }}</td>
-                    <td>{{ $value->end_time }}</td>
-                    <td>{{ $value->slot_hours }}</td>
+@if($data->isEmpty())
+  <p class="not-found info-message">
+<span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
 
+There is currently no Data available </p>  
+@else
+<div class="row g-4 mt-4">
+    @foreach($data as $key => $value)
+        <div class="col-lg-4 col-md-6">
+            <div class="planBox">
+                <div class="heading d-flex justify-content-between align-items-center">
+                    <h4>Shift {{ $key + 1 }}</h4>
+                    @if($value->deleted_at)
+                        <span class="inactive text-danger">Inactive</span>
+                    @else
+                        <span class="active">Active</span>
+                    @endif
+                </div>
 
-                    <td>
-                         <ul class="actionalbls">
-                                <li>
-                                    <a href="javascript:void(0)" class="active-deactive" data-id="{{ $value->id }}" data-table="PlanType" title="Active/Deactive">
-                                        @if($value->deleted_at)
-                                        <i class="fas fa-ban"></i>
-                                        @else
-                                        <i class="fa fa-check"></i>
-                                        @endif
-                                    </a>
-                                </li>
-                                  
-                                 <li><a href="{{route('planType.create',$value->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                               
-                                <li><a href="javascript:void(0)" class="delete-btn" data-id="{{ $value->id }}" data-table="PlanType" title="Delete"><i class="fa fa-trash"></i></a></li>
-                            </ul>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+                <div class="plan border-top mt-2">
+                    <ul>
+                        <li>
+                            <span>Shift Name</span>
+                            <p class="m-0">{{ $value->name }}</p>
+                        </li>
+                        <li>
+                            <span>Shift Hrs</span>
+                            <p class="m-0">{{ $value->slot_hours }}</p>
+                        </li>
+                        <li>
+                            <span>Start Time</span>
+                            <p class="m-0">{{ \Carbon\Carbon::parse($value->start_time)->format('h:i A') }}</p>
+                        </li>
+                        <li>
+                            <span>End Time</span>
+                            <p class="m-0">{{ \Carbon\Carbon::parse($value->end_time)->format('h:i A') }}</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <ul class="actionalbles mt-3">
+                    <li>
+                        <a href="javascript:void(0)" 
+                           class="active-deactive" 
+                           data-id="{{ $value->id }}" 
+                           data-table="PlanType" 
+                           title="Active/Deactive">
+                            @if($value->deleted_at)
+                                <i class="fas fa-ban"></i>
+                            @else
+                                <i class="fa fa-check"></i>
+                            @endif
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('planType.create', $value->id) }}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:void(0)" 
+                           class="delete-btn" 
+                           data-id="{{ $value->id }}" 
+                           data-table="PlanType" 
+                           title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    @endforeach
 </div>
-
-
-
+@endif
 
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
@@ -80,18 +105,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
 
-<script>
-    (function($) {
-        $(window).on("load", function() {
-            $(".contents").mCustomScrollbar({
-                theme: "dark",
-                scrollInertia: 300,
-                axis: "y",
-                autoHideScrollbar: false, // Keeps
-            });
-        });
-    })(jQuery);
-</script>
+
 <script>
     $(document).ready(function() {
         function toggleCustomInput() {
