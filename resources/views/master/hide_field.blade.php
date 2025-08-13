@@ -71,10 +71,22 @@
                     hidden_ids: selectedIds
                 },
                 success: function (response) {
-                    console.log(response.message);
+                       Swal.fire({
+                            icon: 'success',
+                            title: 'Changed!',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
                 },
                 error: function () {
-                    alert("Something went wrong. Please try again.");
+                   
+                    Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Something went wrong. Please try again.'
+                        });
                 }
             });
         });

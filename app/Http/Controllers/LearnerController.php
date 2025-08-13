@@ -1943,20 +1943,26 @@ class LearnerController extends Controller
         return response()->json($status);
     }
 
-    public function destroy($id)
+   public function destroy(Request $request, $id)
     {
 
         try {
-            DB::transaction(function () use ($id) {
+             DB::transaction(function () use ($request, $id) {
 
                 $customer = Learner::findOrFail($id);
 
 
-                $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)
-                    ->orderBy('id', 'desc')
-                    ->first();
-
+                $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id',$request->learnerDetail)->first();
+                if (!$lastLearnerDetail) {
+                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
+                }
                 if ($lastLearnerDetail) {
+                     if ($request->isRefund && $request->refundAmount > 0) {
+                         LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
+                            'refund'=> $request->refundAmount
+                         ]);
+                            
+                        }
                     // Delete associated LearnerTransaction records
                     LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
 
@@ -1965,10 +1971,7 @@ class LearnerController extends Controller
                     $customer->save();
                     $customer->delete();
                    
-                } else {
-
-                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
-                }
+                } 
             });
 
 

@@ -1264,55 +1264,130 @@
         }
     }
 
+    // $(document).on('click', '.delete-customer', function() {
+    //     var id = $(this).data('id');
+    //     var learnerDetail = $(this).data('learnerDetail');
+    //     var url = '{{ route('learners.destroy', ':id') }}';
+    
+    //     url = url.replace(':id', id);  
+    //     var formId='deleteSeat';
+    //     var fieldName='deleted_at';
+    //     var newValue = new Date().toISOString()
+    //     var oldValue = null;
+       
+    //     Swal.fire({
+    //         title: 'Are you sure?',
+    //         text: "You won't be able to revert this!",
+    //         icon: 'warning',
+    //         showCancelButton: true,
+    //         confirmButtonColor: '#3085d6',
+    //         cancelButtonColor: '#d33',
+    //         confirmButtonText: 'Yes, delete it!'
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             $.ajax({
+    //                 url: url,
+    //                 type: 'DELETE',
+    //                 data: {
+    //                     _token: '{{ csrf_token() }}'
+    //                 },
+    //                 success: function(response) {
+    //                     logFieldChange(id, formId, fieldName, oldValue, newValue,learnerDetail);
+    //                     Swal.fire(
+    //                         'Deleted!',
+    //                         'User has been deleted.',
+    //                         'success'
+    //                     ).then(() => {
+    //                         location.reload(); // Optionally, you can refresh the page
+    //                     });
+    //                 },
+    //                 error: function(xhr, status, error) {
+    //                     Swal.fire(
+    //                         'Error!',
+    //                         'An error occurred while deleting the student.',
+    //                         'error'
+    //                     );
+    //                 }
+    //             });
+    //         }
+    //     });
+    // });
+
     $(document).on('click', '.delete-customer', function() {
         var id = $(this).data('id');
-        var learnerDetail = $(this).data('learnerDetail');
+       var learnerDetail = $(this).data('learnerdetail');
+      
         var url = '{{ route('learners.destroy', ':id') }}';
-    
-        url = url.replace(':id', id);  
-        var formId='deleteSeat';
+        url = url.replace(':id', id);
+         var formId='deleteSeat';
         var fieldName='deleted_at';
         var newValue = new Date().toISOString()
         var oldValue = null;
        
+       
         Swal.fire({
             title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            html: `
+                <p>You won't be able to revert this!</p>
+                <div style="text-align:left;">
+                    <input type="checkbox" id="isRefund" style="margin-right:5px;">
+                    <label for="isRefund">Refund?</label>
+                    <div id="refundAmountDiv" style="margin-top:10px; display:none;">
+                        <input type="number" id="refundAmount" class="swal2-input" placeholder="Enter refund amount">
+                    </div>
+                </div>
+            `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: 'Yes, delete it!',
+            didOpen: () => {
+                $('#isRefund').on('change', function() {
+                    if ($(this).is(':checked')) {
+                        $('#refundAmountDiv').show();
+                    } else {
+                        $('#refundAmountDiv').hide();
+                        $('#refundAmount').val('');
+                    }
+                });
+            },
+            preConfirm: () => {
+                const isRefund = $('#isRefund').is(':checked');
+                const refundAmount = $('#refundAmount').val();
+                if (isRefund && (!refundAmount || refundAmount <= 0)) {
+                    Swal.showValidationMessage('Please enter a valid refund amount');
+                    return false;
+                }
+                return {
+                    isRefund: isRefund,
+                    refundAmount: refundAmount
+                };
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
                     url: url,
                     type: 'DELETE',
                     data: {
-                        _token: '{{ csrf_token() }}'
+                        _token: '{{ csrf_token() }}',
+                        learnerDetail: learnerDetail,
+                        isRefund: result.value.isRefund ? 1 : 0,
+                        refundAmount: result.value.refundAmount
                     },
                     success: function(response) {
                         logFieldChange(id, formId, fieldName, oldValue, newValue,learnerDetail);
-                        Swal.fire(
-                            'Deleted!',
-                            'User has been deleted.',
-                            'success'
-                        ).then(() => {
-                            location.reload(); // Optionally, you can refresh the page
+                        Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
+                            location.reload();
                         });
                     },
-                    error: function(xhr, status, error) {
-                        Swal.fire(
-                            'Error!',
-                            'An error occurred while deleting the student.',
-                            'error'
-                        );
+                    error: function(xhr) {
+                        Swal.fire('Error!', 'An error occurred while deleting.', 'error');
                     }
                 });
             }
         });
     });
-
 
     // Learner Close Plan Form
     $(document).on('click', '.link-close-plan', function() {

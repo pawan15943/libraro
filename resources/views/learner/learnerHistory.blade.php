@@ -7,17 +7,6 @@
 $current_route = Route::currentRouteName();
 @endphp
 
-
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
 @can('has-permission', 'Filter')
 <div class="row mb-3">
     <div class="col-lg-12">

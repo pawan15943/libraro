@@ -202,7 +202,7 @@ class DashboardController extends Controller
            
           
             // for dropdown year and month
-            $dates = LearnerDetail::select('plan_start_date', 'plan_end_date')->get();
+            $dates = LearnerDetail::withTrashed()->select('plan_start_date', 'plan_end_date')->get();
 
             $months = [];
             foreach ($dates as $date) {
@@ -606,19 +606,19 @@ class DashboardController extends Controller
                 ->with('planType')
                 ->get();
 
-        // Prepare data for response for graph
-   
-        $bookinglabels = $plan_wise_booking->map(function ($booking) {
-            return $booking->planType->name ?? 'N/A'; // or any default value
-        })->toArray();
- 
-       
-        $bookingcount = $plan_wise_booking->pluck('booking')->toArray(); 
+            // Prepare data for response for graph
+    
+            $bookinglabels = $plan_wise_booking->map(function ($booking) {
+                return $booking->planType->name ?? 'N/A'; // or any default value
+            })->toArray();
+    
+        
+            $bookingcount = $plan_wise_booking->pluck('booking')->toArray(); 
 
 
-        // Prepare labels and data for revenue
-        $revenueLabels = $planTypeWiseRevenue->pluck('planType.name')->toArray();
-        $revenueData = $planTypeWiseRevenue->pluck('revenue')->toArray();
+            // Prepare labels and data for revenue
+            $revenueLabels = $planTypeWiseRevenue->pluck('planType.name')->toArray();
+            $revenueData = $planTypeWiseRevenue->pluck('revenue')->toArray();
 
         //recenue expense div
 
@@ -642,9 +642,12 @@ class DashboardController extends Controller
             ->keyBy(function ($expense) {
                 return "{$expense->year}-{$expense->month}";
             });
+
+         
         
-        $revenue_query = LearnerDetail::withoutGlobalScopes()
+        $revenue_query = LearnerDetail::withTrashed()->withoutGlobalScopes()
             ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+            ->leftJoin('learner_transactions', 'learner_transactions.learner_detail_id', '=', 'learner_detail.id')
             ->where('learner_detail.is_paid', 1)
             ->where('learner_detail.library_id',getLibraryId());
         
@@ -666,63 +669,83 @@ class DashboardController extends Controller
             });
         }
         
-        $learners = $revenue_query->select('plan_start_date', 'plan_end_date', 'plan_price_id', 'plans.plan_id as planId')->get();
+        $learners = $revenue_query->select('plan_start_date', 'plan_end_date', 'plan_price_id', 'plans.plan_id as planId','plans.type as planMonthType','learner_transactions.paid_amount','learner_transactions.pending_amount','learner_transactions.locker_amount','discount_amount','token_money','miscellaneous','refund')->get();
         
         // Calculate Revenue
         $revenues = [];
+       
+
         foreach ($learners as $learner) {
             $start_date = Carbon::parse($learner->plan_start_date);
             $end_date = Carbon::parse($learner->plan_end_date);
-        
-            $monthly_revenue = $learner->plan_price_id /  $learner->planId; // planID is a month duration.
-       
+
+            // base revenue calculation paid_amount=plan_price_id +locker_amount -discount_amount -pending_amount
+            $baseAmount = $learner->paid_amount;
+
+            if ($learner->planMonthType == 'MONTH') {
+                $monthly_base = $baseAmount / $learner->planId;
+            } elseif ($learner->planMonthType == 'YEAR') {
+                $monthly_base = $baseAmount / ($learner->planId * 12);
+            } else {
+                $monthly_base = $baseAmount; // one-time plan
+            }
+
+           $firstMonth = true;
+
+            // Adjust start date: skip the start month if starting on the last day and there’s more than one month
+            if ($start_date->isSameDay($start_date->copy()->endOfMonth()) && !$start_date->isSameMonth($end_date)) {
+                $start_date->addMonth();
+            }
+
             while ($start_date <= $end_date) {
                 $year = $start_date->year;
                 $month = $start_date->month;
-        
-                // Filter based on selected year and month
-                if ($request->filled('year') && $request->filled('month')) {
-                    if ($year == $request->year && $month == $request->month) {
-                        $key = "{$year}-{$month}";
-        
-                        if (!isset($revenues[$key])) {
-                            $revenues[$key] = [
-                                'year' => $year,
-                                'month' => $month,
-                                'monthly_revenue' => 0,
-                                'total_revenue' => 0,
-                            ];
-                        }
-        
-                        $revenues[$key]['monthly_revenue'] += $monthly_revenue;
-                       
 
-                        // $revenues[$key]['total_revenue'] += $learner->plan_price_id;
-                    }
-                    
-                } elseif ($request->filled('year') && !$request->filled('month')) {
-                    // If only year is selected, filter by year
-                    if ($year == $request->year) {
-                        $key = "{$year}-{$month}";
-        
-                        if (!isset($revenues[$key])) {
-                            $revenues[$key] = [
-                                'year' => $year,
-                                'month' => $month,
-                                'monthly_revenue' => 0,
-                                'total_revenue' => 0,
-                            ];
-                        }
-        
-                        $revenues[$key]['monthly_revenue'] += $monthly_revenue;
-                       
-                        // $revenues[$key]['total_revenue'] += $learner->plan_price_id;
-                    }
+                // Skip last month if end_date is the first day of the month
+                if ($start_date->isSameMonth($end_date) && $end_date->day == 1) {
+                    break;
                 }
-                
+
+                $addToResult = false;
+
+                if ($request->filled('year') && $request->filled('month')) {
+                    $addToResult = ($year == $request->year && $month == $request->month);
+                } elseif ($request->filled('year') && !$request->filled('month')) {
+                    $addToResult = ($year == $request->year);
+                } else {
+                    $addToResult = true; // no filter, include all
+                }
+
+                if ($addToResult) {
+                    $key = "{$year}-{$month}";
+
+                    if (!isset($revenues[$key])) {
+                        $revenues[$key] = [
+                            'year' => $year,
+                            'month' => $month,
+                            'monthly_revenue' => 0,
+                            'total_revenue' => 0,
+                        ];
+                    }
+
+                    $monthRevenue = $monthly_base;
+
+                    if ($firstMonth) {
+                        $monthRevenue += ($learner->token_money ?? 0)
+                                    + ($learner->miscellaneous ?? 0)
+                                    - ($learner->refund ?? 0);
+                    }
+
+                    $revenues[$key]['monthly_revenue'] += $monthRevenue;
+                }
+
                 $start_date->addMonth();
+                $firstMonth = false;
             }
+
+
         }
+      
         
         // Combine Revenue and Expense
         $revenu_expense = [];
@@ -733,9 +756,15 @@ class DashboardController extends Controller
             $totalExpense = $expense ? $expense->total_expense : 0;
         
             $monthlyRevenue = round($revenue['monthly_revenue'], 2);
-            $trans = LearnerTransaction::whereYear('paid_date', $year)
+           $trans = LearnerTransaction::withTrashed()
+            ->whereYear('paid_date', $year)
             ->whereMonth('paid_date', $month)
-            ->selectRaw('SUM(paid_amount) as total_revenue')
+            ->selectRaw('
+                IFNULL(SUM(paid_amount), 0) 
+                + IFNULL(SUM(miscellaneous), 0) 
+                + IFNULL(SUM(token_money), 0) 
+                - IFNULL(SUM(refund), 0) AS total_revenue
+            ')
             ->groupByRaw('YEAR(paid_date), MONTH(paid_date)')
             ->first();
         
@@ -754,12 +783,19 @@ class DashboardController extends Controller
                 'netProfit' => $netProfit,
             ];
         }
-
-        $monthlyIncome=LearnerTransaction::with(['learner'])
-            ->where('branch_id', getCurrentBranch())
-            ->whereYear('paid_date', $year)
-            ->whereMonth('paid_date', $month)
-            ->sum('paid_amount');
+        
+       
+        $monthlyIncome = LearnerTransaction::withTrashed()
+        ->where('branch_id', getCurrentBranch())
+        ->whereYear('paid_date', $year)
+        ->whereMonth('paid_date', $month)
+        ->select(DB::raw("
+            IFNULL(SUM(paid_amount), 0) 
+            + IFNULL(SUM(miscellaneous), 0) 
+            + IFNULL(SUM(token_money), 0) 
+            - IFNULL(SUM(refund), 0) AS total_income
+        "))
+        ->value('total_income');
         $monthlyExpense=DB::table("monthly_expense")
                     ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
                     ->where('monthly_expense.branch_id', getCurrentBranch())
