@@ -18,19 +18,19 @@
 
 <!-- Masters -->
 
-<div class="heading-list justify-content-end">
+<div class="heading-list justify-content-end mb-1">
     <a href="{{ route('planType.create') }}" class="btn btn-primary export">
         <i class="fa-solid fa-plus "></i> Add Plan Type
     </a>
-
 </div>
-@if($data->isEmpty())
-  <p class="not-found info-message">
-<span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
 
-There is currently no Data available </p>  
+@if($data->isEmpty())
+<p class="not-found info-message">
+    <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
+    There is currently no Data available 
+</p>  
 @else
-<div class="row g-4 mt-4">
+<div class="row g-4 mb-4">
     @foreach($data as $key => $value)
         <div class="col-lg-4 col-md-6">
             <div class="planBox">
@@ -43,7 +43,7 @@ There is currently no Data available </p>
                     @endif
                 </div>
 
-                <div class="plan border-top mt-2">
+                <div class="plan border-top">
                     <ul>
                         <li>
                             <span>Shift Name</span>
@@ -64,7 +64,7 @@ There is currently no Data available </p>
                     </ul>
                 </div>
 
-                <ul class="actionalbles mt-3">
+                <ul class="actionalbles">
                     <li>
                         <a href="javascript:void(0)" 
                            class="active-deactive" 

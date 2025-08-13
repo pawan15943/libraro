@@ -11,18 +11,17 @@
 </div>
 @endif
 <!-- Breadcrumb -->
-<div class="heading-list justify-content-end">
+<div class="heading-list justify-content-end mb-4">
     <a href="{{ route('branch.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Branch
     </a>
 </div>
 @if($branches->isEmpty())
-  <p class="not-found info-message">
+<p class="not-found info-message">
 <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
-
 There is currently no Data available </p>  
 @else
-<div class="row g-4 mt-4">
+<div class="row g-4 mb-4">
     @foreach($branches as $key => $value)
         <div class="col-lg-4 col-md-6">
             <div class="planBox">
@@ -31,10 +30,10 @@ There is currently no Data available </p>
                     <span class="active">Active</span>
                 </div>
 
-                <div class="plan border-top mt-2">
-                    <div class="branchInfo mb-2">
+                <div class="plan border-top">
+                    <div class="branchInfo">
                         <h4>{{ $value->name }}</h4>
-                        <span>{{ $value->library_address ?? 'Not updated yet' }}</span>
+                        <span>Address : {{ $value->library_address ?? 'Not updated yet' }}</span>
                     </div>
                     <ul>
                         <li>
@@ -48,7 +47,7 @@ There is currently no Data available </p>
                     </ul>
                 </div>
 
-                <ul class="actionalbles mt-3">
+                <ul class="actionalbles">
                     @if(getCurrentBranch() != 0)
                         <li>
                             <a href="{{ route('seat.create', getCurrentBranch()) }}" title="Seat Update">

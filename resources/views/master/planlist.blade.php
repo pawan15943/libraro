@@ -20,7 +20,7 @@
 
 
 <!-- Masters -->
-<div class="heading-list justify-content-end">
+<div class="heading-list justify-content-end mb-4">
     <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Plan
     </a>
@@ -31,12 +31,12 @@
 
 There is currently no Data available </p>  
 @else
-<div class="row g-4 mt-4">
+<div class="row g-4 mb-4">
     @foreach($data as $key => $value)
         <div class="col-lg-4 col-md-6">
             <div class="planBox">
                 <div class="heading d-flex justify-content-between align-items-center">
-                    <h4>Plan {{ $key + 1 }}</h4>
+                    <h4 class="m-0">Plan {{ $key + 1 }}</h4>
                     @if($value->deleted_at)
                         <span class="inactive text-danger">Inactive</span>
                     @else
@@ -44,7 +44,7 @@ There is currently no Data available </p>
                     @endif
                 </div>
 
-                <div class="plan border-top mt-2">
+                <div class="plan border-top">
                     <ul>
                         <li>
                             <span>Plan Name</span>
@@ -53,7 +53,7 @@ There is currently no Data available </p>
                     </ul>
                 </div>
 
-                <ul class="actionalbles mt-3">
+                <ul class="actionalbles">
                     <li>
                         <a href="javascript:void(0)" class="active-deactive" 
                            data-id="{{ $value->id }}" data-table="Plan" 
