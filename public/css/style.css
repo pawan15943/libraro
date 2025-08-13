@@ -1732,6 +1732,7 @@ h1 * {
     padding: 1.5rem;
     border-radius: 1.5rem;
     box-shadow: 1px 0 5px #00000021;
+    height: 100%;
 }
 
 .active-plan-box .top-content {
@@ -1939,19 +1940,6 @@ a.text-white.text-decoration-none:hover i.fa-long-arrow-right {
     color: #14a9bc !important;
 }
 
-.seat-statistics {
-    background: var(--c5);
-    padding: 1rem;
-    border-radius: 1.5rem;
-    box-shadow: 1px 0 5px #00000021;
-
-}
-
-.seat-statistics ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
 
 
 
@@ -2383,9 +2371,13 @@ div#datatable_length {
     background: var(--c5);
     padding: 1.5rem;
     border-radius: 1rem;
-    /* box-shadow: 1px 0 36px #0000001c;
-    border: 1px solid #dedede; */
+    /* box-shadow: 1px 0 36px #0000001c;*/
+    border: 1px solid #dedede !important; 
     border: none;
+}
+
+.card.chart {
+    height: 100%;
 }
 
 label.permission {
@@ -3883,7 +3875,7 @@ ul.revenue-box {
     background: var(--c5);
     padding: 1rem;
     border-radius: 1.5rem;
-    box-shadow: 1px 0 5px #00000021;
+    border: 1px solid #dedede;
 }
 
 .seat-statistics>ul {
