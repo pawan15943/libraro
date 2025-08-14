@@ -7,7 +7,7 @@
 
     <title>Libraro : Library Management Software</title>
 
- 
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"
         rel="stylesheet">
@@ -15,12 +15,12 @@
     <link rel="stylesheet" href="{{ asset('public/css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-   
+
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <!-- Include DataTables CSS -->
-     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.6/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.6/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
@@ -81,7 +81,7 @@
                         // console.log("Session lifetime:", sessionLifetime);
                         // console.log("Warning in:", warningTime, "seconds");
 
-                        setTimeout(function () {
+                        setTimeout(function() {
                             Swal.fire({
                                 title: 'Session Expiring Soon',
                                 text: 'Your session will expire in 1 minute. Please save your work or stay active.',
@@ -93,8 +93,6 @@
                                 }
                             });
                         }, warningTime * 1000);
-
-                        
                     </script>
 
                 </div>
@@ -105,9 +103,9 @@
             @include('partials.footer')
         </div>
 
-     
-        @if(getLibrary()->is_paid == 1  && getLibrary()->status == 1)
-        
+
+        @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+
         <div class="right-sidebar">
             <h4> QUICK ACTION</h4>
             <ul>
@@ -123,22 +121,22 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
                     <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>
                 </li>
-               
+
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
                     <a href="{{ route('seats.history') }}"><i class="fa fa-list-check fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
-                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Bulk ID CARD">
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Bulk ID CARD">
                     <a href="{{ route('learner.checklist') }}"><i class="fa fa-id-card-clip fa-2x"></i></a>
                 </li>
-                
-               <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">
-                 
-                     <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
+
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">
+
+                    <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
                 </li>
-                 @if(!in_array('21', toggleHideField()))
+                @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
                 </li>
@@ -152,7 +150,7 @@
     </div>
 
 
-   
+
     <ul class="mobile-actions d-md-none">
         <li><a href="javascript:;" class=" noseat_popup">Book Seat</a></li>
         <li><a href="{{route('learner.search')}}">Search</a></li>
@@ -163,70 +161,68 @@
 
     @if($video)
     <div class="modal fade" id="videoModal{{ $video->id }}" tabindex="-1" aria-labelledby="videoModalLabel{{ $video->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">{{ $video->video_titel ?? 'Untitled Video' }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ $video->video_titel ?? 'Untitled Video' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    @if(!empty($video->video))
+                    <video width="100%" height="auto" controls>
+                        <source src="{{ asset('public/uploade/' . $video->video) }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    @else
+                    <p>No video uploaded.</p>
+                    @endif
+                </div>
+            </div>
         </div>
-        <div class="modal-body text-center">
-            @if(!empty($video->video))
-            <video width="100%" height="auto" controls>
-                <source src="{{ asset('public/uploade/' . $video->video) }}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            @else
-            <p>No video uploaded.</p>
-            @endif
-        </div>
-        </div>
-    </div>
     </div>
     @endif
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> <!-- Keep jQuery first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> <!-- Keep jQuery first -->
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-{{-- <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js" defer></script> --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js" defer></script>
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<!-- DataTables Buttons -->
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="{{ url('public/js/main-scripts.js') }}" defer></script>
-<script src="{{ url('public/js/main-validation.js') }}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+    {{-- <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js" defer></script> --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js" defer></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Buttons -->
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
+    <script src="{{ url('public/js/main-validation.js') }}" defer></script>
 
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
-        flatpickr(".dob",{
+        flatpickr(".dob", {
             maxDate: "2010-01-01",
             disableMobile: "true"
         });
 
-        flatpickr(".datepicker",{
+        flatpickr(".datepicker", {
             disableMobile: "true"
         });
         flatpickr(".duedate", {
-            disableMobile: "true",        
-            minDate: "today",             
+            disableMobile: "true",
+            minDate: "today",
         });
     </script>
 
     <script>
-
-
         $(document).ready(function() {
             // Attach event listeners for collapse events once
             $('[data-bs-toggle="collapse"]').each(function() {
@@ -369,12 +365,9 @@
                 toggleSupportCard();
             });
         });
-
-       
     </script>
-    
+
     <script>
-        
         $(document).ready(function() {
             const isMobile = window.innerWidth <= 768;
             if (isMobile) {
@@ -406,26 +399,30 @@
 
     <script>
         // Prevent pinch zoom
-        document.addEventListener('touchstart', function (e) {
+        document.addEventListener('touchstart', function(e) {
             if (e.touches.length > 1) {
-            e.preventDefault();
+                e.preventDefault();
             }
-        }, { passive: false });
+        }, {
+            passive: false
+        });
 
         // Prevent double-tap zoom
         let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (e) {
+        document.addEventListener('touchend', function(e) {
             const now = new Date().getTime();
             if (now - lastTouchEnd <= 300) {
-            e.preventDefault();
+                e.preventDefault();
             }
             lastTouchEnd = now;
         }, false);
     </script>
     @include('learner.script')
     <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+        document.addEventListener("DOMContentLoaded", function() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+        });
     </script>
 </body>
 

@@ -200,7 +200,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
             <div class="col-lg-6">
                 <h4 class="my-4">Today’s Financial Snapshot</h4>
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-3">
                             <h6>Todays Collection</h6>
@@ -238,7 +238,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
             <div class="col-lg-6">
                 <h4 class="my-4">Monthly Financial Overview</h4>
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-5">
                             <h6>MONTHLY INCOME</h6>
@@ -321,7 +321,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <div class="row g-4">
             <div class="col-lg-6">
                 <h4 class="my-4">Slot Booking Summary – Till Today</h4>
-                <div class="row">
+                <div class="row g-4">
                     @can('has-permission', 'Total Bookings')
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-3">
@@ -359,7 +359,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
             <div class="col-lg-6">
                 <h4 class="my-4">Slot Booking Overview: This Month</h4>
-                <div class="row">
+                <div class="row g-4">
                     @can('has-permission', 'Total Booked Seats Count')
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-3">
@@ -573,7 +573,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         @endif
         <!-- End -->
         @can('has-permission', 'Plan wise count')
-        <h4 class="my-4">Plan Wise Count</h4>
+        <h4 class="my-4">Plan-Wise Booking Overview</h4>
         <!-- Plan Wise Booking Counts -->
         <div class="row g-4 planwisecount"></div>
         <!-- End -->
@@ -626,7 +626,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 <!-- Show 10 availble Seats -->
 
                 <div class="seat-statistics ">
-                    <h4 class="mb-3 text-center">Avaialble Seats</h4>
+                    <h4 class="mb-3 text-center">Available Seats</h4>
                     <ul class="contents">
 
                         @if(getAvailableSeatCount() >0)
@@ -688,7 +688,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @can('has-permission', 'Seat About to Expire List')
             <div class="col-lg-4">
                 <div class="seat-statistics">
-                    <h4 class="mb-3 text-center">Seat About to Expire</h4>
+                    <h4 class="mb-3 text-center">Seats About to Expire</h4>
                     <ul class="contents">
 
                         @if(!$renewSeats->isEmpty())

@@ -280,23 +280,23 @@ a.w-auto.px-2:hover .fa {
 }
 
 
-.plan-info {
+.seat-info.bg-white .plan-info {
     width: calc(68% - 1rem);
     padding: 1rem !important;
     padding-top: 0 !important;
 }
 
-.plan-info ul {
+.seat-info.bg-white .plan-info ul {
     gap: 2rem;
     justify-content: flex-end;
     flex: 1;
 }
 
-.plan-info ul li {
+.seat-info.bg-white .plan-info ul li {
     width: calc(100% / 6);
 }
 
-.plan-info button {
+.seat-info.bg-white .plan-info button {
     display: inline;
     background: transparent;
     border: none;
