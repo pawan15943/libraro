@@ -7,15 +7,11 @@
 @endif
 
 @if($is_feedback)
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@else
-<div class="alert alert-success">
-    {{ "Your Feedback already Submmitted." }}
-</div>
-@endif
+    @if (!session('success'))
+    <div class="alert alert-success">
+        {{ "Your Feedback already Submmitted." }}
+    </div>
+    @endif
 
 @else 
 

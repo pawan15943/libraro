@@ -4,6 +4,7 @@
 <!-- Content Header (Page header) -->
 @php
 use Carbon\Carbon;
+
 @endphp
 <div class="row g-4">
     <div class="col-lg-4 col-md-6 col-6">
@@ -60,63 +61,80 @@ use Carbon\Carbon;
 
 <!-- Daily Collections Block Starts here -->
 @if(request('type') === 'today_collection' || request('type') === 'monthly_collection' )
-<h4 class="py-4">{{$label}} Summery</h4>
-<div class="row g-4">
-    @if($collection->isNotEmpty())
-    @foreach ($collection as $data)
-    @php
-    $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->first();
-    @endphp
-    <div class="col-lg-12">
-        <div class="revenue-info">
-            <ul>
-                <li>
-                    <div class="icon">
-                        <i class="fa fa-long-arrow-right text-success"></i>
+    <h4 class="py-4">{{ $label }} Summary</h4>
+    <div class="row g-4">
+        @if($collection->isNotEmpty())
+            @foreach ($collection as $data)
+                @php
+                    $learner_detail = App\Models\LearnerDetail::where('id', $data->learner_detail_id)->first();
+                @endphp
+
+                {{-- Seat Payment --}}
+                @if(!empty($data->paid_amount) && $data->paid_amount > 0)
+                    <div class="col-lg-12">
+                        <div class="revenue-info">
+                            <ul>
+                                <li><div class="icon"><i class="fa fa-long-arrow-right text-success"></i></div></li>
+                                <li><span>Seat No</span><p>{{ $data->learner->seat_no ?? 'GENERAL' }}</p></li>
+                                <li><span>Plan Type</span><p>{{ myPlanType($learner_detail->plan_type_id)->name ?? 'N/A' }}</p></li>
+                                <li><span>Trxn Type</span><p>Seat Payment</p></li>
+                                <li><span>Amount Received</span><p>{{ $data->paid_amount }}</p></li>
+                                <li><span>Date</span><p>{{ $data->paid_date ?? 'N/A' }}</p></li>
+                                <li><span>Created by</span><p>Library Admin</p></li>
+                                <li><p><a href=""><i class="fa fa-print"></i> Download Receipt</a></p></li>
+                            </ul>
+                        </div>
                     </div>
-                </li>
-                <li>
-                    <span>Seat No</span>
-                    <p>{{ $data->learner->seat_no ?? 'GENERAL'}}</p>
-                </li>
-                <li>
-                    <span>Plan Type</span>
-                    <p>{{ myPlanType($learner_detail->plan_type_id)->name  ?? 'N/A' }}</p>
-                </li>
-                <li>
-                    <span>Trxn Type</span>
-                    <p>Seat Payment</p>
-                </li>
-                <li>
-                    <span>Amount Received</span>
-                    <p>{{ $data->paid_amount ?? 'N/A' }}</p>
-                </li>
-                <li>
-                    <span>Date</span>
-                    <p>{{ $data->paid_date ?? 'N/A' }}</p>
-                </li>
-                <li>
-                    <span>Created by</span>
-                    <p>Library Admin</p>
-                </li>
-                <li>
-                    <p><a href=""><i class="fa fa-print"></i> Downlaod Receipt</a></p>
-                </li>
-            </ul>
-        </div>
+                @endif
+
+                {{-- Token Money --}}
+                @if(!empty($data->token_money) && $data->token_money > 0)
+                    <div class="col-lg-12">
+                        <div class="revenue-info">
+                            <ul>
+                                <li><div class="icon"><i class="fa fa-long-arrow-right text-success"></i></div></li>
+                                <li><span>Seat No</span><p>{{ $data->learner->seat_no ?? 'GENERAL' }}</p></li>
+                                <li><span>Plan Type</span><p>{{ myPlanType($learner_detail->plan_type_id)->name ?? 'N/A' }}</p></li>
+                                <li><span>Trxn Type</span><p>Token Money</p></li>
+                                <li><span>Amount Received</span><p>{{ $data->token_money }}</p></li>
+                                <li><span>Date</span><p>{{ $data->paid_date ?? 'N/A' }}</p></li>
+                                <li><span>Created by</span><p>Library Admin</p></li>
+                                <li><p><a href=""><i class="fa fa-print"></i> Download Receipt</a></p></li>
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Miscellaneous --}}
+                @if(!empty($data->miscellaneous) && $data->miscellaneous > 0)
+                    <div class="col-lg-12">
+                        <div class="revenue-info">
+                            <ul>
+                                <li><div class="icon"><i class="fa fa-long-arrow-right text-success"></i></div></li>
+                                <li><span>Seat No</span><p>{{ $data->learner->seat_no ?? 'GENERAL' }}</p></li>
+                                <li><span>Plan Type</span><p>{{ myPlanType($learner_detail->plan_type_id)->name ?? 'N/A' }}</p></li>
+                                <li><span>Trxn Type</span><p>Miscellaneous</p></li>
+                                <li><span>Amount Received</span><p>{{ $data->miscellaneous }}</p></li>
+                                <li><span>Date</span><p>{{ $data->paid_date ?? 'N/A' }}</p></li>
+                                <li><span>Created by</span><p>Library Admin</p></li>
+                                <li><p><a href=""><i class="fa fa-print"></i> Download Receipt</a></p></li>
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+
+            @endforeach
+        @endif
     </div>
-    @endforeach
-    @endif
-</div>
 @endif
 <!-- Daily Collections Block Ends here -->
+
 
 
 
 <!-- Expense Block Starts Here -->
 @if(request('type') === 'today_expense' || request('type') === 'monthly_expense' )
 <h4 class="py-4">Daily Expense Summery</h4>
-
 @if($expenses->isNotEmpty() )
 <!-- Loop Start -->
 <div class="row">
@@ -318,49 +336,136 @@ $finalBalance = 0;
                         <th>Learner Info</th>
                         <th>Contact Info</th>
                         <th>Plan Info</th>
-                        <th>Amount received</th>
+                        <th>Payment Type</th>
+                        <th>Amount Received</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if($collection->isNotEmpty())
                     @foreach ($collection as $data)
-                    @php
-                    $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->first();
-                    @endphp
 
-
+                    {{-- Seat Payment --}}
+                    @if(!empty($data->paid_amount) && $data->paid_amount > 0)
                     <tr>
-                        <td>{{ $data->learner->seat_no ?? 'GENERAL'}}</td>
-
-                        <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                data-bs-title="{{$data->learner->name ?? ''}}" data-bs-placement="bottom">{{$data->learner->name ?? ''}}</span>
-                            <br> <small>{{$data->dob}}</small>
-                        </td>
-
-                        <td><span class="truncate">
-                                {!! $data->learner->email ? $data->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
-                            </span> <br>
-                            <small> +91-{{$data->learner->mobile}}</small>
+                        <td>{{ optional($data->learner)->seat_no ?? 'GENERAL' }}</td>
+                        <td>
+                            <span class="uppercase truncate" data-bs-toggle="tooltip" data-bs-title="{{ optional($data->learner)->name ?? '' }}" data-bs-placement="bottom">
+                                {{ optional($data->learner)->name ?? '' }}
+                            </span>
+                            <br><small>{{ $data->dob }}</small>
                         </td>
                         <td>
-                            {{ myPlanType($learner_detail->plan_type_id)->name  ?? 'N/A' }}<br>
-                            <small>{{ myPlan($learner_detail->plan_id)->name  ?? 'N/A' }}</small>
+                            <span class="truncate">
+                                {!! optional($data->learner)->email ? optional($data->learner)->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
+                            </span>
+                            <br><small>+91-{{ optional($data->learner)->mobile }}</small>
                         </td>
                         <td>
-                            {{ $data->paid_amount ?? 'N/A' }}<br>
-
+                            {{ myPlanType($data->learnerDetail->plan_type_id)->name ?? 'N/A' }}<br>
+                            <small>{{ myPlan($data->learnerDetail->plan_id)->name ?? 'N/A' }}</small>
                         </td>
-                        <td>
-                            {{ $data->paid_date ?? 'N/A' }}<br>
-
-                        </td>
-
-
+                        <td><strong>Seat Payment</strong></td>
+                        <td>{{ $data->paid_amount }}</td>
+                        <td>{{ $data->paid_date ?? 'N/A' }}</td>
                     </tr>
+                    @endif
+
+                    {{-- Token Money Payment --}}
+                    @if(!empty($data->token_money) && $data->token_money > 0)
+                    <tr>
+                        <td>{{ optional($data->learner)->seat_no ?? 'GENERAL' }}</td>
+                        <td>
+                            <span class="uppercase truncate" data-bs-toggle="tooltip" data-bs-title="{{ optional($data->learner)->name ?? '' }}" data-bs-placement="bottom">
+                                {{ optional($data->learner)->name ?? '' }}
+                            </span>
+                            <br><small>{{ $data->dob }}</small>
+                        </td>
+                        <td>
+                            <span class="truncate">
+                                {!! optional($data->learner)->email ? optional($data->learner)->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
+                            </span>
+                            <br><small>+91-{{ optional($data->learner)->mobile }}</small>
+                        </td>
+                        <td>
+                            {{ myPlanType($data->learnerDetail->plan_type_id)->name ?? 'N/A' }}<br>
+                            <small>{{ myPlan($data->learnerDetail->plan_id)->name ?? 'N/A' }}</small>
+                        </td>
+                        <td><strong>Token Money</strong></td>
+                        <td>{{ $data->token_money }}</td>
+                        <td>{{ $data->paid_date ?? 'N/A' }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Miscellaneous Payment --}}
+                    @if(!empty($data->miscellaneous) && $data->miscellaneous > 0)
+                    <tr>
+                        <td>{{ optional($data->learner)->seat_no ?? 'GENERAL' }}</td>
+                        <td>
+                            <span class="uppercase truncate" data-bs-toggle="tooltip" data-bs-title="{{ optional($data->learner)->name ?? '' }}" data-bs-placement="bottom">
+                                {{ optional($data->learner)->name ?? '' }}
+                            </span>
+                            <br><small>{{ $data->dob }}</small>
+                        </td>
+                        <td>
+                            <span class="truncate">
+                                {!! optional($data->learner)->email ? optional($data->learner)->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
+                            </span>
+                            <br><small>+91-{{ optional($data->learner)->mobile }}</small>
+                        </td>
+                        <td>
+                            {{ myPlanType($data->learnerDetail->plan_type_id)->name ?? 'N/A' }}<br>
+                            <small>{{ myPlan($data->learnerDetail->plan_id)->name ?? 'N/A' }}</small>
+                        </td>
+                        <td><strong>Miscellaneous</strong></td>
+                        <td>{{ $data->miscellaneous }}</td>
+                        <td>{{ $data->paid_date ?? 'N/A' }}</td>
+                    </tr>
+                    @endif
 
                     @endforeach
                     @endif
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>Total Collection</strong></td>
+                        <td colspan="2"><strong>₹{{ number_format($totalPaid, 2) }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            @endif
+
+
+            @if(request('type') === 'today_expense' || request('type') === 'monthly_expense' )
+            <table class="table text-center datatable border-bottom f-width" id="datatable-expense">
+
+                <thead>
+                    <tr>
+                        <th>S.N</th>
+                        <th>Expense Name</th>
+                        <th>Expense Amount</th>
+                        <th>Expense Date</th>
+                    </tr>
+                </thead>
+                @if($expenses->isNotEmpty() )
+                <tbody>
+                    @foreach ($expenses as $index => $expense)
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $expense->expense_name ?? 'N/A' }}</td>
+                        <td>₹{{ number_format($expense->amount, 2) }}</td>
+                        <td>{{ \Carbon\Carbon::parse($expense->created_at)->format('d-m-Y') }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-end"><strong>Total Expense</strong></td>
+                        <td colspan="2"><strong>₹{{ number_format($totalExpense, 2) }}</strong></td>
+                    </tr>
+                </tfoot>
+                @endif
+
                 </tbody>
                 <tfoot>
                     <tr>
@@ -530,6 +635,7 @@ $finalBalance = 0;
         $('#datatable-balance').DataTable();
         // $('#datatable-today-balance').DataTable();
     });
+
 </script>
 
 

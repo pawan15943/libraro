@@ -191,10 +191,11 @@
                 </div>
             </div>
 
-             @if(!isset($branch))
+               @if(!isset($branch))
             <div class="card mt-5">
                 <h4 class="mb-4">Branch Master</h4>
                 <div class="row g-4">
+                  
                      <div class="col-lg-6">
                         <label for="">Add Seats to Library Branch <span>*</span></label>
                         <input type="text" name="seats" class="form-control digit-only @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats') }}">
@@ -239,6 +240,7 @@
                         </span>
                         @enderror
                     </div>
+                    
                     <div class="col-lg-6">
                         <label for="">Token Money(optional) </label>
                         <input type="text" class="form-control digit-only @error('token_money') is-invalid @enderror no-validate" name="token_money" placeholder="Enter Days" value="{{old('token_money')}}">
@@ -250,7 +252,8 @@
                     </div>
                 </div>
             </div>
-            @endif
+             @endif
+           
 
             @if(isset($branch))
             <div class="card mt-5">

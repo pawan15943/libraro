@@ -1943,32 +1943,38 @@ class LearnerController extends Controller
         return response()->json($status);
     }
 
-    public function destroy($id)
+   public function destroy(Request $request, $id)
     {
-
+       
         try {
-            DB::transaction(function () use ($id) {
+             DB::transaction(function () use ($request, $id) {
 
                 $customer = Learner::findOrFail($id);
 
 
-                $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)
-                    ->orderBy('id', 'desc')
-                    ->first();
-
+                $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id',$request->learnerDetail)->first();
+                if (!$lastLearnerDetail) {
+                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
+                }
                 if ($lastLearnerDetail) {
+                     if ($request->isRefund && $request->refundAmount > 0) {
+                         LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
+                            'refund'=> $request->refundAmount
+                         ]);
+                            
+                        }
+                        if($request->remark){
+                            $customer->remark =  $request->remark;
+                        }
                     // Delete associated LearnerTransaction records
                     LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
 
                     $lastLearnerDetail->delete();
-                     $customer->status = 0;
+                    $customer->status = 0;
                     $customer->save();
                     $customer->delete();
                    
-                } else {
-
-                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
-                }
+                } 
             });
 
 
@@ -2769,11 +2775,13 @@ class LearnerController extends Controller
             } elseif ($request->payment_type === 'miscellaneous') {
                 $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
             }
+           
+            $transaction->save(); 
 
-            $transaction->save(); // Automatically updates `updated_at`
+            return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
 
-            return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
         } catch (\Exception $e) {
+              
             // Log the error if needed: Log::error($e->getMessage());
             return redirect()->back()->with('error', 'An error occurred while processing payment.');
         }

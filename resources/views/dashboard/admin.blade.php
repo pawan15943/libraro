@@ -698,13 +698,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
-                                    <h6>Seat No. {{$value->seat_no}}</h6>
+                                    <h6>Seat No. : {{$value->seat_no ?? 'GEN'}}</h6>
                                     <small>{{$value->planType->name ?? ''}}</small>
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
+                                    
                                     @can('has-permission', 'Plan Renews')
-                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->learner_detail_id}}">Renew Plan</a></small>
+                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
 
@@ -744,7 +745,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
                                 <div class="seat-content">
-                                    <h6>Seat No. {{ $seat->seat_no }}</h6>
+                                    <h6>Seat No. : {{ $seat->seat_no ?? 'GEN'}}</h6>
                                     <small>{{ $seat->planType->name}}</small>
                                 </div>
                                 <div class="seat-status">

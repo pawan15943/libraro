@@ -45,7 +45,7 @@ class ReportController extends Controller
       if (getCurrentBranch() != 0) {
             $query->where('learner_detail.branch_id', getCurrentBranch());
         }
-
+    \Log::info($query->toSql(), $query->getBindings());
     $monthlyRevenues = $query->get();
        
 

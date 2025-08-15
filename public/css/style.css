@@ -2176,6 +2176,7 @@ select {
 
 .form-check label {
     font-weight: 600;
+    text-align: left;
 }
 
 /* Style input field value */
@@ -2773,13 +2774,7 @@ ul.actionalbls li i:hover {
     color: var(--heading-2);
 }
 
-input[type="checkbox"] {
-    width: 16px;
-    height: 18px;
-    display: block;
-    margin: 0 auto;
-    padding: 0;
-}
+
 
 .table-responsive img.profile {
     width: 50px;

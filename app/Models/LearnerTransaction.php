@@ -22,7 +22,11 @@ class LearnerTransaction extends Model
 
     public function learner()
     {
-        return $this->belongsTo(Learner::class, 'learner_id');
+        return $this->belongsTo(Learner::class, 'learner_id')->withTrashed();
     }
-   
+   public function learnerDetail()
+    {
+        return $this->belongsTo(LearnerDetail::class, 'learner_detail_id')->withTrashed();
+    }
+
 }

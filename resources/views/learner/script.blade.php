@@ -1264,55 +1264,148 @@
         }
     }
 
+    // $(document).on('click', '.delete-customer', function() {
+    //     var id = $(this).data('id');
+    //     var learnerDetail = $(this).data('learnerDetail');
+    //     var url = '{{ route('learners.destroy', ':id') }}';
+    
+    //     url = url.replace(':id', id);  
+    //     var formId='deleteSeat';
+    //     var fieldName='deleted_at';
+    //     var newValue = new Date().toISOString()
+    //     var oldValue = null;
+       
+    //     Swal.fire({
+    //         title: 'Are you sure?',
+    //         text: "You won't be able to revert this!",
+    //         icon: 'warning',
+    //         showCancelButton: true,
+    //         confirmButtonColor: '#3085d6',
+    //         cancelButtonColor: '#d33',
+    //         confirmButtonText: 'Yes, delete it!'
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             $.ajax({
+    //                 url: url,
+    //                 type: 'DELETE',
+    //                 data: {
+    //                     _token: '{{ csrf_token() }}'
+    //                 },
+    //                 success: function(response) {
+    //                     logFieldChange(id, formId, fieldName, oldValue, newValue,learnerDetail);
+    //                     Swal.fire(
+    //                         'Deleted!',
+    //                         'User has been deleted.',
+    //                         'success'
+    //                     ).then(() => {
+    //                         location.reload(); // Optionally, you can refresh the page
+    //                     });
+    //                 },
+    //                 error: function(xhr, status, error) {
+    //                     Swal.fire(
+    //                         'Error!',
+    //                         'An error occurred while deleting the student.',
+    //                         'error'
+    //                     );
+    //                 }
+    //             });
+    //         }
+    //     });
+    // });
+
     $(document).on('click', '.delete-customer', function() {
         var id = $(this).data('id');
-        var learnerDetail = $(this).data('learnerDetail');
+       var learnerDetail = $(this).data('learnerdetail');
+      
         var url = '{{ route('learners.destroy', ':id') }}';
-    
-        url = url.replace(':id', id);  
-        var formId='deleteSeat';
+        url = url.replace(':id', id);
+         var formId='deleteSeat';
         var fieldName='deleted_at';
         var newValue = new Date().toISOString()
         var oldValue = null;
        
+       
         Swal.fire({
             title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
+            html: `
+                <p>You won't be able to revert this!</p>
+                <div class="row">
+                    <div class="col-lg-12">
+                        
+                        <div class="form-check ">
+                            <input class="form-check-input" type="checkbox" value="" id="isRefund">
+                            <label class="form-check-label" for="isRefund">
+                                Do you want to give refunt to learner ?
+                            </label>
+                        </div>
+                        <div id="refundAmountDiv" class="mt-3" style="display:none;">
+                            <input type="number" id="refundAmount" class="form-control" placeholder="Enter refund amount">
+                        </div>
+                        <div id="remarkDiv" class="mt-3" style="display:none;">
+                            <textarea rows="2" id="refundremark" class="form-control" style="height:auto !important;" placeholder="Enter Remark"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `,
+            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: 'Yes, delete it!',
+            didOpen: () => {
+                $('#isRefund').on('change', function() {
+                    if ($(this).is(':checked')) {
+                        $('#refundAmountDiv').show();
+                        $('#remarkDiv').show();
+                    } else {
+                        $('#refundAmountDiv').hide();
+                        $('#remarkDiv').hide();
+                        $('#refundAmount').val('');
+                    }
+                });
+            },
+            preConfirm: () => {
+                const isRefund = $('#isRefund').is(':checked');
+                const refundAmount = $('#refundAmount').val();
+                const remark = $('#refundremark').val();
+                if (isRefund && (!refundAmount || refundAmount <= 0)) {
+                    Swal.showValidationMessage('Please enter a valid refund amount');
+                    return false;
+                }
+                return {
+                    isRefund: isRefund,
+                    refundAmount: refundAmount,
+                    remark: remark,
+                };
+            }
         }).then((result) => {
+            console.log(result);
+            console.log(result.value);
+            console.log(result.value.remark);
             if (result.isConfirmed) {
                 $.ajax({
                     url: url,
                     type: 'DELETE',
                     data: {
-                        _token: '{{ csrf_token() }}'
+                        _token: '{{ csrf_token() }}',
+                        learnerDetail: learnerDetail,
+                        isRefund: result.value.isRefund ? 1 : 0,
+                        refundAmount: result.value.refundAmount,
+                        remark: result.value.remark
                     },
                     success: function(response) {
                         logFieldChange(id, formId, fieldName, oldValue, newValue,learnerDetail);
-                        Swal.fire(
-                            'Deleted!',
-                            'User has been deleted.',
-                            'success'
-                        ).then(() => {
-                            location.reload(); // Optionally, you can refresh the page
+                        Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
+                            location.reload();
                         });
                     },
-                    error: function(xhr, status, error) {
-                        Swal.fire(
-                            'Error!',
-                            'An error occurred while deleting the student.',
-                            'error'
-                        );
+                    error: function(xhr) {
+                        Swal.fire('Error!', 'An error occurred while deleting.', 'error');
                     }
                 });
             }
         });
     });
-
 
     // Learner Close Plan Form
     $(document).on('click', '.link-close-plan', function() {

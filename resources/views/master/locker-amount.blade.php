@@ -51,15 +51,9 @@
                         class="fa fa-plus"></i>
                     Add Amount</button>
             </div>
-
+        </div>
     </form>
 </div>
-
-
-</div>
-
-
-
 
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">

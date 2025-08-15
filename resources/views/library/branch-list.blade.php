@@ -69,6 +69,11 @@ There is currently no Data available </p>
                                 <i class="fa-solid fa-lock"></i>
                             </a>
                         </li>
+                         <li>
+                            <a href="{{ route('tokenAmount.create', $value->id) }}" title="Token Money">
+                                <i class="fa-solid fa-lock"></i>
+                            </a>
+                        </li>
                     @endif
                     <li>
                         <a href="{{ route('branch.edit', $value->id) }}" title="Branch Profile Edit">

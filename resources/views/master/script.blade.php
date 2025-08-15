@@ -64,10 +64,8 @@
 </script>
 
 <script>
-    $(document).ready(function() {
-      let table = new DataTable('#datatable');
-        $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
-            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker,#library_exam,#categoryForm', function(event) {
+     $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
+            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker,#library_exam,#categoryForm,#token_money', function(event) {
             event.preventDefault(); 
             var form = this;
             var formData = new FormData(form);
@@ -95,10 +93,7 @@
                     window.location.href = response.redirect;
                     toastr.success(response.message);
                 }
-                else if (response.success) {
-                    toastr.success(response.message);
-                    window.location.reload();
-                } 
+                
                 else if (response.errors) {
                     $.each(response.errors, function(key, value) {
                         var element = $("[name='" + key + "']");
@@ -143,6 +138,9 @@
 
             return false; 
         });
+    $(document).ready(function() {
+      let table = new DataTable('#datatable');
+       
 
         $(document.body).on('click', '.plan_edit ,.plantype_edit, .hour_edit,.seat_edit,.extend_day_edit ,.planPrice_edit,.expense_edit,.locker_amount_edit', function() {
           
