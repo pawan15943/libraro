@@ -53,15 +53,9 @@ $current_route = Route::currentRouteName();
                     </tr>
                 </thead>
                 <tbody>
-                    @if(isset($learners) &&  $learners->isNotEmpty())
+                    
                     @foreach($learners as $key => $value)
-                        @php
-                        $today = Carbon::today();
-                        $endDate = Carbon::parse($value->plan_end_date);
-                        $diffInDays = $today->diffInDays($endDate, false);
-                        $inextendDate = $endDate->copy()->addDays($extendDay); // Preserving the original $endDate
-                        $diffExtendDay= $today->diffInDays($inextendDate, false);
-                        @endphp
+                     
                     <tr>
                         <td>{{$value->seat_no ?? 'G'}}</td>
                         <td> {{$value->name}}</td>
@@ -78,11 +72,7 @@ $current_route = Route::currentRouteName();
                         </td>
                     </tr>
                     @endforeach
-                    @else
-                    <tr>
-                        <td colspan="5">Please select a date to view the student list. No date is currently selected.</td>
-                    </tr>
-                    @endif
+                   
                 </tbody>
 
 
