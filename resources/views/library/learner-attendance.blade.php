@@ -41,8 +41,8 @@ $current_route = Route::currentRouteName();
 <div class="row mb-4">
     <div class="col-lg-12">
         <div class="text-danger pb-3"><b>Note :</b> If you don't provide an out time, then learner's  closing shift time will be used as the out time.</div>
-        <div class="table-responsive ">
-            <table class="table text-center datatable border-bottom" id="datatable">
+        <div class="table-responsive mt-4">
+            <table class="table text-center" id="datatable">
                 <thead>
                     <tr>
                         <th>Seat No.</th>
@@ -54,30 +54,19 @@ $current_route = Route::currentRouteName();
                 </thead>
                 <tbody>
                     @if(isset($learners) &&  $learners->isNotEmpty())
-
-
                     @foreach($learners as $key => $value)
-                    @php
-                    $today = Carbon::today();
-                    $endDate = Carbon::parse($value->plan_end_date);
-                    $diffInDays = $today->diffInDays($endDate, false);
-                    $inextendDate = $endDate->copy()->addDays($extendDay); // Preserving the original $endDate
-                    $diffExtendDay= $today->diffInDays($inextendDate, false);
-                   
-                    @endphp
+                        @php
+                        $today = Carbon::today();
+                        $endDate = Carbon::parse($value->plan_end_date);
+                        $diffInDays = $today->diffInDays($endDate, false);
+                        $inextendDate = $endDate->copy()->addDays($extendDay); // Preserving the original $endDate
+                        $diffExtendDay= $today->diffInDays($inextendDate, false);
+                        @endphp
                     <tr>
-                        <td>{{$value->seat_no ?? 'G'}}<br>
-                        </td>
-                        <td>
-                           {{$value->name}}
-                        </td>
-                        
-
+                        <td>{{$value->seat_no ?? 'G'}}</td>
+                        <td> {{$value->name}}</td>
                         <td>{{ $value->in_time ? \Carbon\Carbon::parse($value->in_time)->format('h:i A') : '-' }}</td>
-
-                        <td>{{ $value->out_time ? \Carbon\Carbon::parse($value->out_time)->format('h:i A') : '-' }}</td>
-                        
-                        
+                        <td>{{ $value->out_time ? \Carbon\Carbon::parse($value->out_time)->format('h:i A') : '-' }}</td>                        
                         <td>
                             @if($value->attendance==1)
                                 Present
@@ -89,7 +78,6 @@ $current_route = Route::currentRouteName();
                         </td>
                     </tr>
                     @endforeach
-
                     @else
                     <tr>
                         <td colspan="5">Please select a date to view the student list. No date is currently selected.</td>
@@ -103,16 +91,5 @@ $current_route = Route::currentRouteName();
         </div>
     </div>
 </div>
-
-
-
-<script>
-    $(document).ready(function() {
-       
-       
-
-       
-    });
-</script>
 
 @endsection
