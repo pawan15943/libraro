@@ -50,7 +50,7 @@
                     <td>
                         <ul class="actionalbls">
                             <li><a href="{{route('library-users.create',$user->id)}}" title="Edit "><i class="fas fa-edit"></i></a></li>
-                            <li><a href="javascript:void(0)" class="edit_user" data-user='@json($user)'><i class="fas fa-edit"></i></a></li>
+                            {{-- <li><a href="javascript:void(0)" class="edit_user" data-user='@json($user)'><i class="fas fa-edit"></i></a></li> --}}
                             <li>
                                 <a href="#" class="toggle-status" data-id="{{ $user->id }}">
                                     <i class="fas {{ $user->status ? 'fa-ban' : 'fa-check' }}"></i>
