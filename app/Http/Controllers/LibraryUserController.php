@@ -75,7 +75,7 @@ class LibraryUserController extends Controller
             'permissions' => 'required|array|min:1',
              'mobile' => 'required|digits:10',
         ]);
-        dd($request);
+        
 
         DB::beginTransaction();
        
