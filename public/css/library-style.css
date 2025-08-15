@@ -20,16 +20,16 @@
     border: none;
 }
 
-.seat-info.bg-white .extended {
+.seat-info.bg-white .extended ,td span.extended{
     color: red !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875em !important;
+    font-weight: 700;
 }
 
-.seat-info.bg-white .actives {
+.seat-info.bg-white .actives,td span.actives {
     color: #70b900 !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875em !important;
+    font-weight: 700;
 }
 
 .information a {
@@ -38,8 +38,8 @@
 
 .seat-info.bg-white .aboutToExpire {
     color: orange !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875rem !important;
+    font-weight: 700;
 }
 
 
@@ -338,11 +338,11 @@ a.w-auto.px-2:hover .fa {
     margin: 0;
 }
 
-label {
+/* label {
     font-size: .8rem;
     color: #8a8787 !important;
     font-weight: 500 !important;
-}
+} */
 
 .form-control {
     height: 45px;
@@ -353,11 +353,6 @@ label {
     border-radius: 1rem;
 }
 
-input.btn.btn-primary.button {
-    background: #00389a !important;
-    height: 45px;
-    border-color: #00389a;
-}
 
 .filter h4 {
     font-size: 1rem;

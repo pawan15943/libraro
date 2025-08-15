@@ -81,7 +81,7 @@ $currentMonth = date('m');
    
     <div class="col-lg-12">
         <div id="export" class="mb-3"></div>
-        <div class="table-responsive ">
+        <div class="table-responsive">
             <table class="table text-center datatable border-bottom" id="datatable">
                 <thead>
                     <tr>

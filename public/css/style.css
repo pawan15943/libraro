@@ -879,23 +879,17 @@ ul.actionalbls li i:hover {
 
 /* Table */
 .table-responsive {
-    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: .8rem;
-    box-shadow: 1px 0 5px #00000020;
+    border: 1px solid #dedede;
 }
 
 .table-responsive table {
     margin-bottom: 0;
+
 }
 
-.filter-box {
-    padding: 1.5rem;
-    border: none;
-    border-radius: .8rem;
-    background: var(--c5);
-    box-shadow: 1px 0 5px #00000020;
-}
+
 
 .filter-box h4 {
     font-size: 1.1rem;
@@ -2374,6 +2368,7 @@ div#datatable_length {
     /* box-shadow: 1px 0 36px #0000001c;*/
     border: 1px solid #dedede !important;
     border: none;
+    overflow: hidden;
 }
 
 .card.chart {
@@ -2778,16 +2773,32 @@ ul.actionalbls li i:hover {
     color: var(--heading-2);
 }
 
+input[type="checkbox"] {
+    width: 16px;
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.table-responsive img.profile {
+    width: 50px;
+    height: 50px ! IMPORTANT;
+    border-radius: 50px;
+    background: rebeccapurple;
+    display: block;
+    margin: 0 auto;
+}
+
 /* Table */
 .table-responsive {
-    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: .8rem;
-    box-shadow: 1px 0 5px #00000020;
 }
 
 .table-responsive table {
     margin-bottom: 0;
+    width: 100% !important;
 }
 
 .filter-box {
@@ -2795,7 +2806,8 @@ ul.actionalbls li i:hover {
     border: none;
     border-radius: .8rem;
     background: var(--c5);
-    box-shadow: 1px 0 5px #00000020;
+    border: 1px solid #dedede;
+    box-shadow: none;
 }
 
 .filter-box h4 {
@@ -3332,6 +3344,7 @@ ul.libraryFeatures li:hover {
 
 .card h4.mb-4 {
     color: #00aec4 !important;
+    overflow: hidden;
 }
 
 /* Library Steps */
@@ -4130,7 +4143,7 @@ div.dt-container div.dt-layout-row {
     margin: 0 !important;
 }
 
-div#datatable_wrapper input,
+div#datatable_wrapper input:not([type="checkbox"]),
 div#datatable_wrapper select {
     height: 35px;
     margin: .5rem;
@@ -4157,6 +4170,18 @@ div#datatable_info {
     padding: .5rem;
     font-size: .8rem;
     font-weight: 700;
+}
+
+div#datatable_paginate {
+    margin: 0 !IMPORTANT;
+    padding: 0;
+}
+
+a#datatable_previous,
+a#datatable_next {
+    font-size: .8rem;
+    font-weight: 700 !IMPORTANT;
+    color: inherit !important;
 }
 
 div#datatable1_info {
@@ -5828,4 +5853,14 @@ span.w-auto.px-3.text-muted {
     justify-content: center;
     align-items: center;
     border-radius: 2rem;
+}
+
+button.print-cards.mb-4 {
+    background: navy;
+    color: #fff;
+    padding: .5rem 1.5rem;
+    border-radius: 2rem;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 1px 0 5px #00000021;
 }
