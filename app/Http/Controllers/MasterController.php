@@ -535,6 +535,19 @@ class MasterController extends Controller
        
         return view('master.locker-amount', compact('locker_amount'));
     }
+    public function tokenAmountCreate($id = null)
+    {
+        $token_amount = null;
+        if ($id) {
+            $token_amount = Branch::find($id);  
+            if (!$token_amount) {
+                return redirect()->route('branch.list')->with('error', 'Branch not found.');
+            }
+        }
+       
+        return view('master.tokenmoney', compact('token_amount'));
+    }
+    
         public function examView()
     {
       

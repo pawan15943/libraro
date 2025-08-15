@@ -2772,11 +2772,13 @@ class LearnerController extends Controller
             } elseif ($request->payment_type === 'miscellaneous') {
                 $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
             }
+           
+            $transaction->save(); 
 
-            $transaction->save(); // Automatically updates `updated_at`
+            return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
 
-            return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
         } catch (\Exception $e) {
+              
             // Log the error if needed: Log::error($e->getMessage());
             return redirect()->back()->with('error', 'An error occurred while processing payment.');
         }

@@ -651,33 +651,50 @@ class DashboardController extends Controller
             ->where('learner_detail.is_paid', 1)
             ->where('learner_detail.library_id',getLibraryId());
         
-        if ($request->filled('year') && !$request->filled('month')) {
-            // If year is selected, fetch records that overlap within the year
+       if ($request->filled('year') && !$request->filled('month')) {
             $startOfYear = Carbon::create($request->year, 1, 1);
-            $endOfYear = Carbon::create($request->year, 12, 31);
+            $endOfYear   = Carbon::create($request->year, 12, 31);
             $revenue_query->where(function ($query) use ($startOfYear, $endOfYear) {
                 $query->whereBetween('plan_start_date', [$startOfYear, $endOfYear])
                     ->orWhereBetween('plan_end_date', [$startOfYear, $endOfYear]);
             });
         } elseif ($request->filled('year') && $request->filled('month')) {
-            // If year and month are selected, fetch records that overlap within the month
             $startOfMonth = Carbon::create($request->year, $request->month, 1);
-            $endOfMonth = $startOfMonth->copy()->endOfMonth();
+            $endOfMonth   = $startOfMonth->copy()->endOfMonth();
             $revenue_query->where(function ($query) use ($startOfMonth, $endOfMonth) {
                 $query->where('plan_start_date', '<=', $endOfMonth)
                     ->where('plan_end_date', '>=', $startOfMonth);
             });
         }
-        
+                
         $learners = $revenue_query->select('plan_start_date', 'plan_end_date', 'plan_price_id', 'plans.plan_id as planId','plans.type as planMonthType','learner_transactions.paid_amount','learner_transactions.pending_amount','learner_transactions.locker_amount','discount_amount','token_money','miscellaneous','refund')->get();
         
         // Calculate Revenue
         $revenues = [];
        
-
+        // ✅ Pre-fill months with 0
+        if ($request->filled('year') && !$request->filled('month')) {
+            for ($m = 1; $m <= 12; $m++) {
+                $key = "{$request->year}-{$m}";
+                $revenues[$key] = [
+                    'year' => $request->year,
+                    'month' => $m,
+                    'monthly_revenue' => 0,
+                    'total_revenue' => 0,
+                ];
+            }
+        } elseif ($request->filled('year') && $request->filled('month')) {
+            $key = "{$request->year}-{$request->month}";
+            $revenues[$key] = [
+                'year' => $request->year,
+                'month' => $request->month,
+                'monthly_revenue' => 0,
+                'total_revenue' => 0,
+            ];
+        }
         foreach ($learners as $learner) {
-            $start_date = Carbon::parse($learner->plan_start_date);
-            $end_date = Carbon::parse($learner->plan_end_date);
+            $start_date = Carbon::parse($learner->plan_start_date)->startOfMonth();
+            $end_date   = Carbon::parse($learner->plan_end_date)->startOfMonth(); 
 
             // base revenue calculation paid_amount=plan_price_id +locker_amount -discount_amount -pending_amount
             $baseAmount = $learner->paid_amount;
@@ -692,56 +709,47 @@ class DashboardController extends Controller
 
            $firstMonth = true;
 
-            // Adjust start date: skip the start month if starting on the last day and there’s more than one month
-            if ($start_date->isSameDay($start_date->copy()->endOfMonth()) && !$start_date->isSameMonth($end_date)) {
-                $start_date->addMonth();
+          
+
+          while ($start_date->lt($end_date)) {
+            $year = $start_date->year;
+            $month = $start_date->month;
+
+            $addToResult = false;
+            if ($request->filled('year') && $request->filled('month')) {
+                $addToResult = ($year == $request->year && $month == $request->month);
+            } elseif ($request->filled('year') && !$request->filled('month')) {
+                $addToResult = ($year == $request->year);
+            } else {
+                $addToResult = true;
             }
 
-            while ($start_date <= $end_date) {
-                $year = $start_date->year;
-                $month = $start_date->month;
-
-                // Skip last month if end_date is the first day of the month
-                if ($start_date->isSameMonth($end_date) && $end_date->day == 1) {
-                    break;
+            if ($addToResult) {
+                $key = "{$year}-{$month}";
+                if (!isset($revenues[$key])) {
+                    $revenues[$key] = [
+                        'year' => $year,
+                        'month' => $month,
+                        'monthly_revenue' => 0,
+                        'total_revenue' => 0,
+                    ];
                 }
 
-                $addToResult = false;
-
-                if ($request->filled('year') && $request->filled('month')) {
-                    $addToResult = ($year == $request->year && $month == $request->month);
-                } elseif ($request->filled('year') && !$request->filled('month')) {
-                    $addToResult = ($year == $request->year);
-                } else {
-                    $addToResult = true; // no filter, include all
+                $monthRevenue = $monthly_base;
+                if ($firstMonth) {
+                    $monthRevenue += ($learner->token_money ?? 0)
+                                + ($learner->miscellaneous ?? 0)
+                                - ($learner->refund ?? 0);
                 }
 
-                if ($addToResult) {
-                    $key = "{$year}-{$month}";
-
-                    if (!isset($revenues[$key])) {
-                        $revenues[$key] = [
-                            'year' => $year,
-                            'month' => $month,
-                            'monthly_revenue' => 0,
-                            'total_revenue' => 0,
-                        ];
-                    }
-
-                    $monthRevenue = $monthly_base;
-
-                    if ($firstMonth) {
-                        $monthRevenue += ($learner->token_money ?? 0)
-                                    + ($learner->miscellaneous ?? 0)
-                                    - ($learner->refund ?? 0);
-                    }
-
-                    $revenues[$key]['monthly_revenue'] += $monthRevenue;
-                }
-
-                $start_date->addMonth();
-                $firstMonth = false;
+                $revenues[$key]['monthly_revenue'] += $monthRevenue;
             }
+
+            $start_date->addMonthNoOverflow();
+            $firstMonth = false;
+        }
+
+
 
 
         }
@@ -1316,7 +1324,7 @@ class DashboardController extends Controller
        
         switch ($type) {
             case 'today_collection':
-                $collection = LearnerTransaction::with(['learner'])
+                $collection = LearnerTransaction::with(['learner','learnerDetail'])
                     ->where('branch_id', getCurrentBranch())
                     ->whereDate('paid_date', now()->toDateString())
                     ->get();
@@ -1410,7 +1418,7 @@ class DashboardController extends Controller
 
                
         }
-
+       
         return view('dashboard.library_daily_tran', $data);
     }
 

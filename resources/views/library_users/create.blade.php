@@ -72,9 +72,6 @@
         <div class="row ">
             <div class="col-lg-12">
 
-
-
-
             @php
                 $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
             @endphp
@@ -83,7 +80,8 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <h5 class='role-category-heading'>
-                            {{ $categoryId ? \App\Models\PermissionCategory::find($categoryId)->name : 'No Category' }}
+                            {{ $categoryId ? \App\Models\PermissionCategory::where('id', $categoryId)->value('name') ?? 'No Category' : 'No Category' }}
+
                         </h5>
                     </div>
                 </div>

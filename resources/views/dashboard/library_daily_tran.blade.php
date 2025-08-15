@@ -4,6 +4,7 @@
 <!-- Content Header (Page header) -->
 @php
      use Carbon\Carbon;
+    
 @endphp
 
 <div class="row mb-4">
@@ -26,27 +27,23 @@
                     <tbody>
                         @if($collection->isNotEmpty())
                         @foreach ($collection as $data)
-                            @php
-                            $learner_detail=App\Models\LearnerDetail::where('id',$data->learner_detail_id)->first();
-                            @endphp
-                        
-                        
+                           
                             <tr>
-                                <td>{{ $data->learner->seat_no ?? 'GENERAL'}}</td> 
+                                <td>{{ optional($data->learner)->seat_no ?? 'GENERAL'}}</td> 
                                 
                                 <td><span class="uppercase truncate" data-bs-toggle="tooltip"
-                                    data-bs-title="{{$data->learner->name ?? ''}}" data-bs-placement="bottom">{{$data->learner->name ?? ''}}</span>
+                                    data-bs-title="{{optional($data->learner)->name ?? ''}}" data-bs-placement="bottom">{{optional($data->learner)->name ?? ''}}</span>
                                 <br> <small>{{$data->dob}}</small>
                                 </td>
                             
                             <td><span class="truncate" >
-                                    {!! $data->learner->email ? $data->learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
+                                    {!! optional($data->learner)->email ? optional($data->learner)->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} 
                                     </span> <br>
-                                    <small> +91-{{$data->learner->mobile}}</small>
+                                    <small> +91-{{optional($data->learner)->mobile}}</small>
                                 </td>
                                 <td>
-                                {{  myPlanType($learner_detail->plan_type_id)->name  ?? 'N/A' }}<br>
-                                        <small>{{ myPlan($learner_detail->plan_id)->name  ?? 'N/A' }}</small>
+                                {{  myPlanType($data->learnerDetail->plan_type_id)->name  ?? 'N/A' }}<br>
+                                        <small>{{ myPlan($data->learnerDetail->plan_id)->name  ?? 'N/A' }}</small>
                                 </td>
                                 <td>
                                     {{ $data->paid_amount ?? 'N/A' }}<br>
