@@ -348,7 +348,7 @@
         <p>{{ $learner_detail->plan->name}}</p>
         <p>{{ $learner_detail->plan_start_date}}</p>
         <p>{{ $learner_detail->plan_end_date}}</p>
-        <button class="mb-3"> Booked for <b>{{ $learner_detail->planType->name}}</b></button>
+        <button class="mb-3 print-id-card"> Booked for <b>{{ $learner_detail->planType->name}}</b></button>
         </div>
     </div> --}}
 </body>

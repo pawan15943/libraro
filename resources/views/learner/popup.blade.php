@@ -129,6 +129,30 @@
                                     <option value="1">Online</option>
                                     <option value="2">Offline</option>
                                     <option value="3">Pay Later</option>
+
+    {{-- <optgroup label="Cash">
+        <option value="CASH">CASH</option>
+    </optgroup>
+
+    <optgroup label="Bank Transfers">
+        <option value="BANK TRANSFER">BANK TRANSFER</option>
+        <option value="ONLINE BANKING">ONLINE BANKING</option>
+        <option value="UPI">UPI</option>
+    </optgroup>
+
+    <optgroup label="Digital Wallets">
+        <option value="PHONE PAY">PHONE PAY</option>
+        <option value="GOOGLE PAY">GOOGLE PAY</option>
+        <option value="BHARAT PAY">BHARAT PAY</option>
+        <option value="PAYTM">PAYTM</option>
+        <option value="AMAZON PAY">AMAZON PAY</option>
+        <option value="WHATSAPP PAY">WHATSAPP PAY</option>
+    </optgroup>
+
+    <optgroup label="Other">
+        <option value="MANUAL">MANUAL</option>
+        <option value="OTHER">OTHER</option>
+    </optgroup> --}}
                                 </select>
                             </div>
 

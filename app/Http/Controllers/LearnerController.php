@@ -1945,7 +1945,7 @@ class LearnerController extends Controller
 
    public function destroy(Request $request, $id)
     {
-
+       
         try {
              DB::transaction(function () use ($request, $id) {
 
@@ -1963,11 +1963,14 @@ class LearnerController extends Controller
                          ]);
                             
                         }
+                        if($request->remark){
+                            $customer->remark =  $request->remark;
+                        }
                     // Delete associated LearnerTransaction records
                     LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
 
                     $lastLearnerDetail->delete();
-                     $customer->status = 0;
+                    $customer->status = 0;
                     $customer->save();
                     $customer->delete();
                    

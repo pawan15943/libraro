@@ -20,16 +20,16 @@
     border: none;
 }
 
-.seat-info.bg-white .extended {
+.seat-info.bg-white .extended ,td span.extended{
     color: red !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875em !important;
+    font-weight: 700;
 }
 
-.seat-info.bg-white .actives {
+.seat-info.bg-white .actives,td span.actives {
     color: #70b900 !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875em !important;
+    font-weight: 700;
 }
 
 .information a {
@@ -38,8 +38,8 @@
 
 .seat-info.bg-white .aboutToExpire {
     color: orange !important;
-    font-size: .8rem !important;
-    font-weight: 500;
+    font-size: .875rem !important;
+    font-weight: 700;
 }
 
 
@@ -280,23 +280,23 @@ a.w-auto.px-2:hover .fa {
 }
 
 
-.plan-info {
+.seat-info.bg-white .plan-info {
     width: calc(68% - 1rem);
     padding: 1rem !important;
     padding-top: 0 !important;
 }
 
-.plan-info ul {
+.seat-info.bg-white .plan-info ul {
     gap: 2rem;
     justify-content: flex-end;
     flex: 1;
 }
 
-.plan-info ul li {
+.seat-info.bg-white .plan-info ul li {
     width: calc(100% / 6);
 }
 
-.plan-info button {
+.seat-info.bg-white .plan-info button {
     display: inline;
     background: transparent;
     border: none;
@@ -338,11 +338,11 @@ a.w-auto.px-2:hover .fa {
     margin: 0;
 }
 
-label {
+/* label {
     font-size: .8rem;
     color: #8a8787 !important;
     font-weight: 500 !important;
-}
+} */
 
 .form-control {
     height: 45px;
@@ -353,11 +353,6 @@ label {
     border-radius: 1rem;
 }
 
-input.btn.btn-primary.button {
-    background: #00389a !important;
-    height: 45px;
-    border-color: #00389a;
-}
 
 .filter h4 {
     font-size: 1rem;
@@ -958,3 +953,87 @@ ul.actionalbles li a:hover {
 }
 
 /* Master CSS Ends Here */
+
+
+
+    .revenue-box {
+      background: #e4e4e4;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      height: 100%;
+    }
+
+    .revenue-box h4 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .revenue-box span {
+      font-size: .8rem;
+    }
+
+    .revenue-info {
+      padding: 1rem;
+      border: 1px solid #dedede;
+      border-radius: 1rem;
+      background: #fff;
+    }
+
+    .revenue-info ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .revenue-info ul li {
+      width: calc(100% / 6 - 1rem);
+      font-family: 'outfit','sans-sarif';
+      color: #000;
+    }
+
+    .revenue-info span {
+      font-size: .8rem;
+      color: #ababab;
+    }
+
+    .revenue-info p {
+      font-size: .9rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .revenue-info .icon {
+      background: #f5f5f5;
+      width: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50px;
+      height: 50px;
+      transform: rotate(45deg);
+    }
+
+    @media screen and (max-width:480px) {
+      .revenue-info ul {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .revenue-info ul li:first-child {
+        width: 100%;
+      }
+
+      .revenue-info ul li {
+        width: calc(100% / 2 - 1rem);
+      }
+
+      .revenue-info ul li a {
+        padding: .5rem .8rem;
+        background: #f5f5f5;
+        border-radius: 1.5rem;
+        font-weight: 400;
+      }
+    }

@@ -4,7 +4,6 @@
 <style>
     div#datatable_wrapper input,
     div#datatable_wrapper select {
-        height: auto !important;
         margin: .5rem;
         border-color: #e7e7e7;
     }

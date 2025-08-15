@@ -144,8 +144,8 @@ class DashboardController extends Controller
                     ->where('ld.plan_end_date', '>', DB::raw('learner_detail.plan_end_date')) ;
                    
             })
-            ->with('planType')
-            ->select('learner_detail.seat_no','learner_detail.plan_end_date','learner_detail.status','learner_detail.learner_id','learner_detail.id as learner_detail_id','learners.name','learners.email','learners.mobile')
+           ->with('planType')
+            // ->select('learner_detail.seat_no','learner_detail.plan_end_date','learner_detail.status','learner_detail.learner_id','learner_detail.id as learner_detail_id','learners.name','learners.email','learners.mobile','plan_types.name as plan_type_name')
             ->get();
         
 
