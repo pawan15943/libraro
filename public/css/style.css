@@ -5864,3 +5864,13 @@ button.print-cards.mb-4 {
     margin: 0 auto;
     box-shadow: 1px 0 5px #00000021;
 }
+
+td .text-success {
+    font-size: .7rem ! IMPORTANT;
+    font-weight: 700;
+}
+
+td .text-danger {
+    font-size: .7rem ! IMPORTANT;
+    font-weight: 700;
+}
