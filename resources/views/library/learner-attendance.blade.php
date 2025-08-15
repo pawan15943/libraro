@@ -92,7 +92,7 @@ $current_route = Route::currentRouteName();
 
                     @else
                     <tr>
-                        <td colspan="7">Please select a date to view the student list. No date is currently selected.</td>
+                        <td colspan="5">Please select a date to view the student list. No date is currently selected.</td>
                     </tr>
                     @endif
                 </tbody>
