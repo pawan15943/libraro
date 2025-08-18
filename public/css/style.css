@@ -1611,7 +1611,7 @@ td {
 }
 
 img.extedned,
-.expired {
+.aboutToExpire {
     color: red ! IMPORTANT;
 }
 

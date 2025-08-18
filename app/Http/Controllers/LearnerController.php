@@ -17,6 +17,7 @@ use App\Models\Seat;
 use App\Models\Suggestion;
 use App\Models\LearnerFeedback;
 use App\Models\Complaint;
+use App\Models\LearnerTransactionActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -196,7 +197,7 @@ class LearnerController extends Controller
         $paid_amount = (float) $request->input('paid_amount', 0);
         $locker = (float) $request->input('locker_amount', 0);
         $discount = (float) $request->input('discount_amount', 0);
-
+       
         $effectivePaid = $planPrice + $locker - $discount;
         $pending_amount =  $effectivePaid - $paid_amount;
 
@@ -318,6 +319,9 @@ class LearnerController extends Controller
             $paid_amount = 0;
         }
 
+      
+        
+
         $customer = Learner::create([
             'seat_no' => $seat_no,
             'name' => $request->input('name'),
@@ -356,37 +360,24 @@ class LearnerController extends Controller
             'branch_id' => getCurrentBranch(),
             'exam_id' => $request->input('exam_id') ?? null,
         ]);
+        $data=[];
+        $data['planPrice']=$planPrice ;
+        $data['paid_amount']=$paid_amount ;
+        $data['locker']=$locker ;
+        $data['discount']=$discount ;
+        $data['start_date']=$start_date ;
+        $data['is_paid']=$is_paid ;
+        $data['learner_detail_id']=$learner_detail->id ;
+        $data['learner_id']=$customer->id ;
+        $data['payment_type']='SEAT ASSIGNMENT' ;
+        $data['payment_mode']=$request->input('payment_mode');
+        $data['due_date']=$request->due_date ;
+       $this->learnerTransactionAddUpdate($data);
 
-
-        LearnerTransaction::create([
-            'learner_id' => $customer->id,
-            'library_id' => getLibraryId(),
-            'learner_detail_id' => $learner_detail->id,
-            'total_amount' => $effectivePaid,
-            'paid_amount' => $paid_amount,
-            'pending_amount' => $pending_amount,
-            'locker_amount' => $locker,
-            'discount_amount' => $discount,
-            'paid_date' => $start_date->format('Y-m-d') ?? date('Y-m-d'),
-            'is_paid' => $is_paid,
-            'branch_id' => getCurrentBranch()
-        ]);
-
-        if ($pending_amount &&  $request->due_date) {
-            $tran = [
-                'learner_id' => $customer->id,
-                'due_date' => $request->due_date,
-                'pending_amount' => $pending_amount,
-                'created_at' => now(),
-            ];
-            DB::table('learner_pending_transaction')->insert($tran);
-        }
         if ($status == 1) {
 
             $this->dataUpdate();
         }
-
-
 
         return response()->json([
             'success' => true,
@@ -494,6 +485,16 @@ class LearnerController extends Controller
             $learnerTransaction->paid_amount = $request->input('new_plan_price');
             $learnerTransaction->pending_amount = 0;
             $learnerTransaction->save();
+
+            //learner Activity
+            $data=[];
+            $data['learner_id']=$customer->id;
+            $data['particular']='Paid By Trans';
+            $data['payment_type']='CHANGE PLAN';
+            $data['payment_mode']=1;
+            $data['amount']=$request->input('new_plan_price') ?? 0;
+            $data['dr_cr']='Cr';
+            $this->learnerTransactionActivity($data);
         }
 
 
@@ -1206,28 +1207,29 @@ class LearnerController extends Controller
 
             if ($request->paid_date) {
                 $transaction_date = $request->paid_date;
-            } elseif ($start_date->format('Y-m-d')) {
-                $transaction_date = $start_date->format('Y-m-d');
             } else {
-                $transaction_date = date('Y-m-d');
+                $transaction_date =null;
             }
-            if ($request->locker_amount) {
-                $lockeramt = $request->locker_amount;
-            } else {
-                $lockeramt = 0;
-            }
+           
+            $locker = (float) $request->input('locker_amount', 0);
             if ($request->discountType == 'amount') {
                 $discount = $request->discount_amount;
             } elseif ($request->discountType == 'percentage') {
-                $total = $request->input('plan_price_id') + $lockeramt;
+                $total = $request->input('plan_price_id') + $locker;
                 $discount = ($total * $request->discount_amount) / 100;
             } else {
                 $discount = 0;
             }
-
-            $total_amount = $request->input('plan_price_id') + $lockeramt - $discount;
-            if ($total_amount != $request->total_amount) {
-                return redirect()->back()->with('error', 'Something went wrong');
+            $planPrice = (float) $request->input('plan_price_id', 0);
+            $paid_amount = (float) $request->input('paid_amount', 0);
+            $effectivePaid = $planPrice + $locker - $discount;
+            $pending_amount =  $effectivePaid - $paid_amount;
+            if (($paid_amount > $effectivePaid) || ($paid_amount == 0)) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Paid amount is not valid',
+                ], 422);
+                die;
             }
             $learner_detail = LearnerDetail::create([
                 'library_id' => $customer->library_id,
@@ -1246,21 +1248,27 @@ class LearnerController extends Controller
                 'payment_mode' => $payment_mode,
             ]);
 
-            if ($payment_mode == 1 || $payment_mode == 2) {
-                LearnerTransaction::create([
-                    'learner_id' => $customer->id,
-                    'library_id' => getLibraryId(),
-                    'branch_id' => getCurrentBranch(),
-                    'learner_detail_id' => $learner_detail->id,
-                    'total_amount' => $total_amount,
-                    'paid_amount' => $total_amount,
-                    'pending_amount' => 0,
-                    'paid_date' => $transaction_date,
-                    'locker_amount' => $lockeramt,
-                    'discount_amount' => $discount ?? 0,
-                    'is_paid' => 1,
-                ]);
+             if ($request->expectsJson()){
+                $payment_type='RENEW';
+            }else{
+                $payment_type='UPGRADE';
             }
+
+            $data=[];
+            $data['planPrice']=$planPrice ;
+            $data['paid_amount']=$paid_amount ;
+            $data['locker']=$locker ;
+            $data['discount']=$discount ;
+            $data['start_date']=$start_date ;
+            $data['paid_date']=$transaction_date ;
+            $data['is_paid']=$is_paid ;
+            $data['learner_detail_id']=$learner_detail->id ;
+            $data['learner_id']=$customer->id ;
+            $data['payment_type']=$payment_type ;
+            $data['payment_mode']=$payment_mode;
+            $data['due_date']=$request->due_date ;
+            $this->learnerTransactionAddUpdate($data);
+
             if ($status == 1) {
                 $customer->hours = $hours;
                LearnerDetail::where('learner_id', $customer->id)
@@ -1763,6 +1771,16 @@ class LearnerController extends Controller
                 'operation' => 'reactive',
                 'created_at' => now(),
             ]);
+
+            // transaction activity
+                $data=[];
+                $data['learner_id']=$customer->id;
+                $data['particular']='Paid By Trans';
+                $data['payment_type']='REACTIVE';
+                $data['payment_mode']=1;
+                $data['amount']=$request->input('plan_price_id') ?? 0;
+                $data['dr_cr']='Cr';
+                $this->learnerTransactionActivity($data);
             DB::commit();
 
             return redirect()->route('learnerHistory')->with('success', 'Learner updated successfully.');
@@ -1973,6 +1991,17 @@ class LearnerController extends Controller
                     $customer->status = 0;
                     $customer->save();
                     $customer->delete();
+                    if ($request->isRefund && $request->refundAmount > 0){
+                        $data=[];
+                        $data['learner_id']=$id;
+                        $data['particular']='Paid By Trans';
+                        $data['payment_type']='REFUND';
+                        $data['payment_mode']=1;
+                        $data['amount']=$request->refundAmount ?? 0;
+                        $data['dr_cr']='Dr';
+                        $this->learnerTransactionActivity($data);
+                    }
+                    
                    
                 } 
             });
@@ -2023,62 +2052,26 @@ class LearnerController extends Controller
         return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment'));
     }
 
-    public function paymentStore(Request $request)
+   public function paymentStore(Request $request)
     {
-
         $this->validate($request, [
-            'learner_id' => 'required|exists:learners,id',
-            'paid_amount' => 'required|numeric',
-
+            'learner_id'   => 'required|exists:learners,id',
+            'paid_amount'  => 'required|numeric|min:1',
             'payment_mode' => 'required'
         ]);
 
+        $tranDetail = LearnerTransaction::find($request->learner_transaction_id);
 
-
-        if ($request->learner_transaction_id && LearnerTransaction::where('id', $request->learner_transaction_id)->exists()) {
-
-            $tranDetail = LearnerTransaction::where('id', $request->learner_transaction_id)->first();
-
-            $data['pending_amount'] = $tranDetail->pending_amount - $request->paid_amount;
-            if ($data['pending_amount'] == 0) {
-                $data['is_paid'] = 1;
-            } else {
-                $data['is_paid'] = 0;
-            }
-            $data['paid_amount'] = $tranDetail->paid_amount + $request->paid_amount;
-            $data['paid_date'] = date('Y-m-d');
-            $traupdate = LearnerTransaction::where('id', $tranDetail->id)->update($data);
-            if ($traupdate) {
-                if (DB::table('learner_pending_transaction')->where('learner_id', $request->learner_id)->exists()) {
-                    DB::table('learner_pending_transaction')->where('learner_id', $request->learner_id)->where('pending_amount', '>=', $request->paid_amount)
-                        ->update([
-                            
-                            'paid_date' => date('Y-m-d'),
-                            'status' => $data['is_paid'],
-                            'payment_mode'=> $request->payment_mode,
-                        ]);
-                } elseif ($data['pending_amount'] > 0) {
-                    DB::table('learner_pending_transaction')->insert(
-                        [
-                            'learner_id' => $request->learner_id,
-                            'due_date' => date("Y-m-d"),
-                            'pending_amount' => $data['pending_amount'],
-                            'status' => $data['is_paid']
-                        ]
-                    );
-                }
-            }
-            try {
-
-                return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
-            } catch (\Exception $e) {
-                \Log::error('Payment Error: ' . $e->getMessage());
-                return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
-            }
+        if (!$tranDetail) {
+            return redirect()->route('learners')->with('error', 'Transaction not found.');
         }
 
-        return redirect()->route('learners')->with('error', 'Something went wrong');
+        // ✅ Call reusable function
+        $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode);
+
+        return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
     }
+
 
     public function learnerExpire(Request $request, $id = null)
     {
@@ -2641,18 +2634,15 @@ class LearnerController extends Controller
 
     public function pendingPayment(Request $request)
     {
-        $learner_id = $request->id;
-        $customer = LearnerDetail::where('learner_id', $learner_id)
+       
+        $id = $request->id;
+        $pendingPayment =LearnerTransaction::where('id',$id)->first();
+        $customer = LearnerDetail::where('id', $pendingPayment->learner_detail_id)
             ->with('learner', 'plan', 'plantype')
             ->orderBy('id', 'DESC')
             ->first();
-        $pendingPayment = DB::table('learner_pending_transaction')->where('learner_id', $learner_id)
-            ->where('learner_id', $learner_id)
-            ->first();
-        // $pendingPayment = LearnerTransaction::where('learner_id', $learner_id)
-        // ->where('pending_amount', '!=', 0)
-        // ->whereNotNull('pending_amount')
-        // ->first();
+       
+       
         return view('learner.pending-payment', compact('customer', 'pendingPayment'));
     }
 
@@ -2679,48 +2669,28 @@ class LearnerController extends Controller
 
         $this->validate($request, [
             // 'transaction_image' => 'nullable|mimes:webp,png,jpg,jpeg|max:200',
-            'transaction_id' => 'required|exists:learner_pending_transaction,id',
+            'transaction_id' => 'required|exists:learner_transactions,id',
             'pending_amount' => 'required',
             'payment_mode' => 'required',
 
         ]);
-        $pendingTransaction = DB::table('learner_pending_transaction')
-            ->where('id', $request->transaction_id)
-            ->orderBy('id', 'desc')
-            ->first();
-        $transaction = LearnerTransaction::where('learner_id', $pendingTransaction->learner_id)->where('pending_amount', $request->pending_amount)->first();
+        
+        $transaction = LearnerTransaction::where('id',$request->transaction_id)->where('pending_amount', $request->pending_amount)->first();
         if (!$transaction) {
             return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
         }
 
-        $total_amount = $transaction->total_amount;
-        $total_paid_amount = $transaction->paid_amount + $transaction->pending_amount;
-        $new_pending_amount = $total_amount - $total_paid_amount;
-
-
+       
         try {
 
-            $transaction->pending_amount = $new_pending_amount;
-            $transaction->paid_amount = $total_paid_amount;
-            $transaction->save();
-
-            if ($pendingTransaction) {
-                DB::table('learner_pending_transaction')
-                    ->where('id', $pendingTransaction->id)
-                    ->update([
-
-                        'status' => 1,
-                        'payment_mode' => $request->payment_mode ?? null,
-                        'paid_date'=>date('Y-m-d'),
-                        
-                    ]);
-            }
+           $this->updateLearnerTransactionPayment($transaction, $request->pending_amount, $request->payment_mode);
 
             return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
         } catch (\Exception $e) {
             \Log::error('Payment Error: ' . $e->getMessage());
             return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
         }
+        
     }
     function generateLearnerCode() {
         $prefix = "LN";
@@ -2745,7 +2715,7 @@ class LearnerController extends Controller
     {
 
         $customer_detail_id = $request->id;
-        $customer = LearnerDetail::where('id', $customer_detail_id)->with('learner', 'plan', 'plantype')->first();
+        $customer = LearnerDetail::where('learner_detail.id', $customer_detail_id)->leftJoin('learner_transactions','learner_transactions.learner_detail_id','=','learner_detail.id')->with('learner', 'plan', 'plantype')->select('learner_detail.*','learner_transactions.token_money')->first();
         
         $tokenMoney = token_money();
         
@@ -2772,11 +2742,22 @@ class LearnerController extends Controller
             // Step 3: Update based on payment type
             if ($request->payment_type === 'token_money') {
                 $transaction->token_money = $request->fees;
+                $payment_type='TOKEN MONEY';
+               
             } elseif ($request->payment_type === 'miscellaneous') {
                 $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
+                $payment_type='MISCELLANEOUS';
             }
            
             $transaction->save(); 
+                $data=[];
+                $data['learner_id']=$request->learner_id;
+                $data['particular']='Paid By Trans';
+                $data['payment_type']=$payment_type;
+                $data['payment_mode']=1;
+                $data['amount']=$request->fees;
+                $data['dr_cr']='Cr';
+                $this->learnerTransactionActivity($data);
 
             return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
 
@@ -2815,6 +2796,115 @@ class LearnerController extends Controller
         return view('learner.checklist', compact('learners'));
 
     }
+
+    public function learnerTransactionActivity($data)
+    {
+        // Fixed year
+        $year = "2025";
+
+        // Get last transaction (only for 2025 IDs)
+        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($last && !empty($last->transaction_id)) {
+            // extract last sequence (last 4 digits)
+            $lastSeq = (int)substr($last->transaction_id, -4);
+            $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            // first transaction
+            $newSeq = "0001";
+        }
+
+        // Build transaction ID
+        $transactionId = $year . "000" . $newSeq;
+
+        LearnerTransactionActivity::create([
+            'branch_id'      => getCurrentBranch(),
+            'learner_id'     => $data['learner_id'],
+            'date'           => now()->format('Y-m-d'),
+            'transaction_id' => $transactionId,
+            'particular'     => $data['particular'],
+            'payment_type'   => $data['payment_type'],
+            'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
+            'amount'         => $data['amount'] ?? 0,
+            'dr_cr'          => $data['dr_cr'],
+            'created_by'     => auth()->user()->name ?? 'System'
+        ]);
+    }
+
+   public function learnerTransactionAddUpdate($data)
+    {
+        // 1. Save LearnerTransaction
+         $effectivePaid = $data['planPrice'] + $data['locker'] -$data['discount'];
+        $pending_amount =  $effectivePaid - $data['paid_amount'];
+        if ( $data['paid_date']) {
+            $transaction_date = $data['paid_date']->format('Y-m-d');
+        } elseif ($data['start_date']->format('Y-m-d')) {
+            $transaction_date = $data['start_date']->format('Y-m-d');
+        } else {
+            $transaction_date = date('Y-m-d');
+        }
+        $learnerTransaction = LearnerTransaction::create([
+            'learner_id'        => $data['learner_id'],
+            'library_id'        => getLibraryId(),
+            'learner_detail_id' => $data['learner_detail_id'],
+            'total_amount'      => $effectivePaid,
+            'paid_amount'       => $data['paid_amount'],
+            'pending_amount'    => $pending_amount,
+            'locker_amount'     => $data['locker'] ?? 0,
+            'discount_amount'   => $data['discount'] ?? 0,
+            'paid_date'         => $transaction_date,
+            'is_paid'           => $data['is_paid'] ?? 0,
+            'branch_id'         => getCurrentBranch(),
+             'due_date'        => $data['due_date'],
+        ]);
+
+        // 2. Add to LearnerTransactionActivity
+        $activityData = [
+            'learner_id'   => $data['learner_id'],
+            'particular'   => 'Paid By Trans',
+            'payment_type' => $data['payment_type'],
+            'payment_mode' => $data['payment_mode'],
+            'amount'       => $data['paid_amount'],
+            'dr_cr'        => 'Cr',
+        ];
+        $this->learnerTransactionActivity($activityData);
+
+     
+        return $learnerTransaction;
+    }
+
+    public function updateLearnerTransactionPayment($transaction, $paid_amount, $payment_mode)
+    {
+        // 1. Update amounts
+        $newPending = $transaction->pending_amount - $paid_amount;
+        $newPaid    = $transaction->paid_amount + $paid_amount;
+        $isPaid     = $newPending <= 0 ? 1 : 0;
+        $due_date   = $newPending > 0 ? date("Y-m-d") : null ;
+        $transaction->update([
+            'pending_amount' => $newPending,
+            'paid_amount'    => $newPaid,
+            'is_paid'        => $isPaid,
+            'paid_date'      => now()->format('Y-m-d'),
+            'due_date'      => $due_date 
+        ]);
+
+        // 3. Insert into LearnerTransactionActivity
+        
+            $activityData = [
+                'learner_id'   => $transaction->learner_id,
+                'particular'   => 'Additional Payment',
+                'payment_type' => 'PENDING',
+                'payment_mode' => $payment_mode,
+                'amount'       => $paid_amount,
+                'dr_cr'        => 'Cr',
+            ];
+            $this->learnerTransactionActivity($activityData);
+    }
+
+
+
 
    
 }

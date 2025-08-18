@@ -1,15 +1,6 @@
 @extends('layouts.library')
 @section('content')
- @if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-@if (session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
+
 <!-- Breadcrumb -->
 <div class="heading-list justify-content-end mb-4">
     <a href="{{ route('branch.create') }}" class="btn btn-primary export m-0">
@@ -71,7 +62,7 @@ There is currently no Data available </p>
                         </li>
                          <li>
                             <a href="{{ route('tokenAmount.create', $value->id) }}" title="Token Money">
-                                <i class="fa-solid fa-lock"></i>
+                                <i class="fa-solid fa-credit-card"></i>
                             </a>
                         </li>
                     @endif

@@ -154,7 +154,7 @@ class BranchController extends Controller
             
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
-            'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:width=250,height=250',
+            'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:max_width=250,max_height=250',
             'features' => 'nullable|array', 
             'features.*' => 'integer',
             'google_map'=>'nullable',

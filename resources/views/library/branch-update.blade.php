@@ -334,8 +334,9 @@
                         </label>
                     </div>
                     <small class="text-info d-block">Multiple images upload and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP. Image Size must be in 1024 * 1024 px</small>
-                    <small class="text-danger d-block">You can only allow to upload 4 images of your library</small><small id="fileUploadError" class="text-danger mt-2"></small>
-                    <div id="imagePreview" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                    <small class="text-danger d-block">You can only allow to upload 4 images of your library</small>
+                    <small id="fileUploadError" class="text-danger mt-2"></small>
+                    <div id="imagePreview1" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
                 </div>
             </div>
 
@@ -353,8 +354,8 @@
                     <div class="preview" id="preview">
                         @if(old('library_logo'))
                             <img src="{{ asset('public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                        @elseif(isset($library) && $library->library_logo)
-                            <img src="{{ asset('public/' . $library->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        @elseif(isset($branch) && $branch->library_logo)
+                            <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                         @else
                             <!-- Show empty preview or placeholder -->
                             <p class="text-muted">No logo uploaded</p>
@@ -398,12 +399,13 @@
     $('#branchUpdate').on('submit', function (e){
         console.log("sd");
     });
+
     $(document).ready(function() {
         // Show existing images if available
         let existingImages = @json(json_decode($branch -> library_images ?? '[]'));
 
         $.each(existingImages, function(index, image) {
-            $("#imagePreview").append(
+            $("#imagePreview1").append(
                 `<div class="image-container" style="position: relative; display: inline-block;">
                     <img src="{{ asset('public') }}/${image}" width="100" style="margin: 5px; border: 1px solid #ddd; padding: 5px;">
                     <button type="button" class="btn btn-danger btn-sm remove-existing-image" data-image="${image}" 
@@ -412,21 +414,7 @@
             );
         });
 
-        // Preview new images on selection
-        $("#libraryImages").on("change", function(event) {
-            $("#imagePreview1").html(""); // Clear previous previews
 
-            let files = event.target.files;
-            $.each(files, function(index, file) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    $("#imagePreview").append(
-                        `<img src="${e.target.result}" width="100" style="margin: 5px; border: 1px solid #ddd; padding: 5px;">`
-                    );
-                };
-                reader.readAsDataURL(file);
-            });
-        });
 
         // Remove existing image
         $(document).on("click", ".remove-existing-image", function() {
@@ -491,7 +479,7 @@
 
         $('#libraryImages').on('change', function () {
             const files = this.files;
-            const previewContainer = $('#imagePreview');
+            const previewContainer = $('#imagePreview1');
             previewContainer.empty(); // Clear previous previews
             $("#fileUploadError").html('');
             let error = '';
@@ -512,18 +500,43 @@
                 }
 
                 // Show preview if valid
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = $('<img>').attr('src', e.target.result).css({
-                        width: '100px',
-                        height: '100px',
-                        objectFit: 'cover',
-                        border: '1px solid #ccc',
-                        borderRadius: '5px'
-                    });
-                    previewContainer.append(img);
-                };
-                reader.readAsDataURL(file);
+const reader = new FileReader();
+reader.onload = function (e) {
+    // Create wrapper for image + close button
+    const wrapper = $('<div>').css({
+        position: 'relative',
+        display: 'inline-block',
+        margin: '5px'
+    });
+
+    // Create image
+    const img = $('<img>').attr('src', e.target.result).css({
+        width: '100px',
+        height: '100px',
+        objectFit: 'cover',
+        border: '1px solid #ccc',
+        borderRadius: '5px'
+    });
+
+    // Create close button
+    const closeBtn = $(
+        `<button type="button" class="btn btn-danger btn-sm remove-existing-image" 
+            style="position:absolute; top:0; right:0; padding:2px 6px;">×</button>`
+    );
+
+    // Remove image on button click
+    closeBtn.on('click', function () {
+        wrapper.remove();
+    });
+
+    // Append image and close button to wrapper
+    wrapper.append(img).append(closeBtn);
+
+    // Append wrapper to preview container
+    previewContainer.append(wrapper);
+};
+reader.readAsDataURL(file);
+
             });
 
             if (error !== '') {
@@ -534,7 +547,7 @@
             }
         });
 
-        
+        // Logo
         $('#fileInput').on('change', function () {
             const file = this.files[0];
             if (file && file.size <= maxSize) {
@@ -586,5 +599,5 @@
 </script>
 
 
-@include('library.script')
+{{-- @include('library.script') --}}
 @endsection

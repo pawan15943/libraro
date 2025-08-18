@@ -379,6 +379,9 @@
         // If user manually updates paid_amount, update pending as well
         $('#paid_amount').on('input', calculatePendingAmount);
 
+         // If user manually updates paid_amount in RENEW, update pending as well
+        $('#new_plan_price2').on('input', calculatePendingAmountRenew);
+
         // Manage Locaker in Booking Form
         $('#toggleFieldCheckbox2, #plan_id3').on('change', function () {
            
@@ -620,6 +623,7 @@
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
             $('#update_plan_end_date').val(end_date);
+            $('#seat_number_upgrades').text('Renew Library Membership for Seat No '  + seat_no);
             fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);
         });
      
@@ -901,7 +905,7 @@
         });
 
       
-        // Upgrade PLAN 
+        // RENEW FORM SUBMIT
         $(document).on('submit', '#upgradeForm', function(event) {
            
             event.preventDefault();
@@ -1689,10 +1693,9 @@
         // console.log('autoPaidnew',autoPaidnew);
         
         $('#new_plan_price2').val(autoPaidnew);
-        calculatePendingAmount();
+        calculatePendingAmountRenew();
     }
-
-    // Calculate Pending Amount on BOOKING FORM
+     // Calculate Pending Amount on BOOKING FORM
     function calculatePendingAmount() {
         const planPrice = parseFloat($('#plan_price_id').val()) || 0;
         const paidAmount = parseFloat($('#paid_amount').val()) || 0;
@@ -1732,6 +1735,48 @@
             $('#due_date').attr('readonly', true);
         }
     }
+
+    // Calculate Pending Amount on Renew FORM
+    function calculatePendingAmountRenew() {
+        const planPrice = parseFloat($('#plan_price_id2').val()) || 0;
+        const paidAmount = parseFloat($('#new_plan_price2').val()) || 0;
+        const lockerAmount = parseFloat($('#locker_amount2').val()) || 0;
+        const discountRaw = parseFloat($('#discount_amount3').val()) || 0;
+        const discountType = $('#discount_type').val();
+        let discountAmount = 0;
+
+        if (discountType === 'percentage') {
+            discountAmount = ((planPrice + lockerAmount) * discountRaw) / 100;
+        } else {
+            discountAmount = discountRaw;
+        }
+
+        const effectivePaid = planPrice+lockerAmount - discountAmount;
+        const pendingAmount = effectivePaid-paidAmount;
+       
+        
+
+        if(pendingAmount > 0){
+            $('#pending_amt2').html('Pending Amount: ' + pendingAmount);
+        }else if (pendingAmount < 0) {
+            $('#pending_amt2').html('High price not allowed.' + pendingAmount);
+        }else{
+            $('#pending_amt2').html('');
+        }
+
+        console.log('lockerAmount',lockerAmount);
+        console.log('discountAmount',discountAmount);
+        //console.log('planPrice',planPrice); 
+        console.log('effectivePaid',effectivePaid);
+        console.log('pendingAmount',pendingAmount);
+
+        if (pendingAmount > 0) {
+            $('#due_date2').removeAttr('readonly');
+        } else {
+            $('#due_date2').attr('readonly', true);
+        }
+    }
+
 
 
     // Select Discount Type in Booking Form nad enable/disable amout field

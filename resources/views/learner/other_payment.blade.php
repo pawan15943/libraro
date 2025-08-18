@@ -89,7 +89,10 @@ $class=$planDetails['class'];
                             <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror"
                                     data-token="{{ $tokenMoney }}">
                                 <option value="">Select Payment</option>
+                                @if(!$customer->token_money)
                                 <option value="token_money">Token Money</option>
+                                @endif
+                                
                                 <option value="miscellaneous">Miscellaneous fee</option>
                             </select>
 
@@ -164,6 +167,31 @@ $(document).ready(function () {
         }
     });
 });
+
+// $(document).ready(function () {
+//     // pass PHP value into JS
+//     var tokenMoneyExists = {{ $customer->token_money ?? 0 }};
+
+//     $('#payment_type').on('change', function () {
+//         let selected = $(this).val();
+//         var tokenMoney = $(this).data('token');
+//         if (selected === 'token_money') {
+//             $('#fees').val(tokenMoney);
+
+//             if (tokenMoneyExists > 0) {
+//                 // already paid → hide button
+//                 $('.button').hide();
+//             } else {
+//                 // not paid yet → allow payment
+//                 $('.button').show();
+//             }
+//         } else {
+//             $('#fees').val('');
+//             $('.button').show();
+//         }
+//     });
+// });
+
 
 </script>
 

@@ -284,14 +284,14 @@ if (!function_exists('getPlanStatusDetails')) {
 
         if ($diffInDays < 0 && $diffExtendDay > 0) {
              $status = 'In Extension';
-            $class = 'expired';
+            $class = 'extedned';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
            
             $status = 'About to Expire';
             $class = 'aboutToExpire';
         } elseif ($diffExtendDay < 0) {
             $status = 'Expired';
-            $class = 'expired';
+            $class = 'extedned';
         }
 
         return [
