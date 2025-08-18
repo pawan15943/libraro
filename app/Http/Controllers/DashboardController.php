@@ -1293,9 +1293,10 @@ class DashboardController extends Controller
             'todayExpense' => collect(),
             'monthlyExpense' => collect(),
         ];
-        $today_booking_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','SEAT ASSIGNMENT')->where('dr_cr','Cr')->sum('amount');
-         $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','!=','SEAT ASSIGNMENT')->where('dr_cr','Cr')->sum('amount');
+        $today_booking_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])->where('dr_cr','Cr')->sum('amount');
+         $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
           $today_expense=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');
+           $today_pending=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','PENDING')->sum('amount');
           $today_refund=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','REFUND')->sum('amount');
           $total_cr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Cr')->sum('amount');
           $total_dr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Dr')->sum('amount');
@@ -1319,6 +1320,7 @@ class DashboardController extends Controller
        $data['today_other_amt']=$today_other_amt;
        $data['today_expense']=$today_expense;
        $data['today_refund']=$today_refund;
+       $data['today_pending']=$today_pending;
        $data['total_revenue']=$total_revenue;
         switch ($type) {
             case 'today_collection':

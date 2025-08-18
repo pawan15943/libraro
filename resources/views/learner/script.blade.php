@@ -1736,7 +1736,7 @@
         }
     }
 
-    // Calculate Pending Amount on Renew FORM
+    // Calculate Pending Amount on Renew Popup FORM
     function calculatePendingAmountRenew() {
         const planPrice = parseFloat($('#plan_price_id2').val()) || 0;
         const paidAmount = parseFloat($('#new_plan_price2').val()) || 0;
@@ -1774,6 +1774,47 @@
             $('#due_date2').removeAttr('readonly');
         } else {
             $('#due_date2').attr('readonly', true);
+        }
+    }
+
+    // Calculate Pending Amount on Renew FORM
+    function calculatePendingAmountRenew() {
+        const planPrice = parseFloat($('#plan_price').val()) || 0;
+        const paidAmount = parseFloat($('#new_plan_price').val()) || 0;
+        const lockerAmount = parseFloat($('#locker_amount').val()) || 0;
+        const discountRaw = parseFloat($('#discount_amount2').val()) || 0;
+        const discountType = $('#discountType2').val();
+        let discountAmount = 0;
+
+        if (discountType === 'percentage') {
+            discountAmount = ((planPrice + lockerAmount) * discountRaw) / 100;
+        } else {
+            discountAmount = discountRaw;
+        }
+
+        const effectivePaid = planPrice+lockerAmount - discountAmount;
+        const pendingAmount = effectivePaid-paidAmount;
+       
+        
+
+        if(pendingAmount > 0){
+            $('#pending_amt3').html('Pending Amount: ' + pendingAmount);
+        }else if (pendingAmount < 0) {
+            $('#pending_amt3').html('High price not allowed.' + pendingAmount);
+        }else{
+            $('#pending_amt3').html('');
+        }
+
+        console.log('lockerAmount',lockerAmount);
+        console.log('discountAmount',discountAmount);
+        //console.log('planPrice',planPrice); 
+        console.log('effectivePaid',effectivePaid);
+        console.log('pendingAmount',pendingAmount);
+
+        if (pendingAmount > 0) {
+            $('#due_date3').removeAttr('readonly');
+        } else {
+            $('#due_date3').attr('readonly', true);
         }
     }
 

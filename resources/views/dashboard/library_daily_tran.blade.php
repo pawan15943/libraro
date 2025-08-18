@@ -6,6 +6,35 @@
 use Carbon\Carbon;
 
 @endphp
+<!-- Fileter Layout -->
+    <div class="row mb-4">
+      <div class="col-lg-12">
+        <div class="filter p-3 bg-white">
+          <h4><i class="fa fa-filter"></i> Filter Learners</h4>
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <label for="">Choose Payment Type</label>
+              <select name="" class="form-control form-select" id="">
+                <option value="">Choose Plan</option>
+              </select>
+            </div>
+            
+            <div class="col-lg-4">
+              <label for="">From</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-lg-4">
+              <label for="">To</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-lg-3">
+              <input type="text" class="btn btn-primary button" value="Search">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 <div class="row g-4">
     <div class="col-lg-4 col-md-6 col-6">
         <div class="revenue-box">
@@ -33,7 +62,7 @@ use Carbon\Carbon;
     </div>
     <div class="col-lg-4 col-md-6 col-6">
         <div class="revenue-box">
-            <h4>1520</h4>
+            <h4>{{number_format($today_pending)}}</h4>
             <span>Today’s Pending Receipts (E)</span>
         </div>
     </div>
@@ -62,14 +91,14 @@ use Carbon\Carbon;
 <!-- Daily Collections Block Starts here -->
 @if(request('type') === 'today_collection' || request('type') === 'monthly_collection' )
     <h4 class="py-4">{{ $label }} Summary</h4>
-    <div class="row g-4">
+    <div class="row g-4 mb-4">
         @if($collection->isNotEmpty())
             @foreach ($collection as $data)
                
                     <div class="col-lg-12">
                         <div class="revenue-info">
                             <ul>
-                                <li><div class="icon">
+                                <li style="width: 8%"><div class="icon">
                                     @if($data->dr_cr=='Cr')
                                         <i class="fa fa-long-arrow-right text-success"></i>
                                     @else
@@ -77,15 +106,15 @@ use Carbon\Carbon;
                                     @endif
                                     
                                 </div></li>
-                                <li><span>Seat Info</span><p>{{ $data->learner->seat_no ?? 'GENERAL' }}<br>
+                                <li><span>Trxn. Id</span><a href="#" class="d-block">{{ $data->transaction_id ?? 'N/A' }}</a></li>
+
+                                <li><span>Seat Info</span><p class="truncate">{{ $data->learner->seat_no ?? 'GENERAL' }} :
                                     {{ $data->learner->name ?? '' }}
                                 </p></li>
-                                <li><span>Trxn</span><p>{{ $data->transaction_id ?? 'N/A' }}</p></li>
-                                <li><span>Trxn Type</span><p>{{ $data->payment_type ?? '' }} Payment</p></li>
-                                <li><span>Amount Received</span><p>{{ $data->amount }}</p></li>
-                                <li><span>Date</span><p>{{ $data->date ?? 'N/A' }}</p></li>
-                                <li><span>Created by</span><p>{{ $data->created_by ?? 'N/A' }}</p></li>
-                                <li><p><a href=""><i class="fa fa-print"></i> Download Receipt</a></p></li>
+                                <li><span>Trxn. Type</span><p>{{ $data->payment_type ?? '' }}</p></li>
+                                <li><span>Trxn. Amt</span><p class="text-success">{{ $data->dr_cr }} : {{ $data->amount }}</p></li>
+                                <li><span>Trxn. Date</span><p>{{ $data->date ?? 'N/A' }}</p></li>
+                                <li><span>Created by</span><p class="truncate">{{ $data->created_by ?? 'N/A' }}</p></li>
                             </ul>
                         </div>
                     </div>
