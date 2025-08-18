@@ -456,10 +456,14 @@ ul.paginations li a:hover {
         width: 100% !important;
     }
 
-    .plan-info ul {
+    .seat-info.bg-white .plan-info {
+        width: 100%;
+        padding: 1rem !important;
+    }
+
+    .seat-info.bg-white .plan-info ul {
         gap: 1rem;
         margin: 0;
-        padding: 0;
         flex-wrap: wrap;
     }
 
