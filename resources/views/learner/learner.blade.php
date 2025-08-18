@@ -112,12 +112,7 @@ $transaction = learnerTransaction($value->id, $value->learner_detail_id);
 
 
 if ($transaction && isset($transaction->pending_amount)) {
-    $due_date = DB::table('learner_pending_transaction')
-        ->where('learner_id', $value->id)
-        ->where('status', 0)
-        ->where('pending_amount', $transaction->pending_amount)
-        ->select('due_date')
-        ->first();
+    $due_date = $transaction->due_date;
 } else {
     $due_date = null;
 }
@@ -289,14 +284,19 @@ if ($transaction && isset($transaction->pending_amount)) {
                                 </button>
                             </form>
 
+
                             @elseif(empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount))
                             <span></span>
                             @elseif( pending_amt($value->learner_detail_id))
-                            <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
+                            <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
                                 @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
                                 @else
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?"> {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{$due_date->due_date}})</span>
+                                <span class="extended" data-bs-title="Popover title"  data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                    {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+                                    
+                                </span>
+
                                 @endif
                             </a>
 

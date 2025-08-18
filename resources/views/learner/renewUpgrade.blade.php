@@ -158,12 +158,16 @@ $ids='learnerUpgrade';
 
                         <div class="col-lg-4">
                             <label>Total Amount <span>*</span></label>
-                            <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" readonly>
+                            <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" >
                             @error('total_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
+                             <span id="pending_amt3" class="text-danger"></span>
                         </div>
-
+                        <div class="col-lg-4">
+                            <label for="">Choose Due Date<span>*</span></label>
+                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date3" readonly>
+                        </div>
                         <div class="col-lg-4">
                             <label>Payment Mode <span>*</span></label>
                             <select name="payment_mode" id="payment_mode" class="form-control form-select @error('payment_mode') is-invalid @enderror">
@@ -210,21 +214,14 @@ $ids='learnerUpgrade';
         const formId = "{{ $ids }}"; // Dynamically injected form ID
         const formElement = document.getElementById(formId);
 
-        if (formId == 'learnerUpgrade') {
-            handleFormChanges('learnerUpgrade', {
-                {
-                    $customer - > id
-                }
-            });
-        } else if (formId == 'renewSeat') {
-            handleFormChanges('renewSeat', {
-                {
-                    $customer - > id
-                }
-            });
+        if (formId === 'learnerUpgrade') {
+            handleFormChanges('learnerUpgrade', {{ $customer->id }});
+        } else if (formId === 'renewSeat') {
+            handleFormChanges('renewSeat', {{ $customer->id }});
         }
     });
 </script>
+
 
 
 

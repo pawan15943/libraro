@@ -23,6 +23,7 @@ use App\Models\Feature;
 use App\Models\Learner;
 use App\Models\LearnerOperationsLog;
 use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use App\Models\PlanType;
 use App\Models\Subscription;
 use Log;
@@ -223,15 +224,12 @@ class DashboardController extends Controller
             }
 
               //Daily Transaction
-            $todayCollection = LearnerTransaction::where('branch_id', getCurrentBranch())
-            ->whereDate('paid_date', $today)
-            ->sum('paid_amount'); 
+            $todayCollection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
+            ->sum('amount'); 
 
-            $todayExpense = DB::table('monthly_expense')
-                ->where('library_id', getLibraryId())
-                ->where('branch_id', getCurrentBranch())
-                ->whereDate('created_at', $today)
-                ->sum('amount'); 
+            $todayExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
+            ->where('payment_type','EXPENSE')
+            ->sum('amount'); 
            
             $todayBalance = $todayCollection - $todayExpense;
            
@@ -622,26 +620,26 @@ class DashboardController extends Controller
 
         //recenue expense div
 
-            $expense_query = DB::table('monthly_expense')
-            ->where('library_id', getLibraryId());
+          $expense_query = LearnerTransactionActivity::with('learner')
+                ->where('branch_id', getCurrentBranch())
+                ->where('payment_type', 'EXPENSE');
 
-        if ($request->filled('year') && !$request->filled('month')) {
-            $expense_query->where('year', $request->year);
-        } elseif ($request->filled('year') && $request->filled('month')) {
-            $expense_query->where('year', $request->year)
-                        ->where('month', $request->month);
-        }
+            if ($request->filled('year') && !$request->filled('month')) {
+                $expense_query->whereYear('date', $request->year);
+            } elseif ($request->filled('year') && $request->filled('month')) {
+                $expense_query->whereYear('date', $request->year)
+                            ->whereMonth('date', $request->month);
+            }
 
+            $expenses = $expense_query->selectRaw('YEAR(date) as year, MONTH(date) as month, SUM(amount) as total_expense')
+                ->groupBy('year', 'month')
+                ->orderBy('year', 'asc')
+                ->orderBy('month', 'asc')
+                ->get()
+                ->keyBy(function ($expense) {
+                    return "{$expense->year}-{$expense->month}";
+                });
 
-
-        $expenses = $expense_query->selectRaw('year, month, SUM(amount) as total_expense')
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'asc')
-            ->orderBy('month', 'asc')
-            ->get()
-            ->keyBy(function ($expense) {
-                return "{$expense->year}-{$expense->month}";
-            });
 
          
         
@@ -793,23 +791,12 @@ class DashboardController extends Controller
         }
         
        
-        $monthlyIncome = LearnerTransaction::withTrashed()
-        ->where('branch_id', getCurrentBranch())
-        ->whereYear('paid_date', $year)
-        ->whereMonth('paid_date', $month)
-        ->select(DB::raw("
-            IFNULL(SUM(paid_amount), 0) 
-            + IFNULL(SUM(miscellaneous), 0) 
-            + IFNULL(SUM(token_money), 0) 
-            - IFNULL(SUM(refund), 0) AS total_income
-        "))
-        ->value('total_income');
-        $monthlyExpense=DB::table("monthly_expense")
-                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-                    ->where('monthly_expense.branch_id', getCurrentBranch())
-                    ->whereYear('monthly_expense.created_at', $year)
-                    ->whereMonth('monthly_expense.created_at', $month)
-                    ->sum('amount');   
+        $monthlyIncome =LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch()) ->whereYear('date', $year)->whereMonth('date', $month)->sum('amount'); 
+      
+        $monthlyExpense=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)->whereMonth('date', $month)
+            ->where('payment_type','EXPENSE')
+            ->sum('amount');
+       
         $monthlyBalance= $monthlyIncome- $monthlyExpense;   
         $monthly_ncome  = $this->formatNumber($monthlyIncome);
         $monthly_expense = $this->formatNumber($monthlyExpense);
@@ -1306,6 +1293,14 @@ class DashboardController extends Controller
             'todayExpense' => collect(),
             'monthlyExpense' => collect(),
         ];
+        $today_booking_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])->where('dr_cr','Cr')->sum('amount');
+         $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
+          $today_expense=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');
+           $today_pending=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','PENDING')->sum('amount');
+          $today_refund=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','REFUND')->sum('amount');
+          $total_cr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Cr')->sum('amount');
+          $total_dr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Dr')->sum('amount');
+          $total_revenue=$total_cr-$total_dr;
 
         if ($request->filled('year') && $request->filled('month')) {
             $year = $request->year;
@@ -1321,54 +1316,44 @@ class DashboardController extends Controller
             $month = date('m');
         }
 
-       
+       $data['today_booking_amt']=$today_booking_amt;
+       $data['today_other_amt']=$today_other_amt;
+       $data['today_expense']=$today_expense;
+       $data['today_refund']=$today_refund;
+       $data['today_pending']=$today_pending;
+       $data['total_revenue']=$total_revenue;
         switch ($type) {
             case 'today_collection':
-                $collection = LearnerTransaction::with(['learner','learnerDetail'])
-                    ->where('branch_id', getCurrentBranch())
-                    ->whereDate('paid_date', now()->toDateString())
+                $collection=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
                     ->get();
+             
 
                 $data['collection'] = $collection;
-                $data['totalPaid'] = $collection->sum('paid_amount');
+                $data['totalPaid'] = $collection->sum('amount');
                 $data['label'] = 'Today Collection';
                 break;
 
             case 'monthly_collection':
-                $collection = LearnerTransaction::with(['learner'])
-                    ->where('branch_id', getCurrentBranch())
-                    ->whereYear('paid_date', $year)
-                    ->whereMonth('paid_date', $month)
+                 $collection=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)
+                    ->whereMonth('date', $month)
                     ->get();
-
+               
                 $data['collection'] = $collection;
-                $data['totalPaid'] = $collection->sum('paid_amount');
+                $data['totalPaid'] = $collection->sum('amount');
                 $data['label'] = 'Monthly Collection';
                 break;
             case 'today_expense':
-                $todayExpense = DB::table("monthly_expense")
-                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-                    ->where('monthly_expense.branch_id', getCurrentBranch())
-                    ->whereDate('monthly_expense.created_at', $today)
-                    ->select('expenses.name as expense_name', 'monthly_expense.*')
-                    ->get();
-
-        
+                $todayExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', $today)
+                ->where('payment_type','EXPENSE')->get();
                 $data['expenses'] = $todayExpense;
                 $data['totalExpense'] = $todayExpense->sum('amount');
                 $data['label'] = 'Today Expense';
                 break;
 
             case 'monthly_expense':
-                $monthlyExpense = DB::table("monthly_expense")
-                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-                    ->where('monthly_expense.branch_id', getCurrentBranch())
-                    ->whereYear('monthly_expense.created_at', $year)
-                    ->whereMonth('monthly_expense.created_at', $month)
-                    ->select('expenses.name as expense_name', 'monthly_expense.*')
-                    ->get();
-
-                
+                $monthlyExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)->whereMonth('date', $month)
+                ->where('payment_type','EXPENSE')->get();
+              
                 $data['expenses'] = $monthlyExpense;
                 $data['totalExpense'] = $monthlyExpense->sum('amount');
                 $data['label'] = 'Today Expense';
@@ -1376,16 +1361,11 @@ class DashboardController extends Controller
            case 'today_balance':
            
 
-                $collection = LearnerTransaction::where('branch_id', getCurrentBranch())
-                    ->whereDate('paid_date', $today)
+                $collection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
                     ->get();
 
-                $expense = DB::table("monthly_expense")
-                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-                    ->where('monthly_expense.branch_id', getCurrentBranch())
-                    ->whereDate('monthly_expense.created_at', $today)
-                    ->select('expenses.name as expense_name', 'monthly_expense.*')
-                    ->get();
+                $expense =LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', $today)
+                ->where('payment_type','EXPENSE')->get();
 
                 $data['todayCollection'] = $collection;
                 $data['todayExpense'] = $expense;
@@ -1395,27 +1375,17 @@ class DashboardController extends Controller
 
 
             case 'monthly_balance':
-                $collection = LearnerTransaction::with(['learner'])
-                    ->where('branch_id', getCurrentBranch())
-                    ->whereYear('paid_date', $year)
-                    ->whereMonth('paid_date', $month)
+                $collection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)
+                    ->whereMonth('date', $month)
                     ->get();
-                $monthlyExpense = DB::table("monthly_expense")
-                    ->leftJoin('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-                    ->where('monthly_expense.branch_id', getCurrentBranch())
-                    ->whereYear('monthly_expense.created_at', $year)
-                    ->whereMonth('monthly_expense.created_at', $month)
-                    ->select('expenses.name as expense_name', 'monthly_expense.*')
-                    ->get();
+                $monthlyExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)->whereMonth('date', $month)
+                ->where('payment_type','EXPENSE')->get();
                  $data['collection'] = $collection;
                 $data['expenses'] = $monthlyExpense;
                 $data['label'] = 'Monthly Balance';
 
                 break;
-              
-
-         
-
+        
                
         }
        

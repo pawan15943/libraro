@@ -130,29 +130,29 @@
                                     <option value="2">Offline</option>
                                     <option value="3">Pay Later</option>
 
-    {{-- <optgroup label="Cash">
-        <option value="CASH">CASH</option>
-    </optgroup>
+                                    {{-- <optgroup label="Cash">
+                                        <option value="CASH">CASH</option>
+                                    </optgroup>
 
-    <optgroup label="Bank Transfers">
-        <option value="BANK TRANSFER">BANK TRANSFER</option>
-        <option value="ONLINE BANKING">ONLINE BANKING</option>
-        <option value="UPI">UPI</option>
-    </optgroup>
+                                    <optgroup label="Bank Transfers">
+                                        <option value="BANK TRANSFER">BANK TRANSFER</option>
+                                        <option value="ONLINE BANKING">ONLINE BANKING</option>
+                                        <option value="UPI">UPI</option>
+                                    </optgroup>
 
-    <optgroup label="Digital Wallets">
-        <option value="PHONE PAY">PHONE PAY</option>
-        <option value="GOOGLE PAY">GOOGLE PAY</option>
-        <option value="BHARAT PAY">BHARAT PAY</option>
-        <option value="PAYTM">PAYTM</option>
-        <option value="AMAZON PAY">AMAZON PAY</option>
-        <option value="WHATSAPP PAY">WHATSAPP PAY</option>
-    </optgroup>
+                                    <optgroup label="Digital Wallets">
+                                        <option value="PHONE PAY">PHONE PAY</option>
+                                        <option value="GOOGLE PAY">GOOGLE PAY</option>
+                                        <option value="BHARAT PAY">BHARAT PAY</option>
+                                        <option value="PAYTM">PAYTM</option>
+                                        <option value="AMAZON PAY">AMAZON PAY</option>
+                                        <option value="WHATSAPP PAY">WHATSAPP PAY</option>
+                                    </optgroup>
 
-    <optgroup label="Other">
-        <option value="MANUAL">MANUAL</option>
-        <option value="OTHER">OTHER</option>
-    </optgroup> --}}
+                                    <optgroup label="Other">
+                                        <option value="MANUAL">MANUAL</option>
+                                        <option value="OTHER">OTHER</option>
+                                    </optgroup> --}}
                                 </select>
                             </div>
 
@@ -276,13 +276,12 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title px-2 fs-5" >Re-New Lerners Plan</h1>
+                <h4 id="seat_number_upgrades"></h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body m-0">
                 <form id="upgradeForm">
                     <div class="detailes">
-                        <h3 id="seat_number_upgrades"></h3>
                         <input type="hidden" id="hidden_plan">
                         <p class="text-danger mb-1"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
 
@@ -307,6 +306,7 @@
                                 <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id">
 
                             </div>
+                            @if(!in_array('3', toggleHideField()))
                             <div class="col-lg-4 col-6">
                                 <label for="locker">Locker?</label>
                                 <select name="locker" id="locker" class="form-select">
@@ -319,7 +319,12 @@
                                 <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
 
                             </div>
-
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                    <label for="locker_no">Locker No.</label>
+                                    <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                            </div>
+                            @endif
+                            @if(!in_array('6', toggleHideField()))
                             <div class="col-lg-4 col-6">
                                 <label for="discount_type">Discount Type</label>
                                 <select id="discount_type" class="form-select" name="discountType">
@@ -333,10 +338,15 @@
                                 <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
 
                             </div>
+                            @endif
                             <div class="col-lg-4">
                                 <label for="">Total Amount <span>*</span></label>
-                                <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price2" value="" readonly>
-
+                                <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="" >
+                                <span id="pending_amt2" class="text-danger"></span>
+                            </div>
+                            <div class="col-lg-4 col-6">
+                                <label for="">Choose Due Date<span>*</span></label>
+                                <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
                             </div>
                             <div class="col-lg-4">
                                 <label for="">Payment Mode <span>*</span></label>
