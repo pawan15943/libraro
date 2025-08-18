@@ -1825,16 +1825,17 @@ ul.revenue-box {
 }
 
 ul.revenue-box li {
-    background: #c5f8ff !important;
+    background: #fff !important;
     width: 430px;
     border-radius: 1.5rem;
     padding: 1.5rem;
     margin: 0 !important;
+    border: 1px solid #dedede !important;
 }
 
-ul.revenue-box li:nth-child(odd) {
+/* ul.revenue-box li:nth-child(odd) {
     background: #d1ebff !important;
-}
+} */
 
 ul.revenue-box li .d-flex {
     width: 380px !important;
