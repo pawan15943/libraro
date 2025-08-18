@@ -377,7 +377,7 @@ class LearnerController extends Controller
         $data['learner_id']=$customer->id ;
         $data['payment_type']='SEAT ASSIGNMENT' ;
         $data['payment_mode']=$request->input('payment_mode');
-        $data['due_date']=$request->due_date ;
+        $data['due_date']=$request->due_date ?? null;
        $this->learnerTransactionAddUpdate($data);
 
         if ($status == 1) {
@@ -1279,7 +1279,7 @@ class LearnerController extends Controller
             $data['learner_id']=$customer->id ;
             $data['payment_type']=$payment_type ;
             $data['payment_mode']=$payment_mode;
-            $data['due_date']=$request->due_date ;
+            $data['due_date']=$request->due_date ?? null ;
             $this->learnerTransactionAddUpdate($data);
 
             if ($status == 1) {
