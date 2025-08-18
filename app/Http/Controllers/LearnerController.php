@@ -360,12 +360,18 @@ class LearnerController extends Controller
             'branch_id' => getCurrentBranch(),
             'exam_id' => $request->input('exam_id') ?? null,
         ]);
+        if ($request->paid_date) {
+            $transaction_date = $request->paid_date;
+        } else {
+            $transaction_date =null;
+        }
         $data=[];
         $data['planPrice']=$planPrice ;
         $data['paid_amount']=$paid_amount ;
         $data['locker']=$locker ;
         $data['discount']=$discount ;
         $data['start_date']=$start_date ;
+        $data['paid_date']=$transaction_date ;
         $data['is_paid']=$is_paid ;
         $data['learner_detail_id']=$learner_detail->id ;
         $data['learner_id']=$customer->id ;
@@ -1224,13 +1230,18 @@ class LearnerController extends Controller
             $paid_amount = (float) $request->input('paid_amount', 0);
             $effectivePaid = $planPrice + $locker - $discount;
             $pending_amount =  $effectivePaid - $paid_amount;
-            if (($paid_amount > $effectivePaid) || ($paid_amount == 0)) {
+            
+            if (($paid_amount > $effectivePaid) || ($paid_amount == 0) && $request->expectsJson()) {
                 return response()->json([
                     'error' => true,
                     'message' => 'Paid amount is not valid',
                 ], 422);
                 die;
             }
+             if (($paid_amount > $effectivePaid) || ($paid_amount == 0)){
+                return redirect()->back()->with('error', 'Paid amount is not valid');
+             }
+            
             $learner_detail = LearnerDetail::create([
                 'library_id' => $customer->library_id,
                 'branch_id' => getCurrentBranch(),
@@ -1248,7 +1259,9 @@ class LearnerController extends Controller
                 'payment_mode' => $payment_mode,
             ]);
 
-             if ($request->expectsJson()){
+            if($request->payment_type){
+                $payment_type=$request->payment_type;
+            }elseif ($request->expectsJson()){
                 $payment_type='RENEW';
             }else{
                 $payment_type='UPGRADE';

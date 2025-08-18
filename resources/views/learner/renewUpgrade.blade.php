@@ -103,6 +103,7 @@ $ids='learnerUpgrade';
                             </select>
                             @if(Route::currentRouteName() == 'learner.renew.plan')
                             <input type="hidden" name="plan_type_id" value="{{ old('plan_type_id', $customer->plan_type_id) }}">
+                            <input type="hidden" name="payment_type" value="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew' : 'Upgrade' }}">
                             @endif
                             @error('plan_type_id')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -158,8 +159,8 @@ $ids='learnerUpgrade';
 
                         <div class="col-lg-4">
                             <label>Total Amount <span>*</span></label>
-                            <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" id="new_plan_price" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" >
-                            @error('total_amount')
+                            <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" >
+                            @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                              <span id="pending_amt3" class="text-danger"></span>
@@ -181,6 +182,7 @@ $ids='learnerUpgrade';
                             @enderror
                         </div>
                     </div>
+                    
 
                     <div class="button-list mt-4">
                         @if($planDetails['diff_in_days'] <= 5 && $planDetails['diff_extend_day']> 0 && !$is_renew && !$isalreadyRenew)

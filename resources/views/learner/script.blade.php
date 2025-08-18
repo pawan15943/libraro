@@ -382,6 +382,9 @@
          // If user manually updates paid_amount in RENEW, update pending as well
         $('#new_plan_price2').on('input', calculatePendingAmountRenew);
 
+        // If user manually updates paid_amount in RENEW upgrade, update pending as well
+        $('#new_plan_price').on('input', calculatePendingAmountRenewUpgrade);
+
         // Manage Locaker in Booking Form
         $('#toggleFieldCheckbox2, #plan_id3').on('change', function () {
            
@@ -1653,6 +1656,7 @@
         var difference = autoPaid - totalAmount;
         
         $('#diffrence_amount').val(difference);
+        calculatePendingAmountRenewUpgrade();
     }
 
 
@@ -1778,7 +1782,7 @@
     }
 
     // Calculate Pending Amount on Renew FORM
-    function calculatePendingAmountRenew() {
+    function calculatePendingAmountRenewUpgrade() {
         const planPrice = parseFloat($('#plan_price').val()) || 0;
         const paidAmount = parseFloat($('#new_plan_price').val()) || 0;
         const lockerAmount = parseFloat($('#locker_amount').val()) || 0;
