@@ -5,456 +5,400 @@
 <!-- View Customer Information -->
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
-        <div class="actions">
-            <div class="upper-box">
-                <div class="d-flex">
-                    <h4 class="mb-3">Leraners Info</h4>
-                    <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go
-                        Back <i class="fa-solid fa-backward pl-2"></i></a>
-                </div>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6">
-                        <span>Seat Owner Name</span>
-                        <h5 class="uppercase">{{ $customer->name }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <span>Date Of Birth </span>
-                        <h5>{{ $customer->dob }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <span>Mobile Number</span>
-                        <h5>+91-{{ $customer->mobile }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <span>Email Id</span>
-                        <h5>{{ $customer->email }}</h5>
-                    </div>
-                </div>
+        <div class="library-operations mt-4">
+
+            {{-- Personal Info --}}
+            <div class="info__section">
+                <h4 class="inner-heading">Learner Info</h4>
+                <ul>
+                    <li>
+                        <span>Learner UID</span>
+                        <h4>{{ $customer->learner_no ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Full Name</span>
+                        <h4>{{ $customer->name ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>DOB</span>
+                        <h4>{{ $customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Mobile</span>
+                        <h4>{{ $customer->mobile ? '+91-'.$customer->mobile : 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Email</span>
+                        <h4>
+                            <a href="mailto:{{$customer->email}}" class="text-white">
+                                {!! $customer->email ? $customer->email : 'Not Updated Yet' !!}
+                            </a>
+                        </h4>
+                    </li>
+                </ul>
             </div>
-            <div class="action-box">
-                <h4>Seat Plan Info</h4>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6 col-6">
+
+            {{-- Plan Info --}}
+            <div class="seat_plan_info">
+                <h4 class="inner-heading">Plan Info</h4>
+                <ul>
+                    <li>
                         <span>Plan</span>
-                        <h5>{{ $customer->plan_name }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->plan_name ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Plan Type</span>
-                        <h5>{{ $customer->plan_type_name }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->plan_type_name ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Plan Price</span>
-                        <h5>{{ $customer->plan_price_id }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->plan_price_id ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Seat Booked On</span>
-                        <h5>{{ $customer->join_date }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->join_date ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Plan Starts On</span>
-                        <h5>{{ $customer->plan_start_date }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->plan_start_date ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Plan Ends On</span>
-
-                        <h5>{{ $customer->plan_end_date }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->plan_end_date ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Seat Timings</span>
-                        <h5>{{$customer->hours}} Hours ({{ $customer->start_time }} to {{ $customer->end_time }})</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>
+                            {{ $customer->hours ? $customer->hours.' Hours ('.$customer->start_time.' to '.$customer->end_time.')' : 'Not Updated Yet' }}
+                        </h4>
+                    </li>
+                    <li>
                         <span>Plan Expired In</span>
-                        <h5>{!! getUserStatusWithSpan($customer->plan_end_date) !!}</h5>
-                        
-                      
-
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{!! $customer->plan_end_date ? getUserStatusWithSpan($customer->plan_end_date) : 'Not Updated Yet' !!}</h4>
+                    </li>
+                    <li>
                         <span>Current Plan Status</span>
-                        <h5>
-                            @if($customer->status==1)
-                            <h5 class="text-success">Active</h5>
-                            @else
-                            <h5 class="text-danger">Expired on 20-10-2024</h5>
-                            @endif
-                        </h5>
-                    </div>
+                        @if($customer->status==1)
+                        <h4 class="text-success">Active</h4>
+                        @elseif($customer->plan_end_date)
+                        <h4 class="text-danger">Expired on {{ $customer->plan_end_date }}</h4>
+                        @else
+                        <h4>Not Updated Yet</h4>
+                        @endif
+                    </li>
+                </ul>
+            </div>
 
-
-                </div>
-                <h4 class="mt-4"> Seat Other Info :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6 col-6">
+            {{-- Other Info --}}
+            <div class="seat_plan_info">
+                <h4 class="inner-heading">Seat Other Info</h4>
+                <ul>
+                    <li>
                         <span>Father Name</span>
-                        <h5>{{ $customer->father_name }}</h5>
-                    </div>
-                     <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->father_name ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Alternate Mobile No.</span>
-                        <h5>{{ $customer->alternate_mobile }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->alternate_mobile ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Address</span>
-                        <h5>{{ $customer->address }}</h5>
-                    </div>
-                     <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->address ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Remark</span>
-                        <h5>{{ $customer->remark }}</h5>
-                    </div>
-
-
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->remark ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Id Proof</span>
-                        <h5>
+                        <h4>
                             @if($customer->id_proof_name==1)
                             Aadhar
                             @elseif($customer->id_proof_name==2)
                             Driving License
-                            @else
+                            @elseif($customer->id_proof_name)
                             Other
+                            @else
+                            Not Updated Yet
                             @endif
                             @if($customer->id_proof_file)
                             <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150">
-                            @else
-                            <img src="">
-
                             @endif
-                        </h5>
-                    </div>
-
-                    <div class="col-lg-6 col-6 col-6">
+                        </h4>
+                    </li>
+                    <li>
                         <span>Seat Created At</span>
-                        <h5>{{ $customer->created_at }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->created_at ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Seat Modified At</span>
-                        <h5>{{ $customer->updated_at }}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
+                        <h4>{{ $customer->updated_at ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
                         <span>Seat Deleted At</span>
-                        <h5> {{ $customer->deleted_at ? $customer->deleted_at : 'NA'}}</h5>
-                    </div>
-                </div>
-                {{-- Locker Info --}}
-                @if(isset($transaction) && $transaction->locker_amount)
-                <h4 class="mt-4"> Locker Info :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Is Locker </span>
-                        <h5>{{ $transaction->locker_amount ? 'Yes' : 'No' }}</h5>
-                    </div>
-
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Locker Number</span>
-                        <h5> {{ $customer->locker_no ? $customer->locker_no : 'NA'}}</h5>
-                    </div>
-                   
-                </div>
-                @endif
-                {{-- Seat Payment Info --}}
-                <h4 class="mt-4"> Seat Payment Info :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Payment Date</span>
-                        @if(isset($transaction->paid_date) && $transaction->paid_date)
-                        <h5>{{$transaction->paid_date}}</h5>
-                        @else
-                        <h5>NA</h5>
-                        @endif
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Payment Mode</span>
-                        @if($customer->payment_mode == 1)
-                        <h5>{{ 'Online' }}</h5>
-                        @elseif($customer->payment_mode == 2)
-                        <h5>{{ 'Offline' }}</h5>
-                        @else
-                        <h5>{{ 'Pay Later' }}</h5>
-
-                        @endif
-                    </div>
-
-                  
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Total Amount to Pay
-                            @if(isset($transaction) && $transaction->locker_amount !=0 && $transaction->discount_amount ==0)
-                            (Plan Price + locker Amt.)
-                            @elseif(isset($transaction) && $transaction->discount_amount !=0 && $transaction->locker_amount !=0)
-                            (Plan Price + Locker Amt. - Discount Amt.)
-                            @elseif(isset($transaction) && $transaction->discount_amount !=0 && $transaction->locker_amount ==0)
-                            (Plan Price - Discount Amt.)
-                            @endif
-                        </span>
-                        <h5>
-                           
-                            {{ $transaction->total_amount ?? 'NA'}}</h5>
-                    </div>
-                      @if(isset($transaction) && $transaction->discount_amount)
-
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Discount Amount</span>
-                        <h5 class="text-success">{{$transaction->discount_amount ?? '0'}}</h5>
-                    </div>
-                    @endif
-                    @if(isset($transaction) && $transaction->locker_amount)
-                     <div class="col-lg-6 col-6 col-6">
-                        <span>Locker Amt.</span>
-                        <h5> {{$transaction->locker_amount ?? '0'}}</h5>
-                    </div>
-                    @endif
-            
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Paid Amt.</span>
-                        <h5 class="text-success">{{ $transaction->paid_amount ?? 'NA'}}</h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Pending Amt.
-                            {{-- @if(overdue($customer->id, $transaction->pending_amount))
-                           <small class="text-danger"><strong>Overdue</strong></small>
-                            @endif --}}
-                            
-                        </span>
-                        <h5 class="text-danger">{{$transaction->pending_amount ?? '0'}}</h5>
-                    </div>
-                     @if(isset($transaction) && $transaction->token_money)
-                     <div class="col-lg-6 col-6 col-6">
-                        <span>Token Money</span>
-                        <h5> {{$transaction->token_money ?? '0'}}</h5>
-                    </div>
-                    @endif
-                    @if(isset($transaction) && $transaction->miscellaneous)
-                     <div class="col-lg-6 col-6 col-6">
-                        <span>Miscellaneous</span>
-                        <h5> {{$transaction->miscellaneous ?? '0'}}</h5>
-                    </div>
-                    @endif
-
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Payment Status</span>
-                        <h5>
-                            @if(isset($transaction->is_paid) && $transaction->is_paid==1)
-                            <h5 class="text-success">Paid</h5>
-                            @else
-                            <h5 class="text-danger">Unpaid</h5>
-                            @endif
-
-
-                        </h5>
-                    </div>
-                    <div class="col-lg-6 col-6 col-6">
-                        <span>Transaction Id</span>
-                        @if(isset($transaction->transaction_id) && $transaction->transaction_id)
-                        <h5>{{$transaction->transaction_id}}</h5>
-                        @else
-                        <h5>NA</h5>
-                        @endif
-
-                    </div>
-
-                </div>
-               
-                <h4 class="mt-4">Current Seat Owner’s Renewal History</h4>
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <div class="table-responsive">
-                            <table class="table text-center border-bottom" id="datatable">
-                                <thead>
-                                    <tr>
-                                        <th>Plan </th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Amount</th>
-                                        <th>Payment Mode</th>
-                                        <th>Paid On</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-
-                                    @foreach($renew_detail as $key => $value)
-                                    @php
-                                    $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$value->id)->where('is_paid',1)->first();
-                                    @endphp
-                                    <tr>
-                                        <td>
-                                            {{$value->plan->name}} <br>
-                                            <small class="text-success">{{$value->planType->name}}</small>
-                                        </td>
-                                        <td>{{$value->plan_start_date}}</td>
-                                        <td>{{$value->plan_end_date}}</td>
-                                        <td>{{$transactionRenew->total_amount ?? 'NA'}}</td>
-
-                                        @if($value->payment_mode == 1)
-                                        <td>{{ 'Online' }}</td>
-                                        @elseif($value->payment_mode == 2)
-                                        <td>{{ 'Offline' }}</td>
-                                        @else
-                                        <td>{{ 'Pay Later' }}</td>
-
-                                        @endif
-                                        <td>{{$transactionRenew->paid_date ?? 'NA'}}</td>
-
-                                        <td>
-                                            <ul class="actionalbls" style="width: 90px;">
-                                                {{-- @can('has-permission', 'View Seat')
-                                                <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                                @endcan  --}}
-
-                                                @can('has-permission', 'Receipt Generation')
-                                                @if($value->is_paid==1)
-                                                <li>
-
-                                                    <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
-                                                        @csrf
-                                                        <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
-                                                        <input type="hidden" name="type" value="learner">
-
-                                                        <button type="submit">
-                                                            <i class="fa fa-print"></i>
-                                                        </button>
-                                                    </form>
-
-                                                </li>
-                                                @endif
-
-                                                @endcan
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-
-
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                @if(!is_null($seat_history) && $seat_history->isNotEmpty())
-                <h4 class="mt-4"> History of Previous Seat Owners</h4>
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <div class="table-responsive">
-                            <table class="table text-center border-bottom" id="datatable1">
-                                <thead>
-                                    <tr>
-                                        <th>Owner Name</th>
-                                        <th>Mobile</th>
-                                        <th>Email</th>
-                                        <th>Plan</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                 
-                                    @foreach ($seat_history as $learner)
-                                  
-                                    <tr>
-                                        <td>{{ $learner->name }}<br>
-                                            <small>{{$learner->seat_no ?? 'General'}}</small>
-                                        </td> 
-                                        <td>{{ $learner->mobile }}</td>
-                                        <td>{{ $learner->email }}</td>
-
-                                       
-                                        @if ($learner->learnerDetails->isNotEmpty())
-                                            @php
-                                            $firstDetail = $learner->learnerDetails->first();
-                                            @endphp
-                                        
-                                        <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
-                                        <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td> 
-                                        <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td> 
-                                        <td>
-                                           
-                                            <ul class="actionalbls" style="width: 90px;">
-                                                @can('has-permission', 'View Seat')
-                                                <li><a href="{{route('learners.show',$firstDetail->learner_id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                                @endcan
-
-                                                @can('has-permission', 'Receipt Generation')
-                                                <li>
-                                                    <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
-                                                        @csrf
-                                                        <input type="hidden" id="custId" name="id" value="{{ $firstDetail->id }}">
-                                                        <input type="hidden" name="type" value="learner">
-                                                        <button type="submit"><i class="fa fa-print"></i></button>
-                                                    </form>
-                                                </li>
-                                                @endcan
-                                               
-                                            </ul>
-                                        </td>
-                                    </tr>
-
-                                  
-                                    @foreach ($learner->learnerDetails->skip(1) as $detail)
-                                    <tr>
-                                        <td ></td> 
-                                        <td ></td> 
-                                        <td ></td> 
-                                        <td>{{ $detail->plan->name ?? 'N/A' }}</td> 
-                                        <td>{{ $detail->plan_start_date ?? 'N/A' }}</td> 
-                                        <td>{{ $detail->plan_end_date ?? 'N/A' }}</td> 
-                                        <td>
-                                            <ul class="actionalbls" style="width: 90px;">
-                                                @can('has-permission', 'View Seat')
-                                                <li><a href="{{route('learners.show',$detail->learner_id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                                                @endcan
-                                                @can('has-permission', 'Receipt Generation')
-                                                <li>
-                                                    <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
-                                                        @csrf
-                                                        <input type="hidden" id="custId" name="id" value="{{ $detail->id }}">
-                                                        <input type="hidden" name="type" value="learner">
-                                                        <button type="submit"><i class="fa fa-print"></i></button>
-                                                    </form>
-                                                </li>
-                                                @endcan
-
-                                                @can('has-permission', 'Download Payment Receipt')
-                                                <li><a href="" title="Download Receipt"><i class="fa-solid fa-download"></i></a></li>
-                                                @endcan
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                    @else
-                                    
-                                    <td colspan="4">No details available</td>
-                                    </tr>
-                                    @endif
-                                    @endforeach
-
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                @endif
+                        <h4>{{ $customer->deleted_at ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                </ul>
             </div>
+
+            {{-- Locker Info --}}
+            @if(isset($transaction))
+            <div class="locer_info">
+                <h4 class="inner-heading">Locker Info</h4>
+                <ul>
+                    <li>
+                        <span>Is Locker</span>
+                        <h4>{{ $transaction->locker_amount ? 'Yes' : 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Locker Number</span>
+                        <h4>{{ $customer->locker_no ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                </ul>
+            </div>
+            @endif
+
+            {{-- Payment Info --}}
+            <div class="paymentt_info">
+                <h4 class="inner-heading">Payment Info</h4>
+                <ul>
+                    <li>
+                        <span>Payment Date</span>
+                        <h4>{{ $transaction->paid_date ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Payment Mode</span>
+                        <h4>
+                            @if($customer->payment_mode == 1)
+                            Online
+                            @elseif($customer->payment_mode == 2)
+                            Offline
+                            @elseif($customer->payment_mode == 3)
+                            Pay Later
+                            @else
+                            Not Updated Yet
+                            @endif
+                        </h4>
+                    </li>
+                    <li>
+                        <span>Total Amount to Pay</span>
+                        <h4>{{ $transaction->total_amount ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Discount Amount</span>
+                        <h4 class="text-success">{{ $transaction->discount_amount ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Locker Amt.</span>
+                        <h4>{{ $transaction->locker_amount ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Paid Amt.</span>
+                        <h4 class="text-success">{{ $transaction->paid_amount ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Pending Amt.</span>
+                        <h4 class="text-danger">{{ $transaction->pending_amount ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Token Money</span>
+                        <h4>{{ $transaction->token_money ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Miscellaneous</span>
+                        <h4>{{ $transaction->miscellaneous ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                    <li>
+                        <span>Payment Status</span>
+                        @if(isset($transaction->is_paid) && $transaction->is_paid==1)
+                        <h4 class="text-success">Paid</h4>
+                        @elseif(isset($transaction->is_paid))
+                        <h4 class="text-danger">Unpaid</h4>
+                        @else
+                        <h4>Not Updated Yet</h4>
+                        @endif
+                    </li>
+                    <li>
+                        <span>Transaction Id</span>
+                        <h4>{{ $transaction->transaction_id ?? 'Not Updated Yet' }}</h4>
+                    </li>
+                </ul>
+            </div>
+
+
+            {{-- Renewal History --}}
+            <div class="locer_info">
+                <h4 class="inner-heading">Renewal History</h4>
+                <div class="table-responsive">
+                    <table class="table text-center border-bottom" id="datatable">
+                        <thead>
+                            <tr>
+                                <th>Plan </th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Amount</th>
+                                <th>Payment Mode</th>
+                                <th>Paid On</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($renew_detail as $key => $value)
+                            @php
+                            $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$value->id)->where('is_paid',1)->first();
+                            @endphp
+                            <tr>
+                                <td>
+                                    {{$value->plan->name}} <br>
+                                    <small class="text-success">{{$value->planType->name}}</small>
+                                </td>
+                                <td>{{$value->plan_start_date}}</td>
+                                <td>{{$value->plan_end_date}}</td>
+                                <td>{{$transactionRenew->total_amount ?? 'NA'}}</td>
+                                <td>
+                                    @if($value->payment_mode == 1) Online
+                                    @elseif($value->payment_mode == 2) Offline
+                                    @else Pay Later
+                                    @endif
+                                </td>
+                                <td>{{$transactionRenew->paid_date ?? 'NA'}}</td>
+                                <td>
+                                    <ul class="actionalbls" style="width: 90px;">
+                                        @can('has-permission', 'Receipt Generation')
+                                        @if($value->is_paid==1)
+                                        <li>
+                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
+                                                <input type="hidden" name="type" value="learner">
+                                                <button type="submit">
+                                                    <i class="fa fa-print"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                        @endif
+                                        @endcan
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Previous Owners --}}
+            @if(!is_null($seat_history) && $seat_history->isNotEmpty())
+            <div class="locer_info">
+                <h4 class="inner-heading">History of Previous Seat Owners</h4>
+                <div class="table-responsive">
+                    <table class="table text-center border-bottom" id="datatable1">
+                        <thead>
+                            <tr>
+                                <th>Owner Name</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                                <th>Plan</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($seat_history as $learner)
+                            <tr>
+                                <td>{{ $learner->name }}<br>
+                                    <small>{{$learner->seat_no ?? 'General'}}</small>
+                                </td>
+                                <td>{{ $learner->mobile }}</td>
+                                <td>{{ $learner->email }}</td>
+                                @if ($learner->learnerDetails->isNotEmpty())
+                                @php $firstDetail = $learner->learnerDetails->first(); @endphp
+                                <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
+                                <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td>
+                                <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td>
+                                <td>
+                                    <ul class="actionalbls" style="width: 90px;">
+                                        @can('has-permission', 'View Seat')
+                                        <li><a href="{{route('learners.show',$firstDetail->learner_id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                                        @endcan
+                                        @can('has-permission', 'Receipt Generation')
+                                        <li>
+                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="id" value="{{ $firstDetail->id }}">
+                                                <input type="hidden" name="type" value="learner">
+                                                <button type="submit"><i class="fa fa-print"></i></button>
+                                            </form>
+                                        </li>
+                                        @endcan
+                                    </ul>
+                                </td>
+                                @else
+                                <td colspan="4">No details available</td>
+                                @endif
+                            </tr>
+                            @foreach ($learner->learnerDetails->skip(1) as $detail)
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ $detail->plan->name ?? 'N/A' }}</td>
+                                <td>{{ $detail->plan_start_date ?? 'N/A' }}</td>
+                                <td>{{ $detail->plan_end_date ?? 'N/A' }}</td>
+                                <td>
+                                    <ul class="actionalbls" style="width: 90px;">
+                                        @can('has-permission', 'View Seat')
+                                        <li><a href="{{route('learners.show',$detail->learner_id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                                        @endcan
+                                        @can('has-permission', 'Receipt Generation')
+                                        <li>
+                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="id" value="{{ $detail->id }}">
+                                                <input type="hidden" name="type" value="learner">
+                                                <button type="submit"><i class="fa fa-print"></i></button>
+                                            </form>
+                                        </li>
+                                        @endcan
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
+
     <div class="col-lg-3 order-1 order-md-2">
-        <div class="seat--info">
-            @php
-            $planDetails = getPlanStatusDetails($customer->plan_end_date);
-
-            @endphp
-            
-            <span class="d-block ">Seat No : {{ $customer->seat_no ?? 'GEN'}}</span>
+        
            
-            <img src="{{ asset($customer->image) }}" alt="Seat" class="seat py-3 {{ $planDetails['class']}}">
-            <p>{{ $customer->plan_name}}</p>
-            <button class="mb-3"> Booked for <b>{{ $customer->plan_type_name}}</b></button>
 
-            {!! getUserStatusDetails($customer->plan_end_date) !!}
+           
+           
             <!-- End -->
+
+        <div class="seatnumber">
+             @php
+            $planDetails = getPlanStatusDetails($customer->plan_end_date);
+            @endphp
+            <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$planDetails['class']}}" style="width:60px; display:block; margin:0 auto;">
+            @if($customer->seat_no)
+            <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
+            @else
+            <span class="d-block ">General</span>
+            @endif
+            <div class="seat--plan">{{ $customer->plan_type_name}}</div>
         </div>
-      
+        
+
         @if($learner_request->isNotEmpty())
-     
+
         <div class="request-logs mt-4">
             <h5>Learners Request</h5>
             <ul class="request_list">
@@ -524,7 +468,6 @@
             searching: false, // This option hides the search bar
         });
     });
-
 </script>
 
 

@@ -267,13 +267,9 @@
         </div>
     </div>
 </div>
-
-
 @endcan
 
 @can('has-permission', 'Renew Seat')
-
-
 <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div id="success-message" class="alert alert-success" style="display:none;"></div>
     <div id="error-message" class="alert alert-danger" style="display:none;"></div>
@@ -364,5 +360,43 @@
     </div>
 </div>
 @endcan
+
+
+<div class="modal fade" id="expenseModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Add Library Expense</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+            <div class="col-lg-12">
+                <label for="">Expense Type</label>
+                <select name="" id="" class="form-control form-select">
+                    <option value="">Choose Expense</option>
+                    <option value="">TEA</option>
+                </select>
+            </div>
+            <div class="col-lg-12">
+                <label for="">Amount</label>
+                <input type="text" class="form-control" >
+            </div>
+            <div class="col-lg-12">
+                <label for="">Date</label>
+                <input type="date" class="form-control" >
+            </div>
+            <div class="col-lg-12">
+                <label for="">Remark</label>
+                <textarea type="date" class="form-control" ></textarea>
+            </div>
+            <div class="col-lg-12">
+                <input type="submit" class="btn btn-primary button" value="Add Expense">
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 
