@@ -109,8 +109,10 @@ $readonlyStyle = '';
 
                         @php
                         $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
+                         $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+                        $selectedDiscountType = $discountAmount ? 'amount' : '';
                         @endphp
-
+                         @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker === 'yes')))
                         <div class="col-lg-4">
                             <label for="locker">Locker?</label>
                             <select name="locker" id="toggleFieldCheckbox" class="form-select">
@@ -130,8 +132,21 @@ $readonlyStyle = '';
                             </span>
                             @enderror
                         </div>
+                         <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                            <label for="locker_no">Locker No.</label>
+                            <input type="text" class="form-control digit-only" name="locker_no" id="locker_no2" placeholder="Enter Locker No." readonly>
+                        </div>
+                        @endif
 
-                        @if(currentTransaction($customer->learner_detail_id)->discount_amount)
+                        @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount) )
+                          <div class="col-lg-4">
+                            <label>Discount Type</label>
+                            <select id="discountType2" class="form-control form-select" name="discountType">
+                                <option value="">Select Discount Type</option>
+                                <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
+                                <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                            </select>
+                        </div>
                         <div class="col-lg-4">
                             <label for="">Discount Amount <span>*</span></label>
                             <input type="text" class="form-control @error('discount_amount') is-invalid @enderror"
@@ -166,6 +181,11 @@ $readonlyStyle = '';
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
+                             <span id="pending_amt4" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-4">
+                            <label for="">Choose Due Date<span>*</span></label>
+                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date3" readonly>
                         </div>
 
                         <div class="col-lg-4 col-6">
@@ -237,11 +257,8 @@ $readonlyStyle = '';
 <script>
     // Call the handleFormChanges function for the specific form when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
-        handleFormChanges('changePlan', {
-            {
-                $customer - > id
-            }
-        });
+         handleFormChanges('changePlan', {{ $customer->id }});
+       
     });
 </script>
 

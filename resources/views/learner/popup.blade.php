@@ -307,14 +307,14 @@
 
                             </div>
                             @if(!in_array('3', toggleHideField()))
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="locker">Locker?</label>
                                 <select name="locker" id="locker" class="form-select">
                                     <option value="no">No</option>
                                     <option value="yes">Yes, I Need a Locker</option>
                                 </select>
                             </div>
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="">Locker Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
 

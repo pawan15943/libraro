@@ -8,6 +8,7 @@ $class=$planDetails['class'];
 @endphp
 
 @if($current_route=='learners.edit')
+
 <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -66,9 +67,85 @@ $class=$planDetails['class'];
                     <h4 class="inner-heading">Edit Info</h4>
                     <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
                     <div class="row g-4">
+                        @if(!in_array('29', toggleHideField()))
+                        <div class="col-lg-6 ">
+                            <label for="father_name">Father Name</label>
+                            <input type="text" class="form-control @error('father_name') is-invalid @enderror char-only" name="father_name"  placeholder="Enter Father name" value="{{ old('father_name', $customer->father_name) }}">
+                            @error('father_name')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                        @endif
+                            @if(!in_array('30', toggleHideField()))
+                        <div class="col-lg-6 ">
+                            <label for="alternate_mobile">Alternate Mobile No.</label>
+                            <input type="text" class="form-control @error('alternate_mobile') is-invalid @enderror digit-only" name="alternate_mobile"  maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No." value="{{ old('alternate_mobile', $customer->alternate_mobile) }}">
+                            @error('alternate_mobile')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                        @endif
+                        @if(!in_array('4', toggleHideField()))
+                        <div class="col-lg-6 ">
+                            <label for="prepareFor">Prepare For</label>
+                            <select name="exam_id"  class="form-select @error('exam_id') is-invalid @enderror">
+                                <option value="">Learner is Prepare For Exam</option>
+                                @foreach($exams as $key => $value)
+                                <option value="{{$value->id}}" {{ old('exam_id', $customer->exam_id) == $value->id ? 'selected' : '' }}>{{$value->name}}</option>   
+                                @endforeach
+                            </select>
+                            @error('exam_id')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                        @endif
+                            @if(!in_array('32', toggleHideField()))
+                        <div class="col-lg-12 ">
+                            <label for="address">Address</label>
+                            <textarea class="form-control @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
+                            @error('address')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                        @endif
+                            @if(!in_array('31', toggleHideField()))
+                        <div class="col-lg-12 ">
+                            <label for="remark">Remark</label>
+                            <textarea class="form-control @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
+                            @error('remark')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                        @endif
+                         @if(!in_array('8', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="profile_picture">Upload Profile Photo</label>
+                                <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" name="profile_picture"  value="{{ old('profile_picture', $customer->profile_picture) }}"
+                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                            @error('profile_picture')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                            @if($customer->profile_picture)
+                            <a href="{{ asset($customer->profile_picture) }}" target="_blank">View</a>
+                            @endif
+                        </div>
+                        @endif
+                        @if(!in_array('5', toggleHideField()))
                         <div class="col-lg-6 col-6">
                             <label for="">Id Proof Received (Optional)</label>
-                            <select id="id_proof_name" class="form-control @error('id_proof_name') is-invalid @enderror" name="id_proof_name">
+                            <select  class="form-control @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
                                 <option value="">Select Id Proof</option>
                                 <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>Aadhar</option>
                                 <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>Driving License</option>
@@ -82,20 +159,21 @@ $class=$planDetails['class'];
                         </div>
                         <div class="col-lg-6 col-6">
                             <label for="">Upload Scan Copy of Proof (Optional)</label>
-                            <input type="file" class="form-control @error('id_proof_file') is-invalid @enderror" name="id_proof_file" id="id_proof_file" autocomplete="off">
+                            <input type="file" class="form-control @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
                             @error('id_proof_file')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
                             @if($customer->id_proof_file)
-                            <a href="{{ asset('storage/' . $customer->id_proof_file) }}" target="_blank">View</a>
+                            <a href="{{ asset('public/'.$customer->id_proof_file) }}" target="_blank">View</a>
                             @endif
                         </div>
+                        @endif
                     </div>
                     <div class="row mt-3">
                         <div class="col-lg-3">
-                            <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Update Seat Info" autocomplete="off">
+                            <input type="submit" class="btn btn-primary btn-block button"  value="Update Seat Info" autocomplete="off">
                         </div>
                     </div>
                 </div>

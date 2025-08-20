@@ -56,8 +56,14 @@ class LearnerController extends Controller
             ],
             'name' => 'required',
             'id_proof_file' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'profile_picture' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
             'mobile' => 'required|digits:10',
             'dob' => 'nullable|date',
+            'father_name' => 'nullable|string|max:255',
+            'alternate_mobile' => 'nullable|digits:10',
+            'address' => 'nullable|string|max:500',
+            'remark' => 'nullable|string|max:1000',
+            'exam_id' => 'nullable|exists:exams,id',
 
             'plan_id' => 'required',
             'plan_type_id' => 'required',
@@ -231,6 +237,14 @@ class LearnerController extends Controller
             ], 422);
             die;
         }
+        if (($pending_amount > 0) && (!$request->due_date)) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Due date is required',
+            ], 422);
+            die;
+        }
+        
 
 
         if ($request->hasFile('id_proof_file')) {
@@ -641,7 +655,8 @@ class LearnerController extends Controller
             'plan_types.image',
             'learner_detail.is_paid',
             'learner_detail.payment_mode',
-            'learner_detail.id as learner_detail_id'
+            'learner_detail.id as learner_detail_id',
+            'learner_detail.exam_id'
         );
 
 
@@ -702,9 +717,9 @@ class LearnerController extends Controller
 
             // Handle renew cases
             if ($isRenew) {
-                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 1 as is_renew');
+                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 1 as is_renew ,learner_detail.exam_id');
             } else {
-                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 0 as is_renew');
+                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 0 as is_renew ,learner_detail.exam_id');
             }
 
             $customer = $query->firstOrFail();
@@ -1238,9 +1253,19 @@ class LearnerController extends Controller
                 ], 422);
                 die;
             }
+            if (($pending_amount > 0) && (!$request->due_date)  && $request->expectsJson()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Due date is required',
+                ], 422);
+                die;
+            }
              if (($paid_amount > $effectivePaid) || ($paid_amount == 0)){
                 return redirect()->back()->with('error', 'Paid amount is not valid');
              }
+            if (($pending_amount > 0) && (!$request->due_date)) {
+               return redirect()->back()->with('error', 'Due date is required');
+            }
             
             $learner_detail = LearnerDetail::create([
                 'library_id' => $customer->library_id,
@@ -2273,7 +2298,18 @@ class LearnerController extends Controller
 
 
         $customer = Learner::findOrFail($user_id);
-        // Handle the file upload
+        
+        // Handle the profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+            $profile_picture = $request->profile_picture;
+            $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+            $profile_picture->move('public/uploade/', $profile_pictureNewName);
+            $profile_picturePath = 'public/uploade/' . $profile_pictureNewName;
+            $customer->profile_picture = $profile_picturePath;
+        }
+        
+        // Handle the id proof file upload
         if ($request->hasFile('id_proof_file')) {
             $id_proof_file = $request->file('id_proof_file');
             $id_proof_fileNewName = "id_proof_file_" . time() . "_" . $id_proof_file->getClientOriginalName();
@@ -2286,16 +2322,31 @@ class LearnerController extends Controller
             $customer->id_proof_file = $id_proof_filePath;
         }
 
-        // Update customer details only if the field is provided
+        // Update customer details
         $customer->name = $request->input('name', $customer->name);
+        $customer->email = encryptData($request->input('email', $customer->email));
         $customer->mobile = encryptData($request->input('mobile', $customer->mobile));
-
         $customer->dob = $request->input('dob', $customer->dob);
-
+        $customer->father_name = $request->input('father_name', $customer->father_name);
+        $customer->alternate_mobile = $request->input('alternate_mobile', $customer->alternate_mobile);
+        $customer->address = $request->input('address', $customer->address);
+        $customer->remark = $request->input('remark', $customer->remark);
         $customer->id_proof_name = $request->input('id_proof_name', $customer->id_proof_name);
 
         // Save the customer details
         $customer->save();
+        
+        // Update exam_id in learner_detail table if provided
+        if ($request->has('exam_id')) {
+            $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
+                ->where('status', 1)
+                ->first();
+            
+            if ($learnerDetail) {
+                $learnerDetail->exam_id = $request->input('exam_id');
+                $learnerDetail->save();
+            }
+        }
         return redirect()->route('learners')->with('success', 'Learner updated successfully.');
     }
 

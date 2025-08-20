@@ -242,6 +242,7 @@
                         success: function(html) {
                             console.log("sfpriev",html);
                             if (html && html !== undefined) {
+                                 $('#pending_amt3').html('');
                                if ($("#plan_price_id").length) {
                                   console.log("1plantype");
                                     $("#plan_price_id").val(html);
@@ -281,7 +282,7 @@
                         dataType: 'json',
                         success: function(html) {
                             if (html && html !== undefined) {
-
+                                $('#pending_amt3').html('');
                                 if ($("#plan_price").length) {
                                    
                                     $("#plan_price").val(html);
@@ -374,7 +375,9 @@
             autoCalculatePaidAmount2(); // Recalculate if amount changes
         });
          $('#discountType2').on('change', function (){
-          autoCalculatePaidAmount2();
+         
+            autoCalculatePaidAmount2(); 
+          
         });
         // If user manually updates paid_amount, update pending as well
         $('#paid_amount').on('input', calculatePendingAmount);
@@ -384,6 +387,8 @@
 
         // If user manually updates paid_amount in RENEW upgrade, update pending as well
         $('#new_plan_price').on('input', calculatePendingAmountRenewUpgrade);
+         // If user manually updates paid_amount in RENEW upgrade, update pending as well
+        $('#diffrence_amount').on('input', calculatePendingAmountChangePlan);
 
         // Manage Locaker in Booking Form
         $('#toggleFieldCheckbox2, #plan_id3').on('change', function () {
@@ -422,6 +427,8 @@
             var planId     = $('#plan_id').val();
 
             if (needLocker === 'yes') {
+                
+                $('#locker_no2').removeAttr('readonly');
                 $('#locker_no').removeAttr('readonly');
                 $.get("{{ route('locker.price') }}", { plan_id: planId })
                 .done(function(json) {
@@ -436,8 +443,10 @@
             } else {
                 $('#locker_amount').attr('readonly', true);
                 $('#locker_no').attr('readonly', true);
+                $('#locker_no2').attr('readonly', true);
                 $('#locker_amount').val(0);
                 $('#locker_no').val('');
+                $('#locker_no2').val('');
                 // ✅ call here when locker is disabled
                 autoCalculatePaidAmount2(); 
             }
@@ -1644,18 +1653,15 @@
         var autoPaid = planPrice + lockerAmount - discountAmount;
 
         
-       console.log('planPrice',planPrice);
-        console.log('lockerAmount',lockerAmount);
        
-        console.log('discountType',discountType);
-        console.log('discountAmountt',discountAmount);
-        console.log('autoPaid',autoPaid);
         $('#new_plan_price').val(autoPaid);
         
        
         var difference = autoPaid - totalAmount;
         
         $('#diffrence_amount').val(difference);
+        $('#diffrence_amount').removeAttr('readonly');
+        $('#discount_amount2').removeAttr('readonly');
         calculatePendingAmountRenewUpgrade();
     }
 
@@ -1783,6 +1789,7 @@
 
     // Calculate Pending Amount on Renew FORM
     function calculatePendingAmountRenewUpgrade() {
+        
         const planPrice = parseFloat($('#plan_price').val()) || 0;
         const paidAmount = parseFloat($('#new_plan_price').val()) || 0;
         const lockerAmount = parseFloat($('#locker_amount').val()) || 0;
@@ -1816,6 +1823,42 @@
         console.log('pendingAmount',pendingAmount);
 
         if (pendingAmount > 0) {
+            $('#due_date3').removeAttr('readonly');
+        } else {
+            $('#due_date3').attr('readonly', true);
+        }
+    }
+     // Calculate Pending Amount on Change plan
+    function calculatePendingAmountChangePlan() {
+
+        const planPrice2 = parseFloat($('#plan_price').val()) || 0;
+        const lockerAmount2 = parseFloat($('#locker_amount').val()) || 0;
+        const discountType2 = $('#discountType2').val();
+        const discountAmt2 = parseFloat($('#discount_amount2').val()) || 0;
+        const totalAmount2 = parseFloat($('#total_amount2').val()) || 0;
+        const autoPaid2 = parseFloat($('#new_plan_price').val()) || 0;
+
+        if (discountType2 === 'percentage' ) {
+            discountAmount2 = ((planPrice2 + lockerAmount2) * discountAmt2) / 100;
+        } else {
+            discountAmount2 = discountAmt2;
+        }
+
+        const effectivePaid2 = planPrice2 + lockerAmount2 - discountAmount2 - totalAmount2;
+
+        const inputamt = $(this).val();
+        const pendingAmount2 = effectivePaid2-inputamt;
+      
+        if(pendingAmount2 > 0){
+            $('#pending_amt4').html('Pending Amount: ' + pendingAmount2);
+        }else if (pendingAmount2 < 0) {
+            $('#pending_amt4').html('High price not allowed.' + pendingAmount2);
+        }else{
+            $('#pending_amt4').html('');
+        }
+
+      
+        if (pendingAmount2 > 0) {
             $('#due_date3').removeAttr('readonly');
         } else {
             $('#due_date3').attr('readonly', true);
