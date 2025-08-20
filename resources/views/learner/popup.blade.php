@@ -13,29 +13,29 @@
                 <form id="seatAllotmentForm">
                     @csrf
                     <div class="detailes">
-                        
+
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no"
                             autocomplete="off">
 
                         <div class="row g-4">
-                              
+
                             {{--Seat Concept======================================================================  --}}
                             <div class="col-lg-6 col-6">
                                 <label for="general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
-                                   
+
                                     <option value="yes">No</option>
-                                  
+
                                     <option value="no">Yes, Allot a Seat No.</option>
                                 </select>
                             </div>
                             {{-- Show Only Available Slots or Seat No. --}}
                             <div class="col-lg-6 col-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select" id="seat_id" >
-                                    <option value="" >Choose Seat No</option>
+                                <select name="seat_no" class="form-select" id="seat_id">
+                                    <option value="">Choose Seat No</option>
                                     @foreach($availableseats as $key => $value)
-                                        <option value="{{$value}}">{{$value}}</option>
+                                    <option value="{{$value}}">{{$value}}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -49,14 +49,14 @@
                                 <label for="">Mobile Number <span>*</span></label>
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
-                           
-                             @if(!in_array('2', toggleHideField()))
+
+                            @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6 col-6">
                                 <label for="">DOB </label>
                                 <input type="date" class="form-control dob" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
                             </div>
                             @endif
-                           @if(!in_array('1', toggleHideField()))
+                            @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">Email Id </label>
                                 <input type="text" class="form-control" name="email" id="email">
@@ -67,7 +67,7 @@
                             <div class="col-lg-4 col-6">
                                 <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id3" class="form-select" name="plan_id">
-                               
+
                                     <option value="">Choose</option>
                                     @foreach($plans as $key => $value)
                                     <option value="{{$value->id}}">{{$value->name}}</option>
@@ -79,7 +79,7 @@
                                 <label for="">Plan Type / Shift <span>*</span></label>
                                 <select id="plan_type_id" class="form-select" name="plan_type_id">
                                     <option value="">Choose</option>
-                                   
+
                                 </select>
                             </div>
 
@@ -87,28 +87,28 @@
                                 <label for="">Plan Starts On <span>*</span></label>
                                 <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
                             </div>
-                         
+
                             <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
-                            
-                           
-                             @if(!in_array('3', toggleHideField()))
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                    <label for="toggleFieldCheckbox">Need a Locker ?</label>
-                                    <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes, I Need a Locker</option>
-                                    </select>
-                                </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
-                                    <label for="locker_amount">Locker Amount</label>
-                                    <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
-                                </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
-                                    <label for="locker_no">Locker No.</label>
-                                    <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
-                                </div>
+
+
+                            @if(!in_array('3', toggleHideField()))
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                                <label for="toggleFieldCheckbox">Need a Locker ?</label>
+                                <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes, I Need a Locker</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                <label for="locker_amount">Locker Amount</label>
+                                <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
+                            </div>
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                <label for="locker_no">Locker No.</label>
+                                <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                            </div>
                             @endif
-                            
+
                             <div class="col-lg-4 col-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
@@ -119,9 +119,9 @@
                                 <label for="">Choose Due Date<span>*</span></label>
                                 <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
                             </div>
-                         
-                          
-                            
+
+
+
                             <div class="col-lg-4 col-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select">
@@ -157,15 +157,15 @@
                             </div>
 
                         </div>
-                         @if(!in_array('7', toggleHideField()))
+                        @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields
                             <i id="toggleIcon" class="fa fa-plus" style="cursor: pointer;"></i>
                         </h4>
 
                         <div id="idProofFields" style="display: none;">
                             <div class="row g-4">
-                                 @if(!in_array('6', toggleHideField()))
-                                <div class="col-lg-6 col-6"  >
+                                @if(!in_array('6', toggleHideField()))
+                                <div class="col-lg-6 col-6">
                                     <label for="discountType">Discount Type</label>
                                     <select id="discountType" class="form-select" name="discountType">
                                         <option value="">Discount Type</option>
@@ -190,7 +190,7 @@
                                     </select>
                                     <span class="text-danger">Uploading ID proof is optional do it later.</span>
                                 </div>
-                                 
+
                                 <div class="col-lg-6">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
                                     <input type="file" class="form-control" name="id_proof_file" id="id_proof_file"
@@ -211,7 +211,7 @@
                                     <input type="file" class="form-control" name="profile_picture" id="profile_picture"
                                         autocomplete="off" accept=".jpeg, .jpg, .png, .webp">
 
-                                </div> 
+                                </div>
                                 @endif
                                 @if(!in_array('29', toggleHideField()))
                                 <div class="col-lg-6 ">
@@ -219,7 +219,7 @@
                                     <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name">
                                 </div>
                                 @endif
-                                 @if(!in_array('30', toggleHideField()))
+                                @if(!in_array('30', toggleHideField()))
                                 <div class="col-lg-6 ">
                                     <label for="alternate_mobile">Alternate Mobile No.</label>
                                     <input type="text" class="form-control digit-only" name="alternate_mobile" id="alternate_mobile" maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No.">
@@ -231,18 +231,18 @@
                                     <select name="exam_id" id="prepareFor" class="form-select">
                                         <option value="">Learner is Prepare For Exam</option>
                                         @foreach($exams as $key => $value)
-                                        <option value="{{$value->id}}">{{$value->name}}</option>   
+                                        <option value="{{$value->id}}">{{$value->name}}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 @endif
-                                 @if(!in_array('32', toggleHideField()))
+                                @if(!in_array('32', toggleHideField()))
                                 <div class="col-lg-12 ">
                                     <label for="address">Address</label>
                                     <textarea class="form-control" name="address" id="address" rows="3" placeholder="Enter address"></textarea>
                                 </div>
                                 @endif
-                                 @if(!in_array('31', toggleHideField()))
+                                @if(!in_array('31', toggleHideField()))
                                 <div class="col-lg-12 ">
                                     <label for="remark">Remark</label>
                                     <textarea class="form-control" name="remark" id="remark" rows="3" placeholder="Enter Remark"></textarea>
@@ -252,10 +252,10 @@
 
                         </div>
                         @endif
-                    
+
                         <div class="row mt-4">
                             <div class="col-lg-4">
-                                <input type="submit" class="btn btn-primary btn-block button" 
+                                <input type="submit" class="btn btn-primary btn-block button"
                                     value="Book Library Seat Now" autocomplete="off">
                             </div>
                         </div>
@@ -284,71 +284,80 @@
                     <div class="detailes">
                         <input type="hidden" id="hidden_plan">
                         <p class="text-danger mb-1"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
-
-                        <div class="row g-4">
-                            <div class="col-lg-12">
-                            </div>
-
+                        <h4 class="mt-4 mb-3">Current Plan Info</h4>
+                        <div class="row g-3">
+                            <!-- Plan Info -->
                             <div class="col-lg-4 col-6">
                                 <label for="">Select Plan <span>*</span></label>
-                                <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)>
-
-                                </select>
+                                <select id="plan_id2" class="form-control form-select" name="plan_id" @readonly(true)></select>
                             </div>
                             <div class="col-lg-4 col-6">
                                 <label for="">Plan Type <span>*</span></label>
-                                <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)>
-
-                                </select>
+                                <select id="plan_type_id_renew" class="form-control form-select" name="plan_type_id" @readonly(true)></select>
                             </div>
                             <div class="col-lg-4 col-6">
                                 <label for="">Plan Price <span>*</span></label>
                                 <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id">
-
                             </div>
+                        </div>
+                        
+
+                        <h4 class="mt-4 mb-3">Your plan Addon's
+                            <i id="toggleIcon1" class="fa fa-plus" style="cursor: pointer;"></i>
+                        </h4>
+
+                        <div id="idProofFields1" style="display: none;" class="mb-3">
                             @if(!in_array('3', toggleHideField()))
-                            <div class="col-lg-4 col-6">
-                                <label for="locker">Locker?</label>
-                                <select name="locker" id="locker" class="form-select">
-                                    <option value="no">No</option>
-                                    <option value="yes">Yes, I Need a Locker</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-4 col-6">
-                                <label for="">Locker Amount <span>*</span></label>
-                                <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
+                            <!-- Locker -->
+                            <div class="row g-3">
+                                <div class="col-lg-4 col-6">
+                                    <label for="locker">Locker?</label>
+                                    <select name="locker" id="locker" class="form-select">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes, I Need a Locker</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-4 col-6">
+                                    <label for="">Locker Amount <span>*</span></label>
+                                    <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
 
-                            </div>
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                </div>
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
                                     <label for="locker_no">Locker No.</label>
                                     <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                                </div>
                             </div>
                             @endif
-                            @if(!in_array('6', toggleHideField()))
-                            <div class="col-lg-4 col-6">
-                                <label for="discount_type">Discount Type</label>
-                                <select id="discount_type" class="form-select" name="discountType">
-                                    <option value="">Select Discount Type</option>
-                                    <option value="amount">Amount</option>
-                                    <option value="percentage">Percentage</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-4 col-6">
-                                <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                                <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
 
+                            @if(!in_array('6', toggleHideField()))
+                            <div class="row g-3 mt-2">
+                                <div class="col-lg-4 col-6">
+                                    <label for="discount_type">Discount Type</label>
+                                    <select id="discount_type" class="form-select" name="discountType">
+                                        <option value="">Select Discount Type</option>
+                                        <option value="amount">Amount</option>
+                                        <option value="percentage">Percentage</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-4 col-6">
+                                    <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
+                                    <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
+                                </div>
+                                <div class="col-lg-4 col-6">
+                                    <label for="">Choose Due Date<span>*</span></label>
+                                    <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
+                                </div>
                             </div>
                             @endif
-                            <div class="col-lg-4">
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-6">
                                 <label for="">Total Amount <span>*</span></label>
-                                <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="" >
+                                <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="">
                                 <span id="pending_amt2" class="text-danger"></span>
                             </div>
-                            <div class="col-lg-4 col-6">
-                                <label for="">Choose Due Date<span>*</span></label>
-                                <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
-                            </div>
-                            <div class="col-lg-4">
+
+                            <div class="col-lg-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select">
                                     <option value="">Select Payment Mode</option>
@@ -357,6 +366,8 @@
                                     <option value="3">Pay Later</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="row g-3 mt-2">
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
@@ -370,43 +381,3 @@
     </div>
 </div>
 @endcan
-
-
-<div class="modal fade" id="expenseModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5">Add Library Expense</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-4">
-            <div class="col-lg-12">
-                <label for="">Expense Type</label>
-                <select name="" id="" class="form-control form-select">
-                    <option value="">Choose Expense</option>
-                    <option value="">TEA</option>
-                </select>
-            </div>
-            <div class="col-lg-12">
-                <label for="">Amount</label>
-                <input type="text" class="form-control" >
-            </div>
-            <div class="col-lg-12">
-                <label for="">Date</label>
-                <input type="date" class="form-control" >
-            </div>
-            <div class="col-lg-12">
-                <label for="">Remark</label>
-                <textarea type="date" class="form-control" ></textarea>
-            </div>
-            <div class="col-lg-12">
-                <input type="submit" class="btn btn-primary button" value="Add Expense">
-            </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-

@@ -269,6 +269,11 @@
                     $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
                 }
             });
+            ;
+            $('#toggleIcon1').click(function() {
+                $('#idProofFields1').fadeToggle(300); // smooth fade in/out
+                $('#toggleIcon1').toggleClass('fa-plus fa-minus');
+            });
         });
     </script>
 

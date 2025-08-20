@@ -1,6 +1,5 @@
 @extends('layouts.library')
 @section('content')
-<!-- @include('learner.popup') -->
 
 @php
 use App\Models\Learner;
@@ -63,7 +62,7 @@ $today = Carbon::today();
                 <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Library Seats</button>
             </li>
             @can('has-permission', 'General Seat Booked')
-             @if(!in_array('12', toggleHideField()))
+            @if(!in_array('12', toggleHideField()))
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">General Seats</button>
             </li>
@@ -76,12 +75,8 @@ $today = Carbon::today();
                 <div class="col-lg-12 mt-0">
                     <div class="seat-booking">
                         @if( isset($total_seats) && $total_seats != 0)
-
-
                             @for($seatNo = 1; $seatNo <= $total_seats; $seatNo++)
-
                                 <div class="seat">
-
                                     @php
                                         $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
                                         $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
@@ -96,12 +91,10 @@ $today = Carbon::today();
                                             $halfday = 1;
                                             $hourly = 1;
                                             $x=1;
-
                                     @endphp
 
                                     @if($usersForSeat->count() > 0)
                                         @php
-
                                             $halfDayBookings = $usersForSeat->where('day_type_id', 2)->count() + $usersForSeat->where('day_type_id', 3)->count();
                                             $hourlyBookings = $usersForSeat->whereIn('day_type_id', [4, 5, 6, 7])->count();
                                             $halldaybooking=$usersForSeat->where('day_type_id', 8)->count();
