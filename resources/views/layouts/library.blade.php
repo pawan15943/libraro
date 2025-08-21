@@ -262,12 +262,7 @@
         $(document).ready(function() {
             $('#toggleIcon').click(function() {
                 $('#idProofFields').slideToggle();
-
-                if ($('#idProofFields').is(':visible')) {
-                    $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
-                } else {
-                    $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-                }
+                $('#toggleIcon').toggleClass('fa-plus fa-minus');
             });
             ;
             $('.toggleIcon1').click(function() {
