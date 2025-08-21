@@ -142,7 +142,7 @@ $class=$planDetails['class'];
             <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{$class}}">
             <p>{{ $customer->plan->name}}</p>
             <button>Booked for <b>{{ $customer->planType->name}}</b></button>
-            {!! getUserStatusWithSpan($customer->plan_end_date) !!}
+            {!! getUserStatusWithSpan($customer->plan_end_date,$customer->id) !!}
         </div>
     </div>
 </div>

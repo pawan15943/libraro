@@ -130,7 +130,7 @@ if ($transaction && isset($transaction->pending_amount)) {
                 <span> {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @endif
 
-                {!! getUserStatusDetails($value->plan_end_date) !!}
+                {!! getUserStatusWithSpan($value->plan_end_date,$value->id) !!}
 
             </div>
             <div class="seat-actions">

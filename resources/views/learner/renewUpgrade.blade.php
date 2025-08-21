@@ -17,6 +17,11 @@ $displayNone = '';
 $readonlyStyle = '';
 $ids='learnerUpgrade';
 }
+if($customer->locker_no){
+    $locker_read='';
+}else{
+    $locker_read='readonly';
+}
 
 @endphp
 <input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
@@ -70,9 +75,10 @@ $ids='learnerUpgrade';
                     @method('POST')
 
                     <input type="hidden" name="learner_detail" value="{{$customer->learner_detail_id }}">
-                    <input type="hidden" name="learner_id" value="{{ $customer->id}}">
-                    <input type="hidden" name="user_id" value="{{ $customer->id}}">
+                    <input type="hidden" name="learner_id" value="{{ $customer->id}}" >
+                    <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="library_id" value="{{ $customer->library_id}}">
+                    <h4 class="mt-4 mb-3">Current Plan Info</h4>
 
                     <div class="row g-4">
                         <div class="col-lg-4">
@@ -109,7 +115,7 @@ $ids='learnerUpgrade';
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-
+                   
                         <div class="col-lg-4">
                             <label>Plan Price <span>*</span></label>
                             <input id="plan_price" class="form-control @error('plan_price_id') is-invalid @enderror" value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly name="plan_price_id">
@@ -124,51 +130,58 @@ $ids='learnerUpgrade';
                         $selectedDiscountType = $discountAmount ? 'amount' : '';
                         
                         @endphp
-                        @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker == 'yes')))
-                        <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
-                            <label>Locker?</label>
-                            <select name="locker" id="toggleFieldCheckbox" class="form-control">
-                                <option value="no" {{ $hasLocker === 'no' ? 'selected' : '' }}>No</option>
-                                <option value="yes" {{ $hasLocker === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
-                            </select>
-                        </div>
+                    </div>
+                    <h4 class="mt-4 mb-3">Your plan Addon's
+                            <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i>
+                    </h4>
 
-                        <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
-                            <label>Locker Amount <span>*</span></label>
-                            <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount" value="{{ currentTransaction($customer->learner_detail_id)->locker_amount }}" readonly>
-                            @error('locker_amount')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
-                            <label for="locker_no">Locker No.</label>
-                            <input type="text" class="form-control digit-only" name="locker_no" id="locker_no2"  placeholder="Enter Locker No." readonly>
-                        </div>
-                        @endif
-                         @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount) )
-                        <div class="col-lg-4">
-                            <label>Discount Type</label>
-                            <select id="discountType2" class="form-control form-select" name="discountType">
-                                <option value="">Select Discount Type</option>
-                                <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
-                                <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                            </select>
-                        </div>
+                    <div style="display: none;" class="mb-3 idProofFields1">
+                        <div class="row g-4">
+                            @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker == 'yes')))
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                <label>Locker?</label>
+                                <select name="locker" id="toggleFieldCheckbox" class="form-control">
+                                    <option value="no" {{ $hasLocker === 'no' ? 'selected' : '' }}>No</option>
+                                    <option value="yes" {{ $hasLocker === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+                                </select>
+                            </div>
 
-                        <div class="col-lg-4">
-                            <label>Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                            <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount2" value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}">
-                            @error('discount_amount')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                <label>Locker Amount <span>*</span></label>
+                                <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount" value="{{ currentTransaction($customer->learner_detail_id)->locker_amount }}" readonly>
+                                @error('locker_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                <label for="locker_no">Locker No.</label>
+                                <input type="text" class="form-control digit-only" name="locker_no" id="locker_no3"  placeholder="Enter Locker No." value="{{$customer->locker_no}}" {{$locker_read}}>
+                            </div>
+                            @endif
+                            @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount) )
+                            <div class="col-lg-4">
+                                <label>Discount Type</label>
+                                <select id="discountType2" class="form-control form-select" name="discountType">
+                                    <option value="">Select Discount Type</option>
+                                    <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
+                                    <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                </select>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <label>Discount Amount ( <span id="typeVal3">INR / %</span> )</label>
+                                <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount2" value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}">
+                                @error('discount_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            @endif
+                            
                         </div>
-                        @endif
+                    </div>
+
+                    <div class="row g-4">
                         <div class="col-lg-4">
-                            <label for="">Choose Due Date<span>*</span></label>
-                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date3" readonly>
-                        </div>
-                        
-                        <div class="col-lg-6">
                             <label>Total Amount <span>*</span></label>
                             <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price" value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" >
                             @error('paid_amount')
@@ -176,8 +189,15 @@ $ids='learnerUpgrade';
                             @enderror
                              <span id="pending_amt3" class="text-danger"></span>
                         </div>
+                        <div class="col-lg-4">
+                            <label for="">Choose Due Date<span>*</span></label>
+                            <input type="date" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date" id="due_date3" readonly>
+                            @error('due_date')
+                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
                         
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label>Payment Mode <span>*</span></label>
                             <select name="payment_mode" id="payment_mode" class="form-control form-select @error('payment_mode') is-invalid @enderror">
                                 <option value="">Select Payment Mode</option>

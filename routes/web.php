@@ -248,6 +248,12 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
         'price' => getLockerPrice($req->query('plan_id'))
         ]);
     })->name('locker.price');
+
+     Route::get('/locker-no', function (\Illuminate\Http\Request $req) {
+    return response()->json([
+        'learner' => myLearner($req->query('learner_id'))
+        ]);
+    })->name('locker.no');
     
 
         

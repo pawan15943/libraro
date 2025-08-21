@@ -74,7 +74,7 @@
                     </li>
                     <li>
                         <span>Plan Expired In</span>
-                        <h4>{!! $customer->plan_end_date ? getUserStatusWithSpan($customer->plan_end_date) : 'Not Updated Yet' !!}</h4>
+                        <h4>{!! $customer->plan_end_date ? getUserStatusWithSpan($customer->plan_end_date,$customer->id) : 'Not Updated Yet' !!}</h4>
                     </li>
                     <li>
                         <span>Current Plan Status</span>

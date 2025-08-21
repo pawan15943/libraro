@@ -355,6 +355,7 @@ class LearnerController extends Controller
             'remark' => $request->input('remark'),
             'profile_picture'=>$profile_picture,
             'address' => $request->input('address'),
+            'locker_no'=>$request->input('locker_no') ?? null ,
         ]);
 
         $learner_detail = LearnerDetail::create([
@@ -449,10 +450,10 @@ class LearnerController extends Controller
         $selectedPlanName = Plan::where('id', $selectedPlan)->pluck('name', 'id');
 
         // Return the filtered plan types as JSON
-        $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('plan_id', 'plan_type_id', 'plan_price_id')->first();
+        $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('learner_id','plan_id', 'plan_type_id', 'plan_price_id')->first();
         $transaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->select('total_amount', 'locker_amount', 'discount_amount', 'paid_amount')->first();
-
-        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction]);
+        $learner=Learner::where('id',$selectedbothId->learner_id)->select('locker_no')->first();
+        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction,$learner]);
     }
     public function getPrice(Request $request)
     {

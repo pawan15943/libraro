@@ -115,7 +115,7 @@
                                     Inactive <small>{{isset($learner_detail) && $learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
                                 @endif
                                 <br>
-                                {!! getUserStatusWithSpan($learner_detail->plan_end_date) !!}
+                                {!! getUserStatusWithSpan($learner_detail->plan_end_date,$learner->id) !!}
                                    
                             </td>
                             
@@ -168,7 +168,7 @@
                                     Inactive
                                 @endif
                                 <br>
-                               {!! getUserStatusWithSpan($endDate) !!}
+                               {!! getUserStatusWithSpan($endDate,$data->learner->id) !!}
                         </td>
                         
                         
@@ -225,7 +225,7 @@
                                     Inactive
                                 @endif
                                 <br>
-                                {!! getUserStatusWithSpan($endDate) !!}
+                                {!! getUserStatusWithSpan($endDate,$data->learner_id) !!}
                             </td>
                             
                             
@@ -277,7 +277,7 @@
                                     Inactive
                                 @endif
                                 <br>
-                                {!! getUserStatusWithSpan($endDate) !!}
+                                {!! getUserStatusWithSpan($endDate,$data->learner_id) !!}
                             </td>
                             
                             

@@ -155,9 +155,11 @@
                             if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
                                 $("#locker").val('yes');
                                 $("#locker_amount2").val(html[3].locker_amount);
+                                
                             } else {
                                 $("#locker").val('no');
                                 $("#locker_amount2").val('');
+                               
                             }
 
                             if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
@@ -167,6 +169,12 @@
                                 $("#discount_type").val('');
                                 $("#discount_amount3").val('');
                             }
+                        }
+                         if (html[4]){
+                           $("#locker_no2").val(html[4].locker_no);
+                           if(html[4].locker_no){
+                            $("#locker_no2").removeAttr('readonly');
+                           }      
                         }
                         
                         popupautoCalculatePaidAmount(); 
@@ -368,6 +376,14 @@
         });
           // If Discount amt is enter it can change the paid amt on RE-NEW Popup
         $('#discount_type').on('change', function (){
+            const type = $(this).val();
+            if (type === 'percentage') {
+                $('#typeVal').text('%');
+            } else if (type === 'amount') {
+                $('#typeVal').text('INR');
+            } else {
+                $('#typeVal').text('INR / %');
+            }
           popupautoCalculatePaidAmount();
         });
           // If Discount amt is enter it can change the paid amt on RE-NEW FORM
@@ -375,7 +391,14 @@
             autoCalculatePaidAmount2(); // Recalculate if amount changes
         });
          $('#discountType2').on('change', function (){
-         
+         const type = $(this).val();
+            if (type === 'percentage') {
+                $('#typeVal3').text('%');
+            } else if (type === 'amount') {
+                $('#typeVal3').text('INR');
+            } else {
+                $('#typeVal3').text('INR / %');
+            }
             autoCalculatePaidAmount2(); 
           
         });
@@ -409,6 +432,8 @@
                     $('#locker_amount_book').val('').prop('readonly', true);
                     autoCalculatePaidAmount(); 
                 });
+
+               
             } else {
                 $('#locker_amount_book').attr('readonly', true);
                 $('#locker_no').attr('readonly', true);
@@ -425,10 +450,12 @@
            
             var needLocker = $('#toggleFieldCheckbox').val();
             var planId     = $('#plan_id').val();
-
+            const locker_user_id     = $('#user_id').val();
+           
             if (needLocker === 'yes') {
                 
                 $('#locker_no2').removeAttr('readonly');
+                $('#locker_no3').removeAttr('readonly');
                 $('#locker_no').removeAttr('readonly');
                 $.get("{{ route('locker.price') }}", { plan_id: planId })
                 .done(function(json) {
@@ -440,13 +467,19 @@
                     $('#locker_amount').val('').prop('readonly', true);
                     autoCalculatePaidAmount2(); 
                 });
+
+                
+                //locker no get
+                getLockerNo(locker_user_id,'locker_no3');
             } else {
                 $('#locker_amount').attr('readonly', true);
                 $('#locker_no').attr('readonly', true);
                 $('#locker_no2').attr('readonly', true);
+                $('#locker_no3').attr('readonly', true);
                 $('#locker_amount').val(0);
                 $('#locker_no').val('');
                 $('#locker_no2').val('');
+                $('#locker_no3').val('');
                 // ✅ call here when locker is disabled
                 autoCalculatePaidAmount2(); 
             }
@@ -617,7 +650,12 @@
             $('#update_plan_end_date').val(endOnDate);
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
-            $('#seat_number_upgrades').text('Renew Library Membership for Seat No '  + seat_no);
+            if(seat_no){
+                 $('#seat_number_upgrades').text('Renew Seat No :'  + seat_no);
+            }else{
+                 $('#seat_number_upgrades').text('Renew Seat No : GEN');
+            }
+           
           
             // Show the second modal
             $('#seatAllotmentModal3').modal('show');
@@ -635,7 +673,12 @@
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
             $('#update_plan_end_date').val(end_date);
-            $('#seat_number_upgrades').text('Renew Library Membership for Seat No '  + seat_no);
+            if(seat_no){
+                 $('#seat_number_upgrades').text('Renew Seat No :'  + seat_no);
+            }else{
+                 $('#seat_number_upgrades').text('Renew Seat No : GEN');
+            }
+           
             fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);
         });
      
@@ -1125,23 +1168,44 @@
         $('#locker').on('change', function () {
             var needLocker = $(this).val();
             var planId     = $('#plan_id2').val();
+            var locker_user_id     = $('#update_user_id').val();
             if (needLocker === 'yes') {
+                $('#locker_no2').removeAttr('readonly');
+             
+              
                 $.get("{{ route('locker.price') }}", { plan_id: planId })
                 .done(function(json) {
                     $('#locker_amount2').val(json.price);
+                     
                     popupautoCalculatePaidAmount(); 
+                    
                 })
                 .fail(function() {
                     $('#locker_amount2').val('').prop('readonly', true);
                     popupautoCalculatePaidAmount(); 
                 });
+
+                //locker no get
+                getLockerNo(locker_user_id,'locker_no2');
             } else {
                 $('#locker_amount2').attr('readonly', true);
                 $('#locker_amount2').val('');
+                $('#locker_no2').val('');
                 popupautoCalculatePaidAmount(); 
             }
         });
 
+       function getLockerNo(learner_id, addid) {
+            // locker no. get
+            $.get("{{ route('locker.no') }}", { learner_id: learner_id })
+                .done(function (json) {
+                    $('#' + addid).val(json.learner.locker_no); // if you're passing an element ID
+                    // or use $('.' + addid) if you're passing a class name
+                })
+                .fail(function () {
+                    $('#' + addid).val('').prop('readonly', true);
+                });
+        }
 
       
 

@@ -140,7 +140,7 @@ $class=$planDetails['class'];
 
             <p>{{ $customer->plan->name}}</p>
             <button>Booked for <b>{{ optional($customer->planType)->name }}</b></button>        
-            {!! getUserStatusWithSpan($customer->plan_end_date) !!}
+            {!! getUserStatusWithSpan($customer->plan_end_date,$customer->id) !!}
         </div>
     </div>
 </div>
