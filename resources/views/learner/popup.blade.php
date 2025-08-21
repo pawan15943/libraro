@@ -352,7 +352,7 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-lg-6">
-                                <label for="">Total Amount <span>*</span></label>
+                                <label for="">Total Amount  <span>*</span></label>
                                 <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="">
                                 <span id="pending_amt2" class="text-danger"></span>
                             </div>
