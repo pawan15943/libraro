@@ -6,9 +6,9 @@
 
 @foreach($seats as $seat)
     @php
-        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->limit(1)->get();
+        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->get();
         if ($usersForSeat->isEmpty()) {
-            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->limit(1)->get();
+            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->get();
         }
     @endphp
 

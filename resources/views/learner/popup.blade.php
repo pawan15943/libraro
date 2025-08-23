@@ -89,26 +89,44 @@
                             </div>
 
                             <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
-
-
-                            @if(!in_array('3', toggleHideField()))
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                <label for="toggleFieldCheckbox">Need a Locker ?</label>
-                                <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
-                                    <option value="no">No</option>
-                                    <option value="yes">Yes, I Need a Locker</option>
-                                </select>
+                        </div>
+                        <h4 class="my-3">Your Plan Addon's <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i></h4>
+                        <div class="idProofFields1">
+                            <div class="row g-4">
+                                @if(!in_array('3', toggleHideField()))
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                                    <label for="toggleFieldCheckbox">Need a Locker ?</label>
+                                    <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes, I Need a Locker</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                    <label for="locker_amount">Locker Amount</label>
+                                    <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
+                                </div>
+                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                    <label for="locker_no">Locker No.</label>
+                                    <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                                </div>
+                                @endif
+                                @if(!in_array('6', toggleHideField()))
+                                <div class="col-lg-6 col-6">
+                                    <label for="discountType">Discount Type</label>
+                                    <select id="discountType" class="form-select" name="discountType">
+                                        <option value="">Discount Type</option>
+                                        <option value="amount">Amount</option>
+                                        <option value="percentage">Percentage</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-6 col-6">
+                                    <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
+                                    <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
+                                </div>
+                                @endif
                             </div>
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
-                                <label for="locker_amount">Locker Amount</label>
-                                <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
-                            </div>
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
-                                <label for="locker_no">Locker No.</label>
-                                <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
-                            </div>
-                            @endif
-
+                        </div>
+                        <div class="row g-4 mt-0">
                             <div class="col-lg-4 col-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
@@ -164,21 +182,7 @@
 
                         <div id="idProofFields" style="display: none;">
                             <div class="row g-4">
-                                @if(!in_array('6', toggleHideField()))
-                                <div class="col-lg-6 col-6">
-                                    <label for="discountType">Discount Type</label>
-                                    <select id="discountType" class="form-select" name="discountType">
-                                        <option value="">Discount Type</option>
-                                        <option value="amount">Amount</option>
-                                        <option value="percentage">Percentage</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-lg-6 col-6">
-                                    <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                                    <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
-                                </div>
-                                @endif
+                                
 
                                 @if(!in_array('5', toggleHideField()))
                                 <div class="col-lg-6">

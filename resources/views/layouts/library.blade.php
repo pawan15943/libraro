@@ -213,15 +213,18 @@
     <script>
         flatpickr(".dob", {
             maxDate: "2010-01-01",
-            disableMobile: "true"
+            disableMobile: "true",
+            allowInput: true
         });
 
         flatpickr(".datepicker", {
-            disableMobile: "true"
+            disableMobile: "true",
+            allowInput: true
         });
         flatpickr(".duedate", {
             disableMobile: "true",
             minDate: "today",
+            allowInput: true
         });
     </script>
 
@@ -264,7 +267,7 @@
                 $('#idProofFields').slideToggle();
                 $('#toggleIcon').toggleClass('fa-plus fa-minus');
             });
-            ;
+            $('.idProofFields1').hide(); // smooth fade in/out
             $('.toggleIcon1').click(function() {
                 $('.idProofFields1').fadeToggle(300); // smooth fade in/out
                 $('.toggleIcon1').toggleClass('fa-plus fa-minus');
