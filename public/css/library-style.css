@@ -24,14 +24,14 @@
 td span.extended {
     color: red !important;
     font-size: .875em !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .seat-info.bg-white .actives,
 td span.actives {
     color: #70b900 !important;
     font-size: .875em !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .information a {
@@ -41,7 +41,7 @@ td span.actives {
 .seat-info.bg-white .aboutToExpire {
     color: orange !important;
     font-size: .875rem !important;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 
@@ -401,6 +401,22 @@ ul.paginations li a:hover {
     color: #fff;
 }
 
+.attendence-box {
+    border: 1px solid #dedede;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.attendence-box h4 {
+    font-weight: 700;
+    margin: 0;
+}
+
+.attendence-box span {
+    font-size: .8rem;
+    color: #7f7f7f;
+}
 
 
 @media screen and (max-width:830px) {
