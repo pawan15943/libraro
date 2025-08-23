@@ -1966,3 +1966,239 @@
         }
     });
 </script>
+<script>
+    // start new according
+// on plan change-total change,price change, locker amount change
+// on plan type change-total change,price change
+// on locker yes -total change, locker amount ,locker no
+// on discount type change -total change, red text change
+// on total input change-pending get, due date on, 
+
+// diffrence amount - hidden , change plan show
+// diffrence amount on change-change plan
+$(document).ready(function() {
+    
+     const plan_id10 = $('#plan_id10').val();
+    const plan_type_id10 = $('#plan_type_id10').val();
+    
+    getPlanPriceAmount(plan_type_id10,plan_id10);
+    calculatePaidAmount();
+   
+    var lockerCheck= $('#toggleFieldCheckbox10').val();
+    
+   
+    if(lockerCheck== 'yes'){
+         $('#locker_no10').attr('readonly', false);
+       
+    }
+
+    if($('#discountType10').val() == 'percentage' || $('#discountType10').val() == 'amount'){
+        $('#discount_amount10').attr('readonly', false);
+    }else{
+         $('#discount_amount10').attr('readonly', true);
+        
+    }
+
+   
+});
+
+ $('#plan_id10').on('change', function(event) {
+    event.preventDefault();
+    const plan_id10 = $(this).val();
+    const plan_type_id10 = $('#plan_type_id10').val();
+    
+    if(plan_type_id10 && plan_id10){
+        getPlanPriceAmount(plan_type_id10,plan_id10);
+        calculatePaidAmount();
+        if(lockerCheck== 'yes'){
+            lockerAmountGet(plan_id10);
+        }
+        
+    }else{
+        $("#plan_price10").val('');
+    }
+});
+ $('#plan_type_id10').on('change', function(event) {
+    event.preventDefault();
+    const plan_type_id10 = $(this).val();
+    const plan_id10 = $('#plan_id10').val();
+    
+    if(plan_type_id10 && plan_id10){
+        getPlanPriceAmount(plan_type_id10,plan_id10);
+        calculatePaidAmount();
+       if(lockerCheck== 'yes'){
+            lockerAmountGet(plan_id10);
+        }
+    }else{
+        $("#plan_price10").val('');
+    }
+});
+  $('#toggleFieldCheckbox10').on('change', function () {
+    
+    var needLocker = $(this).val();
+    const plan_id10 = $('#plan_id10').val();
+
+    if (needLocker === 'yes') {
+        $('#locker_no10').removeAttr('readonly');
+        lockerAmountGet(plan_id10)
+        
+    } else {
+        $('#locker_amount10').attr('readonly', true);
+        $('#locker_no10').attr('readonly', true);
+        $('#locker_amount10').val(0);
+        
+        
+    }
+    calculatePaidAmount();
+    $('#pending_amt10').val("");
+});
+$('#discountType10').on('change', function (){
+    const type = $(this).val();
+    if (type === 'percentage') {
+        $('#typeVal10').text('%');
+        $('#discount_amount10').attr('readonly', false);
+    } else if (type === 'amount') {
+        $('#typeVal10').text('INR');
+        $('#discount_amount10').attr('readonly', false);
+    } else {
+        $('#typeVal10').text('INR / %');
+        $('#discount_amount10').attr('readonly', true);
+    }
+    calculatePaidAmount(); 
+    $('#pending_amt10').val("");
+    
+});
+ $('#discount_amount10').on('input', function () {
+    calculatePaidAmount(); 
+});
+$('#total_amount10').on('input', function () {
+    calculatePending($(this).val());   
+});
+
+$('#diffrence_amount10').on('input', function () {
+    calculatePending($(this).val());  
+});
+
+
+ function getPlanPriceAmount(plan_type_id10,plan_id10){
+          
+    if (plan_type_id10 && plan_id10) {
+            $.ajax({
+                url: '{{ route('getPricePlanwise') }}',
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "plan_type_id": plan_type_id10,
+                    "plan_id": plan_id10,
+                },
+                dataType: 'json',
+                success: function(html) {
+                   
+                    if (html && html !== undefined) {
+                        
+                        $('#pending_amt10').html('');
+                         $("#plan_price10").val(html);
+                          calculatePaidAmount(); 
+                        $("#error-message").hide();
+                    } else {
+                        $("#plan_price10").val("");
+                        
+                        $("#pending_amt10").html("No Plan Price Added Yet.");
+                        $("#total_amount10").val("");
+                    }
+                }
+
+            });
+    } else {
+        $("#plan_price10").empty();
+        
+        $("#total_amount10").empty();
+    
+    }
+}
+
+function lockerAmountGet(plan_id10){
+    $.get("{{ route('locker.price') }}", { plan_id: plan_id10 })
+    .done(function(json) {
+        $('#locker_amount10').val(json.price);
+        calculatePaidAmount();
+    })
+    .fail(function() {
+        $('#locker_amount10').val('').prop('readonly', true);
+        calculatePaidAmount();
+    });
+}
+
+ function calculatePaidAmount() {
+    const planPrice = parseFloat($('#plan_price10').val()) || 0;
+    const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
+    const discountRaw = parseFloat($('#discount_amount10').val()) || 0;
+    const discountType = $('#discountType10').val();
+    console.log('planPrice',planPrice);
+    console.log('lockerAmount',lockerAmount);
+    console.log('discountRaw',discountRaw);
+    console.log('discountType',discountType);
+  
+    
+    var discountAmount = 0;
+
+    if (discountType === 'percentage') {
+        discountAmount = ((planPrice + lockerAmount) * discountRaw) / 100;
+    } else if (discountType === 'amount') {
+        discountAmount = discountRaw;
+    }
+
+    if (discountType !== 'percentage' && discountType !== 'amount') {
+        $('#discount_amount10').val("");
+    }
+        
+    const autoPaid = planPrice + lockerAmount - discountAmount;
+    $('#total_amount10').val(autoPaid);
+
+     const previous_amount =$('#previous_amount10').val();
+   
+    const diffrence =autoPaid-previous_amount;
+    $('#diffrence_amount10').val(diffrence);
+}
+function calculatePending(paid_val) {
+    const planPrice = parseFloat($('#plan_price10').val()) || 0;
+    const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
+    const discountRaw = parseFloat($('#discount_amount10').val()) || 0;
+    const discountType = $('#discountType10').val();
+    const previous_amount10 = parseFloat($('#previous_amount10').val()) || 0;
+
+
+    discountAmount =0;
+    if (discountType === 'percentage') {
+        discountAmount = ((planPrice + lockerAmount) * discountRaw) / 100;
+    } else if (discountType === 'amount') {
+        discountAmount = discountRaw;
+    }
+
+    const effectivePaid = planPrice+lockerAmount - discountAmount;
+    const pendingAmount = effectivePaid-paid_val-previous_amount10;
+  
+    $('#pending_amt10').val(pendingAmount);
+  
+   if ((paid_val > effectivePaid)) {
+        $('#pending_amt_error').html('High price not allowed.' + pendingAmount);
+        $('#due_date10').attr('readonly', true);
+    }else{
+        $('#pending_amt_error').html('');
+    }
+    if(pendingAmount != 0){
+        $('#due_date10').attr('readonly', false);
+    }
+    else{
+        
+        $('#due_date10').attr('readonly', true);
+    }
+
+
+}
+
+
+
+
+//  end 
+</script>

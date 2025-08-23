@@ -36,7 +36,7 @@
                         @endforeach
                     </tbody>
                 </table>
-
+                <button type="submit" class="print-cards mb-4">🖨️ Print Selected ID Cards</button>
 
             </div>
         </form>
@@ -44,7 +44,7 @@
 </div>
 
 
-<button type="submit" class="print-cards mb-4">🖨️ Print Selected ID Cards</button>
+
 <script>
     // Select/Deselect all checkboxes
     document.getElementById('select_all').onclick = function() {

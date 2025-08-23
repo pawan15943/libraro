@@ -462,7 +462,7 @@ class LearnerController extends Controller
         $plan_id = $request->plan_id;
         if ($request->plan_type_id && $request->plan_id) {
             $PlanpPrice = getPlanPrice($plan_id, $plan_type_id);
-            
+           
             return response()->json($PlanpPrice);
         }
     }
@@ -473,22 +473,82 @@ class LearnerController extends Controller
         $request->validate([
             'plan_type_id' => 'required|exists:plan_types,id',
             'plan_price_id' => 'required',
-            'new_plan_price' => 'required',
+            'paid_amount' => 'required',
+            'diffrence_amount' => 'required',
+            'previous_amount' => 'required',
             'payment_mode' => 'required',
-            'learner_detail_id' => 'required|exists:learner_detail,id',
+            'user_id' => 'required|exists:learners,id',
+            'learner_detail' => 'required|exists:learner_detail,id',
+             'discountType' => 'nullable',
+            'discount_amount' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
+                        $fail('Discount type must be selected when providing a discount amount.');
+                    }
+                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
+                        $fail('Discount amount is required when a discount type is selected.');
+                    }
+                }
+            ],
+            'locker_no' => [
+                'nullable',
+                 'required_if:locker,yes',
+                'numeric'
+            ],
         ]);
 
+        $LearnerDetail = LearnerDetail::where('id', $request->learner_detail)->first();
+        $customer = Learner::findOrFail($request->user_id);
 
-        $hours = PlanType::where('id', $request->plan_type_id)->value('slot_hours');
+         if (!Auth::user()->can('has-permission', 'Change Plan')) {
+            return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+        }
 
-        $customer = Learner::findOrFail($id);
-        $customer->hours = $hours;
-        $customer->save();
+        //check plan type hours based on plan_type_id
 
-        $LearnerDetail = LearnerDetail::where('learner_id', $customer->id)->first();
+        $planType = PlanType::find($request->plan_type_id);
+        $startTime = $planType->start_time;
+        $endTime = $planType->end_time;
+        $hours = $planType->slot_hours;
+        if ($customer->seat_no) {
+            // Fetch existing bookings for the same seat
+            $existingBookings = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $customer->seat_no)
+                ->where('learners.id', '!=', $customer->id) // Exclude the current booking
+                ->where('learner_detail.status', 1)
+                ->get();
+            // Check for overlaps with existing bookings
+            foreach ($existingBookings as $booking) {
+                $bookingPlanType = PlanType::find($booking->plan_type_id);
+
+                if ($bookingPlanType) {
+                    $bookingStartTime = $bookingPlanType->start_time;
+                    $bookingEndTime = $bookingPlanType->end_time;
+
+                    if (
+                        ($startTime < $bookingEndTime && $endTime > $bookingStartTime) ||
+                        ($endTime > $bookingStartTime && $startTime < $bookingEndTime)
+                    ) {
+                        return redirect()->back()->with('error', 'The selected plan type overlaps with an existing booking.');
+                    }
+                }
+            }
+
+            $first_record = Hour::first();
+            $total_hour = $first_record ? $first_record->hour : 0;
+
+            if ($total_hour === 0) {
+                return redirect()->back()->with('error', 'Total available hours not set.');
+            }
+
+            $total_cust_hour = Learner::where('seat_no', $customer->seat_no)->where('status', 1)->sum('hours');
+            // Check if the selected plan type exceeds available hours
+            if ($hours > ($total_hour - ($total_cust_hour - $customer->hours))) {
+                return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
+            }
+        }
+
         if ($LearnerDetail) {
-
-
             $LearnerDetail->plan_type_id = $request->input('plan_type_id');
             $LearnerDetail->plan_price_id = $request->input('plan_price_id');
             $LearnerDetail->payment_mode = $request->input('payment_mode');
@@ -496,15 +556,52 @@ class LearnerController extends Controller
             $LearnerDetail->save();
         }
 
-        $learnerTransaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->first();
+        $customer->hours = $hours;
+        $customer->save();
+        $locker=$request->input('locker_amount');
+        if($request->payment_type){
+            $payment_type=$request->payment_type;
+        }else{
+            $payment_type='UPGRADE';
+        }
+         if ($request->discountType == 'amount') {
+            $discount = $request->discount_amount;
+        } elseif ($request->discountType == 'percentage') {
+            $total = $request->input('plan_price_id') + $locker;
+            $discount = ($total * $request->discount_amount) / 100;
+        } else {
+            $discount = 0;
+        }
+
+
+        $learnerTransaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail)->first();
+        $effectivePaid = $request->input('plan_price_id') + $request->locker_amount -$discount;  // new price
+        $old_price=$learnerTransaction->plan_price_id +$learnerTransaction->plan_price_id-$learnerTransaction->pending_amount-$learnerTransaction->discount_amount;
+        $paid_amount=$learnerTransaction->paid_amount + $request->input('diffrence_amount');  //positive value for diffrence 
+        
+        $pending_amount =  $effectivePaid -$paid_amount;
+
+        if($request->input('diffrence_amount') < 0){
+                $pending_refund=$pending_amount;
+                $pending_amount=0;
+                $refund=$request->input('diffrence_amount');
+        }else{
+            $pending_amount=$pending_amount;
+            $pending_refund=0;
+            $refund=0;
+        }
+
+
         if ($learnerTransaction) {
             if ($request->locker == 'yes') {
-                $learnerTransaction->locker_amount = $request->input('locker_amount');
+                $learnerTransaction->locker_amount = $locker;
             }
 
-            $learnerTransaction->total_amount = $request->input('new_plan_price');
-            $learnerTransaction->paid_amount = $request->input('new_plan_price');
-            $learnerTransaction->pending_amount = 0;
+            $learnerTransaction->total_amount = $effectivePaid ?? $request->input('paid_amount');
+            $learnerTransaction->paid_amount = $paid_amount;
+            $learnerTransaction->pending_amount = $pending_amount;
+            $learnerTransaction->refund = $pending_refund;
+            $learnerTransaction->due_date=$request->due_date ?? null;
             $learnerTransaction->save();
 
             //learner Activity
@@ -513,10 +610,16 @@ class LearnerController extends Controller
             $data['particular']='Paid By Trans';
             $data['payment_type']='CHANGE PLAN';
             $data['payment_mode']=1;
-            $data['amount']=$request->input('new_plan_price') ?? 0;
+            $data['amount']=$request->input('diffrence_amount') ?? 0;
             $data['dr_cr']='Cr';
             $this->learnerTransactionActivity($data);
+
+           
         }
+
+
+            
+           
 
 
         $this->dataUpdate();
@@ -659,6 +762,7 @@ class LearnerController extends Controller
             'learner_detail.id as learner_detail_id',
             'learner_detail.exam_id'
         );
+        
 
 
         //  Apply dynamic filters if provided
@@ -1108,11 +1212,11 @@ class LearnerController extends Controller
     //learner  Upgrade and renew store
     public function learnerUpgradeRenew(Request $request)
     {
-        
+      
         $rules = [
 
             'plan_id' => 'required',
-            'plan_type_id' => 'required',
+            'plan_type_id' => 'required|exists:plan_types,id',
             'plan_price_id' => 'required',
             'payment_mode' => 'required',
             'user_id' => 'required',
@@ -1127,9 +1231,15 @@ class LearnerController extends Controller
                         $fail('Discount amount is required when a discount type is selected.');
                     }
                 }
-            ]
+            ],
+            'locker_no' => [
+                'nullable',
+                 'required_if:locker,yes',
+                'numeric'
+            ],
 
         ];
+         
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -1140,9 +1250,12 @@ class LearnerController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        if (!Auth::user()->can('has-permission', 'Renew Seat')) {
-            return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+        if($request->payment_type=='RENEW'){
+             if (!Auth::user()->can('has-permission', 'Renew Seat')) {
+                return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+            }
         }
+       
 
         $currentDate = date('Y-m-d');
         DB::beginTransaction();
@@ -1463,13 +1576,10 @@ class LearnerController extends Controller
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
 
-        if ($routeName == 'learners.upgrade.renew' || $routeName == 'learner.renew.plan') {
+        
 
-            return view('learner.renewUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew'));
-        } else {
-
-            return view('learner.upgradePlantype', compact('customer',  'available_seat', 'showButton', 'filteredPlanTypes'));
-        }
+        return view('learner.renewUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew'));
+       
     }
     public function getSwapUser($id)
     {

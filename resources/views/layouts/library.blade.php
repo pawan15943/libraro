@@ -213,15 +213,18 @@
     <script>
         flatpickr(".dob", {
             maxDate: "2010-01-01",
-            disableMobile: "true"
+            disableMobile: "true",
+            allowInput: true
         });
 
         flatpickr(".datepicker", {
-            disableMobile: "true"
+            disableMobile: "true",
+            allowInput: true
         });
         flatpickr(".duedate", {
             disableMobile: "true",
             minDate: "today",
+            allowInput: true
         });
     </script>
 

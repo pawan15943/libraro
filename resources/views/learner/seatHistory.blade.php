@@ -6,9 +6,9 @@
 
 @foreach($seats as $seat)
     @php
-        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->limit(1)->get();
+        $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->get();
         if ($usersForSeat->isEmpty()) {
-            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->limit(1)->get();
+            $usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->get();
         }
     @endphp
 
@@ -34,7 +34,10 @@
                         </div>
 
                         <div class="seat-informarion">
-                            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                            <img 
+  src="{{ optional($learner)->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" 
+  alt="profile">
+
                             <div class="information">
                                 <h4>{{ $learner->name }}
                                     <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>

@@ -194,7 +194,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::get('/booking-info/{id?}', [LearnerController::class, 'showLearner'])->name('learners.show');
       Route::get('/edit/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit');
       Route::put('/upgrade/update/{id?}', [LearnerController::class, 'userUpdate'])->name('learners.update.upgrade');
-      Route::put('/change/plan/update/{id?}', [LearnerController::class, 'changePlanUpdate'])->name('learners.update.changePlan');
+      Route::post('/change/plan/update/{id?}', [LearnerController::class, 'changePlanUpdate'])->name('learners.update.changePlan');
       Route::put('/update/{id?}', [LearnerController::class, 'learnerUpdate'])->name('learners.update');
       
       Route::get('/swap/{id?}', [LearnerController::class, 'getSwapUser'])->name('learners.swap');
