@@ -344,14 +344,14 @@ if (!function_exists('getUserStatusDetails')) {
             return '<span class="actives">🟢 Plan is Active ('. $diffInDays .' Days Left)</span>';
             
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '</span> <span class="extended"> Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
+            return '<span class="extended"> Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return '</span> <span class="extended"> 🔴 Expired today</span>';
+            return '<span class="extended"> 🔴 Expired today</span>';
             
         } elseif ($diffInDays == 0) {
-             return '</span> <span class="extended"> 🔴 Expired today</span>';
+             return '<span class="extended"> 🔴 Expired today</span>';
         } else {
-             return '</span> <span class="extended"> 🔴 Expired ' . abs($diffInDays) . ' days ago</span>';
+             return '<span class="extended"> 🔴 Expired ' . abs($diffInDays) . ' days ago</span>';
            
         }
     }
@@ -732,6 +732,17 @@ if (!function_exists('paybleRefund')) {
              + $query->sum('miscellaneous');
     }
 }
+if (!function_exists('getLearnerOperation')) {
+    function getLearnerOperation($learnerDetailId)
+    {
+        $operation = DB::table('learner_operations_log')
+            ->where('learner_detail_id', $learnerDetailId)
+            ->orderByDesc('id') // latest operation
+            ->select('operation')
+            ->first();
 
+        return $operation ?? null;
+    }
+}
 
 

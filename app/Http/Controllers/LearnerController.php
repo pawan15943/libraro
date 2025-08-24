@@ -969,7 +969,7 @@ class LearnerController extends Controller
             'search'  => $request->get('search'),
         ];
 
-        $query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
 
@@ -1055,7 +1055,7 @@ class LearnerController extends Controller
                 ->where('learner_detail.status',0);
         }
 
-        $learnerHistory =   $query->whereDate('learner_detail.plan_end_date', '<', Carbon::now())->paginate($perPage);
+        $learnerHistory =   $query->whereDate('learner_detail.plan_end_date', '<=', Carbon::now())->paginate($perPage);
 
 
        
@@ -2135,9 +2135,11 @@ class LearnerController extends Controller
                         }
                     // Delete associated LearnerTransaction records
                     LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
-
+                    $lastLearnerDetail->status=0;
+                    $lastLearnerDetail->save();
                     $lastLearnerDetail->delete();
                     $customer->status = 0;
+                    
                     $customer->save();
                     $customer->delete();
                     if ($request->isRefund && $request->refundAmount > 0){
@@ -2190,9 +2192,11 @@ class LearnerController extends Controller
                             $customer->remark =  $request->remark;
                         }
                     // Delete associated LearnerTransaction records
-                    LearnerDetail::where('id', $request->learnerDetail)->where('status', 1)->update(['plan_end_date' => $today, 'status' => 0]);
+                    LearnerDetail::where('id', $request->learnerDetail)->update([
+                        'plan_end_date' => $today, 'status' => 0
+                    ]);
 
-                   $customer->status = 0;
+                    $customer->status = 0;
                     $customer->save();
                     if ($request->isRefund && $request->refundAmount > 0){
                         $data=[];

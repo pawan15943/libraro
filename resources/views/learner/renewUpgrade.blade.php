@@ -308,9 +308,9 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
         } else if (formId === 'renewSeat') {
             handleFormChanges('renewSeat', {{ $customer->id }});
         }
-        // else if (formId === 'changePlan'){
-        //     handleFormChanges('changePlan', {{ $customer->id }});
-        // }
+        else if (formId === 'changePlan'){
+            handleFormChanges('changePlan', {{ $customer->id }});
+        }
     });
 </script>
 

@@ -4,8 +4,8 @@ use App\Http\Controllers\Api\V1\Auth\LibraryAuthController;
 use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
 
 
-Route::get('app-settings', [LibraryAuthController::class, 'setting']);
-Route::get('library-plan', [LibraryAuthController::class, 'libraryPlan']);
+Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
+Route::get('library/library-plan', [LibraryAuthController::class, 'libraryPlan']);
 Route::post('library/register', [LibraryAuthController::class, 'register']);
 Route::post('library/verify-email', [LibraryAuthController::class, 'verifyEmailOtp']);
 Route::post('forgot-password', [LibraryAuthController::class, 'sendResetLinkEmail']);

@@ -29,12 +29,14 @@ class LibraryAuthController extends Controller
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
                 'facebook' => 'https://www.facebook.com/libraro.in',
+                'whatsapp'=>'https://wa.me/+918114479678',
                 'master_sample' => url('public/sample/master.csv'),
                 'learner_sample' => url('public/sample/learner.csv'),
                 'privacy_policy' => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
+                'isMaintenance'=>false,
                 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
