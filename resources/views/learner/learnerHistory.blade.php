@@ -86,19 +86,29 @@ if ($transaction && isset($transaction->pending_amount)) {
 } else {
     $due_date = null;
 }
+
+
 @endphp
 <div class="row">
     <div class="col-lg-12">
         <div class="seat-info bg-white">
             <div class="seat-no">
-
+              
                 @if($value->seat_no )
                 <span> Seat No. {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @else
                 <span> {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @endif
+                @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
+                    <span class="extended"> Close Seat</span>
+                @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
+                    <span class="extended"> Delete Seat</span>
+                @else
+                    {!! getUserStatusDetails($value->plan_end_date) !!}
+                @endif
 
-                {!! getUserStatusDetails($value->plan_end_date) !!}
+
+                
 
             </div>
             <div class="seat-actions">
@@ -117,8 +127,13 @@ if ($transaction && isset($transaction->pending_amount)) {
                 <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">
                     <h4>{{$value->name}}
+                        @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
+                        <span class="extended"> Close Seat</span>
+                        @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
+                        <span class="extended"> Delete Seat</span>
+                        @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
-
+                        @endif
                     </h4>
                     <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
                     <span class="d-block">E: <a href="mailto:{{$value->email}}"> {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
