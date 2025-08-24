@@ -2261,9 +2261,10 @@ class LearnerController extends Controller
         if (!$tranDetail) {
             return redirect()->route('learners')->with('error', 'Transaction not found.');
         }
+        $due_date=null;
 
         // ✅ Call reusable function
-        $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode);
+        $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode,$due_date);
 
         return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
     }
@@ -2897,15 +2898,20 @@ class LearnerController extends Controller
 
         ]);
         
-        $transaction = LearnerTransaction::where('id',$request->transaction_id)->where('pending_amount', $request->pending_amount)->first();
+        $transaction = LearnerTransaction::where('id',$request->transaction_id)->first();
         if (!$transaction) {
             return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
+        }
+        if($request->due_date){
+            $due_dat=$request->due_date;
+        }else{
+             $due_dat=null;
         }
 
        
         try {
 
-           $this->updateLearnerTransactionPayment($transaction, $request->pending_amount, $request->payment_mode);
+           $this->updateLearnerTransactionPayment($transaction, $request->pending_amount, $request->payment_mode,$due_dat);
 
             return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
         } catch (\Exception $e) {
@@ -2937,7 +2943,7 @@ class LearnerController extends Controller
     {
 
         $customer_detail_id = $request->id;
-        $customer = LearnerDetail::where('learner_detail.id', $customer_detail_id)->leftJoin('learner_transactions','learner_transactions.learner_detail_id','=','learner_detail.id')->with('learner', 'plan', 'plantype')->select('learner_detail.*','learner_transactions.token_money')->first();
+        $customer = LearnerDetail::where('learner_detail.id', $customer_detail_id)->leftJoin('learner_transactions','learner_transactions.learner_detail_id','=','learner_detail.id')->with('learner', 'plan', 'plantype')->select('learner_detail.*','learner_transactions.token_money','learner_transactions.refund as pending_refund')->first();
         
         $tokenMoney = token_money();
         
@@ -2949,7 +2955,7 @@ class LearnerController extends Controller
       
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
-            'payment_type'  => 'required|in:token_money,miscellaneous',
+            'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
             'fees'          => 'required|numeric|min:1',
         ]);
 
@@ -2965,10 +2971,15 @@ class LearnerController extends Controller
             if ($request->payment_type === 'token_money') {
                 $transaction->token_money = $request->fees;
                 $payment_type='TOKEN MONEY';
-               
+                $dr_cr='Cr';
             } elseif ($request->payment_type === 'miscellaneous') {
                 $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
                 $payment_type='MISCELLANEOUS';
+                 $dr_cr='Cr';
+            } elseif ($request->payment_type === 'pending_refund'){
+                $transaction->refund=($transaction->refund ?? 0) - $request->fees;
+                $payment_type='REFUND';
+                 $dr_cr='Dr';
             }
            
             $transaction->save(); 
@@ -2976,9 +2987,9 @@ class LearnerController extends Controller
                 $data['learner_id']=$request->learner_id;
                 $data['particular']='Paid By Trans';
                 $data['payment_type']=$payment_type;
-                $data['payment_mode']=1;
+                $data['payment_mode']=$request->payment_mode ?? 1;
                 $data['amount']=$request->fees;
-                $data['dr_cr']='Cr';
+                $data['dr_cr']=$dr_cr;
                 $this->learnerTransactionActivity($data);
 
             return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
@@ -3097,13 +3108,15 @@ class LearnerController extends Controller
         return $learnerTransaction;
     }
 
-    public function updateLearnerTransactionPayment($transaction, $paid_amount, $payment_mode)
+    public function updateLearnerTransactionPayment($transaction, $paid_amount, $payment_mode ,$due_date)
     {
         // 1. Update amounts
         $newPending = $transaction->pending_amount - $paid_amount;
         $newPaid    = $transaction->paid_amount + $paid_amount;
         $isPaid     = $newPending <= 0 ? 1 : 0;
-        $due_date   = $newPending > 0 ? date("Y-m-d") : null ;
+        $due_date = $due_date ?? ($newPending > 0 ? date("Y-m-d") : null);
+
+
         $transaction->update([
             'pending_amount' => $newPending,
             'paid_amount'    => $newPaid,

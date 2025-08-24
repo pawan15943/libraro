@@ -79,21 +79,21 @@ $class=$planDetails['class'];
                     <p class="text-danger">Note : Here you can receive the pending payment of learners.</p>
                     
                     <div class="row g-4">
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-6 col-6">
                                 <label for="">Pending Payment </label>
-                                <input id="pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
-                                name="pending_amount" value="{{ $pendingPayment->pending_amount ?? '' }}">
+                                <input id="for_pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
+                                 value="{{ $pendingPayment->pending_amount ?? '' }}" @readonly(true)> 
                                 <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
                             </div>
                                 
-                            <div class="col-lg-4 col-6">
-                                <label for="">Due Date <span>*</span>
+                            <div class="col-lg-6 col-6">
+                                <label for="">Last Due Date <span>*</span>
                                    @if($pendingPayment?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
                                         <small class="text-danger"><strong>Overdue</strong></small>
                                     @endif
 
                                 </label>
-                                <input type="date" class="form-control @error('due_date') is-invalid @enderror"  name="due_date" id="due_date" value="{{$pendingPayment->due_date ?? 0}}" disabled>
+                                <input type="date" class="form-control @error('due_date') is-invalid @enderror"   id="due_date" value="{{$pendingPayment->due_date ?? 0}}" disabled>
                                 @error('due_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -101,21 +101,34 @@ $class=$planDetails['class'];
                                 @enderror
                                
                             </div> 
+                             <div class="col-lg-4 col-6">
+                                <label for="">Amount to Pay </label>
+                                <input id="amount_to_pay" class="form-control @error('pending_amount') is-invalid @enderror"
+                                name="pending_amount" value="{{ $pendingPayment->pending_amount ?? '' }}" > 
+                                <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
+                            </div>
                           
-                        <div class="col-lg-4 col-6">
-                            <label for="">Payment Mode</label>
-                            <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
-                                <option value="">Select Payment Mode</option>
-                                <option value="Online" >Online</option>
-                                <option value="Offline" >Offline</option>
-                                <option value="Other" >Pay Later</option>
-                            </select>
-                            @error('payment_mode')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
+                            <div class="col-lg-4 col-6">
+                                <label for="">Payment Mode</label>
+                                <select name="payment_mode"  class="form-select @error('payment_mode') is-invalid @enderror">
+                                    <option value="">Select Payment Mode</option>
+                                    <option value="Online" >Online</option>
+                                    <option value="Offline" >Offline</option>
+                                    <option value="Other" >Pay Later</option>
+                                </select>
+                                @error('payment_mode')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4 col-6 due-date-wrapper" style="display:none;">
+                                <label for="">Due Date <span>*</span></label>
+                                <input type="date" class="form-control" name="due_date" id="for_pending_due_date">
+                            </div>
+
+
+                           
                     </div>
                     
                     @if($pendingPayment && $pendingPayment->pending_amount)
@@ -151,6 +164,30 @@ $class=$planDetails['class'];
         handleFormChanges('pendingPayment', {{$customer->learner->id}});
     });
  
+    $(document).ready(function () {
+    let totalPending = parseFloat($("#for_pending_amount").val()) || 0;
+
+    $("#amount_to_pay").on("input", function () {
+        let amountToPay = parseFloat($(this).val()) || 0;
+
+        // 🔴 Prevent paying more than pending
+        if (amountToPay > totalPending) {
+            alert("You cannot pay more than the pending amount (" + totalPending + ")");
+            $(this).val(totalPending);
+            amountToPay = totalPending;
+        }
+
+        let remaining = totalPending - amountToPay;
+
+        // Show due date if still pending
+        if (remaining > 0) {
+            $(".due-date-wrapper").show();
+        } else {
+            $(".due-date-wrapper").hide();
+            $("#for_pending_due_date").val(""); // clear date if no pending
+        }
+    });
+});
 
 
 </script>

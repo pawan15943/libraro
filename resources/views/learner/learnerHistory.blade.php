@@ -119,7 +119,8 @@ if ($transaction && isset($transaction->pending_amount)) {
                     @endcan
                     @can('has-permission', 'Reactive Seat')
                     <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>          
-                    @endcan              
+                    @endcan 
+                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>             
                 </ul>
             </div>
 

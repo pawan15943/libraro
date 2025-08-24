@@ -147,7 +147,7 @@ $due_date = null;
                     <!-- Make payment -->
                     @if(paylater($value->learner_detail_id) || pending_amt($value->learner_detail_id))
                     @can('has-permission','Renew Seat')
-                    <li><a href="{{route('learner.payment',$value->learner_detail_id)}}" title="Payment Lerners" class="payment-learner w-auto px-2">Pay Pending Amt.</a></li>
+                    <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" title="Payment Lerners" class="payment-learner w-auto px-2">Pay Pending Amt.</a></li>
 
                     @endcan
                     @endif
@@ -295,7 +295,7 @@ $due_date = null;
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
                                 @else
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+                                    Pending {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
 
                                 </span>
 

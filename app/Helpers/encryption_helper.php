@@ -525,7 +525,7 @@ if (!function_exists('getLearnerMonthsAndYears')) {
 if (!function_exists('overdue')) {
     function overdue($learner_id, $pending_amt)
     {
-        $exists = DB::table('learner_pending_transaction')->where('learner_id', $learner_id)->where('status', 0)->where('pending_amount', $pending_amt)->first();
+        $exists = DB::table('learner_transactions')->where('learner_id', $learner_id)->where('pending_amount', $pending_amt)->first();
         if ($exists && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($exists->due_date))) {
             return true;
         } else {
@@ -544,7 +544,7 @@ if (!function_exists('paylater')) {
 if (!function_exists('pending_amt')) {
     function pending_amt($learner_detail_id)
     {
-        return LearnerTransaction::where('learner_detail_id', $learner_detail_id)->where('is_paid', 1)->where('pending_amount', '>', 0)->exists();
+        return LearnerTransaction::where('learner_detail_id', $learner_detail_id)->where('pending_amount', '>', 0)->exists();
     }
 }
 

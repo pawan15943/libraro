@@ -83,14 +83,17 @@ $class=$planDetails['class'];
                     <input id="learner_id" type="hidden" name="learner_id" value="{{ $customer->learner_id}}">
                     
                     <div class="row g-4">
-                        <div class="col-lg-6 ">
+                        <div class="col-lg-4 ">
                             <label for="">Payment Type</label>
                            
                             <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror"
-                                    data-token="{{ $tokenMoney }}">
+                                    data-token="{{ $tokenMoney }}" data-refund="{{$customer->pending_refund}}">
                                 <option value="">Select Payment</option>
                                 @if(!$customer->token_money)
                                 <option value="token_money">Token Money</option>
+                                @endif
+                                @if($customer->pending_refund)
+                                <option value="pending_refund">Refund Amt. to Pay</option>
                                 @endif
                                 
                                 <option value="miscellaneous">Miscellaneous fee</option>
@@ -105,7 +108,7 @@ $class=$planDetails['class'];
                             
                         </div>
                          
-                         <div class="col-lg-6">
+                         <div class="col-lg-4">
                             <label for="">Fees <span>*</span></label>
                             <input type="text" class="form-control @error('fees') is-invalid @enderror" placeholder="Enter Fees" name="fees" id="fees" value="">
                             @error('fees')
@@ -114,6 +117,20 @@ $class=$planDetails['class'];
                             </span>
                             @enderror
                         </div>
+                          <div class="col-lg-4 col-6">
+                                <label for="">Payment Mode</label>
+                                <select name="payment_mode"  class="form-select @error('payment_mode') is-invalid @enderror">
+                                    <option value="">Select Payment Mode</option>
+                                    <option value="Online" >Online</option>
+                                    <option value="Offline" >Offline</option>
+                                    <option value="Other" >Pay Later</option>
+                                </select>
+                                @error('payment_mode')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
                      
                         <div class="col-lg-3">
                         
@@ -159,12 +176,18 @@ $(document).ready(function () {
       
         let selected = $(this).val();
         let tokenMoney = $(this).data('token');
+        let pending_refund=$(this).data('refund');
        
         if (selected === 'token_money') {
             $('#fees').val(tokenMoney);
+        }else if (selected === 'pending_refund'){
+             $('#fees').val(pending_refund);
+            
         } else {
             $('#fees').val('');
         }
+
+
     });
 });
 
