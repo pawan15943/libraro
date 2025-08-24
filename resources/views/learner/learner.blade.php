@@ -109,7 +109,7 @@
 @php
 $planStatus = getPlanStatusDetails($value->plan_end_date);
 $transaction = learnerTransaction($value->id, $value->learner_detail_id);
-
+$oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
 if ($transaction && isset($transaction->pending_amount)) {
 $due_date = $transaction->due_date;
@@ -117,7 +117,7 @@ $due_date = $transaction->due_date;
 $due_date = null;
 }
 
-
+ $today = \Carbon\Carbon::now();
 @endphp
 
 <!-- Modal -->
@@ -180,7 +180,8 @@ $due_date = null;
 
 
                             @can('has-permission', 'Change Plan')
-                            @if(!in_array('14', toggleHideField()))
+                            
+                            @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater))
                             <li><a href="{{route('learner.change.plan',$value->id)}}" title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
                             @endif
                             @endcan
