@@ -722,4 +722,16 @@ if (!function_exists('token_money')) {
     }
 }
 
+if (!function_exists('paybleRefund')) {
+    function paybleRefund($learner_detail_id)
+    {
+        $query = LearnerTransaction::where('learner_detail_id', $learner_detail_id);
+
+        return $query->sum('paid_amount')
+             + $query->sum('token_money')
+             + $query->sum('miscellaneous');
+    }
+}
+
+
 

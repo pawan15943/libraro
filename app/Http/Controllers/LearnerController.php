@@ -2126,7 +2126,7 @@ class LearnerController extends Controller
                 if ($lastLearnerDetail) {
                      if ($request->isRefund && $request->refundAmount > 0) {
                          LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
-                            'refund'=> $request->refundAmount
+                            'refund'=> $request->pendingRefund
                          ]);
                             
                         }
@@ -2167,12 +2167,55 @@ class LearnerController extends Controller
     public function userclose(Request $request)
     {
 
-        $customer = Learner::findOrFail($request->learner_id);
-        $today = date('Y-m-d');
-        LearnerDetail::where('id', $request->learner_detail_id)->where('status', 1)->update(['plan_end_date' => $today, 'status' => 0]);
-        $customer->status = 0;
-        $customer->save();
-        return response()->json(['message' => 'Learner closed successfully.']);
+      
+         try {
+            
+             DB::transaction(function () use ($request) {
+                 $today = date('Y-m-d');
+                $customer = Learner::findOrFail($request->learner_id);
+
+
+                $lastLearnerDetail = LearnerDetail::where('id',$request->learnerDetail)->exists();
+                if (!$lastLearnerDetail) {
+                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
+                }
+                if ($lastLearnerDetail) {
+                     if ($request->isRefund && $request->refundAmount > 0) {
+                         LearnerTransaction::where('learner_detail_id', $request->learnerDetail)->update([
+                            'refund'=> $request->pendingRefund
+                         ]);
+                            
+                        }
+                        if($request->remark){
+                            $customer->remark =  $request->remark;
+                        }
+                    // Delete associated LearnerTransaction records
+                    LearnerDetail::where('id', $request->learnerDetail)->where('status', 1)->update(['plan_end_date' => $today, 'status' => 0]);
+
+                   $customer->status = 0;
+                    $customer->save();
+                    if ($request->isRefund && $request->refundAmount > 0){
+                        $data=[];
+                        $data['learner_id']=$request->learner_id;
+                        $data['particular']='Paid By Trans';
+                        $data['payment_type']='REFUND';
+                        $data['payment_mode']=1;
+                        $data['amount']=$request->refundAmount ?? 0;
+                        $data['dr_cr']='Dr';
+                        $this->learnerTransactionActivity($data);
+                    }
+                    
+                   
+                } 
+            });
+
+            return response()->json(['success' => 'Learner closed successfully.']);
+            
+        } catch (\Exception $e) {
+
+            return response()->json(['error' => 'An error occurred while close the customer: ' . $e->getMessage()], 500);
+        }
+       
     }
 
     public function makePayment(Request $request)
