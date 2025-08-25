@@ -2073,7 +2073,7 @@ $(document).ready(function() {
     event.preventDefault();
     const plan_id10 = $(this).val();
     const plan_type_id10 = $('#plan_type_id10').val();
-    
+    var lockerCheck= $('#toggleFieldCheckbox10').val();
     if(plan_type_id10 && plan_id10){
         getPlanPriceAmount(plan_type_id10,plan_id10);
         calculatePaidAmount();
@@ -2089,7 +2089,7 @@ $(document).ready(function() {
     event.preventDefault();
     const plan_type_id10 = $(this).val();
     const plan_id10 = $('#plan_id10').val();
-    
+    var lockerCheck= $('#toggleFieldCheckbox10').val();
     if(plan_type_id10 && plan_id10){
         getPlanPriceAmount(plan_type_id10,plan_id10);
         calculatePaidAmount();
@@ -2226,6 +2226,14 @@ function lockerAmountGet(plan_id10){
    
     const diffrence =autoPaid-previous_amount;
     $('#diffrence_amount10').val(diffrence);
+    if(diffrence < 0){
+         $('label[for="diffrence_amount10"]').text("Refund Amount *");
+       
+        
+    }else{
+         $('label[for="diffrence_amount10"]').text("Diffrence Amount *");
+       
+    }
 }
 function calculatePending(paid_val) {
     const planPrice = parseFloat($('#plan_price10').val()) || 0;
@@ -2259,6 +2267,13 @@ function calculatePending(paid_val) {
     else{
         
         $('#due_date10').attr('readonly', true);
+    }
+    if (pendingAmount < 0) {
+    $('#pending_amt10').prev('label').text("Pending Refund Amount *");
+       
+    } else {
+        $('#pending_amt10').prev('label').text("Pending Amount *");
+       
     }
 
 

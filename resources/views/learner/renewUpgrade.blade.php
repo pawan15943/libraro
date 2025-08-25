@@ -178,7 +178,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                             </div>
                             <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
                                 <label for="locker_no">Locker No.</label>
-                                <input type="text" class="form-control digit-only" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{$customer->locker_no}}" {{$locker_read}}>
+                                <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{$customer->locker_no}}" {{$locker_read}}>
                                 @error('locker_no')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -212,7 +212,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                             <label for="">Last paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
                                 name="previous_amount" id="previous_amount10"
-                                value="{{ currentTransaction($customer->learner_detail_id)->total_amount }}" readonly>
+                                value="{{ currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
                             @error('previous_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -231,7 +231,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                         </div>
                         @if($paymentType=='CHANGE PLAN')
                         <div class="col-lg-4">
-                            <label for="">Diffrence Amount <span>*</span></label>
+                            <label for="diffrence_amount10">Diffrence Amount <span>*</span></label>
                             <input type="text" class="form-control @error('diffrence_amount') is-invalid @enderror"
                                 name="diffrence_amount" id="diffrence_amount10"  value="{{ old('diffrence_amount') }}"    placeholder="0.00">
                             @error('diffrence_amount')
@@ -243,7 +243,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                         </div>
                         @endif
                         <div class="col-lg-4">
-                            <label>Pending Amount <span>*</span></label>
+                            <label for="pending_amt10">Pending Amount <span>*</span></label>
                             <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
