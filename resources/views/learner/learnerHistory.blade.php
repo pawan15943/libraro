@@ -96,21 +96,17 @@ if ($transaction && isset($transaction->pending_amount)) {
             <div class="seat-no">
               
                 @if($value->seat_no )
-                <span> Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span> Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
                 @else
-                <span>Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span>Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
                 @endif
                 @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
-                    <span class="extended"> Close Seat</span>
+                    <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
-                    <span class="extended"> Delete Seat</span>
+                    <span class="extended"> Deleted Seat</span>
                 @else
                     {!! getUserStatusDetails($value->plan_end_date) !!}
                 @endif
-
-
-                
-
             </div>
             <div class="seat-actions">
                 <ul>
@@ -121,7 +117,7 @@ if ($transaction && isset($transaction->pending_amount)) {
                     <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li> 
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
-                    <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                    <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
                     @endcan            
                 </ul>
             </div>
@@ -131,9 +127,9 @@ if ($transaction && isset($transaction->pending_amount)) {
                 <div class="information">
                     <h4>{{$value->name}}
                         @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
-                        <span class="extended"> Close Seat</span>
+                        <span class="extended"> Closed Seat</span>
                         @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
-                        <span class="extended"> Delete Seat</span>
+                        <span class="extended"> Deleted Seat</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif
