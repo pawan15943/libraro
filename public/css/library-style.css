@@ -207,6 +207,10 @@ a.w-auto.px-2:hover .fa {
 
 }
 
+.seat-info.bg-white:hover {
+    transform: scale(1.01);
+}
+
 .seat-info ul {
     display: flex;
     list-style: none;

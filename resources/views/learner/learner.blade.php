@@ -129,12 +129,12 @@ $due_date = null;
             <div class="seat-no">
 
                 @if($value->seat_no )
-                <span> Seat No. {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @else
-                <span> {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @endif
 
-                {!! getUserStatusWithSpan($value->plan_end_date,$value->id) !!}
+                &nbsp;  {!! getUserStatusWithSpan($value->plan_end_date,$value->id) !!}
 
             </div>
             <div class="seat-actions">
@@ -174,7 +174,7 @@ $due_date = null;
 
                             @can('has-permission', 'Swap Seat')
 
-                            <li><a href="{{route('learners.swap',$value->id)}}" title="Swap Seat "><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
+                            <li><a href="{{route('learners.swap',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Swap Seat"><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
 
                             @endcan
 
@@ -182,12 +182,12 @@ $due_date = null;
                             @can('has-permission', 'Change Plan')
                             
                             @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater))
-                            <li><a href="{{route('learner.change.plan',$value->id)}}" title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
+                            <li><a href="{{route('learner.change.plan',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
                             @endif
                             @endcan
                             <!---ID Card generate-->
                             {{-- @if(!in_array('15', toggleHideField()))
-                         <li>
+                         <li data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card">
                         <form action="{{ route('generateIdCard') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" id="custId" name="detail_id" value="{{ $value->learner_detail_id }}">
@@ -197,10 +197,10 @@ $due_date = null;
                             </li>
                             @endif --}}
                             @if(!in_array('15', toggleHideField()))
-                            <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class=""><i class="fa-solid fa-id-card-clip"></i> </a></li>
+                            <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class="" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card"><i class="fa-solid fa-id-card-clip"></i> </a></li>
                             @endif
                             <!-- upgrade Seat-->
-                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 && $planStatus['diff_extend_day'] <= 5) @can('has-permission', 'Upgrade Seat Plan' ) @if(!in_array('13', toggleHideField())) <li><a href="{{route('learners.upgrade.renew',$value->id)}}" title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
+                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 && $planStatus['diff_extend_day'] <= 5) @can('has-permission', 'Upgrade Seat Plan' ) @if(!in_array('13', toggleHideField())) <li><a href="{{route('learners.upgrade.renew',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
                                     @endif
                                     @endcan
 
@@ -209,7 +209,7 @@ $due_date = null;
 
                                     @can('has-permission', 'Close Seat')
                                     @if(!in_array('16', toggleHideField()))
-                                    <li><a href="javascript:void(0);" class="link-close-plan"  data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-learner_detail_id="{{$value->learner_detail_id}}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" title="Close" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
+                                    <li><a href="javascript:void(0);" class="link-close-plan"  data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-learner_detail_id="{{$value->learner_detail_id}}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}"  data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Close Plan" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
                                      
                                     @endif
                                     @endcan
@@ -217,26 +217,26 @@ $due_date = null;
 
                                     @can('has-permission', 'Reactive Seat')
                                     @if($value->status==0)
-                                    <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
+                                    <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" ><i class="fa-solid fa-arrows-rotate"></i></a></li>
                                     @endif
                                     @endcan
 
-                                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
+                                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner" ><i class="fa-solid fa-money-bill"></i></a></li>
                                     <!-- View Seat Info -->
                                     @can('has-permission', 'View Seat')
-                                    <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                                    <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
                                     @endcan
 
                                     <!-- Deletr Seat -->
 
                                     @can('has-permission', 'Edit Seat')
                                     @if(!in_array('17', toggleHideField()))
-                                    <li><a href="{{route('learners.edit',$value->id)}}" title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
+                                    <li><a href="{{route('learners.edit',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
                                     @endif
                                     @endcan
 
                                     @can('has-permission', 'Delete Seat')
-                                    <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
+                                    <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                                     @endcan
                 </ul>
             </div>

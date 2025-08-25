@@ -112,19 +112,24 @@
                     <li>
                         <span>Id Proof</span>
                         <h4>
-                            @if($customer->id_proof_name==1)
+                            {{-- ID Proof Name --}}
+                            @if($customer->id_proof_name == 1)
                             Aadhar
-                            @elseif($customer->id_proof_name==2)
+                            @elseif($customer->id_proof_name == 2)
                             Driving License
-                            @elseif($customer->id_proof_name)
+                            @elseif($customer->id_proof_name == 3)
                             Other
                             @else
                             Not Updated Yet
                             @endif
-                            @if($customer->id_proof_file)
-                            <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150">
-                            @endif
+
+                           
+
                         </h4>
+                         {{-- ID Proof File --}}
+                            @if(!empty($customer->id_proof_file))
+                            <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150" class="circle" alt="ID Proof">
+                            @endif
                     </li>
                     <li>
                         <span>Seat Created At</span>
@@ -376,15 +381,15 @@
     </div>
 
     <div class="col-lg-3 order-1 order-md-2">
-        
-           
 
-           
-           
-            <!-- End -->
+
+
+
+
+        <!-- End -->
 
         <div class="seatnumber">
-             @php
+            @php
             $planDetails = getPlanStatusDetails($customer->plan_end_date);
             @endphp
             <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$planDetails['class']}}" style="width:60px; display:block; margin:0 auto;">
@@ -395,7 +400,7 @@
             @endif
             <div class="seat--plan">{{ $customer->plan_type_name}}</div>
         </div>
-        
+
 
         @if($learner_request->isNotEmpty())
 
