@@ -550,7 +550,7 @@ class LearnerController extends Controller
     //learner  change plan 
     public function changePlanUpdate(Request $request, $id = null)
     {
-
+       
         $request->validate([
             'plan_type_id' => 'required|exists:plan_types,id',
             'plan_price_id' => 'required',
@@ -629,16 +629,12 @@ class LearnerController extends Controller
             }
         }
 
-        if ($LearnerDetail) {
-            $LearnerDetail->plan_type_id = $request->input('plan_type_id');
-            $LearnerDetail->plan_price_id = $request->input('plan_price_id');
-            $LearnerDetail->payment_mode = $request->input('payment_mode');
-            $LearnerDetail->hour = $hours;
-            $LearnerDetail->save();
-        }
+     
 
         $customer->hours = $hours;
         $customer->save();
+
+
         $locker=$request->input('locker_amount');
         if($request->payment_type){
             $payment_type=$request->payment_type;
@@ -656,33 +652,44 @@ class LearnerController extends Controller
 
 
         $learnerTransaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail)->first();
-        $effectivePaid = $request->input('plan_price_id') + $request->locker_amount -$discount;  // new price
-        $old_price=$learnerTransaction->plan_price_id +$learnerTransaction->plan_price_id-$learnerTransaction->pending_amount-$learnerTransaction->discount_amount;
-        $paid_amount=$learnerTransaction->paid_amount + $request->input('diffrence_amount');  //positive value for diffrence 
-        
-        $pending_amount =  $effectivePaid -$paid_amount;
 
-        if($request->input('diffrence_amount') < 0){
-                $pending_refund=$pending_amount;
-                $pending_amount=0;
-                $refund=$request->input('diffrence_amount');
-        }else{
-            $pending_amount=$pending_amount;
-            $pending_refund=0;
-            $refund=0;
+        $effectivePaid = $request->input('plan_price_id') + $locker - $discount;  // new price
+        $old_price      = $learnerTransaction->paid_amount ?? 0;
+        $paid_amount    = $request->input('paid_amount'); 
+
+        $pending_amount = $request->input('pending_amount');
+        $diff_amount    = $request->input('diffrence_amount');
+
+        $refund = 0;
+        $pending_refund = 0;
+
+        // Handle difference amount (refund vs pending)
+        if ($diff_amount < 0) {
+         
+            // refund case
+            $refund = abs($diff_amount);
+            $pending_refund = abs($pending_amount);
+            $pending_amount = 0;
+        } else {
+           
+            // extra payment (pending dues)
+            $pending_amount = $diff_amount;
+            $refund = 0;
+            $pending_refund = 0;
         }
-
-
+        
         if ($learnerTransaction) {
             if ($request->locker == 'yes') {
                 $learnerTransaction->locker_amount = $locker;
             }
 
-            $learnerTransaction->total_amount = $effectivePaid ?? $request->input('paid_amount');
-            $learnerTransaction->paid_amount = $paid_amount;
+            $learnerTransaction->total_amount   = $effectivePaid ?? $paid_amount;
+            $learnerTransaction->paid_amount    = $paid_amount;
             $learnerTransaction->pending_amount = $pending_amount;
-            $learnerTransaction->refund = $pending_refund;
-            $learnerTransaction->due_date=$request->due_date ?? null;
+            $learnerTransaction->refund         = $pending_refund;   // keep refund only if negative diff
+            $learnerTransaction->due_date       = $request->due_date ?? null;
+            $learnerTransaction->discount_amount       =$discount; 
+           
             $learnerTransaction->save();
 
             //learner Activity
@@ -699,7 +706,13 @@ class LearnerController extends Controller
         }
 
 
-            
+        if ($LearnerDetail) {
+            $LearnerDetail->plan_type_id = $request->input('plan_type_id');
+            $LearnerDetail->plan_price_id = $request->input('plan_price_id');
+            $LearnerDetail->payment_mode = $request->input('payment_mode');
+            $LearnerDetail->hour = $hours;
+            $LearnerDetail->save();
+        }
            
 
 
