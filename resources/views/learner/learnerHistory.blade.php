@@ -95,9 +95,9 @@ if ($transaction && isset($transaction->pending_amount)) {
             <div class="seat-no">
               
                 @if($value->seat_no )
-                <span> Seat No. {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span> Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @else
-                <span> {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                <span>Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @endif
                 @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
                     <span class="extended"> Close Seat</span>
@@ -113,14 +113,15 @@ if ($transaction && isset($transaction->pending_amount)) {
             </div>
             <div class="seat-actions">
                 <ul>
+                    
+                    @can('has-permission', 'Reactive Seat')
+                    <li ><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2" ></i> Reactivate Seat</a></li>          
+                    @endcan 
+                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li> 
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
                     <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                    @endcan
-                    @can('has-permission', 'Reactive Seat')
-                    <li><a href="{{route('learners.reactive',$value->id)}}" title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>          
-                    @endcan 
-                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" title="Other Payment " class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>             
+                    @endcan            
                 </ul>
             </div>
 

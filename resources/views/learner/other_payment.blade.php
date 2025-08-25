@@ -7,79 +7,44 @@ $class=$planDetails['class'];
 
    
 @endphp
-<input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
-        <div class="actions">
-            <div class="upper-box">
-                <div class="d-flex">
-                    <h4 class="mb-3">Leraners Info</h4>
-                    <a href="javascript:void(0);" class="go-back"
-                        onclick="window.history.back();">Go
-                        Back <i class="fa-solid fa-backward pl-2"></i></a>
-                </div>
-                <div class="row g-4">
-                    <div class="col-lg-6 col-6">
-                        <label for="">Seat Owner Name <span>*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror char-only" placeholder="Full Name" name="name" id="name" value="{{ old('name', $customer->learner->name) }}" readonly>
-                        @error('name')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <label for="">DOB <span>*</span></label>
-                        <input type="date" class="form-control @error('dob') is-invalid @enderror" placeholder="DOB" name="dob" id="dob" value="{{ old('dob', $customer->learner->dob) }}" readonly>
-                        @error('dob')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <label for="">Mobile Number <span>*</span></label>
-                        <input type="text" class="form-control @error('mobile') is-invalid @enderror digit-only" maxlength="10" minlength="10" placeholder="Mobile Number" name="mobile" id="mobile" value="{{ old('mobile', $customer->learner->mobile) }}" readonly>
-                        @error('mobile')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6 col-6">
-                        <label for="">Email Id <span>*</span></label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->learner->email) }}" readonly>
-                        @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
+         <div class="library-operations mt-4">
 
-                </div>
+            <div class="info__section">
+                <h4 class="inner-heading">Learner Info</h4>
+                <ul>
+                    <li>
+                        <span>Learner UID</span>
+                        <h4>{{ $customer->learner->learner_no }}</h4>
+                    </li>
+                    <li>
+                        <span>Full Name</span>
+                        <h4>{{ $customer->learner->name }}</h4>
+                    </li>
+                    <li>
+                        <span>DOB</span>
+                        <h4>{{ $customer->learner->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'DOB Not Available' }}</h4>
+                    </li>
+                    <li>
+                        <span>Mobile</span>
+                        <h4>+91-{{ $customer->learner->mobile }}</h4>
+                    </li>
+                    <li>
+                        <span>Email</span>
+                        <h4><a href="mailto:{{$customer->email}}" class="text-white"> {!! $customer->learner->email ? $customer->learner->email : 'Email ID Not Available' !!} </a></h4>
+                    </li>
+                </ul>
             </div>
-        
-            <form action="{{route('learner.other.payment.store')}}" method="POST" enctype="multipart/form-data" id=""  class="payment_page">
-                @csrf
-                @method('POST')
-                <div class="action-box">
-                    <h4 class="mb-4">Actionables 
-                    <div class="info-container">  
-                        <i class="fa-solid fa-circle-info info-icon"></i>
-                        <div class="info-card">
-                            <h3 class="info-title">Payment</h3>
-                            <p class="info-details">Learners can request to change their current
-                            seat to another available seat. If the requested seat is
-                            available, the learner’s current seat will be swapped with the
-                            new one.</p>
-                        </div>
-                    </div>
-                  
-                    </h4>
-                
-                    <p class="text-danger">Note : Here we are displaying the active plan Payment information that has been completed. You can also make payment of Pay Later and Pending Amount.</p>
-                    
+
+            <div class="form-input mb-4">
+                <h4 class="inner-heading">Other Payment</h4>
+                <div class="tip"><i class="fa-solid fa-gem pe-1"></i> Learners can request to change their current  seat to another available seat. If the requested seat is available, the learner’s current seat will be swapped with the
+                 new one.</div>
+                <form action="{{route('learner.other.payment.store')}}" method="POST" enctype="multipart/form-data" id=""  class="payment_page">
+                    @csrf
+                    @method('POST')
                     <input id="learner_id" type="hidden" name="learner_id" value="{{ $customer->learner_id}}">
                     
                     <div class="row g-4">
@@ -107,8 +72,7 @@ $class=$planDetails['class'];
                         
                             
                         </div>
-                         
-                         <div class="col-lg-4">
+                        <div class="col-lg-4">
                             <label for="">Fees <span>*</span></label>
                             <input type="text" class="form-control @error('fees') is-invalid @enderror" placeholder="Enter Fees" name="fees" id="fees" value="">
                             @error('fees')
@@ -117,7 +81,7 @@ $class=$planDetails['class'];
                             </span>
                             @enderror
                         </div>
-                          <div class="col-lg-4 col-6">
+                        <div class="col-lg-4 col-6">
                                 <label for="">Payment Mode</label>
                                 <select name="payment_mode"  class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
@@ -130,35 +94,37 @@ $class=$planDetails['class'];
                                     <strong>{{ $message }}</strong>
                                 </span>
                                 @enderror
-                            </div>
-                     
+                        </div>
                         <div class="col-lg-3">
-                        
                             <input type="submit" class="btn btn-primary button" value="Make Payment">
                         </div>          
-
                     </div>
-            
-                </div>
-            </form>
+
+                    
+                </form>
+            </div>
         </div>
+        
     </div>
+    
+
     <div class="col-lg-3 order-1 order-md-2">
-        <div class="seat--info">
-          
+        <div class="seatnumber">
+           @if($customer->planType && $customer->planType->image)
+                <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="py-3 {{$class}}" style="width:60px; display:block; margin:0 auto;">
+            @else
+                <img src="{{ asset('public/img/booked.png') }}" alt="Seat" class="py-3 {{$class}}" style="width:60px; display:block; margin:0 auto;">
+            @endif
+
             @if($customer->seat_no)
             <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
-            @endif
-            @if($customer->planType && $customer->planType->image)
-                <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{ $class }}">
             @else
-                <img src="{{ asset('public/img/booked.png') }}" alt="Seat" class="seat py-3 {{ $class }}">
+            <span class="d-block ">General</span>
             @endif
 
-            <p>{{ $customer->plan->name}}</p>
-            <button>Booked for <b>{{ optional($customer->planType)->name }}</b></button>        
-            {!! getUserStatusWithSpan($customer->plan_end_date,$customer->id) !!}
+            <div class="seat--plan">{{ $customer->plan->name}}</div>
         </div>
+
     </div>
 </div>
 <script>

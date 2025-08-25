@@ -267,6 +267,11 @@ class AppServiceProvider extends ServiceProvider
                 'Plan List' => route('plan.index'),
                 'Edit Plan' => route('plan.create', $parameters),
             ],
+            'learner.other.payment' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Other Library Payment' => route('learner.other.payment', $parameters),
+            ],
 
             'planType.create' => [
                 'Dashboard' => route('library.home'),
@@ -460,6 +465,7 @@ class AppServiceProvider extends ServiceProvider
             'learner.feadback' => 'Feedback',
             'support' => 'Support',
             'seat.create' => 'Add Seats to Library',
+            'learner.other.payment' => 'Library Other Payment',
 
             'branch.list' => 'Branche List',
             'plan.create' => 'Plan List',
