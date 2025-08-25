@@ -1150,7 +1150,7 @@ class Controller extends BaseController
     }
 
 
-    // Function to handle plantype updates
+    // Function to handle Master plantype updates
     private function handleSlotUpdates($slots, $library_id, &$invalidRecords, $data, &$successRecords)
     {
 
@@ -1220,7 +1220,7 @@ class Controller extends BaseController
     }
 
 
-    // Function to handle plan updates
+    // Function to handle Master plan updates
     private function handlePlanUpdates($plans, $library_id, &$invalidRecords, &$successRecords)
     {
 
@@ -1266,7 +1266,7 @@ class Controller extends BaseController
     }
 
 
-    // Function to handle price updates
+    // Function to handle Master price updates
     private function handlePlanPrices($library_id, $branch_id, $fullday_price, $halfday_price, $allday_price, $fullnight_price)
     {
 

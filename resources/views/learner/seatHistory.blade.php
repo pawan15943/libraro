@@ -34,12 +34,10 @@
                         </div>
 
                         <div class="seat-informarion">
-                            <img 
-  src="{{ optional($learner)->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" 
-  alt="profile">
+                            <img src="{{ optional($learner)->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
 
                             <div class="information">
-                                <h4>{{ $learner->name }}
+                                <h4>{{ $learner->name ?? ''}}
                                     <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
                                 </h4>
                                 <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
@@ -94,7 +92,7 @@
                     <div class="seat-informarion">
                         <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                         <div class="information">
-                            <h4>{{ $learner->name }}{{$learner->email}}
+                            <h4>{{ $learner->name ?? ''}}{{$learner->email ?? ''}}
                                 <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
                             </h4>
                             <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
