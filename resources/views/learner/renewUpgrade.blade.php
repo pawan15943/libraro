@@ -244,7 +244,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                         @endif
                         <div class="col-lg-4">
                             <label>Pending Amount <span>*</span></label>
-                            <input type="text" id="pending_amt10" class="form-control" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
+                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
                         <div class="col-lg-4">
