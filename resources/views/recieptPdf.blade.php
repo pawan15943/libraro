@@ -92,14 +92,17 @@
                 <img src="{{ asset('public/img/logo-socials.png') }}" alt="Library Logo" style="width: 80px; height:80px; border-radius:100%;">
             </div>
             <div class="address_header text-right">
-                <h4><?php if(isset($library_name)): echo $library_name; endif;?></h4>
+                <h4><?php echo isset($library_name) ? $library_name : ''; ?></h4>
                 <div class="address">
-                     <p><?php if(isset($library_address)): echo $library_address; endif;?></p>
+                     <p><?php echo isset($library_address) ? $library_address : ''; ?></p>
                 </div>
-                <a href="mailto:<?php if(isset($library_email)): echo $library_email; endif;?>" title="Library Email Id">Email: <?php if(isset($library_email)): echo $library_email; endif;?></a><br>
-                <a href="tel:<?php if(isset($library_mobile)): echo $library_mobile; endif;?>" title="Library Contact info">Contact: <?php if(isset($library_mobile)): echo $library_mobile; endif;?></a><br>
+                <a href="mailto:<?php echo isset($library_email) ? $library_email : ''; ?>" title="Library Email Id">
+                    Email: <?php echo isset($library_email) ? $library_email : ''; ?>
+                </a><br>
+                <a href="tel:<?php echo isset($library_mobile) ? $library_mobile : ''; ?>" title="Library Contact info">
+                    Contact: <?php echo isset($library_mobile) ? $library_mobile : ''; ?>
+                </a><br>
                 <a href="www.librao.in" title="Library System">Website: www.libraro.com</a><br>
-
             </div>
         </div>
 
@@ -107,71 +110,72 @@
         <table>
             <thead class="text-center">
                 <tr>
-                    <th colspan="4" class="tab_title">Subscription Receipt - Library Management Software</th>
+                    <th colspan="4" class="tab_title">Transaction Receipt</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td style="width:30%"><b>Subscription Plan:</b></td>
+                    <td style="width:30%"><b> Plan:</b></td>
                     <td style="width:15%">
-                        <?php if(isset($subscription)){ echo $subscription; } ?>
+                        <?php echo isset($subscription) ? $subscription : ''; ?>
                     </td>
-                    <td style="width:45%"><b>Subscription Date:</b></td>
+                    <td style="width:45%"><b>Plan Start Date:</b></td>
                     <td style="width:15%">
-                        <?php if(isset($transactiondate)){ echo $transactiondate; } ?>
+                        <?php echo isset($transactiondate) ? $transactiondate : ''; ?>
                     </td>
                 </tr>
                 <tr>
                     <td><b>Invoice Number:</b></td>
                     <td>
-                        <?php if(isset($invoice_ref_no)){ echo $invoice_ref_no; } ?>
+                        <?php echo isset($invoice_ref_no) ? $invoice_ref_no : ''; ?>
                     </td>
-                    <td><b>Expiration Date:</b></td>
+                    <td><b>Plan End Date:</b></td>
                     <td>
-                        <?php if(isset($end_date)){ echo $end_date; } ?>
+                        <?php echo isset($end_date) ? $end_date : ''; ?>
                     </td>
                 </tr>
                 <tr>
-                    <td><b>Subscriber Name:</b></td>
+                    <td><b>Name</b></td>
                     <td colspan="3">
-                     
-                        <?php if(isset($name)){ echo $name; } ?>
+                        <?php echo isset($name) ? $name : ''; ?>
                     </td>
                 </tr>
                 <tr>
                     <td><b>Email Address:</b></td>
                     <td colspan="3">
-                        <?php if(isset($email)){ echo $email; } ?>
+                        <?php echo isset($email) ? $email : 'Not Updated Yet'; ?>
                     </td>
                 </tr>
                 <tr>
-                    <td><b>Payment Method:</b></td>
+                    <td><b>Payment Type:</b></td>
                     <td>
                         <?php 
-                        if ($payment_mode == 1) { 
-                            echo 'Online'; 
-                        } elseif ($payment_mode == 2) {
-                            echo 'Offline'; 
+                        if (isset($payment_mode)) {
+                            if ($payment_mode == 1) { 
+                                echo 'Online'; 
+                            } elseif ($payment_mode == 2) {
+                                echo 'Offline'; 
+                            } else {
+                                echo 'Pay Later'; 
+                            }
                         } else {
-                            echo 'Pay Later'; 
+                            echo '';
                         }
-                    ?>
-                    
+                        ?>
                     </td>
                     <td><b>Amount Paid:</b></td>
                     <td>
-                        <?php if(isset($paid_amount)){ echo $paid_amount; } ?>
-                        <?php if(isset($currency)){ echo $currency; } ?>
+                        <?php echo isset($paid_amount) ? $paid_amount : ''; ?>
                     </td>
                 </tr>
                 <tr>
                     <td><b>Total Amount:</b></td>
                     <td>
-                        <?php if(isset($monthly_amount)){ echo $monthly_amount; } ?>
+                        <?php echo isset($monthly_amount) ? $monthly_amount : ''; ?>
                     </td>
                     <td><b>Plan Duration:</b></td>
                     <td>
-                        <?php if(isset($month)){ echo $month; } ?> <b>month</b>
+                        <b><?php echo isset($month) ? $month : ''; ?> Month</b>
                     </td>
                 </tr>
                 <tr>
@@ -195,5 +199,6 @@
         </table>
     </div>
 </body>
+
 
 </html>

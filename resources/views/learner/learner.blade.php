@@ -133,8 +133,15 @@ $due_date = null;
                 @else
                 <span> Seat No. : {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
                 @endif
+                 @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
+                    <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
+                    <span class="extended"> Deleted Seat</span>
+                @else
+                    {!! getUserStatusWithSpan($value->plan_end_date,$value->id) !!}
+                @endif
 
-                &nbsp;  {!! getUserStatusWithSpan($value->plan_end_date,$value->id) !!}
+               
 
             </div>
             <div class="seat-actions">
@@ -280,7 +287,8 @@ $due_date = null;
 
                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
-                                <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
+                                <input type="hidden" name="learner_id" value="{{$value->id}}" >
+                                <input type="hidden" name="id" value="{{ learnerTransaction($value->id,$value->learner_detail_id)->id ?? 'NA'}}">
                                 <input type="hidden" name="type" value="learner">
                                 <button type="submit">
                                     <i class="fa fa-download receipt"></i>

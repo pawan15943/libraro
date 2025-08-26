@@ -28,6 +28,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Http\Middleware\LoadMenus;
 use App\Models\Branch;
 use App\Models\Expense;
+use App\Models\LearnerTransactionActivity;
 use App\Models\Subscription;
 use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Str;
@@ -52,6 +53,7 @@ class Controller extends BaseController
             $name = $user->library_owner;
             $subscription = Subscription::where('id', $user->library_type)->value('name');
             $library = $user;
+            $transaction_id=$data->transaction_id;
         }
         if ($request->type == 'learner') {
             $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
@@ -79,12 +81,13 @@ class Controller extends BaseController
                 $end_date = null;
                 $subscription = null;
             }
-            $name = $user->name;
-
+            $name = $user->name ?? '';
+            $tran=LearnerTransactionActivity::where('learner_id',$data->learner_id)->select('transaction_id')->first();
+            $transaction_id=$tran->transaction_id;
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
         }
 
-
+        
         $send_data = [
             'subscription' => $subscription ?? 'NA',
             'name' => $name ?? 'NA',
@@ -92,7 +95,7 @@ class Controller extends BaseController
             'transactiondate' => $transactionDate ?? 'NA',
             'paid_amount' => $data->paid_amount ?? 'NA',
             'payment_mode' => $paymentMode ?? 'NA',
-            'invoice_ref_no' => $data->transaction_id ?? 'NA',
+            'invoice_ref_no' => $transaction_id ?? 'NA',
             'total_amount' => $total_amount ?? 'NA',
             'start_date' => $start_date ?? 'NA',
             'end_date' => $end_date ?? 'NA',

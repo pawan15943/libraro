@@ -2488,9 +2488,9 @@ class LearnerController extends Controller
         try {
             $validatedData = $request->validate([
                 'learner_id' => 'required|integer',
-                'field_updated' => 'required|string',
-                'old_value' => 'nullable|string',
-                'new_value' => 'nullable|string',
+                'field_updated' => 'required',
+                'old_value' => 'nullable',
+                'new_value' => 'nullable',
                 'updated_by' => 'required|integer',
                 'operation' => 'required',
             ]);
@@ -2506,7 +2506,7 @@ class LearnerController extends Controller
                     ->value('id');
             } elseif ($validatedData['operation'] == 'closeSeat' || $validatedData['operation'] == 'deleteSeat') {
                 Log::info('Learner Deatail Delete');
-                $learner_detail_id = LearnerDetail::where('learner_id', $validatedData['learner_id'])
+                $learner_detail_id = LearnerDetail::withTrashed()->where('learner_id', $validatedData['learner_id'])
                     ->orderBy('id', 'DESC')
                     ->value('id');
             } else {
@@ -3207,7 +3207,7 @@ class LearnerController extends Controller
     public function learnerTransactionActivity($data)
     {
         // Fixed year
-        $year = "2025";
+        $year = "2000";
 
         // Get last transaction (only for 2025 IDs)
         $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
@@ -3224,7 +3224,7 @@ class LearnerController extends Controller
         }
 
         // Build transaction ID
-        $transactionId = $year . "000" . $newSeq;
+        $transactionId = $year . "0000" . $newSeq;
 
         LearnerTransactionActivity::create([
             'branch_id'      => getCurrentBranch(),

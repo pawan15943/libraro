@@ -29,7 +29,15 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
         <div class="seat-info bg-white">
             <div class="seat-no">
                 <span>Seat No. : {{ $seat->seat_no }}</span>
-                {!! getUserStatusDetails($user->plan_end_date) !!}
+                
+
+                @if(optional(getLearnerOperation($user->learner_detail_id))->operation == 'closeSeat')
+                    <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                @elseif(optional(getLearnerOperation($user->learner_detail_id))->operation == 'deleteSeat')
+                    <span class="extended"> Deleted Seat</span>
+                @else
+                    {!! getUserStatusDetails($user->plan_end_date) !!}
+                @endif
             </div>
 
             <div class="seat-actions">
@@ -94,7 +102,15 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
         <div class="seat-info bg-white">
             <div class="seat-no">
                 <span>Seat No.: GEN</span>
-                {!! getUserStatusDetails($user->plan_end_date) !!}
+                
+
+                 @if(optional(getLearnerOperation($user->learner_detail_id))->operation == 'closeSeat')
+                    <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                @elseif(optional(getLearnerOperation($user->learner_detail_id))->operation == 'deleteSeat')
+                    <span class="extended"> Deleted Seat</span>
+                @else
+                    {!! getUserStatusDetails($user->plan_end_date) !!}
+                @endif
             </div>
 
             <div class="seat-actions">
