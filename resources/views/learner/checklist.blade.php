@@ -26,7 +26,7 @@
                             <td>
                                 <input type="checkbox" name="learner_ids[]" value="{{ $learner->id }}" class="select_one">
                             </td>
-                            <td><img src="{{ $learner->name }}" alt="Image" class="profile"></td>
+                            <td><img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="profile" alt="Profile Photo"></td>
                             <td>{{ $learner->name }}</td>
                             <td>+91-{{ $learner->mobile }}</td>
                             <td>{{ $learner->father_name ?? 'Not Available' }}</td>
@@ -37,7 +37,6 @@
                     </tbody>
                 </table>
                 <button type="submit" class="print-cards mb-4">🖨️ Print Selected ID Cards</button>
-
             </div>
         </form>
     </div>

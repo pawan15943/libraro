@@ -43,9 +43,9 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
 
                 <div class="information">
                     <h4>{{ $learner->name ?? ''}}
-                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
+                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
                     </h4>
-                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
+                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile ?? ''}}</a></span>
                     <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
                 </div>
             </div>
@@ -59,13 +59,13 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
                         <p>{{ optional(myPlanType($user->plan_type_id))->name }}</p>
                     </li>
                     <li><span>Join On</span>
-                        <p>{{ $user->join_date }}</p>
+                        <p>{{ $user->join_date ?? ''}}</p>
                     </li>
                     <li><span>Start On</span>
-                        <p>{{ $user->plan_start_date }}</p>
+                        <p>{{ $user->plan_start_date ?? ''}}</p>
                     </li>
                     <li><span>Ends On</span>
-                        <p>{{ $user->plan_end_date }}</p>
+                        <p>{{ $user->plan_end_date ?? ''}}</p>
                     </li>
                     <li><span>Payment</span>
                         @if(isset($user->is_paid) && $user->is_paid == 1)
@@ -106,10 +106,10 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
             <div class="seat-informarion">
                 <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">
-                    <h4>{{ $learner->name ?? ''}}{{$learner->email ?? ''}}
-                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</span>
+                    <h4>{{ $learner->name ?? ''}}
+                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
                     </h4>
-                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
+                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
                     <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
                 </div>
             </div>
@@ -123,13 +123,13 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
                         <p>{{ optional(myPlanType($user->plan_type_id))->name }}</p>
                     </li>
                     <li><span>Join On</span>
-                        <p>{{ $user->join_date }}</p>
+                        <p>{{ $user->join_date ?? '' }}</p>
                     </li>
                     <li><span>Start On</span>
-                        <p>{{ $user->plan_start_date }}</p>
+                        <p>{{ $user->plan_start_date ?? '' }}</p>
                     </li>
                     <li><span>Ends On</span>
-                        <p>{{ $user->plan_end_date }}</p>
+                        <p>{{ $user->plan_end_date ?? '' }}</p>
                     </li>
                     <li><span>Payment</span>
                         @if(isset($user->is_paid) && $user->is_paid == 1)

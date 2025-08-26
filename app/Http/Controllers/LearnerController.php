@@ -1148,8 +1148,8 @@ class LearnerController extends Controller
             $query->where('learners.status', 0)
                 ->where('learner_detail.status',0);
         }
-
-        $learnerHistory =   $query->whereDate('learner_detail.plan_end_date', '<=', Carbon::now())->paginate($perPage);
+      
+        $learnerHistory =   $query->paginate($perPage);
 
 
        

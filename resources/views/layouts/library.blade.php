@@ -40,7 +40,7 @@
     </div>
     <!-- New Design Dahsbard Library -->
     <div class="support-container">
-        <div class="support-icon" onclick="toggleSupportCard()">
+        <div class="support-icon" onclick="toggleSupportCard()" data-bs-placement="left" data-bs-toggle="tooltip" data-bs-title="Support Corner">
             <i class="fa-solid fa-phone-volume"></i>
         </div>
         <div class="support-card" id="supportCard">
@@ -128,16 +128,17 @@
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
                     <a href="{{ route('seats.history') }}"><i class="fa fa-list-check fa-2x"></i></a>
                 </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
-                    <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
-                </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Bulk ID CARD">
+                
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD">
                     <a href="{{ route('learner.checklist') }}"><i class="fa fa-id-card-clip fa-2x"></i></a>
                 </li>
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? '' }}">
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}">
 
                     <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
+                </li>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
+                    <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
                 @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
