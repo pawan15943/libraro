@@ -215,7 +215,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-3">
                             <h6>Other Income</h6>
                             <div class="d-flex">
-                                <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
+                                <h4 id="">{{ (int)$today_other_amt == $today_other_amt ? (int)$today_other_amt : $today_other_amt }}</h4>
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                             <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -237,7 +237,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-3">
                             <h6>Refund</h6>
                             <div class="d-flex">
-                                <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
+                                <h4 id="">{{ (int)$today_refund == $today_refund ? (int)$today_refund : $today_refund }}</h4>
 
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
@@ -248,7 +248,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-3">
                             <h6>Pending Payment</h6>
                             <div class="d-flex">
-                                <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
+                                <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
 
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
@@ -288,7 +288,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-5">
                             <h6>OTHER INCOME</h6>
                             <div class="d-flex">
-                                <h4 id="total_income">0</h4>
+                                <h4 id="other_total_income">0</h4>
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                             <a href="{{ route('library.transaction.view', ['type' => 'monthly_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -308,7 +308,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-5">
                             <h6>REFUND</h6>
                             <div class="d-flex">
-                                <h4 id="total_balance">0</h4>
+                                <h4 id="total_refund">0</h4>
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                             <a href="{{ route('library.transaction.view', ['type' => 'monthly_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -318,7 +318,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <div class="booking-count bg-5">
                             <h6>PENDING PAYMENT</h6>
                             <div class="d-flex">
-                                <h4 id="total_expense">0</h4>
+                                <h4 id="total_pending">0</h4>
                             </div>
                             <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                             <a href="{{ route('library.transaction.view', ['type' => 'monthly_expense']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
@@ -1090,7 +1090,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 $('#delete_seat').text(highlights.delete_seat);
                 $('#change_plan_seat').text(highlights.change_plan_seat);
                 $('#total_income').text(highlights.monthly_income);
+                $('#other_total_income').text(highlights.other_total_income);
                 $('#total_expense').text(highlights.monthly_expense);
+                $('#total_refund').text(highlights.monthly_refund);
+                $('#total_pending').text(highlights.monthly_pending);
                 $('#total_balance').text(highlights.monthly_balance);
             }
 
