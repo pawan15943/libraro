@@ -14,11 +14,14 @@ class LearnerTransaction extends Model
     use HasBranch;
     protected $table = 'learner_transactions';
     protected $guarded = [];
-    protected static function booted()
+     protected static function booted()
     {
-        
+        static::addGlobalScope('withTrashed', function ($builder) {
+            $builder->withTrashed();
+        });
         static::addGlobalScope(new LibraryScope());
     }
+  
 
     public function learner()
     {

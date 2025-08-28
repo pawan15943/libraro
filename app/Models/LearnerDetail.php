@@ -14,6 +14,12 @@ class LearnerDetail extends Model
     use HasBranch;
     protected $guarded = []; 
     protected $table = 'learner_detail';
+     protected static function booted()
+    {
+        static::addGlobalScope('withTrashed', function ($builder) {
+            $builder->withTrashed();
+        });
+    }
     // protected static function booted()
     // {
         

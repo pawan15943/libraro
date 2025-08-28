@@ -19,8 +19,16 @@ class Learner extends Authenticatable
     use HasFactory,SoftDeletes;
     use HasBranch;
     use HasSeatType;
+
     
     protected $guarded = [];
+    
+     protected static function booted()
+    {
+        static::addGlobalScope('withTrashed', function ($builder) {
+            $builder->withTrashed();
+        });
+    }
     
     public function planType()
     {
