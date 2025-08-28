@@ -119,7 +119,7 @@
                     <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
                 </li> -->
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense">
-                    <a href="javascript::" data-bs-toggle="modal" data-bs-target="#expenseModal"><i class="fa fa-plus fa-2x"></i></a>
+                    <a href="{{route('add.expense.list')}}"><i class="fa fa-plus fa-2x"></i></a>
                 </li>
                 <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
                     <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>

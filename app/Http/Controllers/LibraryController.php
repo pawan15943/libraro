@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreLibraryRequest;
 use App\Models\City;
 use App\Models\Complaint;
+use App\Models\Expense;
 use App\Models\Feedback;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerFeedback;
 use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use App\Models\Library;
 use App\Models\LibraryEnquiry;
 use App\Models\LibrarySetting;
@@ -1056,6 +1058,123 @@ class LibraryController extends Controller
         }
         
     }
+
+   public function expenceList(Request $request)
+    {
+        // Get expense master list for dropdown
+        $data = Expense::all();
+
+        // Base query
+        $query = LearnerTransactionActivity::where('payment_type', 'EXPENSE');
+
+        // Apply filters if present
+        if ($request->filled('expense')) {
+            $query->where('particular', $request->expense);
+        }
+
+        if ($request->filled('from')) {
+            $query->whereDate('date', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('date', '<=', $request->to);
+        }
+
+        // Paginate results
+        $expences = $query->orderBy('date', 'desc')->paginate(10);
+
+        return view('master.expense-list', compact('expences', 'data'));
+    }
+
+    public function expenceStore(Request $request)
+    {
+      
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|date',
+            'name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'payment_mode' => 'required',
+            'remark' => 'nullable|string',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+        if($request->name=='other' && $request->remark){
+            $particular=$request->remark ;
+        }elseif($request->name=='other' && !$request->remark){
+            $particular='other' ;
+        }else{
+            $particular=$request->name ;
+        }
+        if($request->payment_mode==1){
+            $mode='UPI';
+        }elseif($request->payment_mode==2){
+             $mode='CASH';
+        }else{
+             $mode='OTHER';
+        }
+        
+         // Fixed year
+        $year = "2000";
+
+        // Get last transaction (only for 2025 IDs)
+        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
+            ->orderBy('id', 'desc')
+            ->first();
+        if ($last && !empty($last->transaction_id)) {
+            // extract last sequence (last 4 digits)
+            $lastSeq = (int)substr($last->transaction_id, -4);
+            $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+        } else {// first transaction
+            $newSeq = "0001";
+        }
+
+        // Build transaction ID
+        $transactionId = $year . "0000" . $newSeq;
+
+        $data=[
+           'branch_id' => getCurrentBranch(),
+           'learner_id'=>null,
+           'date'=>$request->date ?? date('Y-m-d'),
+            'particular'=>$particular,
+            'payment_type'=>'EXPENSE',
+            'payment_mode'=>$mode,
+            'amount'=>$request->amount,
+            'dr_cr'=>'Dr',
+            'amount'=>$request->amount,
+            'transaction_id'=>$transactionId
+           
+        ];
+
+
+        if ($request->id) {
+            // Update
+            $expense = LearnerTransactionActivity::findOrFail($request->id);
+            $expense->update($data);
+            $message = 'Expense updated successfully';
+        } else {
+            // Create
+            LearnerTransactionActivity::create($data);
+            $message = 'Expense created successfully';
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            
+        ]);
+    }
+
+    public function expencedestroy($id)
+    {
+        LearnerTransactionActivity::findOrFail($id)->delete();
+
+        return redirect()->back()->with('success', 'Expense deleted successfully!');
+    }
+
 
    
 

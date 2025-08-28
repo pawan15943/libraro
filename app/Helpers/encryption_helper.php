@@ -478,7 +478,7 @@ if (!function_exists('seatRemainingHour')) {
 if (!function_exists('currentTransaction')) {
     function currentTransaction($learner_detail)
     {
-        $data = LearnerTransaction::where('learner_detail_id', $learner_detail)->first();
+        $data = LearnerTransaction::withTrashed()->where('learner_detail_id', $learner_detail)->first();
         return $data ?? null;
     }
 }

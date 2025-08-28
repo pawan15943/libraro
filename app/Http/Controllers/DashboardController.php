@@ -31,6 +31,7 @@ use Log;
 
 
 
+
 class DashboardController extends Controller
 {
     use LearnerQueryTrait;
@@ -224,12 +225,22 @@ class DashboardController extends Controller
             }
 
               //Daily Transaction
-            $todayCollection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
+              
+            $todayCollection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->where('dr_cr','Cr')->whereDate('date', now()->toDateString())
             ->sum('amount'); 
 
-            $todayExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
-            ->where('payment_type','EXPENSE')
-            ->sum('amount'); 
+            $todayExpense = LearnerTransactionActivity::with('learner')
+            ->where('branch_id', getCurrentBranch())
+            ->whereDate('date', now()->toDateString())
+            ->where(function($q) {
+                $q->whereIn('payment_type', ['EXPENSE','REFUND'])
+                ->orWhere(function($sub) {
+                    $sub->where('payment_type', 'CHANGE PLAN')
+                        ->where('dr_cr', 'Dr');
+                });
+            })
+            ->sum('amount');
+
            
             $todayBalance = $todayCollection - $todayExpense;
            
@@ -1294,13 +1305,23 @@ class DashboardController extends Controller
             'monthlyExpense' => collect(),
         ];
         $today_booking_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])->where('dr_cr','Cr')->sum('amount');
-         $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
-          $today_expense=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');
-           $today_pending=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','PENDING')->sum('amount');
-          $today_refund=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','REFUND')->sum('amount');
-          $total_cr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Cr')->sum('amount');
-          $total_dr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Dr')->sum('amount');
-          $total_revenue=$total_cr-$total_dr;
+        $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
+        $today_expense=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');
+        $today_pending=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','PENDING')->sum('amount');
+        $today_refund = LearnerTransactionActivity::where('branch_id', getCurrentBranch())
+        ->whereDate('date', now()->toDateString())
+        ->where(function($q) {
+            $q->where('payment_type', 'REFUND')
+            ->orWhere(function($sub) {
+                $sub->where('payment_type', 'CHANGE PLAN')
+                    ->where('dr_cr', 'Dr');
+            });
+        })
+        ->sum('amount');
+
+        $total_cr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Cr')->sum('amount');
+        $total_dr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Dr')->sum('amount');
+        $total_revenue=$total_cr-$total_dr;
 
         if ($request->filled('year') && $request->filled('month')) {
             $year = $request->year;
@@ -1322,28 +1343,27 @@ class DashboardController extends Controller
        $data['today_refund']=$today_refund;
        $data['today_pending']=$today_pending;
        $data['total_revenue']=$total_revenue;
+       $query=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch());
+
         switch ($type) {
             case 'today_collection':
-                $collection=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
-                    ->get();
+               $query->whereDate('date', now()->toDateString());
+                 
              
 
-                $data['collection'] = $collection;
-                $data['totalPaid'] = $collection->sum('amount');
                 $data['label'] = 'Today Collection';
                 break;
 
             case 'monthly_collection':
-                 $collection=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)
-                    ->whereMonth('date', $month)
-                    ->get();
+                $query->whereYear('date', $year)
+                    ->whereMonth('date', $month);
+                  
                
-                $data['collection'] = $collection;
-                $data['totalPaid'] = $collection->sum('amount');
+               
                 $data['label'] = 'Monthly Collection';
                 break;
             case 'today_expense':
-                $todayExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', $today)
+                $todayExpense = $query->whereDate('date', $today)
                 ->where('payment_type','EXPENSE')->get();
                 $data['expenses'] = $todayExpense;
                 $data['totalExpense'] = $todayExpense->sum('amount');
@@ -1351,7 +1371,7 @@ class DashboardController extends Controller
                 break;
 
             case 'monthly_expense':
-                $monthlyExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)->whereMonth('date', $month)
+                $monthlyExpense = $query->whereYear('date', $year)->whereMonth('date', $month)
                 ->where('payment_type','EXPENSE')->get();
               
                 $data['expenses'] = $monthlyExpense;
@@ -1361,10 +1381,10 @@ class DashboardController extends Controller
            case 'today_balance':
            
 
-                $collection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
+                $collection = $query->whereDate('date', now()->toDateString())
                     ->get();
 
-                $expense =LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereDate('date', $today)
+                $expense =$query->whereDate('date', $today)
                 ->where('payment_type','EXPENSE')->get();
 
                 $data['todayCollection'] = $collection;
@@ -1375,10 +1395,10 @@ class DashboardController extends Controller
 
 
             case 'monthly_balance':
-                $collection = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)
+                $collection = $query->whereYear('date', $year)
                     ->whereMonth('date', $month)
                     ->get();
-                $monthlyExpense = LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch())->whereYear('date', $year)->whereMonth('date', $month)
+                $monthlyExpense = $query->whereYear('date', $year)->whereMonth('date', $month)
                 ->where('payment_type','EXPENSE')->get();
                  $data['collection'] = $collection;
                 $data['expenses'] = $monthlyExpense;
@@ -1388,13 +1408,23 @@ class DashboardController extends Controller
         
                
         }
+        $query->when($request->filled('payment_type'), fn($q) => $q->where('payment_type', $request->payment_type));
+        $query->when($request->filled('from') && $request->filled('to'), fn($q) => $q->whereBetween('date', [$request->from, $request->to]));
+
+        // finally run it once
+        $collection = $query->paginate(10)->withQueryString();
+
+
+        $data['collection'] = $collection;
+        $data['totalPaid']  = $collection->sum('amount');
+
        
         return view('dashboard.library_daily_tran', $data);
     }
 
     function formatNumber($value) {
-    return (intval($value) == $value) ? intval($value) : number_format($value, 2);
-}
+        return (intval($value) == $value) ? intval($value) : number_format($value, 2);
+    }
 
     
     

@@ -670,12 +670,14 @@ class LearnerController extends Controller
             $refund = abs($diff_amount);
             $pending_refund = abs($pending_amount);
             $pending_amount = 0;
+            $dr_cr='Dr';
         } else {
            
             // extra payment (pending dues)
             $pending_amount = $diff_amount;
             $refund = 0;
             $pending_refund = 0;
+            $dr_cr='Cr';
         }
         
         if ($learnerTransaction) {
@@ -698,8 +700,8 @@ class LearnerController extends Controller
             $data['particular']='Paid By Trans';
             $data['payment_type']='CHANGE PLAN';
             $data['payment_mode']=1;
-            $data['amount']=$request->input('diffrence_amount') ?? 0;
-            $data['dr_cr']='Cr';
+            $data['amount']=$refund ?? 0;
+            $data['dr_cr']=$dr_cr;
             $this->learnerTransactionActivity($data);
 
            
@@ -823,7 +825,7 @@ class LearnerController extends Controller
     public function fetchCustomerData($customerId = null, $isRenew = false, $status, $detailStatus, $filters = [],$perPage = 10,$paginate = true)
     {
 
-        $query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
 
@@ -1787,13 +1789,15 @@ class LearnerController extends Controller
     }
     public function reactiveUser(Request $request, $id = null)
     {
-
+        
         $customerId = $request->id ?? $id;
+        
         $is_renew = $this->learnerService->getRenewalStatus($customerId);
         $available_seat = $this->learnerService->getAvailableSeats();
       
         $customer = $this->fetchCustomerData($customerId, false, $status = 0, $detailStatus = 0,$perPage = 10,$paginate = false);
-        $customer_detail = LearnerDetail::where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
+        
+        $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
      
         if ($request->expectsJson() || $request->has('id')) {
 
@@ -1852,6 +1856,7 @@ class LearnerController extends Controller
     }
     public function reactiveLearner(Request $request, $id)
     {
+        
 
          $rules = [
 
@@ -1874,7 +1879,12 @@ class LearnerController extends Controller
                         $fail('Discount amount is required when a discount type is selected.');
                     }
                 }
-            ]
+            ],
+             'locker_no' => [
+                'nullable',
+                 'required_if:locker,yes',
+                'numeric'
+            ],
 
         ];
         $validator = Validator::make($request->all(), $rules);
@@ -1891,10 +1901,13 @@ class LearnerController extends Controller
         try {
             // for log value
 
-            $old_value = LearnerDetail::where('id', $request->learner_detail)->first();
+            $old_value = LearnerDetail::withTrashed()
+                ->where('id', $request->learner_detail)
+                ->first();
 
             // for log value
-            $customer = Learner::findOrFail($request->user_id);
+           $customer = Learner::withTrashed()
+                ->findOrFail($request->user_id);
 
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $plan_id = $request->input('plan_id');
@@ -1994,12 +2007,7 @@ class LearnerController extends Controller
                 $seat_no = null;
             }
 
-            $customer->seat_no = $seat_no;
-            $customer->hours = $hours;
-            $customer->status = 1;
-            if (!$customer->save()) {
-                throw new \Exception('Failed to update customer');
-            }
+          
 
             if ($request->seat_no) {
 
@@ -2046,6 +2054,13 @@ class LearnerController extends Controller
                     'message' => 'Due date is required',
                 ], 422);
                 die;
+            }
+
+            $customer->seat_no = $seat_no;
+            $customer->hours = $hours;
+            $customer->status = $status;
+            if (!$customer->save()) {
+                throw new \Exception('Failed to update customer');
             }
            
             $learner_detail = LearnerDetail::create([

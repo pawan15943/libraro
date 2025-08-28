@@ -107,6 +107,10 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
 
     Route::get('/learner/expire/{id?}', [LearnerController::class, 'learnerExpire'])->name('learner.expire');
     Route::put('/learner/expire/update/{id?}', [LearnerController::class, 'editLearnerExpire'])->name('learner.expire.update');
+     Route::get('/add/expense/list', [LibraryController::class, 'expenceList'])->name('add.expense.list');
+     Route::post('/add/expense/store', [LibraryController::class, 'expenceStore'])->name('daily.expense.store');
+     Route::delete('/add/expense/{id}', [LibraryController::class, 'expencedestroy'])->name('add.expenses.destroy');
+
       //**LEARNER**//
     Route::get('library/learners', [LearnerController::class, 'index'])->name('seats');
     Route::post('library/learners/log', [LearnerController::class, 'learnerLog'])->name('learner.log');
