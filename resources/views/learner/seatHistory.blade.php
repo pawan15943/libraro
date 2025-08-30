@@ -53,8 +53,13 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
                     <h4>{{ $learner->name ?? ''}}
                         <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
                     </h4>
-                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile ?? ''}}</a></span>
-                    <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                    <span>UID: <a href="{{route('learners.show',$user->learner_id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? ''}}</a></span>
+                    <span class="d-block">
+                        E: 
+                        <a href="mailto:{{ optional($learner)->email }}">
+                            {!! optional($learner)->email ?? '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
+                        </a>
+                    </span>
                 </div>
             </div>
 

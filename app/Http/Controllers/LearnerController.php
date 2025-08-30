@@ -2334,7 +2334,7 @@ class LearnerController extends Controller
                     if ($request->isRefund && $request->refundAmount > 0){
                         $data=[];
                         $data['learner_id']=$id;
-                        $data['particular']='Paid By Trans';
+                        $data['particular']='Delete Plan';
                         $data['payment_type']='REFUND';
                         $data['payment_mode']=1;
                         $data['amount']=$request->refundAmount ?? 0;
@@ -2390,7 +2390,7 @@ class LearnerController extends Controller
                     if ($request->isRefund && $request->refundAmount > 0){
                         $data=[];
                         $data['learner_id']=$request->learner_id;
-                        $data['particular']='Paid By Trans';
+                        $data['particular']='Close Plan';
                         $data['payment_type']='REFUND';
                         $data['payment_mode']=1;
                         $data['amount']=$request->refundAmount ?? 0;
