@@ -13,13 +13,13 @@ use Carbon\Carbon;
     <div class="col-lg-4 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_booking_amt)}}</h4>
-            <span>Monthly Booking Income (A)</span>
+            <span>Today's Booking Income (A)</span>
         </div>
     </div>
     <div class="col-lg-4 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_other_amt)}}</h4>
-            <span>Monthly Other Income (Token, Misc.) (B)</span>
+            <span>Today's Other Income (Token, Misc.) (B)</span>
         </div>
     </div>
     <div class="col-lg-4 col-md-6 col-6">

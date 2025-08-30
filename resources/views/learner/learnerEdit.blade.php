@@ -403,10 +403,11 @@ if($customer->locker_no){
                             </span>
                             @enderror
                         </div>
+                    </div>
                         <h4 class="mt-4 mb-3">Your plan Addon's
                         <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i>
                         </h4>
-                        <div style="display: none;" class="mb-3 idProofFields1">
+                        <div style="display: none;" class="idProofFields1 mb-3">
                             <div class="row g-4">
                                 @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker == 'yes')))
                                     <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
@@ -451,80 +452,82 @@ if($customer->locker_no){
                                     </div>
                                 @endif
 
-
-                                <div class="col-lg-4">
-                                    <label>Total Amount <span>*</span></label>
-                                    <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
-                                    @error('paid_amount')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                    
-                                </div>
-                                <div class="col-lg-4">
-                                    <label>Pending Amount <span>*</span></label>
-                                    <input type="text" id="pending_amt10" class="form-control" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
-                                    <span id="pending_amt_error" class="text-danger"></span>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label for="">Choose Due Date<span>*</span></label>
-                                    <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
-                                    @error('due_date')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
-                                <div class="col-lg-4">
-                                    <label for="">Plan Starts On <span>*</span></label>
-                                    <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date" value="{{ old('plan_start_date') }}">
-                                    @error('plan_start_date')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                </div>
-
-                                <div class="col-lg-4">
-                                    <label for="">Select Seat<span>*</span></label>
-                                    <select name="seat_no" id="new_seat_id2" class="form-select @error('seat_no') is-invalid @enderror">
-                                        <option>Select Seat</option>
-                                        <option value="">General</option>
-                                        @foreach($available_seat as $id => $seat_no)
-                                        <option value="{{ $seat_no }}" {{ $customer->seat_no == $seat_no ? 'selected' : '' }}>{{ $seat_no }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('seat_no')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                </div>
-                                <div class="col-lg-4">
-                                    <label for="">Payment Mode <span>*</span></label>
-                                    <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
-                                        <option value="">Select Payment Mode</option>
-                                        <option value="1" {{ old('payment_mode') == 1 ? 'selected' : '' }}>Online</option>
-                                        <option value="2" {{ old('payment_mode') == 2 ? 'selected' : '' }}>Offline</option>
-                                        <option value="3" {{ old('payment_mode') == 3 ? 'selected' : '' }}>Pay Later</option>
-                                    </select>
-                                    @error('payment_mode')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                </div>
-
-                            </div>
-                            <div class="row mt-4">
-                                <div class="col-lg-3">
-                                    <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Update">
-                                </div>
                             </div>
                         </div>
+                        <div class="g-4 row">         
+                            <div class="col-lg-4">
+                                <label>Total Amount <span>*</span></label>
+                                <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
+                                @error('paid_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                                
+                            </div>
+                            <div class="col-lg-4">
+                                <label>Pending Amount <span>*</span></label>
+                                <input type="text" id="pending_amt10" class="form-control" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
+                                <span id="pending_amt_error" class="text-danger"></span>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="">Choose Due Date<span>*</span></label>
+                                <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
+                                @error('due_date')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="">Plan Starts On <span>*</span></label>
+                                <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date" value="{{ old('plan_start_date') }}">
+                                @error('plan_start_date')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+
+                            <div class="col-lg-4">
+                                <label for="">Select Seat<span>*</span></label>
+                                <select name="seat_no" id="new_seat_id2" class="form-select @error('seat_no') is-invalid @enderror">
+                                    <option>Select Seat</option>
+                                    <option value="">General</option>
+                                    @foreach($available_seat as $id => $seat_no)
+                                    <option value="{{ $seat_no }}" {{ $customer->seat_no == $seat_no ? 'selected' : '' }}>{{ $seat_no }}</option>
+                                    @endforeach
+                                </select>
+                                @error('seat_no')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="">Payment Mode <span>*</span></label>
+                                <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
+                                    <option value="">Select Payment Mode</option>
+                                    <option value="1" {{ old('payment_mode') == 1 ? 'selected' : '' }}>Online</option>
+                                    <option value="2" {{ old('payment_mode') == 2 ? 'selected' : '' }}>Offline</option>
+                                    <option value="3" {{ old('payment_mode') == 3 ? 'selected' : '' }}>Pay Later</option>
+                                </select>
+                                @error('payment_mode')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-lg-3">
+                                <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Update">
+                            </div>
+                        </div>
+                        
                     </div>
                 </form>
             </div>
         </div>
-    </div>
-    <div class="col-lg-3">
+    
+    <div class="col-lg-3 order-1 order-md-2">
         <div class="seatnumber">
             <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$class}}" style="width:60px; display:block; margin:0 auto;">
             @if($customer->seat_no)

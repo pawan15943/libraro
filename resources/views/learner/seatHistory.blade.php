@@ -8,93 +8,61 @@
 </p>
 
 @foreach($seats as $seat)
-@php
-$usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',1)->get();
-if ($usersForSeat->isEmpty()) {
-$usersForSeat = App\Models\LearnerDetail::where('seat_no',$seat->seat_no)->where('status',0)->get();
-}
-@endphp
+    @if($seat->learners->count() > 0)
+        @foreach($seat->learners as $user)
+            @php
+                $learner = optional($user); // Already joined, can access fields directly
+                $planStatus = getPlanStatusDetails($user->plan_end_date);
+                $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
+            @endphp
 
-@if($usersForSeat->count() > 0)
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="seat-info bg-white">
+                        <div class="seat-no">
+                            <span>Seat No. : {{ $seat->seat_no }}</span>
+                            @if($operation == 'closeSeat')
+                                <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                            @elseif($operation == 'deleteSeat')
+                                <span class="extended"> Deleted Seat</span>
+                            @else
+                                {!! getUserStatusDetails($user->plan_end_date) !!}
+                            @endif
+                        </div>
 
-@foreach($usersForSeat as $user)
-@php
-$learner = myLearner($user->learner_id);
-$planStatus = getPlanStatusDetails($user->plan_end_date);
-@endphp
+                        <div class="seat-actions">
+                            <ul>
+                                <li><a href="{{ url('seats/history', $seat->seat_no) }}" class="w-auto px-2"><i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History</a></li>
+                            </ul>
+                        </div>
 
-<div class="row">
-    <div class="col-lg-12">
-        
-        <div class="seat-info bg-white">
-            <div class="seat-no">
-                <span>Seat No. : {{ $seat->seat_no }}</span>
-                
+                        <div class="seat-informarion">
+                            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                            <div class="information">
+                                <h4>{{ $learner->name ?? '' }} <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span></h4>
+                                <span>UID: <a href="{{ route('learners.show', $user->learner_id) }}">{{ $learner->learner_no ?? '' }}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? '' }}</a></span>
+                                <span class="d-block">E: <a href="mailto:{{ $learner->email ?? '' }}">{!! $learner->email ?? '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}</a></span>
+                            </div>
+                        </div>
 
-                @if(optional(getLearnerOperation($user->learner_detail_id))->operation == 'closeSeat')
-                    <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
-                @elseif(optional(getLearnerOperation($user->learner_detail_id))->operation == 'deleteSeat')
-                    <span class="extended"> Deleted Seat</span>
-                @else
-                    {!! getUserStatusDetails($user->plan_end_date) !!}
-                @endif
-            </div>
-
-            <div class="seat-actions">
-                <ul>
-                    <li><a href="{{ url('seats/history', $seat->seat_no) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Previous History" class="w-auto px-2"><i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History</a></li>
-                </ul>
-            </div>
-
-            <div class="seat-informarion">
-                <img src="{{ optional($learner)->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
-
-                <div class="information">
-                    <h4>{{ $learner->name ?? ''}}
-                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
-                    </h4>
-                    <span>UID: <a href="{{route('learners.show',$user->learner_id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? ''}}</a></span>
-                    <span class="d-block">
-                        E: 
-                        <a href="mailto:{{ optional($learner)->email }}">
-                            {!! optional($learner)->email ?? '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
-                        </a>
-                    </span>
+                        <div class="plan-info">
+                            <ul>
+                                <li><span>Plan</span><p>{{ optional(myPlan($user->plan_id))->name }}</p></li>
+                                <li><span>Plan Type</span><p>{{ optional(myPlanType($user->plan_type_id))->name }}</p></li>
+                                <li><span>Join On</span><p>{{ $user->join_date ?? '' }}</p></li>
+                                <li><span>Start On</span><p>{{ $user->plan_start_date ?? '' }}</p></li>
+                                <li><span>Ends On</span><p>{{ $user->plan_end_date ?? '' }}</p></li>
+                                <li><span>Payment</span><p>{{ $user->is_paid == 1 ? 'Paid' : 'Unpaid' }}</p></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="plan-info">
-                <ul>
-                    <li><span>Plan</span>
-                        <p>{{ optional(myPlan($user->plan_id))->name }}</p>
-                    </li>
-                    <li><span>Plan Type</span>
-                        <p>{{ optional(myPlanType($user->plan_type_id))->name }}</p>
-                    </li>
-                    <li><span>Join On</span>
-                        <p>{{ $user->join_date ?? ''}}</p>
-                    </li>
-                    <li><span>Start On</span>
-                        <p>{{ $user->plan_start_date ?? ''}}</p>
-                    </li>
-                    <li><span>Ends On</span>
-                        <p>{{ $user->plan_end_date ?? ''}}</p>
-                    </li>
-                    <li><span>Payment</span>
-                        @if(isset($user->is_paid) && $user->is_paid == 1)
-                        <p>Paid</p>
-                        @else
-                        <p>Unpaid</p>
-                        @endif
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
+        @endforeach
+    @endif
 @endforeach
-@endif
-@endforeach
+
 @if($finalGeneralLearners->count())
 @foreach($finalGeneralLearners as $user)
 @php

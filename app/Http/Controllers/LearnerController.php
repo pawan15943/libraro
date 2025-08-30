@@ -1692,34 +1692,28 @@ class LearnerController extends Controller
     public function seatHistory()
     {
 
-        $learners_seats =  Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-            ->where('learners.branch_id', getCurrentBranch())->get();
-
-
-        $today = Carbon::today();
+      $today = Carbon::today();
         $first_record = Hour::where('branch_id', getCurrentBranch())->first();
         $total_seats = $first_record ? $first_record->seats : 0;
 
         $seats = [];
 
         for ($seatNo = 1; $seatNo <= $total_seats; $seatNo++) {
-            // Fetch learners for each seat number
-            $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            // Fetch learners for this seat including trashed details
+            $learners = Learner::withTrashed()
+                ->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->where('learners.branch_id', getCurrentBranch())
                 ->where('learner_detail.seat_no', $seatNo)
                 ->select('learners.*', 'learner_detail.*')
                 ->get();
 
-            // Separate active and expired learners
             $activeLearners = $learners->where('status', 1);
             $expiredLearners = $learners->where('status', 0);
 
-            // Initialize seat info
             $seat = new \stdClass();
             $seat->seat_no = $seatNo;
+            $seat->learners = $activeLearners->isNotEmpty() ? $activeLearners : ($expiredLearners->isNotEmpty() ? $expiredLearners : collect());
 
-
-            // Determine seat status
             if ($activeLearners->isNotEmpty()) {
                 $seat->status = 'booked';
             } elseif ($expiredLearners->isNotEmpty()) {
@@ -1731,6 +1725,7 @@ class LearnerController extends Controller
             $seats[] = $seat;
         }
 
+
         $generalLearners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.branch_id', getCurrentBranch())
             ->whereNull('learner_detail.seat_no')
@@ -1740,8 +1735,9 @@ class LearnerController extends Controller
         $activeGeneral = $generalLearners->where('status', 1);
         $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
         $finalGeneralLearners = $activeGeneral->isNotEmpty() ? $activeGeneral : $expiredGeneral;
+       
          
-        return view('learner.seatHistory', ['learners_seats' => $learners_seats->toArray(), 'seats' => $seats,'finalGeneralLearners'=>$finalGeneralLearners]);
+        return view('learner.seatHistory', [ 'seats' => $seats,'finalGeneralLearners'=>$finalGeneralLearners]);
     }
     // public function history($id)
     // {
@@ -2059,6 +2055,9 @@ class LearnerController extends Controller
             $customer->seat_no = $seat_no;
             $customer->hours = $hours;
             $customer->status = $status;
+            if ($customer->trashed()) {
+                $customer->restore();
+            }
             if (!$customer->save()) {
                 throw new \Exception('Failed to update customer');
             }
@@ -3132,7 +3131,7 @@ class LearnerController extends Controller
     {
 
         $customer_detail_id = $request->id;
-        $customer = LearnerDetail::where('learner_detail.id', $customer_detail_id)->leftJoin('learner_transactions','learner_transactions.learner_detail_id','=','learner_detail.id')->with('learner', 'plan', 'plantype')->select('learner_detail.*','learner_transactions.token_money','learner_transactions.refund as pending_refund')->first();
+        $customer = LearnerDetail::withTrashed()->where('learner_detail.id', $customer_detail_id)->leftJoin('learner_transactions','learner_transactions.learner_detail_id','=','learner_detail.id')->with('learner', 'plan', 'plantype')->select('learner_detail.*','learner_transactions.token_money','learner_transactions.refund as pending_refund')->first();
         
         $tokenMoney = token_money();
         
