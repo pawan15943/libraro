@@ -2,6 +2,7 @@
 @section('content')
 
 @php
+
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class=$planDetails['class'];
 
@@ -42,7 +43,7 @@ $class=$planDetails['class'];
                 <h4 class="inner-heading">Other Payment</h4>
                 <div class="tip"><i class="fa-solid fa-gem pe-1"></i> Learners can request to change their current  seat to another available seat. If the requested seat is available, the learner’s current seat will be swapped with the
                  new one.</div>
-                <form action="{{route('learner.other.payment.store')}}" method="POST" enctype="multipart/form-data" id=""  class="payment_page">
+                <form action="{{route('learner.other.payment.store')}}" method="POST" enctype="multipart/form-data" id="other-payment_page"  class="payment_page">
                     @csrf
                     @method('POST')
                     <input id="learner_id" type="hidden" name="learner_id" value="{{ $customer->learner_id}}">
@@ -146,10 +147,13 @@ $(document).ready(function () {
        
         if (selected === 'token_money') {
             $('#fees').val(tokenMoney);
+            $('#fees').val(tokenMoney).prop('readonly', true); // ✅ readonly
         }else if (selected === 'pending_refund'){
+             $('#fees').val(pending_refund).prop('readonly', false); // editable
              $('#fees').val(pending_refund);
             
         } else {
+            $('#fees').val(pending_refund).prop('readonly', false); // editable
             $('#fees').val('');
         }
 
@@ -157,29 +161,7 @@ $(document).ready(function () {
     });
 });
 
-// $(document).ready(function () {
-//     // pass PHP value into JS
-//     var tokenMoneyExists = {{ $customer->token_money ?? 0 }};
 
-//     $('#payment_type').on('change', function () {
-//         let selected = $(this).val();
-//         var tokenMoney = $(this).data('token');
-//         if (selected === 'token_money') {
-//             $('#fees').val(tokenMoney);
-
-//             if (tokenMoneyExists > 0) {
-//                 // already paid → hide button
-//                 $('.button').hide();
-//             } else {
-//                 // not paid yet → allow payment
-//                 $('.button').show();
-//             }
-//         } else {
-//             $('#fees').val('');
-//             $('.button').show();
-//         }
-//     });
-// });
 
 
 </script>

@@ -11,6 +11,7 @@ use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerOperationsLog;
 use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use Illuminate\Http\Request;
 use DB;
 use Auth;
@@ -31,14 +32,14 @@ class ReportController extends Controller
     public function monthlyReport()
     {
        $query = LearnerDetail::withoutGlobalScopes()
+        ->leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')
         ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
         ->where('learner_detail.is_paid', 1)
         ->where('learner_detail.library_id',getLibraryId())
         ->selectRaw('
             YEAR(join_date) as year,
             MONTH(join_date) as month,
-            SUM(plan_price_id) as total_revenue,
-            SUM(plan_price_id / plans.plan_id) as monthly_revenue
+            SUM(paid_amount / plans.plan_id) as monthly_revenue
         ')
         ->groupBy('year', 'month');
 
@@ -56,22 +57,21 @@ class ReportController extends Controller
       
    
         foreach ($monthlyRevenues as $monthlyRevenue) {
-            // Fetch corresponding monthly expenses with MIN(id)
-            $monthlyExpenses = DB::table('monthly_expense')->where('library_id',getLibraryId())
-                ->selectRaw('MIN(id) as expense_id, year, month, SUM(amount) as total_expenses')
-                ->where('year', $monthlyRevenue->year)
-                ->where('month', $monthlyRevenue->month)
-                ->groupBy('year', 'month')
-                ->first();
+           $totals_monthly = LearnerTransactionActivity::selectRaw("
+                SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
+                SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr
+            ")
+            ->where('branch_id', getCurrentBranch())
+            ->whereYear('date', $monthlyRevenue->year)->whereMonth('date', $monthlyRevenue->month)
+            ->first();
             
 
             // Prepare the report data
             $reportData[] = [
                 'year' => $monthlyRevenue->year,
                 'month' => $monthlyRevenue->month,
-                'total_revenue' => $monthlyRevenue->total_revenue,
-                'id' => $monthlyExpenses->expense_id ?? null, 
-                'total_expenses' => $monthlyExpenses->total_expenses ?? 0, 
+                'total_revenue' => $totals_monthly->total_cr,
+                'total_expenses' => $totals_monthly->total_dr ?? 0, 
                 'monthly_revenue' => $monthlyRevenue->monthly_revenue, 
                 
             ];
@@ -82,7 +82,6 @@ class ReportController extends Controller
                 'year' =>date("Y"),
                 'month' => date("m"),
                 'total_revenue' => null,
-                'id' => null, 
                 'total_expenses' =>  0, 
                 'monthly_revenue' => 0, 
                 
@@ -483,24 +482,32 @@ class ReportController extends Controller
         $year = $request->get('year');
         $month = $request->get('month');
 
-        // Base query
-        $query =DB::table('learner_pending_transaction')->leftJoin('learners','learner_pending_transaction.learner_id','=','learners.id')->where('learners.library_id',getLibraryId())->select('learner_pending_transaction.*','learners.name','learners.email','learners.mobile','learners.seat_no');
+        $query = LearnerTransaction::withoutGlobalScopes()->leftJoin('learners', 'learner_transactions.learner_id', '=', 'learners.id')
+           ->where('learner_transactions.branch_id', getCurrentBranch())
+           ->whereNotNull('learner_transactions.due_date')
+            ->select(
+                'learner_transactions.due_date',
+                'learner_transactions.pending_amount',
+                'learners.name',
+                'learners.email',
+                'learners.mobile',
+                'learners.seat_no'
+            );
 
-        // Apply filters based on request
+        // Apply filters
         if ($year && $month) {
-            $query->whereYear('due_date', $year)->whereMonth('due_date', $month);
+            $query->whereYear('learner_transactions.due_date', $year)
+                ->whereMonth('learner_transactions.due_date', $month);
         } elseif ($year) {
-            $query->whereYear('due_date', $year);
+            $query->whereYear('learner_transactions.due_date', $year);
         } elseif ($month) {
-            $query->whereMonth('due_date', $month);
+            $query->whereMonth('learner_transactions.due_date', $month);
         }
 
-        // Filter by branch
-        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
-            $query->where('learners.branch_id', getCurrentBranch());
-        }
+       
 
         $learners = $query->get();
+
 
         return view('report.partial_payment_collection', compact('dynamicyears', 'dynamicmonths', 'learners'));
     }

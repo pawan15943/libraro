@@ -6,6 +6,7 @@
 use Carbon\Carbon;
 $currentYear = date('Y');
 $currentMonth = date('m');
+$transaction ='';
 @endphp
 
 @if (session('error'))
@@ -133,15 +134,17 @@ $currentMonth = date('m');
                 </thead>
 
                 <tbody>
+                   
                     @foreach($learners as $value)
                  
                     @php
-                 
+                  
                     $today = Carbon::today();
                     $endDate = Carbon::parse($value->plan_end_date);
                     $diffInDays = $today->diffInDays($endDate, false);
                     $inextendDate = $endDate->copy()->addDays($extendDay); // Preserving the original $endDate
-                    $diffExtendDay= $today->diffInDays($inextendDate, false)
+                    $diffExtendDay= $today->diffInDays($inextendDate, false);
+                    $transaction = learnerTransaction($value->learner_id, $value->id);
                     @endphp
 
                     <tr>
@@ -191,7 +194,14 @@ $currentMonth = date('m');
                         <td class="merged-display">
                             <ul class="actionalbls">
                             <!-- Make payment -->
-                            <li><a href="{{route('learner.payment',$value->id)}}" title="Payment Lerners" class="payment-learner"><i class="fas fa-credit-card"></i></a></li>
+                            <li>
+                                @if($transaction && $transaction->pending_amount > 0)
+                                
+                                 <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="payment-learner"><i class="fas fa-credit-card"></i></a>
+                                @else
+                                 <a href="{{route('learner.other.payment',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner" ><i class="fa-solid fa-money-bill"></i></a>
+                                @endif
+                            </li>
                             </ul>
                         </td>
                         <td class="merged-display">

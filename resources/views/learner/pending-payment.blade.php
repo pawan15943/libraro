@@ -67,7 +67,7 @@ $class=$planDetails['class'];
                             <div class="col-lg-6 col-6">
                                 <label for="">Pending Payment </label>
                                 <input id="for_pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    value="{{ $pendingPayment->pending_amount ?? '' }}" @readonly(true)>
+                                    value="{{ number_format($pendingPayment->pending_amount, 0) }}" @readonly(true)>
                                 <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
                             </div>
 
@@ -75,7 +75,7 @@ $class=$planDetails['class'];
                             <div class="col-lg-4 col-6">
                                 <label for="">Amount want to Pay <span>*</span></label>
                                 <input id="amount_to_pay" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    name="pending_amount" value="{{ $pendingPayment->pending_amount ?? '' }}">
+                                    name="pending_amount" value="{{ number_format($pendingPayment->pending_amount, 0) }}">
                                 <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
                             </div>
                             <div class="col-lg-4 col-6 due-date-wrapper">

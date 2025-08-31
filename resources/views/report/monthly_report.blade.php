@@ -37,10 +37,8 @@
                         <td class="text-success bold"><i class="fa fa-inr"></i> {{ number_format($value['monthly_revenue'] - $value['total_expenses'], 2) }}</td>
                         <td>
                             <ul class="actionalbls">
-                                <li>
-                                    <a href="{{ route('report.expense', ['year' => $value['year'], 'month' => $value['month']]) }}" title="Add Expense">
-                                        <i class="fas fa-plus"></i>
-                                    </a>
+                               <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense">
+                                    <a href="{{route('add.expense.list')}}"><i class="fa fa-plus fa-2x"></i></a>
                                 </li>
                             </ul>
                         </td>

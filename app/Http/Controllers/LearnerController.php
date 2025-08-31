@@ -674,10 +674,13 @@ class LearnerController extends Controller
         } else {
            
             // extra payment (pending dues)
-            $pending_amount = $diff_amount;
-            $refund = 0;
+            $pending_amount = $pending_amount ;
+            $refund = $diff_amount;
             $pending_refund = 0;
             $dr_cr='Cr';
+        }
+        if($pending_amount > 0){
+            return redirect()->back()->with('error', 'Due date is required');
         }
         
         if ($learnerTransaction) {
@@ -3086,9 +3089,16 @@ class LearnerController extends Controller
 
         ]);
         
+        
         $transaction = LearnerTransaction::where('id',$request->transaction_id)->first();
+
         if (!$transaction) {
             return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
+        }
+        
+        if(($transaction->pending_amount - $request->pending_amount) > 0 && !$request->due_date){
+          
+            return redirect()->back() ->with('error', ' Due date is required');
         }
         if($request->due_date){
             $due_dat=$request->due_date;
@@ -3149,7 +3159,7 @@ class LearnerController extends Controller
 
         try {
             // Step 2: Find transaction record
-            $transaction = LearnerTransaction::where('learner_id', $request->learner_id)->first();
+            $transaction = LearnerTransaction::withTrashed()->where('learner_id', $request->learner_id)->first();
 
             if (!$transaction) {
                 return redirect()->back()->with('error', 'Learner transaction record not found.');
