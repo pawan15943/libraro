@@ -660,6 +660,7 @@ class LearnerController extends Controller
         $pending_amount = $request->input('pending_amount');
         $diff_amount    = $request->input('diffrence_amount');
 
+        
         $refund = 0;
         $pending_refund = 0;
 
@@ -674,7 +675,7 @@ class LearnerController extends Controller
         } else {
            
             // extra payment (pending dues)
-            $pending_amount = $pending_amount ;
+            $pending_amount = $pending_amount ?? 0;
             $refund = $diff_amount;
             $pending_refund = 0;
             $dr_cr='Cr';
