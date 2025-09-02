@@ -5,21 +5,23 @@
 
 <div class="row">
     <div class="col-lg-12 text-end">
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
 
         @can('has-permission', 'Export Library Seats')
         @if(!in_array('22', toggleHideField()))
-        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Export Learners Data to CSV"><i class="fa-solid fa-file-export"></i></a>
         @endif
         @endcan
         @can('has-permission', 'Import Library Seats')
         @if(!in_array('11', toggleHideField()))
-        <a href="{{ route('library.upload.form') }}" class="btn btn-primary export bg-4"><i class="fa-solid fa-file-import"></i> Import Learners Data to Portal</a>
+        <a href="{{ route('library.upload.form') }}" class="btn btn-primary export bg-4" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Import Learners Data to Portal"><i class="fa-solid fa-file-import"></i></a>
         @endif
         @endcan
     </div>
 </div>
 @can('has-permission', 'Filter')
-<div class="row mb-3">
+<div class="row mb-3" id="filterContainer">
     <div class="col-lg-12">
         <div class="filter p-3 bg-white">
             <h4><i class="fa fa-filter"></i> Filter Learners</h4>
@@ -88,7 +90,7 @@
 </div>
 @endcan
 @if(!in_array('24', toggleHideField()))
-<div class="col-lg-12 mb-4">
+<div class="col-lg-12 mb-4" id="countsContainer">
     <div class="records">
 
         <p class="mb-2 text-dark"><b>Total Seats : {{$total_seats}} | Available Seats : {{$availble_seats}} | Booked Seats: {{$booked_seats}} | General Seats: {{$genral_seat ?? 0}}</b></p>
