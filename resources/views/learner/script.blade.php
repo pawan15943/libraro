@@ -1461,7 +1461,7 @@
                 Swal.showValidationMessage('Please enter a valid refund amount');
                 return false;
             }
-            if (isRefund && (!pendingRefund || pendingRefund <= 0)) {
+            if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
                 Swal.showValidationMessage('Please enter a valid pending refund amount');
                 return false;
             }
@@ -1568,9 +1568,14 @@
                 const isRefund = $('.isRefund').is(':checked');
                 const refundAmount = $('.refundAmount').val();
                 const remark = $('.refundRemark').val();
+                 const pendingRefund = $('.pendingRefund').val();
 
                 if (isRefund && (!refundAmount || refundAmount <= 0)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
+                    return false;
+                }
+                if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
+                    Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
 
