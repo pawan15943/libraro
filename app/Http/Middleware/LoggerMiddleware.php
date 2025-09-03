@@ -42,7 +42,7 @@ class LoggerMiddleware
 
     protected function logAction($request, $response, $user)
     {
-        Log::info('logAction method triggered'); // Debugging line
+        // Log::info('logAction method triggered'); 
 
         try {
             DB::table('library_activity_log')->insert([
@@ -56,7 +56,7 @@ class LoggerMiddleware
                 'request_body' => json_encode($request->all()),
             ]);
 
-            Log::info('Action successfully logged');
+            // Log::info('Action successfully logged');
         } catch (\Exception $e) {
             Log::error('Failed to log action: ' . $e->getMessage());
         }
@@ -64,22 +64,22 @@ class LoggerMiddleware
 
     protected function logSuccess($request, $response)
     {
-        Log::info('Action successful from middleware', [
-            'user_id' => Auth::id(),
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-            'status_code' => method_exists($response, 'getStatusCode') ? $response->getStatusCode() : 1, // Use getStatusCode()
-        ]);
+        // Log::info('Action successful from middleware', [
+        //     'user_id' => Auth::id(),
+        //     'method' => $request->method(),
+        //     'url' => $request->fullUrl(),
+        //     'status_code' => method_exists($response, 'getStatusCode') ? $response->getStatusCode() : 1, // Use getStatusCode()
+        // ]);
     }
 
     protected function logFailure($request, $exception)
     {
-        Log::error('Action failed from middleware', [
-            'user_id' => Auth::id(),
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-            'error_message' => $exception->getMessage(),
-        ]);
+        // Log::error('Action failed from middleware', [
+        //     'user_id' => Auth::id(),
+        //     'method' => $request->method(),
+        //     'url' => $request->fullUrl(),
+        //     'error_message' => $exception->getMessage(),
+        // ]);
     }
 }
 

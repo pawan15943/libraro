@@ -180,7 +180,7 @@ class LibraryController extends Controller
                 $library->email_otp = $otp;
                 $library->save();
                  \Log::info('sendVerificationEmail');
-                // $this->sendVerificationEmail($library);
+                $this->sendVerificationEmail($library);
                 session(['library_email' => $library->email]);
 
                 return redirect()->route('verification.notice')
@@ -760,7 +760,7 @@ class LibraryController extends Controller
                 $library->library_no = $libraryCode;
                 $library->save();
                  \Log::info('sendSuccessfulEmail');
-                //  $this->sendSuccessfulEmail($library);
+                 $this->sendSuccessfulEmail($library);
             }
         }
         

@@ -52,7 +52,7 @@ if (!function_exists('decryptData')) {
         $IV = substr(md5($key), 0, $iv_size);
         $data = str_replace([" ", "*"], ["+", "/"], $data);
         $decrypted = openssl_decrypt($data, $cipher, $key, 0, $IV);
-        \Log::info("Decryption Successful: " . $data . " → " . $decrypted);
+        // \Log::info("Decryption Successful: " . $data . " → " . $decrypted);
         return $decrypted;
     }
 }
@@ -67,7 +67,7 @@ if (!function_exists('getLibraryData')) {
     function getLibraryData()
     {
         $id = Session::get('selected_library_id');
-        \Log::info("selected_library_id " . $id);
+        // \Log::info("selected_library_id " . $id);
         if (!$id) {
             return null; // No library selected
         }
