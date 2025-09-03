@@ -20,7 +20,7 @@
                         <div class="row g-4">
 
                             {{--Seat Concept======================================================================  --}}
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
 
@@ -30,7 +30,7 @@
                                 </select>
                             </div>
                             {{-- Show Only Available Slots or Seat No. --}}
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
@@ -45,13 +45,13 @@
                                 <label for="">Full Name <span>*</span></label>
                                 <input type="text" class="form-control char-only" name="name" id="name">
                             </div>
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="">Mobile Number <span>*</span></label>
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
 
                             @if(!in_array('2', toggleHideField()))
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="">DOB </label>
                                 <input type="date" class="form-control dob" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
                             </div>
@@ -64,7 +64,7 @@
                             </div>
                             @endif
 
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id3" class="form-select" name="plan_id">
 
@@ -75,7 +75,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Type / Shift <span>*</span></label>
                                 <select id="plan_type_id" class="form-select" name="plan_type_id">
                                     <option value="">Choose</option>
@@ -83,7 +83,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
                                 <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
                             </div>
@@ -111,7 +111,7 @@
                                 </div>
                                 @endif
                                 @if(!in_array('6', toggleHideField()))
-                                <div class="col-lg-6 col-6">
+                                <div class="col-lg-6">
                                     <label for="discountType">Discount Type</label>
                                     <select id="discountType" class="form-select" name="discountType">
                                         <option value="">Discount Type</option>
@@ -119,7 +119,7 @@
                                         <option value="percentage">Percentage</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-6 col-6">
+                                <div class="col-lg-6">
                                     <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
                                     <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
                                 </div>
@@ -127,20 +127,20 @@
                             </div>
                         </div>
                         <div class="row g-4 mt-0">
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
                                 <span id="pending_amt" class="text-danger"></span>
                             </div>
 
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Choose Due Date<span>*</span></label>
                                 <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
                             </div>
 
 
 
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select">
                                     <option value="">Choose</option>
@@ -292,15 +292,15 @@
                         <h4 class="mt-4 mb-3">Current Plan Info</h4>
                         <div class="row g-3">
                             <!-- Plan Info -->
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Select Plan <span>*</span></label>
                                 <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)></select>
                             </div>
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Type <span>*</span></label>
                                 <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)></select>
                             </div>
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Price <span>*</span></label>
                                 <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id" readonly>
                             </div>
@@ -314,19 +314,19 @@
                         <div style="display: none;" class="mb-3 idProofFields1">
                             @if(!in_array('3', toggleHideField()))
                             <div class="row g-4">
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="locker">Locker?</label>
                                 <select name="locker" id="locker" class="form-select">
                                     <option value="no">No</option>
                                     <option value="yes">Yes, I Need a Locker</option>
                                 </select>
                             </div>
-                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="">Locker Amount <span>*</span></label>
                                 <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
 
                                 </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
                                     <label for="locker_no">Locker No.</label>
                                     <input type="text" class="form-control digit-only" name="locker_no" id="locker_no2" placeholder="Enter Locker No." readonly>
                                 </div>
@@ -336,7 +336,7 @@
 
                             @if(!in_array('6', toggleHideField()))
                             <div class="row g-3 mt-2">
-                                <div class="col-lg-6 col-6">
+                                <div class="col-lg-6">
                                     <label for="discount_type">Discount Type</label>
                                     <select id="discount_type" class="form-select" name="discountType">
                                         <option value="">Select Discount Type</option>
@@ -344,7 +344,7 @@
                                         <option value="percentage">Percentage</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-6 col-6">
+                                <div class="col-lg-6">
                                     <label for="discount_amount">Discount Amount ( <span id="typeVal2">INR / %</span> )</label>
                                     <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" value="">
                                 </div>

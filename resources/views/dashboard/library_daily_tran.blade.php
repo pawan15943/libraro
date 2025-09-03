@@ -6,7 +6,11 @@
 use Carbon\Carbon;
 
 @endphp
-
+<div class="row">
+    <div class="col-lg-12 text-end">
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
+    </div>
+</div>
 
 <div class="row g-4">
     @if(request('type') === 'today_collection' || request('type') === 'today_other_collection' ||  request('type') === 'today_refund' ||  request('type') === 'today_pending'  || request('type') === 'today_balance' )
@@ -88,7 +92,7 @@ use Carbon\Carbon;
 </div>
 <!-- Fileter Layout -->
 @if(request('type') != 'monthly_balance' )
-<div class="filter p-3 bg-white mt-4">
+<div class="filter p-3 bg-white mt-4" id="filterContainer">
     <h4><i class="fa fa-filter"></i> Filter </h4>
     <form method="GET" action="{{ route('library.transaction.view') }}">
         <input type="hidden" name="type" value="{{request('type')}}">

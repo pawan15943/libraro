@@ -7,8 +7,15 @@
 $current_route = Route::currentRouteName();
 @endphp
 
+<div class="row">
+    <div class="col-lg-12 text-end">
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
+    </div>
+</div>
+
+
 @can('has-permission', 'Filter')
-<div class="row mb-3">
+<div class="row mb-3" id="filterContainer">
     <div class="col-lg-12">
         <div class="filter p-3 bg-white">
             <h4><i class="fa fa-filter"></i> Filter Learners</h4>
@@ -54,7 +61,7 @@ $current_route = Route::currentRouteName();
                         <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email"
                             value="{{ request()->get('search') }}">
                     </div>
-                
+
 
                     <div class="col-lg-3 align-self-end">
                         <button class="btn btn-primary button">
@@ -77,15 +84,15 @@ $planStatus = getPlanStatusDetails($value->plan_end_date);
 $transaction = learnerTransaction($value->id, $value->learner_detail_id);
 
 if ($transaction && isset($transaction->pending_amount)) {
-    $due_date = DB::table('learner_pending_transaction')
-        ->where('learner_id', $value->id)
-        ->where('status', 0)
-        ->where('pending_amount', $transaction->pending_amount)
-        ->select('due_date')
-        ->first();
-    $due_date = $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : null;
+$due_date = DB::table('learner_pending_transaction')
+->where('learner_id', $value->id)
+->where('status', 0)
+->where('pending_amount', $transaction->pending_amount)
+->select('due_date')
+->first();
+$due_date = $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : null;
 } else {
-    $due_date = null;
+$due_date = null;
 }
 
 
@@ -94,31 +101,31 @@ if ($transaction && isset($transaction->pending_amount)) {
     <div class="col-lg-12">
         <div class="seat-info bg-white">
             <div class="seat-no">
-              
+
                 @if($value->seat_no )
                 <span> Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
                 @else
                 <span>Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
                 @endif
                 @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
-                    <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
-                    <span class="extended"> Deleted Seat</span>
+                <span class="extended"> Deleted Seat</span>
                 @else
-                    {!! getUserStatusDetails($value->plan_end_date) !!}
+                {!! getUserStatusDetails($value->plan_end_date) !!}
                 @endif
             </div>
             <div class="seat-actions">
                 <ul>
-                    
+
                     @can('has-permission', 'Reactive Seat')
-                    <li ><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2" ></i> Reactivate Seat</a></li>          
-                    @endcan 
-                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li> 
+                    <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2"></i> Reactivate Seat</a></li>
+                    @endcan
+                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li>
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
                     <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
-                    @endcan            
+                    @endcan
                 </ul>
             </div>
 
@@ -178,10 +185,10 @@ if ($transaction && isset($transaction->pending_amount)) {
                             <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
                                 @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{ $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : 'N/A' }}
-)</span>
+                                    )</span>
                                 @else
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?"> {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{ $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : 'N/A' }}
-)</span>
+                                    )</span>
                                 @endif
                             </a>
 
@@ -193,9 +200,9 @@ if ($transaction && isset($transaction->pending_amount)) {
                     <li>
                         <span>Locker</span>
                         @if(optional($transaction)->locker_amount)
-                            <p>Yes – #{{ $transaction->locker_amount }} Paid</p>
+                        <p>Yes – #{{ $transaction->locker_amount }} Paid</p>
                         @else
-                            <p>No</p>
+                        <p>No</p>
                         @endif
 
 
@@ -208,7 +215,7 @@ if ($transaction && isset($transaction->pending_amount)) {
 @endforeach
 
 {{-- Pagination --}}
- @if ($learnerHistory->lastPage() > 1)
+@if ($learnerHistory->lastPage() > 1)
 <ul class="paginations">
     {{-- Prev Button --}}
     <li>
@@ -239,7 +246,7 @@ if ($transaction && isset($transaction->pending_amount)) {
 <script>
     $(document).on('click', '.delete-customer', function() {
         var id = $(this).data('id');
-        var url = '{{ route('learners.destroy', ': id ') }}';
+        var url = '{{ route('learners.destroy', ':id') }}';
         url = url.replace(':id', id);
 
         Swal.fire({
@@ -300,7 +307,7 @@ if ($transaction && isset($transaction->pending_amount)) {
 <script>
     $(document).on('click', '.link-close-plan', function() {
         const learner_id = this.getAttribute('data-id');
-        var url = '{{ route('learners.close') }}'; // Adjust the route as necessary
+        var url = '{{ route( 'learners.close' ) }}'; // Adjust the route as necessary
 
         Swal.fire({
             title: 'Are you sure?',

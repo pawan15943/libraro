@@ -431,6 +431,23 @@
             [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
         });
     </script>
+
+    <script>
+        $(document).ready(function() {
+            $('#filterContainer').hide(); // Initially hide the filter container
+            $('#countsContainer').hide(); // Initially hide the counts container
+
+            $('#filter').on('click', function(e) {
+                e.preventDefault(); // Prevent default action
+                $('#filterContainer').toggle(); // Toggle visibility
+            });
+
+            $('#counts').on('click', function(e) {
+                e.preventDefault(); // Prevent default action
+                $('#countsContainer').toggle(); // Toggle visibility
+            });
+        });
+        </script>
 </body>
 
 </html>
