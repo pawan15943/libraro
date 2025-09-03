@@ -83,7 +83,7 @@ class LoginController extends Controller
                             $user->email_otp = $otp;
                             $user->save();
                              \Log::info('sendVerificationEmail LoginController');
-                            $this->sendVerificationEmail($user);
+                            // $this->sendVerificationEmail($user);
                             session()->flash('library_email', $user->email);
                         }
                         return redirect()->route('verification.notice')->with('email', $user->email);
