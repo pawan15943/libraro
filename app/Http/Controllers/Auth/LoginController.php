@@ -64,6 +64,7 @@ class LoginController extends Controller
                 if (Auth::guard('web')->attempt($credentials, $remember)) {
                     return redirect()->intended(route('home'));
                 } else {
+                    // re-direct to learner login 
                     return redirect()->back()->withErrors(['error' => 'Invalid email or password for Superadmin.']);
                 }
                 break;
@@ -83,7 +84,7 @@ class LoginController extends Controller
                             $user->email_otp = $otp;
                             $user->save();
                              \Log::info('sendVerificationEmail LoginController');
-                            // $this->sendVerificationEmail($user);
+                             $this->sendVerificationEmail($user);
                             session()->flash('library_email', $user->email);
                         }
                         return redirect()->route('verification.notice')->with('email', $user->email);
