@@ -455,7 +455,7 @@ class SiteController extends Controller
         unset($data['terms']);
         DB::table('lp_lead')->insert($data);
          \Log::info('landingPageSuccessMail');
-        // $this->landingPageSuccessMail($data);
+        $this->landingPageSuccessMail($data);
        
         return response()->json([
             'status' => 'success',

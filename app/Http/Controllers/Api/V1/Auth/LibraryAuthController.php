@@ -306,15 +306,15 @@ class LibraryAuthController extends Controller
 
         try {
             \Log::info('Forgot email');
-            // Mail::send('email.forgot-password', [
-            //     'token' => $token,
-            //     'email' => $user->email,
-            //     'name' => $user->name,
-            //     'resetLink'=>'link'
-            // ], function ($message) use ($user) {
-            //     $message->to($user->email)
-            //             ->subject('Reset Your Account Password');
-            // });
+            Mail::send('email.forgot-password', [
+                'token' => $token,
+                'email' => $user->email,
+                'name' => $user->name,
+                'resetLink'=>'link'
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Reset Your Account Password');
+            });
 
             return response()->json([
                 'status' => true,
