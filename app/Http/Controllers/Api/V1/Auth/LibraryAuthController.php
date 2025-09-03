@@ -90,11 +90,12 @@ class LibraryAuthController extends Controller
                 'email' => $library->email,
                 'otp' => $otp,
             ];
+             \Log::info('Verify Your Email Address');
 
-            Mail::send('email.verify-email', $data, function ($message) use ($data) {
-                $message->to($data['email'], $data['name'])
-                        ->subject('Verify Your Email Address');
-            });
+            // Mail::send('email.verify-email', $data, function ($message) use ($data) {
+            //     $message->to($data['email'], $data['name'])
+            //             ->subject('Verify Your Email Address');
+            // });
 
             return response()->json([
                 'status' => true,
@@ -304,15 +305,16 @@ class LibraryAuthController extends Controller
         );
 
         try {
-            Mail::send('email.forgot-password', [
-                'token' => $token,
-                'email' => $user->email,
-                'name' => $user->name,
-                'resetLink'=>'link'
-            ], function ($message) use ($user) {
-                $message->to($user->email)
-                        ->subject('Reset Your Account Password');
-            });
+            \Log::info('Forgot email');
+            // Mail::send('email.forgot-password', [
+            //     'token' => $token,
+            //     'email' => $user->email,
+            //     'name' => $user->name,
+            //     'resetLink'=>'link'
+            // ], function ($message) use ($user) {
+            //     $message->to($user->email)
+            //             ->subject('Reset Your Account Password');
+            // });
 
             return response()->json([
                 'status' => true,

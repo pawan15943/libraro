@@ -179,8 +179,8 @@ class LibraryController extends Controller
                 $otp = Str::random(6); 
                 $library->email_otp = $otp;
                 $library->save();
-                
-                $this->sendVerificationEmail($library);
+                 \Log::info('sendVerificationEmail');
+                // $this->sendVerificationEmail($library);
                 session(['library_email' => $library->email]);
 
                 return redirect()->route('verification.notice')
@@ -238,7 +238,7 @@ class LibraryController extends Controller
 
     public function sendVerificationEmail($library)
     {
-       
+        \Log::info('sendVerificationEmail');
         // Prepare the data to send to the email view
         $data = [
             'name' => $library->library_name,
@@ -759,7 +759,8 @@ class LibraryController extends Controller
                 $libraryCode = $this->generateLibraryCode();
                 $library->library_no = $libraryCode;
                 $library->save();
-                 $this->sendSuccessfulEmail($library);
+                 \Log::info('sendSuccessfulEmail');
+                //  $this->sendSuccessfulEmail($library);
             }
         }
         
@@ -930,6 +931,7 @@ class LibraryController extends Controller
     public function sendSuccessfulEmail($library)
     {
         // Prepare the data to send to the email view
+         \Log::info('sendSccessfulEmail');
         $data = [
             'name' => $library->library_name,
             'email' => $library->email,
