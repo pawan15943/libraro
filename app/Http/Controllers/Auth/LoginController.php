@@ -64,7 +64,7 @@ class LoginController extends Controller
                 if (Auth::guard('web')->attempt($credentials, $remember)) {
                     return redirect()->intended(route('home'));
                 } else {
-                    // re-direct to learner login 
+                    // re-direct to learner login 2
                     return redirect()->back()->withErrors(['error' => 'Invalid email or password for Superadmin.']);
                 }
                 break;
@@ -80,7 +80,7 @@ class LoginController extends Controller
                         
                         Auth::guard('library')->logout();
                         if ($user) {
-                            $otp = rand(100000, 999999); // Generates a 6-digit numeric OTP
+                            $otp = rand(100000, 999999); // Generates a 6-digit numeric OTP 2
                             $user->email_otp = $otp;
                             $user->save();
                              \Log::info('sendVerificationEmail LoginController');
