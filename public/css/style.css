@@ -29,7 +29,7 @@ input[type="file"].form-control {
     border: 1px solid #ced4da;
     border-radius: 0.375rem;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    height: 45px;
+    height: 38px;
 }
 
 /* Hover effect */
@@ -281,9 +281,9 @@ a.go-back {
 .detailes select,
 .detailes textarea {
     font-size: .9rem !important;
-    height: 45px;
+    height: 38px;
     font-weight: 600 !important;
-    border-radius: .6rem !important;
+    border-radius: .4rem !important;
 }
 
 .modal-content {
@@ -462,17 +462,17 @@ span {
 
 .form-control,
 input[type="submit"] {
-    height: 45px !important;
+    height: 38px !important;
     border-color: #dcdcdc;
     font-size: .85rem;
-    border-radius: .6rem !important;
+    border-radius: .4rem !important;
 }
 
 select {
     font-size: .85rem;
     font-weight: 600;
-    height: 45px;
-    border-radius: .6rem !important;
+    height: 48px;
+    border-radius: .4rem !important;
 }
 
 .btn {
@@ -1387,7 +1387,7 @@ span.timestamp {
 }
 
 .master-form.mt-3>ul>li {
-    padding: .6rem 1rem;
+    padding: .4rem 1rem;
     background: var(--c5);
     border-radius: .5rem;
 }
@@ -2206,24 +2206,18 @@ span {
     width: 100%;
     background: var(--c1) !important;
     color: #fff !important;
-    border-radius: .6rem !important;
+    border-radius: .4rem !important;
 }
 
-
-.form-control,
-input[type="submit"] {
-    height: 45px !important;
-    border-color: #dcdcdc;
-}
 
 select {
     font-size: .9rem;
     font-weight: 600;
-    height: 45px;
+    height: 38px;
 }
 
 .btn {
-    height: 45px !important;
+    height: 38px !important;
     box-shadow: var(--bs-1);
     border: none;
 }
@@ -2583,7 +2577,7 @@ ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li {
 
 ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li {
     padding: .8rem 1rem;
-    border-radius: .6rem;
+    border-radius: .4rem;
     /* margin-left: 1.5rem; */
     background: #ffffff1a;
 }
@@ -3322,7 +3316,7 @@ span.timestamp {
 }
 
 .master-form.mt-3>ul>li {
-    padding: .6rem 1rem;
+    padding: .4rem 1rem;
     background: var(--c5);
     border-radius: .5rem;
 }
@@ -3997,7 +3991,7 @@ ul.revenue-box {
 
 .seat-statistics .d-flex a.book {
     background: var(--c1);
-    padding: .1rem .6rem;
+    padding: .1rem .4rem;
     text-decoration: none;
     color: var(--c5);
     border-radius: 1rem;
@@ -4257,7 +4251,7 @@ a.btn.btn-primary.export {
     background: var(--c1);
     height: auto ! IMPORTANT;
     border-radius: .3rem;
-    padding: .4rem .6rem;
+    padding: .4rem .4rem;
     margin-bottom: 1rem;
     display: inline-block;
     font-size: .8rem;

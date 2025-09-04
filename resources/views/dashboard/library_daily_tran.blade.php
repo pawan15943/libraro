@@ -12,39 +12,39 @@ use Carbon\Carbon;
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-2">
     @if(request('type') === 'today_collection' || request('type') === 'today_other_collection' ||  request('type') === 'today_refund' ||  request('type') === 'today_pending'  || request('type') === 'today_balance' )
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_booking_amt)}}</h4>
             <span>Today's Booking Income (A)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_other_amt)}}</h4>
             <span>Today's Other Income (Token, Misc.) (B)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_expense)}}</h4>
             <span>Today's Expenses (C)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_refund)}}</h4>
             <span>Today’s Refunds (D)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($today_pending)}}</h4>
             <span>Today’s Pending Receipts (E)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($total_revenue)}}</h4>
             <span>Today’s Total Revenue (A + B + E - (C +D))</span>
@@ -52,37 +52,37 @@ use Carbon\Carbon;
     </div>
     @else
 
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($monthly_income)}}</h4>
             <span>Monthly Booking Income (A)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($other_total_income)}}</h4>
             <span>Monthly Other Income (Token, Misc.) (B)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($monthly_expense)}}</h4>
             <span>Monthly Expenses (C)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($monthly_refund)}}</h4>
             <span>Monthly Refunds (D)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($monthly_pending)}}</h4>
             <span>Monthly Pending Receipts (E)</span>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-6">
+    <div class="col-lg-2 col-md-6 col-6">
         <div class="revenue-box">
             <h4>{{number_format($monthlyBalance)}}</h4>
             <span>Monthly Total Revenue (A + B + E - (C +D))</span>
@@ -96,7 +96,7 @@ use Carbon\Carbon;
     <h4><i class="fa fa-filter"></i> Filter </h4>
     <form method="GET" action="{{ route('library.transaction.view') }}">
         <input type="hidden" name="type" value="{{request('type')}}">
-        <div class="row g-4">
+        <div class="row g-2">
             @if(request('type') === 'today_expense' || request('type') === 'monthly_expense' )
             <div class="col-lg-4">
                 <label>Choose Expense Type</label>
@@ -171,7 +171,7 @@ use Carbon\Carbon;
         </p>
     </div>
 </div>
-<div class="row g-4 mb-4">
+<div class="row g-2 mb-4">
     
     @forelse ($collection as $data)
     @if($collection->isNotEmpty())
@@ -266,7 +266,7 @@ use Carbon\Carbon;
         </p>
     </div>
 </div>
-<div class="row g-4 mb-4">
+<div class="row g-2 mb-4">
     
     @forelse ($collection as $data)
     @if($collection->isNotEmpty())
@@ -391,7 +391,7 @@ use Carbon\Carbon;
 <!-- Monthly Block Starts here -->
 @if(request('type') === 'monthly_balance' )
 
-<div class="row g-4 mt-4 mb-4">
+<div class="row g-2 mt-4 mb-4">
     <!-- Loop -->
     @foreach($monthly_balance  as $row)
   
