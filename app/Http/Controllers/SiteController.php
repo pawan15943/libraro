@@ -454,6 +454,7 @@ class SiteController extends Controller
         $data = $validator->validated();
         unset($data['terms']);
         DB::table('lp_lead')->insert($data);
+         \Log::info('landingPageSuccessMail');
         $this->landingPageSuccessMail($data);
        
         return response()->json([

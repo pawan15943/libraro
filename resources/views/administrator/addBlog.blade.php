@@ -14,8 +14,7 @@
                 id="page_title" 
                 name="page_title" 
                 class="form-control @error('page_title') is-invalid @enderror" 
-                value="{{ old('page_title', $page->page_title ?? '') }}"
-                onkeyup="generateSlug()" >
+                value="{{ old('page_title', $data->page_title ?? '') }}" onkeyup="generateSlug()" >
                 <small>Blog URL : </small>
             @error('page_title')
                 <span class="invalid-feedback" role="alert">
@@ -26,7 +25,7 @@
     
         <div class="col-lg-12 mb-4">
             <label for="page_slug">Page Slug</label>
-            <input  id="page_slug" name="page_slug" class="form-control"value="{{ old('page_slug', $page->page_slug ?? '') }}" >
+            <input  id="page_slug" name="page_slug" class="form-control"value="{{ old('page_slug', $data->page_slug ?? '') }}" >
         </div>
     
         <div class="col-lg-12 mb-4">
@@ -130,16 +129,14 @@
             <label for="categories_id">Select Categories</label>
             <select name="categories_id[]" id="categories_id" class="form-control" multiple>
                 @foreach($categories as $category)
-                    <option 
-                        value="{{ $category->id }}" 
-                        >
+                    <option value="{{ $category->id }}" >
                         {{ $category->name }}
                     </option>
                 @endforeach
             </select>
         </div>
 
-        <!-- Header Image -->
+            <!-- Header Image -->
         <div class="col-lg-12 mb-4">
             <label for="header_image">Header Image</label>
             <input 
@@ -147,12 +144,15 @@
                 id="header_image" 
                 name="header_image" 
                 class="form-control @error('header_image') is-invalid @enderror">
+
+
             @error('header_image')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
                 </span>
             @enderror
         </div>
+
         <div class="col-lg-3">
             <button type="submit" class="btn btn-primary button">
                 {{ isset($data) ? 'Update' : 'Save' }}

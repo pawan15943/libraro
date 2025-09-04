@@ -90,11 +90,12 @@ class LibraryAuthController extends Controller
                 'email' => $library->email,
                 'otp' => $otp,
             ];
+             \Log::info('Verify Your Email Address');
 
-            Mail::send('email.verify-email', $data, function ($message) use ($data) {
-                $message->to($data['email'], $data['name'])
-                        ->subject('Verify Your Email Address');
-            });
+            // Mail::send('email.verify-email', $data, function ($message) use ($data) {
+            //     $message->to($data['email'], $data['name'])
+            //             ->subject('Verify Your Email Address');
+            // });
 
             return response()->json([
                 'status' => true,
@@ -304,6 +305,7 @@ class LibraryAuthController extends Controller
         );
 
         try {
+            \Log::info('Forgot email');
             Mail::send('email.forgot-password', [
                 'token' => $token,
                 'email' => $user->email,
