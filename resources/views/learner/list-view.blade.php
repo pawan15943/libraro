@@ -115,7 +115,9 @@
                                     Inactive <small>{{isset($learner_detail) && $learner_detail->is_paid==1 ? 'Paid' : 'Unpaid'}}</small><br>{{$operationDetails['operation_type']}}
                                 @endif
                                 <br>
+                                @if($learner_detail)
                                 {!! getUserStatusWithSpan($learner_detail->plan_end_date,$learner->id) !!}
+                                @endif
                                    
                             </td>
                             

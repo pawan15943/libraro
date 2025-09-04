@@ -784,6 +784,7 @@ class DashboardController extends Controller
         $monthly_refund  = $this->formatNumber($monthly_refund);
         $monthly_expense = $this->formatNumber($monthlyExpense);
         $monthly_balance= $this->formatNumber($monthlyBalance);
+        $monthly_pending= $this->formatNumber($monthly_pending);
         
         return response()->json([
             'highlights' => [
