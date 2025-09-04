@@ -3096,6 +3096,7 @@ class LearnerController extends Controller
         if (!$transaction) {
             return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
         }
+       
         
         if(($transaction->pending_amount - $request->pending_amount) > 0 && !$request->due_date){
           
