@@ -861,6 +861,29 @@ section.blog-header {
     padding: 5rem 0;
 }
 
+/* Blog UI */
+.blog-content .container ul 
+{
+    display: flex;
+    list-style: none;
+    gap: .5rem;
+    padding: 0;
+}
+
+.blog-content .container ul li {
+    background: linear-gradient(45deg, #3eb1ac, #00BCD4) !important;
+    padding: .2rem .5rem;
+    border-radius: 2rem;
+    font-size: .8rem;
+    color: #fff;
+}
+
+.blog-content .container ul li {
+    background: #dedede;
+    padding: .05rem .5rem;
+    border-radius: 2rem;
+    font-size: .8rem;
+}
 
 section.blog-header h1 {
     color: #fff;
@@ -878,8 +901,6 @@ section.blog-header h1 {
 .blog-content h5,
 .blog-content h6 {
     font-weight: bold;
-    margin-top: 20px;
-    margin-bottom: 10px;
     color: #333;
 }
 

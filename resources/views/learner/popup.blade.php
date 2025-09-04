@@ -17,7 +17,7 @@
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no"
                             autocomplete="off">
 
-                        <div class="row g-4">
+                        <div class="row g-3">
 
                             {{--Seat Concept======================================================================  --}}
                             <div class="col-lg-6">
@@ -92,7 +92,7 @@
                         </div>
                         <h4 class="my-3">Your Plan Addon's <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i></h4>
                         <div class="idProofFields1">
-                            <div class="row g-4">
+                            <div class="row g-3">
                                 @if(!in_array('3', toggleHideField()))
                                 <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
                                     <label for="toggleFieldCheckbox">Need a Locker ?</label>
@@ -126,7 +126,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="row g-4 mt-0">
+                        <div class="row g-3 mt-0">
                             <div class="col-lg-4">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
@@ -181,7 +181,7 @@
                         </h4>
 
                         <div id="idProofFields" style="display: none;">
-                            <div class="row g-4">
+                            <div class="row g-3">
                                 
 
                                 @if(!in_array('5', toggleHideField()))
@@ -313,7 +313,7 @@
 
                         <div style="display: none;" class="mb-3 idProofFields1">
                             @if(!in_array('3', toggleHideField()))
-                            <div class="row g-4">
+                            <div class="row g-3">
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="locker">Locker?</label>
                                 <select name="locker" id="locker" class="form-select">
