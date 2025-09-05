@@ -937,6 +937,31 @@ class LearnerController extends Controller
 
             return $customer;
         }
+            // 🔹 Get sorting values from request (default = seat_no asc)
+        $sortBy = request()->get('sort_by', 'seat_no');
+        $sortOrder = request()->get('sort_order', 'asc');
+
+        // Map sort_by to real columns
+        $sortableColumns = [
+            'seat_no' => 'learner_detail.seat_no',
+        ];
+
+        if (array_key_exists($sortBy, $sortableColumns)) {
+            if ($sortBy === 'seat_no') {
+                // NULL values go last
+                $query->orderByRaw('learner_detail.seat_no IS NULL')
+                    ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ' . $sortOrder);
+            } else {
+                $query->orderBy($sortableColumns[$sortBy], $sortOrder);
+            }
+        } else {
+            // Default fallback with NULL last
+            $query->orderByRaw('learner_detail.seat_no IS NULL')
+                ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC');
+        }
+
+
+       
         
         return $paginate
         ? $query->paginate($perPage)
@@ -3096,6 +3121,7 @@ class LearnerController extends Controller
         if (!$transaction) {
             return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
         }
+       
         
         if(($transaction->pending_amount - $request->pending_amount) > 0 && !$request->due_date){
           

@@ -105,23 +105,34 @@
 
 
 <p><b>{{ $learners->total() }} Records for {{ $learners->perPage() }} per page</b></p>
+<div class="mb-3">
+    <a href="{{ request()->fullUrlWithQuery([
+        'sort_by' => 'seat_no',
+        'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'
+    ]) }}">
+        Sort by Seat No. 
+        @if(request('sort_by') == 'seat_no')
+            ({{ request('sort_order') == 'asc' ? '↑' : '↓' }})
+        @endif
+    </a>
+</div>
 @foreach($learners as $key => $value)
 
-@php
-$planStatus = getPlanStatusDetails($value->plan_end_date);
-$transaction = learnerTransaction($value->id, $value->learner_detail_id);
-$oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
+    @php
+    $planStatus = getPlanStatusDetails($value->plan_end_date);
+    $transaction = learnerTransaction($value->id, $value->learner_detail_id);
+    $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
-if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+    if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+    
+    $due_date = $transaction->due_date;
+    } else {
+    
+    $due_date = null;
+    }
 
-$due_date = $transaction->due_date;
-} else {
-
-$due_date = null;
-}
-
-$today = \Carbon\Carbon::now();
-@endphp
+    $today = \Carbon\Carbon::now();
+    @endphp
 
 <!-- Modal -->
 
