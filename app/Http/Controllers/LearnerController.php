@@ -2455,14 +2455,19 @@ class LearnerController extends Controller
         $status = $learner->status;
         $detailStatus = $customer_detail->status;
 
-        $customer = LearnerDetail::where('id', $customer_detail_id)->with('learner', 'plan', 'plantype')->first();
+        $customer = LearnerDetail::leftJoin('learner_transactions','learner_detail.id','=','learner_transactions.learner_detail_id')->where('learner_detail.id', $customer_detail_id)->with('learner', 'plan', 'plantype')->first();
         $is_payment_pending = LearnerTransaction::where('learner_detail_id', $customer_detail_id)
             ->where('pending_amount', '!=', 0)
             ->exists();
         $pending_payment = LearnerTransaction::where('learner_detail_id', $customer_detail_id)
             ->where('pending_amount', '!=', 0)->select('pending_amount', 'id')->first();
+         if ($customer_detail->seat_no) {
+           $filteredPlanTypes =filterPlantypeFromseat($customer_detail->seat_no,$customerId);
+        } else {
+            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+        }
 
-        return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment'));
+        return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment','filteredPlanTypes'));
     }
 
    public function paymentStore(Request $request)

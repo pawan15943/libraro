@@ -300,7 +300,10 @@
                         <span>Payment Status</span>
 
                         <div class="d-flex g-1">
-                            @if(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
+                            @if(paylater($value->learner_detail_id))
+                         
+                            <a href="{{route('learner.payment',$value->learner_detail_id)}}" title="Payment Lerners" class="payment-learner w-auto px-2">Pay Later</a>
+                            @elseif(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
@@ -334,8 +337,7 @@
                                 @endif
                             </a>
 
-                            @elseif(paylater($value->learner_detail_id))
-                            <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span>
+                           
                             @endif
                         </div>
                     </li>
