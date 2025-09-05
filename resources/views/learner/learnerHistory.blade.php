@@ -18,13 +18,17 @@ $current_route = Route::currentRouteName();
 <div class="row mb-3" id="filterContainer">
     <div class="col-lg-12">
         <div class="filter p-3 bg-white">
-            <h4><i class="fa fa-filter"></i> Filter Learners</h4>
-
             <form action="{{ route('learnerHistory') }}" method="GET">
                 <div class="row g-4">
+                    <!-- Search By Name, Mobile & Email -->
+                    <div class="col-lg-5">
+                        <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email"
+                            value="{{ request()->get('search') }}">
+                    </div>
+
+
                     <!-- Filter By Plan -->
-                    <div class="col-lg-3">
-                        <label for="plan_id">Filter By Plan</label>
+                    <div class="col-lg-2">
                         <select name="plan_id" id="plan_id" class="form-select">
                             <option value="">Choose Plan</option>
                             @foreach($plans as $plan)
@@ -36,8 +40,7 @@ $current_route = Route::currentRouteName();
                     </div>
 
                     <!-- Filter By Payment Status -->
-                    <div class="col-lg-3">
-                        <label for="is_paid">Filter By Payment Status</label>
+                    <div class="col-lg-2">
                         <select name="is_paid" id="is_paid" class="form-select">
                             <option value="">Choose Payment Status</option>
                             <option value="1" {{ request()->get('is_paid') == '1' ? 'selected' : '' }}>Paid</option>
@@ -46,8 +49,7 @@ $current_route = Route::currentRouteName();
                     </div>
 
                     <!-- Filter By Active/Expired Status -->
-                    <div class="col-lg-3">
-                        <label for="status">Filter By Active / Expired</label>
+                    <div class="col-lg-2">
                         <select name="status" id="status" class="form-select">
                             <option value="">Choose Status</option>
                             <option value="active" {{ request()->get('status') == 'active' ? 'selected' : '' }}>Active</option>
@@ -55,17 +57,10 @@ $current_route = Route::currentRouteName();
                         </select>
                     </div>
 
-                    <!-- Search By Name, Mobile & Email -->
-                    <div class="col-lg-3">
-                        <label for="search">Search By Name, Mobile & Email</label>
-                        <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email"
-                            value="{{ request()->get('search') }}">
-                    </div>
 
-
-                    <div class="col-lg-3 align-self-end">
+                    <div class="col-lg-1">
                         <button class="btn btn-primary button">
-                            <i class="fa fa-search"></i> Search Records
+                            <i class="fa fa-search"></i>
                         </button>
                     </div>
                 </div>

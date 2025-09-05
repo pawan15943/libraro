@@ -1822,7 +1822,7 @@ ul.plann-info li {
     align-items: center;
     gap: 1rem;
     color: var(--heading-1) !important;
-
+    font-size: 1.2rem;
 }
 
 .dashboard h4 span a {
@@ -1910,10 +1910,9 @@ ul.revenue-box li .d-flex {
 
 .booking-count {
     background: #0f1c64;
-    padding: 1rem;
-    border-radius: 1rem;
+    padding: .6rem;
+    border-radius: .8rem;
     position: relative;
-    box-shadow: 3px 3px 0 #acacac;
 }
 
 .booking-count a.viewall {
@@ -2430,6 +2429,12 @@ div#datatable_length {
     height: 100%;
 }
 
+.card.chart h5 {
+    font-size: 1.2rem;
+    text-align: center;
+    color: #3F51B5 ! IMPORTANT;
+}
+
 label.permission {
     display: flex;
     gap: .8rem;
@@ -2508,9 +2513,9 @@ i#sidebar {
 }
 
 h2.made-inindia {
-    color: #104f7f ! IMPORTANT;
+    color: #cdcdcd ! IMPORTANT;
     padding: 2rem 0;
-    opacity: .3;
+    opacity: 43;
     text-align: center;
 }
 
@@ -2542,11 +2547,7 @@ ul.list-unstyled.ps-0 {
     text-align: center;
 }
 
-ul.list-unstyled.ps-0>li {
-    /* padding: 0 1rem; */
-    border-radius: 1.6rem;
-    position: relative;
-}
+
 
 ul.btn-toggle-nav li:last-child {
     margin-bottom: 0.4rem !important;
@@ -2556,8 +2557,14 @@ ul.btn-toggle-nav li:last-child {
     padding: 0 !important;
 }
 
-ul.list-unstyled.ps-0>li+li {
+ul.list-unstyled.ps-0 > li+li {
     margin-top: .5rem;
+    border-radius: 0;
+}
+
+ul.list-unstyled.ps-0 li.active {
+    background: transparent !important;
+    box-shadow: none;
 }
 
 ul.list-unstyled ul {
@@ -2576,7 +2583,7 @@ ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li {
 } */
 
 ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li {
-    padding: .8rem 1rem;
+    padding: .6rem 1rem;
     border-radius: .4rem;
     /* margin-left: 1.5rem; */
     background: #ffffff1a;
@@ -3240,8 +3247,9 @@ ul.request_list li+li {
 }
 
 p.m-0 {
-    font-weight: 700;
+    font-weight: 500;
     margin-bottom: .4rem !IMPORTANT;
+    font-size: .8rem;
 }
 
 span.description {
@@ -3900,7 +3908,7 @@ ul.revenue-box {
 .booking-count {
     background: #0f1c64;
     padding: 1rem;
-    border-radius: 1rem;
+    border-radius: .8rem;
     position: relative;
 }
 
@@ -3950,8 +3958,8 @@ ul.revenue-box {
 }
 
 .seat-statistics img {
-    width: 40px;
-    height: 43px;
+    width: 33px;
+    height: 35px;
 }
 
 .seat-statistics .d-flex {
@@ -4033,7 +4041,7 @@ ul.revenue-box {
 .seat-statistics h4 {
     text-align: center;
     display: block;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 600;
 }
 
@@ -4249,15 +4257,20 @@ div#datatable1_info {
 
 a.btn.btn-primary.export {
     background: var(--c1);
-    height: auto ! IMPORTANT;
-    border-radius: .3rem;
-    padding: .4rem .4rem;
+    height: 35px ! IMPORTANT;
+    border-radius: 2rem;
     margin-bottom: 1rem;
-    display: inline-block;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
     font-size: .8rem;
     opacity: 1;
     margin-left: .5rem;
+    width: auto;
+    gap: .5rem;
 }
+
+
 
 a.btn.btn-primary.export:hover {
     opacity: .8;
@@ -4523,12 +4536,12 @@ a.guideline {
     border-radius: 1rem !important;
 }
 
-li.active {
+/* li.active {
     background: var(--c1) ! IMPORTANT;
     color: #fff;
     border-color: var(--c1) ! IMPORTANT;
     box-shadow: 1px 0 5px #0000003b ! IMPORTANT;
-}
+} */
 
 .error-box {
     display: flex;

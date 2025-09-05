@@ -93,13 +93,11 @@ use Carbon\Carbon;
 <!-- Fileter Layout -->
 @if(request('type') != 'monthly_balance' )
 <div class="filter p-3 bg-white mt-4" id="filterContainer">
-    <h4><i class="fa fa-filter"></i> Filter </h4>
     <form method="GET" action="{{ route('library.transaction.view') }}">
         <input type="hidden" name="type" value="{{request('type')}}">
         <div class="row g-2">
             @if(request('type') === 'today_expense' || request('type') === 'monthly_expense' )
             <div class="col-lg-4">
-                <label>Choose Expense Type</label>
                 <select name="expense" class="form-control form-select">
                 <option value="">All Types</option>
                 @foreach($expensedata as $expType)
@@ -154,7 +152,6 @@ use Carbon\Carbon;
 
             <div class="col-lg-3">
                 <input type="submit" class="btn btn-primary button" value="Search">
-
             </div>
         </div>
     </form>

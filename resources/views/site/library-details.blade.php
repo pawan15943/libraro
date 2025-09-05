@@ -72,7 +72,7 @@
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="m-0">
-                    {{ $library->name ?? 'N/A' }} <span>Libraro Verified</span>
+                    {{ $library->display_name ?? $library->name }} <span>Libraro Verified</span>
                 </h1>
 
                 <h5>

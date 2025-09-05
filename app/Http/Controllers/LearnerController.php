@@ -1037,7 +1037,7 @@ class LearnerController extends Controller
             'seat_no'  => $request->get('seat_no'),
         ];
 
-        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters,$perPage = 5,$paginate = true);
+        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters,$perPage = 15,$paginate = true);
 
         return view('learner.learner', compact('learners'));
     }
