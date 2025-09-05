@@ -1022,8 +1022,9 @@ ul.actionalbles li a:hover {
 }
 
 .revenue-box h4 {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #000;
 }
 
 .revenue-box span {

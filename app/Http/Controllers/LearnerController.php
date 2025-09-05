@@ -1062,7 +1062,7 @@ class LearnerController extends Controller
             'seat_no'  => $request->get('seat_no'),
         ];
 
-        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters,$perPage = 5,$paginate = true);
+        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters,$perPage = 15,$paginate = true);
 
         return view('learner.learner', compact('learners'));
     }
@@ -2475,7 +2475,8 @@ class LearnerController extends Controller
         $this->validate($request, [
             'learner_id'   => 'required|exists:learners,id',
             'paid_amount'  => 'required|numeric|min:1',
-            'payment_mode' => 'required'
+            'payment_mode' => 'required',
+            'learner_transaction_id'=>'required',
         ]);
 
         $tranDetail = LearnerTransaction::find($request->learner_transaction_id);
@@ -2486,7 +2487,16 @@ class LearnerController extends Controller
         $due_date=null;
 
         // ✅ Call reusable function
-        $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode,$due_date);
+             $activityData = [
+                'learner_id'   => $tranDetail->learner_id,
+                'particular'   => 'Pay later',
+                'payment_type' => 'SEAT ASSIGNMENT',
+                'payment_mode' => $request->payment_mode,
+                'amount'       => $request->paid_amount,
+                'dr_cr'        => 'Cr',
+            ];
+            $this->learnerTransactionActivity($activityData);
+        // $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode,$due_date);
 
         return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
     }
