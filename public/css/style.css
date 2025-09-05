@@ -2574,6 +2574,20 @@ ul.list-unstyled ul {
 ul.list-unstyled ul li a {
     text-decoration: none;
 }
+a.sort {
+    background: #fff;
+    padding: .5rem 1rem;
+    border: 1px solid #dedede;
+    border-radius: 2rem;
+    font-family: 'outfit', 'sans-sarif';
+    font-size: .8rem;
+    display: block;
+}
+.set-table{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
 
 /* 
 ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li {

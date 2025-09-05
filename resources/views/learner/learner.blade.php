@@ -73,12 +73,12 @@
                     <!-- Search Button -->
                     <div class="col-lg-1 align-self-end">
                         <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Search">
-                            <i class="fa fa-search"></i>
+                            Search
                         </button>
                     </div>
                     <div class="col-lg-1 align-self-end">
-                        <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Reset">
-                            <i class="fa fa-eraser"></i>
+                        <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Clear Filter" >
+                            Clear
                         </button>
                     </div>
 
@@ -104,9 +104,10 @@
 @endif
 
 
-<p><b>{{ $learners->total() }} Records for {{ $learners->perPage() }} per page</b></p>
-<div class="mb-3">
-    <a href="{{ request()->fullUrlWithQuery([
+
+<div class="mb-3 set-table">
+    <p class="m-0"><b>{{ $learners->total() }} Records for {{ $learners->perPage() }} per page</b></p>
+    <a class="sort" href="{{ request()->fullUrlWithQuery([
         'sort_by' => 'seat_no',
         'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'
     ]) }}">
@@ -278,6 +279,7 @@
             </div>
             <div class="plan-info">
                 <ul>
+                    <!-- Plan Details -->
                     <li>
                         <span>Plan</span>
                         <p>{{$value->plan_name??''}}</p>

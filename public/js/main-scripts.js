@@ -86,28 +86,68 @@ $(document).ready(function () {
     }
   });
 
+  $(function () {
   // Listen for any changes in the form inputs
   $('form input, form select, form textarea').on('input change', function () {
     var form = $(this).closest('form');
     var submitButton = form.find('.button');
-    var buttonText = 'Wait..'; // Set your button text
+    var originalText = submitButton.data('original-text') || submitButton.html();
     var isFormValid = true;
 
     // Revalidate the form fields in real-time
     form.find('input[required], select[required], textarea[required]').each(function () {
-      if ($(this).val().trim() === '') {
+      var v = $(this).val();
+      if (v === null || $.trim(String(v)) === '') {
         isFormValid = false;
+        return false;
       }
     });
 
-    // Remove the loader and reset button if form is filled correctly
+    // Enable/disable button and restore original text when valid/invalid
     if (isFormValid) {
       submitButton.prop('disabled', false); // Enable the button when the form is valid
-      submitButton.html(buttonText); // Restore button text without loader
+      // only restore if not currently loading
+      if (!submitButton.data('loading')) submitButton.html(originalText);
     } else {
       submitButton.prop('disabled', true); // Keep button disabled if the form is invalid
-      submitButton.html(buttonText); // Ensure no loader is visible if invalid
+      if (!submitButton.data('loading')) submitButton.html(originalText);
     }
+  });
+
+  // Change state on click of button to "Wait!"
+  $('form').on('click', '.button', function (e) {
+    var $btn = $(this);
+    var $form = $btn.closest('form');
+
+    // Prevent action if already disabled/loading
+    if ($btn.prop('disabled') || $btn.data('loading')) {
+      e.preventDefault();
+      return;
+    }
+
+    // Final validation before changing state
+    var isFormValid = true;
+    $form.find('input[required], select[required], textarea[required]').each(function () {
+      var v = $(this).val();
+      if (v === null || $.trim(String(v)) === '') {
+        isFormValid = false;
+        return false;
+      }
+    });
+    if (!isFormValid) {
+      // let native validation/errors show
+      return;
+    }
+
+    // store original text once so we can restore later
+    if (!$btn.data('original-text')) $btn.data('original-text', $btn.html());
+
+    // set loading state and text
+    $btn.data('loading', true).prop('disabled', true).html('Wait!');
+
+    // If you submit via AJAX, restore button after response:
+    // on complete: $btn.data('loading', false).prop('disabled', false).html($btn.data('original-text'));
+    // For normal form submit (page reload) no further action is required.
   });
 });
 
