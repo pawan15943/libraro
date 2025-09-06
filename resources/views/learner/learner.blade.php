@@ -76,11 +76,17 @@
                             Search
                         </button>
                     </div>
-                    <div class="col-lg-1 align-self-end">
-                        <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Clear Filter" >
+                   <div class="col-lg-1 align-self-end">
+                        <button type="button" 
+                                id="clearFilter" 
+                                class="btn btn-secondary button"
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="bottom" 
+                                data-bs-title="Clear Filter">
                             Clear
                         </button>
                     </div>
+
 
                 </div>
             </form>

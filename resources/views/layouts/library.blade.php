@@ -447,6 +447,13 @@
                 $('#countsContainer').toggle(); // Toggle visibility
             });
         });
+
+        // clear filter button js
+        document.getElementById('clearFilter').addEventListener('click', function() {
+            let form = this.closest('form');
+            form.reset(); // reset form fields
+            window.location.href = form.action; // reload without filters
+        });
         </script>
 </body>
 

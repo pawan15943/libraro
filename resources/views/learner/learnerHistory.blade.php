@@ -21,7 +21,7 @@ $current_route = Route::currentRouteName();
             <form action="{{ route('learnerHistory') }}" method="GET">
                 <div class="row g-4">
                     <!-- Search By Name, Mobile & Email -->
-                    <div class="col-lg-5">
+                    <div class="col-lg-4">
                         <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email"
                             value="{{ request()->get('search') }}">
                     </div>
@@ -63,6 +63,17 @@ $current_route = Route::currentRouteName();
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
+                    <div class="col-lg-1 align-self-end">
+                        <button type="button" 
+                                id="clearFilter" 
+                                class="btn btn-secondary button"
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="bottom" 
+                                data-bs-title="Clear Filter">
+                            Clear
+                        </button>
+                    </div>
+
                 </div>
             </form>
         </div>

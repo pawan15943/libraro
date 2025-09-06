@@ -150,8 +150,18 @@ use Carbon\Carbon;
                 <input type="date" name="to" class="form-control" value="{{ request('to') }}">
             </div>
 
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <input type="submit" class="btn btn-primary button" value="Search">
+            </div>
+             <div class="col-lg-1 align-self-end">
+                <button type="button" 
+                        id="clearFilter" 
+                        class="btn btn-secondary button"
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="bottom" 
+                        data-bs-title="Clear Filter">
+                    Clear
+                </button>
             </div>
         </div>
     </form>

@@ -2495,7 +2495,14 @@ class LearnerController extends Controller
                 'amount'       => $request->paid_amount,
                 'dr_cr'        => 'Cr',
             ];
+              $tranDetail->update([
+               
+                'is_paid'        => 1,
+                'paid_date'      => now()->format('Y-m-d'),
+               
+            ]);
             $this->learnerTransactionActivity($activityData);
+
         // $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode,$due_date);
 
         return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
