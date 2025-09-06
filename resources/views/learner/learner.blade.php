@@ -307,8 +307,13 @@
                         <span>Payment Status</span>
                             
                         <div class="d-flex g-1">
-                            @if(paylater($value->learner_detail_id) )
-                            <a href="{{route('learner.payment',$value->learner_detail_id)}}" title="Payment Lerners" class="payment-learner w-auto px-2">Pay Later</a>
+                            @if(paylater($value->learner_detail_id) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount!=0)
+                             <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                    PayLater {{ rtrim(rtrim(number_format(   (learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                </span>
+                             </a>
                             <!-- <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span> -->
                             @elseif(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
