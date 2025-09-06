@@ -292,7 +292,7 @@
                     <div class="detailes">
                         <input type="hidden" id="hidden_plan">
                         <p class="text-danger mb-3"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
-                        <div class="actions">
+                        <!-- <div class="actions">
                             <div class="upper-box">
                                 <div class="row g-4">
                                     <div class="col-lg-12 col-6">
@@ -311,7 +311,7 @@
                                    
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                         <h4 class="mt-4 mb-3">Current Plan Info</h4>
                         <div class="row g-3">
                             <!-- Plan Info -->
