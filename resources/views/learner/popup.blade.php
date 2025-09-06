@@ -297,16 +297,16 @@
                                 <div class="row g-4">
                                     <div class="col-lg-12 col-6">
                                         <span>Learner UID</span>
-                                        <h5 id="owner" class="uppercase">NA</h5>
+                                        <h5 id="ownerpop" class="uppercase">NA</h5>
                                     </div>
                                     <div class="col-lg-6 col-6">
                                         <span>Seat Owner Name</span>
-                                        <h5 id="owner" class="uppercase">NA</h5>
+                                        <h5 id="ownerpop" class="uppercase">NA</h5>
                                     </div>
                                     
                                     <div class="col-lg-6 col-6">
                                         <span>Mobile Number</span>
-                                        <h5 id="learner_mobile">NA</h5>
+                                        <h5 id="learner_mobilepop">NA</h5>
                                     </div>
                                    
                                 </div>
