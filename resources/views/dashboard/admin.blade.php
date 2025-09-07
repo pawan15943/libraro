@@ -759,6 +759,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(!$renewSeats->isEmpty())
 
                         @foreach($renewSeats as $key => $value)
+                        
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
@@ -770,15 +771,22 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
                                     
                                     @can('has-permission', 'Plan Renews')
-                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
+                                    <small><a class="renew_extend"  data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
 
                                 <ul class="d-flex inner">
                                     <li>
-                                        <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                        <a target="_blank" 
+                                        href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                                "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team" . getCurrentBranchName()
+                                        ) }}">
+                                            <i class="fab fa-whatsapp" 
+                                            data-bs-placement="bottom" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-title="Send Reminder"></i>
                                         </a>
+
                                     </li>
 
 
@@ -823,10 +831,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <ul class="d-flex inner">
                                     <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
                                     <li>
-                                        <a target="_blank" href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode("Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
+                                        <a target="_blank" 
+                                        href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                                "Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                        ) }}">
+                                            <i class="fab fa-whatsapp" 
+                                            data-bs-placement="bottom" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-title="Send Reminder"></i>
+                                        </a>                                    </li>
                                     <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li>
                                 </ul>
                             </div>

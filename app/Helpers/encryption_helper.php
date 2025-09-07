@@ -744,5 +744,17 @@ if (!function_exists('getLearnerOperation')) {
         return $operation ?? null;
     }
 }
+if (!function_exists('getCurrentBranchName')) {
+    function getCurrentBranchName(): ?string
+    {
+        $user = Auth::guard('library')->user() ?? Auth::guard('library_user')->user();
+
+        if (!$user || !$user->current_branch) {
+            return null; // safer fallback if user or branch is not set
+        }
+
+        return Branch::find($user->current_branch)?->display_name ?? null;
+    }
+}
 
 

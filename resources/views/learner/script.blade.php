@@ -656,7 +656,26 @@
                  $('#seat_number_upgrades').text('Renew Seat No : GEN');
             }
            
-          
+            $.ajax({
+                url: '{{ route('learners.show')}}',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                },
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": user_id,
+                },
+                dataType: 'json',
+                success: function(html) {
+                    console.log(html);
+                    $('#learner_uid').text(html.learner_no);
+                    $('#learner_name').text(html.name);
+                    $('#learner_mobilepop').text(html.mobile);
+                    // $('#learner_email').text(html.email);
+                
+                }
+            });
             // Show the second modal
             $('#seatAllotmentModal3').modal('show');
             fetchPlanTypesRenew(seat_no,user_id,learner_detail_id);
@@ -669,6 +688,29 @@
             var seat_no = $(this).data('seat_no');
             var end_date = $(this).data('end_date');
             var learner_detail_id = $(this).data('learner_detail');
+
+            // learner detail fetch
+             $.ajax({
+                    url: '{{ route('learners.show')}}',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                    },
+                    type: 'GET',
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        "id": user_id,
+                    },
+                    dataType: 'json',
+                    success: function(html) {
+                       console.log(html);
+                        $('#learner_uid').text(html.learner_no);
+                        $('#learner_name').text(html.name);
+                        $('#learner_mobilepop').text(html.mobile);
+                        // $('#learner_email').text(html.email);
+                 
+                    }
+                });
+            //learner detail fetch end
             $('#seatAllotmentModal3').modal('show');
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
@@ -2288,6 +2330,7 @@ function calculatePending(paid_val) {
 
 
 }
+
 
 
 

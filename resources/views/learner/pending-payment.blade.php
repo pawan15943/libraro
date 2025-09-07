@@ -40,7 +40,7 @@ $class=$planDetails['class'];
             </div>
 
             <div class="form-input mb-4">
-                <h4 class="inner-heading">Pending Payment</h4>
+                <h4 class="inner-heading">Make Payment</h4>
                 <div class="tip"><i class="fa-solid fa-gem pe-1"></i> Note : Here you can receive the pending payment of learners.</div>
                 <form action="{{route('learner.pending.payment.store')}}" method="POST" enctype="multipart/form-data" class="pending_payment">
                     @csrf

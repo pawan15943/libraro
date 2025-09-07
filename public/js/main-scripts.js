@@ -90,7 +90,7 @@ $(document).ready(function () {
   $('form input, form select, form textarea').on('input change', function () {
     var form = $(this).closest('form');
     var submitButton = form.find('.button');
-    var buttonText = 'Processing!'; // Set your button text
+    var buttonText = 'Wait..'; // Set your button text
     var isFormValid = true;
 
     // Revalidate the form fields in real-time

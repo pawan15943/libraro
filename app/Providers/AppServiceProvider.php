@@ -143,6 +143,11 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Booking Info' => route('learners.show', $parameters)
             ],
+            'learner.pending.payment' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Make Payment' => route('learner.pending.payment', $parameters)
+            ],
             'learners.edit' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
@@ -421,6 +426,7 @@ class AppServiceProvider extends ServiceProvider
             'profile' => 'Library Profile',
             'subscriptions.choosePlan' => 'Choose Plan',
             'subscriptions.payment' => 'Make Payment',
+            'learner.pending.payment' => 'Make Payment',
             'seats' => 'Seat Assignment',
             'learners' => 'Learners List',
             'learners.show' => 'Booking Info',

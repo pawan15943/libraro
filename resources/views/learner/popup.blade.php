@@ -274,6 +274,8 @@
 </div>
 @endcan
 
+
+
 @can('has-permission', 'Renew Seat')
 <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div id="success-message" class="alert alert-success" style="display:none;"></div>
@@ -286,9 +288,30 @@
             </div>
             <div class="modal-body m-0">
                 <form id="upgradeForm">
+                    
                     <div class="detailes">
                         <input type="hidden" id="hidden_plan">
-                        <p class="text-danger mb-1"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
+                        <p class="text-danger mb-3"><b>Note</b> :Your upcoming plan starts after your current plan expires.</p>
+                        <div class="actions">
+                            <div class="upper-box">
+                                <div class="row g-4">
+                                    <div class="col-lg-12 col-6">
+                                        <span>Learner UID</span>
+                                        <h5 id="learner_uid" class="uppercase">NA</h5>
+                                    </div>
+                                    <div class="col-lg-6 col-6">
+                                        <span>Seat Owner Name</span>
+                                        <h5 id="learner_name" class="uppercase">NA</h5>
+                                    </div>
+                                    
+                                    <div class="col-lg-6 col-6">
+                                        <span>Mobile Number</span>
+                                        <h5 id="learner_mobilepop">NA</h5>
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                        </div> 
                         <h4 class="mt-4 mb-3">Current Plan Info</h4>
                         <div class="row g-3">
                             <!-- Plan Info -->
