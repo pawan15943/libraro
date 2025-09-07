@@ -777,9 +777,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <ul class="d-flex inner">
                                     <li>
-                                        <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                        <a target="_blank" 
+                                        href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                                "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team" . getCurrentBranchName()
+                                        ) }}">
+                                            <i class="fab fa-whatsapp" 
+                                            data-bs-placement="bottom" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-title="Send Reminder"></i>
                                         </a>
+
                                     </li>
 
 
@@ -824,10 +831,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <ul class="d-flex inner">
                                     <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
                                     <li>
-                                        <a target="_blank" href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode("Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team Libraro") }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
+                                        <a target="_blank" 
+                                        href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                                "Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                        ) }}">
+                                            <i class="fab fa-whatsapp" 
+                                            data-bs-placement="bottom" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-title="Send Reminder"></i>
+                                        </a>                                    </li>
                                     <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li>
                                 </ul>
                             </div>
