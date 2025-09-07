@@ -3423,8 +3423,12 @@ class LearnerController extends Controller
         $newPaid    = $transaction->paid_amount + $paid_amount;
         $isPaid     = $newPending <= 0 ? 1 : 0;
         $due_date = $due_date ?? ($newPending > 0 ? date("Y-m-d") : null);
+        $pay_mode = LearnerDetail::where('id', $transaction->learner_detail_id)
+            ->value('payment_mode');
 
-
+        $type  = $pay_mode == 3 ? 'SEAT ASSIGNMENT' : 'PENDING';
+        $parti = $pay_mode == 3 ? 'PAY LATER PAYMENT' : 'ADDITIONAL PAYMENT';
+    
         $transaction->update([
             'pending_amount' => $newPending,
             'paid_amount'    => $newPaid,
@@ -3442,13 +3446,7 @@ class LearnerController extends Controller
         ]);
 
         // 3. Insert into LearnerTransactionActivity
-            if($transaction->payment_mode==3){
-                $type='SEAT ASSIGNMENT';
-                $parti='PayLater';
-            }else{
-                $type='PENDING';
-                $parti='Additional Payment';
-            }
+          
             $activityData = [
                 'learner_id'   => $transaction->learner_id,
                 'particular'   => $parti,
