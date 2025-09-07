@@ -759,6 +759,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(!$renewSeats->isEmpty())
 
                         @foreach($renewSeats as $key => $value)
+                        
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
@@ -770,7 +771,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
                                     
                                     @can('has-permission', 'Plan Renews')
-                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
+                                    <small><a class="renew_extend"  data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
 
