@@ -38,11 +38,11 @@ There is currently no Data available </p>
                     </ul>
                     
                 </div>
-                 <div class="p-3 border rounded bg-light text-center">
+                 {{-- <div class="p-3 border rounded bg-light text-center">
                     {!! QrCode::size(150)->generate(route('qr.branch', $value->uuid)) !!}
                     
                     <p class="mt-2"><small>Scan to book or renew seat</small></p>
-                </div>
+                </div> --}}
 
                 <ul class="actionalbles">
                     @if(getCurrentBranch() != 0)
