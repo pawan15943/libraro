@@ -18,6 +18,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\QrEntryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
@@ -186,7 +187,8 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
       Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
       Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
-      
+      //QR code feature
+      Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
     });
    
     Route::prefix('library/learners')->group(function () {
