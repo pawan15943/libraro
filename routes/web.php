@@ -81,6 +81,9 @@ Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerysto
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
  //QR code feature
 Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
+Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'create'])->name('booking.form');
+Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renew'])->name('renew.form');
+
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {
