@@ -81,6 +81,7 @@ return array(
     'App\\Models\\LearnerFeedback' => $baseDir . '/app/Models/LearnerFeedback.php',
     'App\\Models\\LearnerOperationsLog' => $baseDir . '/app/Models/LearnerOperationsLog.php',
     'App\\Models\\LearnerTransaction' => $baseDir . '/app/Models/LearnerTransaction.php',
+    'App\\Models\\LearnerTransactionActivity' => $baseDir . '/app/Models/LearnerTransactionActivity.php',
     'App\\Models\\Library' => $baseDir . '/app/Models/Library.php',
     'App\\Models\\LibraryEnquiry' => $baseDir . '/app/Models/LibraryEnquiry.php',
     'App\\Models\\LibrarySetting' => $baseDir . '/app/Models/LibrarySetting.php',

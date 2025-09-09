@@ -18,6 +18,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\QrEntryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
@@ -78,6 +79,11 @@ Route::get('library-detail/{slug}', [SiteController::class, 'libraryDetail'])->n
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
+ //QR code feature
+Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
+Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'bookSeat'])->name('booking.form');
+Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])->name('renew.form');
+
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {
@@ -186,7 +192,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
       Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
       Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
-      
+     
     });
    
     Route::prefix('library/learners')->group(function () {

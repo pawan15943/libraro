@@ -351,13 +351,13 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         ),
         'Spatie\\LaravelIgnition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
-            1 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
+            0 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
+            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
         ),
         'Spatie\\Ignition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
-            1 => __DIR__ . '/..' . '/spatie/ignition/src',
+            0 => __DIR__ . '/..' . '/spatie/ignition/src',
+            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
         ),
         'Spatie\\FlareClient\\' => 
         array (
@@ -683,6 +683,7 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'App\\Models\\LearnerFeedback' => __DIR__ . '/../..' . '/app/Models/LearnerFeedback.php',
         'App\\Models\\LearnerOperationsLog' => __DIR__ . '/../..' . '/app/Models/LearnerOperationsLog.php',
         'App\\Models\\LearnerTransaction' => __DIR__ . '/../..' . '/app/Models/LearnerTransaction.php',
+        'App\\Models\\LearnerTransactionActivity' => __DIR__ . '/../..' . '/app/Models/LearnerTransactionActivity.php',
         'App\\Models\\Library' => __DIR__ . '/../..' . '/app/Models/Library.php',
         'App\\Models\\LibraryEnquiry' => __DIR__ . '/../..' . '/app/Models/LibraryEnquiry.php',
         'App\\Models\\LibrarySetting' => __DIR__ . '/../..' . '/app/Models/LibrarySetting.php',

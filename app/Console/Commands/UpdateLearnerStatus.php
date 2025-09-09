@@ -31,13 +31,47 @@ class UpdateLearnerStatus extends Command
     {
         $today = Carbon::today();
         $futureCheckDate = $today->copy()->addDays(5);
+        $allbranch=Branch::get();
+        foreach($allbranch as $branch){
 
-        $customerdatas = LearnerDetail::where('status', 1)->get();
+        
+            $extend_day = $branch ? $branch->extend_days : 0;
+        
+        // ---- Case 1: Renewed Learners ----
+        $renewedLearners = LearnerDetail::where('branch_id',$branch->id)->select('learner_id')
+            ->groupBy('learner_id')
+            ->havingRaw('
+                SUM(CASE WHEN plan_end_date <= ? THEN 1 ELSE 0 END) > 0 
+                AND 
+                SUM(CASE WHEN plan_end_date > ? AND status = 0 THEN 1 ELSE 0 END) > 0
+            ', [$today->copy()->addDays(5), $today->copy()->addDays(5)])
+            ->pluck('learner_id');
+
+        // ---- Case 2: Expired Learners ----
+        $expiredLearners = LearnerDetail::where('branch_id',$branch->id)->whereDate(
+                DB::raw("DATE_ADD(plan_end_date, INTERVAL $extend_day DAY)"),
+                '<=',
+                $today
+            )
+            ->pluck('learner_id');
+
+        // ---- Case 3: Active Future Booked Learners ----
+        $futureLearners = LearnerDetail::where('branch_id',$branch->id)->where('status', 0)
+            ->where('plan_start_date', '<=', $today)
+            ->where('plan_end_date', '>', $today)
+            ->pluck('learner_id');
+
+        // ---- Merge All Unique Learners ----
+        $learnerIds = $renewedLearners
+            ->merge($expiredLearners)
+            ->merge($futureLearners)
+            ->unique();
+
+       
+        $customerdatas = LearnerDetail::whereIn('learner_id', $learnerIds)->get();
 
         foreach ($customerdatas as $customerdata) {
-            $branchId = $customerdata->branch_id;
-            $branch = $branchId ? Branch::find($branchId) : null;
-            $extend_day = $branch ? $branch->extend_days : 0;
+           
 
             $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
 
@@ -79,6 +113,8 @@ class UpdateLearnerStatus extends Command
                     ->update(['status' => 1]);
             }
             
+        }
+
         }
     }
 
