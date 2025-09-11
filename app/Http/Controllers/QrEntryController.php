@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class QrEntryController extends Controller
 {
@@ -161,7 +162,7 @@ class QrEntryController extends Controller
             'payment_screenshot' => $payment_screenshot,
             'status' => 'pending'
         ]);
-        dd($update);
+      
        // 🔔 Send notification to library owner
         if ($update) {
             $branch = Branch::where('id', $booking->branch_id)->first(['id', 'email', 'library_id']);
@@ -171,11 +172,15 @@ class QrEntryController extends Controller
             $email = $branch->email ?? $library->email;
 
             if ($email) {
-                // Pass data as array
-                Mail::send('email.notify-email', ['booking' => $booking], function ($message) use ($booking, $email) {
-                    $message->to($email)
-                        ->subject('New Registration Payment Request');
-                });
+                try {
+                    Mail::send('email.notify-email', ['booking' => $booking], function ($message) use ($booking, $email) {
+                        $message->to($email)
+                            ->subject('New Registration Payment Request');
+                    });
+                } catch (\Exception $e) {
+                    // Log error but don't break redirect
+                    \Log::error('Mail sending failed: ' . $e->getMessage());
+                }
             }
         }
          return redirect()
