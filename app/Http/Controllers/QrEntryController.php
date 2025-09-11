@@ -27,9 +27,9 @@ class QrEntryController extends Controller
       
         $plans = Plan::where('library_id', $branch->library_id)->get();
 
-        $planTypes = PlanType::where('library_id', $branch->library_id)->get();
+        $planType = PlanType::where('library_id', $branch->library_id)->get();
 
-        return view('qrcode.booking', compact('branch', 'plans', 'planTypes'));
+        return view('qrcode.booking', compact('branch', 'plans', 'planType'));
     }
    public function getPlanPrice(Request $request)
     {
