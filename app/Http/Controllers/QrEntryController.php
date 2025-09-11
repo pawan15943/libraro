@@ -161,6 +161,7 @@ class QrEntryController extends Controller
             'payment_screenshot' => $payment_screenshot,
             'status' => 'pending'
         ]);
+        dd($update);
        // 🔔 Send notification to library owner
         if ($update) {
             $branch = Branch::where('id', $booking->branch_id)->first(['id', 'email', 'library_id']);

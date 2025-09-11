@@ -73,7 +73,7 @@ Route::get('/', [SiteController::class, 'home'])->name('/');
 Route::post('demo-request', [SiteController::class, 'demoRequestStore'])->name('demo-request');
 Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('submit.inquiry');
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
-Route::get('blog/detail/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
+Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
 Route::get('library-detail/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
