@@ -9,6 +9,7 @@ use App\Models\PlanType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QrEntryController extends Controller
 {
@@ -124,9 +125,11 @@ class QrEntryController extends Controller
     public function showPaymentQR($bookingId)
     {
         $booking = Booking::with('branch')->findOrFail($bookingId);
+        $upiLink = "upi://pay?pa=heenamehandi94145@ybl&pn=Test+Library&am=10&cu=INR&tn=Seat+Booking+Test";
 
+        $qrCode = QrCode::size(300)->generate($upiLink);
         // Assume branch has a payment_qr field
-        return view('qrcode.payment_qr', compact('booking'));
+        return view('qrcode.payment_qr', compact('booking','qrCode'));
     }
 
     public function showOfflineDetails($bookingId)

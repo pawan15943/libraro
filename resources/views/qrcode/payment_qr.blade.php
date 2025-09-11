@@ -86,6 +86,9 @@
             @if($booking->branch->payment_qr)
                 <img src="{{ asset('storage/'.$booking->branch->payment_qr) }}" alt="QR Code" style="width:250px;">
             @else
+            {!! $qrCode !!}
+
+            
                 <p>No QR code uploaded for this branch.</p>
             @endif
 
