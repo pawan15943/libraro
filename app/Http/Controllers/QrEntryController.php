@@ -148,7 +148,7 @@ class QrEntryController extends Controller
         $booking = Booking::findOrFail($bookingId);
 
         if ($request->hasFile('payment_screenshot')) {
-            $path = $request->file('payment_screenshot')->store('payments', 'public');
+            $path = $request->file('payment_screenshot')->store('payments', 'public/uploade');
             $booking->update([
                 'payment_screenshot' => $path,
                 'payment_status' => 'pending'
