@@ -57,7 +57,7 @@ class QrEntryController extends Controller
 
     public function store(Request $request, $uuid)
     {
-        dd($request);
+       
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
         // ✅ Validation rules
@@ -69,7 +69,7 @@ class QrEntryController extends Controller
             'dob'            => 'nullable|date',
             'plan_id'        => 'required|integer|exists:plans,id',
             'plan_type_id'   => 'required|integer|exists:plan_types,id',
-            'plan_price_id'  => 'required|integer|exists:plan_prices,id',
+            'plan_price_id'  => 'required',
             'plan_start_date'=> 'required|date',
             'payment_mode'   => 'required|in:online,offline',
         ]);
