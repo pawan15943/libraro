@@ -146,14 +146,19 @@ class QrEntryController extends Controller
         ]);
 
         $booking = Booking::findOrFail($bookingId);
-
-        if ($request->hasFile('payment_screenshot')) {
-            $path = $request->file('payment_screenshot')->store('payments', 'public/uploade');
-            $booking->update([
-                'payment_screenshot' => $path,
-                'payment_status' => 'pending'
-            ]);
+          if ($request->hasFile('payment_screenshot')) {
+            $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:200']);
+            $payment_screenshot = $request->payment_screenshot;
+            $payment_screenshotNewName = "payment" . time() . $payment_screenshot->getClientOriginalName();
+            $payment_screenshot->move('public/uploade/payments', $payment_screenshotNewName);
+            $payment_screenshot = 'public/uploade/payments' . $payment_screenshotNewName;
+        } else {
+            $payment_screenshot = null;
         }
+         $booking->update([
+            'payment_screenshot' => $payment_screenshot,
+            'payment_status' => 'pending'
+        ]);
 
         return redirect()->route('home')->with('success', 'Payment screenshot uploaded. Please wait for confirmation.');
     }
