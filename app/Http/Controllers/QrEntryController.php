@@ -159,7 +159,7 @@ class QrEntryController extends Controller
         }
         $update= $booking->update([
             'payment_screenshot' => $payment_screenshot,
-            'payment_status' => 'pending'
+            'status' => 'pending'
         ]);
        // 🔔 Send notification to library owner
         if ($update) {
