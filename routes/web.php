@@ -86,7 +86,8 @@ Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])
 Route::post('/get-plan-price', [QrEntryController::class, 'getPlanPrice'])->name('get.plan.price');
 Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->name('booking.store');
 Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
-Route::get('/booking/{id}/offline-details', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
+Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
+
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
 
 // Routes for library users with 'auth:library' guard

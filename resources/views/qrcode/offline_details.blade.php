@@ -80,8 +80,15 @@
 
     <div class="sacnd-data">
         <div class="container">
-            <h3>Offline Payment Details</h3>
+              <h2 class="text-success">🎉 Thank You for Registering!</h2>
+            
+
+            @if($booking->payment_mode === 'offline')
             <p>Please visit the branch to complete your payment.</p>
+            @else
+            <p>Your booking has been recorded successfully.</p></br>
+            <p>Payment screenshot uploaded. Please wait for confirmation.</p>
+            @endif
 
             <ul>
                 <li><strong>Branch Name:</strong> {{ $booking->branch->name }}</li>

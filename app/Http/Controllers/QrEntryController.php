@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Branch;
+use App\Models\Library;
 use App\Models\Plan;
 use App\Models\PlanType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Mail;
 
 class QrEntryController extends Controller
 {
@@ -150,17 +152,36 @@ class QrEntryController extends Controller
             $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:200']);
             $payment_screenshot = $request->payment_screenshot;
             $payment_screenshotNewName = "payment" . time() . $payment_screenshot->getClientOriginalName();
-            $payment_screenshot->move('public/uploade/payments', $payment_screenshotNewName);
-            $payment_screenshot = 'public/uploade/payments' . $payment_screenshotNewName;
+            $payment_screenshot->move('public/uploade', $payment_screenshotNewName);
+            $payment_screenshot = 'public/uploade' . $payment_screenshotNewName;
         } else {
             $payment_screenshot = null;
         }
-         $booking->update([
+        $update= $booking->update([
             'payment_screenshot' => $payment_screenshot,
             'payment_status' => 'pending'
         ]);
+       // 🔔 Send notification to library owner
+        if ($update) {
+            $branch = Branch::where('id', $booking->branch_id)->first(['id', 'email', 'library_id']);
+            $library = Library::where('id', $branch->library_id)->first(['id', 'email']);
 
-        return redirect()->route('home')->with('success', 'Payment screenshot uploaded. Please wait for confirmation.');
+            // Decide which email to use
+            $email = $branch->email ?? $library->email;
+
+            if ($email) {
+                // Pass data as array
+                Mail::send('email.notify-email', ['booking' => $booking], function ($message) use ($booking, $email) {
+                    $message->to($email)
+                        ->subject('New Registration Payment Request');
+                });
+            }
+        }
+         return redirect()
+                ->route('booking.offline.details', $booking->id)
+                ->with('success', 'Payment screenshot uploaded. Please wait for confirmation.');
+
+        
     }
 
 
