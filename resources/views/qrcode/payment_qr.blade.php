@@ -83,14 +83,18 @@
             <h3>Pay Online</h3>
             <p>Scan the QR code below to make the payment</p>
 
-            @if($booking->branch->payment_qr)
+            {{-- @if($booking->branch->payment_qr)
                 <img src="{{ asset('storage/'.$booking->branch->payment_qr) }}" alt="QR Code" style="width:250px;">
             @else
             {!! $qrCode !!}
 
             
                 <p>No QR code uploaded for this branch.</p>
-            @endif
+            @endif --}}
+            <a href="{{ $upiLink }}">
+                <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}">
+            </a>
+
 
             <form action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf

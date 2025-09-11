@@ -129,7 +129,7 @@ class QrEntryController extends Controller
 
         $qrCode = QrCode::size(300)->generate($upiLink);
         // Assume branch has a payment_qr field
-        return view('qrcode.payment_qr', compact('booking','qrCode'));
+        return view('qrcode.payment_qr', compact('booking','qrCode','upiLink'));
     }
 
     public function showOfflineDetails($bookingId)
