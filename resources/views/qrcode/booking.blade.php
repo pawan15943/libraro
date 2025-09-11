@@ -83,7 +83,7 @@
            <!-- resources/views/booking/form.blade.php -->
         <form action="{{ route('booking.store', $branch->uuid) }}" method="POST">
             @csrf
-
+            <input type="hidden" id="branch_id" value="{{$branch->id}}">
             <div class="form-group">
                 <label>Name</label>
                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
@@ -104,8 +104,10 @@
 
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror">
-                @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" value="{{ old('password') }}">
+                @error('password') 
+                <div class="invalid-feedback">{{ $message }}</div> 
+                @enderror
             </div>
            
             <div class="col-lg-6">
@@ -116,33 +118,39 @@
 
             <div class="col-lg-4">
                 <label for="">Plan <span>*</span></label>
-                <select name="plan_id" id="plan_id" class="form-select" name="plan_id">
+                <select name="plan_id" id="plan_id" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
 
                     <option value="">Choose</option>
                     @foreach($plans as $key => $value)
                     <option value="{{$value->id}}">{{$value->name}}</option>
                     @endforeach
                 </select>
+                @error('plan_id') 
+                <div class="invalid-feedback">{{ $message }}</div> 
+                @enderror
             </div>
 
             <div class="col-lg-4">
                 <label for="">Plan Type / Shift <span>*</span></label>
-                <select id="plan_type_id" class="form-select" name="plan_type_id">
+               <select id="plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                     <option value="">Choose</option>
-                     @foreach($planType as $key => $value)
-                    <option value="{{$value->id}}">{{$value->name}}</option>
+                    @foreach($planType as $key => $value)
+                        <option value="{{$value->id}}">{{$value->name}}</option>
                     @endforeach
                 </select>
+                @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                
             </div>
              <div class="col-lg-4">
                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                <input id="plan_price" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
-                
+                <input id="plan_price" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" readonly>
+                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
             <div class="col-lg-4">
                 <label for="">Plan Starts On <span>*</span></label>
-                <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                 @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
             <div class="col-lg-4 col-6">
                 <label for="">Payment Mode</label>
