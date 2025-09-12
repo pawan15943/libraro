@@ -174,7 +174,7 @@ if (!function_exists('getPlanPrice')) {
 
         $plan_price_all = PlanPrice::withoutGlobalScopes()
             ->leftJoin('plans', function ($join) use ($libraryId) {
-                $join->on('plan_prices.plan_id', '=', 'plans.plan_id')
+                $join->on('plan_prices.plan_id', '=', 'plans.id')
                     ->where('plans.library_id', $libraryId);
             })
 
@@ -185,8 +185,10 @@ if (!function_exists('getPlanPrice')) {
             ->where('plan_prices.branch_id', $branchId)
             ->select('plan_prices.price')
             ->first();
+          
 
         $plan = Plan::where('id', $plan_id)->first();
+        
 
         if ($plan_price_all && $plan) {
 

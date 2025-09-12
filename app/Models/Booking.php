@@ -14,4 +14,13 @@ class Booking extends Model
         return $this->belongsTo(Branch::class, 'branch_id', 'id');
                  
     }
+       public function plan()
+    {
+        return $this->belongsTo(Plan::class, 'plan_id');
+    }
+
+    public function planType()
+    {
+        return $this->belongsTo(PlanType::class, 'plan_type_id');
+    }
 }

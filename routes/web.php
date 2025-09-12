@@ -94,6 +94,7 @@ Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploa
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {
   // 
+    Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
     Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
     Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
 

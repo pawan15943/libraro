@@ -373,8 +373,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
                     </li>
                     @endforeach
+                   
                     @else
                     <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
+                    @endif
+                     @if($qrbookings->count() > 0)
+                    @foreach($qrbookings as $key => $value)
+                        <li>{{$value->name}}<a href="{{ route('booking.details', $value->id) }}">View Details</a></li>
+                    @endforeach
                     @endif
                 </ul>
             </div>

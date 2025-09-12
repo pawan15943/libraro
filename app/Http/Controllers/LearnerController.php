@@ -1665,9 +1665,11 @@ class LearnerController extends Controller
 
         $plan_type_id = $request->plan_type_id;
         $plan_id = $request->plan_id;
+        $branch=getCurrentBranch();
         if ($request->plan_type_id && $request->plan_id) {
+            
             $PlanpPrice = getPlanPrice($plan_id, $plan_type_id);
-           
+        
             return response()->json($PlanpPrice);
         }
     }

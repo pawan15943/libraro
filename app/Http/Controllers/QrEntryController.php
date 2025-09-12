@@ -189,6 +189,17 @@ class QrEntryController extends Controller
 
         
     }
+    public function showBookingDetails($id)
+    {
+        
+        $customer = Booking::with(['branch', 'plan', 'planType']) // eager load relations
+            ->findOrFail($id);
+        $plans = Plan::where('library_id', getLibraryId())->get();
+
+        $planType = PlanType::where('library_id', getLibraryId())->get();
+
+        return view('qrcode.verify_request', compact('customer','planType','plans'));
+    }
 
 
 

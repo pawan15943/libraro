@@ -18,6 +18,7 @@ use App\Services\LibraryService;
 use App\Services\LearnerService;
 use App\Traits\LearnerQueryTrait;
 use App\Http\Middleware\LoadMenus;
+use App\Models\Booking;
 use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\Feature;
@@ -259,7 +260,8 @@ class DashboardController extends Controller
 
 
             $recent_activitys=DB::table('learner_operations_log')->where('library_id',getLibraryId())->where('created_at', '>=', Carbon::now()->subDays(5))->get();
-
+            $qrbookings=Booking::where('branch_id',getCurrentBranch())->get();
+           
             if($is_expire && $user->hasRole('admin')){
             
                 return redirect()->route('library.myplan');
@@ -275,7 +277,7 @@ class DashboardController extends Controller
                 }
 
                
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending'));
+                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings'));
             }else{
               
                 return redirect($redirectUrl);
