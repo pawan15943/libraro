@@ -36,6 +36,12 @@ There is currently no Data available </p>
                             <p class="m-0">{{ $value->email ?? 'Not updated yet' }}</p>
                         </li>
                     </ul>
+                    
+                </div>
+                 <div class="p-3 border rounded bg-light text-center">
+                    {!! QrCode::size(150)->generate(route('qr.branch', $value->uuid)) !!}
+                    
+                    <p class="mt-2"><small>Scan to book or renew seat</small></p>
                 </div>
 
                 <ul class="actionalbles">

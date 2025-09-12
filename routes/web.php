@@ -18,6 +18,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\QrEntryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
@@ -72,12 +73,23 @@ Route::get('/', [SiteController::class, 'home'])->name('/');
 Route::post('demo-request', [SiteController::class, 'demoRequestStore'])->name('demo-request');
 Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('submit.inquiry');
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
-Route::get('blog/detail/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
+Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
 Route::get('library-detail/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
+ //QR code feature
+Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
+Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'bookSeat'])->name('booking.form');
+Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])->name('renew.form');
+Route::post('/get-plan-price', [QrEntryController::class, 'getPlanPrice'])->name('get.plan.price');
+Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->name('booking.store');
+Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
+Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
+
+Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
+
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {
@@ -186,7 +198,7 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
       Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
       Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
       Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
-      
+     
     });
    
     Route::prefix('library/learners')->group(function () {
