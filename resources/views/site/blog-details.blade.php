@@ -16,20 +16,21 @@
        {{-- Categories --}}
         @if($categories->isNotEmpty())
             
-            <ul>
+            <ul class="categories-list mb-4">
                 @foreach($categories as $category)
                     <li>{{ $category->name }}</li>
                 @endforeach
             </ul>
         @endif
         <h2>{{ $data->page_title }}</h2>
-        <ul>
+        <ul class="categories-list mb-4">
             <li>Author</li>
             <li>Posted on 08-08-2025</li>
         </ul>
         <div class="row justify-content-center">
             <div class="col-lg-8">
-            <img src="{{ asset('public/' . $data->header_image) }}" alt="{{ $data->page_title }}">
+            <img src="{{ asset('public/' . $data->header_image) }}" alt="{{ $data->page_title }}" class="img-fluid mb-4 rounded-2">
+                {{-- Render the page content as HTML --}}
 
                 <div class="mt-4">
                 {!! $data->page_content !!}
@@ -37,7 +38,7 @@
             </div>
 
             <div class="col-lg-8">
-                <div class="ul">
+                <ul class="tags-list mt-4">
                     @if(!empty($data->tags))
                     @foreach($data->tags as $tag)
                         <li>{{ $tag }}</li>
