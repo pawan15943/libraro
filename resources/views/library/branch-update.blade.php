@@ -12,6 +12,12 @@
 @endif
 
 
+
+
+
+
+
+
   <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 
     method="POST"enctype="multipart/form-data"  id="branchUpdate">
     @csrf

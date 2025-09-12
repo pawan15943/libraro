@@ -7,6 +7,10 @@
         <i class="fa-solid fa-plus "></i> Add Branch
     </a>
 </div>
+
+
+
+
 @if($branches->isEmpty())
 <p class="not-found info-message">
 <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>

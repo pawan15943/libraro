@@ -83,7 +83,7 @@
             <div class="row justify-content-center align-items-center h-100">
                 <div class="col-lg-3">
                     <div class="process-step-1">
-                        <img src="http://localhost/genrate/public/img/libraro.svg" alt="logo" class="logo">
+                        <img src="https://www.libraro.in/public/img/libraro.svg" alt="logo" class="logo">
                         <div class="action-content">
                             <div class="headings text-center">
                                 <h4>What would you like to do?</h4>
@@ -93,14 +93,14 @@
                             </div>
                             <ul class="action-list">
                                  <li><a href="{{ route('booking.form', $branch->uuid) }}">Book Seat</a></li>
-                                <li><a href="{{ route('renew.form', $branch->uuid) }}">Re-New Plan</a></li>
+                                <li><a href="{{ route('renew.form', $branch->uuid) }}">Re-New</a></li>
                                 <!-- <li><a href="">Upgrade Plan</a></li>
                                 <li><a href="">Change Plan</a></li>
                                 <li><a href="">Close Plan</a></li>
                                 <li><a href="">Raise Complaint</a></li> -->
                             </ul>
                         </div>
-                        <span class="footer">Copyright © 2025 Libraro.in. All Rights Reserved.</span>
+                        <span class="footer">Copyright © {{ date('Y') }} Libraro.in. All Rights Reserved.</span>
                     </div>
                 </div>
             </div>
