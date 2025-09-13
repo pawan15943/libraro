@@ -91,15 +91,20 @@
             
                 <p>No QR code uploaded for this branch.</p>
             @endif --}}
-            <a href="{{ $upiLink }}">
+            {{-- <a href="{{ $upiLink }}">
                 <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}">
-            </a>
+            </a> --}}
 
 
             <form action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <label>Upload Payment Screenshot:</label>
-                <input type="file" name="payment_screenshot" class="form-control" required>
+                <input type="file" name="payment_screenshot" class="form-control @error('payment_screenshot') is-invalid @enderror" >
+                @error('payment_screenshot')  
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
+                @enderror
                 <button type="submit" class="btn btn-primary mt-3">Submit</button>
             </form>
         </div>

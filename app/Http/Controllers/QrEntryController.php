@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Branch;
+use App\Models\Hour;
+use App\Models\Learner;
+use App\Models\LearnerDetail;
+use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use App\Models\Library;
 use App\Models\Plan;
 use App\Models\PlanType;
@@ -13,6 +18,10 @@ use Carbon\Carbon;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use DB;
+use App\Http\Controllers\LearnerController;
 
 class QrEntryController extends Controller
 {
@@ -29,9 +38,9 @@ class QrEntryController extends Controller
         $branch = Branch::where('uuid', $branchUuid)->firstOrFail();
 
       
-        $plans = Plan::where('library_id', $branch->library_id)->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
-        $planType = PlanType::where('library_id', $branch->library_id)->get();
+        $planType = PlanType::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType'));
     }
@@ -65,18 +74,48 @@ class QrEntryController extends Controller
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
         // ✅ Validation rules
-        $validated = $request->validate([
-            'name'           => 'required|string|max:191',
-            'email'          => 'nullable|email|max:191|unique:bookings,email',
-            'mobile'         => 'required|digits_between:8,15',
-            'password'       => 'required|min:6',
-            'dob'            => 'nullable|date',
-            'plan_id'        => 'required|integer|exists:plans,id',
-            'plan_type_id'   => 'required|integer|exists:plan_types,id',
-            'plan_price_id'  => 'required',
-            'plan_start_date'=> 'required|date',
-            'payment_mode'   => 'required|in:online,offline',
-        ]);
+       $validated = $request->validate([
+        'name'           => 'required|string|max:191',
+        'email'          => 'nullable|email|max:191|unique:bookings,email',
+        'mobile'         => 'required|integer|digits_between:8,15',
+        'password'       => 'required|min:6',
+        'dob'            => 'nullable|date',
+        'plan_id'        => 'required|integer|exists:plans,id',
+        'plan_type_id'   => 'required|integer|exists:plan_types,id',
+        'plan_price_id'  => 'required',
+        'plan_start_date'=> 'required|date',
+        'payment_mode'   => 'required|in:online,offline',
+    ], [
+        'name.required'            => 'Please enter your full name.',
+        'name.max'                 => 'Name should not exceed 191 characters.',
+        
+        'email.email'              => 'Please provide a valid email address.',
+        'email.unique'             => 'This email is already registered.',
+        'email.max'                => 'Email should not exceed 191 characters.',
+
+        'mobile.required'          => 'Mobile number is required.',
+        'mobile.digits_between'    => 'Mobile number must be between 8 to 15 digits.',
+
+        'password.required'        => 'Password is required.',
+        'password.min'             => 'Password must be at least 6 characters.',
+
+        'dob.date'                 => 'Please enter a valid date of birth.',
+
+        'plan_id.required'         => 'Please select a plan.',
+        'plan_id.exists'           => 'Selected plan does not exist.',
+
+        'plan_type_id.required'    => 'Please select a plan type.',
+        'plan_type_id.exists'      => 'Selected plan type does not exist.',
+
+        'plan_price_id.required'   => 'Please select a plan price.',
+
+        'plan_start_date.required' => 'Please choose a start date for the plan.',
+        'plan_start_date.date'     => 'Plan start date must be a valid date.',
+
+        'payment_mode.required'    => 'Please select a payment mode.',
+        'payment_mode.in'          => 'Payment mode must be either online or offline.',
+    ]);
+
          $months = Plan::where('id', $validated['plan_id'])->value('plan_id');
             $duration = $months ?? 0;
             $type     = Plan::where('id', $validated['plan_id'])->value('type'); 
@@ -196,10 +235,331 @@ class QrEntryController extends Controller
             ->findOrFail($id);
         $plans = Plan::where('library_id', getLibraryId())->get();
 
-        $planType = PlanType::where('library_id', getLibraryId())->get();
+        $planType = PlanType::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
 
         return view('qrcode.verify_request', compact('customer','planType','plans'));
     }
+
+      public function requestApproveEdit(Request $request)
+    {
+        
+      
+        $rules = [
+            'booking_id' => 'required',
+            'branch_id' => 'required',
+            'seat_no' => 'nullable',
+            'plan_id' => 'required',
+            'plan_type_id' => 'required',
+            'plan_price_id' => 'required',
+            'plan_start_date' => 'required',
+            'paid_amount' => 'nullable',
+            'previous_amount' => 'required',
+            'discount_type' => 'nullable',
+            'diffrence_amount' => 'nullable',
+            'discount_amount' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!in_array($request->discount_type, ['amount', 'percentage']) && $value) {
+                        $fail('Discount type must be selected when providing a discount amount.');
+                    }
+                    if (in_array($request->discount_type, ['amount', 'percentage']) && !$value) {
+                        $fail('Discount amount is required when a discount type is selected.');
+                    }
+                }
+            ],
+            'locker_no' => [
+                'nullable',
+                'required_if:locker,yes',
+                'numeric'
+            ],
+            'locker_amount' => [
+                'nullable',
+                'required_if:locker,yes'
+            ],
+
+        ];
+       
+       
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+        // if (!Auth::user()->can('has-permission', 'Renew Seat')) {
+        //     return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+        // }
+
+
+        DB::beginTransaction();
+
+        try {
+            $learnerController = app(\App\Http\Controllers\LearnerController::class);
+
+         
+            $booking=Booking::find($request->booking_id);
+            
+            if ($request->seat_no && $request->seat_no!='gen') {
+                $seat_no = $request->input('seat_no');
+            } else {
+                $seat_no = null;
+            }
+            $planPrice = (float) $request->input('plan_price_id', 0);
+            $locker = (float) $request->input('locker_amount', 0);
+            if ($request->discount_type == 'amount') {
+                $discount = $request->discount_amount;
+            } elseif ($request->discount_type == 'percentage') {
+                $total = $planPrice + $locker;
+                $discount = ($total * $request->discount_amount) / 100;
+            } else {
+                $discount = 0;
+            }
+            $total_amt=$planPrice+$locker-$discount;
+           
+            $paid_amount = (float) $request->input('paid_amount', 0);
+            $pending_amount = $request->input('pending_amount');
+            $diff_amount    = $request->input('diffrence_amount');
+            $already_paid  =$booking->plan_price_id;
+            
+            $refund = 0;
+            $pending_refund = 0;
+
+            // Handle difference amount (refund vs pending)
+            if ($diff_amount < 0) {
+            
+                // refund case
+                $new_paid=$already_paid-$paid_amount;
+                $pending_refund = $new_paid-$total_amt;
+                $refund = abs($paid_amount);
+                
+                $pending_amount = 0;
+                $dr_cr='Dr';
+                
+            } else {
+                $new_paid=$already_paid+$paid_amount;
+                // extra payment (pending dues)
+                $pending_amount = $total_amt-$new_paid ;
+                $refund = 0;
+                $pending_refund = 0;
+                $dr_cr='Cr';
+               
+            }
+    
+            if($pending_amount > 0){
+                return redirect()->back()->with('error', 'Due date is required');
+            }
+
+
+            $start_date = Carbon::parse($request->input('plan_start_date'));
+            $plan_id = $request->input('plan_id');
+            $months = Plan::where('id', $plan_id)->value('plan_id'); 
+            $duration = $months ?? 0;
+            $type = Plan::where('id', $plan_id)->value('type'); 
+          
+            $plan_type_id = $request->input('plan_type_id');
+            
+            $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
+          
+            $startTime = $planType->start_time;
+            $endTime = $planType->end_time;
+            $hours = $planType->slot_hours;
+        
+            $first_record = Hour::first();
+            $total_hour = $first_record ? $first_record->hour : 0;
+
+            switch (strtoupper($type)) {
+                case 'DAY':
+                    $endDate = $start_date->copy()->addDays($duration);
+                    break;
+                case 'WEEK':
+                    $endDate = $start_date->copy()->addWeeks($duration);
+                    break;
+                case 'MONTH':
+                    $endDate = $start_date->copy()->addMonths($duration);
+                    break;
+                case 'YEAR':
+                    $endDate = $start_date->copy()->addYears($duration);
+                    break;
+                default:
+                    $endDate = $start_date; 
+                    break;
+            }
+
+            
+            $existingBookings = $this->getLearnersByLibrary()
+            ->where('learner_detail.seat_no', '=', $request->seat_no)
+            ->where('learner_detail.plan_type_id', '=', $request->plan_type_id)
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->where(function ($q) use ($start_date, $endDate) {
+                $q->where('learner_detail.plan_start_date', '<=', $endDate)
+                ->where('learner_detail.plan_end_date', '>=', $start_date);
+            })
+        
+            ->exists();
+
+    
+            if($existingBookings){
+                return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.');
+            }
+        
+
+            if ($total_hour === 0) {
+                return redirect()->back()->with('error', 'Total available hours not set.');
+            }
+
+            $total_cust_hour = Learner::where('seat_no', $request->seat_no)->where('status', 1)->sum('hours');
+        
+
+            if ($hours > ($total_hour - $total_cust_hour)) {
+
+                return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
+            }
+
+        
+
+            $extendDay = getExtendDays();
+
+            $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+            if ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
+                $status = 1;
+            } else {
+                $status = 0;
+            }
+            $is_paid = 1;
+            $payment_mode = 1;
+         
+           
+            if ($seat_no) {
+
+                if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->count() > 0) {
+                    return redirect()->back()->with('error', 'This Plan Type Seat already booked');
+                }
+
+                if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+                     return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.');
+                  
+                }
+
+                if(($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date','>',Carbon::today())->exists())){
+                    if($learnerController->checkPlanTypeSeatWise($seat_no,$plan_type_id)==false){
+                         return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing future booking. ');
+                       
+                    }
+                }
+            }
+
+
+            if (($new_paid > $total_amt) || ($new_paid == 0)) {
+                return redirect()->back()->with('error', 'Paid amount is not valid');
+               
+            }
+            if (($pending_amount > 0) && (!$request->due_date)) {
+                return redirect()->back()->with('error', 'Paid amount is not valid');
+              
+            }
+            
+           
+            $customerEmail = $booking->email 
+        ? encryptData($booking->email) 
+        : ($request->filled('email') ? encryptData($request->input('email')) : null);
+
+           $customer = Learner::create([
+            'seat_no' => $seat_no,
+            'name' => $booking->name,
+            'mobile' =>$booking->mobile,
+            'email' => $customerEmail,
+            'dob' => $booking->dob,
+            'hours' => $hours,
+            'status' => $status,
+            'library_id' => getLibraryId(),
+            'branch_id' => getCurrentBranch(),
+            'password' => $booking->password,
+            'learner_no'=>$learnerController->generateLearnerCode(),
+            'locker_no'=>$request->input('locker_no') ?? null ,
+        ]);
+            $learner_detail = LearnerDetail::create([
+                'library_id' => getLibraryId(),
+                'branch_id' => getCurrentBranch(),
+                'learner_id' => $customer->id,
+                'plan_id' => $plan_id,
+                'plan_type_id' => $plan_type_id,
+                'plan_price_id' => $planPrice,
+                'plan_start_date' => $start_date->format('Y-m-d'),
+                'plan_end_date' => $endDate->format('Y-m-d'),
+                'join_date' => $start_date->format('Y-m-d'),
+                'hour' => $hours,
+                'seat_no' => $seat_no,
+                'payment_mode' => $payment_mode,
+                'is_paid' =>1,
+                'status' => $status,
+            ]);
+             if ($booking->created_at) {
+                    $transaction_date = $booking->created_at;
+                } else {
+                    $transaction_date =null;
+                }
+                   
+
+             $learnerTransaction = LearnerTransaction::create([
+                'learner_id' => $customer->id,
+                'library_id'        => getLibraryId(),
+                'branch_id'         => getCurrentBranch(),
+                'learner_detail_id' => $learner_detail->id,
+                'total_amount'      => $total_amt,
+                'paid_amount'       => $new_paid,
+                'pending_amount'    => $pending_amount,
+                'locker_amount'     => $locker ?? 0,
+                'discount_amount'   => $discount ?? 0,
+                'paid_date'         => $transaction_date,
+                'is_paid'           => $is_paid ?? 0,
+                'due_date'        => $request->due_date,
+                'refund'        => $pending_refund,
+            ]);
+           
+            //learner Activity
+            $data=[];
+            $data['learner_id']=$customer->id;
+            $data['particular']='Paid By Trans';
+            $data['payment_type']='SEAT ASSIGNMENT';
+            $data['payment_mode']=1;
+            $data['amount']=$new_paid;
+            $data['dr_cr']='Cr';
+          
+            $learnerController->learnerTransactionActivity($data);
+
+                if ($status == 1) {
+
+                    $learnerController->dataUpdate();
+                }
+                $booking->delete();
+
+            DB::commit();
+
+            return redirect()->route('learners')->with('success', 'Learner updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
+    }
+    function generateLearnerCode() {
+        $prefix = "LN";
+      $lastlearner = Learner::withoutGlobalScopes()
+                      ->whereNotNull('learner_no')
+                      ->orderBy('id', 'DESC')
+                      ->first();
+                              
+        if ($lastlearner) {
+            
+            $lastNumber = intval(substr($lastlearner->learner_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
+    }
+
+   
 
 
 

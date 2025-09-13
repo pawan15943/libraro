@@ -68,25 +68,32 @@ if(Route::currentRouteName() == 'booking.details'){
                     If the seat not have that plan type available then first need to perform swap seat operation then you do change plan.
                 </div>
 
-                <form action="{{$route}}" method="POST" enctype="multipart/form-data" id="{{$ids}}">
+                <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" >
                     @csrf
                     @method('POST')
 
-                    <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
+                    <input type="hidden" name="booking_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="branch_id" value="{{ $customer->branch_id}}">  
 
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
-                    <div class="col-lg-6">
-                        <label for="seat_id">Choose Seat No. <span>*</span></label>
-                        <select name="seat_no" class="form-select" id="seat_id11">
-                            <option value="gen">GEN</option>
-                            @foreach($availableseats as $key => $value)
-                                <option value="{{$value}}">{{$value}}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                  
 
                     <div class="row g-4">
+                          <div class="col-lg-6">
+                            <label for="seat_id">Choose Seat No. <span>*</span></label>
+                            <select name="seat_no" class="form-select" id="seat_id11">
+                                <option value="gen">GEN</option>
+                                @foreach($availableseats as $key => $value)
+                                    <option value="{{$value}}">{{$value}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-6">
+                            <label for="">Plan Start Date <span>*</span></label>
+                             <input type="text"  name="plan_start_date"
+                                class="form-control @error('plan_start_date') is-invalid @enderror"
+                                value="{{ old('plan_start_date', $customer->plan_start_date) }}" readonly>
+                        </div>
                         <div class="col-lg-4">
                             <label for="plan_id11">Plan <span>*</span></label>
                             <select id="plan_id11" class="form-control form-select @error('plan_id') is-invalid @enderror" 
@@ -130,8 +137,8 @@ if(Route::currentRouteName() == 'booking.details'){
                             <label for="plan_price11">Plan Price <span>*</span></label>
                             <input type="text" id="plan_price11" name="plan_price_id"
                                 class="form-control @error('plan_price_id') is-invalid @enderror"
-                                value="{{ old('plan_price_id', $customer->plan_price_id) }}"
-                                readonly>
+                                value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly>
+                                
                             @error('plan_price_id')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -204,16 +211,21 @@ if(Route::currentRouteName() == 'booking.details'){
                             <label for="previous_amount11">Previous Amount</label>
                             <input type="text" id="previous_amount11" name="previous_amount"
                                 class="form-control"
-                                value="{{ old('previous_amount', $customer->previous_amount ?? 0) }}"
+                                value="{{ old('previous_amount', $customer->plan_price_id ?? 0) }}"
                                 readonly>
                         </div>
 
                        <div class="col-lg-4">
-                            <label for="diffrence_amount11">Difference Amount *</label>
+                            <label for="diffrence_amount11">Difference Amount*</label>
                             <input type="text" id="diffrence_amount11" name="diffrence_amount"
                                 class="form-control"
-                                value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}"
-                                readonly>
+                                value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
+                        </div>
+                           <div class="col-lg-4">
+                            <label for="paid_amount11">Paid Amount *</label>
+                            <input type="text" id="paid_amount11" name="paid_amount"
+                                class="form-control"
+                                value="{{ old('paid_amount') }}"  placeholder="0">
                         </div>
 
                          <div class="col-lg-4">
@@ -279,7 +291,7 @@ $(document).ready(function() {
     }
     
     getPlanPrice(selectedPlanType,plan_id11);
-    calculatePaidAmount();
+    calculatePaidTotalAmount();
    
     var lockerCheck= $('#toggleFieldCheckbox11').val();
     
@@ -296,23 +308,7 @@ $(document).ready(function() {
         
     }
 
-    $('#plan_type_id11').on('change', function(event) {
-        event.preventDefault();
-        const plan_type_id11 = $(this).val();
-        const plan_id11 = $('#plan_id11').val();
-        var lockerCheck= $('#toggleFieldCheckbox11').val();
-        console.log("Values =>", { plan_type_id11, plan_id11, lockerCheck });
-        if(plan_type_id11 && plan_id11){
-           console.log("Calling getPlanPriceAmount...");
-            getPlanPrice(plan_type_id11,plan_id11);
-            calculatePaidAmount();
-        if(lockerCheck== 'yes'){
-                lockerAmountGet(plan_id11);
-            }
-        }else{
-            $("#plan_price11").val('');
-        }
-    });
+   
 
    
 });
@@ -328,15 +324,32 @@ $('#seat_id11').on('change', function () {
     var lockerCheck= $('#toggleFieldCheckbox11').val();
     if(plan_type_id11 && plan_id11){
         getPlanPrice(plan_type_id11,plan_id11);
-        calculatePaidAmount();
+        calculatePaidTotalAmount();
         if(lockerCheck== 'yes'){
-            lockerAmountGet(plan_id11);
+            lockerAmtGet(plan_id11);
         }
         
     }else{
         $("#plan_price11").val('');
     }
 });
+ $('#plan_type_id11').on('change', function(event) {
+        event.preventDefault();
+        const plan_type_id11 = $(this).val();
+        const plan_id11 = $('#plan_id11').val();
+        var lockerCheck= $('#toggleFieldCheckbox11').val();
+        console.log("Values =>", { plan_type_id11, plan_id11, lockerCheck });
+        if(plan_type_id11 && plan_id11){
+           console.log("Calling getPlanPriceAmount...");
+            getPlanPrice(plan_type_id11,plan_id11);
+            
+        if(lockerCheck== 'yes'){
+                lockerAmtGet(plan_id11);
+            }
+        }else{
+            $("#plan_price11").val('');
+        }
+    });
 
   $('#toggleFieldCheckbox11').on('change', function () {
     
@@ -345,7 +358,7 @@ $('#seat_id11').on('change', function () {
 
     if (needLocker === 'yes') {
         $('#locker_no11').removeAttr('readonly');
-        lockerAmountGet(plan_id11)
+        lockerAmtGet(plan_id11)
         
     } else {
         $('#locker_amount11').attr('readonly', true);
@@ -354,7 +367,7 @@ $('#seat_id11').on('change', function () {
         
         
     }
-    calculatePaidAmount();
+    calculatePaidTotalAmount();
     $('#pending_amt11').val("");
 });
 $('#discountType11').on('change', function (){
@@ -369,19 +382,19 @@ $('#discountType11').on('change', function (){
         $('#typeVal11').text('INR / %');
         $('#discount_amount11').attr('readonly', true);
     }
-    calculatePaidAmount(); 
+    calculatePaidTotalAmount(); 
     $('#pending_amt11').val("");
     
 });
  $('#discount_amount11').on('input', function () {
-    calculatePaidAmount(); 
+    calculatePaidTotalAmount(); 
 });
 $('#total_amount11').on('input', function () {
-    calculatePending($(this).val());   
+    calculatePendingAmt($(this).val());   
 });
 
-$('#diffrence_amount11').on('input', function () {
-    calculatePending($(this).val());  
+$('#paid_amount11').on('input', function () {
+    calculatePendingAmt($(this).val());  
 });
  function getPlanPrice(plan_type_id11,plan_id11){
     
@@ -401,8 +414,11 @@ $('#diffrence_amount11').on('input', function () {
                     if (html && html !== undefined) {
                         
                         $('#pending_amt11').html('');
-                         $("#plan_price11").val(html);
-                          calculatePaidAmount(); 
+                        $("#plan_price11").prop("value", html);
+
+
+                         console.log("Value now in input:", $("#plan_price11").val());
+                          calculatePaidTotalAmount(); 
                         $("#error-message").hide();
                     } else {
                         $("#plan_price11").val("");
@@ -451,27 +467,25 @@ function getTypeSeatwise(seatId, selectedPlanType = null) {
 }
 
 
-function lockerAmountGet(plan_id11){
+function lockerAmtGet(plan_id11){
     $.get("{{ route('locker.price') }}", { plan_id: plan_id11 })
     .done(function(json) {
         $('#locker_amount11').val(json.price);
-        calculatePaidAmount();
+        calculatePaidTotalAmount();
     })
     .fail(function() {
         $('#locker_amount11').val('').prop('readonly', true);
-        calculatePaidAmount();
+        calculatePaidTotalAmount();
     });
 }
 
- function calculatePaidAmount() {
-    const planPrice = parseFloat($('#plan_price11').val()) || 0;
+ function calculatePaidTotalAmount() {
+      const planPrice = parseFloat($('#plan_price11').val()) || 0;
+   
     const lockerAmount = parseFloat($('#locker_amount11').val()) || 0;
     const discountRaw = parseFloat($('#discount_amount11').val()) || 0;
     const discountType = $('#discountType11').val();
-    console.log('planPrice',planPrice);
-    console.log('lockerAmount',lockerAmount);
-    console.log('discountRaw',discountRaw);
-    console.log('discountType',discountType);
+   
   
     
     var discountAmount = 0;
@@ -494,15 +508,15 @@ function lockerAmountGet(plan_id11){
     const diffrence =autoPaid-previous_amount;
     $('#diffrence_amount11').val(diffrence);
     if(diffrence < 0){
-         $('label[for="diffrence_amount11"]').text("Refund Amount *");
+         $('label[for="paid_amount11"]').text("Refund Amount *");
        
         
     }else{
-         $('label[for="diffrence_amount11"]').text("Diffrence Amount *");
+         $('label[for="paid_amount11"]').text("Diffrence Amount *");
        
     }
 }
-function calculatePending(paid_val) {
+function calculatePendingAmt(paid_val) {
     const planPrice = parseFloat($('#plan_price11').val()) || 0;
     const lockerAmount = parseFloat($('#locker_amount11').val()) || 0;
     const discountRaw = parseFloat($('#discount_amount11').val()) || 0;
@@ -516,11 +530,19 @@ function calculatePending(paid_val) {
     } else if (discountType === 'amount') {
         discountAmount = discountRaw;
     }
+    const paidAmount = parseFloat(paid_val) || 0;
 
     const effectivePaid = planPrice+lockerAmount - discountAmount;
-    const pendingAmount = effectivePaid-paid_val-previous_amount11;
-  
+    let pendingAmount;
+
+    if (effectivePaid - previous_amount11 < 0) {
+        pendingAmount = effectivePaid - previous_amount11 + paidAmount;
+    } else {
+        pendingAmount = effectivePaid - previous_amount11 - paidAmount;
+    }
+
     $('#pending_amt11').val(pendingAmount);
+
   
    if ((paid_val > effectivePaid)) {
         $('#pending_amt_error').html('High price not allowed.' + pendingAmount);

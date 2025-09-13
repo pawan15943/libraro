@@ -87,26 +87,34 @@
             <div class="form-group">
                 <label>Name</label>
                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
-                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                @error('name')  <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> @enderror
             </div>
 
             <div class="form-group">
                 <label>Email (optional)</label>
                 <input type="email" name="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror">
-                @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                @error('email')  <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> @enderror
             </div>
 
             <div class="form-group">
                 <label>Mobile</label>
                 <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror">
-                @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                @error('mobile')  <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> @enderror
             </div>
 
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" value="{{ old('password') }}">
                 @error('password') 
-                <div class="invalid-feedback">{{ $message }}</div> 
+                 <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
                 @enderror
             </div>
            
@@ -126,7 +134,9 @@
                     @endforeach
                 </select>
                 @error('plan_id') 
-                <div class="invalid-feedback">{{ $message }}</div> 
+                 <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
                 @enderror
             </div>
 
@@ -138,19 +148,30 @@
                         <option value="{{$value->id}}">{{$value->name}}</option>
                     @endforeach
                 </select>
-                @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                @error('plan_type_id')  <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
+                @enderror
                 
             </div>
              <div class="col-lg-4">
                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                <input id="plan_price" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" readonly>
-                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <input id="plan_price" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" readonly>
+                @error('plan_price_id')  
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
+                @enderror
             </div>
 
             <div class="col-lg-4">
                 <label for="">Plan Starts On <span>*</span></label>
                 <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
-                 @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                 @error('plan_start_date') 
+                  <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span> 
+                 @enderror
             </div>
             <div class="col-lg-4 col-6">
                 <label for="">Payment Mode</label>
@@ -183,6 +204,7 @@
 <script>
 $(document).ready(function(){
     $('#plan_id, #plan_type_id').on('change', function(){
+    
         let plan_id = $('#plan_id').val();
         let plan_type_id = $('#plan_type_id').val();
         let branch_id = $('#branch_id').val();

@@ -103,6 +103,12 @@
                             <span>WhatsApp</span>
                         </a>
                     </li>
+                     <li>
+                        <a href="{{ route('booking.form', $library->uuid) }}" target="_blank">
+                            <i class="fab fa-whatsapp"></i>
+                            <span>Book Seat</span>
+                        </a>
+                    </li>
 
                 </ul>
             </div>

@@ -1082,14 +1082,25 @@ class LearnerController extends Controller
 
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $plan_id = $request->input('plan_id');
-            $duration = Plan::where('id', $plan_id)->value('plan_id'); 
-            $type = Plan::where('id', $plan_id)->value('type'); 
+            $months = Plan::where('id', $plan_id)->value('plan_id'); 
+            $duration = $months ?? 0;
+            $type = Plan::where('id', $plan_id)->value('type');
+
             $paid_amount = (float) $request->input('paid_amount', 0);
             $locker = (float) $request->input('locker_amount', 0);
-            $discount = (float) $request->input('discount_amount', 0);
+            
             $planPrice = (float) $request->input('plan_price_id', 0);
+            if ($request->discountType == 'amount') {
+                $discount = $request->discount_amount;
+            } elseif ($request->discountType == 'percentage') {
+                $total = $planPrice + $locker;
+                $discount = ($total * $request->discount_amount) / 100;
+            } else {
+                $discount = 0;
+            }
             $effectivePaid = $planPrice + $locker - $discount;
             $pending_amount =  $effectivePaid - $paid_amount;
+
             $planType = PlanType::find($request->plan_type_id);
             $startTime = $planType->start_time;
             $endTime = $planType->end_time;
@@ -1098,10 +1109,8 @@ class LearnerController extends Controller
             $first_record = Hour::first();
             $total_hour = $first_record ? $first_record->hour : 0;
 
-            $months = Plan::where('id', $request->plan_id)->value('plan_id');
-            $duration = $months ?? 0;
-            $start_date = Carbon::parse($request->input('plan_start_date'));
-            $endDate = $start_date->copy()->addMonths($duration);
+            
+            
             switch (strtoupper($type)) {
                 case 'DAY':
                     $endDate = $start_date->copy()->addDays($duration);
