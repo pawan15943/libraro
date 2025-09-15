@@ -71,7 +71,10 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
+            Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
+            Log::info('Branch found', ['branch_id' => $branch->id]);
 
             // Build validation rules
             $rules = [
@@ -86,43 +89,24 @@ class QrEntryController extends Controller
                 'payment_mode'   => 'required|in:online,offline',
             ];
 
-            // Only add password rule if not renewal
             if (!$request->has('renewal')) {
                 $rules['password'] = 'required|min:6';
             }
 
             $messages = [
-                'name.required'            => 'Please enter your full name.',
-                'name.max'                 => 'Name should not exceed 191 characters.',
-                'email.email'              => 'Please provide a valid email address.',
-                'email.unique'             => 'This email is already registered.',
-                'email.max'                => 'Email should not exceed 191 characters.',
-                'mobile.required'          => 'Mobile number is required.',
-                'mobile.digits_between'    => 'Mobile number must be between 8 to 15 digits.',
-                'password.required'        => 'Password is required.',
-                'password.min'             => 'Password must be at least 6 characters.',
-                'dob.date'                 => 'Please enter a valid date of birth.',
-                'plan_id.required'         => 'Please select a plan.',
-                'plan_id.exists'           => 'Selected plan does not exist.',
-                'plan_type_id.required'    => 'Please select a plan type.',
-                'plan_type_id.exists'      => 'Selected plan type does not exist.',
-                'plan_price_id.required'   => 'Please select a plan price.',
-                'plan_start_date.required' => 'Please choose a start date for the plan.',
-                'plan_start_date.date'     => 'Plan start date must be a valid date.',
-                'payment_mode.required'    => 'Please select a payment mode.',
-                'payment_mode.in'          => 'Payment mode must be either online or offline.',
+                'password.required' => 'Password is required.',
+                'password.min'      => 'Password must be at least 6 characters.',
             ];
 
-            // Run validation
             $validated = $request->validate($rules, $messages);
+            Log::info('Validation passed', ['validated' => $validated]);
 
             $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
             $duration = $months ?? 0;
-            $type     = Plan::where('id', $validated['plan_id'])->value('type'); 
+            $type     = Plan::where('id', $validated['plan_id'])->value('type');
 
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
-            // Calculate end date
             switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
@@ -130,10 +114,17 @@ class QrEntryController extends Controller
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
+            Log::info('Plan dates calculated', [
+                'start_date' => $start_date,
+                'end_date'   => $endDate,
+                'type'       => $type,
+                'duration'   => $duration
+            ]);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()
                 ->where('id', $request->learner_transaction_id)
                 ->first();
+            Log::info('Transaction check', ['transaction' => $transactions]);
 
             if ($transactions) {
                 $password     = Learner::where('id', $transactions->learner_id)->value('password');
@@ -142,31 +133,30 @@ class QrEntryController extends Controller
                 $password     = Hash::make($validated['password']);
                 $total_amount = $validated['plan_price_id'];
             }
+            Log::info('Password & Total amount set', ['total_amount' => $total_amount]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
 
-            // ✅ Save booking
             $booking = Booking::create([
                 'name'            => $validated['name'],
                 'email'           => $validated['email'] ?? null,
                 'mobile'          => $validated['mobile'],
                 'password'        => $password,
                 'dob'             => $validated['dob'] ?? null,
-
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
                 'plan_type_id'    => $validated['plan_type_id'],
                 'plan_price_id'   => $validated['plan_price_id'],
-
                 'plan_start_date' => $validated['plan_start_date'],
                 'plan_end_date'   => $endDate,
-
                 'payment_mode'    => $validated['payment_mode'],
                 'status'          => 'pending',
                 'total_amount'    => $total_amount,
                 'transaction_id'  => $transactions ? $transactions->id : null,
                 'type'            => $seat_type,
             ]);
+
+            Log::info('Booking created successfully', ['booking_id' => $booking->id]);
 
             if ($validated['payment_mode'] === 'online') {
                 return redirect()
@@ -179,20 +169,19 @@ class QrEntryController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // If validation fails → Laravel auto-redirects, but catch if needed
-            return redirect()->back()
-                ->withErrors($e->validator)
-                ->withInput();
+            Log::warning('Validation failed', ['errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            // Any other error
-            \Log::error('Booking store error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            Log::error('Booking store error: '.$e->getMessage(), [
+                'request' => $request->all(),
+                'trace'   => $e->getTraceAsString(),
             ]);
             return redirect()->back()
                 ->with('error', 'Something went wrong while processing your booking. Please try again.')
                 ->withInput();
         }
     }
+
 
 
     public function showPaymentQR($bookingId)

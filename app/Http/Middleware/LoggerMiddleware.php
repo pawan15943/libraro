@@ -11,34 +11,34 @@ use Illuminate\Support\Facades\Log;
 
 class LoggerMiddleware
 {
-    // public function handle($request, Closure $next)
-    // {
-    //     try {
-    //         if (!in_array($request->method(), ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])) {
-    //             return response()->json(['error' => 'Method not allowed'], 405);
-    //         }
-    //         $user = Auth::user();
-    //         $response = $next($request);
+    public function handle($request, Closure $next)
+    {
+        try {
+            if (!in_array($request->method(), ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])) {
+                return response()->json(['error' => 'Method not allowed'], 405);
+            }
+            $user = Auth::user();
+            $response = $next($request);
 
-    //         if ($user) {
-    //             $this->logAction($request, $response, $user);
-    //         }
+            if ($user) {
+                $this->logAction($request, $response, $user);
+            }
 
-    //         // $this->logSuccess($request, $response);
+            // $this->logSuccess($request, $response);
 
-    //         return $response;
-    //     } catch (\Exception $ex) {
-    //         $this->logFailure($request, $ex);
-    //         if ($request->ajax()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'An error occurred.',
-    //                 'error' => $ex->getMessage()
-    //             ], 500);
-    //         }
-    //         throw $ex;
-    //     }
-    // }
+            return $response;
+        } catch (\Exception $ex) {
+            $this->logFailure($request, $ex);
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred.',
+                    'error' => $ex->getMessage()
+                ], 500);
+            }
+            throw $ex;
+        }
+    }
 
     protected function logAction($request, $response, $user)
     {
