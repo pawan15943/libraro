@@ -607,13 +607,13 @@ class QrEntryController extends Controller
             ->latest() // gets the latest detail record
             ->first();
        
-        $transactions = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
-        if (!$transactions) {
+        $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
+        if (!$transaction) {
             return back()->withErrors(['mobile' => 'No customer transaction found with this mobile.']);
         }
     
 
-        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transactions'));
+        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction'));
     }
 public function renewStore(Request $request, $uuid)
 {
