@@ -602,7 +602,7 @@ class QrEntryController extends Controller
             return back()->withErrors(['mobile' => 'No customer found with this mobile.']);
         }
 
-        $customer_detail = LearnerDetail::where('learner_id', $customer->id)
+        $customer_detail = LearnerDetail::withoutGlobalScopes()->where('learner_id', $customer->id)
             ->with('plan', 'planType')
             ->latest() // gets the latest detail record
             ->first();
