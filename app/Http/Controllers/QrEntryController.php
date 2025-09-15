@@ -70,7 +70,7 @@ class QrEntryController extends Controller
 
     public function store(Request $request, $uuid)
     {
-       
+        try {
             Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
 
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
@@ -88,7 +88,7 @@ class QrEntryController extends Controller
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
             ];
-            dd($request->has('renewal'));
+            
 
             if (!$request->has('renewal')) {
                 $rules['password'] = 'required|min:6';
@@ -169,7 +169,18 @@ class QrEntryController extends Controller
                     ->with('success', 'Booking created! Please visit the branch to pay.');
             }
 
-       
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Validation failed', ['errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            Log::error('Booking store error: '.$e->getMessage(), [
+                'request' => $request->all(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()
+                ->with('error', 'Something went wrong while processing your booking. Please try again.')
+                ->withInput();
+        }
     }
 
 
