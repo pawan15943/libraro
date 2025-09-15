@@ -143,7 +143,7 @@
 
         <input type="hidden" name="plan_id" value="{{ $customer_detail->plan_id }}">
         <input type="hidden" name="plan_type_id" value="{{ $customer_detail->plan_type_id }}">
-        <input type="hidden" name="plan_price_id" value="{{ $transaction->plan_price }}">
+        <input type="hidden" name="plan_price_id" value="{{ $transaction->plan_price_id }}">
 
         {{-- New start & end date (maybe extended 1 month or per plan rules) --}}
         <input type="hidden" name="plan_start_date" value="{{ \Carbon\Carbon::parse($customer_detail->plan_end_date)->addDay()->toDateString() }}">
