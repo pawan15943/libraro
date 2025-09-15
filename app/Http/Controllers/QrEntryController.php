@@ -593,10 +593,13 @@ class QrEntryController extends Controller
         ]);
 
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
+        
+       $query = Learner::withoutGlobalScopes()
+            ->where('branch_id', $branch->id)
+            ->where('mobile', encryptData($request->input('mobile')));
 
-        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-            ->where('mobile', encryptData($request->input('mobile')))
-            ->first();
+        dd($query->toSql(), $query->getBindings(), $query->first(),encryptData($request->input('mobile')));
+
 
         if (!$customer) {
             return back()->withErrors(['mobile' => 'No customer found with this mobile.']);
