@@ -47,8 +47,8 @@
 @endif
 
 <div class="text-center mt-4">
-    {{-- {{ route('booking.store', $branch->uuid) }} --}}
-    <form method="POST" action="{{ route('booking.store', $branch->uuid) }}">
+    <form action="{{ route('booking.store', $branch->uuid) }}" method="POST">
+    
         @csrf
 
         {{-- Required fields for validation --}}
