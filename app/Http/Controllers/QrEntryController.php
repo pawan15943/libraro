@@ -70,7 +70,7 @@ class QrEntryController extends Controller
 
     public function store(Request $request, $uuid)
     {
-       
+       dd($request);
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
      // Build validation rules
