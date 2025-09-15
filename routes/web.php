@@ -88,8 +88,11 @@ Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->na
 Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
 Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
 
-Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
+Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
 
+Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
+Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
+Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {

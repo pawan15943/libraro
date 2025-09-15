@@ -73,50 +73,51 @@ class QrEntryController extends Controller
        
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
-        // ✅ Validation rules
-       $validated = $request->validate([
-        'name'           => 'required|string|max:191',
-        'email'          => 'nullable|email|max:191|unique:bookings,email',
-        'mobile'         => 'required|integer|digits_between:8,15',
-        'password'       => 'required|min:6',
-        'dob'            => 'nullable|date',
-        'plan_id'        => 'required|integer|exists:plans,id',
-        'plan_type_id'   => 'required|integer|exists:plan_types,id',
-        'plan_price_id'  => 'required',
-        'plan_start_date'=> 'required|date',
-        'payment_mode'   => 'required|in:online,offline',
-    ], [
-        'name.required'            => 'Please enter your full name.',
-        'name.max'                 => 'Name should not exceed 191 characters.',
-        
-        'email.email'              => 'Please provide a valid email address.',
-        'email.unique'             => 'This email is already registered.',
-        'email.max'                => 'Email should not exceed 191 characters.',
+     // Build validation rules
+        $rules = [
+            'name'           => 'required|string|max:191',
+            'email'          => 'nullable|email|max:191|unique:bookings,email',
+            'mobile'         => 'required|integer|digits_between:8,15',
+            'dob'            => 'nullable|date',
+            'plan_id'        => 'required|integer|exists:plans,id',
+            'plan_type_id'   => 'required|integer|exists:plan_types,id',
+            'plan_price_id'  => 'required',
+            'plan_start_date'=> 'required|date',
+            'payment_mode'   => 'required|in:online,offline',
+        ];
 
-        'mobile.required'          => 'Mobile number is required.',
-        'mobile.digits_between'    => 'Mobile number must be between 8 to 15 digits.',
+        // Only add password rule if not renewal
+        if (!$request->has('renewal')) {
+            $rules['password'] = 'required|min:6';
+        }
 
-        'password.required'        => 'Password is required.',
-        'password.min'             => 'Password must be at least 6 characters.',
+        $messages = [
+            'name.required'            => 'Please enter your full name.',
+            'name.max'                 => 'Name should not exceed 191 characters.',
+            'email.email'              => 'Please provide a valid email address.',
+            'email.unique'             => 'This email is already registered.',
+            'email.max'                => 'Email should not exceed 191 characters.',
+            'mobile.required'          => 'Mobile number is required.',
+            'mobile.digits_between'    => 'Mobile number must be between 8 to 15 digits.',
+            'password.required'        => 'Password is required.',
+            'password.min'             => 'Password must be at least 6 characters.',
+            'dob.date'                 => 'Please enter a valid date of birth.',
+            'plan_id.required'         => 'Please select a plan.',
+            'plan_id.exists'           => 'Selected plan does not exist.',
+            'plan_type_id.required'    => 'Please select a plan type.',
+            'plan_type_id.exists'      => 'Selected plan type does not exist.',
+            'plan_price_id.required'   => 'Please select a plan price.',
+            'plan_start_date.required' => 'Please choose a start date for the plan.',
+            'plan_start_date.date'     => 'Plan start date must be a valid date.',
+            'payment_mode.required'    => 'Please select a payment mode.',
+            'payment_mode.in'          => 'Payment mode must be either online or offline.',
+        ];
 
-        'dob.date'                 => 'Please enter a valid date of birth.',
+        // Run validation
+        $validated = $request->validate($rules, $messages);
 
-        'plan_id.required'         => 'Please select a plan.',
-        'plan_id.exists'           => 'Selected plan does not exist.',
 
-        'plan_type_id.required'    => 'Please select a plan type.',
-        'plan_type_id.exists'      => 'Selected plan type does not exist.',
-
-        'plan_price_id.required'   => 'Please select a plan price.',
-
-        'plan_start_date.required' => 'Please choose a start date for the plan.',
-        'plan_start_date.date'     => 'Plan start date must be a valid date.',
-
-        'payment_mode.required'    => 'Please select a payment mode.',
-        'payment_mode.in'          => 'Payment mode must be either online or offline.',
-    ]);
-
-         $months = Plan::where('id', $validated['plan_id'])->value('plan_id');
+            $months = Plan::where('id', $validated['plan_id'])->value('plan_id');
             $duration = $months ?? 0;
             $type     = Plan::where('id', $validated['plan_id'])->value('type'); 
 
@@ -131,13 +132,28 @@ class QrEntryController extends Controller
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
+        $transactions = LearnerTransaction::withoutGlobalScopes()->where('id', $request->learner_transaction_id)->first();
+        if($transactions){
+            $password=Learner::where('id',$transactions->learner_id)->value('password');
+            $total_amount=$transactions->total_amount;
+           
+        }else{
+            $password=Hash::make($validated['password']);
+            $total_amount=$validated['plan_price_id'];
+        }
+        if ($request->has('renewal')){
+            $seat_type='qr_renew';
+        }else{
+            $seat_type='qr_seat_book';
+        }
+
 
         // ✅ Save booking
        $booking = Booking::create([
             'name'            => $validated['name'],
             'email'           => $validated['email'] ?? null,
             'mobile'          => $validated['mobile'],
-            'password'        => Hash::make($validated['password']),
+            'password'        => $password,
             'dob'             => $validated['dob'] ?? null,
 
             'branch_id'       => $branch->id,
@@ -150,6 +166,9 @@ class QrEntryController extends Controller
 
             'payment_mode'    => $validated['payment_mode'],
             'status'          => 'pending',
+            'total_amount' =>$total_amount,
+            'transaction_id' =>$transactions ? $transactions->id : null,
+            'type'=>$seat_type,
         ]);
          if ($validated['payment_mode'] === 'online') {
             return redirect()
@@ -560,6 +579,126 @@ class QrEntryController extends Controller
     }
 
    
+    public function renewSeat($uuid)
+    {
+        $branch = Branch::where('uuid', $uuid)->firstOrFail();
+
+        return view('qrcode.renew_form', compact('branch'));
+    }
+
+   public function findCustomer(Request $request, $uuid)
+    {
+        $request->validate([
+            'mobile' => 'required|digits:10',
+        ]);
+
+        $branch = Branch::where('uuid', $uuid)->firstOrFail();
+
+        $customer = Learner::where('branch_id', $branch->id)
+            ->where('mobile', $request->mobile)
+            ->first();
+
+        if (!$customer) {
+            return back()->withErrors(['mobile' => 'No customer found with this mobile.']);
+        }
+
+        $customer_detail = LearnerDetail::where('learner_id', $customer->id)
+            ->with('plan', 'planType')
+            ->latest() // gets the latest detail record
+            ->first();
+        $transactions = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->where('is_paid',1)->first();
+        if (!$transactions) {
+            return back()->withErrors(['mobile' => 'No customer transaction found with this mobile.']);
+        }
+    
+
+        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transactions'));
+    }
+public function renewStore(Request $request, $uuid)
+{
+    $branch = Branch::where('uuid', $uuid)->firstOrFail();
+
+    $request->validate([
+        'mobile' => 'required|digits:10',
+        'learner_detail_id'=>'required',
+        'learner_transaction_id'=>'required',
+    ]);
+
+    $customer = Learner::where('branch_id', $branch->id)
+        ->where('mobile', $request->mobile)
+        ->firstOrFail();
+
+    // Get latest detail for reference
+    $lastDetail = LearnerDetail::find($request->learner_detail_id);
+
+    if (!$lastDetail) {
+        return back()->withErrors(['mobile' => 'No existing plan found for this customer.']);
+    }
+
+   $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
+    $duration  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('plan_id'); 
+        $type  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('type'); 
+   
+    // Calculate end date
+    switch (strtoupper($type)) {
+        case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
+        case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
+        case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+        case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
+        default:      $endDate = $start_date; break;
+    }
+    $transactions = LearnerTransaction::withoutGlobalScopes()->where('id', $request->learner_transaction_id)->first();
+
+    // Store new renewal record
+    $learnerController = app(\App\Http\Controllers\LearnerController::class);
+    $learner_detail = LearnerDetail::create([
+        'library_id' => $branch->library_id,
+        'branch_id' => $branch->id,
+        'learner_id' => $lastDetail->learner_id,
+        'plan_id'         => $lastDetail->plan_id,
+        'plan_type_id'    => $lastDetail->plan_type_id,
+        'plan_price_id' =>  $lastDetail->plan_price_id,
+        'plan_start_date' => $start_date->format('Y-m-d'),
+        'plan_end_date' => $endDate->format('Y-m-d'),
+        'join_date' =>$lastDetail->join_date,
+        'hour' => $lastDetail->hour,
+        'seat_no' => $lastDetail->seat_no,
+        'payment_mode' => 1,
+        'is_paid' =>0,
+        'status' => 0,
+    ]);
+    LearnerTransaction::create([
+                'learner_id' => $lastDetail->learner_id,
+                'library_id' => $branch->library_id,
+                'branch_id' => $branch->id,
+                'learner_detail_id' => $learner_detail->id,
+                'total_amount'      => $transactions->total_amount,
+                'paid_amount'       => $transactions->paid_amount,
+                'pending_amount'    => $transactions->pending_amount,
+                'locker_amount'     =>$transactions->locker_amount,
+                'discount_amount'   => $transactions->discount_amount,
+                'paid_date'         =>date('Y-m-d'),
+                'is_paid'           =>0,
+                'due_date'        => $transactions->due_date,
+                'refund'        => $transactions->refund,
+            ]);
+           
+            //learner Activity
+            $data=[];
+            $data['learner_id']=$customer->id;
+            $data['particular']='Paid By Trans';
+            $data['payment_type']='RENEW';
+            $data['payment_mode']=1;
+            $data['amount']=$transactions->paid_amount;
+            $data['dr_cr']='Cr';
+          
+            $learnerController->learnerTransactionActivity($data);
+
+    return redirect()
+        ->route('renew.form', $branch->uuid)
+        ->with('success', 'Plan renewed successfully!');
+}
+
 
 
 
