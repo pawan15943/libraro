@@ -594,7 +594,7 @@ class QrEntryController extends Controller
 
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
-        $customer = Learner::where('branch_id', $branch->id)
+        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
             ->where('mobile', encryptData($request->input('mobile')))
             ->first();
 
