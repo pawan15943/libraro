@@ -606,7 +606,8 @@ class QrEntryController extends Controller
             ->with('plan', 'planType')
             ->latest() // gets the latest detail record
             ->first();
-        $transactions = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->where('is_paid',1)->first();
+       
+        $transactions = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
         if (!$transactions) {
             return back()->withErrors(['mobile' => 'No customer transaction found with this mobile.']);
         }
