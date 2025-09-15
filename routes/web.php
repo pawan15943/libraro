@@ -88,7 +88,7 @@ Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->na
 Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
 Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
 
-Route::get('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
+Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
 
 Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
