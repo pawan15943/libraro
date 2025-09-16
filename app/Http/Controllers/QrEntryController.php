@@ -257,14 +257,22 @@ class QrEntryController extends Controller
         $plans = Plan::where('library_id', getLibraryId())->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
+        if($customer->transaction_id){
+             $transaction=LearnerTransaction::withoutGlobalScopes()->where('id',$customer->transaction_id)->first();
+             $learner=Learner::withoutGlobalScopes()->where('id',$transaction->learner_id)->first();
+        }else{
+            $transaction=null;
+             $learner=null;
+        }
+       
 
-        return view('qrcode.verify_request', compact('customer','planType','plans'));
+        return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner'));
     }
 
       public function requestApproveEdit(Request $request)
     {
         
-      
+     
         $rules = [
             'booking_id' => 'required',
             'branch_id' => 'required',
@@ -338,7 +346,7 @@ class QrEntryController extends Controller
             $paid_amount = (float) $request->input('paid_amount', 0);
             $pending_amount = $request->input('pending_amount');
             $diff_amount    = $request->input('diffrence_amount');
-            $already_paid  =$booking->plan_price_id;
+            $already_paid  =$booking->total_amount;
             
             $refund = 0;
             $pending_refund = 0;
@@ -364,6 +372,7 @@ class QrEntryController extends Controller
                
             }
     
+           
             if($pending_amount > 0){
                 return redirect()->back()->with('error', 'Due date is required');
             }
@@ -403,40 +412,7 @@ class QrEntryController extends Controller
                     $endDate = $start_date; 
                     break;
             }
-
             
-            $existingBookings = $this->getLearnersByLibrary()
-            ->where('learner_detail.seat_no', '=', $request->seat_no)
-            ->where('learner_detail.plan_type_id', '=', $request->plan_type_id)
-            ->where('learners.status', 1)
-            ->where('learner_detail.status', 1)
-            ->where(function ($q) use ($start_date, $endDate) {
-                $q->where('learner_detail.plan_start_date', '<=', $endDate)
-                ->where('learner_detail.plan_end_date', '>=', $start_date);
-            })
-        
-            ->exists();
-
-    
-            if($existingBookings){
-                return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.');
-            }
-        
-
-            if ($total_hour === 0) {
-                return redirect()->back()->with('error', 'Total available hours not set.');
-            }
-
-            $total_cust_hour = Learner::where('seat_no', $request->seat_no)->where('status', 1)->sum('hours');
-        
-
-            if ($hours > ($total_hour - $total_cust_hour)) {
-
-                return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
-            }
-
-        
-
             $extendDay = getExtendDays();
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
@@ -447,9 +423,29 @@ class QrEntryController extends Controller
             }
             $is_paid = 1;
             $payment_mode = 1;
-         
+              if ($total_hour === 0) {
+                return redirect()->back()->with('error', 'Total available hours not set.');
+            }
+
            
-            if ($seat_no) {
+
+            if ($seat_no && !$request->learner_id) {
+                 $existingBookings = $this->getLearnersByLibrary()
+                ->where('learner_detail.seat_no', '=', $seat_no)
+                ->where('learner_detail.plan_type_id', '=', $request->plan_type_id)
+                ->where('learners.status', 1)
+                ->where('learner_detail.status', 1)
+                ->where(function ($q) use ($start_date, $endDate) {
+                    $q->where('learner_detail.plan_start_date', '<=', $endDate)
+                    ->where('learner_detail.plan_end_date', '>=', $start_date);
+                })
+            
+                ->exists();
+
+        
+                if($existingBookings){
+                    return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.');
+                }
 
                 if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->count() > 0) {
                     return redirect()->back()->with('error', 'This Plan Type Seat already booked');
@@ -468,6 +464,15 @@ class QrEntryController extends Controller
                 }
             }
 
+            $total_cust_hour = Learner::where('seat_no', $request->seat_no)->where('status', 1)->sum('hours');
+        
+
+            if ($hours > ($total_hour - $total_cust_hour)) {
+
+                return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
+            }
+
+        
 
             if (($new_paid > $total_amt) || ($new_paid == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid');
@@ -482,11 +487,16 @@ class QrEntryController extends Controller
             $customerEmail = $booking->email 
         ? encryptData($booking->email) 
         : ($request->filled('email') ? encryptData($request->input('email')) : null);
-
-           $customer = Learner::create([
+        if($request->learner_id){
+            $customer=Learner::find($request->learner_id);
+            $customer->seat_no=$seat_no;
+            $customer->hours=$hours;
+            $customer->save();
+        }else{
+             $customer = Learner::create([
             'seat_no' => $seat_no,
             'name' => $booking->name,
-            'mobile' =>$booking->mobile,
+            'mobile' =>encryptData($booking->mobile),
             'email' => $customerEmail,
             'dob' => $booking->dob,
             'hours' => $hours,
@@ -497,6 +507,9 @@ class QrEntryController extends Controller
             'learner_no'=>$learnerController->generateLearnerCode(),
             'locker_no'=>$request->input('locker_no') ?? null ,
         ]);
+        }
+
+          
             $learner_detail = LearnerDetail::create([
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
@@ -561,24 +574,7 @@ class QrEntryController extends Controller
             return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
         }
     }
-    function generateLearnerCode() {
-        $prefix = "LN";
-      $lastlearner = Learner::withoutGlobalScopes()
-                      ->whereNotNull('learner_no')
-                      ->orderBy('id', 'DESC')
-                      ->first();
-                              
-        if ($lastlearner) {
-            
-            $lastNumber = intval(substr($lastlearner->learner_no, 2)); 
-            $newNumber = $lastNumber + 1;
-            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
-        } else {
-            $randomNumber = '000001';
-        }
     
-        return $prefix . $randomNumber;
-    }
 
    
     public function renewSeat($uuid)
@@ -617,90 +613,90 @@ class QrEntryController extends Controller
 
         return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction'));
     }
-public function renewStore(Request $request, $uuid)
-{
-    $branch = Branch::where('uuid', $uuid)->firstOrFail();
+// public function renewStore(Request $request, $uuid)
+// {
+//     $branch = Branch::where('uuid', $uuid)->firstOrFail();
 
-    $request->validate([
-        'mobile' => 'required|digits:10',
-        'learner_detail_id'=>'required',
-        'learner_transaction_id'=>'required',
-    ]);
+//     $request->validate([
+//         'mobile' => 'required|digits:10',
+//         'learner_detail_id'=>'required',
+//         'learner_transaction_id'=>'required',
+//     ]);
 
-    $customer = Learner::where('branch_id', $branch->id)
-        ->where('mobile', $request->mobile)
-        ->firstOrFail();
+//     $customer = Learner::where('branch_id', $branch->id)
+//         ->where('mobile', $request->mobile)
+//         ->firstOrFail();
 
-    // Get latest detail for reference
-    $lastDetail = LearnerDetail::find($request->learner_detail_id);
+//     // Get latest detail for reference
+//     $lastDetail = LearnerDetail::find($request->learner_detail_id);
 
-    if (!$lastDetail) {
-        return back()->withErrors(['mobile' => 'No existing plan found for this customer.']);
-    }
+//     if (!$lastDetail) {
+//         return back()->withErrors(['mobile' => 'No existing plan found for this customer.']);
+//     }
 
-   $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
-    $duration  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('plan_id'); 
-        $type  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('type'); 
+//    $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
+//     $duration  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('plan_id'); 
+//         $type  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('type'); 
    
-    // Calculate end date
-    switch (strtoupper($type)) {
-        case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
-        case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-        case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
-        case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
-        default:      $endDate = $start_date; break;
-    }
-    $transactions = LearnerTransaction::withoutGlobalScopes()->where('id', $request->learner_transaction_id)->first();
+//     // Calculate end date
+//     switch (strtoupper($type)) {
+//         case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
+//         case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
+//         case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+//         case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
+//         default:      $endDate = $start_date; break;
+//     }
+//     $transactions = LearnerTransaction::withoutGlobalScopes()->where('id', $request->learner_transaction_id)->first();
 
-    // Store new renewal record
-    $learnerController = app(\App\Http\Controllers\LearnerController::class);
-    $learner_detail = LearnerDetail::create([
-        'library_id' => $branch->library_id,
-        'branch_id' => $branch->id,
-        'learner_id' => $lastDetail->learner_id,
-        'plan_id'         => $lastDetail->plan_id,
-        'plan_type_id'    => $lastDetail->plan_type_id,
-        'plan_price_id' =>  $lastDetail->plan_price_id,
-        'plan_start_date' => $start_date->format('Y-m-d'),
-        'plan_end_date' => $endDate->format('Y-m-d'),
-        'join_date' =>$lastDetail->join_date,
-        'hour' => $lastDetail->hour,
-        'seat_no' => $lastDetail->seat_no,
-        'payment_mode' => 1,
-        'is_paid' =>0,
-        'status' => 0,
-    ]);
-    LearnerTransaction::create([
-                'learner_id' => $lastDetail->learner_id,
-                'library_id' => $branch->library_id,
-                'branch_id' => $branch->id,
-                'learner_detail_id' => $learner_detail->id,
-                'total_amount'      => $transactions->total_amount,
-                'paid_amount'       => $transactions->paid_amount,
-                'pending_amount'    => $transactions->pending_amount,
-                'locker_amount'     =>$transactions->locker_amount,
-                'discount_amount'   => $transactions->discount_amount,
-                'paid_date'         =>date('Y-m-d'),
-                'is_paid'           =>0,
-                'due_date'        => $transactions->due_date,
-                'refund'        => $transactions->refund,
-            ]);
+//     // Store new renewal record
+//     $learnerController = app(\App\Http\Controllers\LearnerController::class);
+//     $learner_detail = LearnerDetail::create([
+//         'library_id' => $branch->library_id,
+//         'branch_id' => $branch->id,
+//         'learner_id' => $lastDetail->learner_id,
+//         'plan_id'         => $lastDetail->plan_id,
+//         'plan_type_id'    => $lastDetail->plan_type_id,
+//         'plan_price_id' =>  $lastDetail->plan_price_id,
+//         'plan_start_date' => $start_date->format('Y-m-d'),
+//         'plan_end_date' => $endDate->format('Y-m-d'),
+//         'join_date' =>$lastDetail->join_date,
+//         'hour' => $lastDetail->hour,
+//         'seat_no' => $lastDetail->seat_no,
+//         'payment_mode' => 1,
+//         'is_paid' =>0,
+//         'status' => 0,
+//     ]);
+//     LearnerTransaction::create([
+//                 'learner_id' => $lastDetail->learner_id,
+//                 'library_id' => $branch->library_id,
+//                 'branch_id' => $branch->id,
+//                 'learner_detail_id' => $learner_detail->id,
+//                 'total_amount'      => $transactions->total_amount,
+//                 'paid_amount'       => $transactions->paid_amount,
+//                 'pending_amount'    => $transactions->pending_amount,
+//                 'locker_amount'     =>$transactions->locker_amount,
+//                 'discount_amount'   => $transactions->discount_amount,
+//                 'paid_date'         =>date('Y-m-d'),
+//                 'is_paid'           =>0,
+//                 'due_date'        => $transactions->due_date,
+//                 'refund'        => $transactions->refund,
+//             ]);
            
-            //learner Activity
-            $data=[];
-            $data['learner_id']=$customer->id;
-            $data['particular']='Paid By Trans';
-            $data['payment_type']='RENEW';
-            $data['payment_mode']=1;
-            $data['amount']=$transactions->paid_amount;
-            $data['dr_cr']='Cr';
+//             //learner Activity
+//             $data=[];
+//             $data['learner_id']=$customer->id;
+//             $data['particular']='Paid By Trans';
+//             $data['payment_type']='RENEW';
+//             $data['payment_mode']=1;
+//             $data['amount']=$transactions->paid_amount;
+//             $data['dr_cr']='Cr';
           
-            $learnerController->learnerTransactionActivity($data);
+//             $learnerController->learnerTransactionActivity($data);
 
-    return redirect()
-        ->route('renew.form', $branch->uuid)
-        ->with('success', 'Plan renewed successfully!');
-}
+//     return redirect()
+//         ->route('renew.form', $branch->uuid)
+//         ->with('success', 'Plan renewed successfully!');
+// }
 
 
 

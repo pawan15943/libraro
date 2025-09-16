@@ -73,21 +73,37 @@ if(Route::currentRouteName() == 'booking.details'){
                     @method('POST')
 
                     <input type="hidden" name="booking_id" value="{{ $customer->id}}" id="user_id">
+                    <input type="hidden" name="learner_id" value="{{ $learner->id}}" >
                     <input type="hidden" name="branch_id" value="{{ $customer->branch_id}}">  
+                    <input type="hidden" name="learner_detail_id" value="{{ $transaction->learner_detail_id}}" id="learner_detail_id">  
 
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
                   
 
                     <div class="row g-4">
-                          <div class="col-lg-6">
-                            <label for="seat_id">Choose Seat No. <span>*</span></label>
-                            <select name="seat_no" class="form-select" id="seat_id11">
-                                <option value="gen">GEN</option>
-                                @foreach($availableseats as $key => $value)
-                                    <option value="{{$value}}">{{$value}}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                          @php
+                                $availableSeatsArray = $availableseats->toArray();
+                            @endphp
+
+                            <div class="col-lg-6">
+                                <label for="seat_id">Choose Seat No. <span>*</span></label>
+                                <select name="seat_no" class="form-select" id="seat_id11">
+                                    <option value="gen" 
+                                        {{ ($learner->seat_no ?? 'gen') == 'gen' || !in_array($learner->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                        GEN
+                                    </option>
+
+                                    @foreach($availableseats as $value)
+                                        <option value="{{ $value }}" 
+                                            {{ ($learner->seat_no ?? '') == $value && in_array($learner->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                            {{ $value }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+
+                        
                         <div class="col-lg-6">
                             <label for="">Plan Start Date <span>*</span></label>
                              <input type="text"  name="plan_start_date"
@@ -154,24 +170,31 @@ if(Route::currentRouteName() == 'booking.details'){
                             @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField())))
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="toggleFieldCheckbox11">Locker?</label>
-                                <select name="locker" id="toggleFieldCheckbox11" class="form-control">
-                                    <option value="no">No</option>
-                                    <option value="yes">Yes, I Need a Locker</option>
+                                    <select name="locker" id="toggleFieldCheckbox11" class="form-control @error('locker') is-invalid @enderror">
+                                    <option value="no"  {{ old('locker', ($transaction->locker_amount ?? 0) > 0 ? 'yes' : 'no') == 'no' ? 'selected' : '' }}>No</option>
+                                    <option value="yes" {{ old('locker', ($transaction->locker_amount ?? 0) > 0 ? 'yes' : 'no') == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
                                 </select>
+                                @error('locker')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+
                             </div>
 
                              <div class="col-lg-4">
                                 <label for="locker_amount11">Locker Amount</label>
                                 <input type="text" id="locker_amount11" name="locker_amount"
-                                    class="form-control"
-                                    value="{{ old('locker_amount', $customer->locker_amount ?? 0) }}"
+                                    class="form-control @error('locker_amount') is-invalid @enderror"
+                                    value="{{ old('locker_amount', $transaction->locker_amount ?? 0) }}"
                                     readonly>
+                                     @error('locker_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
 
                             <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
                                 <label for="locker_no11">Locker No.</label>
                                 <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" 
-                                    name="locker_no" id="locker_no11" placeholder="Enter Locker No.">
+                                    name="locker_no" id="locker_no11" placeholder="Enter Locker No." value="{{ old('locker_no', ($transaction->locker_amount > 0 && !empty($learner->locker_no)) ? $learner->locker_no : '') }}">
                                 @error('locker_no')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -181,20 +204,23 @@ if(Route::currentRouteName() == 'booking.details'){
                             @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount))
                             <div class="col-lg-4">
                                 <label for="discountType11">Discount Type</label>
-                                <select id="discountType11" name="discount_type" class="form-control">
-                                    <option value="">None</option>
+                                <select id="discountType11" name="discount_type" class="form-control @error('discount_type') is-invalid @enderror">
+                                   <option value="">None</option>
                                     <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                                    <option value="amount" {{ old('discount_type') == 'amount' ? 'selected' : '' }}>Amount</option>
+                                    <option value="amount" {{ !empty($transaction->discount_amount) ? 'selected' : '' }}>Amount</option>
                                 </select>
+                                 @error('discount_type')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4">
+                                <label>Discount</label>
+                                <input type="text" class="form-control  @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount11" value="{{ $transaction->discount_amount ?? 0 }}" readonly>
+                                 @error('discount_amount')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
 
-                           <div class="col-lg-4">
-                                <label for="discount_amount11">Discount <span id="typeVal11">INR / %</span></label>
-                                <input type="text" id="discount_amount11" name="discount_amount"
-                                    class="form-control"
-                                    value="{{ old('discount_amount', $customer->discount_amount ?? 0) }}"
-                                    readonly>
-                                </div>
                             @endif
                         </div>
                     </div>
@@ -211,7 +237,7 @@ if(Route::currentRouteName() == 'booking.details'){
                             <label for="previous_amount11">Previous Amount</label>
                             <input type="text" id="previous_amount11" name="previous_amount"
                                 class="form-control"
-                                value="{{ old('previous_amount', $customer->plan_price_id ?? 0) }}"
+                                value="{{ old('previous_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
                         </div>
 
@@ -283,13 +309,28 @@ $(document).ready(function() {
     
      const plan_id11 = $('#plan_id11').val();
      const selectedPlanType = $('#plan_type_id11').val();
-    const seat = $('#seat_id11').val();
-     if (!seat || seat === 'gen') {
-        getTypeSeatwise('', selectedPlanType); // load all plan types
-    } else {
-        getTypeSeatwise(seat, selectedPlanType); // load plan types seatwise
-    }
+     const learner_detail_id = $('#learner_detail_id').val();
     
+    const seat = $('#seat_id11').val();
+
+    if(learner_detail_id){
+       
+        // if (!seat || seat === 'gen') {
+        //     fetchPlanTypesRenewSeat('',learner_detail_id)
+           
+        // } else {
+        //     fetchPlanTypesRenewSeat(seat, learner_detail_id); 
+        // }
+
+    }else{
+
+     
+        if (!seat || seat === 'gen') {
+            getTypeSeatwise('', selectedPlanType); // load all plan types
+        } else {
+            getTypeSeatwise(seat, selectedPlanType); // load plan types seatwise
+        }
+    }
     getPlanPrice(selectedPlanType,plan_id11);
     calculatePaidTotalAmount();
    
@@ -491,8 +532,10 @@ function lockerAmtGet(plan_id11){
     var discountAmount = 0;
 
     if (discountType === 'percentage') {
+        console.log('heena_prencetenge');
         discountAmount = ((planPrice + lockerAmount) * discountRaw) / 100;
     } else if (discountType === 'amount') {
+        console.log('heena_amontcheck');
         discountAmount = discountRaw;
     }
 
@@ -501,6 +544,10 @@ function lockerAmtGet(plan_id11){
     }
         
     const autoPaid = planPrice + lockerAmount - discountAmount;
+    console.log('heena_planPrice',planPrice);
+    console.log('heena_lockerAmount',lockerAmount);
+    console.log('heena_discountAmount',discountAmount);
+    console.log('heena_autoPaid',autoPaid);
     $('#total_amount11').val(autoPaid);
 
      const previous_amount =$('#previous_amount11').val();
@@ -512,7 +559,7 @@ function lockerAmtGet(plan_id11){
        
         
     }else{
-         $('label[for="paid_amount11"]').text("Diffrence Amount *");
+         $('label[for="paid_amount11"]').text("Paid Amount *");
        
     }
 }
@@ -567,7 +614,86 @@ function calculatePendingAmt(paid_val) {
 
 
 }
+//  function fetchPlanTypesRenewSeat(seat_no,learner_detail_id) {
+           
+//             if (seat_no  && learner_detail_id) {
+//                 $.ajax({
+//                     url: '{{ route('gettypePlanwise') }}',
+//                     headers: {
+//                         'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+//                     },
+//                     type: 'GET',
+//                     data: {
+//                         "_token": "{{ csrf_token() }}",
+//                         "seat_no": seat_no,
+//                         "learner_detail_id": learner_detail_id,
+//                     },
+//                     dataType: 'json',
+//                     success: function (html) {
+//                         console.log("renew",html);
+//                         $("#plan_type_id_renew").empty(); 
+//                         $("#plan_id2").empty(); 
 
+//                         if (html[0]) {
+//                             $.each(html[0], function (key, value) {
+//                                 $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
+//                             });
+//                         } else {
+//                             $("#plan_type_id_renew").append('<option value="">Choose</option>');
+//                         }
+                       
+
+//                         if (html[1]) {
+//                              $.each(html[1], function (key, value) {
+//                                 $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
+//                             });
+//                         }
+
+//                         if (html[2]){
+//                            $("#plan_price_id2").val(html[2].plan_price_id);      
+//                         }
+
+//                         if(html[3]){
+//                             $("#locker_amount2").val(html[3].locker_amount);  
+//                             $("#discount_amount3").val(html[3].discount_amount);  
+//                             $("#new_plan_price").val(html[3].discount_amount);  
+
+//                             if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
+//                                 $("#locker").val('yes');
+//                                 $("#locker_amount2").val(html[3].locker_amount);
+                                
+//                             } else {
+//                                 $("#locker").val('no');
+//                                 $("#locker_amount2").val('');
+                               
+//                             }
+
+//                             if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
+//                                 $("#discount_type").val('amount');
+//                                 $("#discount_amount3").val(html[3].discount_amount);
+//                             } else {
+//                                 $("#discount_type").val('');
+//                                 $("#discount_amount3").val('');
+//                             }
+//                         }
+//                          if (html[4]){
+//                            $("#locker_no2").val(html[4].locker_no);
+//                            if(html[4].locker_no){
+//                             $("#locker_no2").removeAttr('readonly');
+//                            }      
+//                         }
+                        
+//                         popupautoCalculatePaidAmount(); 
+//                     },
+//                     error: function (xhr, status, error) {
+//                         console.error("AJAX error:", status, error); // Log any errors
+//                     }
+//                 });
+//             } else {
+//                 $("#plan_type_id_renew").empty();
+//                 $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
+//             }
+//         }
 
 //  end 
 </script>
