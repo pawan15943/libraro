@@ -91,9 +91,9 @@
             
                 <p>No QR code uploaded for this branch.</p>
             @endif --}}
-            {{-- <a href="{{ $upiLink }}">
+            <a href="{{ $upiLink }}">
                 <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}">
-            </a> --}}
+            </a>
 
 
             <form action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">

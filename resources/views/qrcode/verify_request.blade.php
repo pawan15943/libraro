@@ -72,10 +72,14 @@ if(Route::currentRouteName() == 'booking.details'){
                     @csrf
                     @method('POST')
 
-                    <input type="hidden" name="booking_id" value="{{ $customer->id}}" id="user_id">
-                    <input type="hidden" name="learner_id" value="{{ $learner->id}}" >
-                    <input type="hidden" name="branch_id" value="{{ $customer->branch_id}}">  
-                    <input type="hidden" name="learner_detail_id" value="{{ $transaction->learner_detail_id}}" id="learner_detail_id">  
+                  <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" id="user_id">
+
+                <input type="hidden" name="learner_id" value="{{ $learner->id ?? '' }}">
+
+                <input type="hidden" name="branch_id" value="{{ $customer->branch_id ?? '' }}">
+
+                <input type="hidden" name="learner_detail_id" value="{{ $transaction->learner_detail_id ?? '' }}" id="learner_detail_id">
+
 
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
                   
