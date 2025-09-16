@@ -175,8 +175,9 @@ if(Route::currentRouteName() == 'booking.details'){
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="toggleFieldCheckbox11">Locker?</label>
                                     <select name="locker" id="toggleFieldCheckbox11" class="form-control @error('locker') is-invalid @enderror">
-                                    <option value="no"  {{ old('locker', ($transaction->locker_amount ?? 0) > 0 ? 'yes' : 'no') == 'no' ? 'selected' : '' }}>No</option>
-                                    <option value="yes" {{ old('locker', ($transaction->locker_amount ?? 0) > 0 ? 'yes' : 'no') == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+                                  <option value="no"  {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'no' ? 'selected' : '' }}>No</option>
+                                    <option value="yes" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+
                                 </select>
                                 @error('locker')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -186,10 +187,10 @@ if(Route::currentRouteName() == 'booking.details'){
 
                              <div class="col-lg-4">
                                 <label for="locker_amount11">Locker Amount</label>
-                                <input type="text" id="locker_amount11" name="locker_amount"
-                                    class="form-control @error('locker_amount') is-invalid @enderror"
-                                    value="{{ old('locker_amount', $transaction->locker_amount ?? 0) }}"
-                                    readonly>
+                               <input type="text" id="locker_amount11" name="locker_amount"
+                                class="form-control @error('locker_amount') is-invalid @enderror"
+                                value="{{ old('locker_amount', $transaction?->locker_amount ?? 0) }}"
+                                readonly>
                                      @error('locker_amount')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -197,8 +198,12 @@ if(Route::currentRouteName() == 'booking.details'){
 
                             <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
                                 <label for="locker_no11">Locker No.</label>
-                                <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" 
-                                    name="locker_no" id="locker_no11" placeholder="Enter Locker No." value="{{ old('locker_no', ($transaction->locker_amount > 0 && !empty($learner->locker_no)) ? $learner->locker_no : '') }}">
+                                <input type="text" 
+                                class="form-control digit-only @error('locker_no') is-invalid @enderror"
+                                name="locker_no" id="locker_no11" placeholder="Enter Locker No."
+                                value="{{ old('locker_no', ((optional($transaction)->locker_amount > 0) && !empty(optional($learner)->locker_no)) ? $learner->locker_no : '') }}">
+
+                              
                                 @error('locker_no')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -211,7 +216,8 @@ if(Route::currentRouteName() == 'booking.details'){
                                 <select id="discountType11" name="discount_type" class="form-control @error('discount_type') is-invalid @enderror">
                                    <option value="">None</option>
                                     <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                                    <option value="amount" {{ !empty($transaction->discount_amount) ? 'selected' : '' }}>Amount</option>
+                                    <option value="amount" {{ !empty($transaction?->discount_amount) ? 'selected' : '' }}>Amount</option>
+
                                 </select>
                                  @error('discount_type')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
