@@ -210,7 +210,7 @@ class QrEntryController extends Controller
 
         $booking = Booking::findOrFail($bookingId);
           if ($request->hasFile('payment_screenshot')) {
-            $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:200']);
+            $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:2048']);
             $payment_screenshot = $request->payment_screenshot;
             $payment_screenshotNewName = "payment" . time() . $payment_screenshot->getClientOriginalName();
             $payment_screenshot->move('public/uploade', $payment_screenshotNewName);

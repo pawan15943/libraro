@@ -1,21 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="http://localhost/genrate/public/css/home-style.css">
+@extends('sitelayouts.layout')
+@section('content')
 
     <style>
         .process-step-1 {
-            height: 100vh;
             display: flex;
             align-items: center;
             flex-direction: column;
@@ -48,16 +35,12 @@
             border-color: #18225f;
         }
     </style>
-</head>
 
-<body>
-
-    <div class="sacnd-data">
+    <div class="sacnd-data" style="min-height: 500px; display:flex; align-items:center;">
         <div class="container">
             <div class="row justify-content-center align-items-center h-100">
-                <div class="col-lg-3">
+                <div class="col-lg-4">
                     <div class="process-step-1">
-                        <img src="http://localhost/genrate/public/img/libraro.svg" alt="logo" class="logo">
                         <div class="action-content">
                             <div class="headings text-center">
                                 <h4>Welcome to Libraro</h4>
@@ -81,22 +64,11 @@
                                 </div>
                             </form>
                         </div>
-                        <span class="footer">Copyright © 2025 Libraro.in. All Rights Reserved.</span>
+                        
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
-
-</body>
-
-</html>
+@endsection
