@@ -79,9 +79,9 @@ class QrEntryController extends Controller
             // Build validation rules
             $rules = [
                 'name'           => 'required|string|max:191',
-                'email'          => 'nullable|email|max:191|unique:bookings,email',
+                // 'email'          => 'nullable|email|max:191|unique:bookings,email',
                 'mobile'         => 'required|integer|digits_between:8,15',
-                'dob'            => 'nullable|date',
+                // 'dob'            => 'nullable|date',
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
@@ -140,10 +140,10 @@ class QrEntryController extends Controller
 
             $booking = Booking::create([
                 'name'            => $validated['name'],
-                'email'           => $validated['email'] ?? null,
+                // 'email'           => $validated['email'] ?? null,
                 'mobile'          => $validated['mobile'],
                 'password'        => $password,
-                'dob'             => $validated['dob'] ?? null,
+                // 'dob'             => $validated['dob'] ?? null,
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
                 'plan_type_id'    => $validated['plan_type_id'],
@@ -484,9 +484,9 @@ class QrEntryController extends Controller
             }
             
            
-            $customerEmail = $booking->email 
-        ? encryptData($booking->email) 
-        : ($request->filled('email') ? encryptData($request->input('email')) : null);
+        //     $customerEmail = $booking->email 
+        // ? encryptData($booking->email) 
+        // : ($request->filled('email') ? encryptData($request->input('email')) : null);
         if($request->learner_id){
             $customer=Learner::find($request->learner_id);
             $customer->seat_no=$seat_no;
@@ -497,8 +497,8 @@ class QrEntryController extends Controller
             'seat_no' => $seat_no,
             'name' => $booking->name,
             'mobile' =>encryptData($booking->mobile),
-            'email' => $customerEmail,
-            'dob' => $booking->dob,
+            // 'email' => $customerEmail,
+            // 'dob' => $booking->dob,
             'hours' => $hours,
             'status' => $status,
             'library_id' => getLibraryId(),
@@ -506,7 +506,7 @@ class QrEntryController extends Controller
             'password' => $booking->password,
             'learner_no'=>$learnerController->generateLearnerCode(),
             'locker_no'=>$request->input('locker_no') ?? null ,
-        ]);
+            ]);
         }
 
           
