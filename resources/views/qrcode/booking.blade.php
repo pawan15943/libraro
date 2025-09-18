@@ -126,7 +126,7 @@
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="plan_price" type="date" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" readonly>
+                                <input id="plan_price" type="text" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
