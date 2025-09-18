@@ -210,7 +210,7 @@ if(Route::currentRouteName() == 'booking.details'){
                             </div>
                             @endif
 
-                            @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount))
+                            @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $transaction?->discount_amount))
                             <div class="col-lg-4">
                                 <label for="discountType11">Discount Type</label>
                                 <select id="discountType11" name="discount_type" class="form-control @error('discount_type') is-invalid @enderror">
