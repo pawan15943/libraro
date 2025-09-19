@@ -1,69 +1,6 @@
 @extends('sitelayouts.layout')
 @section('content')
 
-    <style>
-       
-        .sacnd-data {
-            background: linear-gradient(2deg, #d6faff, transparent);
-            display: flex;
-            align-items: center;
-            justify-content: center;  
-        }
-
-        .sacnd-data .form-control,.sacnd-data .form-select{
-            height: 45px;
-        }
-
-
-
-        .action-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .action-content span.text-message {
-            color: #a1a1a1;
-            font-size: .9rem;
-        }
-
-        .sacnd-data span.footer {
-            font-size: .8rem;
-        }
-
-        input.btn.btn-primary {
-            background: #18225f;
-            border-color: #18225f;
-        }
-
-        ul.action-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            list-style: none;
-            padding: 0;
-            justify-content: space-between;
-        }
-
-        ul.action-list li {
-            width: calc(100% / 2 - .75rem);
-
-        }
-
-        ul.action-list li a {
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            padding: 2rem 2rem;
-            background: #fff;
-            box-shadow: 1px 0 5px #00000021;
-            border-radius: 1rem;
-            font-weight: 700;
-        }
-
-    </style>
-
     <section class="sacnd-data py-5">
         <div class="container">
             <!-- resources/views/booking/form.blade.php -->

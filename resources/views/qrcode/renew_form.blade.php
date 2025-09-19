@@ -1,40 +1,7 @@
 @extends('sitelayouts.layout')
 @section('content')
 
-    <style>
-        .process-step-1 {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            gap: 1rem;
-            justify-content: space-between;
-        }
 
-        .sacnd-data {
-            background: linear-gradient(2deg, #d6faff, transparent);
-        }
-
-        .action-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .action-content span.text-message {
-            color: #a1a1a1;
-            font-size: .9rem;
-        }
-
-        .process-step-1 span.footer {
-            font-size: .8rem;
-        }
-
-        input.btn.btn-primary {
-            background: #18225f;
-            border-color: #18225f;
-        }
-    </style>
 
     <div class="sacnd-data" style="min-height: 500px; display:flex; align-items:center;">
         <div class="container">

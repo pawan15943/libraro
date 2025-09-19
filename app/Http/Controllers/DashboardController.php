@@ -255,12 +255,10 @@ class DashboardController extends Controller
            
             $todayBalance = $total_cr-$total_dr;
            
-            
-
-
-
+         
             $recent_activitys=DB::table('learner_operations_log')->where('library_id',getLibraryId())->where('created_at', '>=', Carbon::now()->subDays(5))->get();
-            $qrbookings=Booking::where('branch_id',getCurrentBranch())->get();
+            $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->get();
+            $branch=Branch::where('id',getCurrentBranch())->first();
            
             if($is_expire && $user->hasRole('admin')){
             
@@ -277,7 +275,7 @@ class DashboardController extends Controller
                 }
 
                
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings'));
+                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch'));
             }else{
               
                 return redirect($redirectUrl);

@@ -22,9 +22,29 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use App\Http\Controllers\LearnerController;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class QrEntryController extends Controller
 {
+    public function downloadBranchQR($uuid)
+    {
+        
+        $url = route('qr.branch', $uuid);
+
+        // Generate QR as SVG       
+     
+        $qrCode = base64_encode(
+        QrCode::format('png')
+            ->size(550)
+            ->margin(2)
+            ->generate($url)
+            );
+
+        $pdf = PDF::loadView('library.branch-qr', compact('qrCode', 'uuid'))
+                ->setPaper('a4', 'portrait');
+
+        return $pdf->download("branch-qr-{$uuid}.pdf");
+    }
    public function showOptions($uuid)
     {
         $branch = Branch::where('uuid', $uuid)->where('status', 1)->firstOrFail();
