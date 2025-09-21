@@ -12,13 +12,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
+        @if($branch->uuid)
         <div id="qrPreview" class="mb-4">
 
             {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
         </div>
-       @if($branch->uuid)
-      
-        
        
          <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm" >Print QR</a>
        @endif
