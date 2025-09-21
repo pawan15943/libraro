@@ -16,9 +16,12 @@
 
             {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
         </div>
+       @if($branch->uuid)
+      
+        
        
          <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm" >Print QR</a>
-       
+       @endif
         {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
         <button class="btn button btn-sm" onclick="downloadQR(this)">Download QR</button> --}}
       </div>
