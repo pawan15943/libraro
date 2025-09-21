@@ -85,6 +85,16 @@
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>
+                     <div class="col-lg-6">
+                        <label for="mobile">UPI ID(for payment receive)<span>*</span></label>
+                        <input type="text" 
+                               class="form-control  @error('upi_id') is-invalid @enderror"
+                               name="upi_id" maxlength="10"
+                               value="{{ old('upi_id', $branch->upi_id ?? '') }}">
+                        @error('upi_id')
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                        @enderror
+                    </div>
                 </div>
             </div>
             @if(isset($branch))
