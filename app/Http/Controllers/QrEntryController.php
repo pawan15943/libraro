@@ -208,7 +208,19 @@ class QrEntryController extends Controller
     public function showPaymentQR($bookingId)
     {
         $booking = Booking::with('branch')->findOrFail($bookingId);
-        $upiLink = "upi://pay?pa=heenamehandi94145@ybl&pn=Test+Library&am=10&cu=INR&tn=Seat+Booking+Test";
+
+        $branch=Branch::where('id',$booking->branch_id)->first();
+        $upiId   = $branch->upi_id ?? 'heenamehandi94145';  // fallback UPI if branch has none
+        $payee   = $branch->name ?? 'Library';           // dynamic payee name
+        $amount  = $amount ?? 10;                        // dynamic amount
+        $currency = 'INR';
+        $note     = 'Seat Booking';                      // you can extend this as needed
+
+
+        $upiLink = "upi://pay?pa={$upiId}&pn=".urlencode($payee)."&am={$amount}&cu={$currency}&tn=".urlencode($note);
+      
+
+        
 
         $qrCode = QrCode::size(300)->generate($upiLink);
         // Assume branch has a payment_qr field

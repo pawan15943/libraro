@@ -125,11 +125,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </a>
                             </li>
+                            @if($branch->uuid && $branch->upi_id)
                             
                             <li>
                                 
                                 <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
+
                             </li>
+                            @endif
                         </ul>
                     </div>
                 </div>
