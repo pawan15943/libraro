@@ -233,8 +233,8 @@ class QrEntryController extends Controller
             $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:2048']);
             $payment_screenshot = $request->payment_screenshot;
             $payment_screenshotNewName = "payment" . time() . $payment_screenshot->getClientOriginalName();
-            $payment_screenshot->move('public/uploade', $payment_screenshotNewName);
-            $payment_screenshot = 'public/uploade' . $payment_screenshotNewName;
+            $payment_screenshot->move('public/uploade/', $payment_screenshotNewName);
+            $payment_screenshot = 'public/uploade/' . $payment_screenshotNewName;
         } else {
             $payment_screenshot = null;
         }
@@ -242,6 +242,7 @@ class QrEntryController extends Controller
             'payment_screenshot' => $payment_screenshot,
             'status' => 'pending'
         ]);
+        
       
        // 🔔 Send notification to library owner
         if ($update) {
@@ -633,91 +634,13 @@ class QrEntryController extends Controller
 
         return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction'));
     }
-// public function renewStore(Request $request, $uuid)
-// {
-//     $branch = Branch::where('uuid', $uuid)->firstOrFail();
+    public function destroy($id)
+    {
+        $booking = Booking::findOrFail($id);
+        $booking->delete();
 
-//     $request->validate([
-//         'mobile' => 'required|digits:10',
-//         'learner_detail_id'=>'required',
-//         'learner_transaction_id'=>'required',
-//     ]);
-
-//     $customer = Learner::where('branch_id', $branch->id)
-//         ->where('mobile', $request->mobile)
-//         ->firstOrFail();
-
-//     // Get latest detail for reference
-//     $lastDetail = LearnerDetail::find($request->learner_detail_id);
-
-//     if (!$lastDetail) {
-//         return back()->withErrors(['mobile' => 'No existing plan found for this customer.']);
-//     }
-
-//    $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
-//     $duration  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('plan_id'); 
-//         $type  = Plan::withoutGlobalScopes()->where('id', $lastDetail->plan_id)->value('type'); 
-   
-//     // Calculate end date
-//     switch (strtoupper($type)) {
-//         case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
-//         case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-//         case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
-//         case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
-//         default:      $endDate = $start_date; break;
-//     }
-//     $transactions = LearnerTransaction::withoutGlobalScopes()->where('id', $request->learner_transaction_id)->first();
-
-//     // Store new renewal record
-//     $learnerController = app(\App\Http\Controllers\LearnerController::class);
-//     $learner_detail = LearnerDetail::create([
-//         'library_id' => $branch->library_id,
-//         'branch_id' => $branch->id,
-//         'learner_id' => $lastDetail->learner_id,
-//         'plan_id'         => $lastDetail->plan_id,
-//         'plan_type_id'    => $lastDetail->plan_type_id,
-//         'plan_price_id' =>  $lastDetail->plan_price_id,
-//         'plan_start_date' => $start_date->format('Y-m-d'),
-//         'plan_end_date' => $endDate->format('Y-m-d'),
-//         'join_date' =>$lastDetail->join_date,
-//         'hour' => $lastDetail->hour,
-//         'seat_no' => $lastDetail->seat_no,
-//         'payment_mode' => 1,
-//         'is_paid' =>0,
-//         'status' => 0,
-//     ]);
-//     LearnerTransaction::create([
-//                 'learner_id' => $lastDetail->learner_id,
-//                 'library_id' => $branch->library_id,
-//                 'branch_id' => $branch->id,
-//                 'learner_detail_id' => $learner_detail->id,
-//                 'total_amount'      => $transactions->total_amount,
-//                 'paid_amount'       => $transactions->paid_amount,
-//                 'pending_amount'    => $transactions->pending_amount,
-//                 'locker_amount'     =>$transactions->locker_amount,
-//                 'discount_amount'   => $transactions->discount_amount,
-//                 'paid_date'         =>date('Y-m-d'),
-//                 'is_paid'           =>0,
-//                 'due_date'        => $transactions->due_date,
-//                 'refund'        => $transactions->refund,
-//             ]);
-           
-//             //learner Activity
-//             $data=[];
-//             $data['learner_id']=$customer->id;
-//             $data['particular']='Paid By Trans';
-//             $data['payment_type']='RENEW';
-//             $data['payment_mode']=1;
-//             $data['amount']=$transactions->paid_amount;
-//             $data['dr_cr']='Cr';
-          
-//             $learnerController->learnerTransactionActivity($data);
-
-//     return redirect()
-//         ->route('renew.form', $branch->uuid)
-//         ->with('success', 'Plan renewed successfully!');
-// }
-
+        return response()->json(['success' => true]);
+    }
 
 
 

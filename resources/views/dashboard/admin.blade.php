@@ -12,15 +12,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
-        <div id="qrPreview">
+        <div id="qrPreview" class="mb-4">
 
             {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
         </div>
        
-         <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" >Print QR</a>
+         <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm" >Print QR</a>
        
-          {{-- <button class="btn button btn-sm" onclick="printQR()">Print QR</button>
-        <button class="btn button btn-sm" onclick="downloadQR()">Download QR</button> --}}
         {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
         <button class="btn button btn-sm" onclick="downloadQR(this)">Download QR</button> --}}
       </div>
@@ -128,9 +126,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 </a>
                             </li>
                             
-                            <li>Branch QR Code
+                            <li>
                                 
-                                <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(40)->generate(route('qr.branch', $branch->uuid)) !!} View</a>
+                                <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
                             </li>
                         </ul>
                     </div>
@@ -397,12 +395,23 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <td>{{$value->name}}</td>
                                     <td>{{$value->mobile}}</td>
                                     <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
-                                    <td><a href="">Paid</a></td>
+                                    @if($value->payment_screenshot)
+                                         <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
+                                    @else
+                                         <td>UnPaid</td>
+                                    @endif
+                                   
                                     <td>
                                         <ul class="actions-icons">
-                                            <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li>
+                                            {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
                                             <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
-                                            <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-trash"></i></a></li>
+                                            <li>
+                                                <a href="javascript:void(0)" 
+                                                class="delete-booking" 
+                                                data-id="{{ $value->id }}">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+                                            </li>
                                         </ul>
                                     </td>
                                 </tr>
@@ -1480,5 +1489,47 @@ function downloadQR() {
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 }
 </script>
+<script>
+$(document).on('click', '.delete-booking', function (e) {
+    e.preventDefault();
+    let bookingId = $(this).data('id');
 
-    @endsection
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This booking will be permanently deleted!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "{{ url('booking') }}/" + bookingId,
+                type: "DELETE",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                },
+                success: function (response) {
+                    Swal.fire(
+                        'Deleted!',
+                        'Booking has been deleted.',
+                        'success'
+                    ).then(() => {
+                        location.reload(); // refresh page after delete
+                    });
+                },
+                error: function () {
+                    Swal.fire(
+                        'Error!',
+                        'Something went wrong. Please try again.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+});
+</script>
+
+@endsection

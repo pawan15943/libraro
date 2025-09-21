@@ -4,5 +4,6 @@
 .env.production
 .htaccess
 /public/uploads
+/public/uploade
 /public/allpdf
 /storage/logs/laravel.log

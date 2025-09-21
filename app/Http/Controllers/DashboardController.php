@@ -1145,7 +1145,7 @@ class DashboardController extends Controller
                 ->where('learner_detail.status',1)
                 ->where('learner_detail.plan_end_date', '<', date('Y-m-d'))
                 ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extend_day])
-                ->with(['plan', 'planType', 'learnerDetails']);
+                ->with(['plan', 'planType', 'learnerDetails'])->get();
                 break;
             case 'swap_seat':
                 $result = (clone $baseQuery)->where('operation', 'swapseat')->get();

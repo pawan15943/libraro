@@ -2,8 +2,6 @@
 @section('content')
 
 
-
-
 <div class="sacnd-data py-5" style="min-height: 500px; display:flex; align-items:center;">
     <div class="container">
         <div class="row justify-content-center align-items-center h-100">

@@ -64,8 +64,7 @@ if(Route::currentRouteName() == 'booking.details'){
             <div class="form-input mb-4">
                
                 <div class="tip text-danger">
-                    <b>Note:</b> Any learner can upgrade their plan only renewing seat in their extend period.
-                    If the seat not have that plan type available then first need to perform swap seat operation then you do change plan.
+                    <b>Note:</b> Seat numbers are not directly assigned to learners; they are allocated at the time of seat approval.
                 </div>
 
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" >
@@ -242,6 +241,8 @@ if(Route::currentRouteName() == 'booking.details'){
                                 class="form-control"
                                 value="{{ old('total_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
+                            <small><a href="">Payment screenshot</a></small>
+                            {{-- <img src="{{asset($customer->payment_screenshot)}}" alt=""> --}}
                         </div>
                         <div class="col-lg-4">
                             <label for="previous_amount11">Previous Amount</label>
@@ -296,9 +297,9 @@ if(Route::currentRouteName() == 'booking.details'){
     </div>
     <div class="col-lg-3 order-1 order-md-2">
         <div class="seatnumber">
-            <img src="" alt="Seat" class="py-3 " style="width:60px; display:block; margin:0 auto;">
+            <img src="{{asset('public/img/booked.png')}}" alt="Seat" class="py-3 " style="width:60px; display:block; margin:0 auto;">
             <span class="d-block ">General</span>
-            <div class="seat--plan">{{ $customer->plan_type_name}}</div>
+            <div class="seat--plan">{{ $customer->planType->name}}</div>
         </div>
 
     </div>

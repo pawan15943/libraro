@@ -94,6 +94,7 @@ Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->na
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
+Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
 
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
