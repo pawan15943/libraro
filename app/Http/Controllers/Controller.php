@@ -874,39 +874,95 @@ class Controller extends BaseController
 
 
 
-    function dataUpdateNow($learner_id)
+    // function dataUpdateNow($learner_id)
+    // {
+
+
+    //     $userUpdate = Learner::where('branch_id', getCurrentBranch())->where('id', $learner_id)->where('status', 1)->first();
+
+
+    //     $today = date('Y-m-d');
+    //     $customerdatas = LearnerDetail::where('learner_id', $learner_id)->where('status', 1)->get();
+
+    //     $extend_day = getExtendDays();
+    //     foreach ($customerdatas as $customerdata) {
+    //         $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+    //         $current_date = Carbon::today();
+    //         $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
+    //             ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
+    //             ->exists();
+    //         $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
+    //             ->where('plan_end_date', '<', $current_date->copy()->addDays(5))
+    //             ->exists();
+
+    //         $isRenewed = $hasFuturePlan && $hasPastPlan;
+    //         if ($planEndDateWithExtension->lte($today)) {
+    //             $userUpdate->update(['status' => 0]);
+    //             $customerdata->update(['status' => 0]);
+    //         } elseif ($isRenewed) {
+    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
+    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
+    //         } else {
+    //             $userUpdate->update(['status' => 1]);
+    //             LearnerDetail::where('learner_id', $userUpdate->learner_id)->where('status', 0)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $today)->update(['status' => 1]);
+    //         }
+    //     }
+    // }
+      public function dataUpdateNow($learner_id)
     {
+        $today = Carbon::today();
+        $futureCheckDate = $today->copy()->addDays(5);
+         $extend_day = getExtendDays();
+    
 
+       
+        $customerdatas = LearnerDetail::where('learner_id', $learner_id)->get();
 
-
-        $userUpdate = Learner::where('branch_id', getCurrentBranch())->where('id', $learner_id)->where('status', 1)->first();
-
-
-        $today = date('Y-m-d');
-        $customerdatas = LearnerDetail::where('learner_id', $learner_id)->where('status', 1)->get();
-
-        $extend_day = getExtendDays();
         foreach ($customerdatas as $customerdata) {
+            $branchId = $customerdata->branch_id;
+            $branch = $branchId ? Branch::find($branchId) : null;
+            $extend_day = $branch ? $branch->extend_days : 0;
+
             $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
-            $current_date = Carbon::today();
-            $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
-                ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
+
+            $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                ->where('plan_end_date', '>', $futureCheckDate)
+                ->where('status', 0)
                 ->exists();
-            $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
-                ->where('plan_end_date', '<', $current_date->copy()->addDays(5))
+
+            $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                ->where('plan_end_date', '<', $futureCheckDate)
                 ->exists();
 
             $isRenewed = $hasFuturePlan && $hasPastPlan;
+
             if ($planEndDateWithExtension->lte($today)) {
-                $userUpdate->update(['status' => 0]);
+                Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 0)
+                    ->update(['status' => 0]);
+
                 $customerdata->update(['status' => 0]);
             } elseif ($isRenewed) {
-                LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
-                LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $futureCheckDate)
+                    ->update(['status' => 1]);
+
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('plan_end_date', '<', $today)
+                    ->update(['status' => 0]);
             } else {
-                $userUpdate->update(['status' => 1]);
-                LearnerDetail::where('learner_id', $userUpdate->learner_id)->where('status', 0)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $today)->update(['status' => 1]);
+                Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 1)
+                    ->update(['status' => 1]);
+
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('status', 0)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $today)
+                    ->update(['status' => 1]);
             }
+            
         }
     }
     protected function parseDate($date)
@@ -1486,30 +1542,29 @@ class Controller extends BaseController
 
     protected function statusUpdate()
     {
-        // $today = date('Y-m-d');
-        // Library::where('id', Auth::user()->id)->update([
-        //     'is_paid' => 1,
-        //     'status' => 1
+        $today = date('Y-m-d');
+        Library::where('id', Auth::user()->id)->update([
+            'is_paid' => 1,
+            'status' => 1
 
-        // ]);
-        // LibraryTransaction::where('library_id', Auth::user()->id)
-        //     ->where('is_paid', 1)
-        //     ->where('end_date', '>=', $today)->update([
+        ]);
+        LibraryTransaction::where('library_id', Auth::user()->id)
+            ->where('is_paid', 1)
+            ->where('end_date', '>=', $today)->update([
 
-        //         'status' => 1,
-        //         'is_paid' => 1
+                'status' => 1,
+                'is_paid' => 1
 
-        //     ]);
-        // LibraryTransaction::where('library_id', Auth::user()->id)
-        //     ->where('is_paid', 1)
-        //     ->where('end_date', '<', $today)
-        //     ->where('start_date', '<', $today)->update([
+            ]);
+        LibraryTransaction::where('library_id', Auth::user()->id)
+            ->where('is_paid', 1)
+            ->where('end_date', '<', $today)
+            ->where('start_date', '<', $today)->update([
 
-        //         'status' => 0
+                'status' => 0
 
-        //     ]);
-        $learnerController = app(\App\Http\Controllers\LearnerController::class);
-        $learnerController->dataUpdate();
+            ]);
+      
     }
 
     // learner export functionality
@@ -1597,4 +1652,5 @@ class Controller extends BaseController
 
         return $prefix . $randomNumber;
     }
+   
 }
