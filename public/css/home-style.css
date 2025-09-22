@@ -862,28 +862,14 @@ section.blog-header {
 }
 
 /* Blog UI */
-.blog-content .container ul 
-{
+.blog-content .container ul {
     display: flex;
     list-style: none;
     gap: .5rem;
     padding: 0;
 }
 
-.blog-content .container ul li {
-    background: linear-gradient(45deg, #3eb1ac, #00BCD4) !important;
-    padding: .2rem .5rem;
-    border-radius: 2rem;
-    font-size: .8rem;
-    color: #fff;
-}
 
-.blog-content .container ul li {
-    background: #dedede;
-    padding: .05rem .5rem;
-    border-radius: 2rem;
-    font-size: .8rem;
-}
 
 section.blog-header h1 {
     color: #fff;
@@ -962,6 +948,21 @@ section.blog-header h1 {
     margin: 30px 0;
 }
 
+
+.blog-content .categories-list li {
+    background: linear-gradient(45deg, #3eb1ac, #00BCD4) !important;
+    padding: .2rem .5rem;
+    border-radius: 2rem;
+    font-size: .8rem;
+    color: #fff;
+}
+
+.blog-content .categories-list li {
+    background: #dedede;
+    padding: .05rem .5rem;
+    border-radius: 2rem;
+    font-size: .8rem;
+}
 
 /* ===========================================================
 Directory
@@ -1671,3 +1672,83 @@ small.text-gray {
     color: red;
     font-style: italic;
 }
+
+a.bookSeat {
+    background: #18225f;
+    display: block;
+    padding: .8rem;
+    text-align: center;
+    color: #fff;
+    text-decoration: none;
+    border-radius: .6rem;
+    font-weight: 600;
+    margin-top: 2rem;
+}
+
+.process-step-1,
+.process-step-2 {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.sacnd-data {
+    background: linear-gradient(2deg, #d6faff, transparent);
+}
+
+.action-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.action-content span.text-message {
+    color: #a1a1a1;
+    font-size: .9rem;
+}
+
+.sacnd-data span.footer {
+    font-size: .8rem;
+}
+
+input.btn.btn-primary {
+    background: #18225f;
+    border-color: #18225f;
+}
+
+ul.action-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    list-style: none;
+    padding: 0;
+    justify-content: space-between;
+}
+
+ul.action-list li {
+    width: calc(100% / 2 - .75rem);
+
+}
+
+ul.action-list li a {
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    padding: 2rem 2rem;
+    background: #fff;
+    box-shadow: 1px 0 5px #00000021;
+    border-radius: 1rem;
+    font-weight: 700;
+}
+
+ul.actions-icons {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: .5rem;
+}
+

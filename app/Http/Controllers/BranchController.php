@@ -160,6 +160,7 @@ class BranchController extends Controller
             'google_map'=>'nullable',
             'description'=>'nullable',
             'locker_amount'=>'nullable',
+             'upi_id'=>'nullable',
             'token_money'=>'nullable',
             'extend_days'=>'nullable',
             'longitude'=>'nullable',

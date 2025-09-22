@@ -188,13 +188,18 @@ $due_date = null;
                             @elseif(empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount))
                             <span></span>
                             @elseif( pending_amt($value->learner_detail_id))
-                            <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
-                                @if(overdue($value->id,learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{ $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : 'N/A' }}
-                                    )</span>
+                            <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+
+
+
+                                @if(is_object($due_date) && !empty($due_date->due_date) && overdue($value->id, learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
                                 @else
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?"> {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{ $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : 'N/A' }}
-                                    )</span>
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                    Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                </span>
+
                                 @endif
                             </a>
 

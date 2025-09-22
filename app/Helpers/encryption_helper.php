@@ -160,25 +160,35 @@ if (!function_exists('getCurrentBranch')) {
     }
 }
 if (!function_exists('getPlanPrice')) {
-    function getPlanPrice($plan_id, $plan_type_id)
+    function getPlanPrice($plan_id, $plan_type_id, $branch_id = null)
     {
-        $libraryId = getLibraryId();
-        $branchId = getCurrentBranch();
+        
+        
+         if ($branch_id) {
+            $branchId  = $branch_id;
+            $libraryId = Branch::where('id', $branchId)->value('library_id');
+        } else {
+            $branchId  = getCurrentBranch();
+            $libraryId = getLibraryId();
+        }
 
         $plan_price_all = PlanPrice::withoutGlobalScopes()
-            ->leftJoin('plans', function ($join) {
+            ->leftJoin('plans', function ($join) use ($libraryId) {
                 $join->on('plan_prices.plan_id', '=', 'plans.id')
-                    ->where('plans.library_id', getLibraryId());
+                    ->where('plans.library_id', $libraryId);
             })
+
             ->where('plans.plan_id', 1)
             ->where('plans.type', 'MONTH')
             ->where('plan_prices.plan_type_id', $plan_type_id)
-            ->where('plan_prices.library_id', getLibraryId())
-            ->where('plan_prices.branch_id', getCurrentBranch())
+            ->where('plan_prices.library_id', $libraryId)
+            ->where('plan_prices.branch_id', $branchId)
             ->select('plan_prices.price')
             ->first();
+          
 
         $plan = Plan::where('id', $plan_id)->first();
+        
 
         if ($plan_price_all && $plan) {
 
@@ -198,7 +208,6 @@ if (!function_exists('getPlanPrice')) {
         return 0; // or null or handle if price or plan not found
     }
 }
-
 
 if (!function_exists('getLockerPrice')) {
     function getLockerPrice(?int $planId = null)
@@ -636,7 +645,7 @@ if (!function_exists('branchCountValidation')) {
         $library=Library::findOrFail(getLibraryId());
         $branch_count=Branch::where('library_id',getLibraryId())->count();
         $message="You cannot add more branches. You already have $branch_count branches.";
-        $limits = [1 => 1, 2 => 2, 3 => 4]; // library_type => max branches
+        $limits = [1 => 2, 2 => 3, 3 => 5]; // library_type => max branches
         $maxAllowed = $limits[$library->library_type] ?? 0;
 
         return [

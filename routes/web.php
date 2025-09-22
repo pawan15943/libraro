@@ -73,7 +73,7 @@ Route::get('/', [SiteController::class, 'home'])->name('/');
 Route::post('demo-request', [SiteController::class, 'demoRequestStore'])->name('demo-request');
 Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('submit.inquiry');
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
-Route::get('blog/detail/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
+Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
 Route::get('library-detail/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
@@ -83,11 +83,25 @@ Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashbo
 Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
 Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'bookSeat'])->name('booking.form');
 Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])->name('renew.form');
+Route::post('/get-plan-price', [QrEntryController::class, 'getPlanPrice'])->name('get.plan.price');
+Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->name('booking.store');
+Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
+Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
+
+Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
+
+Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
+Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
+Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
+Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
+Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
 
 // Routes for library users with 'auth:library' guard
  Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
 // Route::middleware(['auth:library','log.requests'])->group(function () {
   // 
+    Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
+    Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
     Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
     Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
 

@@ -12,6 +12,12 @@
 @endif
 
 
+
+
+
+
+
+
   <form  action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" 
     method="POST"enctype="multipart/form-data"  id="branchUpdate">
     @csrf
@@ -76,6 +82,16 @@
                                name="mobile" maxlength="10"
                                value="{{ old('mobile', $branch->mobile ?? '') }}">
                         @error('mobile')
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                        @enderror
+                    </div>
+                     <div class="col-lg-6">
+                        <label for="mobile">UPI ID(for payment receive)<span>*</span></label>
+                        <input type="text" 
+                               class="form-control  @error('upi_id') is-invalid @enderror"
+                               name="upi_id" maxlength="10"
+                               value="{{ old('upi_id', $branch->upi_id ?? '') }}">
+                        @error('upi_id')
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>

@@ -3,6 +3,31 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
+
+<div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+     @if($branch?->uuid)
+
+        <div id="qrPreview" class="mb-4">
+
+            {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
+        </div>
+       
+         <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm" >Print QR</a>
+       @endif
+        {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
+        <button class="btn button btn-sm" onclick="downloadQR(this)">Download QR</button> --}}
+      </div>
+      
+    </div>
+  </div>
+</div>
 @php
 use App\Helpers\HelperService;
 @endphp
@@ -12,7 +37,7 @@ use App\Helpers\HelperService;
 $completion = getProfileCompletionPercentage();
 $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
-    @endphp
+@endphp
 
     @if ($completion < 70)
     <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
@@ -77,17 +102,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @break
             @endswitch">
                     <div class="top-content">
-                        <h4>{{$plan->name}}
-
-                        </h4>
+                        <h4>{{$plan->name}} </h4>
                         <label for="">
                             @if((isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile))
-                                <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
-                                @else
-                                Active
-                                @endif
+                            <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
+                            @else
+                            Active
+                            @endif
 
                         </label>
+                        
                     </div>
 
                     <div class="d-flex">
@@ -103,6 +127,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </a>
                             </li>
+                           @if($branch?->uuid && $branch?->upi_id)
+                            
+                            <li>
+                                
+                                <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
+
+                            </li>
+                            @endif
                         </ul>
                     </div>
                 </div>
@@ -343,18 +375,63 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <div class="row g-4 mb-2">
             @can('has-permission', 'Monthly Revenues')
             <div class="col-lg-8">
-                <h4 class="my-4">Monthly Revenues</h4>
+                <h4 class="my-4">Online / QR Bookings</h4>
+                <div class="table-responsive" id="requests">
+                    <table class="table table-boredred" id="onlineRequest">
+                        <thead>
+                            <tr>
+                                <th class="text-center">S.No</th>
+                                <th class="text-center">Name</th>
+                                <th class="text-center">Mobile</th>
+                                <th class="text-center">Plan Info</th>
+                                <th class="text-center">Payment Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                       @if($qrbookings?->count() > 0)
+                            @php
+                                $x = 1;
+                            @endphp
+                            <tbody>
+                            @foreach($qrbookings as $key => $value)
+                            
+                                <tr>
+                                    <td>{{$x++}}</td>
+                                    <td>{{$value->name}}</td>
+                                    <td>{{$value->mobile}}</td>
+                                    <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
+                                    @if($value->payment_screenshot)
+                                         <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
+                                    @else
+                                         <td>UnPaid</td>
+                                    @endif
+                                   
+                                    <td>
+                                        <ul class="actions-icons">
+                                            {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
+                                            <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
+                                            <li>
+                                                <a href="javascript:void(0)" 
+                                                class="delete-booking" 
+                                                data-id="{{ $value->id }}">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            
+                                
+                            @endforeach
 
-                <div class="v-content">
-                    <ul class="revenue-box scroll-x " id="monthlyData">
-
-                        <li class="not-data" style="display: none; " id="no-data">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
-                            <span>No Data Available</span>
-                        </li>
-
-                    </ul>
+                            </tbody>
+                        @else
+                           <p class="bg-white p-2 rounded-2">No Booking Found yet</p>
+                        @endif
+                    </table>
                 </div>
+
+                
             </div>
             @endcan
             <div class="col-lg-4">
@@ -372,11 +449,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <li>Seat {{$seat_no ?? ''}} {{$operationDetails['operation_type']}} {{$operationDetails['field']}} {{$operationDetails['old']}} to {{$operationDetails['new']}}
                         <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
                     </li>
-                    @endforeach
+                    @endforeach 
+                   
                     @else
                     <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
                     @endif
-                </ul>
+                   
             </div>
         </div>
         @endcan
@@ -1370,7 +1448,93 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
     </script>
 
+<script>
+function printQR() {
+    let svg = document.querySelector("#qrPreview svg");
 
+    let printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Print QR</title>
+            <style>
+                @page { size: A4; margin: 20mm; }
+                body { text-align:center; margin:0; padding:50px; }
+                svg { width: 650px; height: 650px; }
+            </style>
+        </head>
+        <body>${svg.outerHTML}</body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
 
+function downloadQR() {
+    let svg = document.querySelector("#qrPreview svg");
+    let serializer = new XMLSerializer();
+    let svgData = serializer.serializeToString(svg);
 
-    @endsection
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+
+    let img = new Image();
+    img.onload = function() {
+        // Download in 350x350 size
+        canvas.width = 650;
+        canvas.height = 650;
+        ctx.drawImage(img, 0, 0, 650, 650);
+
+        let pngFile = canvas.toDataURL("image/png");
+        let downloadLink = document.createElement("a");
+        downloadLink.download = "branch-qr.png";
+        downloadLink.href = pngFile;
+        downloadLink.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+}
+</script>
+<script>
+$(document).on('click', '.delete-booking', function (e) {
+    e.preventDefault();
+    let bookingId = $(this).data('id');
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This booking will be permanently deleted!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "{{ url('booking') }}/" + bookingId,
+                type: "DELETE",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                },
+                success: function (response) {
+                    Swal.fire(
+                        'Deleted!',
+                        'Booking has been deleted.',
+                        'success'
+                    ).then(() => {
+                        location.reload(); // refresh page after delete
+                    });
+                },
+                error: function () {
+                    Swal.fire(
+                        'Error!',
+                        'Something went wrong. Please try again.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+});
+</script>
+
+@endsection

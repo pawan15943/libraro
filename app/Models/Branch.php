@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasSeatType;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Branch extends Model
 {
@@ -32,6 +33,18 @@ class Branch extends Model
     public function city()
     {
         return $this->belongsTo(City::class, 'city_id');
+    }
+ 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Fires only on creation
+        static::creating(function ($branch) {
+            if (empty($branch->uuid)) {
+                $branch->uuid = (string) Str::uuid();
+            }
+        });
     }
 
 }

@@ -15,13 +15,7 @@
         
 
          const toggleHiddenFields = @json(toggleHideField());
-         
-        // $.ajaxSetup({
-        //     headers: {
-        //         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        //     }
-        // });
-
+      
 
         let table = new DataTable('#datatable');
         //learner edit page 

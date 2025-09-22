@@ -327,8 +327,8 @@ class SiteController extends Controller
         if (empty($library)) {
             return view('errors.404');
         } else {
-
-            $our_package = PlanPrice::leftJoin('plan_types', 'plan_prices.plan_type_id', '=', 'plan_types.id')
+           
+            $our_package = PlanPrice::withoutGlobalScopes()->leftJoin('plan_types', 'plan_prices.plan_type_id', '=', 'plan_types.id')
                 ->leftJoin('plans', 'plan_prices.plan_id', '=', 'plans.id')
                 ->select(
                     'plans.name as plan_name',
@@ -346,11 +346,12 @@ class SiteController extends Controller
 
             $total_seat = Hour::withoutGlobalScopes()->where('branch_id', $library->id)->value('seats') ?? 0;
 
-            $operating = PlanType::where('library_id', $library->library_id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
+            $operating = PlanType::withoutGlobalScopes()->where('library_id', $library->library_id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
 
             $learnerFeedback = LearnerFeedback::where('library_id', $library->library_id)->with(['learner'])->get();
-            $libraryplantype = PlanType::where('library_id', $library->library_id)->pluck('name', 'id');
+            $libraryplantype = PlanType::withoutGlobalScopes()->where('library_id', $library->library_id)->pluck('name', 'id');
         }
+      
 
         return view('site.library-details', compact('library', 'features', 'our_package', 'total_seat', 'operating', 'learnerFeedback', 'libraryplantype'));
     }

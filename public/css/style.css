@@ -6077,3 +6077,34 @@ h4#seat_number_upgrades {
     height: 50px !important;
     font-size: 1rem 16px !important;
 }
+ul.actions-icons{
+    list-style: none;
+    padding: 0;
+    display: flex;
+    margin: 0;
+    gap :.5rem;
+}
+
+ul.actions-icons li a {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #dedede;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 30px;
+    font-size: .8rem !important;
+}
+
+#onlineRequest th, #onlineRequest td{
+    vertical-align: middle;
+}
+
+#onlineRequest table tr:last-child{
+    border-bottom: none;
+}
+
+div#requests {
+    height: 266px;
+    overflow: auto;
+}

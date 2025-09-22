@@ -90,6 +90,9 @@
 
                             <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                         </div>
+                        @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
+                           
+                       
                         <h4 class="my-3">Your Plan Addon's <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i></h4>
                         <div class="idProofFields1">
                             <div class="row g-3">
@@ -126,6 +129,7 @@
                                 @endif
                             </div>
                         </div>
+                         @endif
                         <div class="row g-3 mt-0">
                             <div class="col-lg-4">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>

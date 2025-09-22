@@ -89,7 +89,17 @@
         <!-- header -->
         <div class="receipt_header">
             <div class="logo" style="display: flex; gap:1rem; align-items:center;">
-                <img src="{{ asset('public/img/logo-socials.png') }}" alt="Library Logo" style="width: 80px; height:80px; border-radius:100%;">
+               @php
+                if($branch_logo && file_exists(public_path($branch_logo))){
+                    $logo = base64_encode(file_get_contents(public_path($branch_logo)));
+                } else {
+                    $logo = base64_encode(file_get_contents(public_path('img/logo-socials.png')));
+                }
+            @endphp
+
+            <img src="data:image/png;base64,{{ $logo }}" style="width:80px;height:80px;border-radius:100%;">
+
+               
             </div>
             <div class="address_header text-right">
                 <h4><?php echo isset($library_name) ? $library_name : ''; ?></h4>
