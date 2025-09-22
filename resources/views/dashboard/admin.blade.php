@@ -388,7 +388,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
-                       @if($qrbookings?->count() > 0)
+                        @if($qrbookings?->count() > 0)
                             @php
                                 $x = 1;
                             @endphp
@@ -424,10 +424,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 
                             @endforeach
 
-                            </tbody>
+                            
                         @else
-                           <p class="bg-white p-2 rounded-2">No Booking Found yet</p>
+                            <tr>
+                                <th colspan="6" class="text-center">No Booking Found yet</th>
+                            </tr>
                         @endif
+                        </tbody>
                     </table>
                 </div>
 
