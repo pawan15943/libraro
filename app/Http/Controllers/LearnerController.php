@@ -2175,8 +2175,8 @@ class LearnerController extends Controller
         $available_seat = $this->learnerService->getAvailableSeats();
         $customer_status = learner::where('id', $customerId)->first();
      
-        $status = $customer_status->status;
-        $detailStatus = $customer_status->status;
+        $status = $customer_status->status ?? 0;
+        $detailStatus = $customer_status->status ?? 0;
         $customer = $this->fetchCustomerData($customerId, $is_renew, $status, $detailStatus);
 
         //renew History
