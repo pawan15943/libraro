@@ -12,7 +12,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
-        @if($branch->uuid)
+     @if($branch?->uuid)
+
         <div id="qrPreview" class="mb-4">
 
             {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
@@ -387,7 +388,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
-                        @if($qrbookings->count() > 0)
+                       @if($qrbookings?->count() > 0)
                             @php
                                 $x = 1;
                             @endphp
