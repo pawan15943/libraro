@@ -127,7 +127,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </a>
                             </li>
-                            @if($branch->uuid && $branch->upi_id)
+                           @if($branch?->uuid && $branch?->upi_id)
                             
                             <li>
                                 
