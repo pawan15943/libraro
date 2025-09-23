@@ -13,13 +13,19 @@
             font-family: 'Roboto', sans-serif;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid black;
             border-collapse: collapse;
             padding: 10px 12px;
         }
 
-        h2, h3, h4, h5, h6 {
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             margin: 0px;
             font-weight: 700;
         }
@@ -78,13 +84,15 @@
             text-decoration: none;
         }
 
-        .pdf_descContent li, .pdf_descContent p {
+        .pdf_descContent li,
+        .pdf_descContent p {
             line-height: 26px;
         }
     </style>
 </head>
 
 <body>
+    
     <div class="receipt_wrapper">
         <!-- header -->
         <div class="receipt_header">
@@ -104,7 +112,7 @@
             <div class="address_header text-right">
                 <h4><?php echo isset($library_name) ? $library_name : ''; ?></h4>
                 <div class="address">
-                     <p><?php echo isset($library_address) ? $library_address : ''; ?></p>
+                    <p><?php echo isset($library_address) ? $library_address : ''; ?></p>
                 </div>
                 <a href="mailto:<?php echo isset($library_email) ? $library_email : ''; ?>" title="Library Email Id">
                     Email: <?php echo isset($library_email) ? $library_email : ''; ?>
@@ -159,14 +167,14 @@
                 <tr>
                     <td><b>Payment Type:</b></td>
                     <td>
-                        <?php 
+                        <?php
                         if (isset($payment_mode)) {
-                            if ($payment_mode == 1) { 
-                                echo 'Online'; 
+                            if ($payment_mode == 1) {
+                                echo 'Online';
                             } elseif ($payment_mode == 2) {
-                                echo 'Offline'; 
+                                echo 'Offline';
                             } else {
-                                echo 'Pay Later'; 
+                                echo 'Pay Later';
                             }
                         } else {
                             echo '';
