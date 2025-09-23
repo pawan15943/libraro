@@ -66,7 +66,9 @@
                 </thead>
                 <tbody>
                     
+                    
                     @foreach ($result as $data)
+                   
                     @if($data->operation_date)
                         @php
                             $learner=App\Models\Learner::withTrashed()->where('id',$data->learner_id)->first();

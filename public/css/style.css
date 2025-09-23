@@ -1485,7 +1485,7 @@ a.btn.btn-toggle.d-inline-flex.align-items-center.rounded.border-0.flex-start {
     background-color: red !important;
     text-transform: uppercase;
 }
-}
+
 
 .conatent.flex {
     gap: 0.8rem !important;
@@ -6084,4 +6084,35 @@ small.alert.alert-info.py-3 {
     border-radius: .8rem;
     margin: 0;
     margin-bottom: .8rem;
+}
+ul.actions-icons{
+    list-style: none;
+    padding: 0;
+    display: flex;
+    margin: 0;
+    gap :.5rem;
+}
+
+ul.actions-icons li a {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #dedede;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 30px;
+    font-size: .8rem !important;
+}
+
+#onlineRequest th, #onlineRequest td{
+    vertical-align: middle;
+}
+
+#onlineRequest table tr:last-child{
+    border-bottom: none;
+}
+
+div#requests {
+    height: 266px;
+    overflow: auto;
 }

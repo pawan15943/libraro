@@ -103,13 +103,6 @@
                             <span>WhatsApp</span>
                         </a>
                     </li>
-                     <li>
-                        <a href="{{ route('booking.form', $library->uuid) }}" target="_blank">
-                            <i class="fab fa-whatsapp"></i>
-                            <span>Book Seat</span>
-                        </a>
-                    </li>
-
                 </ul>
             </div>
 
@@ -316,7 +309,12 @@
                     <iframe src="{{ $library->google_map }}" width="100%" class="rounded" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
             @endif
-            
+            @if($library->uuid && $library->upi_id)
+                
+            <a href="{{ route('booking.form', $library->uuid) }}" target="_blank" class="bookSeat"> Book your Seat</a>
+                
+            @endif
+                
             </div>
         </div>
     </div>
