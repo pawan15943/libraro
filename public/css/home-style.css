@@ -862,13 +862,14 @@ section.blog-header {
 }
 
 /* Blog UI */
-.blog-content .container ul 
-{
+.blog-content .container ul {
     display: flex;
     list-style: none;
     gap: .5rem;
     padding: 0;
+    margin: 0;
 }
+
 
 
 
@@ -887,8 +888,9 @@ section.blog-header h1 {
 .blog-content h4,
 .blog-content h5,
 .blog-content h6 {
-    font-weight: bold;
+    font-weight: 600;
     color: #333;
+    margin-bottom: 1.5rem;
 }
 
 .blog-content p {
@@ -906,6 +908,14 @@ section.blog-header h1 {
 
 .blog-content a:hover {
     color: #0056b3;
+}
+
+.blog-content ul:not(.categories-list) {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    gap: .5remrem;
 }
 
 .blog-content li {

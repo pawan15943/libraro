@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-     <title>Libraro : Library Management Software</title>
+    <title>Libraro : Library Management Software</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
@@ -29,6 +29,9 @@
             <div class="middle">
                 <h2>Verify Email id via OTP</h2>
                 <p>Check OTP in you Email Id and Verify your OTP Here and go next </p>
+                <small class="alert alert-info py-3">
+                    Note: Didn’t receive an email? Don’t worry! Just call us at +91-8114479678, +91-7737918848, or +91-8386007688 and we’ll help you continue your registration.
+                </small>
                 <form method="POST" action="{{ route('verify.otp') }}" class="validateForm">
                     @csrf
                     <div class="row g-4">

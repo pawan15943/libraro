@@ -374,6 +374,7 @@
         });
     </script>
 
+    <!-- Right Sidebar -->
     <script>
         $(document).ready(function() {
             const isMobile = window.innerWidth <= 768;

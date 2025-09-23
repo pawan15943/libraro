@@ -4401,7 +4401,7 @@ a.btn.btn-primary.export:hover {
 
 .import-data input[type="file"] {
     border: 2px dashed #c4c4c4;
-    padding: 10px;
+    padding: 4px 10px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -6076,4 +6076,12 @@ h4#seat_number_upgrades {
 .find-a-learner input.form-control.form-control-lg.text-center {
     height: 50px !important;
     font-size: 1rem 16px !important;
+}
+
+small.alert.alert-info.py-3 {
+    font-size: .8rem;
+    padding: .8rem ! IMPORTANT;
+    border-radius: .8rem;
+    margin: 0;
+    margin-bottom: .8rem;
 }
