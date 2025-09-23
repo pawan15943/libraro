@@ -92,9 +92,7 @@
 </head>
 
 <body>
-    @php
-        dd($logo);
-    @endphp
+    
     <div class="receipt_wrapper">
         <!-- header -->
         <div class="receipt_header">
