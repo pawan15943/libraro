@@ -271,7 +271,6 @@
                                     @endcan
                 </ul>
             </div>
-
             <div class="seat-informarion">
                 <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">

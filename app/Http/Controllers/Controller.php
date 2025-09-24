@@ -59,11 +59,13 @@ class Controller extends BaseController
         }
         if ($request->type == 'learner') {
             $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
-
             $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $data->learner_detail_id)
                 ->with(['plan', 'planType'])
                 ->first();
 
+            $libdata = LibraryTransaction::where('id', $request->id)->first();
+
+            
             $user = Learner::where('id', $data->learner_id)->first();
 
             $transactionDate = $data->paid_date;
@@ -84,8 +86,8 @@ class Controller extends BaseController
                 $subscription = null;
             }
             $name = $user->name ?? '';
-            $tran=LearnerTransactionActivity::where('learner_id',$data->learner_id)->select('transaction_id')->first();
-            $transaction_id=$tran->transaction_id;
+            $tran = LearnerTransactionActivity::where('learner_id', $data->learner_id)->select('transaction_id')->first();
+            $transaction_id = $tran->transaction_id;
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
            $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
             $branch_slug=Branch::where('id', getCurrentBranch())->value('slug') ?? null;
@@ -93,6 +95,7 @@ class Controller extends BaseController
 
        
         $send_data = [
+            'logo' =>  $logo ?? '',
             'subscription' => $subscription ?? 'NA',
             'name' => $name ?? 'NA',
             'email' => $user->email ?? 'NA',
@@ -409,7 +412,7 @@ class Controller extends BaseController
         $type = strtoupper($type);
         $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y', 'd.m.Y', 'd M Y', 'd F Y'];
         $rawDate = trim($data['start_date']);
-        
+
         $start_date = null;
 
         foreach ($formats as $format) {
@@ -466,7 +469,7 @@ class Controller extends BaseController
         $extendDay = getExtendDays();
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
         $status = $inextendDate >= Carbon::today() ? 1 : 0;
-         
+
         if (empty($data['paid_amount']) || $paid_amount == 0) {
             $is_paid = 0;
         } else {
@@ -698,7 +701,7 @@ class Controller extends BaseController
                 'seat_no' => $seat,
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
-                 'locker_no' => trim($data['locker_no']) === '' ? null : (int)trim($data['locker_no']),
+                'locker_no' => trim($data['locker_no']) === '' ? null : (int)trim($data['locker_no']),
                 'learner_no' => $this->generateLearnerCode()
             ]);
 
@@ -736,7 +739,7 @@ class Controller extends BaseController
                 'is_paid' => $pending_amount > 0 ? 0 : 1,
             ]);
 
-             if ($pending_amount ) {
+            if ($pending_amount) {
                 $tran = [
                     'learner_id' => $learner->id,
                     'due_date' => date('Y-m-d'),
