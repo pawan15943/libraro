@@ -112,7 +112,14 @@
                 <a href="tel:<?php echo isset($library_mobile) ? $library_mobile : ''; ?>" title="Library Contact info">
                     Contact: <?php echo isset($library_mobile) ? $library_mobile : ''; ?>
                 </a><br>
-                <a href="www.librao.in" title="Library System">Website: www.libraro.com</a><br>
+                @if($branch_slug)
+                    <a href="{{url('library-detail/'.$branch_slug)}}" title="Library System">Website: {{url('library-detail/'.$branch_slug)}}</a>
+                @else
+                    <a href="https://www.libraro.in/" title="Library System">Website: https://www.libraro.in/</a>
+                @endif
+                
+                
+                <br>
             </div>
         </div>
 
