@@ -55,6 +55,7 @@ class Controller extends BaseController
             $library = $user;
             $transaction_id=$data->transaction_id;
             $branch_logo=null;
+            $branch_slug=null;
         }
         if ($request->type == 'learner') {
             $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
@@ -86,10 +87,10 @@ class Controller extends BaseController
             }
             $name = $user->name ?? '';
             $tran = LearnerTransactionActivity::where('learner_id', $data->learner_id)->select('transaction_id')->first();
-            $transaction_id = $tran->transaction_id;
+            $transaction_id = ($tran && $tran->transaction_id)  ? $tran->transaction_id : NULL;
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
            $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
-
+            $branch_slug=Branch::where('id', getCurrentBranch())->value('slug') ?? null;
         }
 
        
@@ -113,6 +114,7 @@ class Controller extends BaseController
             'library_mobile' => $library->library_mobile,
             'library_address' => $library->library_address,
             'branch_logo'=>$branch_logo,
+            'branch_slug'=>$branch_slug
         ];
 
 
@@ -273,7 +275,7 @@ class Controller extends BaseController
         $validation = branchCountValidation();
         $current = $validation['branch_count'];
         $allowed = $validation['max_allowed'];
-        \Log::info('Learner occupide', ['current' => $current, 'allowed' => $allowed, 'newBranchCount' => $newBranchCount]);
+        \Log::info('Branch count for linrary', ['current' => $current, 'allowed' => $allowed, 'newBranchCount' => $newBranchCount]);
         if ($current + $newBranchCount > $allowed) {
             return redirect()->back()->withErrors([
 
@@ -1546,6 +1548,7 @@ class Controller extends BaseController
 
     protected function statusUpdate()
     {
+        Log::info('statusUpdate function call');
         $today = date('Y-m-d');
         Library::where('id', Auth::user()->id)->update([
             'is_paid' => 1,

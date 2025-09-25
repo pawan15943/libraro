@@ -1830,6 +1830,7 @@ class LearnerController extends Controller
 
             // If a status filter is provided, apply it and skip the default status conditions
             if (isset($filters['status'])) {
+                
                 if ($filters['status'] === 'active') {
                     // Only select active learners and details
                     $query->where('learners.status', 1)
@@ -1840,14 +1841,17 @@ class LearnerController extends Controller
                         ->where('learner_detail.status', 0);
                 }
             } else {
+              
                 // Apply default status conditions if no status filter is provided
                 $query->where('learners.status', $status)
                     ->where('learner_detail.status', $detailStatus);
             }
+            
             if (!empty($filters['seat_no'])) {
 
                 $query->where('learner_detail.seat_no', $filters['seat_no']);
             }
+          
             // Search by Name, Mobile, or Email
             if (!empty($filters['search'])) {
                 $search = $filters['search'];
@@ -1859,14 +1863,19 @@ class LearnerController extends Controller
                         ->orWhere('learners.email', $encryptdata); // 🔍 Exact match for encrypted email
                 });
             }
+              
         } else {
+           
             // Apply default status conditions if no filters are provided
             $query->where('learners.status', $status)
                 ->where('learner_detail.status', $detailStatus);
         }
+      
 
         // If fetching a specific customer
         if ($customerId) {
+           
+            
             $query->where('learners.id', $customerId);
 
             // Handle renew cases
@@ -2139,14 +2148,17 @@ class LearnerController extends Controller
    
     public function getUser(Request $request, $id = null)
     {
-
+       
         $customerId = $request->id ?? $id;
+         
         $is_renew = $this->learnerService->getRenewalStatus($customerId);
 
-
+        $status=DB::table('learners')->where('id',$customerId)->value('status') ?? 1;
+        $detail=DB::table('learner_detail')->where('learner_id',$customerId)->orderBy('id', 'DESC')->first();
+        $detailStatus = $detail?->status ?? 1;
         $available_seat = $this->learnerService->getAvailableSeats();
 
-        $customer = $this->fetchCustomerData($customerId, $is_renew, $status = 1, $detailStatus = 1,$perPage = 10,$paginate = false);
+        $customer = $this->fetchCustomerData($customerId, $is_renew, $status, $detailStatus ,$perPage = 10,$paginate = false);
 
         if ($request->expectsJson() || $request->has('id')) {
             return response()->json($customer);
