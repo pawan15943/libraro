@@ -87,7 +87,7 @@ class Controller extends BaseController
             }
             $name = $user->name ?? '';
             $tran = LearnerTransactionActivity::where('learner_id', $data->learner_id)->select('transaction_id')->first();
-            $transaction_id = $tran->transaction_id;
+            $transaction_id = ($tran && $tran->transaction_id)  ? $tran->transaction_id : NULL;
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
            $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
             $branch_slug=Branch::where('id', getCurrentBranch())->value('slug') ?? null;

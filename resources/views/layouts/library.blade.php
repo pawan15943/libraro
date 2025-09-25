@@ -137,9 +137,11 @@
 
                     <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
                 </li>
+                @if(!in_array('28', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
                     <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
                 </li>
+                @endif
                 @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
                     <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
