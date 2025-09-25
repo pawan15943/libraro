@@ -812,8 +812,11 @@
                 <span id="export-progress-text">Preparing download: 0%</span>
             </div>
 
+            
         </div>
+       
     </div>
+     <p class="mt-3 text-center">If you can’t create a master form from Excel, use the Library Master Console (Given in Left Sidebar) to complete your registration. <br>For any issues, call us at +91-8114479678.</p>
 </div>
 
 

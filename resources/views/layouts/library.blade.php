@@ -110,7 +110,7 @@
             <h4> QUICK ACTION</h4>
             <ul>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat">
-                    <a href="javascript:;" class=" noseat_popup"><i class="fa fa-chair fa-2x"></i></a>
+                    <a href="javascript:;" class="noseat_popup"><i class="fa fa-chair fa-2x"></i></a>
                 </li>
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seart">
                     <a href="{{route('learner.search')}}"><i class="fa fa-search fa-2x"></i></a>

@@ -2,6 +2,35 @@
 @section('content')
 <!-- Content Header (Page header) -->
 <!-- Main row -->
+
+@if ($finalGeneralLearners->count() == 0 &&
+    collect($seats)->sum(fn($seat) => $seat->learners->count()) == 0)
+    <div class="no-data-found">
+    <script
+        src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+        type="module"></script>
+
+    <dotlottie-wc
+    src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"
+    style="width: 200px;height: 200px"
+    autoplay
+    loop
+    ></dotlottie-wc>
+    <h4>No Learner Added Yet</h4>
+    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button below.</span>
+    <!-- Masters -->
+    <div class="heading-list justify-content-end mb-1">
+        @if(getCurrentBranch() !=0)
+        <a href="javascript:;"  class="btn btn-primary export noseat_popup">
+            <i class="fa-solid fa-plus "></i> Book Seat
+        </a>
+        @else
+        <h4>To add Plan Prices, first select your Branch.</h4>
+        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices.</span>
+        @endif
+    </div>
+</div>
+@else
 <p class="info-message">
     <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
     <b>Important :</b> The Seat History page displays a comprehensive list of all library seats, along with seat-specific booking details in a single view. If you need information about library seats, this section provides helpful details to guide you.
@@ -133,6 +162,7 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
     </div>
 </div>
 @endforeach
+@endif
 @endif
 
 <!-- /.row (main row) -->

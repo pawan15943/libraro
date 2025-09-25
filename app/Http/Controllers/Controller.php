@@ -277,7 +277,7 @@ class Controller extends BaseController
         if ($current + $newBranchCount > $allowed) {
             return redirect()->back()->withErrors([
 
-                'csv_file' => "Your current plan allows you to create $allowed branches. However, the CSV file you attempted to upload contains more than $newBranchCount branches, so we are unable to process it. Please update your file to include only max $allowed branches and try uploading again."
+            'csv_file' => "Your current plan allows you to create $allowed branches. However, the CSV file you attempted to upload contains more than $newBranchCount branches, so we are unable to process it. Please update your file to include only max $allowed branches and try uploading again."
             ]);
         }
 
@@ -321,6 +321,7 @@ class Controller extends BaseController
         return redirect()->back()->with('successCount', count($successRecords));
     }
 
+    
     protected function validateAndInsert($data, &$successRecords, &$invalidRecords)
     {
 

@@ -12,6 +12,7 @@ $user = getAuthenticatedUser();
         @foreach($menus as $menu)
      
             @php
+            
             $show = ($menu->name == 'Dashboard' || getLibrary()->status == 1 || (getLibrary()->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
             $toggleHidden = toggleHideField(); // Dynamic hidden toggle
             $toglleCategory="Menu";
@@ -21,7 +22,8 @@ $user = getAuthenticatedUser();
                         ->pluck('name') 
                         ->toArray();
            
-            //    echo "<p class='text-white'>show ".$show .'</p>';
+                
+                
             @endphp
             
             @if(is_null($menu->parent_id) && $show==1  && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
@@ -47,14 +49,22 @@ $user = getAuthenticatedUser();
                                 <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                                              
                                     @foreach($menu->children as $submenu)
-                             
                                         @if($submenu->guard === null || $submenu->guard == 'library')
-                                       
+                                            
+
                                             @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp) && !in_array($submenu->has_permissions, $finalHiddenName))
+
+                                            
+                                            
                                                     {{-- If submenu is toggle.feature, only show if status == 1 --}}
+
                                                     @if($submenu->url == 'toggle.feature' && !$iscomp)
                                                         @continue
                                                     @endif
+
+                                                    
+                                                        
+                                                    
 
                                                 <li>
                                                     <a href="{{ route($submenu->url) }}"

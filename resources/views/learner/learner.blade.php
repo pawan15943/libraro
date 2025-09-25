@@ -2,7 +2,33 @@
 @section('content')
 
 <!-- Content Header (Page header) -->
+@if ( $learners->total()==0)
+<div class="no-data-found">
+    <script
+        src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+        type="module"></script>
 
+    <dotlottie-wc
+    src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"
+    style="width: 200px;height: 200px"
+    autoplay
+    loop
+    ></dotlottie-wc>
+    <h4>No Learner Added Yet</h4>
+    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button below.</span>
+    <!-- Masters -->
+    <div class="heading-list justify-content-end mb-1">
+        @if(getCurrentBranch() !=0)
+        <a href="javascript:;"  class="btn btn-primary export noseat_popup">
+            <i class="fa-solid fa-plus "></i> Book Seat
+        </a>
+        @else
+        <h4>To add Plan Prices, first select your Branch.</h4>
+        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices.</span>
+        @endif
+    </div>
+</div>
+@else
 <div class="row">
     <div class="col-lg-12 text-end">
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
@@ -123,6 +149,7 @@
         @endif
     </a>
 </div>
+
 @foreach($learners as $key => $value)
 
     @php
@@ -228,7 +255,8 @@
                             <li><a target="_blank" href="{{ route('idCard',  $value->learner_detail_id) }}" class="" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card"><i class="fa-solid fa-id-card-clip"></i> </a></li>
                             @endif
                             <!-- upgrade Seat-->
-                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 && $planStatus['diff_extend_day'] <= 5)
+                             <!-- (&& $planStatus['diff_extend_day'] <= 5) we remove this block -->
+                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                                     @can('has-permission', 'Upgrade Seat Plan' )
                                     @if(!in_array('13', toggleHideField()))
                                     <li><a href="{{route('learners.upgrade.renew',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
@@ -402,6 +430,8 @@
         <a href="{{ $learners->hasMorePages() ? $learners->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
     </li>
 </ul>
+@endif
+
 @endif
 <!-- Modal Popup end for Configration -->
 

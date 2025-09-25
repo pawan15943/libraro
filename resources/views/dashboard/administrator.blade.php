@@ -42,9 +42,11 @@
     $year=['0'=>'2024','1'=>'2025','2'=>'2026','3'=>'2027'];
     $month=['0'=>'01','1'=>'02','2'=>'03','3'=>'04','4'=>'05','5'=>'06','6'=>'07','7'=>'08','8'=>'09','9'=>'10','10'=>'11','11'=>'12'];
     @endphp
+    
     <div class="col-lg-3">
         <h4>Filter Dashboard Data</h4>
     </div>
+
     <div class="col-lg-3"></div>
     <div class="col-lg-3">
         <select id="datayaer" class="form-select form-control-sm">
@@ -52,8 +54,6 @@
             @foreach($year as $key => $value)
                 <option value="{{ $value }}" {{ $value == $currentYear ? 'selected' : '' }}>{{$value}}</option>   
             @endforeach
-            
-           
         </select>
     </div>
 
@@ -95,7 +95,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                       
+                    
                     </tbody>
                 </table>
             </div>

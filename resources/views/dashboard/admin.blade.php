@@ -5,28 +5,28 @@
 @section('content')
 
 <div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-     @if($branch?->uuid)
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                @if($branch?->uuid)
 
-        <div id="qrPreview" class="mb-4">
+                <div id="qrPreview" class="mb-4">
 
-            {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
-        </div>
-       
-         <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm" >Print QR</a>
-       @endif
-        {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
+                    {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
+                </div>
+
+                <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm">Print QR</a>
+                @endif
+                {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
         <button class="btn button btn-sm" onclick="downloadQR(this)">Download QR</button> --}}
-      </div>
-      
+            </div>
+
+        </div>
     </div>
-  </div>
 </div>
 @php
 use App\Helpers\HelperService;
@@ -37,7 +37,7 @@ use App\Helpers\HelperService;
 $completion = getProfileCompletionPercentage();
 $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
-@endphp
+    @endphp
 
     @if ($completion < 70)
     <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
@@ -105,13 +105,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <h4>{{$plan->name}} </h4>
                         <label for="">
                             @if((isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile))
-                            <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
-                            @else
-                            Active
-                            @endif
+                                <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
+                                @else
+                                Active
+                                @endif
 
                         </label>
-                        
+
                     </div>
 
                     <div class="d-flex">
@@ -127,10 +127,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </a>
                             </li>
-                           @if($branch?->uuid && $branch?->upi_id)
-                            
+                            @if($branch?->uuid && $branch?->upi_id)
+
                             <li>
-                                
+
                                 <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
 
                             </li>
@@ -298,8 +298,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                         </div>
                     </div>
-                    
-                    
+
+
                 </div>
             </div>
 
@@ -389,52 +389,52 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             </tr>
                         </thead>
                         @if($qrbookings?->count() > 0)
-                            @php
-                                $x = 1;
-                            @endphp
-                            <tbody>
+                        @php
+                        $x = 1;
+                        @endphp
+                        <tbody>
                             @foreach($qrbookings as $key => $value)
-                            
-                                <tr>
-                                    <td>{{$x++}}</td>
-                                    <td>{{$value->name}}</td>
-                                    <td>{{$value->mobile}}</td>
-                                    <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
-                                    @if($value->payment_screenshot)
-                                         <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
-                                    @else
-                                         <td>UnPaid</td>
-                                    @endif
-                                   
-                                    <td>
-                                        <ul class="actions-icons">
-                                            {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
-                                            <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
-                                            <li>
-                                                <a href="javascript:void(0)" 
-                                                class="delete-booking" 
+
+                            <tr>
+                                <td>{{$x++}}</td>
+                                <td>{{$value->name}}</td>
+                                <td>{{$value->mobile}}</td>
+                                <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
+                                @if($value->payment_screenshot)
+                                <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
+                                @else
+                                <td>UnPaid</td>
+                                @endif
+
+                                <td>
+                                    <ul class="actions-icons">
+                                        {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
+                                        <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
+                                        <li>
+                                            <a href="javascript:void(0)"
+                                                class="delete-booking"
                                                 data-id="{{ $value->id }}">
-                                                    <i class="fa fa-trash"></i>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                            
-                                
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+
+
                             @endforeach
 
-                            
-                        @else
+
+                            @else
                             <tr>
                                 <th colspan="6" class="text-center">No Booking Found yet</th>
                             </tr>
-                        @endif
+                            @endif
                         </tbody>
                     </table>
                 </div>
 
-                
+
             </div>
             @endcan
             <div class="col-lg-4">
@@ -452,12 +452,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <li>Seat {{$seat_no ?? ''}} {{$operationDetails['operation_type']}} {{$operationDetails['field']}} {{$operationDetails['old']}} to {{$operationDetails['new']}}
                         <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
                     </li>
-                    @endforeach 
-                   
+                    @endforeach
+
                     @else
                     <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
                     @endif
-                   
+
             </div>
         </div>
         @endcan
@@ -733,10 +733,19 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <h5 class="mb-3">Planwise Revenue</h5>
                     <div class="record-not-found">
 
-                        <canvas id="revenueChart" style="max-height:340px;"></canvas>
-
+                        
+                        <script>
+                            let revenueChart = document.getElementById("revenueChart");
+                            if (revenueChart && revenueChart.value) {
+                                <canvas id="revenueChart" style="max-height:340px;"></canvas>
+                            } else {
+                                
+                            }
+                        </script>
                         <div class="not-data" style="display: none;" id="no-data2">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
+                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
+                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"  autoplay loop></dotlottie-wc>
                             <span>No Data Available</span>
                         </div>
 
@@ -747,11 +756,20 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 <div class="card chart">
                     <h5 class="mb-3">Planwise Booking</h5>
                     <div class="record-not-found">
-
-                        <canvas id="bookingCountChart"></canvas>
+                        <script>
+                            let bookingCountChart = document.getElementById("revenueChart");
+                            if (revenueChart && revenueChart.value) {
+                                 <canvas id=""></canvas>
+                            } else {
+                                
+                            }
+                        </script>
+                       
 
                         <div class="not-data" style="display: none; " id="no-data3">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt="record-not-found">
+                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
+                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
                             <span>No Data Available</span>
                         </div>
 
@@ -840,7 +858,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(!$renewSeats->isEmpty())
 
                         @foreach($renewSeats as $key => $value)
-                        
+
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
@@ -850,22 +868,22 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
-                                    
+
                                     @can('has-permission', 'Plan Renews')
-                                    <small><a class="renew_extend"  data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
+                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
 
                                 <ul class="d-flex inner">
                                     <li>
-                                        <a target="_blank" 
-                                        href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                        <a target="_blank"
+                                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
                                                 "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team" . getCurrentBranchName()
                                         ) }}">
-                                            <i class="fab fa-whatsapp" 
-                                            data-bs-placement="bottom" 
-                                            data-bs-toggle="tooltip" 
-                                            data-bs-title="Send Reminder"></i>
+                                            <i class="fab fa-whatsapp"
+                                                data-bs-placement="bottom"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-title="Send Reminder"></i>
                                         </a>
 
                                     </li>
@@ -878,8 +896,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @endforeach
                         @else
                         <li class="record-not-found">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt=" record-not-found">
-                            <span>No Expired Seats Available.</span>
+                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
+                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem !important;" autoplay loop></dotlottie-wc>
+
+                            <span class="d-block mt-0">No Expired Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -912,15 +933,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <ul class="d-flex inner">
                                     <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
                                     <li>
-                                        <a target="_blank" 
-                                        href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                        <a target="_blank"
+                                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
                                                 "Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
                                         ) }}">
-                                            <i class="fab fa-whatsapp" 
-                                            data-bs-placement="bottom" 
-                                            data-bs-toggle="tooltip" 
-                                            data-bs-title="Send Reminder"></i>
-                                        </a>                                    </li>
+                                            <i class="fab fa-whatsapp"
+                                                data-bs-placement="bottom"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-title="Send Reminder"></i>
+                                        </a>
+                                    </li>
                                     <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li>
                                 </ul>
                             </div>
@@ -928,8 +950,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @endforeach
                         @else
                         <li class="record-not-found">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" class="no-record" alt=" record-not-found">
-                            <span>No Extended Seats Available.</span>
+                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem;" autoplay loop></dotlottie-wc>
+
+                            <span class="d-block mt-0">No Extended Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -1451,12 +1474,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
     </script>
 
-<script>
-function printQR() {
-    let svg = document.querySelector("#qrPreview svg");
+    <script>
+        function printQR() {
+            let svg = document.querySelector("#qrPreview svg");
 
-    let printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+            let printWindow = window.open('', '_blank');
+            printWindow.document.write(`
         <html>
         <head>
             <title>Print QR</title>
@@ -1469,75 +1492,75 @@ function printQR() {
         <body>${svg.outerHTML}</body>
         </html>
     `);
-    printWindow.document.close();
-    printWindow.print();
-}
+            printWindow.document.close();
+            printWindow.print();
+        }
 
-function downloadQR() {
-    let svg = document.querySelector("#qrPreview svg");
-    let serializer = new XMLSerializer();
-    let svgData = serializer.serializeToString(svg);
+        function downloadQR() {
+            let svg = document.querySelector("#qrPreview svg");
+            let serializer = new XMLSerializer();
+            let svgData = serializer.serializeToString(svg);
 
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
+            let canvas = document.createElement("canvas");
+            let ctx = canvas.getContext("2d");
 
-    let img = new Image();
-    img.onload = function() {
-        // Download in 350x350 size
-        canvas.width = 650;
-        canvas.height = 650;
-        ctx.drawImage(img, 0, 0, 650, 650);
+            let img = new Image();
+            img.onload = function() {
+                // Download in 350x350 size
+                canvas.width = 650;
+                canvas.height = 650;
+                ctx.drawImage(img, 0, 0, 650, 650);
 
-        let pngFile = canvas.toDataURL("image/png");
-        let downloadLink = document.createElement("a");
-        downloadLink.download = "branch-qr.png";
-        downloadLink.href = pngFile;
-        downloadLink.click();
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-}
-</script>
-<script>
-$(document).on('click', '.delete-booking', function (e) {
-    e.preventDefault();
-    let bookingId = $(this).data('id');
+                let pngFile = canvas.toDataURL("image/png");
+                let downloadLink = document.createElement("a");
+                downloadLink.download = "branch-qr.png";
+                downloadLink.href = pngFile;
+                downloadLink.click();
+            };
+            img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+        }
+    </script>
+    <script>
+        $(document).on('click', '.delete-booking', function(e) {
+            e.preventDefault();
+            let bookingId = $(this).data('id');
 
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "This booking will be permanently deleted!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: "{{ url('booking') }}/" + bookingId,
-                type: "DELETE",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                },
-                success: function (response) {
-                    Swal.fire(
-                        'Deleted!',
-                        'Booking has been deleted.',
-                        'success'
-                    ).then(() => {
-                        location.reload(); // refresh page after delete
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This booking will be permanently deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('booking') }}/" + bookingId,
+                        type: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                        },
+                        success: function(response) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Booking has been deleted.',
+                                'success'
+                            ).then(() => {
+                                location.reload(); // refresh page after delete
+                            });
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong. Please try again.',
+                                'error'
+                            );
+                        }
                     });
-                },
-                error: function () {
-                    Swal.fire(
-                        'Error!',
-                        'Something went wrong. Please try again.',
-                        'error'
-                    );
                 }
             });
-        }
-    });
-});
-</script>
+        });
+    </script>
 
-@endsection
+    @endsection

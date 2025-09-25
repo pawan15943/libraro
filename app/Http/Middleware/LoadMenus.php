@@ -78,16 +78,19 @@ class LoadMenus
             
             $value = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())->where('is_paid', 1)->orderBy('id', 'desc')->first();
 
+            // 24-09-2025 we made changes in this (we change start_date into end_date)
             $is_renew_comp = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
                 ->where('is_paid', 1)
                 ->where('status', 1)
-                ->where('start_date', '>=', date('Y-m-d'))->exists();
+                ->where('end_date', '>=', date('Y-m-d'))->exists();
+
             $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
                 ->where('is_paid', 1)
                 ->where('status', 0)
-                ->where('start_date', '>=', date('Y-m-d'))
+                ->where('end_date', '>=', date('Y-m-d'))
                 ->exists();
-                
+            // End changes
+
             $librarydiffInDays = 0;
             $is_expire = false;
 
@@ -249,7 +252,7 @@ class LoadMenus
                 $this->statusInactive();
                 $this->updateLibraryStatus();
                 $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
-                    $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->value('end_date')??0;
+                    $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->latest('end_date')->value('end_date')??0;
                   
                      if ($lib_enddate) { // only if there is an end date
                         $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);

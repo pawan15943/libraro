@@ -258,6 +258,10 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Plan List' => route('plan.index'),
             ],
+            'learner.checklist' => [
+                'Dashboard' => route('library.home'),
+                'Print ID card in bulk' => route('learner.checklist'),
+            ],
             'plan.create' => [
                 'Dashboard' => route('library.home'),
                 'Plan List' => route('plan.index'),
@@ -485,6 +489,7 @@ class AppServiceProvider extends ServiceProvider
             'lockeramount.create' => 'Add Library Locker Amount',
             'library-users.create' => 'Create Library User',
             'library-users.index' => 'Library Users List',
+            'learner.checklist' => 'Print ID card in bulk',
         ];
 
         return $titles[$routeName] ?? ucfirst(str_replace('.', ' ', $routeName));
