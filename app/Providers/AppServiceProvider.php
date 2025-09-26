@@ -118,6 +118,12 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('home'),
                 'Library Profile' => route('profile')
             ],
+
+            
+            'get.learner.attendance' => [
+                'Dashboard' => route('home'),
+                'Daily Attendance Summery' => route('get.learner.attendance')
+            ],
             'subscriptions.choosePlan' => [
                 'Dashboard' => route('home'),
                 'Choose Plan' => route('subscriptions.choosePlan')
@@ -427,6 +433,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Library Portal
             'library.home' => 'Library Dashboard',
+            'get.learner.attendance' => 'Daily Attendance Summery',
             'profile' => 'Library Profile',
             'subscriptions.choosePlan' => 'Choose Plan',
             'subscriptions.payment' => 'Make Payment',

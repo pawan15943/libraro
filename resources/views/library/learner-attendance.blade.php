@@ -40,24 +40,24 @@ $current_route = Route::currentRouteName();
 
 <div class="row mb-4">
     <div class="col-lg-12">
-        <h4 class="mb-4">Daily Attendence Summery</h4>
+        <h4 class="mb-4">Daily Attendance Summery</h4>
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="attendence-box">
-                    <h4>150</h4>
-                    <span>Total Student</span>
+                    <h4>{{ $totalStudents }}</h4>
+                    <span>Total Students</span>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="attendence-box">
-                    <h4>25 </h4>
-                    <span>Present Student</span>
+                    <h4>{{ $presentStudents }}</h4>
+                    <span>Present Students</span>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="attendence-box">
-                    <h4>25 </h4>
-                    <span>Absent Student</span>
+                    <h4>{{ $absentStudents }}</h4>
+                    <span>Absent Students</span>
                 </div>
             </div>
         </div>
@@ -66,45 +66,59 @@ $current_route = Route::currentRouteName();
                 <div class="text-danger pb-3"><b>Note :</b> If you don't provide an out time, then learner's closing shift time will be used as the out time.</div>
             </div>
         </div>
-        <div class="row g-4 mb-4">
+
+        <div class="row g-2 mb-4">
             @foreach($learners as $key => $value)
             <div class="col-lg-12">
                 <div class="revenue-info">
                     <ul>
                         <li style="width: 8%;">
-                            <div class="icon">
-                                <img src="" alt="">
-                            </div>
+                            <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
                         </li>
                         <li>
                             <span>Seat No</span>
-                            <p>{{$value->seat_no ?? 'G'}}</p>
+                            <p>{{$value->seat_no ?? 'G'}} : {{ $value->plan_type_name }}</p>
                         </li>
                         <li>
                             <span>Name</span>
-                            <p>{{$value->name}}</p>
+                            <p>{{$value->name}} </p>
                         </li>
                         <li>
                             <span>Plan End Date</span>
-                            <p>25 Aug, 2025</p>
+                            <p>
+                                @php
+                                $today = \Carbon\Carbon::today();
+                                @endphp
+
+                                @if(\Carbon\Carbon::parse($value->plan_end_date)->gte($today))
+                                <span class="text-success">
+                                    {{ $value->plan_end_date }} : Active
+                                </span>
+                                @else
+                                <span class="text-danger">
+                                    {{ $value->plan_end_date }} : Extended
+                                </span>
+                                @endif
+                            </p>
                         </li>
                         <li>
                             <span>Punch In</span>
-                            <p>{{ $value->in_time ? \Carbon\Carbon::parse($value->in_time)->format('h:i A') : '-' }}</p>
+                            <p> {{ $value->in_time ? \Carbon\Carbon::parse($value->in_time)->format('h:i A') : '-' }}</p>
                         </li>
                         <li>
                             <span>Punch Out</span>
                             <p>{{ $value->out_time ? \Carbon\Carbon::parse($value->out_time)->format('h:i A') : '-' }}</p>
                         </li>
                         <li>
-                            <span>Punch Out</span>
+                            <span>Attendenace Status</span>
                             <p>@if($value->attendance==1)
-                                Present
+                                <span class="text-success">Present</span>
                                 @elseif($value->attendance==0)
-                                Absent
+                                <span class="text-danger">Absent</span>
                                 @else
-                                No Attendance
-                                @endif</p>
+                                <span class="text-warning"> No Attendance</span>
+                                @endif
+                            </p>
                         </li>
 
                     </ul>
@@ -112,8 +126,8 @@ $current_route = Route::currentRouteName();
             </div>
             @endforeach
         </div>
-        
-        
+
+
     </div>
 </div>
 

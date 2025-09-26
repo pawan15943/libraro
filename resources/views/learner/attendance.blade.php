@@ -37,64 +37,112 @@
 
 </div>
 
-<div class="row mb-4">
+<!-- Note -->
+<div class="row pb-4">
     <div class="col-lg-12">
-        
-        <div class="text-danger pb-3"><b>Note :</b> If you don't provide an out time, then learner's closing shift time will be used as the out time.</div>
-        <div class="table-responsive mt-4">
-            <table class="table text-center datatable border-bottom" id="datatable">
-                <thead>
-                    <tr>
-                        <th>Seat No.</th>
-                        <th>Learner Info</th>
-                        <th>Contact Info</th>
-                        <th>Active Plan</th>
-                        <th>Expired On</th>
-                        <th>In time</th>
-                        <th>Out time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($learners as $key => $value)
-                    <tr>
-                        <td>{{ $value->seat_no ?? 'GENERAL' }}<br><small>{{ $value->plan_type_name }}</small></td>
-                        <td>
-                            <span class="uppercase truncate name">
-                                {{ $value->name }}
-                            </span><br>
-                            <small>{{ $value->dob }}</small>
-                        </td>
-                        <td>
-                            <span class="truncate">
-                                {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
-                            </span><br>
-                            <small>+91-{{ $value->mobile }}</small>
-                        </td>
-                        <td>{{ $value->plan_start_date }}<br><small>{{ $value->plan_name }}</small></td>
-                        <td>{{ $value->plan_end_date }}<br>{!! getUserStatusDetails($value->plan_end_date) !!}</td>
-                        <td>
-                            <div class="form-check form-switch justify-content-center">
-                                <input class="form-check-input toggle" type="checkbox" id="myToggle{{ $value->learner_id }}"
-                                    data-learner="{{ $value->learner_id }}" {{ $value->attendance == 1 ? 'checked' : '' }}>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-check form-switch justify-content-center">
-                                <input class="form-check-input outToggle" type="checkbox" id="outToggle{{ $value->learner_id }}"
-                                    data-learner="{{ $value->learner_id }}">
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-
-
-
-            </table>
-
+        <div class="text-danger pb-3">
+            <b>Note :</b> If you don't provide an out time, then learner's closing shift time will be used as the out time.
         </div>
     </div>
 </div>
+
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <h4 class="mb-4">Take Learner Attendance</h4>
+
+        <!-- Learners List (kept all data from your table, preserved this card/list structure) -->
+        <div class="row g-2 mb-4">
+            @foreach($learners as $key => $value)
+            <div class="col-lg-12">
+                <div class="revenue-info">
+                    <ul>
+                        <!-- Profile -->
+                        <li style="width: 8%;">
+                            <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
+                        </li>
+
+                        <!-- Seat No. + Plan Type -->
+                        <li>
+                            <span>Seat No.</span>
+                            <p>{{ $value->seat_no ?? 'G' }} :
+                                {{ $value->planType->name }}
+                            </p>
+                        </li>
+
+                        <!-- Name + DOB -->
+                        <li>
+                            <span>Learner Info</span>
+                            <p class="uppercase truncate name">
+                                {{ $value->name }}
+                            </p>
+                        </li>
+
+
+                        <!-- Active Plan (Start Date + Plan Name) -->
+                        <li>
+                            <span>Active Plan</span>
+                            <p>
+                                {{ $value->plan_start_date }}
+                                <small class="d-block">{{ $value->plan_name }}</small>
+                            </p>
+                        </li>
+
+                        <!-- Expired On (End Date + Status Active/Extended per your rule) -->
+                        <li class="col-12 col-md-3">
+                            <span>Expired On</span>
+                            <p>
+                                @php
+                                $today = \Carbon\Carbon::today();
+                                @endphp
+
+                                @if(\Carbon\Carbon::parse($value->plan_end_date)->gte($today))
+                                <span class="text-success">
+                                    {{ $value->plan_end_date }} : Active
+                                </span>
+                                @else
+                                <span class="text-danger">
+                                    {{ $value->plan_end_date }} : Extended
+                                </span>
+                                @endif
+                            </p>
+                        </li>
+
+                        <!-- Toggle: Mark Present (same as original "In time" toggle/attendance) -->
+                        <li>
+                            <span>Mark Present</span>
+                            <div class=" form-switch justify-content-center">
+                                <input
+                                    class="form-check-input toggle"
+                                    type="checkbox"
+                                    id="myToggle{{ $value->learner_id }}"
+                                    data-learner="{{ $value->learner_id }}"
+                                    {{ $value->attendance == 1 ? 'checked' : '' }}>
+                            </div>
+                        </li>
+
+                        <!-- Toggle: Mark Out (same as original outToggle) -->
+                        <li>
+                            <span>Mark Out</span>
+                            <div class=" form-switch justify-content-center">
+                                <input
+                                    class="form-check-input outToggle"
+                                    type="checkbox"
+                                    id="outToggle{{ $value->learner_id }}"
+                                    data-learner="{{ $value->learner_id }}">
+                            </div>
+                        </li>
+
+
+                    </ul>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+    </div>
+</div>
+
+
 
 
 

@@ -19,4 +19,13 @@ class LearnerTransactionActivity extends Model
     {
         return $this->belongsTo(Branch::class, 'branch_id')->withTrashed();
     }
+    protected static function booted()
+    {
+        static::addGlobalScope('branch', function ($builder) {
+            if (getCurrentBranch()) {
+                $builder->where('branch_id', getCurrentBranch());
+            }
+        });
+    }
+
 }

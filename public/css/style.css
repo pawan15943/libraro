@@ -6132,3 +6132,8 @@ div#requests {
     align-items: center;
     height: 78vh;
 }
+
+.profile-learner{
+    width: 45px;
+    border-radius: 45px;
+}

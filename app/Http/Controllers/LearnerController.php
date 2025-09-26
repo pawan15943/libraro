@@ -2972,11 +2972,14 @@ class LearnerController extends Controller
         if ($request->has('date')) {
             $learners =  Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->where('learners.library_id', getLibraryId())
+                ->whereNull('learner_detail.deleted_at')
                 ->leftJoin('attendances', function ($join) use ($request) {
                     $join->on('learners.id', '=', 'attendances.learner_id')
                         ->whereDate('attendances.date', '=', $request->date);
                 })
                 ->where('learners.status', 1)
+                ->where('learner_detail.status', 1)
+                ->with(['planType'])
                 ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'))
                 ->get();
         } else {
@@ -3054,7 +3057,9 @@ class LearnerController extends Controller
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learners.library_id', getLibraryId())
-            ->where('learners.status', 1);
+            // ->where('learners.branch_id', getCurrentBranch())
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1);
 
         // Apply Filters Dynamically
         if ($request->has('date')) {
@@ -3087,7 +3092,19 @@ class LearnerController extends Controller
             'attendances.date'
         )->get();
 
-        return view('library.learner-attendance', compact('learners', 'data'));
+            // ✅ Dynamic Counts
+        $totalStudents   = $learners->count();
+        $presentStudents = $learners->where('attendance', 1)->count();
+        $absentStudents  = $learners->where('attendance', 0)->count();
+
+        return view('library.learner-attendance', compact(
+            'learners',
+            'data',
+            'totalStudents',
+            'presentStudents',
+            'absentStudents'
+        ));
+
     }
 
 
