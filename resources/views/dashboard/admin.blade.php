@@ -733,15 +733,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <h5 class="mb-3">Planwise Revenue</h5>
                     <div class="record-not-found">
 
-                        
-                        <script>
-                            let revenueChart = document.getElementById("revenueChart");
-                            if (revenueChart && revenueChart.value) {
-                                <canvas id="revenueChart" style="max-height:340px;"></canvas>
-                            } else {
-                                
-                            }
-                        </script>
+                        <canvas id="revenueChart" style="max-height:340px;"></canvas>
+                       
                         <div class="not-data" style="display: none;" id="no-data2">
                             <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
 
@@ -756,15 +749,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 <div class="card chart">
                     <h5 class="mb-3">Planwise Booking</h5>
                     <div class="record-not-found">
-                        <script>
-                            let bookingCountChart = document.getElementById("revenueChart");
-                            if (revenueChart && revenueChart.value) {
-                                 <canvas id=""></canvas>
-                            } else {
-                                
-                            }
-                        </script>
-                       
+                        <canvas id="bookingCountChart" style="max-height:340px;"></canvas>
+                    
 
                         <div class="not-data" style="display: none; " id="no-data3">
                             <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>

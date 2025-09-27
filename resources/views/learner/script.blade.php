@@ -499,6 +499,7 @@
                 $('#seat_id').closest('.col-lg-6').hide();
                 $('#general_seat').closest('.col-lg-6').hide();
             }else if(toggleHiddenFields.includes('12')){
+                 $('#seat_no_head').text('Booking Form');
                  $('#general_seat').val('no').trigger('change');
             }else{
                 

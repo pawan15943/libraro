@@ -12,7 +12,7 @@
 .modal-backdrop.fade.show {
     background: rgb(0 0 0 / 28%);
     opacity: 1;
-    backdrop-filter: blur(100px);
+    backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
 

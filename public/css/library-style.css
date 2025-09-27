@@ -1044,7 +1044,7 @@ ul.actionalbles li a:hover {
     margin: 0;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .revenue-info ul li {
