@@ -89,7 +89,7 @@
                         <label for="mobile">UPI ID(for payment receive)<span>*</span></label>
                         <input type="text" 
                                class="form-control  @error('upi_id') is-invalid @enderror"
-                               name="upi_id" maxlength="10"
+                               name="upi_id"
                                value="{{ old('upi_id', $branch->upi_id ?? '') }}">
                         @error('upi_id')
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
