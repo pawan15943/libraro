@@ -2132,7 +2132,9 @@ $(document).ready(function() {
     }
 });
  $('#plan_type_id10').on('change', function(event) {
+      
     event.preventDefault();
+  
     const plan_type_id10 = $(this).val();
     const plan_id10 = $('#plan_id10').val();
     var lockerCheck= $('#toggleFieldCheckbox10').val();
@@ -2268,17 +2270,22 @@ function lockerAmountGet(plan_id10){
     const autoPaid = planPrice + lockerAmount - discountAmount;
     $('#total_amount10').val(autoPaid);
 
-     const previous_amount =$('#previous_amount10').val();
-   
-    const diffrence =autoPaid-previous_amount;
-    $('#diffrence_amount10').val(diffrence);
-    if(diffrence < 0){
-         $('label[for="diffrence_amount10"]').text("Refund Amount *");
-       
-        
-    }else{
-         $('label[for="diffrence_amount10"]').text("Diffrence Amount *");
-       
+      // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
+    const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
+
+    if (paymentType === 'CHANGE PLAN') {
+        const previous_amount = parseFloat($('#previous_amount10').val()) || 0;
+        const difference = autoPaid - previous_amount;
+        $('#diffrence_amount10').val(difference);
+
+        if (difference < 0) {
+            $('label[for="diffrence_amount10"]').text("Refund Amount *");
+        } else {
+            $('label[for="diffrence_amount10"]').text("Difference Amount *");
+        }
+    } else {
+        // For RENEW / UPGRADE -> always fresh total, no difference calc
+        $('#diffrence_amount10').val('');
     }
 }
 function calculatePending(paid_val) {
@@ -2297,7 +2304,15 @@ function calculatePending(paid_val) {
     }
 
     const effectivePaid = planPrice+lockerAmount - discountAmount;
-    const pendingAmount = effectivePaid-paid_val-previous_amount10;
+
+    
+   let pendingAmount;
+    const paymentType = $('input[name="payment_type"]').val();
+    if (paymentType === 'CHANGE PLAN') {
+        pendingAmount = effectivePaid - paid_val - previous_amount10;
+    } else {
+        pendingAmount = effectivePaid - paid_val;
+    }
   
     $('#pending_amt10').val(pendingAmount);
   

@@ -116,7 +116,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                     <div class="row g-4">
                         <div class="col-lg-4">
                             <label>Plan <span>*</span></label>
-                            <select id="plan_id10" class="form-control form-select @error('plan_id') is-invalid @enderror" name="plan_id" {{ (Route::currentRouteName() == 'learner.change.plan' || Route::currentRouteName() == 'learner.renew.plan') ? 'readonly' : '' }}>
+                            <select id="plan_id10" class="form-control form-select @error('plan_id') is-invalid @enderror" name="plan_id" {{ (Route::currentRouteName() == 'learner.renew.plan') ? 'readonly' : '' }}>
                                 <option value="">Select Plan</option>
                                 @foreach($plans as $key => $value)
                                 <option value="{{ $value->id }}" {{ old('plan_id', $customer->plan_id) == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
