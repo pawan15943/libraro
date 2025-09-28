@@ -164,21 +164,22 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label>Locker?</label>
                                 <select name="locker" id="toggleFieldCheckbox10" class="form-control">
-                                    <option value="no" {{ $hasLocker === 'no' ? 'selected' : '' }}>No</option>
-                                    <option value="yes" {{ $hasLocker === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+                                  
+                                    <option value="no" {{ old('locker', $hasLocker) === 'no' ? 'selected' : '' }}>No</option>
+                                    <option value="yes" {{ old('locker', $hasLocker) === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
                                 </select>
                             </div>
 
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label>Locker Amount<span>*</span></label>
-                                <input type="text" id="locker_amount10" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" placeholder="0.00" value="{{$locker_amt}}" readonly>
+                                <input type="text" id="locker_amount10" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" placeholder="0.00"  value="{{ old('locker_amount', $locker_amt) }}" readonly>
                                 @error('locker_amount')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
                             <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
                                 <label for="locker_no">Locker No.</label>
-                                <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{$customer->locker_no}}" {{$locker_read}}>
+                                <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{ old('locker_no', $customer->locker_no) }}"  {{$locker_read}}>
                                 @error('locker_no')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -189,14 +190,18 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                                 <label>Discount Type</label>
                                 <select id="discountType10" class="form-control form-select" name="discountType">
                                     <option value="">Select Discount Type</option>
-                                    <option value="amount" {{ $selectedDiscountType == 'amount' ? 'selected' : '' }}>Amount</option>
-                                    <option value="percentage" {{ $selectedDiscountType == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                    <option value="amount" {{ old('discountType', $selectedDiscountType) == 'amount' ? 'selected' : '' }}>Amount</option>
+                                    <option value="percentage" {{ old('discountType', $selectedDiscountType) == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                    
                                 </select>
                             </div>
 
                             <div class="col-lg-6">
                                 <label>Discount Amount ( <span id="typeVal10">INR / %</span> )</label>
-                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"  value="{{ currentTransaction($customer->learner_detail_id)->discount_amount ?? 0 }}" readonly>
+                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"  
+                              
+                                value="{{ old('discount_amount', currentTransaction($customer->learner_detail_id)->discount_amount ?? 0) }}"
+                                readonly>
                                 @error('discount_amount')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror

@@ -230,7 +230,7 @@ class DashboardController extends Controller
               
             $todayCollection = LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
             ->where(function($q) {
-                $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+                $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
                 ->orWhere(function($sub) {
                     $sub->where('payment_type', 'CHANGE PLAN')
                         ->where('dr_cr', 'Cr');
@@ -758,7 +758,7 @@ class DashboardController extends Controller
        
         $monthlyIncome =LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch()) ->whereYear('date', $year)->whereMonth('date', $month)
         ->where(function($q) {
-            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
             ->orWhere(function($sub) {
                 $sub->where('payment_type', 'CHANGE PLAN')
                     ->where('dr_cr', 'Cr');
@@ -1291,7 +1291,7 @@ class DashboardController extends Controller
        
         $today_booking_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
          ->where(function($q) {
-            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
             ->orWhere(function($sub) {
                 $sub->where('payment_type', 'CHANGE PLAN')
                     ->where('dr_cr', 'Cr');
@@ -1337,7 +1337,7 @@ class DashboardController extends Controller
        $data['total_revenue']=$total_revenue;
         $monthlyIncome =LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch()) ->whereYear('date', $year)->whereMonth('date', $month)
         ->where(function($q) {
-            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+            $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
             ->orWhere(function($sub) {
                 $sub->where('payment_type', 'CHANGE PLAN')
                     ->where('dr_cr', 'Cr');
@@ -1379,7 +1379,7 @@ class DashboardController extends Controller
         switch ($type) {
             case 'today_collection':
                $query->where(function($q) {
-                        $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+                        $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
                         ->orWhere(function($sub) {
                             $sub->where('payment_type', 'CHANGE PLAN')
                                 ->where('dr_cr', 'Cr');
@@ -1428,7 +1428,7 @@ class DashboardController extends Controller
             break;
             case 'monthly_collection':
                $query->where(function($q) {
-                        $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE'])
+                        $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
                         ->orWhere(function($sub) {
                             $sub->where('payment_type', 'CHANGE PLAN')
                                 ->where('dr_cr', 'Cr');

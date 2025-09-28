@@ -429,7 +429,7 @@ class LearnerController extends Controller
     public function changePlanUpdate(Request $request, $id = null)
     {
        
-        $request->validate([
+        $rules=[
             'plan_type_id' => 'required|exists:plan_types,id',
             'plan_price_id' => 'required',
             'paid_amount' => 'required',
@@ -438,25 +438,27 @@ class LearnerController extends Controller
             'payment_mode' => 'required',
             'user_id' => 'required|exists:learners,id',
             'learner_detail' => 'required|exists:learner_detail,id',
-             'discountType' => 'nullable',
+            'discountType' => 'nullable|in:amount,percentage',
+          
             'discount_amount' => [
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
-                        $fail('Discount type must be selected when providing a discount amount.');
-                    }
-                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
-                        $fail('Discount amount is required when a discount type is selected.');
-                    }
-                }
+                'required_if:discountType,amount,percentage', 
+                
             ],
             'locker_no' => [
                 'nullable',
                  'required_if:locker,yes',
                 'numeric'
             ],
-        ]);
+            'locker_amount' => [
+                'nullable',
+                 'required_if:locker,yes'
+            ],
+        ];
 
+         $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
         
         $customer = Learner::findOrFail($request->user_id);
         if (!$customer) {
@@ -497,6 +499,7 @@ class LearnerController extends Controller
         }else{
             $endDate=$LearnerDetail->plan_end_date;
         }
+      
       
           // Calculate end date
        
@@ -594,8 +597,12 @@ class LearnerController extends Controller
             $pending_refund = 0;
             $dr_cr='Cr';
         }
-        if($pending_amount > 0){
+        if(($pending_amount > 0 || $pending_refund!=0) && !$request->due_date){
             return redirect()->back()->with('error', 'Due date is required');
+        }
+        if ($pending_amount < 0) {
+        
+             return redirect()->back()->with('error', 'Paid amount is not valid');
         }
         
         if ($learnerTransaction) {
@@ -631,7 +638,7 @@ class LearnerController extends Controller
                 $LearnerDetail->plan_id = $plan_id;
                 
             }
-            
+            $LearnerDetail->plan_end_date=$endDate;
             $LearnerDetail->plan_type_id = $plan_type_id;
             $LearnerDetail->plan_price_id = $planPrice;
             $LearnerDetail->payment_mode = $payment_mode;
