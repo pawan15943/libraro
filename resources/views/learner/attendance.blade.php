@@ -109,7 +109,7 @@
 
                         <!-- Toggle: Mark Present (same as original "In time" toggle/attendance) -->
                         <li>
-                            <span>Mark Present</span>
+                            <span>In Punch</span>
                             <div class=" form-switch justify-content-center">
                                 <input
                                     class="form-check-input toggle"
@@ -122,7 +122,7 @@
 
                         <!-- Toggle: Mark Out (same as original outToggle) -->
                         <li>
-                            <span>Mark Out</span>
+                            <span>Out Punch</span>
                             <div class=" form-switch justify-content-center">
                                 <input
                                     class="form-check-input outToggle"

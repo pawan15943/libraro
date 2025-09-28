@@ -83,8 +83,14 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                     @endif
                 </h4>
                 <div class="tip text-danger">
-                    <b>Note:</b> Any learner can upgrade their plan only renewing seat in their extend period.
-                    If the seat not have that plan type available then first need to perform swap seat operation then you do change plan.
+                    @if(Route::currentRouteName() == 'learner.renew.plan')
+                    <b>Note:</b> You can renew your plan 5 days before it expires or during the extended period. Plan and shift changes are not allowed.
+                    @elseif(Route::currentRouteName() == 'learner.change.plan')
+                    <b>Note:</b> You can change the learner's plan & plan type (shift) within 7 days of seat booking. After that, use the upgrade plan option for any changes.
+                    @else
+                    <b>Note:</b> You can upgrade your plan & plan type (shift) 5 days before it expires or during the extended period.
+                    @endif
+                    
                 </div>
 
                 <form action="{{$route}}" method="POST" enctype="multipart/form-data" id="{{$ids}}">
