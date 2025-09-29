@@ -235,7 +235,7 @@ class LoadMenus
             } 
             $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
                         ->whereNotNull('seat_no')
-                        ->groupBy('seat_no')
+                        ->groupBy('seat_no')->where('status',1)
                         ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
             $availableSeats = collect();

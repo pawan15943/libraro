@@ -49,7 +49,9 @@
             <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
         </div>
     </div>
-
+@php
+$current_route = Route::currentRouteName();
+@endphp
     <div class="library-dashbaord">
         <!-- Sidebar -->
         @include('partials.library-sidebar')
@@ -104,55 +106,90 @@
         </div>
 
 
-        @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+       @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+    <div class="right-sidebar">
+        <h4> QUICK ACTION</h4>
+        <ul>
+            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat"
+                class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
+                <a href="javascript:;" class="noseat_popup">
+                    <i class="fa fa-chair fa-2x"></i>
+                </a>
+            </li>
 
-        <div class="right-sidebar">
-            <h4> QUICK ACTION</h4>
-            <ul>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat">
-                    <a href="javascript:;" class="noseat_popup"><i class="fa fa-chair fa-2x"></i></a>
-                </li>
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seart">
-                    <a href="{{route('learner.search')}}"><i class="fa fa-search fa-2x"></i></a>
-                </li>
-                <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Renew Seat">
-                    <a href=""><i class="fa fa-rotate-right fa-2x"></i></a>
-                </li> -->
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense">
-                    <a href="{{route('add.expense.list')}}"><i class="fa fa-plus fa-2x"></i></a>
-                </li>
-                <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Attendence">
-                    <a href="{{route('attendance')}}"><i class="fa fa-user-tie fa-2x"></i></a>
-                </li> -->
+            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
+                class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
+                <a href="{{ route('learner.search') }}">
+                    <i class="fa fa-search fa-2x"></i>
+                </a>
+            </li>
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List">
-                    <a href="{{ route('seats.history') }}"><i class="fa fa-list-check fa-2x"></i></a>
-                </li>
-                
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD">
-                    <a href="{{ route('learner.checklist') }}"><i class="fa fa-id-card-clip fa-2x"></i></a>
-                </li>
+            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
+                class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
+                <a href="{{ route('add.expense.list') }}">
+                    <i class="fa fa-plus fa-2x"></i>
+                </a>
+            </li>
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}">
+            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List"
+                class="{{ $current_route == 'seats.history' ? 'active' : '' }}">
+                <a href="{{ route('seats.history') }}">
+                    <i class="fa fa-list-check fa-2x"></i>
+                </a>
+            </li>
 
-                    <a href="{{route('library.video-training')}}"><i class="fa fa-video fa-2x"></i></a>
+            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD"
+                class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
+                <a href="{{ route('learner.checklist') }}">
+                    <i class="fa fa-id-card-clip fa-2x"></i>
+                </a>
+            </li>
+
+            <li data-bs-toggle="tooltip" data-bs-placement="left"
+                data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}"
+                class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
+                <a href="{{ route('library.video-training') }}">
+                    <i class="fa fa-video fa-2x"></i>
+                </a>
+            </li>
+
+            @if(!in_array('28', toggleHideField()))
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback"
+                    class="{{ $current_route == 'library.feedback' ? 'active' : '' }}">
+                    <a href="{{ route('library.feedback') }}">
+                        <i class="fa fa-comment fa-2x"></i>
+                    </a>
                 </li>
-                @if(!in_array('28', toggleHideField()))
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback">
-                    <a href="{{route('library.feedback')}}"><i class="fa fa-comment fa-2x"></i></a>
+            @endif
+
+            @if(!in_array('21', toggleHideField()))
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings"
+                    class="{{ $current_route == 'library.settings' ? 'active' : '' }}">
+                    <a href="{{ route('library.settings') }}">
+                        <i class="fa fa-cog fa-2x fa-spin"></i>
+                    </a>
                 </li>
-                @endif
-                @if(!in_array('21', toggleHideField()))
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings">
-                    <a href="{{route('library.settings')}}"><i class="fa fa-cog fa-2x fa-spin"></i></a>
-                </li>
-                @endif
-            </ul>
-            <div class="control-right-sidebar">
-                <i class="fa fa-angle-right" id="sidebar_mob"></i>
-            </div>
+            @endif
+        </ul>
+
+        <div class="control-right-sidebar">
+            <i class="fa fa-angle-right" id="sidebar_mob"></i>
         </div>
-        @endif
+    </div>
+@endif
+
+<style>
+/* Highlight active quick action */
+.right-sidebar ul li.active a {
+    color: #0d6efd; /* Bootstrap primary */
+}
+.right-sidebar ul li.active i {
+    color: #0d6efd;
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+}
+</style>
+
     </div>
 
 

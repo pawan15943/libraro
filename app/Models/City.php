@@ -9,4 +9,9 @@ class City extends Model
 {
     use HasFactory,SoftDeletes;
     protected $guarded = [];
+    public function branches()
+    {
+        return $this->hasMany(Branch::class, 'city_id');
+    }
+
 }

@@ -60,7 +60,7 @@ class SiteController extends Controller
     }
     public function searchLibrary()
     {
-        $cities = City::pluck('city_name', 'id');
+        $cities = City::whereHas('branches')->pluck('city_name', 'id');
         $topLibraries = Library::take(5)->get();
         $library_count = Library::count();
         $learner_counter = Learner::count();
