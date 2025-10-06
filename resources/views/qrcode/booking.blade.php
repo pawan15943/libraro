@@ -132,6 +132,7 @@
                 const generalSeat = $('#general_seat').val();
                 const seatId = $('#seat_id').val();
                 const branch_id = $('#branch_id').val();
+                console.log("branchwith",branch_id);
                 if (generalSeat === 'yes') {
                     // General seat → no seat-wise filter
                     $('#seat_id').prop('disabled', true).val('');
@@ -236,7 +237,7 @@
                 if (generalSeat === 'no') {
                     const seatId = $(this).val();
                     if (seatId) {
-                        getTypeSeatwise(seatId);
+                        getTypeSeatwise(seatId,branch_id);
                     } else {
                         $('#plan_type_id').html('<option value="">Choose</option>');
                     }
