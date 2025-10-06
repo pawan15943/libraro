@@ -236,6 +236,7 @@
                 const generalSeat = $('#general_seat').val();
                 if (generalSeat === 'no') {
                     const seatId = $(this).val();
+                    const branch_id = $('#branch_id').val();
                     if (seatId) {
                         getTypeSeatwise(seatId,branch_id);
                     } else {
