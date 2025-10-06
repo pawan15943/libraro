@@ -232,7 +232,7 @@
         
             }
 
-               $('#seat_id').on('change', function () {
+            $('#seat_id').on('change', function () {
                 const generalSeat = $('#general_seat').val();
                 if (generalSeat === 'no') {
                     const seatId = $(this).val();
