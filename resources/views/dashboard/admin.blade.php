@@ -397,7 +397,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                             <tr>
                                 <td>{{$x++}}</td>
-                                <td>{{$value->name}}</td>
+                                <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
                                 <td>{{$value->mobile}}</td>
                                 <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
                                 @if($value->payment_screenshot)
@@ -408,6 +408,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <td>
                                     <ul class="actions-icons">
+                                        <li>
+                                            <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                               @csrf
+                                                <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                                <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-check"></i></button>
+                                            </form>
+
+                                        </li>
                                         {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
                                         <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
                                         <li>
@@ -1034,10 +1043,17 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 refreshScrollbar();
             });
 
-            observer.observe(document.querySelector(".v-content"), {
-                childList: true,
-                subtree: true
-            });
+           // Observe only if .v-content exists
+            const target = document.querySelector(".v-content");
+            if (target) {
+                const observer = new MutationObserver(() => {
+                    refreshScrollbar();
+                });
+                observer.observe(target, {
+                    childList: true,
+                    subtree: true
+                });
+            }
 
         })(jQuery);
     </script>
@@ -1466,18 +1482,18 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
             let printWindow = window.open('', '_blank');
             printWindow.document.write(`
-        <html>
-        <head>
-            <title>Print QR</title>
-            <style>
-                @page { size: A4; margin: 20mm; }
-                body { text-align:center; margin:0; padding:50px; }
-                svg { width: 650px; height: 650px; }
-            </style>
-        </head>
-        <body>${svg.outerHTML}</body>
-        </html>
-    `);
+            <html>
+            <head>
+                <title>Print QR</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { text-align:center; margin:0; padding:50px; }
+                    svg { width: 650px; height: 650px; }
+                </style>
+            </head>
+            <body>${svg.outerHTML}</body>
+            </html>
+        `);
             printWindow.document.close();
             printWindow.print();
         }
@@ -1548,5 +1564,62 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             });
         });
     </script>
+   <script>
+    $(document).ready(function () {
+
+        // 1️⃣ SweetAlert confirmation before form submit
+        $(document).on('submit', '.approve-form', function (e) {
+            e.preventDefault();
+            let form = this;
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You are about to approve this booking.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Approve it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // submit form if confirmed
+                }
+            });
+        });
+
+        // 2️⃣ Show backend flash messages (success or error) in SweetAlert
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: "{{ session('success') }}",
+                confirmButtonColor: '#3085d6'
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#d33'
+            });
+        @endif
+
+        // 3️⃣ Optional: catch JS errors globally
+        window.addEventListener('error', function (e) {
+            Swal.fire({
+                icon: 'error',
+                title: 'JavaScript Error',
+                text: e.message || 'An unexpected error occurred.',
+                footer: `<small>File: ${e.filename}, Line: ${e.lineno}</small>`
+            });
+        });
+
+    });
+    </script>
+
+    
 
     @endsection

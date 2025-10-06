@@ -57,12 +57,31 @@ class QrEntryController extends Controller
     {
         $branch = Branch::where('uuid', $branchUuid)->firstOrFail();
 
+            $totalSeats =  Hour::where('branch_id',$branch->id)->value('seats');
+            $totalHour=Hour::where('branch_id',$branch->id)->value('hour');
+            $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                        ->where('branch_id',$branch->id)
+                        ->whereNotNull('seat_no')
+                        ->groupBy('seat_no')->where('status',1)
+                        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
+
+            $availableSeats = collect();
+
+            // Step 2: Loop through all seat numbers and apply logic
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
+
+                if ($usedHours < $totalHour) {
+                    $availableSeats->push($seatNo);
+                }
+            }
+
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
-        return view('qrcode.booking', compact('branch', 'plans', 'planType'));
+        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats'));
     }
    public function getPlanPrice(Request $request)
     {
@@ -88,20 +107,126 @@ class QrEntryController extends Controller
         ]);
     }
 
+     private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
+    {
+      
+        $total_hour= Hour::where('branch_id',$branch_id)->first()?->hour ?? 0;
+
+        if ($total_hour === 0) {
+            return ['error' => true, 'message' => 'Total available hours not set.'];
+        }
+
+        $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
+     
+        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
+            return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
+        }
+
+        if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+            return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
+        }
+
+        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
+            if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id,$branch_id,$library_id) == false) {
+                return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+            }
+        }
+       
+
+        // ✅ Always return structured response
+        return ['error' => false];
+    }
+     public function checkPlanTypeSeatWise($seatNo,$requestPlanType,$branch_id,$library_id)
+    {
+
+            // Step 1: Retrieve all bookings for the given seat
+            $bookings = $this->getLearnersByLibrary()
+                ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                ->where('learner_detail.seat_no', $seatNo)
+                ->where('learner_detail.plan_start_date','>',Carbon::today())
+                ->where('learners.branch_id', $branch_id)
+                ->where('learner_detail.branch_id', $branch_id)
+                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+
+            // Step 2: Retrieve all plan types
+            $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->get();
+
+            // Step 3: Initialize an array to store the plan_type_ids to be removed
+            $planTypesRemovals = [];
+
+            // Step 4: Calculate total booked hours for the seat
+            $totalBookedHours = $bookings->sum('slot_hours');
+
+
+            // Step 5: Determine conflicts based on plan_type_id and hours
+            $planTypeId = null;
+            if ($totalBookedHours < 24) {
+
+                foreach ($bookings as $booking) {
+                    foreach ($planTypes as $planType) {
+                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                            $planTypesRemovals[] = $planType->id;
+                        }
+                    }
+                }
+            }
+            if ($totalBookedHours > 1) {
+                $planTypeId = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->where('day_type_id', 8)->value('id') ?? 0;
+            }
+
+            if (!is_null($planTypeId)) {
+                $planTypesRemovals[] = $planTypeId;
+            }
+            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->exists();
+
+            if ($nightseatBooked) {
+                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+                $planTypesRemovals[] = $planTypeid;
+            }
+            // Remove duplicate entries in planTypesRemovals
+            $planTypesRemovals = array_unique($planTypesRemovals);
+
+            // If total booked hours >= 16, all plan types should be removed
+            $first_record = Hour::where('branch_id', $branch_id)->first();
+            $total_hour = $first_record ? $first_record->hour : null;
+
+            if ($totalBookedHours >= $total_hour) {
+                $planTypesRemovals = $planTypes->pluck('id')->toArray();
+            }
+            // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
+            if ($total_hour < 24) {
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
+            }
+            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
+            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
+                return !in_array($planType->id, $planTypesRemovals);
+            })->map(function ($planType) {
+                return ['id' => $planType->id, 'name' => $planType->name];
+            })->values(); // Ensure the keys are reset to a continuous numerical index
+       
+            $exists = $filteredPlanTypes->contains('id', $requestPlanType);
+
+            return $exists; // true if available, false if not
+       
+    }
     public function store(Request $request, $uuid)
     {
         try {
-            Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            // Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
 
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
-            Log::info('Branch found', ['branch_id' => $branch->id]);
+            // Log::info('Branch found', ['branch_id' => $branch->id]);
 
             // Build validation rules
             $rules = [
                 'name'           => 'required|string|max:191',
                 // 'email'          => 'nullable|email|max:191|unique:bookings,email',
                 'mobile'         => 'required|integer|digits_between:8,15',
-                // 'dob'            => 'nullable|date',
+                'seat_no'        => 'nullable',
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
@@ -120,8 +245,18 @@ class QrEntryController extends Controller
             ];
 
             $validated = $request->validate($rules, $messages);
-            Log::info('Validation passed', ['validated' => $validated]);
-
+            // Log::info('Validation passed', ['validated' => $validated]);
+            if($request->seat_no){
+                
+                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
+                if ($validated_custom['error']) {
+                  
+                   return redirect()->back()->with('error',$validated_custom['message']);
+                }
+                
+            }
+            
+           
             $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
             $duration = $months ?? 0;
             $type     = Plan::where('id', $validated['plan_id'])->value('type');
@@ -163,7 +298,7 @@ class QrEntryController extends Controller
                 // 'email'           => $validated['email'] ?? null,
                 'mobile'          => $validated['mobile'],
                 'password'        => $password,
-                // 'dob'             => $validated['dob'] ?? null,
+                'seat_no'         => $validated['seat_no'] ?? null,
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
                 'plan_type_id'    => $validated['plan_type_id'],
@@ -304,8 +439,9 @@ class QrEntryController extends Controller
 
       public function requestApproveEdit(Request $request)
     {
-        
-     
+       
+        if(!$request->direct_validate && !isset($request->direct_validate)){
+
         $rules = [
             'booking_id' => 'required',
             'branch_id' => 'required',
@@ -350,7 +486,8 @@ class QrEntryController extends Controller
         //     return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
         // }
 
-
+        }
+         
         DB::beginTransaction();
 
         try {
@@ -362,62 +499,81 @@ class QrEntryController extends Controller
             if ($request->seat_no && $request->seat_no!='gen') {
                 $seat_no = $request->input('seat_no');
             } else {
-                $seat_no = null;
+                $seat_no = $booking->seat_no;
             }
-            $planPrice = (float) $request->input('plan_price_id', 0);
-            $locker = (float) $request->input('locker_amount', 0);
-            if ($request->discount_type == 'amount') {
-                $discount = $request->discount_amount;
-            } elseif ($request->discount_type == 'percentage') {
-                $total = $planPrice + $locker;
-                $discount = ($total * $request->discount_amount) / 100;
-            } else {
-                $discount = 0;
-            }
-            $total_amt=$planPrice+$locker-$discount;
-           
-            $paid_amount = (float) $request->input('paid_amount', 0);
-            $pending_amount = $request->input('pending_amount');
-            $diff_amount    = $request->input('diffrence_amount');
-            $already_paid  =$booking->total_amount;
-            
-            $refund = 0;
-            $pending_refund = 0;
+            if($request->direct_validate){
+                $planPrice= $booking->plan_price_id;
+                $start_date = Carbon::parse($booking->plan_start_date);
+                $plan_id = $booking->plan_id;
+                $plan_type_id = $booking->plan_type_id;
+                $locker_no=null;
+                $total_amt=$booking->plan_price_id;
+                $new_paid=$booking->plan_price_id;
+                $pending_amount=0;
+                $locker=0;
+                $discount=0;
+                $pending_refund=0;
+            }else{
 
-            // Handle difference amount (refund vs pending)
-            if ($diff_amount < 0) {
             
-                // refund case
-                $new_paid=$already_paid-$paid_amount;
-                $pending_refund = $new_paid-$total_amt;
-                $refund = abs($paid_amount);
+                $planPrice = (float) $request->input('plan_price_id', 0);
+                $locker = (float) $request->input('locker_amount', 0);
+                if ($request->discount_type == 'amount') {
+                    $discount = $request->discount_amount;
+                } elseif ($request->discount_type == 'percentage') {
+                    $total = $planPrice + $locker;
+                    $discount = ($total * $request->discount_amount) / 100;
+                } else {
+                    $discount = 0;
+                }
+                $total_amt=$planPrice+$locker-$discount;
+            
+                $paid_amount = (float) $request->input('paid_amount', 0);
+                $pending_amount = $request->input('pending_amount');
+                $diff_amount    = $request->input('diffrence_amount');
+                $already_paid  =$booking->total_amount;
                 
-                $pending_amount = 0;
-                $dr_cr='Dr';
-                
-            } else {
-                $new_paid=$already_paid+$paid_amount;
-                // extra payment (pending dues)
-                $pending_amount = $total_amt-$new_paid ;
                 $refund = 0;
                 $pending_refund = 0;
-                $dr_cr='Cr';
-               
+
+                // Handle difference amount (refund vs pending)
+                if ($diff_amount < 0) {
+                
+                    // refund case
+                    $new_paid=$already_paid-$paid_amount;
+                    $pending_refund = $new_paid-$total_amt;
+                    $refund = abs($paid_amount);
+                    
+                    $pending_amount = 0;
+                    $dr_cr='Dr';
+                    
+                } else {
+                    $new_paid=$already_paid+$paid_amount;
+                    // extra payment (pending dues)
+                    $pending_amount = $total_amt-$new_paid ;
+                    $refund = 0;
+                    $pending_refund = 0;
+                    $dr_cr='Cr';
+                
+                }
+        
+            
+                if($pending_amount > 0){
+                    return redirect()->back()->with('error', 'Due date is required');
+                }
+
+                $start_date = Carbon::parse($request->input('plan_start_date'));
+                $plan_id = $request->input('plan_id');
+                $plan_type_id = $request->input('plan_type_id');
+                $locker_no=$request->input('locker_no');
+
             }
-    
            
-            if($pending_amount > 0){
-                return redirect()->back()->with('error', 'Due date is required');
-            }
-
-
-            $start_date = Carbon::parse($request->input('plan_start_date'));
-            $plan_id = $request->input('plan_id');
             $months = Plan::where('id', $plan_id)->value('plan_id'); 
             $duration = $months ?? 0;
-            $type = Plan::where('id', $plan_id)->value('type'); 
+            
           
-            $plan_type_id = $request->input('plan_type_id');
+            
             
             $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
           
@@ -427,7 +583,7 @@ class QrEntryController extends Controller
         
             $first_record = Hour::first();
             $total_hour = $first_record ? $first_record->hour : 0;
-
+            $type = Plan::where('id', $plan_id)->value('type'); 
             switch (strtoupper($type)) {
                 case 'DAY':
                     $endDate = $start_date->copy()->addDays($duration);
@@ -465,7 +621,7 @@ class QrEntryController extends Controller
             if ($seat_no && !$request->learner_id) {
                  $existingBookings = $this->getLearnersByLibrary()
                 ->where('learner_detail.seat_no', '=', $seat_no)
-                ->where('learner_detail.plan_type_id', '=', $request->plan_type_id)
+                ->where('learner_detail.plan_type_id', '=', $plan_type_id)
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
                 ->where(function ($q) use ($start_date, $endDate) {
@@ -497,11 +653,11 @@ class QrEntryController extends Controller
                 }
             }
 
-            $total_cust_hour = Learner::where('seat_no', $request->seat_no)->where('status', 1)->sum('hours');
+            $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
         
 
             if ($hours > ($total_hour - $total_cust_hour)) {
-
+                
                 return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
             }
 
@@ -538,7 +694,7 @@ class QrEntryController extends Controller
             'branch_id' => getCurrentBranch(),
             'password' => $booking->password,
             'learner_no'=>$learnerController->generateLearnerCode(),
-            'locker_no'=>$request->input('locker_no') ?? null ,
+            'locker_no'=>$locker_no ?? null ,
             ]);
         }
 
@@ -578,7 +734,7 @@ class QrEntryController extends Controller
                 'discount_amount'   => $discount ?? 0,
                 'paid_date'         => $transaction_date,
                 'is_paid'           => $is_paid ?? 0,
-                'due_date'        => $request->due_date,
+                'due_date'        => $request->due_date ?? null,
                 'refund'        => $pending_refund,
             ]);
            
