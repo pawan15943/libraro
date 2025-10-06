@@ -813,7 +813,7 @@ class QrEntryController extends Controller
 
      public function getPlanTypeSeatWise(Request $request)
     {
-
+        Log::info('Branchrequest', ['request' => $request]);
         $seatNo = $request->seatNo;
         if($request->branchId){
             $branch_id=$request->branchId;
@@ -822,7 +822,7 @@ class QrEntryController extends Controller
         }
        
         $branchData=Branch::where('id',$branch_id)->select('library_id')->first();
-        
+         Log::info('branchData', ['branchData' => $branchData]);
         if ($seatNo) {
 
           
