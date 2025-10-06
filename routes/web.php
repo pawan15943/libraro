@@ -80,6 +80,7 @@ Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('sub
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
  //QR code feature
+Route::get('/getPlanType/seatWise', [QrEntryController::class, 'getPlanTypeSeatWise'])->name('getPlantypeSeatwise');
 Route::get('/qr/b/{uuid}', [QrEntryController::class, 'showOptions'])->name('qr.branch');
 Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'bookSeat'])->name('booking.form');
 Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])->name('renew.form');

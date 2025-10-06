@@ -131,11 +131,11 @@
             function loadPlanTypes() {
                 const generalSeat = $('#general_seat').val();
                 const seatId = $('#seat_id').val();
-
+                const branch_id = $('#branch_id').val();
                 if (generalSeat === 'yes') {
                     // General seat → no seat-wise filter
                     $('#seat_id').prop('disabled', true).val('');
-                    getTypeSeatwise(''); // show general plan types
+                    getTypeSeatwise('',branch_id); // show general plan types
                 } 
                 else if (generalSeat === 'no') {
                     // Specific seat → enable seat selection
@@ -143,7 +143,7 @@
 
                     if (seatId) {
                         // If seat already selected
-                        getTypeSeatwise(seatId); // show seat-wise plan types
+                        getTypeSeatwise(seatId,branch_id); // show seat-wise plan types
                     } else {
                         // Seat not selected yet → clear plan type dropdown
                         $('#plan_type_id').html('<option value="">Choose</option>');
@@ -167,7 +167,7 @@
                 let plan_type_id = $('#plan_type_id').val();
                 let branch_id = $('#branch_id').val();
              
-                if (plan_id && plan_type_id) {
+                if (plan_id && plan_type_id && branch_id) {
                     $.ajax({
                         url: "{{ route('get.plan.price') }}",
                         type: "POST",
@@ -188,19 +188,20 @@
                 }
             });
 
-            function getTypeSeatwise(seatId) {
+            function getTypeSeatwise(seatId,branchId) {
         
                 $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
                 $.ajax({
-                    url: '{{ route('gettypeSeatwise') }}',
+                    url: '{{ route('getPlantypeSeatwise') }}',
                     type: 'GET',
                     data: {
                         "_token": "{{ csrf_token() }}",
                         "seatNo": seatId,
+                        "branchId": branchId,
                     },
                     dataType: 'json',
                     success: function (html) {
-                        
+                        console.log(html);
                         if (html) {
                         
                             let selectedOption = $("#plan_type_id").find("option:selected");
