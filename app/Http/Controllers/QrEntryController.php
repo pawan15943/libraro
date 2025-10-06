@@ -827,7 +827,7 @@ class QrEntryController extends Controller
 
           
             // Step 1: Retrieve all bookings for the given seat
-            $bookings = $this->getLearnersByLibrary()
+            $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')   
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learners.status', 1)
