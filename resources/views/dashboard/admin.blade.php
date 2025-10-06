@@ -408,6 +408,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <td>
                                     <ul class="actions-icons">
+                                        @if($value->payment_screenshot && $value->payment_mode=='offline')
                                         <li>
                                             <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
                                                @csrf
@@ -417,6 +418,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                             </form>
 
                                         </li>
+                                        @endif
                                         {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
                                         <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
                                         <li>
