@@ -518,7 +518,11 @@
                 getTypeSeatwise(seatId); 
             }         
         });
-
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('en-GB', options);
+        }
 
         // Used in View Details Popup on Seat Assignment Page
         $('.second_popup').on('click', function() {
@@ -572,9 +576,10 @@
                         $('#proof').text(proof);
                         $('#planName').text(html.plan_name);
                         $('#planTypeName').text(html.plan_type_name);
-                        $('#joinOn').text(html.join_date);
-                        $('#startOn').text(html.plan_start_date);
-                        $('#endOn').text(html.plan_end_date);
+                        $('#joinOn').text(formatDate(html.join_date));
+                        $('#startOn').text(formatDate(html.plan_start_date));
+                        $('#endOn').text(formatDate(html.plan_end_date));
+
                         $('#price').text(html.plan_price_id);
                         $('#seat_name').text(html.seat_no);
                         $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
