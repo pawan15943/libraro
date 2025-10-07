@@ -62,7 +62,8 @@ if(Route::currentRouteName() == 'booking.details'){
             </div>
 
             <div class="form-input mb-4">
-               
+               <h4 class="inner-heading">
+                QR / Online Booked Seat Info</h4>
                 <div class="tip text-danger">
                     <b>Note:</b> Seat numbers are not directly assigned to learners; they are allocated at the time of seat approval.
                 </div>
