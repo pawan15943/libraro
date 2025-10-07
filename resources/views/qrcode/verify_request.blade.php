@@ -92,13 +92,13 @@ if(Route::currentRouteName() == 'booking.details'){
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id11">
                                     <option value="gen" 
-                                        {{ ($learner->seat_no ?? 'gen') == 'gen' || !in_array($learner->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                        {{ ($customer->seat_no ?? 'gen') == 'gen' || !in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
                                         GEN
                                     </option>
 
                                     @foreach($availableseats as $value)
                                         <option value="{{ $value }}" 
-                                            {{ ($learner->seat_no ?? '') == $value && in_array($learner->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                            {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
                                             {{ $value }}
                                         </option>
                                     @endforeach
