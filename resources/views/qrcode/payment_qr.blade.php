@@ -5,7 +5,7 @@
 <div class="sacnd-data py-5" style="min-height: 500px; display:flex; align-items:center;">
     <div>
         <a href="{{ $upiLink }}">
-            {{-- <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($upiLink)) }}"> --}}
+            <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($upiLink)) }}">
         </a>
     </div>
     <div class="container">
