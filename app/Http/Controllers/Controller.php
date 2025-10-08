@@ -1113,13 +1113,19 @@ class Controller extends BaseController
             // Update or create the operating hours
             $allday_price = trim($data['allday_price'] ?? '');
 
-            if ($allday_price !== '') {
+            if ($allday_price !== '' || $allday_price!='0') {
                 $operatinghour = 24;
                 $allday = true;
             } else {
                 $operatinghour = (int) trim($data['Operating_hour']);
                 $allday = false;
             }
+            \Log::info('Operating hour and allday flag set', [
+                'allday_price' => $allday_price,
+                'Operating_hour_input' => $data['Operating_hour'] ?? null,
+                'operatinghour_final' => $operatinghour,
+                'allday_final' => $allday,
+            ]);
 
             $branch_name = trim($data['branch_name']);
             $slug = Str::slug($branch_name);
