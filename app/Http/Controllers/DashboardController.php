@@ -874,7 +874,7 @@ class DashboardController extends Controller
         $today = Carbon::now()->format('Y-m-d');
         $fiveDaysLater = Carbon::now()->addDays(5)->format('Y-m-d');
 
-        $query = LearnerDetail::with(['plan', 'planType', 'seat', 'learner']);
+        $query = LearnerDetail::with(['plan', 'planType',  'learner']);
     
         if ($request->filled('year') && !$request->filled('month')) {
             // Check for year only

@@ -1351,13 +1351,13 @@ class Controller extends BaseController
                 $price = 0;
 
                 // Calculate prices based on the type of plan
-                if ($plantype_price->day_type_id == 1) {
+                if ($plantype_price->day_type_id == 1 && $fullday_price) {
                     $price = $fullday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 2 || $plantype_price->day_type_id == 3) {
+                } elseif (($plantype_price->day_type_id == 2  || $plantype_price->day_type_id == 3) && $halfday_price) {
                     $price = $halfday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 8) {
+                } elseif ($plantype_price->day_type_id == 8 && $allday_price ) {
                     $price = $allday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 9) {
+                } elseif ($plantype_price->day_type_id == 9 && $fullnight_price) {
                     $price = $fullnight_price * $plans_price->plan_id;
                 }
                 // elseif (in_array($plantype_price->day_type_id, [4, 5, 6, 7])) {

@@ -51,7 +51,7 @@ $class=$planDetails['class'];
                             <input class="form-control" value="{{ $customer->seat_no ?? 'Gen'}} - {{ $customer->plan_type_name }}" readonly>
                         </div>
                         <div class="col-lg-6">
-                            <label>Payment Mode</label>
+                            <label>New Seat Number</label>
                             <select name="seat_id" id="new_seat_id" class="form-control form-select @error('seat_id') is-invalid @enderror">
                                 <option>Select Seat</option>
                                 <option value="">General</option>
