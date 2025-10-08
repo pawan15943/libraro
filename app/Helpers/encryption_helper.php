@@ -645,7 +645,7 @@ if (!function_exists('branchCountValidation')) {
         $library=Library::findOrFail(getLibraryId());
         $branch_count=Branch::where('library_id',getLibraryId())->count();
         $message="You cannot add more branches. You already have $branch_count branches.";
-        $limits = [1 => 2, 2 => 3, 3 => 5]; // library_type => max branches
+        $limits = [1 => 2, 2 => 3, 3 => 20]; // library_type => max branches
         $maxAllowed = $limits[$library->library_type] ?? 0;
 
         return [

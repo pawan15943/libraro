@@ -1113,13 +1113,19 @@ class Controller extends BaseController
             // Update or create the operating hours
             $allday_price = trim($data['allday_price'] ?? '');
 
-            if ($allday_price !== '') {
+            if ($allday_price !== '' || $allday_price!='0') {
                 $operatinghour = 24;
                 $allday = true;
             } else {
                 $operatinghour = (int) trim($data['Operating_hour']);
                 $allday = false;
             }
+            \Log::info('Operating hour and allday flag set', [
+                'allday_price' => $allday_price,
+                'Operating_hour_input' => $data['Operating_hour'] ?? null,
+                'operatinghour_final' => $operatinghour,
+                'allday_final' => $allday,
+            ]);
 
             $branch_name = trim($data['branch_name']);
             $slug = Str::slug($branch_name);
@@ -1351,13 +1357,13 @@ class Controller extends BaseController
                 $price = 0;
 
                 // Calculate prices based on the type of plan
-                if ($plantype_price->day_type_id == 1) {
+                if ($plantype_price->day_type_id == 1 && $fullday_price) {
                     $price = $fullday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 2 || $plantype_price->day_type_id == 3) {
+                } elseif (($plantype_price->day_type_id == 2  || $plantype_price->day_type_id == 3) && $halfday_price) {
                     $price = $halfday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 8) {
+                } elseif ($plantype_price->day_type_id == 8 && $allday_price ) {
                     $price = $allday_price * $plans_price->plan_id;
-                } elseif ($plantype_price->day_type_id == 9) {
+                } elseif ($plantype_price->day_type_id == 9 && $fullnight_price) {
                     $price = $fullnight_price * $plans_price->plan_id;
                 }
                 // elseif (in_array($plantype_price->day_type_id, [4, 5, 6, 7])) {
