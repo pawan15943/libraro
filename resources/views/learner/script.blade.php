@@ -1451,6 +1451,7 @@
 
         Swal.fire({
             title: 'Are you sure?',
+            text: "When you delete your seat using this option, it will still be available in the learner’s history.",
             html: `
                 <div class="row g-4 delete">
                     <div class="col-lg-12">
