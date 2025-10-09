@@ -43,7 +43,7 @@
 
             <div class="plan border-top">
                 <div class="branchInfo">
-                    <h4>{{ $value->name }}</h4>
+                    <h4>{{ $value->display_name ?? $value->name }}</h4>
                     <span>Address : {{ $value->library_address ?? 'Not updated yet' }}</span>
                 </div>
                 <ul>
@@ -59,10 +59,10 @@
 
             </div>
             @if($value->uuid)
-            <div class="p-3 border rounded bg-light text-center">
-                {!! QrCode::size(150)->generate(route('qr.branch', $value->uuid)) !!}
+            <div class="p-3 border bg-light text-center">
+                {!! QrCode::size(100)->generate(route('qr.branch', $value->uuid)) !!}
 
-                <p class="mt-2"><small>Scan to book or renew seat</small></p>
+                <!-- <p class="mt-2"><small>Scan to book or renew seat</small></p> -->
             </div>
             @endif
 

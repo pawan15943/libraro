@@ -122,7 +122,7 @@ class QrEntryController extends Controller
                       ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
             return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
         }
-        dd($total_hour);
+       
 
         if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                       ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
