@@ -53,11 +53,7 @@
 @endif
 <!-- Masters -->
 
-<<<<<<< HEAD
 {{-- @if($iscomp)
-=======
-@if(!$iscomp)
->>>>>>> 1ccdc97b8bb6a199564fc9ca459ddd1505da2089
 <div class="row g-4 mb-4">
     <div class="col-lg-12">
         <p class="info-message">

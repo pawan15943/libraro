@@ -15,5 +15,14 @@ class PlanType extends Model
     {
         
         static::addGlobalScope(new LibraryScope());
+        static::addGlobalScope('branch', function ($builder) {
+            $branchId = getCurrentBranch();
+
+            if (!empty($branchId)) {
+                $builder->where('branch_id', $branchId);
+            }
+        });
     }
+
+   
 }

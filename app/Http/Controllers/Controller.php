@@ -1019,7 +1019,8 @@ class Controller extends BaseController
             }],
             'total_seat'      => 'required|integer|min:1',
             'fullday_price'   => 'required|integer|min:0',
-            'halfday_price'   => 'required|integer|min:0',
+            'halfday_price'   => 'nullable|integer|min:0',
+            'fullnight_price'   => 'nullable|integer|min:0',
             'allday_price'    => [
                 'nullable',
                 'regex:/^\d+$/',
@@ -1112,20 +1113,44 @@ class Controller extends BaseController
 
             // Update or create the operating hours
             $allday_price = trim($data['allday_price'] ?? '');
-
-            if ($allday_price !== '' || $allday_price!='0') {
+          
+            if ($allday_price === '0' || $allday_price !== '') {
+              
                 $operatinghour = 24;
                 $allday = true;
             } else {
+                 
                 $operatinghour = (int) trim($data['Operating_hour']);
                 $allday = false;
             }
-            \Log::info('Operating hour and allday flag set', [
-                'allday_price' => $allday_price,
-                'Operating_hour_input' => $data['Operating_hour'] ?? null,
-                'operatinghour_final' => $operatinghour,
-                'allday_final' => $allday,
-            ]);
+            $fullday_price = trim($data['fullday_price'] ?? '');
+          
+            if ($fullday_price === '0' || $fullday_price !== '') {
+              
+                $fullday = true;
+            } else {
+                 
+                $fullday = false;
+            }
+             $halfday_price = trim($data['halfday_price'] ?? '');
+          
+            if ($halfday_price === '0' || $halfday_price !== '') {
+              
+                $halfday = true;
+            } else {
+                 
+                $halfday = false;
+            }
+             $fullnight_price = trim($data['fullnight_price'] ?? '');
+          
+            if ($fullnight_price === '0' || $fullnight_price !== '') {
+              
+                $fullnightday = true;
+            } else {
+                 
+                $fullnightday = false;
+            }
+            
 
             $branch_name = trim($data['branch_name']);
             $slug = Str::slug($branch_name);
@@ -1176,12 +1201,11 @@ class Controller extends BaseController
                 );
             }
 
-
             // Define slot configurations
-            $slots = $this->defineSlots($start_time, $end_time, $totalHours, $allday);
-
+            $slots = $this->defineSlots($start_time, $end_time, $totalHours, $allday,$fullday,$halfday,$fullnightday);
+            
             // Check user permissions and handle slot updates
-            $this->handleSlotUpdates($slots, $library_id, $invalidRecords, $data, $successRecords);
+            $this->handleSlotUpdates($slots, $library_id,$branch_id, $invalidRecords, $data, $successRecords);
 
             // Define plans
             $plans = [
@@ -1203,21 +1227,50 @@ class Controller extends BaseController
     }
 
     // Function to define plantype
-    private function defineSlots($start_time, $end_time, $totalHours, $allday)
+    private function defineSlots($start_time, $end_time, $totalHours,$allday,$fullday,$halfday,$fullnightday)
     {
-        $slots = [
-            ['type_id' => 1, 'name' => 'Full Day', 'start_time' => $start_time, 'end_time' => $end_time, 'slot_hours' => $totalHours],
-            ['type_id' => 2, 'name' => 'First Half', 'start_time' => $start_time, 'end_time' => $start_time->copy()->addHours($totalHours / 2), 'slot_hours' => $totalHours / 2],
-            ['type_id' => 3, 'name' => 'Second Half', 'start_time' => $start_time->copy()->addHours($totalHours / 2), 'end_time' => $end_time, 'slot_hours' => $totalHours / 2],
-            // ['type_id' => 4, 'name' => 'Hourly Slot 1', 'start_time' => $start_time, 'end_time' => $start_time->copy()->addHours($totalHours / 4), 'slot_hours' => $totalHours / 4],
-            // ['type_id' => 5, 'name' => 'Hourly Slot 2', 'start_time' => $start_time->copy()->addHours($totalHours / 4), 'end_time' => $start_time->copy()->addHours(($totalHours / 4) * 2), 'slot_hours' => $totalHours / 4],
-            // ['type_id' => 6, 'name' => 'Hourly Slot 3', 'start_time' => $start_time->copy()->addHours(($totalHours / 4) * 2), 'end_time' => $start_time->copy()->addHours(($totalHours / 4) * 3), 'slot_hours' => $totalHours / 4],
-            // ['type_id' => 7, 'name' => 'Hourly Slot 4', 'start_time' => $start_time->copy()->addHours(($totalHours / 4) * 3), 'end_time' => $end_time, 'slot_hours' => $totalHours / 4],
-        ];
+      
 
         if ($allday === true) {
 
             $slots[] = ['type_id' => 8, 'name' => 'All Day', 'start_time' => $start_time, 'end_time' => $start_time, 'slot_hours' => 24];
+            
+        }
+        if ($fullday === true) {
+            $slots[] =['type_id' => 1, 'name' => 'Full Day', 'start_time' => $start_time, 'end_time' => $end_time, 'slot_hours' => $totalHours];
+        }
+        
+        // Old Code
+        /* if ($halfday === true) {
+        $slots[] =['type_id' => 2, 'name' => 'First Half', 'start_time' => $start_time, 'end_time' => $start_time->copy()->addHours($totalHours / 2), 'slot_hours' => $totalHours / 2];
+        $slots[] =['type_id' => 3, 'name' => 'Second Half', 'start_time' => $start_time->copy()->addHours($totalHours / 2), 'end_time' => $end_time, 'slot_hours' => $totalHours / 2];
+        }*/
+
+        // New code 09-10-2025
+        if ($halfday === true) {
+            // Ensure total hours is treated as a float
+            $halfHours = floatval($totalHours) / 2;
+
+            $slots[] = [
+                'type_id' => 2,
+                'name' => 'First Half',
+                'start_time' => $start_time,
+                'end_time' => $start_time->copy()->addHours(floor($halfHours))->addMinutes(($halfHours - floor($halfHours)) * 60),
+                'slot_hours' => $halfHours
+            ];
+
+            $slots[] = [
+                'type_id' => 3,
+                'name' => 'Second Half',
+                'start_time' => $start_time->copy()->addHours(floor($halfHours))->addMinutes(($halfHours - floor($halfHours)) * 60),
+                'end_time' => $end_time,
+                'slot_hours' => $halfHours
+            ];
+        }
+
+
+
+        if ($fullnightday === true) {
             $slots[] = ['type_id' => 9, 'name' => 'Full Night', 'start_time' => $end_time, 'end_time' => $start_time, 'slot_hours' => 24 - $totalHours];
         }
 
@@ -1226,14 +1279,14 @@ class Controller extends BaseController
 
 
     // Function to handle Master plantype updates
-    private function handleSlotUpdates($slots, $library_id, &$invalidRecords, $data, &$successRecords)
+    private function handleSlotUpdates($slots, $library_id,$branch_id, &$invalidRecords, $data, &$successRecords)
     {
 
 
-        Log::info('Starting handleSlotUpdates', ['library_id' => $library_id, 'slots' => $slots]);
+        // Log::info('Starting handleSlotUpdates', ['library_id' => $library_id, 'slots' => $slots]);
 
         $user = Library::withoutGlobalScopes()->find($library_id);
-        Log::info('User fetched', ['user' => $user]);
+        // Log::info('User fetched', ['user' => $user]);
 
         foreach ($slots as $slot) {
             Log::info('Processing slot', ['slot' => $slot]);
@@ -1251,15 +1304,7 @@ class Controller extends BaseController
             } elseif ($slot['type_id'] == 9 && !$user->can('has-permission', 'Full Night')) {
                 $hasPermission = false;
             }
-            //  elseif ($slot['type_id'] == 4 && !$user->can('has-permission', 'Hourly Slot 1')) {
-            //     $hasPermission = false;
-            // } elseif ($slot['type_id'] == 5 && !$user->can('has-permission', 'Hourly Slot 2')) {
-            //     $hasPermission = false;
-            // } elseif ($slot['type_id'] == 6 && !$user->can('has-permission', 'Hourly Slot 3')) {
-            //     $hasPermission = false;
-            // } elseif ($slot['type_id'] == 7 && !$user->can('has-permission', 'Hourly Slot 4')) {
-            //     $hasPermission = false;
-            // }
+           
 
             if (!$hasPermission) {
                 // $invalidRecords[] = array_merge($data, ['error' => 'No permission for slot ' . $slot['type_id']]);
@@ -1272,7 +1317,7 @@ class Controller extends BaseController
 
             // Update or create plan type
             $planType = PlanType::withoutGlobalScopes()->updateOrCreate(
-                ['library_id' => $library_id, 'day_type_id' => $slot['type_id']],
+                ['library_id' => $library_id,'branch_id'=>$branch_id, 'day_type_id' => $slot['type_id']],
                 [
                     'name' => $slot['name'],
                     'start_time' => $start_time_new,
@@ -1399,6 +1444,7 @@ class Controller extends BaseController
     public function renewConfigration()
     {
         $library_id = getLibraryId();
+        $branch=getCurrentBranch();
         $today = date('Y-m-d');
         $today_renew = LibraryTransaction::where('library_id', getLibraryId())
             ->where('is_paid', 1)
@@ -1413,9 +1459,12 @@ class Controller extends BaseController
 
 
         $user = Auth::user();
-        $planType = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->first();
-
-        if ($planType) {
+        $planTypes  = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->get();
+        $allday = false;
+        $fullday = false;
+        $halfday = false;
+        $fullnightday = false;
+        foreach ($planTypes as $planType) {
             $start_time = Carbon::parse($planType->start_time);
             $end_time = Carbon::parse($planType->end_time);
             $totalHours = $planType->slot_hours;
@@ -1424,8 +1473,24 @@ class Controller extends BaseController
             } else {
                 $allday = false;
             }
+             if ($planType->day_type_id == 1) {
+                $fullday = true;
+            } else {
+                $fullday = false;
+            }
+             if ($planType->day_type_id == 9) {
+                $fullnightday = true;
+            } else {
+                $fullnightday = false;
+            }
+             if ($planType->day_type_id == 2 || $planType->day_type_id == 3) {
+                $halfday = true;
+            } else {
+                $halfday = false;
+            }
 
-            $slots = $this->defineSlots($start_time, $end_time, $totalHours, $allday);
+
+            $slots = $this->defineSlots($start_time, $end_time, $totalHours, $allday,$fullday,$halfday,$fullnightday);
 
             foreach ($slots as $slot) {
 
