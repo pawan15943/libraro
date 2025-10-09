@@ -271,7 +271,7 @@ $ids='approvwRequest';
                                 value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
                         </div>
                     </div>
-                    <div class="row g-4 m-0 payment-section" style="display:none;">
+                    <div class="row g-4 m-0 differencePayment" style="display:none;">
                         <div class="col-lg-4">
                             <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
                             <input type="text" id="paid_amount11" name="paid_amount"
@@ -320,7 +320,7 @@ $ids='approvwRequest';
                     </div>
 
                     <div class="row g-4 m-0">
-                        <div class="col-lg-12 mt-4">
+                        <div class="col-lg-4 mt-4">
                             <input type="submit" class="btn btn-primary btn-block button" value="Verify & Activate Seat">
                         </div>
                     </div>
@@ -617,9 +617,9 @@ $ids='approvwRequest';
 
         }
         if (diffrence === 0) {
-            $('.payment-section').hide();
+            $('.differencePayment').hide();
         } else {
-            $('.payment-section').show();
+            $('.differencePayment').show();
         }
 
     }
