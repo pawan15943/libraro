@@ -62,7 +62,7 @@ $ids='approvwRequest';
             </div>
 
             <div class="form-input mb-4">
-                <h4 class="inner-heading"> QR / Online Booked Seat Info</h4>
+                <h4 class="inner-heading"> QR / Online Bookings</h4>
                 <div class="tip text-danger">
                     <b>Note:</b> Seats booked through QR code or online mode are not activated immediately. They require verification and approval from the library owner before becoming active.
                 </div>
@@ -98,8 +98,8 @@ $ids='approvwRequest';
                                 @endforeach
                             </select>
                         </div>
-
-                        
+                    </div>
+                    <div class="row g-4">
                         <div class="col-lg-4">
                             <label for="plan_id11">Plan <span>*</span></label>
                             <select id="plan_id11" class="form-control form-select @error('plan_id') is-invalid @enderror"
@@ -140,7 +140,7 @@ $ids='approvwRequest';
 
 
                         <div class="col-lg-4">
-                            <label for="plan_price11">Plan Price <span>*</span></label>
+                            <label for="plan_price11">Plan Price (₹)<span>*</span></label>
                             <input type="text" id="plan_price11" name="plan_price_id"
                                 class="form-control @error('plan_price_id') is-invalid @enderror"
                                 value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly>
@@ -230,11 +230,13 @@ $ids='approvwRequest';
 
                     <div class="row g-4">
                         <div class="col-lg-4">
-                            <label for="previous_amount11">Previously Paid Amt.</label>
+                            <label for="previous_amount11">Previously Paid Amount (₹)</label>
                             <input type="text" id="previous_amount11" name="previous_amount"
                                 class="form-control"
                                 value="{{ old('previous_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
+                            <small><a href="" class="text-danger">Payment Proof / Screenshot</a></small>
+
                         </div>
                         <div class="col-lg-4">
                             <label for="total_amount11">New Plan Total (₹)</label>
@@ -242,10 +244,9 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('total_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
-                            <small><a href="" class="text-danger">Payment Proof / Screenshot</a></small>
                             {{-- <img src="{{asset($customer->payment_screenshot)}}" alt=""> --}}
                         </div>
-                        
+
 
                         <div class="col-lg-4">
                             <label for="diffrence_amount11">Amount Difference (₹)</label>
@@ -254,7 +255,7 @@ $ids='approvwRequest';
                                 value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
                         </div>
                         <div class="col-lg-4">
-                            <label for="paid_amount11">Payment & Refund</label>
+                            <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
                             <input type="text" id="paid_amount11" name="paid_amount"
                                 class="form-control"
                                 value="{{ old('paid_amount') }}" placeholder="0">
