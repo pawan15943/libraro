@@ -271,7 +271,7 @@ $ids='approvwRequest';
                                 value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
                         </div>
                     </div>
-                    <div class="row g-4 m-0 differencePayment" style="display:none;">
+                    <div class="row g-4 mt-0 differencePayment" style="display:none;">
                         <div class="col-lg-4">
                             <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
                             <input type="text" id="paid_amount11" name="paid_amount"
@@ -299,7 +299,7 @@ $ids='approvwRequest';
                             @enderror
                         </div>
                     </div>
-                    <div class="row g-4 m-0">
+                    <div class="row g-4 mt-0">
                         <div class="col-lg-4">
                             <label for="payment_mode" class="form-label">Payment Mode</label>
                             <select
