@@ -99,7 +99,7 @@ $ids='approvwRequest';
                             </select>
                         </div>
                     </div>
-                    <div class="row g-4 mt-4">
+                    <div class="row g-4 mt-0">
                         <div class="col-lg-6">
                             <label for="plan_id11">Plan <span>*</span></label>
                             <select id="plan_id11" class="form-control form-select @error('plan_id') is-invalid @enderror"
@@ -282,8 +282,8 @@ $ids='approvwRequest';
                         </div>
                     </div>
 
-                    <div class="button-list mt-4">
-                        <input type="submit" class="btn btn-primary btn-block button w-25" value="Verified">
+                    <div class="col-lg-4 mt-4">
+                        <input type="submit" class="btn btn-primary btn-block button w-25" value="Verify Seat Info and Activate Seat">
                     </div>
                 </form>
 
