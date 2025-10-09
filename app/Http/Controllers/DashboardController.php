@@ -228,6 +228,7 @@ class DashboardController extends Controller
 
               //Daily Transaction
               
+              
             $todayCollection = LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
             ->where(function($q) {
                 $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
@@ -508,11 +509,11 @@ class DashboardController extends Controller
 
         // this month total slot
         $thismonth_total_book=$month_all_expired+$month_total_active_book;
-
+       
         // Define the base query for learner_operations_log with common filters applied
         $baseQuery = DB::table('learner_operations_log')
         ->select(DB::raw('COUNT(*) as total_renew_count'))
-        ->where('library_id', getLibraryId())
+        ->where('learner_operations_log.branch_id', getCurrentBranch())
         ->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
             return $query->whereYear('created_at', $request->year);
         })
@@ -874,7 +875,7 @@ class DashboardController extends Controller
         $today = Carbon::now()->format('Y-m-d');
         $fiveDaysLater = Carbon::now()->addDays(5)->format('Y-m-d');
 
-        $query = LearnerDetail::with(['plan', 'planType', 'learner']);
+        $query = LearnerDetail::with(['plan', 'planType',  'learner']);
     
         if ($request->filled('year') && !$request->filled('month')) {
             // Check for year only
@@ -951,7 +952,7 @@ class DashboardController extends Controller
             DB::raw('DATE(created_at) as operation_date'),
             DB::raw('GROUP_CONCAT(DISTINCT operation) as operation')
         )
-        ->where('library_id',getLibraryId())
+        ->where('learner_operations_log.branch_id',getCurrentBranch())
         ->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
             return $query->whereYear('created_at', $request->year);
         })
@@ -966,7 +967,6 @@ class DashboardController extends Controller
         ->where(function ($subQuery) use ( $month , $year) {
             $subQuery->whereYear('plan_start_date', $year)
             ->whereMonth('plan_start_date', $month);
-           
         });
 
         $thisexpired_query =$this->getLearnersByLibrary()

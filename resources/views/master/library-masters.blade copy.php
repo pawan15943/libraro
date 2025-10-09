@@ -53,7 +53,7 @@
 @endif
 <!-- Masters -->
 
-{{-- @if($iscomp)
+@if($iscomp)
 <div class="row g-4 mb-4">
     <div class="col-lg-12">
         <p class="info-message">
@@ -778,7 +778,7 @@
     </div>
     @endcan
 </div>
-@else --}}
+@else
 
 <div class="row justify-content-center mb-4 mt-4">
     <div class="col-lg-4">
@@ -914,11 +914,11 @@
         });
     </script>
 </div>
-{{-- @endif --}}
+@endif
 
 
 <!-- Button -->
-@if(!$iscomp)
+@if($iscomp)
 <div class="row justify-content-center mb-4">
     <div class="col-lg-4">
         {{-- @if($seat_button) --}}
