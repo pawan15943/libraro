@@ -399,7 +399,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <td>{{$x++}}</td>
                                 <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
                                 <td>{{$value->mobile}}</td>
-                                <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
+                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
+
                                 @if($value->payment_screenshot)
                                 <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
                                 @else
