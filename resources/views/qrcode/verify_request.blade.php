@@ -280,11 +280,13 @@ $ids='approvwRequest';
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
+
+                        <div class="col-lg-4 mt-4">
+                            <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
+                        </div>
                     </div>
 
-                    <div class="col-lg-4 mt-4">
-                        <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
-                    </div>
+
                 </form>
 
             </div>
