@@ -283,7 +283,7 @@ $ids='approvwRequest';
                     </div>
 
                     <div class="col-lg-4 mt-4">
-                        <input type="submit" class="btn btn-primary btn-block button w-25" value="Verify Seat Info and Activate Seat">
+                        <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
                     </div>
                 </form>
 
