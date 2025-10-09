@@ -452,8 +452,7 @@ $ids='approvwRequest';
 
         if (plan_type_id11 && plan_id11) {
             $.ajax({
-                url: '{{ route('
-                getPricePlanwise ') }}',
+                url: "{{ route('getPricePlanwise') }}",
                 type: 'GET',
                 data: {
                     "_token": "{{ csrf_token() }}",
@@ -494,8 +493,7 @@ $ids='approvwRequest';
         $('#plan_type_id11').empty().append('<option value="">Choose Shift</option>');
 
         $.ajax({
-            url: '{{ route('
-            gettypeSeatwise ') }}',
+            url: "{{ route('gettypeSeatwise') }}",
             type: 'GET',
             data: {
                 "_token": "{{ csrf_token() }}",
