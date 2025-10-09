@@ -2679,44 +2679,68 @@ class LearnerController extends Controller
              DB::transaction(function () use ($request, $id) {
 
                 $customer = Learner::findOrFail($id);
+                if ($request->permanent == '1') {
 
+                    $detail = LearnerDetail::where('learner_id', $id)->select('plan_start_date')->first();
 
-                $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id',$request->learnerDetail)->first();
-                if (!$lastLearnerDetail) {
-                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
-                }
-                if ($lastLearnerDetail) {
-                     if ($request->isRefund && $request->refundAmount > 0) {
-                         LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
-                            'refund'=> $request->pendingRefund
-                         ]);
-                            
+                    if ($detail && $detail->plan_start_date) {
+                        $today = \Carbon\Carbon::now();
+                        $threeDaysAfterStart = \Carbon\Carbon::parse($detail->plan_start_date)->addDays(3);
+
+                        if ($today->lessThanOrEqualTo($threeDaysAfterStart)) {
+                            LearnerTransaction::where('learner_id', $id)->forceDelete();
+                            LearnerDetail::where('learner_id', $id)->forceDelete();
+                            LearnerFeedback::where('learner_id', $id)->forceDelete();
+                            LearnerTransactionActivity::where('learner_id', $id)->forceDelete();
+                            DB::table('learner_operations_log')->where('learner_id', $id)->delete();
+                            DB::table('learner_request')->where('learner_id', $id)->delete();
+                            $customer->forceDelete();
+                        } else {
+                            throw new \Exception("Permanent delete allowed only within 3 days of plan start.");
                         }
-                        if($request->remark){
-                            $customer->remark =  $request->remark;
-                        }
-                    // Delete associated LearnerTransaction records
-                    LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
-                    $lastLearnerDetail->status=0;
-                    $lastLearnerDetail->save();
-                    $lastLearnerDetail->delete();
-                    $customer->status = 0;
-                    
-                    $customer->save();
-                    $customer->delete();
-                    if ($request->isRefund && $request->refundAmount > 0){
-                        $data=[];
-                        $data['learner_id']=$id;
-                        $data['particular']='Delete Plan';
-                        $data['payment_type']='REFUND';
-                        $data['payment_mode']=1;
-                        $data['amount']=$request->refundAmount ?? 0;
-                        $data['dr_cr']='Dr';
-                        $this->learnerTransactionActivity($data);
+                    } else {
+                        throw new \Exception("Plan start date not found for this learner.");
                     }
+
+                } else{
+
+                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id',$request->learnerDetail)->first();
+                    if (!$lastLearnerDetail) {
+                        throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
+                    }
+                    if ($lastLearnerDetail) {
+                        if ($request->isRefund && $request->refundAmount > 0) {
+                            LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
+                                'refund'=> $request->pendingRefund
+                            ]);
+                                
+                            }
+                            if($request->remark){
+                                $customer->remark =  $request->remark;
+                            }
+                        // Delete associated LearnerTransaction records
+                        LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
+                        $lastLearnerDetail->status=0;
+                        $lastLearnerDetail->save();
+                        $lastLearnerDetail->delete();
+                        $customer->status = 0;
+                        
+                        $customer->save();
+                        $customer->delete();
+                        if ($request->isRefund && $request->refundAmount > 0){
+                            $data=[];
+                            $data['learner_id']=$id;
+                            $data['particular']='Delete Plan';
+                            $data['payment_type']='REFUND';
+                            $data['payment_mode']=1;
+                            $data['amount']=$request->refundAmount ?? 0;
+                            $data['dr_cr']='Dr';
+                            $this->learnerTransactionActivity($data);
+                        }
+                        
                     
-                   
-                } 
+                    } 
+                }
             });
 
 

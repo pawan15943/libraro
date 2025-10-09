@@ -1437,113 +1437,158 @@
     
 
     $(document).on('click', '.delete-customer', function () {
-    var id = $(this).data('id');
-    var learnerDetail = $(this).data('learnerdetail');
-    var paybleRefund = $(this).data('payblerefund');
+        var id = $(this).data('id');
+        var learnerDetail = $(this).data('learnerdetail');
+        var paybleRefund = $(this).data('payblerefund');
 
-    var url = '{{ route('learners.destroy', ':id') }}';
-    url = url.replace(':id', id);
+        var url = '{{ route('learners.destroy', ':id') }}';
+        url = url.replace(':id', id);
 
-    var formId = 'deleteSeat';
-    var fieldName = 'deleted_at';
-    var newValue = new Date().toISOString();
-    var oldValue = null;
+        var formId = 'deleteSeat';
+        var fieldName = 'deleted_at';
+        var newValue = new Date().toISOString();
+        var oldValue = null;
 
-    Swal.fire({
-        title: 'Are you sure?',
-        html: `
-            <div class="row g-4 delete">
-                <div class="col-lg-12">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input isRefund" type="checkbox">
-                        <label class="form-check-label">Do you want to Refund</label>
+        Swal.fire({
+            title: 'Are you sure?',
+            html: `
+                <div class="row g-4 delete">
+                    <div class="col-lg-12">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input isRefund" type="checkbox">
+                            <label class="form-check-label">Do you want to Refund</label>
+                        </div>
+                    </div>
+                
+                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
+                        <label>Total Amt.</label>
+                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly>
+                    </div>
+                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
+                        <label>Pay Refund Amt.</label>
+                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount">
+                    </div>
+                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
+                        <label>Pending Refund Amt.</label>
+                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund">
+                    </div>
+                    <div class="col-lg-12 refundAmountDiv" style="display:none;">
+                        <label>Remark</label>
+                        <textarea class="form-control refundRemark" cols="30" rows="3"></textarea>
                     </div>
                 </div>
-            
-                <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                    <label>Total Amt.</label>
-                    <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly>
-                </div>
-                <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                    <label>Pay Refund Amt.</label>
-                    <input type="text" placeholder="Enter Amount" class="form-control refundAmount">
-                </div>
-                <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                    <label>Pending Refund Amt.</label>
-                    <input type="text" placeholder="Enter Amount" class="form-control pendingRefund">
-                </div>
-                <div class="col-lg-12 refundAmountDiv" style="display:none;">
-                    <label>Remark</label>
-                    <textarea class="form-control refundRemark" cols="30" rows="3"></textarea>
-                </div>
-            </div>
-        `,
-        iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        didOpen: () => {
-            $('.isRefund').on('change', function () {
-                if ($(this).is(':checked')) {
-                    $('.refundAmountDiv').show();
-                } else {
-                    $('.refundAmountDiv').hide();
-                    $('.paybleRefund, .refundAmount, .pendingRefund, .refundRemark').val('');
-                }
-            });
-        },
-        preConfirm: () => {
-            const isRefund = $('.isRefund').is(':checked');
-            const refundAmount = $('.refundAmount').val();
-            const remark = $('.refundRemark').val();
-            const pendingRefund = $('.pendingRefund').val();
+            `,
+            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            didOpen: () => {
+                $('.isRefund').on('change', function () {
+                    if ($(this).is(':checked')) {
+                        $('.refundAmountDiv').show();
+                    } else {
+                        $('.refundAmountDiv').hide();
+                        $('.paybleRefund, .refundAmount, .pendingRefund, .refundRemark').val('');
+                    }
+                });
+            },
+            preConfirm: () => {
+                const isRefund = $('.isRefund').is(':checked');
+                const refundAmount = $('.refundAmount').val();
+                const remark = $('.refundRemark').val();
+                const pendingRefund = $('.pendingRefund').val();
 
-            if (isRefund && (!refundAmount || refundAmount <= 0 || paybleRefund < refundAmount)) {
-                Swal.showValidationMessage('Please enter a valid refund amount');
-                return false;
-            }
-            if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
-                Swal.showValidationMessage('Please enter a valid pending refund amount');
-                return false;
-            }
-
-            return {
-                isRefund: isRefund,
-                paybleRefund: $('.paybleRefund').val(),
-                refundAmount: refundAmount,
-                pendingRefund: $('.pendingRefund').val(),
-                remark: remark,
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: url,
-                type: 'DELETE',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    learnerDetail: learnerDetail,
-                    isRefund: result.value.isRefund ? 1 : 0,
-                    paybleRefund: result.value.paybleRefund,
-                    refundAmount: result.value.refundAmount,
-                    pendingRefund: result.value.pendingRefund,
-                    remark: result.value.remark
-                },
-                success: function (response) {
-                    logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
-                    Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
-                        location.reload();
-                    });
-                },
-                error: function (xhr) {
-                    Swal.fire('Error!', 'An error occurred while deleting.', 'error');
+                if (isRefund && (!refundAmount || refundAmount <= 0 || paybleRefund < refundAmount)) {
+                    Swal.showValidationMessage('Please enter a valid refund amount');
+                    return false;
                 }
-            });
-        }
+                if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
+                    Swal.showValidationMessage('Please enter a valid pending refund amount');
+                    return false;
+                }
+
+                return {
+                    isRefund: isRefund,
+                    paybleRefund: $('.paybleRefund').val(),
+                    refundAmount: refundAmount,
+                    pendingRefund: $('.pendingRefund').val(),
+                    remark: remark,
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        learnerDetail: learnerDetail,
+                        isRefund: result.value.isRefund ? 1 : 0,
+                        paybleRefund: result.value.paybleRefund,
+                        refundAmount: result.value.refundAmount,
+                        pendingRefund: result.value.pendingRefund,
+                        remark: result.value.remark
+                    },
+                    success: function (response) {
+                        logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
+                        Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire('Error!', 'An error occurred while deleting.', 'error');
+                    }
+                });
+            }
+        });
     });
-});
+    $(document).on('click', '.delete-permanent-customer', function () {
+        let id = $(this).data('id');
+        let learnerDetail = $(this).data('learnerdetail');
+        let permanent = '1';
 
+        let url = '{{ route("learners.destroy", ":id") }}'.replace(':id', id);
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This action will permanently delete the learner record.",
+            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        learnerDetail: learnerDetail,
+                        permanent: permanent
+                    },
+                    success: function (response) {
+                        // Optional logging function call
+                        logFieldChange(id, 'deleteSeat', 'deleted_at', null, new Date().toISOString(), learnerDetail);
+                        
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Learner has been Permanent deleted successfully.',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload(); // Hard refresh after success
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire('Error!', 'An error occurred while deleting the learner.', 'error');
+                    }
+                });
+            }
+        });
+    });
 
     // Learner Close Plan Form
     $(document).on('click', '.link-close-plan', function() {
