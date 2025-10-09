@@ -99,8 +99,8 @@ $ids='approvwRequest';
                             </select>
                         </div>
                     </div>
-                    <div class="row g-4">
-                        <div class="col-lg-4">
+                    <div class="row g-4 mt-4">
+                        <div class="col-lg-6">
                             <label for="plan_id11">Plan <span>*</span></label>
                             <select id="plan_id11" class="form-control form-select @error('plan_id') is-invalid @enderror"
                                 name="plan_id">
@@ -116,7 +116,7 @@ $ids='approvwRequest';
                             @enderror
                         </div>
 
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label for="plan_type_id11">Plan Type <span>*</span></label>
                             <select id="plan_type_id11"
                                 class="form-control form-select @error('plan_type_id') is-invalid @enderror"
@@ -139,7 +139,7 @@ $ids='approvwRequest';
                         </div>
 
 
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label for="plan_price11">Plan Price (₹)<span>*</span></label>
                             <input type="text" id="plan_price11" name="plan_price_id"
                                 class="form-control @error('plan_price_id') is-invalid @enderror"
@@ -150,7 +150,7 @@ $ids='approvwRequest';
                             @enderror
                         </div>
 
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <label for="">Plan Start Date <span>*</span></label>
                             <input type="text" name="plan_start_date"
                                 class="form-control @error('plan_start_date') is-invalid @enderror"
