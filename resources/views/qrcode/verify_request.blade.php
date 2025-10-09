@@ -320,7 +320,11 @@ $ids='approvwRequest';
 
 
 
-                        <div class="col-lg-4 mt-4">
+
+                    </div>
+
+                    <div class="row g-4 m-0">
+                        <div class="col-lg-12 mt-4">
                             <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
                         </div>
                     </div>
@@ -616,7 +620,7 @@ $ids='approvwRequest';
             $('label[for="paid_amount11"]').text("Paid Amount *");
 
         }
-        if (difference === 0) {
+        if (diffrence === 0) {
             $('.payment-section').hide();
         } else {
             $('.payment-section').show();
