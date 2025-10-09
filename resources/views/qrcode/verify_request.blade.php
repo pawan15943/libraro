@@ -235,11 +235,13 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('previous_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
+                            @if ($customer->payment_screenshot)
                             <small>
                                 <a href="#" class="text-danger" data-bs-toggle="modal" data-bs-target="#paymentProofModal">
                                     Payment Proof / Screenshot
                                 </a>
                             </small>
+                            @endif
                             <!-- Modal -->
                             <div class="modal fade" id="paymentProofModal" tabindex="-1" aria-labelledby="paymentProofModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
@@ -319,7 +321,7 @@ $ids='approvwRequest';
                         </div>
                     </div>
 
-                    <div class="row g-4 m-0">
+                    <div class="row g-4 mt-0">
                         <div class="col-lg-4 mt-4">
                             <input type="submit" class="btn btn-primary btn-block button" value="Verify & Activate Seat">
                         </div>
