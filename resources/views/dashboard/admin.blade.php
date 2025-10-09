@@ -919,7 +919,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
                                 <div class="seat-content">
                                     <h6>Seat No. : {{ $seat->seat_no ?? 'GEN'}}</h6>
-                                    <small>{{ $seat->planType->name}}</small>
+                                    <small>{{ $seat->planType->name ?? 'N/A' }}</small>
+
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p>
