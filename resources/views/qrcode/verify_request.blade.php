@@ -235,7 +235,25 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('previous_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
-                            <small><a href="" class="text-danger">Payment Proof / Screenshot</a></small>
+                            <small>
+                                <a href="#" class="text-danger" data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                    Payment Proof / Screenshot
+                                </a>
+                            </small>
+                            <!-- Modal -->
+                            <div class="modal fade" id="paymentProofModal" tabindex="-1" aria-labelledby="paymentProofModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="paymentProofModalLabel">Payment Proof / Screenshot</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ asset($customer->payment_screenshot) }}" alt="Payment Screenshot" class="img-fluid rounded shadow">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                         </div>
                         <div class="col-lg-4">
@@ -244,7 +262,6 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('total_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
-                            {{-- <img src="{{asset($customer->payment_screenshot)}}" alt=""> --}}
                         </div>
 
 
@@ -254,32 +271,54 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
                         </div>
-                        <div class="col-lg-4">
-                            <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
-                            <input type="text" id="paid_amount11" name="paid_amount"
-                                class="form-control"
-                                value="{{ old('paid_amount') }}" placeholder="0">
-                        </div>
 
-                        <div class="col-lg-4">
-                            <label for="pending_amt11">Pending Payment (₹)</label>
-                            <input type="text" id="pending_amt11" name="pending_amount"
-                                class="form-control"
-                                value="{{ old('pending_amount', $customer->pending_amount ?? 0) }}"
-                                readonly>
-                            <span id="pending_amt_error" class="text-danger"></span>
-                        </div>
+                        <div class="payment-section" style="display:none;">
+                            <div class="col-lg-4">
+                                <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
+                                <input type="text" id="paid_amount11" name="paid_amount"
+                                    class="form-control"
+                                    value="{{ old('paid_amount') }}" placeholder="0">
+                            </div>
 
-                        <div class="col-lg-4">
-                            <label for="due_date11">Payment Due Date<span>*</span></label>
-                            <input type="date" id="due_date11" name="due_date"
-                                class="form-control"
-                                value="{{ old('due_date', $customer->due_date ?? '') }}"
-                                readonly>
-                            @error('due_date')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            <div class="col-lg-4">
+                                <label for="pending_amt11">Pending Payment (₹)</label>
+                                <input type="text" id="pending_amt11" name="pending_amount"
+                                    class="form-control"
+                                    value="{{ old('pending_amount', $customer->pending_amount ?? 0) }}"
+                                    readonly>
+                                <span id="pending_amt_error" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <label for="due_date11">Payment Due Date<span>*</span></label>
+                                <input type="date" id="due_date11" name="due_date"
+                                    class="form-control"
+                                    value="{{ old('due_date', $customer->due_date ?? '') }}"
+                                    readonly>
+                                @error('due_date')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-6">
+                            <label for="payment_mode" class="form-label">Payment Mode</label>
+                            <select
+                                name="payment_mode"
+                                id="payment_mode"
+                                class="form-select @error('payment_mode') is-invalid @enderror">
+                                <option value="">Select Payment Mode</option>
+                                <option value="online" {{ old('payment_mode', $customer->payment_mode ?? '') == 'online' ? 'selected' : '' }}>Online</option>
+                                <option value="offline" {{ old('payment_mode', $customer->payment_mode ?? '') == 'offline' ? 'selected' : '' }}>Offline</option>
+                            </select>
+
+                            @error('payment_mode')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
                             @enderror
                         </div>
+
+
 
                         <div class="col-lg-4 mt-4">
                             <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
@@ -326,7 +365,6 @@ $ids='approvwRequest';
 
             // if (!seat || seat === 'gen') {
             //     fetchPlanTypesRenewSeat('',learner_detail_id)
-
             // } else {
             //     fetchPlanTypesRenewSeat(seat, learner_detail_id); 
             // }
@@ -578,6 +616,12 @@ $ids='approvwRequest';
             $('label[for="paid_amount11"]').text("Paid Amount *");
 
         }
+        if (difference === 0) {
+            $('.payment-section').hide();
+        } else {
+            $('.payment-section').show();
+        }
+
     }
 
     function calculatePendingAmt(paid_val) {

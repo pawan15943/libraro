@@ -9,7 +9,7 @@
             <div class="col-lg-4">
                 <h3 class="text-center mb-4">Make Payment</h3>
                 <p class="text-center">Scan the QR code below to make the payment</p>
-                <div class="QR-code">
+                <div class="QR-code p-3 text-center">
                     <a href="{{ $upiLink }}">
                         <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($upiLink)) }}">
                     </a>
