@@ -6111,10 +6111,21 @@ ul.actions-icons li a {
 #onlineRequest th,
 #onlineRequest td {
     vertical-align: middle;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: .8rem;
 }
 
 #onlineRequest table tr:last-child {
     border-bottom: none;
+}
+
+#onlineRequest button.btn.btn-success {
+    border-radius: 2rem;
+    padding: 0;
+    height: 30px ! IMPORTANT;
+    width: 30px;
+    font-size: .8rem;
 }
 
 div#requests {
