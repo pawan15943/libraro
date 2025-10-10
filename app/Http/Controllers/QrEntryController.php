@@ -635,7 +635,7 @@ class QrEntryController extends Controller
                     $bookingPlanType = PlanType::find($booking->plan_type_id);
                     if ($bookingPlanType) {
                         if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
-                            return ['error' => true, 'message' => 'The selected plan type overlaps with an existing booking.'];
+                            return redirect()->back()->with('error', 'The selected plan type is not available for this seat. Please try a different seat.');
                         }
                     }
                 }
