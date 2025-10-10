@@ -6113,7 +6113,8 @@ ul.actions-icons li a {
     vertical-align: middle;
     text-transform: uppercase;
     font-weight: 500;
-    font-size: .8rem;
+    font-size: .7rem;
+    font-family: 'Outfit','sans-sarif';
 }
 
 #onlineRequest table tr:last-child {
