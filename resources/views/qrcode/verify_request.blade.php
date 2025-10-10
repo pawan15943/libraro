@@ -167,7 +167,7 @@ $ids='approvwRequest';
                             @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField())))
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="toggleFieldCheckbox11">Locker?</label>
-                                <select name="locker" id="toggleFieldCheckbox11" class="form-control @error('locker') is-invalid @enderror">
+                                <select name="locker" id="toggleFieldCheckbox11" class="form-control form-select @error('locker') is-invalid @enderror">
                                     <option value="no" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'no' ? 'selected' : '' }}>No</option>
                                     <option value="yes" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
 
@@ -206,7 +206,7 @@ $ids='approvwRequest';
                             @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $transaction?->discount_amount))
                             <div class="col-lg-4">
                                 <label for="discountType11">Discount Type</label>
-                                <select id="discountType11" name="discount_type" class="form-control @error('discount_type') is-invalid @enderror">
+                                <select id="discountType11" name="discount_type" class="form-control form-select @error('discount_type') is-invalid @enderror">
                                     <option value="">Select Discount Type</option>
                                     <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
                                     <option value="amount" {{ !empty($transaction?->discount_amount) ? 'selected' : '' }}>Amount</option>
@@ -235,7 +235,27 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('previous_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
-                            <small><a href="" class="text-danger">Payment Proof / Screenshot</a></small>
+                            @if ($customer->payment_screenshot)
+                            <small>
+                                <a href="#" class="text-danger" data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                    Payment Proof / Screenshot
+                                </a>
+                            </small>
+                            @endif
+                            <!-- Modal -->
+                            <div class="modal fade" id="paymentProofModal" tabindex="-1" aria-labelledby="paymentProofModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="paymentProofModalLabel">Payment Proof / Screenshot</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ asset($customer->payment_screenshot) }}" alt="Payment Screenshot" class="img-fluid rounded shadow">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                         </div>
                         <div class="col-lg-4">
@@ -244,9 +264,7 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('total_amount', $customer->total_amount ?? 0) }}"
                                 readonly>
-                            {{-- <img src="{{asset($customer->payment_screenshot)}}" alt=""> --}}
                         </div>
-
 
                         <div class="col-lg-4">
                             <label for="diffrence_amount11">Amount Difference (₹)</label>
@@ -254,6 +272,8 @@ $ids='approvwRequest';
                                 class="form-control"
                                 value="{{ old('diffrence_amount', $customer->diffrence_amount ?? 0) }}" readonly>
                         </div>
+                    </div>
+                    <div class="row g-4 mt-0 differencePayment" style="display:none;">
                         <div class="col-lg-4">
                             <label for="paid_amount11">Pay Refundable / Pending Amount (₹)</label>
                             <input type="text" id="paid_amount11" name="paid_amount"
@@ -280,9 +300,30 @@ $ids='approvwRequest';
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
+                    </div>
+                    <div class="row g-4 mt-0">
+                        <div class="col-lg-4">
+                            <label for="payment_mode" class="form-label">Payment Mode</label>
+                            <select
+                                name="payment_mode"
+                                id="payment_mode"
+                                class="form-select @error('payment_mode') is-invalid @enderror">
+                                <option value="">Select Payment Mode</option>
+                                <option value="online" {{ old('payment_mode', $customer->payment_mode ?? '') == 'online' ? 'selected' : '' }}>Online</option>
+                                <option value="offline" {{ old('payment_mode', $customer->payment_mode ?? '') == 'offline' ? 'selected' : '' }}>Offline</option>
+                            </select>
 
+                            @error('payment_mode')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-0">
                         <div class="col-lg-4 mt-4">
-                            <input type="submit" class="btn btn-primary btn-block button" value="Verify Seat Info and Activate Seat">
+                            <input type="submit" class="btn btn-primary btn-block button" value="Verify & Activate Seat">
                         </div>
                     </div>
 
@@ -326,7 +367,6 @@ $ids='approvwRequest';
 
             // if (!seat || seat === 'gen') {
             //     fetchPlanTypesRenewSeat('',learner_detail_id)
-
             // } else {
             //     fetchPlanTypesRenewSeat(seat, learner_detail_id); 
             // }
@@ -578,6 +618,12 @@ $ids='approvwRequest';
             $('label[for="paid_amount11"]').text("Paid Amount *");
 
         }
+        if (diffrence === 0) {
+            $('.differencePayment').hide();
+        } else {
+            $('.differencePayment').show();
+        }
+
     }
 
     function calculatePendingAmt(paid_val) {

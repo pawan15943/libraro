@@ -399,7 +399,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <td>{{$x++}}</td>
                                 <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
                                 <td>{{$value->mobile}}</td>
-                                <td>{{$value->planType->name}} | {{$value->total_amount}}</td>
+                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
+
                                 @if($value->payment_screenshot)
                                 <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
                                 @else
@@ -918,7 +919,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
                                 <div class="seat-content">
                                     <h6>Seat No. : {{ $seat->seat_no ?? 'GEN'}}</h6>
-                                    <small>{{ $seat->planType->name}}</small>
+                                    <small>{{ $seat->planType->name ?? 'N/A' }}</small>
+
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p>

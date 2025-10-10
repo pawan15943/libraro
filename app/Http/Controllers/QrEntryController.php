@@ -453,6 +453,7 @@ class QrEntryController extends Controller
             'plan_start_date' => 'required',
             'paid_amount' => 'nullable',
             'previous_amount' => 'required',
+            'payment_mode' => 'required',
             'discount_type' => 'nullable',
             'diffrence_amount' => 'nullable',
             'discount_amount' => [
@@ -612,7 +613,12 @@ class QrEntryController extends Controller
                 $status = 0;
             }
             $is_paid = 1;
-            $payment_mode = 1;
+            if($request->payment_mode=='online'){
+                $payment_mode = 1;
+            }else{
+                $payment_mode = 0;
+            }
+            
               if ($total_hour === 0) {
                 return redirect()->back()->with('error', 'Total available hours not set.');
             }

@@ -301,7 +301,7 @@
                                     @endcan
                                      @can('has-permission', 'Delete Seat')
                                      @if($today->lessThanOrEqualTo($threeDaysAfterStart))
-                                    <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash"></i></a></li>
+                                    <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
                                     @endif
                                     @endcan
                 </ul>
