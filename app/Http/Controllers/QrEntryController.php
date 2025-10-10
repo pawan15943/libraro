@@ -620,6 +620,19 @@ class QrEntryController extends Controller
            
 
             if ($seat_no && !$request->learner_id) {
+                  $existingBookingsWithoutPlan = $this->getLearnersByLibrary()
+                ->where('learner_detail.seat_no', '=', $seat_no)
+                ->where('learner_detail.status', 1)
+                ->get();
+
+                foreach ($existingBookingsWithoutPlan as $booking) {
+                    $bookingPlanType = PlanType::find($booking->plan_type_id);
+                    if ($bookingPlanType) {
+                        if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
+                            return ['error' => true, 'message' => 'The selected plan type overlaps with an existing booking.'];
+                        }
+                    }
+                }
                  $existingBookings = $this->getLearnersByLibrary()
                 ->where('learner_detail.seat_no', '=', $seat_no)
                 ->where('learner_detail.plan_type_id', '=', $plan_type_id)
@@ -840,9 +853,9 @@ class QrEntryController extends Controller
             // Step 2: Retrieve all plan types
             $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->get();
             Log::info('Plan types fetched', [
-    'count' => $planTypes->count(),
-    'plan_type_ids' => $planTypes->pluck('id')
-]);
+                'count' => $planTypes->count(),
+                'plan_type_ids' => $planTypes->pluck('id')
+            ]);
 
             // Step 3: Initialize an array to store the plan_type_ids to be removed
             $planTypesRemovals = [];
