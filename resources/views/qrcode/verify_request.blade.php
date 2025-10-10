@@ -152,8 +152,9 @@ $ids='approvwRequest';
 
                         <div class="col-lg-6">
                             <label for="">Plan Start Date <span>*</span></label>
-                            <input type="date" name="plan_start_date" class="form-control @error('plan_start_date') is-invalid @enderror"
-                                 value="{{ old('plan_start_date', \Carbon\Carbon::parse($customer->plan_start_date)->isToday() ? $customer->plan_start_date : '') }}">
+                            <input type="date" name="plan_start_date"
+                                class="form-control @error('plan_start_date') is-invalid @enderror"
+                                value="{{ old('plan_start_date', $customer->plan_start_date) }}" >
                         </div>
                     </div>
 
