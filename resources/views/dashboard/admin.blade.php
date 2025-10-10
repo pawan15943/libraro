@@ -409,7 +409,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <td>
                                     <ul class="actions-icons">
-                                        @if($value->payment_screenshot && $value->payment_mode=='online')
+                                        @if($value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday())
                                         <li>
                                             <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
                                                @csrf
@@ -1593,23 +1593,23 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
 
         // 2️⃣ Show backend flash messages (success or error) in SweetAlert
-        @if(session('success'))
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: "{{ session('success') }}",
-                confirmButtonColor: '#3085d6'
-            });
-        @endif
+        //@if(session('success'))
+            //Swal.fire({
+               // icon: 'success',
+              //  title: 'Success',
+               // text: "{{ session('success') }}",
+               // confirmButtonColor: '#3085d6'
+           // });
+       // @endif
 
-        @if(session('error'))
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: "{{ session('error') }}",
-                confirmButtonColor: '#d33'
-            });
-        @endif
+        // @if(session('error'))
+        //     Swal.fire({
+        //         icon: 'error',
+        //         title: 'Error',
+        //         text: "{{ session('error') }}",
+        //         confirmButtonColor: '#d33'
+        //     });
+        // @endif
 
         // 3️⃣ Optional: catch JS errors globally
         window.addEventListener('error', function (e) {
