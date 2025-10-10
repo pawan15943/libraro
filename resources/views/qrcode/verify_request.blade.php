@@ -167,7 +167,7 @@ $ids='approvwRequest';
                             @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField())))
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label for="toggleFieldCheckbox11">Locker?</label>
-                                <select name="locker" id="toggleFieldCheckbox11" class="form-control @error('locker') is-invalid @enderror">
+                                <select name="locker" id="toggleFieldCheckbox11" class="form-control form-select @error('locker') is-invalid @enderror">
                                     <option value="no" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'no' ? 'selected' : '' }}>No</option>
                                     <option value="yes" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
 
@@ -206,7 +206,7 @@ $ids='approvwRequest';
                             @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $transaction?->discount_amount))
                             <div class="col-lg-4">
                                 <label for="discountType11">Discount Type</label>
-                                <select id="discountType11" name="discount_type" class="form-control @error('discount_type') is-invalid @enderror">
+                                <select id="discountType11" name="discount_type" class="form-control form-select @error('discount_type') is-invalid @enderror">
                                     <option value="">Select Discount Type</option>
                                     <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
                                     <option value="amount" {{ !empty($transaction?->discount_amount) ? 'selected' : '' }}>Amount</option>
