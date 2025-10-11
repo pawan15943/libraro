@@ -252,7 +252,7 @@ class QrEntryController extends Controller
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
                 if ($validated_custom['error']) {
                   
-                   return redirect()->back()->with('error',$validated_custom['message']);
+                   return redirect()->back()->with('error',$validated_custom['message'])->withInput();
                 }
                 
             }
