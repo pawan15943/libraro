@@ -155,6 +155,7 @@ $ids='approvwRequest';
                             <input type="date" name="plan_start_date"
                                 class="form-control @error('plan_start_date') is-invalid @enderror"
                                 value="{{ old('plan_start_date', $customer->plan_start_date) }}" >
+                            <span class="text-danger">Note: Verify the plan start date before activating the seat.</span>
                         </div>
                     </div>
 

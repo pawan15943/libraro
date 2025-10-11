@@ -402,9 +402,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
 
                                 @if($value->payment_screenshot)
-                                <td><a href="{{ asset($value->payment_screenshot) }}" target="_blank">Paid</a></td>
+                                    <td>
+                                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success text-decoration-none">
+                                            Paid
+                                        </a>
+                                    </td>
                                 @else
-                                <td>UnPaid</td>
+                                    <td>
+                                        <span class="badge bg-danger">Unpaid</span>
+                                    </td>
                                 @endif
 
                                 <td>
