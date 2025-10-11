@@ -65,7 +65,7 @@
                         <li>
                             <span>Seat No.</span>
                             <p>{{ $value->seat_no ?? 'G' }} :
-                                {{ $value->planType->name }}
+                                {{ $value->planType ?$value->planType->name : 'NA' }}
                             </p>
                         </li>
 

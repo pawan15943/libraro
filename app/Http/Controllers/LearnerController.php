@@ -3050,6 +3050,7 @@ class LearnerController extends Controller
         if ($request->has('date')) {
             $learners =  Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->where('learners.library_id', getLibraryId())
+                ->where('learners.branch_id', getCurrentBranch())
                 ->whereNull('learner_detail.deleted_at')
                 ->leftJoin('attendances', function ($join) use ($request) {
                     $join->on('learners.id', '=', 'attendances.learner_id')
@@ -3125,7 +3126,7 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
-        $data = Learner::where('library_id', getLibraryId())
+        $data = Learner::where('branch_id', getCurrentBranch())
             ->where('status', 1)
             ->pluck('name', 'id');
 
@@ -3135,7 +3136,7 @@ class LearnerController extends Controller
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learners.library_id', getLibraryId())
-            // ->where('learners.branch_id', getCurrentBranch())
+            ->where('learners.branch_id', getCurrentBranch())
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1);
 
