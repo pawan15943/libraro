@@ -38,6 +38,7 @@
         @csrf
         <input type="hidden" name="id" value="{{ $planType->id ?? '' }}">
         <input type="hidden" name="library_id" value="{{ getLibraryId() }}">
+        <input type="hidden" name="branch_id" value="{{getCurrentBranch()}}">
         <input type="hidden" name="databasemodel" value="PlanType">
         <input type="hidden" name="redirect" value="{{ route('plantype.index') }}">
 
