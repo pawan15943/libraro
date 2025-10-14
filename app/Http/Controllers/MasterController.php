@@ -714,6 +714,7 @@ class MasterController extends Controller
                 'start_time' => 'required',
                 'end_time' => 'required',
                 'slot_hours' => 'required', 
+                'branch_id' => ['required','not_in:0'],
             ]);
         }
         if($request->databasemodel == 'PlanPrice'){
