@@ -2752,6 +2752,7 @@ class LearnerController extends Controller
 
         return response()->json(['success' => 'Learner deleted successfully.']);
     }
+    
     public function userclose(Request $request)
     {
 
@@ -2759,7 +2760,7 @@ class LearnerController extends Controller
          try {
             
              DB::transaction(function () use ($request) {
-                 $today = date('Y-m-d');
+                $today = date('Y-m-d');
                 $customer = Learner::findOrFail($request->learner_id);
 
 

@@ -82,7 +82,7 @@ $class=$planDetails['class'];
                             </span>
                             @enderror
                         </div>
-                        <div class="col-lg-4 col-6">
+                        <div class="col-lg-4">
                                 <label for="">Payment Mode</label>
                                 <select name="payment_mode"  class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>

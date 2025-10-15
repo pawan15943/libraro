@@ -9,6 +9,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+    <style>
+        a{
+            display: inline !important; 
+        }
+    </style>
 </head>
 
 <body>
