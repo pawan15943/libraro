@@ -2386,17 +2386,15 @@ class LearnerController extends Controller
                 ->get();
 
             $activeLearners = $learners->where('status', 1);
-            $expiredLearners = $learners->where('status', 0);
+            // $expiredLearners = $learners->where('status', 0);
 
             $seat = new \stdClass();
             $seat->seat_no = $seatNo;
-            $seat->learners = $activeLearners->isNotEmpty() ? $activeLearners : ($expiredLearners->isNotEmpty() ? $expiredLearners : collect());
+            $seat->learners = $activeLearners;
 
             if ($activeLearners->isNotEmpty()) {
                 $seat->status = 'booked';
-            } elseif ($expiredLearners->isNotEmpty()) {
-                $seat->status = 'expired';
-            } else {
+            }  else {
                 $seat->status = 'available';
             }
 
@@ -2425,8 +2423,8 @@ class LearnerController extends Controller
             ->get();
 
         $activeGeneral = $generalLearners->where('status', 1);
-        $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
-        $finalGeneralLearners = $activeGeneral->isNotEmpty() ? $activeGeneral : $expiredGeneral;
+        // $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
+        $finalGeneralLearners = $activeGeneral;
        
          
         return view('learner.seatHistory', [ 'seats' => $seats,'finalGeneralLearners'=>$finalGeneralLearners]);
@@ -2434,17 +2432,15 @@ class LearnerController extends Controller
 
     public function history($id)
     {
-        $learners = LearnerDetail::where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
-        // ->get();
-             
-           ->paginate(5);
+        $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
+       ->paginate(5);
             
         return view('learner.seatHistoryView', compact('learners'));
     }
     public function generalSeathistory()
     {
         // Get the learners with their details, plans, and seat information
-        $learners = Learner::where('library_id', getLibraryId())->where('learners.status', 0)
+        $learners = Learner::where('branch_id', getCurrentBranch())->where('learners.status', 0)
         ->whereNull('learners.seat_no')
             ->with([
                 'learnerDetails' => function ($query) {

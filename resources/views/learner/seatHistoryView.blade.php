@@ -28,6 +28,7 @@ There is currently no history available for this seat for any learners.</p>
             $due_date = null;
         }
         $learner=myLearner($value->learner_id);
+        $operation = optional(getLearnerOperation($value->id))->operation;
         @endphp
         <div class="row">
             <div class="col-lg-12">
@@ -41,7 +42,13 @@ There is currently no history available for this seat for any learners.</p>
                         @endif
 
 
-                        {!! getUserStatusDetails($value->plan_end_date) !!}
+                         @if($operation == 'closeSeat')
+                            <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                        @elseif($operation == 'deleteSeat')
+                            <span class="extended"> Deleted Seat</span>
+                        @else
+                            {!! getUserStatusDetails($value->plan_end_date) !!}
+                        @endif
 
                     </div>
                     

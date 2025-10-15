@@ -370,7 +370,7 @@ if (!function_exists('getUserStatusDetails')) {
 if (!function_exists('myLearner')) {
     function myLearner($learner_id)
     {
-        $learner = Learner::where('id', $learner_id)->first();
+        $learner = Learner::withTrashed()->where('id', $learner_id)->first();
         return $learner ? $learner : null;
     }
 }
