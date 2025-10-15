@@ -136,14 +136,16 @@ $due_date = null;
 
 <div class="row">
     <div class="col-lg-12">
-        <div class="seat-info bg-white">
+        <div class="seat-info bg-white">    
             <div class="seat-no">
+              
+                 <span>
+                    Seat No.: {{ $value->seat_no ?: 'GEN' }} &nbsp;
+                </span>
+                <span>
+                    {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                </span>
 
-                @if($value->seat_no )
-                <span> Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
-                @else
-                <span>Seat No.: {{$value->seat_no ? $value->seat_no : 'GEN'}} &nbsp;</span>
-                @endif
                 @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
@@ -158,7 +160,9 @@ $due_date = null;
                     @can('has-permission', 'Reactive Seat')
                     <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2"></i> Reactivate Seat</a></li>
                     @endcan
+                    @if(refund($value->id)!=0 && learnerTransaction($value->id, $value->learner_detail_id)?->refund >0)
                     <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li>
+                    @endif
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
                     <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
@@ -204,6 +208,13 @@ $due_date = null;
                     <li>
                         <span>Payment Status</span>
                         <div class="d-flex g-1">
+                            <p class="text-danger">
+                                Refund : {{ round(refund($value->id)) }}
+                            </p>
+                        </div>
+
+                        
+                        {{-- <div class="d-flex g-1">
                             @if(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
@@ -236,8 +247,9 @@ $due_date = null;
 
                             @elseif(paylater($value->learner_detail_id))
                             <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span>
+
                             @endif
-                        </div>
+                        </div> --}}
                     </li>
                     <li>
                         <span>Locker</span>

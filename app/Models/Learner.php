@@ -33,7 +33,7 @@ class Learner extends Authenticatable
     public function planType()
     {
         return $this->belongsTo(PlanType::class, 'plan_type_id', 'id')
-                    ->where('library_id', getLibraryId());  // PlanType specific to library
+                    ->where('library_id', getLibraryId())->where('branch_id', getCurrentBranch());  // PlanType specific to library
     }
 
     public function plan()

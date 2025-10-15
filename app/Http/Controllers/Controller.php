@@ -145,7 +145,7 @@ class Controller extends BaseController
                 ->select('plan_types.name as plan_type', 'plan_prices.price as plan_price', 'plan_types.start_time', 'plan_types.end_time');
 
             if (getCurrentBranch() != 0) {
-                $plantypesQuery->where('branch_id', getCurrentBranch());
+                $plantypesQuery->where('plan_types.branch_id', getCurrentBranch());
             }
             $plantypes = $plantypesQuery->get();
         } else {

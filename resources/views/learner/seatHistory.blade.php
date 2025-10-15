@@ -66,7 +66,8 @@
                         </div>
 
                         <div class="seat-informarion">
-                            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                           <img src="{{ $learner?->profile_picture  ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+
                             <div class="information">
                                 <h4>{{ $learner->name ?? '' }} <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span></h4>
                                 <span>UID: <a href="{{ route('learners.show', $user->learner_id) }}">{{ $learner->learner_no ?? '' }}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? '' }}</a></span>
@@ -122,13 +123,20 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
             </div>
 
             <div class="seat-informarion">
-                <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+                <img src="{{ $learner?->profile_picture  ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">
                     <h4>{{ $learner->name ?? ''}}
                         <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
                     </h4>
-                    <span>UID: <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $learner->mobile }}">+91-{{ $learner->mobile }}</a></span>
-                    <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                    <span>UID: <a href="{{route('learners.show',$user->id)}}">{{$user->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $user->mobile }}">+91-{{ $user->mobile }}</a></span>
+                    <span class="d-block">
+                        E:
+                        @if(optional($learner)->email)
+                            <a href="mailto:{{ $learner->email }}">{{ $learner->email }}</a>
+                        @else
+                            <i class="fa-solid fa-times text-danger"></i> Email ID Not Available
+                        @endif
+                    </span>
                 </div>
             </div>
 

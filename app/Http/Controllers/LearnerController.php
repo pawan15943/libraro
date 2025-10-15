@@ -2365,25 +2365,36 @@ class LearnerController extends Controller
 
         for ($seatNo = 1; $seatNo <= $total_seats; $seatNo++) {
             // Fetch learners for this seat including trashed details
-            $learners = Learner::withTrashed()
-                ->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->where('learners.branch_id', getCurrentBranch())
                 ->where('learner_detail.seat_no', $seatNo)
-                ->select('learners.*', 'learner_detail.*')
+                ->select(
+                    'learners.*',
+                    'learner_detail.seat_no',
+                    'learner_detail.plan_start_date',
+                    'learner_detail.plan_end_date',
+                    'learner_detail.plan_type_id',
+                    'learner_detail.plan_id',
+                    'learner_detail.join_date',
+                    'learner_detail.plan_price_id',
+                    'learner_detail.status as learner_detail_status',
+                    'learner_detail.is_paid',
+                    'learner_detail.learner_id',
+                    'learner_detail.payment_mode',
+                    'learner_detail.id as learner_detail_id',
+                )
                 ->get();
 
             $activeLearners = $learners->where('status', 1);
-            $expiredLearners = $learners->where('status', 0);
+            // $expiredLearners = $learners->where('status', 0);
 
             $seat = new \stdClass();
             $seat->seat_no = $seatNo;
-            $seat->learners = $activeLearners->isNotEmpty() ? $activeLearners : ($expiredLearners->isNotEmpty() ? $expiredLearners : collect());
+            $seat->learners = $activeLearners;
 
             if ($activeLearners->isNotEmpty()) {
                 $seat->status = 'booked';
-            } elseif ($expiredLearners->isNotEmpty()) {
-                $seat->status = 'expired';
-            } else {
+            }  else {
                 $seat->status = 'available';
             }
 
@@ -2394,12 +2405,26 @@ class LearnerController extends Controller
         $generalLearners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.branch_id', getCurrentBranch())
             ->whereNull('learner_detail.seat_no')
-            ->select('learners.*', 'learner_detail.*')
+             ->select(
+                    'learners.*',
+                    'learner_detail.seat_no',
+                    'learner_detail.plan_start_date',
+                    'learner_detail.plan_end_date',
+                    'learner_detail.plan_type_id',
+                    'learner_detail.plan_id',
+                    'learner_detail.plan_price_id',
+                    'learner_detail.status as learner_detail_status',
+                    'learner_detail.is_paid',
+                    'learner_detail.payment_mode',
+                      'learner_detail.join_date',
+                      'learner_detail.learner_id',
+                    'learner_detail.id as learner_detail_id',
+                )
             ->get();
 
         $activeGeneral = $generalLearners->where('status', 1);
-        $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
-        $finalGeneralLearners = $activeGeneral->isNotEmpty() ? $activeGeneral : $expiredGeneral;
+        // $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
+        $finalGeneralLearners = $activeGeneral;
        
          
         return view('learner.seatHistory', [ 'seats' => $seats,'finalGeneralLearners'=>$finalGeneralLearners]);
@@ -2407,17 +2432,15 @@ class LearnerController extends Controller
 
     public function history($id)
     {
-        $learners = LearnerDetail::where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
-        // ->get();
-             
-           ->paginate(5);
+        $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
+       ->paginate(5);
             
         return view('learner.seatHistoryView', compact('learners'));
     }
     public function generalSeathistory()
     {
         // Get the learners with their details, plans, and seat information
-        $learners = Learner::where('library_id', getLibraryId())->where('learners.status', 0)
+        $learners = Learner::where('branch_id', getCurrentBranch())->where('learners.status', 0)
         ->whereNull('learners.seat_no')
             ->with([
                 'learnerDetails' => function ($query) {
@@ -3051,6 +3074,7 @@ class LearnerController extends Controller
         if ($request->has('date')) {
             $learners =  Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->where('learners.library_id', getLibraryId())
+                ->where('learners.branch_id', getCurrentBranch())
                 ->whereNull('learner_detail.deleted_at')
                 ->leftJoin('attendances', function ($join) use ($request) {
                     $join->on('learners.id', '=', 'attendances.learner_id')
@@ -3126,7 +3150,7 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
-        $data = Learner::where('library_id', getLibraryId())
+        $data = Learner::where('branch_id', getCurrentBranch())
             ->where('status', 1)
             ->pluck('name', 'id');
 
@@ -3136,7 +3160,7 @@ class LearnerController extends Controller
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learners.library_id', getLibraryId())
-            // ->where('learners.branch_id', getCurrentBranch())
+            ->where('learners.branch_id', getCurrentBranch())
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1);
 

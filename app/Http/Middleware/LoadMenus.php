@@ -337,7 +337,7 @@ class LoadMenus
             ->count();
         $planPrice = PlanPrice::withoutGlobalScopes()->where('library_id', getLibraryId())->count();
         $is_active = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->where('end_date', '>', $today->format('Y-m-d'))->exists();
-        if ($hourexist > 0 && $extendexist > 0 && $plan > 0 && $plantype >= 3 && $planPrice >= 3 && $is_active) {
+        if ($hourexist > 0 && $extendexist > 0 && $plan > 0 && $plantype >= 1 && $planPrice >= 1 && $is_active) {
             $id = getLibraryId();
             $library = Library::findOrFail($id);
            

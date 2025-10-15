@@ -252,7 +252,7 @@ class QrEntryController extends Controller
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
                 if ($validated_custom['error']) {
                   
-                   return redirect()->back()->with('error',$validated_custom['message']);
+                   return redirect()->back()->with('error',$validated_custom['message'])->withInput();
                 }
                 
             }
@@ -348,7 +348,7 @@ class QrEntryController extends Controller
         $branch=Branch::where('id',$booking->branch_id)->first();
         $upiId   = $branch->upi_id ?? 'heenamehandi94145';  // fallback UPI if branch has none
         $payee   = $branch->name ?? 'Library';           // dynamic payee name
-        $amount  = $amount ?? 10;                        // dynamic amount
+        $amount  = $booking->total_amount;                        // dynamic amount
         $currency = 'INR';
         $note     = 'Seat Booking';                      // you can extend this as needed
 

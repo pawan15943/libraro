@@ -19,6 +19,6 @@ class LearnerOperationsLog extends Model
     }
     public function learner()
     {
-        return $this->belongsTo(Learner::class, 'learner_id');
+        return $this->belongsTo(Learner::class, 'learner_id')->withTrashed();
     }
 }

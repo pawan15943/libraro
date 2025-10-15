@@ -31,20 +31,26 @@
         style="width: 200px;height: 200px"
         autoplay
         loop></dotlottie-wc>
+        @if(getCurrentBranch() !=0)
     <h4>You haven’t added any Plan Type / Shift yet.</h4>
     <span> Start by creating your first Plan Type / Shift to manage it here.</span>
-    <div class="heading-list justify-content-end mb-1">
+  
         <a href="{{ route('planType.create') }}" class="btn btn-primary export">
             <i class="fa-solid fa-plus "></i> Add Plan Type / Shift Type
         </a>
-    </div>
+   @else
+    <h4>To add Plan Type, first select your Branch.</h4>
+    <span> Plan names remain the same across all branches, but Plan Type can be different. That’s why you need to choose the branch before adding Plan Type. (Choose Branch in Header Dropdown)</span>
+    @endif
 </div>
 
 @else
 <div class="heading-list justify-content-end mb-1">
+     @if(getCurrentBranch() !=0)
     <a href="{{ route('planType.create') }}" class="btn btn-primary export">
         <i class="fa-solid fa-plus "></i> Add Plan Type
     </a>
+     @endif
 </div>
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)
