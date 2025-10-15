@@ -6,6 +6,7 @@ use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use Illuminate\Support\Facades\Log;
 use App\Models\Library;
 use App\Models\Subscription;
@@ -123,7 +124,7 @@ if (!function_exists('getLibraryDataFromId')) {
 if (!function_exists('learnerTransaction')) {
     function learnerTransaction($id, $detail_id)
     {
-        $transaction = LearnerTransaction::where('learner_id', $id)->where('learner_detail_id', $detail_id)->first();
+        $transaction = LearnerTransaction::withTrashed()->where('learner_id', $id)->where('learner_detail_id', $detail_id)->first();
         return  $transaction;
     }
 }
@@ -765,5 +766,16 @@ if (!function_exists('getCurrentBranchName')) {
         return Branch::find($user->current_branch)?->display_name ?? null;
     }
 }
+
+if (!function_exists('refund')) {
+    function refund($learner_id)
+    {
+        $data = LearnerTransactionActivity::where('learner_id', $learner_id)
+                    ->where('payment_type', 'REFUND')
+                    ->sum('amount');
+        return $data ?? null;
+    }
+}
+
 
 
