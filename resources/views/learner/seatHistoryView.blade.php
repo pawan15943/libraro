@@ -15,20 +15,19 @@ There is currently no history available for this seat for any learners.</p>
     
         @php
         $planStatus = getPlanStatusDetails($value->plan_end_date);
-        $transaction = learnerTransaction($value->learner_id, $value->id);      
+        $learner_detail_id=$value->id;
+        $transaction = learnerTransaction($value->learner_id, $learner_detail_id);      
 
-        if ($transaction && isset($transaction->pending_amount)) {
-            $due_date = DB::table('learner_pending_transaction')
-                ->where('learner_id', $value->id)
-                ->where('status', 0)
-                ->where('pending_amount', $transaction->pending_amount)
-                ->select('due_date')
-                ->first();
+        if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+    
+        $due_date = $transaction->due_date;
         } else {
-            $due_date = null;
+        
+        $due_date = null;
         }
         $learner=myLearner($value->learner_id);
-        $operation = optional(getLearnerOperation($value->id))->operation;
+        $operation = optional(getLearnerOperation($learner_detail_id))->operation;
+        $learner_id=$value->learner_id;
         @endphp
         <div class="row">
             <div class="col-lg-12">
@@ -41,13 +40,12 @@ There is currently no history available for this seat for any learners.</p>
                             <span>GEN</span>
                         @endif
 
-
-                         @if($operation == 'closeSeat')
-                            <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                        @if($operation == 'closeSeat')
+                        <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                         @elseif($operation == 'deleteSeat')
-                            <span class="extended"> Deleted Seat</span>
+                        <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                         @else
-                            {!! getUserStatusDetails($value->plan_end_date) !!}
+                        {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                         @endif
 
                     </div>
@@ -62,10 +60,17 @@ There is currently no history available for this seat for any learners.</p>
 
                         <div class="information">
                             <h4>{{$learner->name}}
+                                 @if($operation == 'closeSeat')
+                                <span class="extended">Closed</span>
+                                @elseif($operation == 'deleteSeat')
+                                <span class="extended">Deleted</span>
+                                @else
                                 <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
+                                @endif
+                                
 
                             </h4>
-                            <span>UID : <a href="{{route('learners.show',$learner->id)}}">{{$learner->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$learner->mobile}}">+91-{{$learner->mobile}}</a> </span>
+                            <span>UID : <a href="{{route('learners.show',$learner_id)}}">{{$learner->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$learner->mobile}}">+91-{{$learner->mobile}}</a> </span>
                             <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
                         </div>
                     </div>
@@ -91,31 +96,44 @@ There is currently no history available for this seat for any learners.</p>
                             <li>
                                 <span>Payment Status</span>
                                 <div class="d-flex g-1">
-                                    @if(!empty(learnerTransaction($value->learner_id,$value->id)->pending_amount) && learnerTransaction($value->learner_id,$value->id)->pending_amount==0)
+                                    @if(paylater($learner_detail_id) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount!=0)
+                                    <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                            PayLater {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                        </span>
+                                    </a>
+                                    @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
                                     <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
                                     <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
-                                        <input type="hidden" name="id" value="{{ $value->learner_id ?? 'NA'}}">
+                                        <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                                        <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">
                                         <input type="hidden" name="type" value="learner">
                                         <button type="submit">
                                             <i class="fa fa-download receipt"></i>
                                         </button>
                                     </form>
 
-                                    @elseif(empty(learnerTransaction($value->learner_id,$value->id)->pending_amount))
+
+                                    @elseif(empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount))
                                     <span></span>
-                                    @elseif( pending_amt($value->learner_detail_id))
-                                    <a href="{{ route('learner.pending.payment', ['id' => $value->id]) }}" class="text-danger d-block">
-                                        @if(overdue($value->id,learnerTransaction($value->learner_id,$value->id)->pending_amount))
-                                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->learner_id,$value->id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
+
+                                    @elseif( pending_amt($learner_detail_id))
+
+                                    <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+
+                                        @if(is_object($due_date) && !empty($due_date->due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
+                                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
                                         @else
-                                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?"> {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->learner_id,$value->id))->pending_amount, 2, '.', ''), '0'), '.') }}({{$due_date->due_date}})</span>
+                                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                            Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                        </span>
+
                                         @endif
                                     </a>
-
-                                    @elseif(paylater($value->id))
-                                    <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span>
                                     @endif
                                 </div>
                             </li>

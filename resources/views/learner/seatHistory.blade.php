@@ -43,6 +43,7 @@
                 $learner = optional($user); // Already joined, can access fields directly
                 $planStatus = getPlanStatusDetails($user->plan_end_date);
                 $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
+                $learner_id=$learner->id;
             @endphp
 
             <div class="row">
@@ -50,12 +51,13 @@
                     <div class="seat-info bg-white">
                         <div class="seat-no">
                             <span>Seat No. : {{ $seat->seat_no }}</span>
+                        
                             @if($operation == 'closeSeat')
-                                <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                            <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
                             @elseif($operation == 'deleteSeat')
-                                <span class="extended"> Deleted Seat</span>
+                            <span class="extended"> Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
                             @else
-                                {!! getUserStatusDetails($user->plan_end_date) !!}
+                            {!! getUserStatusWithSpan($user->plan_end_date,$learner_id) !!}
                             @endif
                         </div>
 
@@ -71,7 +73,8 @@
                             <div class="information">
                                 <h4>{{ $learner->name ?? '' }} <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span></h4>
                                 <span>UID: <a href="{{ route('learners.show', $user->learner_id) }}">{{ $learner->learner_no ?? '' }}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? '' }}</a></span>
-                                <span class="d-block">E: <a href="mailto:{{ $learner->email ?? '' }}">{!! $learner->email ?? '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}</a></span>
+                                 <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+           
                             </div>
                         </div>
 
@@ -98,6 +101,9 @@
 @php
 $learner = myLearner($user->learner_id);
 $planStatus = getPlanStatusDetails($user->plan_end_date);
+ $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
+$learner_id=$learner->id;
+
 @endphp
 
 <div class="row">
@@ -105,14 +111,12 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
         <div class="seat-info bg-white">
             <div class="seat-no">
                 <span>Seat No.: GEN</span>
-                
-
-                 @if(optional(getLearnerOperation($user->learner_detail_id))->operation == 'closeSeat')
+                @if($operation == 'closeSeat')
                     <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
-                @elseif(optional(getLearnerOperation($user->learner_detail_id))->operation == 'deleteSeat')
-                    <span class="extended"> Deleted Seat</span>
+                @elseif($operation == 'deleteSeat')
+                    <span class="extended"> Delete Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
                 @else
-                    {!! getUserStatusDetails($user->plan_end_date) !!}
+                    {!! getUserStatusWithSpan($user->plan_end_date,$learner_id) !!}
                 @endif
             </div>
 
@@ -126,17 +130,17 @@ $planStatus = getPlanStatusDetails($user->plan_end_date);
                 <img src="{{ $learner?->profile_picture  ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">
                     <h4>{{ $learner->name ?? ''}}
-                        <span class="{{ $planStatus['class'] }}">{{ $planStatus['status'] ?? '' }}</span>
-                    </h4>
-                    <span>UID: <a href="{{route('learners.show',$user->id)}}">{{$user->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $user->mobile }}">+91-{{ $user->mobile }}</a></span>
-                    <span class="d-block">
-                        E:
-                        @if(optional($learner)->email)
-                            <a href="mailto:{{ $learner->email }}">{{ $learner->email }}</a>
-                        @else
-                            <i class="fa-solid fa-times text-danger"></i> Email ID Not Available
+                         @if($operation == 'closeSeat')
+                        <span class="extended">Closed</span>
+                        @elseif($operation == 'deleteSeat')
+                        <span class="extended">Deleted</span>
+                         @else
+                        <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif
-                    </span>
+                    </h4>
+                    <span>UID: <a href="{{route('learners.show',$learner_id)}}">{{$user->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $user->mobile }}">+91-{{ $user->mobile }}</a></span>
+                   <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+   
                 </div>
             </div>
 
