@@ -115,23 +115,20 @@ $current_route = Route::currentRouteName();
 @foreach($learnerHistory as $key => $value)
 
 @php
+$learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
 $transaction = learnerTransaction($value->id, $value->learner_detail_id);
-
-if ($transaction && isset($transaction->pending_amount)) {
-$due_date = DB::table('learner_pending_transaction')
-->where('learner_id', $value->id)
-->where('status', 0)
-->where('pending_amount', $transaction->pending_amount)
-->select('due_date')
-->first();
-$due_date = $due_date?->due_date ? date('j M Y', strtotime($due_date->due_date)) : null;
+if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+    
+$due_date = $transaction->due_date;
 } else {
+
 $due_date = null;
 }
 
-
-@endphp
+$learner_id=$value->id;
+$operation = optional(getLearnerOperation($learner_detail_id))->operation;
+ @endphp
 
 
 <div class="row">
@@ -146,12 +143,12 @@ $due_date = null;
                     {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
                 </span>
 
-                @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
+                 @if($operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
-                @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
-                <span class="extended"> Deleted Seat</span>
+                @elseif($operation == 'deleteSeat')
+                <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @else
-                {!! getUserStatusDetails($value->plan_end_date) !!}
+                {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                 @endif
             </div>
             <div class="seat-actions">
@@ -174,11 +171,11 @@ $due_date = null;
                 <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
                 <div class="information">
                     <h4>{{$value->name}}
-                        @if(optional(getLearnerOperation($value->learner_detail_id))->operation == 'closeSeat')
-                        <span class="extended"> Closed Seat</span>
-                        @elseif(optional(getLearnerOperation($value->learner_detail_id))->operation == 'deleteSeat')
-                        <span class="extended"> Deleted Seat</span>
-                        @else
+                        @if($operation == 'closeSeat')
+                        <span class="extended">Closed</span>
+                        @elseif($operation == 'deleteSeat')
+                        <span class="extended">Deleted</span>
+                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif
                     </h4>
@@ -213,43 +210,6 @@ $due_date = null;
                             </p>
                         </div>
 
-                        
-                        {{-- <div class="d-flex g-1">
-                            @if(!empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount) && learnerTransaction($value->id,$value->learner_detail_id)->pending_amount==0)
-                            <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
-
-                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
-                                <input type="hidden" name="type" value="learner">
-                                <button type="submit">
-                                    <i class="fa fa-download receipt"></i>
-                                </button>
-                            </form>
-
-                            @elseif(empty(learnerTransaction($value->id,$value->learner_detail_id)->pending_amount))
-                            <span></span>
-                            @elseif( pending_amt($value->learner_detail_id))
-                            <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
-
-
-
-                                @if(is_object($due_date) && !empty($due_date->due_date) && overdue($value->id, learnerTransaction($value->id, $value->learner_detail_id)->pending_amount))
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
-                                @else
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($value->id, $value->learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
-
-                                </span>
-
-                                @endif
-                            </a>
-
-                            @elseif(paylater($value->learner_detail_id))
-                            <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Pay Later</span>
-
-                            @endif
-                        </div> --}}
                     </li>
                     <li>
                         <span>Locker</span>

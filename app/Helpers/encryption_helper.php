@@ -260,20 +260,72 @@ if (!function_exists('getExtendDays')) {
 }
 
 
+
+
+if (!function_exists('getSeatType')) {
+    function getSeatType()
+    {
+        $branchId = getCurrentBranch();
+        if ($branchId) {
+            $branch = Branch::where('id', $branchId)->select('seat_type')->first();
+            $seat_type = $branch->seat_type;
+        } else {
+            $seat_type = null;
+        }
+
+        return $seat_type;
+    }
+}
+if (!function_exists('countWithoutSeatNo')) {
+    function countWithoutSeatNo()
+    {
+        $branchId = getCurrentBranch();
+        if ($branchId) {
+            $count = Learner::where('branch_id', $branchId)->whereNull('seat_no')->count();
+        }
+
+        return $count ?? 0;
+    }
+}
+//in top
+if (!function_exists('getUserStatusWithSpan')) {
+    function getUserStatusWithSpan($plan_end_date,$learner_id)
+    {
+        $extendDay = getExtendDays();
+        $today = Carbon::today();
+        $endDate = Carbon::parse($plan_end_date);
+
+        $diffInDays = $today->diffInDays($endDate, false);
+        $inextendDate = $endDate->copy()->addDays($extendDay);
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+         $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
+            ->exists();
+        $hasPastPlan = LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
+            ->exists();
+
+        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+
+        if ($diffInDays > 0) {
+            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
+        }elseif($is_renew_update){
+             return '<span class="text-success"> 1 Plan in Queue</span>';
+        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+            return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
+        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
+            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
+        } elseif ($diffInDays == 0) {
+            return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
+        } else {
+            return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
+        }
+    }
+}
+//with name
 if (!function_exists('getPlanStatusDetails')) {
-    // $today = Carbon::today();
-    // $endDate = Carbon::parse($user->plan_end_date);
-    // $diffInDays = $today->diffInDays($endDate, false);
-    // $inextendDate = $endDate->copy()->addDays($extendDay);
-    // $diffExtendDay= $today->diffInDays($inextendDate, false);
-    // $class='';
-    // if($diffInDays < 0 && $diffExtendDay>0){
-    //     $class='extedned';
-    // }
-    // if($diffInDays <=5 && $diffInDays>=0){
-    //     $class='expired';
-    // }
-    // for learner Plan detail
+   
     function getPlanStatusDetails($plan_end_date)
     {
         $extendDay = getExtendDays(); // assume integer
@@ -313,32 +365,6 @@ if (!function_exists('getPlanStatusDetails')) {
         ];
     }
 }
-
-if (!function_exists('getSeatType')) {
-    function getSeatType()
-    {
-        $branchId = getCurrentBranch();
-        if ($branchId) {
-            $branch = Branch::where('id', $branchId)->select('seat_type')->first();
-            $seat_type = $branch->seat_type;
-        } else {
-            $seat_type = null;
-        }
-
-        return $seat_type;
-    }
-}
-if (!function_exists('countWithoutSeatNo')) {
-    function countWithoutSeatNo()
-    {
-        $branchId = getCurrentBranch();
-        if ($branchId) {
-            $count = Learner::where('branch_id', $branchId)->whereNull('seat_no')->count();
-        }
-
-        return $count ?? 0;
-    }
-}
 if (!function_exists('getUserStatusDetails')) {
     function getUserStatusDetails($plan_end_date)
     {
@@ -351,17 +377,17 @@ if (!function_exists('getUserStatusDetails')) {
         $diffExtendDay = $today->diffInDays($inextendDate, false); // negative if beyond extension
 
         if ($diffInDays > 0) {
-            return '<span class="actives">🟢 Plan is Active ('. $diffInDays .' Days Left)</span>';
+            return '<span class="actives">Plan is Active ('. $diffInDays .' Days Left)</span>';
             
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '<span class="extended"> Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
+            return '<span class="extended">Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return '<span class="extended"> 🔴 Expired today</span>';
+            return '<span class="extended">Expired today</span>';
             
         } elseif ($diffInDays == 0) {
-             return '<span class="extended"> 🔴 Expired today</span>';
+             return '<span class="extended">Expired today</span>';
         } else {
-             return '<span class="extended"> 🔴 Expired ' . abs($diffInDays) . ' days ago</span>';
+             return '<span class="extended">Expired ' . abs($diffInDays) . ' days ago</span>';
            
         }
     }
@@ -406,41 +432,7 @@ if (!function_exists('countBranch')) {
     }
 }
 
-if (!function_exists('getUserStatusWithSpan')) {
-    function getUserStatusWithSpan($plan_end_date,$learner_id)
-    {
-        $extendDay = getExtendDays();
-        $today = Carbon::today();
-        $endDate = Carbon::parse($plan_end_date);
 
-        $diffInDays = $today->diffInDays($endDate, false);
-        $inextendDate = $endDate->copy()->addDays($extendDay);
-        $diffExtendDay = $today->diffInDays($inextendDate, false);
-
-         $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
-            ->exists();
-        $hasPastPlan = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
-            ->exists();
-
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
-
-        if ($diffInDays > 0) {
-            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
-        }elseif($is_renew_update){
-             return '<span class="text-success"> 1 Plan in Queue</span>';
-        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
-        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
-        } elseif ($diffInDays == 0) {
-            return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
-        } else {
-            return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
-        }
-    }
-}
 if (!function_exists('getUnavailableSeatCount')) {
     function getUnavailableSeatCount()
     {
