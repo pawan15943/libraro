@@ -231,6 +231,8 @@ a.w-auto.px-2:hover .fa {
 
 .seatno {
     font-weight: 600;
+
+
 }
 
 .seat-no>span {
@@ -241,6 +243,8 @@ a.w-auto.px-2:hover .fa {
 .seat-no {
     width: calc(30% - .5rem);
     padding: 1rem;
+    display: flex;
+    gap: .3rem;
 }
 
 .seat-actions {

@@ -136,24 +136,25 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
         <div class="seat-info bg-white">    
             <div class="seat-no">
               
-                 <span>
+                <span style="display: inline-block !important;">
                     Seat No.: {{ $value->seat_no ?: 'GEN' }} &nbsp;
                 </span>
-                <span>
-                    {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
-                </span>
+                
 
-                 @if($operation == 'closeSeat')
-                <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                @if($operation == 'closeSeat')
+                <span class="extended" style="display: inline-block !important;"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @elseif($operation == 'deleteSeat')
-                <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                <span class="extended" style="display: inline-block !important;"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                 @endif
+
+                <span style="display: inline-block !important;">
+                    Refund : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                </span>
             </div>
             <div class="seat-actions">
                 <ul>
-
                     @can('has-permission', 'Reactive Seat')
                     <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2"></i> Reactivate Seat</a></li>
                     @endcan
@@ -176,7 +177,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                         @elseif($operation == 'deleteSeat')
                         <span class="extended">Deleted</span>
                          @else
-                        <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
+                        <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extended' }} ps-1">{{$planStatus['status']}}</span>
                         @endif
                     </h4>
                     <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
