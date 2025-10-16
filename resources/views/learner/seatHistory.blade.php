@@ -139,7 +139,7 @@ $learner_id=$learner->id;
                         @endif
                     </h4>
                     <span>UID: <a href="{{route('learners.show',$user->id)}}">{{$user->learner_no ?? ''}}</a> | M: <a href="tel:+91-{{ $user->mobile }}">+91-{{ $user->mobile }}</a></span>
-                   <span class="d-block">E: <a href="mailto:{{$user->email}}"> {!! $user->email ? $user->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                   <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
    
                 </div>
             </div>
