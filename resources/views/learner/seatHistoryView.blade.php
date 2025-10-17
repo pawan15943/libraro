@@ -65,7 +65,7 @@ There is currently no history available for this seat for any learners.</p>
                                 @elseif($operation == 'deleteSeat')
                                 <span class="extended">Deleted</span>
                                 @else
-                                <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
+                                <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extended' }} ps-1">{{$planStatus['status']}}</span>
                                 @endif
                                 
 

@@ -22,16 +22,16 @@
 
 .seat-info.bg-white .extended,
 td span.extended {
-    color: red !important;
-    font-size: .875em !important;
-    font-weight: 500;
+    color: #dc3545 !important;
+    font-size: .8em !important;
+    font-weight: 600;
 }
 
 .seat-info.bg-white .actives,
 td span.actives {
     color: #70b900 !important;
-    font-size: .875em !important;
-    font-weight: 500;
+    font-size: .8em !important;
+    font-weight: 600;
 }
 
 .information a {
@@ -1114,4 +1114,11 @@ ul.actionalbles li a:hover {
         border-radius: 1.5rem;
         font-weight: 400;
     }
+}
+
+ul.d-flex.inner i {
+    font-size: 1.3rem;
+    color: #42a319;
+    margin-right: 1rem;
+    justify-content: flex-end;
 }
