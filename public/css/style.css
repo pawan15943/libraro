@@ -1004,6 +1004,10 @@ button.expired-status {
     border-radius: 1rem;
 }
 
+.expired{
+    color:#d20000 !important ;
+}
+
 span.uppercase,
 span.truncate {
     font-weight: 700;

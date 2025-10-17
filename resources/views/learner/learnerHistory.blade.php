@@ -150,7 +150,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                 @endif
                  | 
                 <span style="display: inline-block !important; ">
-                    Pending Refund Amt.: {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                    Pending Refund : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
                 </span>
             </div>
             <div class="seat-actions">
@@ -207,7 +207,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                         <span>Payment Status</span>
                         <div class="d-flex g-1">
                             <p class="text-danger">
-                                Refunded Amt.: {{ round(refund($value->id)) }}
+                                Refunded : {{ round(refund($value->id)) }}
                             </p>
                         </div>
 
