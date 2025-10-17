@@ -201,6 +201,7 @@
                             <span class="extended">Closed</span>
                             @elseif($operation == 'deleteSeat')
                             <span class="extended">Deleted</span>
+                           
                             @else
                             <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }} ps-1">{{$planStatus['status']}}</span>
                             @endif
