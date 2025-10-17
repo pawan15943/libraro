@@ -71,7 +71,8 @@
                            <img src="{{ $learner?->profile_picture  ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
 
                             <div class="information">
-                                <h4>{{ $learner->name ?? '' }} <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extedned' }}">{{ $planStatus['status'] ?? '' }}</span></h4>
+                                <h4>{{ $learner->name ?? '' }} <span class="
+                                {{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }}">{{ $planStatus['status'] ?? '' }}</span></h4>
                                 <span>UID: <a href="{{ route('learners.show', $user->learner_id) }}">{{ $learner->learner_no ?? '' }}</a> | M: <a href="tel:+91-{{ $learner->mobile ?? '' }}">+91-{{ $learner->mobile ?? '' }}</a></span>
                                  <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
            
