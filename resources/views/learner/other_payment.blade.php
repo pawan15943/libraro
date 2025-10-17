@@ -55,7 +55,7 @@ $class=$planDetails['class'];
                             <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror"
                                     data-token="{{ $tokenMoney }}" data-refund="{{$customer->pending_refund}}">
                                 <option value="">Select Payment</option>
-                                @if(!$customer->token_money)
+                                @if(!$customer->token_money && $tokenMoney)
                                 <option value="token_money">Token Money</option>
                                 @endif
                                 @if($customer->pending_refund)

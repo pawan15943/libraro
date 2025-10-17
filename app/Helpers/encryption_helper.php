@@ -353,7 +353,7 @@ if (!function_exists('getPlanStatusDetails')) {
             $class = 'aboutToExpire';
         } elseif ($diffExtendDay < 0) {
             $status = 'Expired';
-            $class = 'extedned';
+            $class = 'expired';
         }
 
         return [
