@@ -44,6 +44,16 @@
                 $planStatus = getPlanStatusDetails($user->plan_end_date);
                 $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
                 $learner_id=$learner->id;
+                $learner_detail_id=$user->learner_detail_id;
+                $transaction = learnerTransaction($learner_id, $learner_detail_id);      
+
+                if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+            
+                $due_date = $transaction->due_date;
+                } else {
+                
+                $due_date = null;
+                }
             @endphp
 
             <div class="row">
@@ -86,7 +96,47 @@
                                 <li><span>Join On</span><p>{{ $user->join_date ?? '' }}</p></li>
                                 <li><span>Start On</span><p>{{ $user->plan_start_date ?? '' }}</p></li>
                                 <li><span>Ends On</span><p>{{ $user->plan_end_date ?? '' }}</p></li>
-                                <li><span>Payment</span><p>{{ $user->is_paid == 1 ? 'Paid' : 'Unpaid' }}</p></li>
+                                <li><span class=" d-block">Payment</span>
+
+                                
+                                @if(paylater($learner_detail_id) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount!=0)
+                                <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                                    <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                        PayLater {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                    </span>
+                                </a>
+                                @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
+                                <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
+
+                                <form action="{{ route('fee.generateReceipt') }}" method="POST" class="d-inline" enctype="multipart/form-data">
+                                    @csrf
+                                    <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                                    <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">
+                                    <input type="hidden" name="type" value="learner">
+                                    <button type="submit">
+                                        <i class="fa fa-download receipt"></i>
+                                    </button>
+                                </form>
+
+                                @elseif(empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount))
+                                <span></span>
+
+                                @elseif( pending_amt($learner_detail_id))
+                                <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                                    @if(is_object($due_date) && !empty($due_date->due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
+                                    <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
+                                    @else
+                                    <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                                        Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                                    </span>
+
+                                    @endif
+                                </a>
+                                @endif
+                                </li>
+                        
                             </ul>
                         </div>
                     </div>
@@ -104,6 +154,16 @@ $learner = myLearner($user->learner_id);
 $planStatus = getPlanStatusDetails($user->plan_end_date);
  $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
 $learner_id=$learner->id;
+ $learner_detail_id=$user->learner_detail_id;
+$transaction = learnerTransaction($learner_id, $learner_detail_id);      
+
+if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+
+$due_date = $transaction->due_date;
+} else {
+
+$due_date = null;
+}
 
 @endphp
 
@@ -162,12 +222,43 @@ $learner_id=$learner->id;
                     <li><span>Ends On</span>
                         <p>{{ $user->plan_end_date ?? '' }}</p>
                     </li>
-                    <li><span>Payment</span>
-                        @if(isset($user->is_paid) && $user->is_paid == 1)
-                        <p>Paid</p>
+                   <li><span class=" d-block">Payment</span>    
+                    @if(paylater($learner_detail_id) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount!=0)
+                    <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                            PayLater {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                        </span>
+                    </a>
+                    @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
+                    <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
+
+                    <form action="{{ route('fee.generateReceipt') }}" method="POST" class="d-inline" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                        <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">
+                        <input type="hidden" name="type" value="learner">
+                        <button type="submit">
+                            <i class="fa fa-download receipt"></i>
+                        </button>
+                    </form>
+
+                    @elseif(empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount))
+                    <span></span>
+
+                    @elseif( pending_amt($learner_detail_id))
+                    <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                        @if(is_object($due_date) && !empty($due_date->due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
+                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
                         @else
-                        <p>Unpaid</p>
+                        <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
+                            Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+
+                        </span>
+
                         @endif
+                    </a>
+                    @endif
                     </li>
                 </ul>
             </div>

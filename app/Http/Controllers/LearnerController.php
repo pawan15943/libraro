@@ -2016,7 +2016,7 @@ class LearnerController extends Controller
             'learner_detail.is_paid',
             'learner_detail.payment_mode',
             'learner_detail.id as learner_detail_id'
-        );
+        )->orderBy('learner_detail_status','DESC');
 
 
         $filters = array_filter($filters ?? []);
@@ -2091,7 +2091,7 @@ class LearnerController extends Controller
             $paginate = false;
         }
 
-        $learners = $this->fetchLearnerData(null, false, 1, 1, $filters,$perPage = 5,$paginate);
+        $learners = $this->fetchLearnerData(null, false, 1, 1, $filters,$perPage = 10,$paginate);
 
         return view('learner.learner-search', compact('learners'));
     }
@@ -2440,7 +2440,7 @@ class LearnerController extends Controller
     public function generalSeathistory()
     {
         // Get the learners with their details, plans, and seat information
-        $learners = Learner::where('branch_id', getCurrentBranch())->where('learners.status', 0)
+        $learners = Learner::withTrashed()->where('branch_id', getCurrentBranch())->where('learners.status', 0)
         ->whereNull('learners.seat_no')
             ->with([
                 'learnerDetails' => function ($query) {
