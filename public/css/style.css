@@ -5840,6 +5840,10 @@ span.invalid-feedback strong {
     color: #fff;
 }
 
+.right-sidebar ul li.active i {
+    transform: scale(1) !important;
+}
+
 .right-sidebar .fa-2x {
     font-size: 1.2rem !important;
 }
@@ -6114,7 +6118,7 @@ ul.actions-icons li a {
     text-transform: uppercase;
     font-weight: 500;
     font-size: .7rem;
-    font-family: 'Outfit','sans-sarif';
+    font-family: 'Outfit', 'sans-sarif';
 }
 
 #onlineRequest table tr:last-child {
@@ -6133,9 +6137,11 @@ div#requests {
     height: 266px;
     overflow: auto;
 }
-.no-data{
+
+.no-data {
     width: 150px;
 }
+
 .no-data-found {
     display: flex;
     flex-direction: column;
@@ -6145,11 +6151,11 @@ div#requests {
     height: 78vh;
 }
 
-.profile-learner{
+.profile-learner {
     width: 45px;
     border-radius: 45px;
 }
 
-ul.list-unstyled.ps-0.mt-4 li > a.active {
+ul.list-unstyled.ps-0.mt-4 li>a.active {
     color: var(--c8);
 }

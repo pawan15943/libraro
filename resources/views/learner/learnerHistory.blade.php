@@ -148,9 +148,9 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                 @endif
-
-                <span style="display: inline-block !important;">
-                    Pending Refund Amt. : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                 | 
+                <span style="display: inline-block !important; ">
+                    Pending Refund Amt.: {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
                 </span>
             </div>
             <div class="seat-actions">
@@ -177,7 +177,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                         @elseif($operation == 'deleteSeat')
                         <span class="extended">Deleted</span>
                          @else
-                        <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extedned' }} ps-1">{{$planStatus['status']}}</span>
+                        <span class=" {{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }} ps-1">{{$planStatus['status']}}</span>
                         @endif
                     </h4>
                     <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
@@ -203,11 +203,11 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                         <span>Plan End Date</span>
                         <p>{{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</p>
                     </li>
-                    <li>
+                    <li style="width: 20%;">
                         <span>Payment Status</span>
                         <div class="d-flex g-1">
                             <p class="text-danger">
-                                Refund : {{ round(refund($value->id)) }}
+                                Refunded Amt.: {{ round(refund($value->id)) }}
                             </p>
                         </div>
 
