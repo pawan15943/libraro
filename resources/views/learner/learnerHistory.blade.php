@@ -177,7 +177,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                         @elseif($operation == 'deleteSeat')
                         <span class="extended">Deleted</span>
                          @else
-                        <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extended' }} ps-1">{{$planStatus['status']}}</span>
+                        <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : 'extedned' }} ps-1">{{$planStatus['status']}}</span>
                         @endif
                     </h4>
                     <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
