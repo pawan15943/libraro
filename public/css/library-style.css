@@ -241,14 +241,14 @@ a.w-auto.px-2:hover .fa {
 }
 
 .seat-no {
-    width: calc(30% - .5rem);
+    width: calc(40% - .5rem);
     padding: 1rem;
     display: flex;
     gap: .3rem;
 }
 
 .seat-actions {
-    width: calc(70% - .5rem) !important;
+    width: calc(60% - .5rem) !important;
     padding: 1rem;
 }
 
