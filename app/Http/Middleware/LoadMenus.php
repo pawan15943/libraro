@@ -239,13 +239,33 @@ class LoadMenus
                         ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
             $availableSeats = collect();
+            $allSeats = collect(generateSeatNumbers());
 
             // Step 2: Loop through all seat numbers and apply logic
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
                 $usedHours = $usedSeats[$seatNo] ?? 0;
 
                 if ($usedHours < $totalHour) {
+                  
                     $availableSeats->push($seatNo);
+                    
+                }
+            }
+            $newAvailableSeats = collect();
+           
+
+            // Step 2: Loop through all seat numbers and apply logic
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
+
+                if ($usedHours < $totalHour) {
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo);
+                    if ($seatInfo) {
+                        $newAvailableSeats->push($seatInfo);
+                    }else{
+                        $newAvailableSeats->push($seatNo);
+                    }
+                    
                 }
             }
             if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
@@ -293,7 +313,7 @@ class LoadMenus
             View::share('planTypeCounts', $planTypeCounts);
             View::share('genral_seat', $genral_seat);
             View::share('learnerupdates', $learnerupdates);
-            // View::share('secondHalfCount', $secondHalfCount);
+            View::share('newAvailableSeats', $newAvailableSeats);
             View::share('availableseats', $availableSeats);
             View::share('totalSeats', $totalSeats);
             View::share('exams', $exams);

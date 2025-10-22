@@ -32,10 +32,12 @@
                             {{-- Show Only Available Slots or Seat No. --}}
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
+                               
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
-                                    @foreach($availableseats as $key => $value)
-                                    <option value="{{$value}}">{{$value}}</option>
+                                    @foreach($newAvailableSeats as $key => $value)
+                                    {{-- <option value="{{$value}}">{{$value}}</option> --}}
+                                    <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
                             </div>

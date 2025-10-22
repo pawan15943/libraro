@@ -66,9 +66,9 @@
                 <div class="seat-no">
 
                    @if($value->seat_no )
-                    <span> Seat No. : {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
                     @else
-                    <span> Seat No. : {{$value->seat_no ? $value->seat_no : 'GEN'}} </span>
+                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
                     @endif
                     @if($operation == 'closeSeat')
                     <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>

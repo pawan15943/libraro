@@ -87,28 +87,28 @@ $(document).ready(function () {
   });
 
   // Listen for any changes in the form inputs
-  $('form input, form select, form textarea').on('input change', function () {
-    var form = $(this).closest('form');
-    var submitButton = form.find('.button');
-    var buttonText = 'Wait..'; // Set your button text
-    var isFormValid = true;
+  // $('form input, form select, form textarea').on('input change', function () {
+  //   var form = $(this).closest('form');
+  //   var submitButton = form.find('.button');
+  //   var buttonText = 'Wait..'; // Set your button text
+  //   var isFormValid = true;
 
-    // Revalidate the form fields in real-time
-    form.find('input[required], select[required], textarea[required]').each(function () {
-      if ($(this).val().trim() === '') {
-        isFormValid = false;
-      }
-    });
+  //   // Revalidate the form fields in real-time
+  //   form.find('input[required], select[required], textarea[required]').each(function () {
+  //     if ($(this).val().trim() === '') {
+  //       isFormValid = false;
+  //     }
+  //   });
 
-    // Remove the loader and reset button if form is filled correctly
-    if (isFormValid) {
-      submitButton.prop('disabled', false); // Enable the button when the form is valid
-      submitButton.html(buttonText); // Restore button text without loader
-    } else {
-      submitButton.prop('disabled', true); // Keep button disabled if the form is invalid
-      submitButton.html(buttonText); // Ensure no loader is visible if invalid
-    }
-  });
+  //   // Remove the loader and reset button if form is filled correctly
+  //   if (isFormValid) {
+  //     submitButton.prop('disabled', false); // Enable the button when the form is valid
+  //     submitButton.html(buttonText); // Restore button text without loader
+  //   } else {
+  //     submitButton.prop('disabled', true); // Keep button disabled if the form is invalid
+  //     submitButton.html(buttonText); // Ensure no loader is visible if invalid
+  //   }
+  // });
 });
 
 

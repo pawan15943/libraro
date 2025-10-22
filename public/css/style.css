@@ -1008,6 +1008,12 @@ button.expired-status {
     color:#d20000 !important ;
 }
 
+h4.uppercase.py-3 {
+    font-size: 1rem;
+    color: #0591a3 !important;
+    text-transform: uppercase !important;
+}
+
 span.uppercase,
 span.truncate {
     font-weight: 700;

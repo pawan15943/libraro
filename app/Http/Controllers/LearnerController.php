@@ -17,6 +17,7 @@ use App\Models\Seat;
 use App\Models\Suggestion;
 use App\Models\LearnerFeedback;
 use App\Models\Complaint;
+use App\Models\Floor;
 use App\Models\LearnerTransactionActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -245,16 +246,18 @@ class LearnerController extends Controller
         $this->dataUpdate();
         $users = $this->getLearnersByLibrary()->where('learners.status', 1)->where('learner_detail.library_id', getLibraryId());
 
-        $count_fullday = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.library_id', getLibraryId())->where('plan_types.day_type_id', 1)->where('learners.status', 1)->count();
-        $count_firstH = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.library_id', getLibraryId())->where('plan_types.day_type_id', 2)->where('learners.status', 1)->count();
-        $count_secondH = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.library_id', getLibraryId())->where('plan_types.day_type_id', 3)->where('learners.status', 1)->count();
-        $count_hourly = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.library_id', getLibraryId())->whereIn('plan_types.day_type_id', [4, 5, 6, 7])->where('learners.status', 1)->count();
+        $count_fullday = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('plan_types.day_type_id', 1)->where('learners.status', 1)->count();
+        $count_firstH = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('plan_types.day_type_id', 2)->where('learners.status', 1)->count();
+        $count_secondH = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('plan_types.day_type_id', 3)->where('learners.status', 1)->count();
+        $count_hourly = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->whereIn('plan_types.day_type_id', [4, 5, 6, 7])->where('learners.status', 1)->count();
 
         $not_available = getUnavailableSeatCount();
         $available = getAvailableSeatCount();
         $availableseats = $this->learnerService->getAvailableSeats();
+        $floors = Floor::where('branch_id', getCurrentBranch())->orderBy('floor_no')->get();
 
-        return view('learner.seat', compact('availableseats', 'users',  'count_fullday', 'count_firstH', 'count_secondH', 'available', 'not_available', 'count_hourly'));
+
+        return view('learner.seat', compact('availableseats', 'users',  'count_fullday', 'count_firstH', 'count_secondH', 'available', 'not_available', 'count_hourly','floors'));
     }
     //learner store seat and without seat
     public function learnerStore(Request $request)
@@ -2282,6 +2285,7 @@ class LearnerController extends Controller
             $customer['pending'] = '';
             $customer['overdue'] = '';
         }
+        $customer['floor_seat_no']=getSeatDisplayByMainNo($customer->seat_no);
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 

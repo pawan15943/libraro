@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LearnerController;
 use App\Models\Branch;
+use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
@@ -767,6 +768,104 @@ if (!function_exists('refund')) {
                     ->sum('amount');
         return $data ?? null;
     }
+}
+
+
+
+
+if (!function_exists('generateSeatNumbers')) {
+  
+    function generateSeatNumbers()
+    {
+        $result = [];
+        $mainSeatNo = 1;
+
+        // Get total seats dynamically
+        $first_record = Hour::where('branch_id', getCurrentBranch())->first(); 
+        $totalSeats = $first_record ? $first_record->seats : 0;
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
+
+        // Get floors ordered by floor number
+        $floors = Floor::where('branch_id', getCurrentBranch())->orderBy('floor_no')->get();
+
+        // Loop through all floors
+        if (!empty($floors)) {
+            foreach ($floors as $floor) {
+                $startSeat = $floor->from_seat ?? 1;
+                $endSeat   = $floor->to_seat ?? 0;
+                $floorSeatNo = 1;
+
+                // Extract floor number from name, e.g. "Floor 1" → "F1"
+               
+
+                // Generate seat mapping
+                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+                    $result[] = [
+                        'main' => $mainSeatNo,
+                        'floor' => $floorSeatNo,
+                        'floor_name' => $floor->name,
+                        'display' => 'Seat No - '. $floorSeatNo . ' (' .$floor->name.')'
+                    ];
+
+                    $mainSeatNo++;
+                    $floorSeatNo++;
+                }
+            }
+        }
+
+        // Add remaining seats (unassigned to any floor)
+        while ($mainSeatNo <= $totalSeats) {
+            $result[] = [
+                'main' => $mainSeatNo,
+                'floor' => null,
+                'floor_name' => null,
+                'display' => 'Seat No - ' . $mainSeatNo // fallback label like F--19
+            ];
+            $mainSeatNo++;
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('getSeatDisplayByMainNo')) {
+    function getSeatDisplayByMainNo($mainSeatNo)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect(generateSeatNumbers());
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+            // Try to extract floor number (like F1, F2)
+            // preg_match('/(\d+)/', $seat['floor_name'], $matches);
+            // $floorShort = isset($matches[1]) ? 'F' . $matches[1] : $seat['floor_name'];
+
+            return  $seat['floor']   . ' (' . $seat['floor_name'] .')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
+    }
+}
+
+
+
+if (!function_exists('getFloor')) {
+        function getFloor(){
+             $floors = Floor::where('branch_id', getCurrentBranch())->orderBy('floor_no')->get();
+             return $floors ?? null;
+        }
 }
 
 

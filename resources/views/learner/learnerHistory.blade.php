@@ -1,6 +1,17 @@
 @extends('layouts.library')
 @section('content')
+<style>
+   
 
+    .seat-no {
+        width: calc(45% - .5rem) !important;
+        
+    }
+    .seat-actions {
+        width: calc(55% - .5rem) !important;
+        
+    }
+</style>
 <!-- Content Header (Page header) -->
 @php
 
@@ -137,7 +148,8 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
             <div class="seat-no">
               
                 <span style="display: inline-block !important;">
-                    Seat No.: {{ $value->seat_no ?: 'GEN' }} &nbsp;
+                    
+                    Seat No.: {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no): 'GEN' }} &nbsp;
                 </span>
                 
 

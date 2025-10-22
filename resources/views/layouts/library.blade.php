@@ -75,6 +75,8 @@ $current_route = Route::currentRouteName();
                         {{ session('success') }}
                     </div>
                     @endif
+                    <div id="success-message-show" class="alert alert-success" style="display:none;"></div>
+                    <div id="error-message-show" class="alert alert-danger" style="display:none;"></div>
                     @yield('content')
                     <script>
                         const sessionLifetime = @json(config('session.lifetime') * 60); // convert to seconds

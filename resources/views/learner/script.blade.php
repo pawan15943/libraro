@@ -482,18 +482,34 @@
         // In Booking form manage Genral or Normal Seat 
         $('.noseat_popup, .first_popup').on('click', function (e) {
             var currentBranch = @json(getCurrentBranch());
+          
+
+            
+
             if (!currentBranch || currentBranch == 0) {
                 alert("Please select a branch first.");
                 return false; 
             }
             
             var seatId = $(this).data('id');
-            var seatNo=$(this).data('seat_no');
+            var seatNo = $(this).data('seat_no');
+            var seatDisplayMap = @json(
+                collect(generateSeatNumbers())->mapWithKeys(function($seat) {
+                    // If floor info exists, show "floor-seat (floor name)"
+                    if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
+                        return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
+                    } else {
+                        // Fallback: show main seat number
+                        return [$seat['main'] => $seat['main']];
+                    }
+                })
+            );
                
             if(seatNo || seatId){
+                var seatDisplay = seatDisplayMap[seatNo] ?? seatNo;
                 $('#seat_no').val(seatNo);
                 $('#seat_id').val(seatId);
-                $('#seat_no_head').text('Book Seat No ' + seatNo);
+                $('#seat_no_head').text('Book Seat No.: ' + seatDisplay);
                 $('#general_seat').val('no').trigger('change');
                 // Hide the seat select fields (visually only)
                 $('#seat_id').closest('.col-lg-6').hide();
@@ -587,7 +603,7 @@
                         if(html.seat_no){
                            $('#seat_details_info').html(
                                 'Booking Details of Seat No. : ' +
-                                html.seat_no + 
+                                html.floor_seat_no + 
                                 ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
                                 '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
                             );
@@ -650,10 +666,22 @@
             $('#update_plan_end_date').val(endOnDate);
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
+            var seatDisplayMap = @json(
+                collect(generateSeatNumbers())->mapWithKeys(function($seat) {
+                    // If floor info exists, show "floor-seat (floor name)"
+                    if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
+                        return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
+                    } else {
+                        // Fallback: show main seat number
+                        return [$seat['main'] => $seat['main']];
+                    }
+                })
+            );
             if(seat_no){
-                 $('#seat_number_upgrades').text('Renew Seat No :'  + seat_no);
+                const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
+                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
             }else{
-                 $('#seat_number_upgrades').text('Renew Seat No : GEN');
+                 $('#seat_number_upgrades').text('Renew Seat No.: GEN');
             }
            
             $.ajax({
@@ -715,10 +743,22 @@
             $('#update_seat_no').val(seat_no);
             $('#update_user_id').val(user_id);
             $('#update_plan_end_date').val(end_date);
+             var seatDisplayMap = @json(
+                collect(generateSeatNumbers())->mapWithKeys(function($seat) {
+                    // If floor info exists, show "floor-seat (floor name)"
+                    if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
+                        return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
+                    } else {
+                        // Fallback: show main seat number
+                        return [$seat['main'] => $seat['main']];
+                    }
+                })
+            );
             if(seat_no){
-                 $('#seat_number_upgrades').text('Renew Seat No :'  + seat_no);
+                  const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
+                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
             }else{
-                 $('#seat_number_upgrades').text('Renew Seat No : GEN');
+                 $('#seat_number_upgrades').text('Renew Seat No.: GEN');
             }
            
             fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);

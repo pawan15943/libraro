@@ -18,6 +18,7 @@ use App\Models\Seat;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Branch;
+use App\Models\Floor;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Exception;
@@ -258,7 +259,7 @@ class MasterController extends Controller
     
     public function storemaster(Request $request, $id = null)
     {
-       
+        
         $this->validationfunction($request);
         $modelClass = 'App\\Models\\' . $request->databasemodel;
         $table=$request->databasetable;
@@ -315,8 +316,31 @@ class MasterController extends Controller
                 ]);
             }
         }
-
       
+        if ($request->databasemodel == 'Floor'){
+           
+            $existing_total=Floor::where('branch_id', $request->branch_id)->sum('total_seats');
+            $first_record = Hour::where('branch_id', getCurrentBranch())->first(); 
+            $grand_branch_total = $first_record ? $first_record->seats : 0;
+           $requested_total_seats = 0;
+            $floorCount = count($request->floor_no ?? []);
+            for ($i = 0; $i < $floorCount; $i++) {
+                $fromSeat = (int) $request->from_seat[$i];
+                $toSeat   = (int) $request->to_seat[$i];
+                $requested_total_seats += ($toSeat - $fromSeat + 1);
+            }
+
+             if (($existing_total + $requested_total_seats) > $grand_branch_total) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Adding these floors exceeds the total allowed seats for this branch. Maximum allowed: ' . $grand_branch_total
+                ]);
+            }
+
+
+        }
+
+    
         try {
             if($request->day_type_id!=0 || !isset($request->day_type_id) ){
              
@@ -338,10 +362,37 @@ class MasterController extends Controller
                    $hour= DB::table('hour')->where('branch_id',$request->branch_id)->first();
                   $data['id']=$hour->id;
             }
-           
+             
             unset($data['redirect']);
+              if($request->databasemodel == 'Floor'){
+                $floorCount = count($request->floor_no ?? []);
+                $createdFloors = [];
+
+                for($i = 0; $i < $floorCount; $i++){
+                    $floorData = [
+                        'branch_id' => $request->branch_id,
+                        'floor_no' => $request->floor_no[$i],
+                        'name'     => $request->name[$i] ?? null,
+                        'from_seat'=> $request->from_seat[$i],
+                        'to_seat'  => $request->to_seat[$i],
+                        
+                    ];
+
+                    // If ID exists, update instead of create
+                    if(isset($request->id[$i]) && $request->id[$i]){
+                        $floorInstance = $modelClass::findOrFail($request->id[$i]);
+                        $floorInstance->update($floorData);
+                        $createdFloors[] = $floorInstance;
+                    } else {
+                        $floorInstance = $modelClass::create($floorData);
+                        $createdFloors[] = $floorInstance;
+                    }
+                }
+
+                $modelInstance = $createdFloors; // return for response
+            }
           
-            if($request->databasemodel){
+            if($request->databasemodel && $request->databasemodel!='Floor'){
                 if (is_null($data['id'])) {
                        
                     $modelInstance = $modelClass::create($data);
@@ -442,6 +493,27 @@ class MasterController extends Controller
         // Pass $planType to view, it will be null for add and model instance for edit
         return view('master.plantype', compact('planType'));
     }
+     public function floorView()
+    {
+      
+        $data = Floor::where('branch_id',getCurrentBranch())->get(); 
+
+        return view('master.floor-list', compact('data'));
+    }
+   public function floorCreate($id = null)
+    {
+        $floor = null;
+        if ($id) {
+            $floor = Floor::find($id);  // Load existing record for edit
+            if (!$floor) {
+                return redirect()->route('floor.create')->with('error', 'Floor not found.');
+            }
+        }
+       
+        // Pass $planType to view, it will be null for add and model instance for edit
+        return view('master.floor', compact('floor'));
+    }
+    
 
     public function planView()
     {
@@ -612,29 +684,35 @@ class MasterController extends Controller
         $table = $request->input('table');
         $modelClass = 'App\\Models\\' . $table;
       
-
         if (!class_exists($modelClass)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
         }
-         $data = $modelClass::withTrashed()->find($id);
+        $data = $modelClass::find($id);
+         if (!$data) {
+            return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+        }
 
-        if ($data) {
-            if ($data->trashed()) {
-                $data->restore();
-                $status = 'activated';
+            if ($modelClass === 'App\\Models\\Floor') {
+                $data->delete(); // permanently deletes because no SoftDeletes
+                $status = 'permanently deleted';
             } else {
-                $data->delete();
-                $status = 'deactivated';
+                // For models with soft deletes
+                if (method_exists($modelClass, 'trashed') && $data->trashed()) {
+                    $data->restore();
+                    $status = 'activated';
+                } else {
+                    $data->delete();
+                    $status = 'deactivated';
+                }
             }
-
-            return response()->json([
+                return response()->json([
                 'status' => 'success',
                 'message' => 'Data successfully ' . $status,
                 'data_status' => $status
             ]);
-        } else {
-            return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
-        }
+
+
+        
      }
     
 
@@ -751,6 +829,21 @@ class MasterController extends Controller
                 'sub_category_name' => 'required',
             ]);
         }
+        if ($request->databasemodel == 'Floor') {
+           
+            $request->validate([
+                'floor_no.*'   => 'required|integer|min:1',   // each floor number required & numeric
+                'from_seat.*'  => 'required|integer|min:1',   // each from_seat required & numeric
+                'to_seat.*'    => 'required|integer|min:1|gte:from_seat.*', // to_seat >= from_seat
+                'name.*'       => 'nullable|string|max:255',  // optional floor name
+            ], [
+                'floor_no.*.required' => 'Floor number is required.',
+                'from_seat.*.required' => 'From Seat is required.',
+                'to_seat.*.required' => 'To Seat is required.',
+                'to_seat.*.gte' => 'To Seat must be greater than or equal to From Seat.',
+            ]);
+        }
+
         
     }
 
