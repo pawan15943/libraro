@@ -13,6 +13,11 @@
                     <a href="{{ $upiLink }}">
                         <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($upiLink)) }}">
                     </a>
+                    <div class="mt-2">
+                        <a href="{{ $upiLink }}" target="_blank" class="btn btn-primary btn-sm">
+                            Scan / Click to Pay
+                        </a>
+                    </div>
                 </div>
                 <form class="mt-4" action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
