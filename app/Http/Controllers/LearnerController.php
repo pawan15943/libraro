@@ -2440,18 +2440,20 @@ class LearnerController extends Controller
     public function generalSeathistory()
     {
         // Get the learners with their details, plans, and seat information
-        $learners = Learner::withTrashed()->where('branch_id', getCurrentBranch())->where('learners.status', 0)
-        ->whereNull('learners.seat_no')
-            ->with([
-                'learnerDetails' => function ($query) {
-                    $query->with(['plan', 'planType']);
-                }
-            ])
-            ->whereHas('learnerDetails', function ($query) {
-                $query->whereNull('seat_no')->where('learner_detail.status', 0);
-            })
+        // $learners = Learner::withTrashed()->where('branch_id', getCurrentBranch())->where('learners.status', 0)
+        // ->whereNull('learners.seat_no')
+        //     ->with([
+        //         'learnerDetails' => function ($query) {
+        //             $query->with(['plan', 'planType']);
+        //         }
+        //     ])
+        //     ->whereHas('learnerDetails', function ($query) {
+        //         $query->whereNull('seat_no')->where('learner_detail.status', 0);
+        //     })
             
-            ->get();
+        //     ->get();
+             $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->whereNull('seat_no')->where('learner_detail.status', 0)->with(['plan', 'planType'])
+             ->paginate(10);
             
         return view('learner.genaralSeatHistoryView', compact('learners'));
     }
