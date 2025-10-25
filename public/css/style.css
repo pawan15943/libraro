@@ -19,7 +19,7 @@
 input[type="file"].form-control {
     display: block;
     width: 100%;
-    padding: 0.375rem 0.75rem;
+    padding: 0.275rem 0.75rem;
     font-size: 1rem;
     font-weight: 400;
     line-height: 2.1;
@@ -31,7 +31,9 @@ input[type="file"].form-control {
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     height: 38px;
 }
-
+textarea.form-control {
+    height: auto !important;
+}
 /* Hover effect */
 input[type="file"].form-control:hover {
     border-color: #86b7fe;
@@ -1004,8 +1006,8 @@ button.expired-status {
     border-radius: 1rem;
 }
 
-.expired{
-    color:#d20000 !important ;
+.expired {
+    color: #d20000 !important;
 }
 
 span.uppercase,
@@ -4954,6 +4956,12 @@ h6.text-center.bg-white {
     .adminstrator-login .logo {
         margin: 0 auto !important;
     }
+
+
+    .seat-no {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
 }
 
 .sticky-top {
@@ -6162,4 +6170,37 @@ div#requests {
 
 ul.list-unstyled.ps-0.mt-4 li>a.active {
     color: var(--c8);
+}
+
+ul.actionalbles.userAction {
+    gap: 2.5rem;
+    border: none;
+    justify-content: flex-start;
+    margin-top: .5rem;
+}
+
+ul.actionalbles.userAction li a:hover {
+    color: #fff !important;
+}
+
+.revenue-info p {
+    font-size: .8rem;
+    font-weight: 600;
+    margin: 0;
+    color: #000;
+    max-height: 75px;
+    overflow: auto;
+}
+
+
+span.chip {
+    color: red !important;
+    font-weight: 400;
+    font-size: .6rem !important;
+    background: #ffdfdf;
+    padding: .1rem .3rem;
+    border-radius: 2rem;
+    display: inline-flex;
+    gap: .2rem ! IMPORTANT;
+    flex-wrap: wrap;
 }

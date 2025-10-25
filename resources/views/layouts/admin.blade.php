@@ -32,8 +32,8 @@
         <div class="support-icon" onclick="toggleSupportCard()">
             <i class="fa-solid fa-phone-volume"></i>
         </div>
-        <div class="support-card" id="supportCard">
-            <p style="color: var(--c1);"><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
+        <div class="support-card" id="supportCard" style="display:none;">
+            <p><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
             <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
             <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
         </div>
@@ -233,17 +233,10 @@
 
     </script>
 
-    <script>
-        $(document).ready(function() {
-            function toggleSupportCard() {
-                $('#supportCard').toggle();
-            }
-
-            $('.support-icon').on('click', function() {
-                toggleSupportCard();
-            });
-        });
-
+   <script>
+        function toggleSupportCard() {
+            $('#supportCard').toggle();
+        }
     </script>
 
 </body>

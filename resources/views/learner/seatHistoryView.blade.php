@@ -50,7 +50,11 @@ There is currently no history available for this seat for any learners.</p>
 
                     </div>
                     
-                    <div class="seat-actions"></div>
+                    <div class="seat-actions">
+                        <ul>
+                            <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Details" class="w-auto px-2"><i class="fa-solid fa-eye me-1"></i> View Seat Details</a></li>
+                        </ul>
+                    </div>
                     <div class="seat-informarion">
                         @if(!empty($learner) && !empty($learner->profile_picture))
                             <img src="{{ asset($learner->profile_picture) }}" alt="profile">

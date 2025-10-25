@@ -893,7 +893,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     </li>
 
 
-                                    <!-- <li><a href="mailto:{{ $value->email }}"><i class="fa fa-envelope"></i></a></li> -->
+                                    <li><a href="mailto:{{ $value->email }}"><i class="fa fa-envelope"></i></a></li>
                                 </ul>
                             </div>
                         </li>
@@ -948,7 +948,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                                 data-bs-title="Send Reminder"></i>
                                         </a>
                                     </li>
-                                    <!-- <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li> -->
+                                    <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li>
                                 </ul>
                             </div>
                         </li>

@@ -27,7 +27,6 @@
 </div>
 
 <div class="card card-default">
-
     <form id="library_exam" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{ $exam->id ?? '' }}">
@@ -50,9 +49,6 @@
             </div>
         </div>
     </form>
-
-
-
 </div>
 
 

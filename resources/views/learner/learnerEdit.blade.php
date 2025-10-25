@@ -29,7 +29,7 @@ if($customer->locker_no){
         <div class="info__section">
             <h4 class="inner-heading">Learner Info</h4>
             <div class="row g-4">
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="" class="text-white">Seat Owner Name <span>*</span></label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror char-only" placeholder="Full Name" name="name" id="name" value="{{ old('name', $customer->name) }}">
                     @error('name')
@@ -38,7 +38,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="" class="text-white">DOB <span>*</span></label>
                     <input type="date" class="form-control @error('dob') is-invalid @enderror" placeholder="DOB" name="dob" id="dob" value="{{ old('dob', $customer->dob) }}">
                     @error('dob')
@@ -47,7 +47,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="" class="text-white">Mobile Number <span>*</span></label>
                     <input type="text" class="form-control @error('mobile') is-invalid @enderror digit-only" maxlength="10" minlength="10" placeholder="Mobile Number" name="mobile" id="mobile" value="{{ old('mobile', $customer->mobile) }}">
                     @error('mobile')
@@ -56,7 +56,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="" class="text-white">Email Id <span>*</span></label>
                     <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}">
                     @error('email')
@@ -113,7 +113,7 @@ if($customer->locker_no){
                     @if(!in_array('32', toggleHideField()))
                 <div class="col-lg-12 ">
                     <label for="address">Address</label>
-                    <textarea class="form-control @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
+                    <textarea class="form-control h-auto @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
                     @error('address')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -124,7 +124,7 @@ if($customer->locker_no){
                     @if(!in_array('31', toggleHideField()))
                 <div class="col-lg-12 ">
                     <label for="remark">Remark</label>
-                    <textarea class="form-control @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
+                    <textarea class="form-control h-auto @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
                     @error('remark')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
@@ -148,7 +148,7 @@ if($customer->locker_no){
                 </div>
                 @endif
                 @if(!in_array('5', toggleHideField()))
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="">Id Proof Received (Optional)</label>
                     <select  class="form-control @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
                         <option value="">Select Id Proof</option>
@@ -162,7 +162,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6">
                     <label for="">Upload Scan Copy of Proof (Optional)</label>
                     <input type="file" class="form-control @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
                     @error('id_proof_file')

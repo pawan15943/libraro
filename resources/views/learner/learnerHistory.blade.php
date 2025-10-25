@@ -148,9 +148,8 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                 @endif
-                 | 
                 <span style="display: inline-block !important; ">
-                    Pending Refund : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                     Pending Refund : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
                 </span>
             </div>
             <div class="seat-actions">
