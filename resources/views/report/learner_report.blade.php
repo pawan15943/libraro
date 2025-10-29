@@ -131,7 +131,7 @@ $currentMonth = date('m');
                    
                     <tr>
                           
-                        <td class="d-none export-seat-no">{{ $value->learner->seat_no ?? "GEN" }}</td>
+                        <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN" }}</td>
                         <td class="d-none export-plan-type">{{ $value->planType->name ?? '' }}</td>
                         <td class="d-none export-name">{{ $value->learner->name ?? '' }}</td>
                         <td class="d-none export-dob">{{ $value->learner->dob ?? '' }}</td>
@@ -150,7 +150,7 @@ $currentMonth = date('m');
                         
 
 
-                        <td class="merged-display">{{$value->learner->seat_no ?? "GEN"}}<br>
+                        <td class="merged-display">{{getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN"}}<br>
                             <small>{{$value->planType->name ?? ''}}</small>
                         </td>
                         <td class="merged-display"><span class="uppercase truncate name" data-bs-toggle="tooltip"

@@ -64,8 +64,8 @@
 </script>
 
 <script>
-     $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour')
-            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker,#library_exam,#categoryForm,#token_money', function(event) {
+     $(document.body).off('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#floorForm')
+            .on('submit', '#planForm, #planTypeForm , #operating_hour , #library_seat, #planPriceForm , #extend_hour,#library_expense,#demo-request,#library_locker,#library_exam,#categoryForm,#token_money,#floorForm', function(event) {
             event.preventDefault(); 
             var form = this;
             var formData = new FormData(form);
@@ -82,12 +82,12 @@
                 contentType: false,
                 // dataType: 'json',
                success: function (response) {
-                
+               
                 // Clear old validation errors
                 $(".is-invalid").removeClass("is-invalid");
                 $(".invalid-feedback").remove();
-                $("#error-message").hide().text('');
-                $("#success-message").hide().text('');
+                $("#error-message-show").hide().text('');
+                $("#success-message-show").hide().text('');
 
                 if (response.success && response.redirect) {
                     window.location.href = response.redirect;
@@ -95,13 +95,14 @@
                 }
                 
                 else if (response.errors) {
+                    
                     $.each(response.errors, function(key, value) {
                         var element = $("[name='" + key + "']");
                         element.addClass("is-invalid");
                         element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
                     });
-                } else {
-                    $("#error-message").text(response.message).show();
+                } else { console.log(response.message);
+                    $("#error-message-show").text(response.message).show();
                 }
             },
 
@@ -109,8 +110,8 @@
                 // Clear old validation errors
                 $(".is-invalid").removeClass("is-invalid");
                 $(".invalid-feedback").remove();
-                $("#error-message").hide().text('');
-                $("#success-message").hide().text('');
+                $("#error-message-show").hide().text('');
+                $("#success-message-show").hide().text('');
 
                 if (xhr.status === 422) {
                     var errors = xhr.responseJSON.errors;

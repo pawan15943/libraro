@@ -143,6 +143,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
     Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
     Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');
+    Route::get('/floors', [MasterController::class, 'floorView'])->name('floor.index');
+    Route::get('/floor/create/{id?}', [MasterController::class, 'floorCreate'])->name('floor.create');
     Route::get('/plan/list', [MasterController::class, 'planView'])->name('plan.index');
     Route::get('/plan/create/{id?}', [MasterController::class, 'planCreate'])->name('plan.create');
     Route::get('/expense/list', [MasterController::class, 'expenseView'])->name('expense.index');

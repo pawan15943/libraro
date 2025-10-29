@@ -97,7 +97,8 @@ $today = \Carbon\Carbon::today();
                         $dueDate = \Carbon\Carbon::parse($value->due_date);
                      @endphp
                     <tr>
-                        <td class="d-none export-seat-no">{{ $value->seat_no ?? "GEN" }}</td>
+                        
+                        <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->seat_no) ?? "GEN" }}</td>
                         <td class="d-none export-name">{{ $value->name ?? '' }}</td>
                         <td class="d-none export-email">{{ $value->email ?? 'Email ID Not Available' }}</td>
                         <td class="d-none export-mobile">
@@ -123,7 +124,7 @@ $today = \Carbon\Carbon::today();
                         <td class="d-none export-payment-mode">{{ $value->payment_mode ?? 'Not Yet'}}</td>
                         <td class="d-none export-paid-date">{{  $value->paid_date ?? 'Not Paid Yet'}}</td>
 
-                        <td class="merged-display">{{$value->seat_no ?? 'General'}}</td>
+                        <td class="merged-display">{{getSeatDisplayByMainNo($value->seat_no) ?? 'General'}}</td>
                         <td class="merged-display" class="uppercase"><span class="uppercase truncate name my-0" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span></td>
                         <td class="merged-display"><span class="truncate" >

@@ -52,7 +52,7 @@ $currentMonth = date('m');
                     @foreach ($value->learnerDetails as $detail)
           
                     <tr>
-                        <td class="d-none export-seat-no">{{$value->seat_no ?? "GEN" }}</td>
+                        <td class="d-none export-seat-no">{{getSeatDisplayByMainNo($value->seat_no) ?? "GEN" }}</td>
                         <td class="d-none export-plan-type">{{ $detail->planType->name ?? '' }}</td>
                         <td class="d-none export-name">{{ $value->name ?? '' }}</td>
                         <td class="d-none export-email">{{ $value->email ?? 'Email ID Not Available' }}</td>
@@ -63,7 +63,7 @@ $currentMonth = date('m');
                         <td class="d-none export-expiry-status">
                          {!! getUserStatusDetails($detail->plan_end_date) !!}
                         </td>
-                        <td class="merged-display">{{$value->seat_no ?? 'GEN'}}<br>
+                        <td class="merged-display">{{getSeatDisplayByMainNo($value->seat_no) ?? 'GEN'}}<br>
                             <small>{{$detail->planType->name ?? ''}}</small>
                         </td>
                         <td class="merged-display"><span class="uppercase truncate name" data-bs-toggle="tooltip"

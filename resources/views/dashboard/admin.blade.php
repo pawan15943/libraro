@@ -806,8 +806,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
 
-                                    <h6>Seat No. {{ $seat['seat_no'] }}</h6>
-                                    @if(count($seat['available_plan_types']) > 3)
+                                    <h6>Seat No. {{ getSeatDisplayByMainNo($seat['seat_no']) }}</h6>
+                                    @if(count($seat['available_plan_types']) > 3)   
                                     <small>Available</small>
                                     @else
                                     @foreach($seat['available_plan_types'] as $planType)
@@ -867,7 +867,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
-                                    <h6>Seat No. : {{$value->seat_no ?? 'GEN'}}</h6>
+                                    
+                                    <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayByMainNo($value['seat_no']) : 'GEN'}}</h6>
                                     <small>{{$value->planType->name ?? ''}}</small>
                                 </div>
                                 <div class="seat-status">
@@ -924,7 +925,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
                                 <div class="seat-content">
-                                    <h6>Seat No. : {{ $seat->seat_no ?? 'GEN'}}</h6>
+                                    
+                                    <h6>Seat No. : {{ $seat->seat_no ? getSeatDisplayByMainNo($seat->seat_no) : 'GEN'}}</h6>
                                     <small>{{ $seat->planType->name ?? 'N/A' }}</small>
 
                                 </div>

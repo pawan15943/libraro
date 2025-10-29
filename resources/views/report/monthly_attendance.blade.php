@@ -94,7 +94,8 @@ $currentMonth = date('m');
                 <tbody>
                     @foreach($learnerAttendance as $value)
                         <tr>
-                            <td>{{ $value['seat_no'] ?? 'G' }}</td>
+                            
+                            <td>{{ getSeatDisplayByMainNo($value['seat_no']) ?? 'G' }}</td>
                             <td>
                                 <span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{ $value['name'] ?? '' }}" data-bs-placement="bottom">{{ $value['name'] ?? '' }}</span>

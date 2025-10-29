@@ -60,7 +60,8 @@
                 <div class="col-lg-12">
                     <div class="seat-info bg-white">
                         <div class="seat-no">
-                            <span>Seat No. : {{ $seat->seat_no }}</span>
+                            
+                            <span>Seat No.: {{ getSeatDisplayByMainNo($seat->seat_no) }}</span>
                         
                             @if($operation == 'closeSeat')
                             <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
