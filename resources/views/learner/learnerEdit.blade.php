@@ -57,7 +57,7 @@ if($customer->locker_no){
                     @enderror
                 </div>
                 <div class="col-lg-6 col-6">
-                    <label for="" class="text-white">Email Id <span>*</span></label>
+                    <label for="" class="text-white">Email Id </label>
                     <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}">
                     @error('email')
                     <span class="invalid-feedback" role="alert">
@@ -67,11 +67,65 @@ if($customer->locker_no){
                 </div>
             </div>
         </div>
+        <div class="form-input mb-4">
+            <h4 class="inner-heading">Update Plan Duration</h4>
+            <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
+           <div class="row g-4">
+
+                <div class="col-lg-6">
+                    <label for=""> Plan <span>*</span></label>
+
+                    <select class="form-select" name="plan_id" disabled id="plan_id">
+                        <option value="{{ $customer->plan_name }}" selected>{{ $customer->plan_name }}</option>
+                    </select>
+
+                    @error('plan_id')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                <div class="col-lg-6">
+                    <label for="">Plan Type <span>*</span></label>
+                    <select class="form-select" name="plan_id" disabled>
+                        <option value="{{ $customer->plan_type_id }}" selected>{{ $customer->plan_type_name }}</option>
+                    </select>
+
+                </div>
+                <div class="col-lg-6">
+                    <label for="plan_start_date">Plan Start Date</label>
+                    <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror" 
+                        name="plan_start_date" 
+                        value="{{ old('plan_start_date', $customer->plan_start_date) }}" 
+                        id="plan_start_date_edit">
+                    @error('plan_start_date')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                <div class="col-lg-6">
+                    <label for="plan_end_date">Plan End Date</label>
+                    <input type="date" class="form-control datepicker @error('plan_end_date') is-invalid @enderror" 
+                        name="plan_end_date" 
+                        value="{{ old('plan_end_date', $customer->plan_end_date) }}" 
+                        id="plan_end_date_edit" readonly>
+                    @error('plan_end_date')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+            </div>
+            
+        </div>
 
         <div class="form-input mb-4">
-            <h4 class="inner-heading">Edit Info</h4>
+            <h4 class="inner-heading">Learner Other Info</h4>
             <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
             <div class="row g-4">
+                
                 @if(!in_array('29', toggleHideField()))
                 <div class="col-lg-6 ">
                     <label for="father_name">Father Name</label>
@@ -655,6 +709,79 @@ if($customer->locker_no){
 </div>
 
 @endif
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const startInput = document.getElementById('plan_start_date_edit');
+    const endInput = document.getElementById('plan_end_date_edit');
+    const planSelect = document.getElementById('plan_id'); // Plan dropdown
+    const planTypeSelect = document.getElementById('plan_type'); // Plan type dropdown (if needed)
 
+    function calculateEndDate() {
+        const startDate = new Date(startInput.value);
+        if (!(startDate instanceof Date) || isNaN(startDate)) return;
+
+        // Get selected plan duration
+        let planText = planSelect.value; // e.g. "3 MONTH", "1 Month"
+        let duration = 1; // default 1
+        let type = "DAY"; // default DAY
+
+        if (planText) {
+            // Extract number and unit
+            const match = planText.match(/(\d+)\s*(DAY|DAYS|WEEK|WEEKS|MONTH|MONTHS|YEAR|YEARS)/i);
+            if (match) {
+                duration = parseInt(match[1]);
+                type = match[2].toUpperCase();
+            }
+        }
+
+        // Copy start date
+        const endDate = new Date(startDate);
+
+        // Calculate end date like PHP Carbon
+        switch (type) {
+            case 'DAY':
+            case 'DAYS':
+                endDate.setDate(endDate.getDate() + duration - 1);
+                break;
+            case 'WEEK':
+            case 'WEEKS':
+                endDate.setDate(endDate.getDate() + (duration * 7) - 1);
+                break;
+            case 'MONTH':
+            case 'MONTHS':
+                endDate.setMonth(endDate.getMonth() + duration);
+                endDate.setDate(endDate.getDate() - 1);
+                break;
+            case 'YEAR':
+            case 'YEARS':
+                endDate.setFullYear(endDate.getFullYear() + duration);
+                endDate.setDate(endDate.getDate() - 1);
+                break;
+            default:
+                break;
+        }
+
+        // Format yyyy-mm-dd
+        const yyyy = endDate.getFullYear();
+        const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(endDate.getDate()).padStart(2, '0');
+        endInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    // Recalculate on start date change or plan change
+    startInput.addEventListener('change', calculateEndDate);
+    planSelect.addEventListener('change', calculateEndDate);
+
+    // Optional: recalc on plan type change if needed
+    if(planTypeSelect){
+        planTypeSelect.addEventListener('change', calculateEndDate);
+    }
+
+    // Initial calculation if start date already filled
+    if (startInput.value) calculateEndDate();
+});
+
+
+</script>
 
 @endsection

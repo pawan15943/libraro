@@ -308,11 +308,27 @@ if (!function_exists('getUserStatusWithSpan')) {
             ->exists();
 
         $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $start_date=LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_start_date',  '>', now())->where('status', 0)
+            ->exists();
+        $isfuture_booking=$start_date && !$hasPastPlan;
+        $startDetail =LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
+        if ($startDetail) {
+            $start_date=Carbon::parse($startDetail->plan_start_date);
+            
+            $startfrom=$today->diffInDays($start_date, false);
+        }else{
+            $startfrom=null;
+        }
+         
 
-        if ($diffInDays > 0) {
+        if ($diffInDays > 0 && !$isfuture_booking) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         }elseif($is_renew_update){
              return '<span class="text-success"> 1 Plan in Queue</span>';
+        }elseif($isfuture_booking){
+            return '<span style="color: purple; ">Plan Starts in '.$startfrom.' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
@@ -807,6 +823,7 @@ if (!function_exists('generateSeatNumbers')) {
                         'main' => $mainSeatNo,
                         'floor' => $floorSeatNo,
                         'floor_name' => $floor->name,
+                        'floor_no'=>$floor->floor_no,
                         'display' => 'Seat No - '. $floorSeatNo . ' (' .$floor->name.')'
                     ];
 
@@ -859,7 +876,31 @@ if (!function_exists('getSeatDisplayByMainNo')) {
     }
 }
 
+if (!function_exists('getSeatDisplayShortFloor')) {
+    function getSeatDisplayShortFloor($mainSeatNo)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
 
+        $seatMap = collect(generateSeatNumbers());
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+           
+
+            return  $seat['floor']   . ' Floor (' . $seat['floor_no'] .')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
+    }
+}
 
 if (!function_exists('getFloor')) {
         function getFloor(){

@@ -458,24 +458,21 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <div class="col-lg-4">
                 <h4 class="my-4">Recent Activity</h4>
                 <ul class="activity contents">
-                    @if($recent_activitys->count() > 0)
+                @if($recent_activitys->count() > 0)
+                    @foreach($recent_activitys as $value)
+                        @php
+                            $operationDetails = HelperService::getOperationDetails($value);
+                        @endphp
 
-                    @foreach($recent_activitys as $key => $value)
-                    @php
-                    $seat_no=App\Models\Learner::where('id',$value->learner_id)->value('seat_no');
-                    $operationDetails = HelperService::getOperationDetails($value);
-
-                    @endphp
-
-                    <li>Seat {{$seat_no ?? ''}} {{$operationDetails['operation_type']}} {{$operationDetails['field']}} {{$operationDetails['old']}} to {{$operationDetails['new']}}
-                        <span class="mt-1"><i class="fa fa-clock"></i> {{$value->updated_at}}</span>
-                    </li>
+                        <li>
+                            {!! $operationDetails['message'] !!}
+                        </li>
                     @endforeach
-
-                    @else
+                @else
                     <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
-                    @endif
-
+                @endif
+                </ul>
+        
             </div>
         </div>
         @endcan
@@ -868,7 +865,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
                                     
-                                    <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayByMainNo($value['seat_no']) : 'GEN'}}</h6>
+                                    <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
                                     <small>{{$value->planType->name ?? ''}}</small>
                                 </div>
                                 <div class="seat-status">

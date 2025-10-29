@@ -25,4 +25,5 @@ Route::prefix('v1')->middleware(['api', 'check.app.version'])->group(function ()
 });
 
 Route::get('update/learner', [DataController::class, 'updateLearnerStatus']);
+Route::get('/delete-expired-learners', [DataController::class, 'deleteExpiredLearners']);
 

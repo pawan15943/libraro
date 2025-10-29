@@ -317,28 +317,34 @@ class MasterController extends Controller
             }
         }
       
-        if ($request->databasemodel == 'Floor'){
-           
-            $existing_total=Floor::where('branch_id', $request->branch_id)->sum('total_seats');
-            $first_record = Hour::where('branch_id', getCurrentBranch())->first(); 
-            $grand_branch_total = $first_record ? $first_record->seats : 0;
-           $requested_total_seats = 0;
-            $floorCount = count($request->floor_no ?? []);
-            for ($i = 0; $i < $floorCount; $i++) {
-                $fromSeat = (int) $request->from_seat[$i];
-                $toSeat   = (int) $request->to_seat[$i];
-                $requested_total_seats += ($toSeat - $fromSeat + 1);
+        if ($request->databasemodel == 'Floor') {
+
+            $existing_total = Floor::where('branch_id', $request->branch_id)->sum('total_seats');
+            $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
+            $grand_branch_total = $branchRecord ? $branchRecord->seats : 0;
+
+            $fromSeat = (int) $request->from_seat;
+            $toSeat   = (int) $request->to_seat;
+            $requested_total_seats = $toSeat - $fromSeat + 1;
+
+            // If updating, subtract old total_seats for this floor
+            if ($request->id && $request->id != 0) { 
+                $oldSeats = Floor::where('id', $request->id)->value('total_seats') ?? 0;
+                $existing_total -= $oldSeats;
             }
 
-             if (($existing_total + $requested_total_seats) > $grand_branch_total) {
+            if (($existing_total + $requested_total_seats) > $grand_branch_total) {
                 return response()->json([
                     'error' => true,
-                    'message' => 'Adding these floors exceeds the total allowed seats for this branch. Maximum allowed: ' . $grand_branch_total
+                    'message' => 'Adding or updating this floor exceeds the total allowed seats for this branch. Maximum allowed: ' . $grand_branch_total
                 ]);
             }
 
+            unset($data['total_seats']);
+            
 
         }
+
 
     
         try {
@@ -364,35 +370,10 @@ class MasterController extends Controller
             }
              
             unset($data['redirect']);
-              if($request->databasemodel == 'Floor'){
-                $floorCount = count($request->floor_no ?? []);
-                $createdFloors = [];
+             
 
-                for($i = 0; $i < $floorCount; $i++){
-                    $floorData = [
-                        'branch_id' => $request->branch_id,
-                        'floor_no' => $request->floor_no[$i],
-                        'name'     => $request->name[$i] ?? null,
-                        'from_seat'=> $request->from_seat[$i],
-                        'to_seat'  => $request->to_seat[$i],
-                        
-                    ];
-
-                    // If ID exists, update instead of create
-                    if(isset($request->id[$i]) && $request->id[$i]){
-                        $floorInstance = $modelClass::findOrFail($request->id[$i]);
-                        $floorInstance->update($floorData);
-                        $createdFloors[] = $floorInstance;
-                    } else {
-                        $floorInstance = $modelClass::create($floorData);
-                        $createdFloors[] = $floorInstance;
-                    }
-                }
-
-                $modelInstance = $createdFloors; // return for response
-            }
           
-            if($request->databasemodel && $request->databasemodel!='Floor'){
+            if($request->databasemodel ){
                 if (is_null($data['id'])) {
                        
                     $modelInstance = $modelClass::create($data);
@@ -509,9 +490,10 @@ class MasterController extends Controller
                 return redirect()->route('floor.create')->with('error', 'Floor not found.');
             }
         }
+        $total_floor=Floor::where('branch_id',getCurrentBranch())->sum('total_seats');
        
         // Pass $planType to view, it will be null for add and model instance for edit
-        return view('master.floor', compact('floor'));
+        return view('master.floor', compact('floor','total_floor'));
     }
     
 

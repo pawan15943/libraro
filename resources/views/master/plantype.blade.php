@@ -43,7 +43,7 @@
         <input type="hidden" name="redirect" value="{{ route('plantype.index') }}">
 
         <div class="row g-4">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label for="plantype_name">Plan Type Name <span>*</span></label>
                 <select class="form-select @error('day_type_id') is-invalid @enderror" name="day_type_id" id="plantype_name">
                     <option value="">Select Plan Type</option>
@@ -76,7 +76,7 @@
                 @enderror
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label for="start_time">Start Time <span>*</span></label>
                 <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time" style="pointer-events: all;" >
                 @error('start_time')
@@ -86,7 +86,7 @@
                 @enderror
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label for="end_time">End Time <span>*</span></label>
                 <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" name="end_time" value="{{ old('end_time', $planType->end_time ?? '') }}" placeholder="Select end time" style="pointer-events: all;">
                 @error('end_time')
@@ -96,7 +96,7 @@
                 @enderror
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label for="slot_hours">Slot Duration <span>*</span></label>
                 <input type="text" id="slot_hours" class="form-control @error('slot_hours') is-invalid @enderror no-validate" name="slot_hours" readonly value="{{ old('slot_hours', $planType->slot_hours ?? '') }}" placeholder="Slot duration">
                 @error('slot_hours')
@@ -106,7 +106,7 @@
                 @enderror
             </div>
 
-            <div class="col-lg-4">
+            {{-- <div class="col-lg-4">
                 <label for="seat_color">Select Seat Color <span>*</span></label>
                 <select name="image" id="seat_color" class="form-select no-validate">
                     <option value="">Select Color</option>
@@ -115,7 +115,7 @@
                     <option value="green" {{ (old('image', $planType->image ?? '') == 'green') ? 'selected' : '' }}>Green</option>
                     <option value="blue" {{ (old('image', $planType->image ?? '') == 'blue') ? 'selected' : '' }}>Blue</option>
                 </select>
-            </div>
+            </div> --}}
 
 
         </div>
