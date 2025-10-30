@@ -165,7 +165,6 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
-
     Route::get('/profile', [LibraryController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update');
     Route::post('/payment/success', [LibraryController::class, 'handleSuccess'])->name('library.payment.success');
