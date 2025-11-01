@@ -252,22 +252,24 @@ class LoadMenus
                 }
             }
             $newAvailableSeats = collect();
-           
 
-            // Step 2: Loop through all seat numbers and apply logic
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
                 $usedHours = $usedSeats[$seatNo] ?? 0;
 
                 if ($usedHours < $totalHour) {
                     $seatInfo = $allSeats->firstWhere('main', $seatNo);
+
                     if ($seatInfo) {
                         $newAvailableSeats->push($seatInfo);
-                    }else{
-                        $newAvailableSeats->push($seatNo);
+                    } else {
+                        $newAvailableSeats->push([
+                            'main' => $seatNo,
+                            'display' => $seatNo,
+                        ]);
                     }
-                    
                 }
             }
+
             if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
                 $this->statusInactive();
                 $this->updateLibraryStatus();

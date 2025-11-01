@@ -126,6 +126,7 @@ $current_route = Route::currentRouteName();
 @foreach($learnerHistory as $key => $value)
 
 @php
+
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
 $transaction = learnerTransaction($value->id, $value->learner_detail_id);
@@ -166,15 +167,26 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
             </div>
             <div class="seat-actions">
                 <ul>
+                    {{-- Reactivate Seat --}}
                     @can('has-permission', 'Reactive Seat')
-                    <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2"></i> Reactivate Seat</a></li>
+                        <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner" class="px-2 w-auto"><i class="fa-solid fa-arrows-rotate pe-2"></i> Reactivate Seat</a></li>
                     @endcan
+
+                    {{-- Refund Amount --}}
                     @if(refund($value->id)!=0 && learnerTransaction($value->id, $value->learner_detail_id)?->refund >0)
-                    <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li>
+                        <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Learner Refund" class="payment-learner px-2 w-auto"><i class="fa-solid fa-money-bill pe-2"> </i> Refund</a></li>
                     @endif
+                    
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
-                    <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                        <li><a href="{{route('learners.show',$value->id)}}" title="View Seat Booking Full Details" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
+                    @endcan
+
+                    {{-- Permanently Delete Seat --}}
+                    @can('has-permission', 'Delete Seat')
+                        @if($value->status == 0 && (empty($transaction?->refund) || $transaction->refund == 0))                    
+                            <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
+                        @endif
                     @endcan
                 </ul>
             </div>

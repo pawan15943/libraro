@@ -58,58 +58,58 @@ function closeNotification() {
 // });
 
 
-$(document).ready(function () {
-  $('form').on('submit', function (e) {
-    var form = $(this);
-    var submitButton = form.find('.button');
-    var buttonText = submitButton.html();
-
-    // Trigger jQuery validation
-    if (form.valid()) {
-      // If the form is valid, disable the button and show loader
-      submitButton.prop('disabled', true);
-
-      // Add loader next to the button text
-      submitButton.html(buttonText + ' <span class="spinner-border spinner-border-sm loader" role="status" aria-hidden="true"></span>');
-
-      // Allow form submission
-      return true;
-    } else {
-      // If form has errors, enable the button and remove loader
-      submitButton.prop('disabled', false);
-
-      // Remove loader and reset button text
-      submitButton.html(buttonText);
-
-      // Prevent form submission until validation is cleared
-      return false;
-    }
-  });
-
-  // Listen for any changes in the form inputs
-  // $('form input, form select, form textarea').on('input change', function () {
-  //   var form = $(this).closest('form');
+// $(document).ready(function () {
+  // $('form').on('submit', function (e) {
+  //   var form = $(this);
   //   var submitButton = form.find('.button');
-  //   var buttonText = 'Wait..'; // Set your button text
-  //   var isFormValid = true;
+  //   var buttonText = submitButton.html();
 
-  //   // Revalidate the form fields in real-time
-  //   form.find('input[required], select[required], textarea[required]').each(function () {
-  //     if ($(this).val().trim() === '') {
-  //       isFormValid = false;
-  //     }
-  //   });
+  //   // Trigger jQuery validation
+  //   if (form.valid()) {
+  //     // If the form is valid, disable the button and show loader
+  //     submitButton.prop('disabled', true);
 
-  //   // Remove the loader and reset button if form is filled correctly
-  //   if (isFormValid) {
-  //     submitButton.prop('disabled', false); // Enable the button when the form is valid
-  //     submitButton.html(buttonText); // Restore button text without loader
+  //     // Add loader next to the button text
+  //     submitButton.html(buttonText + ' <span class="spinner-border spinner-border-sm loader" role="status" aria-hidden="true"></span>');
+
+  //     // Allow form submission
+  //     return true;
   //   } else {
-  //     submitButton.prop('disabled', true); // Keep button disabled if the form is invalid
-  //     submitButton.html(buttonText); // Ensure no loader is visible if invalid
+  //     // If form has errors, enable the button and remove loader
+  //     submitButton.prop('disabled', false);
+
+  //     // Remove loader and reset button text
+  //     submitButton.html(buttonText);
+
+  //     // Prevent form submission until validation is cleared
+  //     return false;
   //   }
   // });
-});
+
+  // Listen for any changes in the form inputs
+  $('form input, form select, form textarea').on('input change', function () {
+    var form = $(this).closest('form');
+    var submitButton = form.find('.button');
+    var buttonText = 'Wait..'; // Set your button text
+    var isFormValid = true;
+
+    // Revalidate the form fields in real-time
+    form.find('input[required], select[required], textarea[required]').each(function () {
+      if ($(this).val().trim() === '') {
+        isFormValid = false;
+      }
+    });
+
+    // Remove the loader and reset button if form is filled correctly
+    if (isFormValid) {
+      submitButton.prop('disabled', false); // Enable the button when the form is valid
+      submitButton.html(buttonText); // Restore button text without loader
+    } else {
+      submitButton.prop('disabled', true); // Keep button disabled if the form is invalid
+      submitButton.html(buttonText); // Ensure no loader is visible if invalid
+    }
+  });
+// });
 
 
 $(document).ready(function () {

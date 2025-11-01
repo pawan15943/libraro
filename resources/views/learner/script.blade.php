@@ -1479,7 +1479,7 @@
     $(document).on('click', '.delete-customer', function () {
         var id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
-        var paybleRefund = $(this).data('payblerefund');
+        var paybleRefund = parseFloat($(this).data('payblerefund'));
 
         var url = '{{ route('learners.destroy', ':id') }}';
         url = url.replace(':id', id);
@@ -1510,11 +1510,11 @@
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount">
+                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount" maxlength='4'>
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund">
+                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund" maxlength='4'>
                     </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
@@ -1539,15 +1539,15 @@
             },
             preConfirm: () => {
                 const isRefund = $('.isRefund').is(':checked');
-                const refundAmount = $('.refundAmount').val();
+                const refundAmount = parseFloat($('.refundAmount').val()) || 0;
                 const remark = $('.refundRemark').val();
-                const pendingRefund = $('.pendingRefund').val();
+                const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
 
                 if (isRefund && (!refundAmount || refundAmount <= 0 || paybleRefund < refundAmount)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
-                if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
+                if (refundAmount !== paybleRefund && (pendingRefund <= 0 || (pendingRefund+refundAmount) > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
@@ -1664,19 +1664,19 @@
                 
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Total Amt.</label>
-                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly>
+                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly >
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount">
+                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount" maxlength="4" >
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund">
+                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund" maxlength="4" >
                     </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
-                        <textarea class="form-control refundRemark" cols="30" rows="3"></textarea>
+                        <textarea class="form-control refundRemark" cols="30" rows="3" style="height:auto !important;"></textarea>
                     </div>
                 </div>
             `,
@@ -1699,13 +1699,14 @@
                 const isRefund = $('.isRefund').is(':checked');
                 const refundAmount = $('.refundAmount').val();
                 const remark = $('.refundRemark').val();
-                 const pendingRefund = $('.pendingRefund').val();
+                const pendingRefund = $('.pendingRefund').val();
 
                 if (isRefund && (!refundAmount || refundAmount <= 0)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
-                if (isRefund && ((paybleRefund!=refundAmount) && pendingRefund <= 0)) {
+
+                if (refundAmount !== paybleRefund && (pendingRefund <= 0 || (pendingRefund+refundAmount) > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }

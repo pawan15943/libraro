@@ -12,7 +12,7 @@ use App\Models\Seat;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Request;
 use Auth;
-
+use Carbon\Carbon;
 
 class HelperService
 {
@@ -74,80 +74,77 @@ class HelperService
         return hash('sha256', $macAddress . '125352-ABXG56-H7Y5F5-45IJNN');
     }
 
+
+
     public static function getOperationDetails($operation)
     {
-        
         $details = [
-            'operation_type' => '',
-            'field' => '',
-            'plan' => null,
-            'plan_type' => null,
-            'seat_no' => null,
-            'old' => null,
-            'new' => null,
+            'message' => '',
         ];
 
         if (!$operation) {
             return $details;
         }
 
+        $userName = $operation->updated_by_name ?? 'System'; 
+
+        // Convert updated_at to Carbon instance
+        $updatedAt = Carbon::parse($operation->updated_at)->format('d-m-Y h:i:s A');
+
         switch ($operation->operation) {
             case 'renewSeat':
-                $details['operation_type'] = 'Renew';
-                $details['field'] = 'Plan';
-                $details['old']=Plan::where('library_id',getLibraryId())->where('id',$operation->old_value)->value('name');
-                $details['new']=Plan::where('id',$operation->new_value)->value('name');
+                $oldPlan = Plan::where('library_id', getLibraryId())->where('id', $operation->old_value)->value('name');
+                $newPlan = Plan::where('id', $operation->new_value)->value('name');
+
+                $details['message'] = "Plan renewed successfully. <br>
+                Your plan validity has been updated from <strong>{$oldPlan}</strong> to <strong>{$newPlan}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'learnerUpgrade':
-                $details['operation_type'] = 'Upgrade';
-                $details['field'] = 'Plan Type' ?? null;
-                $details['old']=PlanType::where('id',$operation->old_value)->value('name');
-                $details['new']=PlanType::where('id',$operation->new_value)->value('name');
+                $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
+                $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
+
+                $details['message'] = "Plan upgraded successfully. <br>
+                Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'reactive':
-                $details['operation_type'] = 'Reactive';
-                $details['field'] = 'Seat';
-                $details['old']=$operation->old_value;
-                $details['new']=$operation->new_value;
+                $details['message'] = "Seat reactivated successfully. <br>
+                Seat number has been updated from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'swapseat':
-                $details['operation_type'] = 'Swap';
-                $details['field'] = 'Seat';
-                $details['old']=$operation->old_value;
-                $details['new']=$operation->new_value;
+                $details['message'] = "Seat swapped successfully. <br>
+                Seat number has been changed from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'closeSeat':
-                $details['operation_type'] = 'Close';
-                $details['field'] = 'Plan End';
-                $details['old']=$operation->old_value;
-                $details['new']=$operation->new_value;
+                $details['message'] = "Seat closed successfully. <br>
+                Plan end has been updated from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'deleteSeat':
-                $details['operation_type'] = 'Delete';
-                $details['field'] = 'Deleted';
-                
-                $details['new']=$operation->new_value;
+                $details['message'] = "Seat deleted successfully. <br>
+                Seat number <strong>{$operation->new_value}</strong> has been deleted on {$updatedAt} by {$userName}.";
                 break;
+
             case 'changePlan':
-                $details['operation_type'] = 'Change Plan Type';
-                $details['field'] = 'Plan Type' ?? null;
-                $details['old']=PlanType::where('id',$operation->old_value)->value('name');
-                $details['new']=PlanType::where('id',$operation->new_value)->value('name');
+                $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
+                $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
+
+                $details['message'] = "Plan type changed successfully. <br>
+                Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             default:
+                $details['message'] = "Operation performed successfully.";
                 break;
         }
 
-      
-
         return $details;
     }
+
+
 
     
    

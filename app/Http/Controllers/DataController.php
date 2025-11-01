@@ -18,7 +18,10 @@ use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Permission;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
+use App\Models\LearnerFeedback;
+use App\Models\LearnerTransactionActivity;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DataController extends Controller
 {
@@ -247,6 +250,59 @@ class DataController extends Controller
         }
 
         
+    }
+
+    public function deleteExpiredLearners()
+    {
+        $branches = Branch::whereNotNull('expired_learner_delete')
+            ->select('id', 'expired_learner_delete')
+            ->get();
+
+        $totalDeleted = 0;
+
+        foreach ($branches as $branche) {
+            $cutoffDate = Carbon::now()->subDays($branche->expired_learner_delete);
+
+            // Get learners whose latest plan_end_date < cutoffDate and all statuses = 0
+            $expiredLearners = Learner::select('learners.id')
+                ->join('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                ->where('learners.branch_id', $branche->id)
+                ->where('learners.status', 0)
+                ->where('learner_detail.status', 0)
+                ->groupBy('learner_detail.learner_id')
+                ->havingRaw('MAX(learner_detail.plan_end_date) < ?', [$cutoffDate])
+                ->pluck('learners.id');
+
+            // Delete in transaction
+            DB::transaction(function () use ($expiredLearners, &$totalDeleted) {
+
+            if ($expiredLearners->isNotEmpty()) {
+
+                // Remove learner_id in learner transaction table to avoid affecting revenue
+                LearnerTransactionActivity::whereIn('learner_id', $expiredLearners)->update([
+                    'learner_id' => null
+                ]);
+                LearnerFeedback::whereIn('learner_id', $expiredLearners)->update([
+                    'learner_id' => null
+                ]);
+                
+
+                // Then permanently delete learners
+                Learner::whereIn('id', $expiredLearners)->forceDelete();
+
+                $totalDeleted += $expiredLearners->count();
+            }
+
+        });
+
+        }
+
+        return response()->json([
+            'message' => $totalDeleted > 0
+                ? "$totalDeleted learners permanently deleted successfully."
+                : "No expired learners found.",
+            'deleted_count' => $totalDeleted
+        ]);
     }
 
    

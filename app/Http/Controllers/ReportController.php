@@ -292,7 +292,7 @@ class ReportController extends Controller
             'expiredyear' => $request->get('expiredyear'),
             'expiredmonth' => $request->get('expiredmonth'),
         ];
-        $query = LearnerDetail::where('library_id',getLibraryId())->with(['plan', 'planType','learner'])->where('status', 0)
+        $query = LearnerDetail::where('library_id',getLibraryId())->where('plan_start_date', '<=', date('Y-m-d'))->with(['plan', 'planType','learner'])->where('status', 0)
         ->whereHas('learner', function($query) {
             $query->where('status', 0);
         });
