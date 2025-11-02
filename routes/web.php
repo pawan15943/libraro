@@ -137,6 +137,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::post('library/learners/log', [LearnerController::class, 'learnerLog'])->name('learner.log');
 
   Route::prefix('library')->group(function () {
+    
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan');
@@ -164,7 +165,6 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
-
     Route::get('/profile', [LibraryController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update');
     Route::post('/payment/success', [LibraryController::class, 'handleSuccess'])->name('library.payment.success');
@@ -212,6 +212,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   });
 
   Route::prefix('library/learners')->group(function () {
+    Route::get('future/bookings', [LearnerController::class, 'learnerFuture'])->name('future.bookings');
     Route::post('/store', [LearnerController::class, 'learnerStore'])->name('learners.store');
     Route::post('/generallearner/store', [LearnerController::class, 'generallearnerStore'])->name('genral.learners.store');
     Route::get('/list', [LearnerController::class, 'learnerList'])->name('learners');

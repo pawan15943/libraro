@@ -65,7 +65,7 @@ class LearnerController extends Controller
             'address' => 'nullable|string|max:500',
             'remark' => 'nullable|string|max:1000',
             'exam_id' => 'nullable|exists:exams,id',
-
+            'plan_start_date' => 'nullable|date',
             'plan_id' => 'required',
             'plan_type_id' => 'required',
             'plan_price_id' => 'required|numeric|min:0',
@@ -1414,15 +1414,16 @@ class LearnerController extends Controller
         // Call validateCustomer method to apply default validation
         $validator = $this->validateCustomer($request);
 
-        $validator = Validator::make($request->all(), array_merge($validator->getRules(), [
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('learners')->where(function ($query) use ($request) {
-                    return $query->where('library_id', getLibraryId());
-                })->ignore($learner->id), // Ignore current learner's email
-            ],
-        ]));
+        // $validator = Validator::make($request->all(), array_merge($validator->getRules(), [
+        //     'email' => [
+        //         'required',
+        //         'email',
+        //         Rule::unique('learners')->where(function ($query) use ($request) {
+        //             return $query->where('library_id', getLibraryId());
+        //         })->ignore($learner->id), // Ignore current learner's email
+        //     ],
+        // ]));
+        
 
         if ($validator->fails()) {
 
@@ -1464,8 +1465,10 @@ class LearnerController extends Controller
             // Set the path in the customer model
             $customer->id_proof_file = $id_proof_filePath;
         }
-
         // Update customer details
+       
+
+        
         $customer->name = $request->input('name', $customer->name);
         $customer->email = encryptData($request->input('email', $customer->email));
         $customer->mobile = encryptData($request->input('mobile', $customer->mobile));
@@ -1475,21 +1478,58 @@ class LearnerController extends Controller
         $customer->address = $request->input('address', $customer->address);
         $customer->remark = $request->input('remark', $customer->remark);
         $customer->id_proof_name = $request->input('id_proof_name', $customer->id_proof_name);
-
+        
         // Save the customer details
         $customer->save();
         
         // Update exam_id in learner_detail table if provided
-        if ($request->has('exam_id')) {
-            $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
-                ->where('status', 1)
-                ->first();
-            
-            if ($learnerDetail) {
+        $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
+        ->where('status', 1)
+        ->first();
+
+        if ($learnerDetail) {
+
+            $updated = false;
+
+            // Update exam_id if provided
+            if ($request->has('exam_id')) {
                 $learnerDetail->exam_id = $request->input('exam_id');
+                $updated = true;
+            }
+
+            // Update plan_start_date and calculate plan_end_date if provided
+            if ($request->has('plan_start_date') && $request->has('plan_id')) {
+
+                $startDate = Carbon::parse($request->input('plan_start_date'));
+
+                // Fetch both duration and type in one query
+                $plan = Plan::select('plan_id as duration', 'type')->find($request->input('plan_id'));
+
+                if ($plan) {
+                    $duration = $plan->duration;
+                    $type = strtoupper($plan->type);
+
+                    // Calculate end date based on type
+                    switch (strtoupper($type)) {
+                        case 'DAY':   $endDate = $startDate->copy()->addDays($duration); break;
+                        case 'WEEK':  $endDate = $startDate->copy()->addWeeks($duration); break;
+                        case 'MONTH': $endDate = $startDate->copy()->addMonths($duration); break;
+                        case 'YEAR':  $endDate = $startDate->copy()->addYears($duration); break;
+                        default:      $endDate = $startDate; break;
+                    }
+
+                    $learnerDetail->plan_start_date = $startDate;
+                    $learnerDetail->plan_end_date = $endDate;
+                    $updated = true;
+                }
+            }
+
+            // Save only if something was updated
+            if ($updated) {
                 $learnerDetail->save();
             }
         }
+
         return redirect()->route('learners')->with('success', 'Learner updated successfully.');
     }
     // custome validation
@@ -1920,6 +1960,10 @@ class LearnerController extends Controller
                         ->orWhere('learners.email', $encryptdata); // 🔍 Exact match for encrypted email
                 });
             }
+
+            if (!empty($filters['future_booking'])) {
+                $query->whereDate('learner_detail.plan_start_date', '>', now());
+            }
               
         } else {
            
@@ -2111,7 +2155,7 @@ class LearnerController extends Controller
 
         $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
-            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.plan_start_date', '<=', date('Y-m-d'));
 
         if (getCurrentBranch() == 0) {
             $query->where('learners.library_id', getLibraryId())
@@ -2707,29 +2751,20 @@ class LearnerController extends Controller
         try {
              DB::transaction(function () use ($request, $id) {
 
-                $customer = Learner::findOrFail($id);
+               $customer = Learner::withTrashed()->findOrFail($id);
+
                 if ($request->permanent == '1') {
 
                     $detail = LearnerDetail::where('learner_id', $id)->select('plan_start_date')->first();
+                   // $threeDaysAfterStart = \Carbon\Carbon::parse($detail->plan_start_date)->addDays(3);
 
-                    if ($detail && $detail->plan_start_date) {
-                        $today = \Carbon\Carbon::now();
-                        $threeDaysAfterStart = \Carbon\Carbon::parse($detail->plan_start_date)->addDays(3);
-
-                        if ($today->lessThanOrEqualTo($threeDaysAfterStart)) {
-                            LearnerTransaction::where('learner_id', $id)->forceDelete();
-                            LearnerDetail::where('learner_id', $id)->forceDelete();
+                        LearnerTransactionActivity::where('learner_id', $id)->update([
+                            'learner_id' => null
+                        ]);;
                             LearnerFeedback::where('learner_id', $id)->forceDelete();
-                            LearnerTransactionActivity::where('learner_id', $id)->forceDelete();
-                            DB::table('learner_operations_log')->where('learner_id', $id)->delete();
-                            DB::table('learner_request')->where('learner_id', $id)->delete();
-                            $customer->forceDelete();
-                        } else {
-                            throw new \Exception("Permanent delete allowed only within 3 days of plan start.");
-                        }
-                    } else {
-                        throw new \Exception("Plan start date not found for this learner.");
-                    }
+                        DB::table('learner_operations_log')->where('learner_id', $id)->delete();
+                        DB::table('learner_request')->where('learner_id', $id)->delete();
+                        $customer->forceDelete();
 
                 } else{
 
@@ -3533,8 +3568,13 @@ class LearnerController extends Controller
                 $data['amount']=$request->fees;
                 $data['dr_cr']=$dr_cr;
                 $this->learnerTransactionActivity($data);
+                if($payment_type=='REFUND'){
+                    return redirect('library/learners/history/list')->with('success', 'Refund Processed Successfully.');
+                }else{
+                    return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
+                }
 
-            return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
+            
 
         } catch (\Exception $e) {
               
@@ -3694,6 +3734,22 @@ class LearnerController extends Controller
     }
 
 
+    public function learnerFuture(Request $request)
+    {
+
+        $filters = [
+            'plan_id' => $request->get('plan_id'),
+            'is_paid' => $request->get('is_paid'),
+            'status'  => $request->get('status'),
+            'search'  => $request->get('search'),
+            'seat_no'  => $request->get('seat_no'),
+            'future_booking' => true,
+        ];
+                            
+        $learners = $this->fetchCustomerData(null, false, 0, 0, $filters,$perPage = 15,$paginate = true);
+
+        return view('learner.future-bookings', compact('learners'));
+    }
 
 
    
