@@ -669,15 +669,17 @@ class MasterController extends Controller
         if (!class_exists($modelClass)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
         }
-        $data = $modelClass::find($id);
+        $data = $modelClass::withTrashed()->find($id);
          if (!$data) {
             return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
         }
 
             if ($modelClass === 'App\\Models\\Floor') {
+                
                 $data->delete(); // permanently deletes because no SoftDeletes
                 $status = 'permanently deleted';
             } else {
+               
                 // For models with soft deletes
                 if (method_exists($modelClass, 'trashed') && $data->trashed()) {
                     $data->restore();

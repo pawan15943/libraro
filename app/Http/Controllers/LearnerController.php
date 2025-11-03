@@ -284,19 +284,18 @@ class LearnerController extends Controller
             die;
         }
 
+    
         $exists = Learner::where('branch_id', getCurrentBranch())
-            ->get()
-            ->filter(function ($learner) use ($request) {
-                return $learner->email === strtolower(trim($request->input('email')));
-            })
-            ->isNotEmpty();
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->whereRaw('LOWER(email) = ?', [strtolower(trim($request->input('email')))])
+            ->exists();
 
         if ($exists) {
             return response()->json([
                 'error' => true,
                 'message' => 'The email has already been taken.'
             ], 422);
-            die;
         }
 
 
