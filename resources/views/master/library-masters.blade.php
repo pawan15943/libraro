@@ -918,7 +918,7 @@
 
 
 <!-- Button -->
-@if(!$iscomp)
+@if($iscomp)
 <div class="row justify-content-center mb-4">
     <div class="col-lg-4">
         {{-- @if($seat_button) --}}
