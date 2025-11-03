@@ -55,8 +55,8 @@ $class=$planDetails['class'];
                             <select name="seat_id" id="new_seat_id" class="form-control form-select @error('seat_id') is-invalid @enderror">
                                 <option>Select Seat</option>
                                 <option value="">General</option>
-                                @foreach($availableseats as $seat_no)
-                                <option value="{{ $seat_no }}"> {{ $seat_no }}</option>
+                                @foreach($newAvailableSeats as $key => $value)
+                                <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
                                 @endforeach
 
                             </select>
