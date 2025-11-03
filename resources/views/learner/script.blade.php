@@ -1479,15 +1479,17 @@
     $(document).on('click', '.delete-customer', function () {
         var id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
+        var seat = $(this).data('seat');
+     
         var paybleRefund = parseFloat($(this).data('payblerefund'));
 
         var url = '{{ route('learners.destroy', ':id') }}';
         url = url.replace(':id', id);
 
         var formId = 'deleteSeat';
-        var fieldName = 'deleted_at';
-        var newValue = new Date().toISOString();
-        var oldValue = null;
+        var fieldName = 'seat';
+        var newValue = seat;
+        var oldValue = seat;
 
         Swal.fire({
             title: 'Are you sure?',
@@ -1591,9 +1593,12 @@
         let id = $(this).data('id');
         let learnerDetail = $(this).data('learnerdetail');
         let permanent = '1';
-
+        var seat = $(this).data('seat');
         let url = '{{ route("learners.destroy", ":id") }}'.replace(':id', id);
-
+         var formId = 'deleteSeat';
+        var fieldName = 'seat';
+        var newValue = seat;
+        var oldValue = seat;
         Swal.fire({
             title: 'Are you sure?',
             text: "This action will permanently delete the learner record.",
@@ -1614,7 +1619,7 @@
                     },
                     success: function (response) {
                         // Optional logging function call
-                        logFieldChange(id, 'deleteSeat', 'deleted_at', null, new Date().toISOString(), learnerDetail);
+                        logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
                         
                         Swal.fire({
                             title: 'Deleted!',

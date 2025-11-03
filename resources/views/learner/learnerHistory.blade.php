@@ -185,7 +185,7 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                     {{-- Permanently Delete Seat --}}
                     @can('has-permission', 'Delete Seat')
                         @if($value->status == 0 && (empty($transaction?->refund) || $transaction->refund == 0))                    
-                            <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
+                            <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-seat="{{$value->seat_no}}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
                         @endif
                     @endcan
                 </ul>
