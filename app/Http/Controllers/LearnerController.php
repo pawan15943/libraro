@@ -2705,7 +2705,7 @@ class LearnerController extends Controller
         $first_record = Hour::first();
         $total_hour = $first_record ? $first_record->hour : null;
 
-        $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $request->new_seat_id)->sum('hours');
+        $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $request->new_seat_id)->where('status', 1)->sum('hours');
         $new_seat_remaining = $total_hour - $total_cust_hour;
 
 
