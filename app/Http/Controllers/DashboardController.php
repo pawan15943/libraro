@@ -1531,9 +1531,15 @@ class DashboardController extends Controller
         return view('dashboard.library_daily_tran', $data);
     }
 
-    function formatNumber($value) {
-        return (intval($value) == $value) ? intval($value) : number_format($value, 2);
+   function formatNumber($value)
+    {
+        // Convert to numeric first
+        $num = is_numeric($value) ? (float)$value : 0;
+
+        // If integer, return as int, else format with 2 decimals
+        return (intval($num) == $num) ? intval($num) : number_format($num, 2, '.', '');
     }
+
 
     
     
