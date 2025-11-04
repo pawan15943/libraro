@@ -284,7 +284,7 @@ class DashboardController extends Controller
                         ]);
                     }
                 }
-                dd("3");
+                dd($iscomp);
                
                 return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch'));
             }else{
