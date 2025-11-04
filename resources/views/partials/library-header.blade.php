@@ -127,7 +127,7 @@ $user = getAuthenticatedUser();
         </div>
 
         @if(countBranch() > 0)
-            {{-- <form action="{{ route('branch.switch') }}" method="POST" >
+            <form action="{{ route('branch.switch') }}" method="POST" >
                 @csrf
                 <select name="branch_id" onchange="this.form.submit()" class="form-control-sm form-select">
                
@@ -139,19 +139,8 @@ $user = getAuthenticatedUser();
                     @endforeach
 
                 </select>
-            </form> --}}
-            <form action="{{ route('branch.switch') }}" method="POST">
-                @csrf
-                <select name="branch_id" onchange="this.form.submit()" class="form-control-sm form-select">
-                    <option value="">Select Branch</option>
-                    @foreach($branches as $index => $b)
-                        <option value="{{ $b->id }}"
-                            {{ $user->current_branch == $b->id || (!$user->current_branch && $index == 0) ? 'selected' : '' }}>
-                            {{ trim($b->display_name) !== '' ? $b->display_name : $b->name }}
-                        </option>
-                    @endforeach
-                </select>
             </form>
+            
 
 
         @endif

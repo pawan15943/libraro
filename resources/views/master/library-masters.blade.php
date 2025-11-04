@@ -922,7 +922,7 @@
 <div class="row justify-content-center mb-4">
     <div class="col-lg-4">
         {{-- @if($seat_button) --}}
-        <a href="{{route('seats')}}" type="button" class="btn btn-primary button main">Take me to My Dashboard </a>
+        <a href="{{route('library.home')}}" type="button" class="btn btn-primary button main">Take me to My Dashboard </a>
         {{-- @endif --}}
     </div>
 </div>
