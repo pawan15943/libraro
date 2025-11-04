@@ -270,12 +270,12 @@ class DashboardController extends Controller
            
            
             if($is_expire && $user->hasRole('admin')){
-                dd("1");
+               
                 return redirect()->route('library.myplan');
             }elseif($iscomp){
                 
-               if (getCurrentBranch() === null || getCurrentBranch() == 0) {
-                dd("2");
+               if (getCurrentBranch() === null || getCurrentBranch() == 0 || $user->current_branch==null) {
+               
                     $firstBranch = Branch::where('library_id', getLibraryId())->select('id')->first();
 
                     if ($firstBranch && $firstBranch->id) {
@@ -284,11 +284,11 @@ class DashboardController extends Controller
                         ]);
                     }
                 }
-                dd($iscomp);
+                
                
                 return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch'));
             }else{
-              dd("3");
+             
                 return redirect($redirectUrl);
             }
            
