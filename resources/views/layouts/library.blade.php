@@ -118,13 +118,14 @@ $current_route = Route::currentRouteName();
                     <i class="fa fa-chair fa-2x"></i>
                 </a>
             </li>
-
+            @can('has-permission', 'Learner Search Bar')
             <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
                 class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
                 <a href="{{ route('learner.search') }}">
                     <i class="fa fa-search fa-2x"></i>
                 </a>
             </li>
+            @endcan
 
             <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
                 class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">

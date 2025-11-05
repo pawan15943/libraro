@@ -482,7 +482,7 @@ class LibraryController extends Controller
             ->first();
       $all_transaction = LibraryTransaction::where('library_id', $library_id)
             ->where('is_paid', 1)
-            ->with(['subscription', 'subscription.permissions'])
+            ->with(['subscriptionPlan', 'subscriptionPlan.permissions'])
             ->get();
          
         return view('library.payment', [
