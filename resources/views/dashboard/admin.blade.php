@@ -226,58 +226,58 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         </div>
         <!-- End -->
-        <h4 class="mt-4">General Seats Snapshot</h4>
-        <div class="col-lg-12 pb-4">
+        <h4 class="mt-4">General Seats Snapshot <div class="beta">Beta</div></h4>
+        <div class="col-lg-12 pb-2">
             <p class="text-danger m-0 mt-1">Note: In Libraro, you can offer two types of seats: numbered seats (with a specific seat number) and general seats (without a seat number). General seats help you earn extra revenue because those learners can sit in any available space.</p>
         </div>
         <div class="row g-4">
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Total Bookings</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
+                        <h4 id="gen-totalBookings">0</h4> 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Active Seats</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$today_other_amt == $today_other_amt ? (int)$today_other_amt : $today_other_amt }}</h4>
+                        <h4 id="gen-active-seat"></h4>
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>About to Expire</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
+                        <h4 id="gen-aboutToExpire"></h4>
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Expired Seats</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
+                        <h4 id="gen-expired"></h4>
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+            {{-- <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Today’s Revenue</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$today_refund == $today_refund ? (int)$today_refund : $today_refund }}</h4>
+                        <h4 id=""></h4>
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
@@ -288,13 +288,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 <div class="booking-count bg-3">
                     <h6>Monthly Revene</h6>
                     <div class="d-flex">
-                        <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
+                        <h4 id=""></h4>
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                     <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
+            </div> --}}
 
 
 
@@ -1265,7 +1265,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             // Function to update highlights
             function updateHighlights(highlights) {
                 console.log('highlights', highlights);
-
+                // for gen
+                $('#gen-totalBookings').text(highlights.generalBookings);
+                $('#gen-active-seat').text(highlights.genactiveSeat);
+                $('#gen-aboutToExpire').text(highlights.gengenAboutToExpire);
+                $('#gen-expired').text(highlights.genexpired_seats);
+                //gen close
                 $('#totalBookings').text(highlights.total_booking);
                 $('#till_previous_book').text(highlights.previous_month);
                 $('#onlinePaid').text(highlights.online_paid);

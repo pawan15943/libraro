@@ -985,7 +985,13 @@ td small {
     font-weight: 700;
 }
 
-
+.beta {
+    font-size: .7rem;
+    padding: .1rem .3rem;
+    border-radius: 1.5rem;
+    background-color: red;
+    color: #fff;
+}
 
 .truncate {
     white-space: nowrap;
