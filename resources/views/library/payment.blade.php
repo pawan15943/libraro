@@ -211,10 +211,10 @@
 
                     @if($all_transaction->count() > 0)
                     @foreach($all_transaction as $index => $transaction)
-
+  
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td>{{ $transaction->subscription->name ?? 'N/A' }}</td>
+                        <td>{{ $transaction->subscriptionPlan->name ?? 'N/A' }}</td>
                         <td>{{ $transaction->amount }}</td>
                         <td>{{ $transaction->discount ?? 'N/A' }}%</td> <!-- Assuming there's a discount field -->
                         <td>{{ $transaction->paid_amount }}</td>

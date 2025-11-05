@@ -1,7 +1,7 @@
 @extends('layouts.library')
 @section('content')
 <!-- Content Header (Page header) -->
-@can('has-permission', 'Filter')
+@can('has-permission', 'Learner Search Bar')
     <div class="row justify-content-center mt-5 mb-4 find-a-learner">
         <div class="col-lg-6 text-center">
             <h2 class="font-weight-700">Search Here</h2>
@@ -40,7 +40,7 @@
     @endif
     @foreach($learners ?? [] as $key => $value)
 
-          @php
+        @php
             $learner_detail_id=$value->learner_detail_id;
             $planStatus = getPlanStatusDetails($value->plan_end_date);
             $transaction = learnerTransaction($value->id, $learner_detail_id);
@@ -59,7 +59,7 @@
             $threeDaysAfterStart  = \Carbon\Carbon::parse($value->plan_start_date)->addDays(3);
             $operation = optional(getLearnerOperation($learner_detail_id))->operation;
             $learner_id=$value->id;
-            @endphp
+        @endphp
     <div class="row ">
         <div class="col-lg-12">
             <div class="seat-info bg-white">
