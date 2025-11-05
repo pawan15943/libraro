@@ -151,7 +151,6 @@ class BranchController extends Controller
             'email' => 'required|email',
             'library_address' => 'required|string',
             'library_zip' => 'required|string|max:6',
-            
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
             'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:max_width=250,max_height=250',
@@ -163,8 +162,8 @@ class BranchController extends Controller
              'upi_id'=>'nullable',
             'token_money'=>'nullable',
             'extend_days'=>'nullable',
-            'longitude'=>'nullable',
-            'latitude'=>'nullable',
+            'longitude'=>'required',
+            'latitude'=>'required',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);

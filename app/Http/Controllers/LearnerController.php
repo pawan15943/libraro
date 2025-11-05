@@ -284,19 +284,18 @@ class LearnerController extends Controller
             die;
         }
 
+    
         $exists = Learner::where('branch_id', getCurrentBranch())
-            ->get()
-            ->filter(function ($learner) use ($request) {
-                return $learner->email === strtolower(trim($request->input('email')));
-            })
-            ->isNotEmpty();
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->whereRaw('LOWER(email) = ?', [strtolower(trim($request->input('email')))])
+            ->exists();
 
         if ($exists) {
             return response()->json([
                 'error' => true,
                 'message' => 'The email has already been taken.'
             ], 422);
-            die;
         }
 
 
@@ -2706,7 +2705,7 @@ class LearnerController extends Controller
         $first_record = Hour::first();
         $total_hour = $first_record ? $first_record->hour : null;
 
-        $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $request->new_seat_id)->sum('hours');
+        $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $request->new_seat_id)->where('status', 1)->sum('hours');
         $new_seat_remaining = $total_hour - $total_cust_hour;
 
 

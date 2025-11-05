@@ -133,6 +133,7 @@ class DashboardController extends Controller
                 
             }
 
+
             $available_seats=$this->learnerService->getAvailableSeatsPlantype();
             
             $extend_day = getExtendDays();
@@ -269,10 +270,12 @@ class DashboardController extends Controller
            
            
             if($is_expire && $user->hasRole('admin')){
-            
+               
                 return redirect()->route('library.myplan');
             }elseif($iscomp){
-               if (getCurrentBranch() === null || getCurrentBranch() == 0) {
+                
+               if (getCurrentBranch() === null || getCurrentBranch() == 0 || $user->current_branch==null) {
+               
                     $firstBranch = Branch::where('library_id', getLibraryId())->select('id')->first();
 
                     if ($firstBranch && $firstBranch->id) {
@@ -281,11 +284,11 @@ class DashboardController extends Controller
                         ]);
                     }
                 }
-
+                
                
                 return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch'));
             }else{
-              
+             
                 return redirect($redirectUrl);
             }
            
@@ -1531,9 +1534,15 @@ class DashboardController extends Controller
         return view('dashboard.library_daily_tran', $data);
     }
 
-    function formatNumber($value) {
-        return (intval($value) == $value) ? intval($value) : number_format($value, 2);
+    function formatNumber($value)
+    {
+        // Convert to numeric first
+        $num = is_numeric($value) ? (float)$value : 0;
+
+        // If integer, return as int, else format with 2 decimals
+        return (intval($num) == $num) ? intval($num) : number_format($num, 2, '.', '');
     }
+
 
     
     
