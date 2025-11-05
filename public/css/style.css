@@ -6229,3 +6229,7 @@ span.chip {
 i.fa-solid.fa-check-circle.booked.paylater_class {
     color: blue !important;
 }
+
+.capitalise{
+    text-transform: capitalize !important;
+}

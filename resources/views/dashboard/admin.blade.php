@@ -931,14 +931,36 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(!$renewSeats->isEmpty())
 
                         @foreach($renewSeats as $key => $value)
-
+                     
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
 
                                     <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
-                                    <small>{{$value->planType->name ?? ''}}</small>
+                                    <small class="capitalise">{{$value->name ?? ''}} </small>
+                                    @if($value->planType->name=='First Half')
+                                    <small>(FH)</small>
+                                    @elseif($value->planType->name=='Second Half')
+                                    <small>(SH) </small>
+                                    @elseif($value->planType->name=='Hourly Slot 1')
+                                    <small>(H1) </small>
+                                    @elseif($value->planType->name=='Hourly Slot 2')
+                                    <small>(H2) </small>
+                                    @elseif($value->planType->name=='Hourly Slot 3')
+                                    <small>(H3) </small>
+                                    @elseif($value->planType->name=='Hourly Slot 4')
+                                    <small>(H4) </small>
+                                    @elseif($value->planType->name=='Full Day')
+                                    <small>(FD) </small>
+                                    @elseif($value->planType->name=='Full Night')
+                                    <small>(FN) </small>
+                                    @elseif($value->planType->name=='All Day')
+                                    <small>(AD) </small>
+                                    @else
+                                    <small>{{ $value->planType->name }}</small>
+                                    @endif
+                                    
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
@@ -952,7 +974,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <li>
                                         <a target="_blank"
                                             href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
-                                                "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team" . getCurrentBranchName()
+                                                "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
                                         ) }}">
                                             <i class="fab fa-whatsapp"
                                                 data-bs-placement="bottom"
