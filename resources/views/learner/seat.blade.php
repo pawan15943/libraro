@@ -149,11 +149,11 @@ $today = Carbon::today();
 
 
                                                 if(overdue($user->id, $pending_amt)){
-                                                $class='orange_class';
+                                                    $class='orange_class';
                                                 }elseif(paylater($user->learner_detail_id)){
-                                                $class='paylater_class';
+                                                    $class='paylater_class';
                                                 }else{
-                                                $class=$planDetails['class'];
+                                                    $class=$planDetails['class'];
                                                 }
 
                                                 @endphp
