@@ -226,7 +226,79 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         </div>
         <!-- End -->
+        <h4 class="mt-4">General Seats Snapshot</h4>
+        <div class="col-lg-12 pb-4">
+            <p class="text-danger m-0 mt-1">Note: In Libraro, you can offer two types of seats: numbered seats (with a specific seat number) and general seats (without a seat number). General seats help you earn extra revenue because those learners can sit in any available space.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>Total Bookings</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>Active Seats</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$today_other_amt == $today_other_amt ? (int)$today_other_amt : $today_other_amt }}</h4>
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>About to Expire</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
 
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>Expired Seats</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
+
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>Today’s Revenue</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$today_refund == $today_refund ? (int)$today_refund : $today_refund }}</h4>
+
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_refund']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                <div class="booking-count bg-3">
+                    <h6>Monthly Revene</h6>
+                    <div class="d-flex">
+                        <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
+
+                    </div>
+                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
+                </div>
+            </div>
+
+
+
+        </div>
         <!-- Daily Collection -->
         <div class="row g-4">
 
@@ -402,15 +474,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
 
                                 @if($value->payment_screenshot)
-                                    <td>
-                                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success text-decoration-none">
-                                            Paid
-                                        </a>
-                                    </td>
+                                <td>
+                                    <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success text-decoration-none">
+                                        Paid
+                                    </a>
+                                </td>
                                 @else
-                                    <td>
-                                        <span class="badge bg-danger">Unpaid</span>
-                                    </td>
+                                <td>
+                                    <span class="badge bg-danger">Unpaid</span>
+                                </td>
                                 @endif
 
                                 <td>
@@ -418,7 +490,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                         @if($value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday())
                                         <li>
                                             <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
-                                               @csrf
+                                                @csrf
                                                 <input type="hidden" name="booking_id" value="{{ $value->id }}">
                                                 <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
                                                 <button type="submit" class="btn btn-success"><i class="fa fa-check"></i></button>
@@ -458,21 +530,21 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <div class="col-lg-4">
                 <h4 class="my-4">Recent Activity</h4>
                 <ul class="activity contents">
-                @if($recent_activitys->count() > 0)
+                    @if($recent_activitys->count() > 0)
                     @foreach($recent_activitys as $value)
-                        @php
-                            $operationDetails = HelperService::getOperationDetails($value);
-                        @endphp
+                    @php
+                    $operationDetails = HelperService::getOperationDetails($value);
+                    @endphp
 
-                        <li>
-                            {!! $operationDetails['message'] !!}
-                        </li>
+                    <li>
+                        {!! $operationDetails['message'] !!}
+                    </li>
                     @endforeach
-                @else
+                    @else
                     <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
-                @endif
+                    @endif
                 </ul>
-        
+
             </div>
         </div>
         @endcan
@@ -749,11 +821,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <div class="record-not-found">
 
                         <canvas id="revenueChart" style="max-height:340px;"></canvas>
-                       
+
                         <div class="not-data" style="display: none;" id="no-data2">
                             <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
 
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"  autoplay loop></dotlottie-wc>
+                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
                             <span>No Data Available</span>
                         </div>
 
@@ -765,7 +837,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <h5 class="mb-3">Planwise Booking</h5>
                     <div class="record-not-found">
                         <canvas id="bookingCountChart" style="max-height:340px;"></canvas>
-                    
+
 
                         <div class="not-data" style="display: none; " id="no-data3">
                             <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
@@ -804,7 +876,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <div class="seat-content">
 
                                     <h6>Seat No. {{ getSeatDisplayByMainNo($seat['seat_no']) }}</h6>
-                                    @if(count($seat['available_plan_types']) > 3)   
+                                    @if(count($seat['available_plan_types']) > 3)
                                     <small>Available</small>
                                     @else
                                     @foreach($seat['available_plan_types'] as $planType)
@@ -864,7 +936,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
-                                    
+
                                     <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
                                     <small>{{$value->planType->name ?? ''}}</small>
                                 </div>
@@ -922,7 +994,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
                                 <div class="seat-content">
-                                    
+
                                     <h6>Seat No. : {{ $seat->seat_no ? getSeatDisplayByMainNo($seat->seat_no) : 'GEN'}}</h6>
                                     <small>{{ $seat->planType->name ?? 'N/A' }}</small>
 
@@ -1052,7 +1124,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 refreshScrollbar();
             });
 
-           // Observe only if .v-content exists
+            // Observe only if .v-content exists
             const target = document.querySelector(".v-content");
             if (target) {
                 const observer = new MutationObserver(() => {
@@ -1573,62 +1645,62 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             });
         });
     </script>
-   <script>
-    $(document).ready(function () {
+    <script>
+        $(document).ready(function() {
 
-        // 1️⃣ SweetAlert confirmation before form submit
-        $(document).on('submit', '.approve-form', function (e) {
-            e.preventDefault();
-            let form = this;
+            // 1️⃣ SweetAlert confirmation before form submit
+            $(document).on('submit', '.approve-form', function(e) {
+                e.preventDefault();
+                let form = this;
 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You are about to approve this booking.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, Approve it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit(); // submit form if confirmed
-                }
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You are about to approve this booking.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Approve it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // submit form if confirmed
+                    }
+                });
             });
-        });
 
-        // 2️⃣ Show backend flash messages (success or error) in SweetAlert
-        //@if(session('success'))
+            // 2️⃣ Show backend flash messages (success or error) in SweetAlert
+            //@if(session('success'))
             //Swal.fire({
-               // icon: 'success',
-              //  title: 'Success',
-               // text: "{{ session('success') }}",
-               // confirmButtonColor: '#3085d6'
-           // });
-       // @endif
+            // icon: 'success',
+            //  title: 'Success',
+            // text: "{{ session('success') }}",
+            // confirmButtonColor: '#3085d6'
+            // });
+            // @endif
 
-        // @if(session('error'))
-        //     Swal.fire({
-        //         icon: 'error',
-        //         title: 'Error',
-        //         text: "{{ session('error') }}",
-        //         confirmButtonColor: '#d33'
-        //     });
-        // @endif
+            // @if(session('error'))
+            //     Swal.fire({
+            //         icon: 'error',
+            //         title: 'Error',
+            //         text: "{{ session('error') }}",
+            //         confirmButtonColor: '#d33'
+            //     });
+            // @endif
 
-        // 3️⃣ Optional: catch JS errors globally
-        window.addEventListener('error', function (e) {
-            Swal.fire({
-                icon: 'error',
-                title: 'JavaScript Error',
-                text: e.message || 'An unexpected error occurred.',
-                footer: `<small>File: ${e.filename}, Line: ${e.lineno}</small>`
+            // 3️⃣ Optional: catch JS errors globally
+            window.addEventListener('error', function(e) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'JavaScript Error',
+                    text: e.message || 'An unexpected error occurred.',
+                    footer: `<small>File: ${e.filename}, Line: ${e.lineno}</small>`
+                });
             });
-        });
 
-    });
+        });
     </script>
 
-    
+
 
     @endsection
