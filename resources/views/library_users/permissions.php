@@ -3,109 +3,121 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 @section('content')
+<div class="card">
+    <!-- Add Library User Form -->
 
-<!-- Add Library User Form -->
+    <form id="userSubmitForm">
+        <!-- @csrf
+        <input type="hidden" name="id"   value="{{ $editUser->id ?? '' }}">
+        <h4 class="pb-4">User Details</h4>
+        <div class="row">
+            <div class="col-lg-4">
+                <label>Name <sup class="text-danger">*</sup></label>
+                <input type="text" name="name"  class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
+            </div>
+            <div class="col-lg-4">
+                <label>Email <sup class="text-danger">*</sup></label>
+                <input type="email" name="email"  class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
+            </div>
+            <div class="col-lg-4">
+                <label>Mobile</label>
+                <input type="text" name="mobile"  class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
+            </div>
+        </div>
 
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <form id="userSubmitForm">
-                @csrf
-                <input type="hidden" name="id" value="{{ $editUser->id ?? '' }}">
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <label>Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
-                    </div>
-                    <div class="col-lg-6">
-                        <label>Email ID <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
-                    </div>
-                    <div class="col-lg-6">
-                        <label>Mobile No <span class="text-danger">*</span></label>
-                        <input type="text" name="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
-                    </div>
+        <div class="row g-4 mt-2">
 
+            <div class="col-lg-4">
+                <label>Password</label>
+                <input type="password" name="password"  class="form-control" autocomplete="off">
+            </div>
 
-                    <div class="col-lg-6">
-                        <label>Select Role <span class="text-danger">*</span></label>
-
-                        <select name="role[]" class="form-select">
-
-                            <option value="">Administrator</option>
-                            <option value="">Library Manager</option>
-                            <option value="">Staff</option>
-                            <option value="">Peon</option>
-
-                        </select>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <label>Select Branch <span class="text-danger">*</span></label>
-
-                        <select name="branch_id[]" id="my-select" class="form-select" multiple>
-                            @php
+            <div class="col-lg-4">
+                <label>Select Branch</label>
+               
+                <select name="branch_id[]" id="my-select" class="form-select" multiple>
+                        @php
                             $selectedBranches = $editUser?->branch_id ?? [];
-                            @endphp
+                        @endphp
 
-                            @foreach($branches as $branch)
+                        @foreach($branches as $branch)
                             <option value="{{ $branch->id }}"
                                 {{ in_array($branch->id, $selectedBranches) ? 'selected' : '' }}>
                                 {{ $branch->name }}
                             </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-lg-6">
-                        <label>Upload Photo </label>
-                        <input type="file" name="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
-                    </div>
-                    <div class="col-lg-6">
-                        <label>Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" autocomplete="off">
-                    </div>
-                    <div class="col-lg-6">
-                        <label>Confirm Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" autocomplete="off">
-                    </div>
+                        @endforeach
+                </select>
+            </div>
 
-                    <!-- <div class="col-lg-4">
+            <div class="col-lg-4">
                 <label>Status</label>
                 <select name="status" id="status" class="form-select">
                     <option value="1" {{ (old('status', $editUser->status ?? '') == 1) ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ (old('status', $editUser->status ?? '') == 0) ? 'selected' : '' }}>Inactive</option>
                 </select>
-            </div> -->
-                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <h4 class="py-4">User Permissions</h4>
+            
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="checkAllPermissions">
+                <label class="form-check-label fw-bold" for="checkAllPermissions">
+                    Check All
+                </label>
+            </div>
+        </div> -->
 
 
-                <div class="row mt-3">
-                    <div class="col-lg-3">
-                        <button type="submit" class="btn btn-primary button" id="submit_id">Add User</button>
+        <div class="row ">
+            <div class="col-lg-12">
+
+            @php
+                $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
+            @endphp
+
+            @foreach($groupedPermissions as $categoryId => $permissions)
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h5 class='role-category-heading'>
+                            {{ $categoryId ? \App\Models\PermissionCategory::where('id', $categoryId)->value('name') ?? 'No Category' : 'No Category' }}
+
+                        </h5>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="photo text-center">
-                <img src="{{ asset('public/img/user.png')}}" id="photo" alt="user" style="width: 150px; display:block; margin:0 auto;">
-                <p class="mt-4">Upload User Photo</p>
+
+                <div class="row g-3 mt-1 mb-3">
+                    @foreach($permissions as $name => $id)
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input
+                                class="form-check-input permission"
+                                type="checkbox"
+                                name="permissions[]"
+                                value="{{ $id }}"
+                                id="perm_{{ $id }}"
+                                data-permission-name="{{ $name }}"
+                                {{ in_array($id, $selectedPermissionIds) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="perm_{{ $id }}">
+                                {{ strtoupper($name) }}
+                            </label>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endforeach
+
             </div>
-            <small class="text-danger">Guideline to Upload</small>
-            <ol class="upload_guideline" type="1">
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-            </ol>
         </div>
-    </div>
+
+        <div class="row mt-3">
+            <div class="col-lg-3">
+                <button type="submit" class="btn btn-primary button" id="submit_id">Save User</button>
+            </div>
+        </div>
+    </form>
+
 </div>
-
-
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -126,7 +138,7 @@
         // Edit user
         $('.edit_user').on('click', function() {
             let user = $(this).data('user');
-
+           
 
             console.log('user', user);
             $('#user_id').val(user.id);
@@ -169,21 +181,21 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    console.log("res", response);
+                    console.log("res",response);
                     if (response.success && response.redirect) {
                         if (response.message) {
                             sessionStorage.setItem('flash_message', response.message);
                             sessionStorage.setItem('flash_type', 'success'); // or error, info, etc.
                         }
                         window.location.href = response.redirect;
-
+                      
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else if (response.success) {
                         if (response.message) {
-                            showFlashMessage(response.message, 'success');
-                        }
-
+                                showFlashMessage(response.message, 'success');
+                            }
+                                            
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else {

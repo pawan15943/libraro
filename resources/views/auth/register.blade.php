@@ -7,7 +7,7 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
 
     <title>Register Library on Libraro | Grow with Library Booking Software</title>
-
+    <link rel="canonical" href="https://www.libraro.in/library/register" />
     <meta name="description" content="Register your library today with Libraro and start managing seat bookings, payments, expenses, and reports from one intuitive dashboard.">
 
     <meta name="keywords" content="Library Software Registration, Library Sign Up, Seat Booking Software, Library Management Software Join">
@@ -17,8 +17,11 @@
     <meta property="og:title" content="Library Sign Up | Get Started with Libraro Today" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
     <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         {
