@@ -1015,11 +1015,38 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
+                                
                                 <div class="seat-content">
 
-                                    <h6>Seat No. : {{ $seat->seat_no ? getSeatDisplayByMainNo($seat->seat_no) : 'GEN'}}</h6>
-                                    <small>{{ $seat->planType->name ?? 'N/A' }}</small>
+                                    <h6>Seat No. : {{$seat->seat_no ? getSeatDisplayShortFloor($seat->seat_no) : 'GEN'}}</h6>
+                                    <small class="capitalise">{{$seat->name ?? ''}} </small>
+                                    @php
+                                        $planTypeName = optional($seat->planType)->name;
+                                    @endphp
 
+                                    @if($planTypeName == 'First Half')
+                                        <small>(FH)</small>
+                                    @elseif($planTypeName == 'Second Half')
+                                        <small>(SH)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 1')
+                                        <small>(H1)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 2')
+                                        <small>(H2)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 3')
+                                        <small>(H3)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 4')
+                                        <small>(H4)</small>
+                                    @elseif($planTypeName == 'Full Day')
+                                        <small>(FD)</small>
+                                    @elseif($planTypeName == 'Full Night')
+                                        <small>(FN)</small>
+                                    @elseif($planTypeName == 'All Day')
+                                        <small>(AD)</small>
+                                    @else
+                                        <small>{{ $planTypeName ?? 'N/A' }}</small>
+                                    @endif
+
+                                    
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p>

@@ -1549,7 +1549,7 @@
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
-                if (refundAmount !== paybleRefund && (pendingRefund <= 0 || (pendingRefund+refundAmount) > paybleRefund)) {
+                if (isRefund && refundAmount !== paybleRefund && (pendingRefund < 0 || (pendingRefund+refundAmount) > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
@@ -1711,7 +1711,7 @@
                     return false;
                 }
 
-                if (refundAmount !== paybleRefund && (pendingRefund <= 0 || (pendingRefund+refundAmount) > paybleRefund)) {
+                if (isRefund && refundAmount !== paybleRefund && (pendingRefund < 0 || (pendingRefund+refundAmount) > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
