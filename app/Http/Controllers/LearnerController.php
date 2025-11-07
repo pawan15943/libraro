@@ -3750,6 +3750,58 @@ class LearnerController extends Controller
         return view('learner.future-bookings', compact('learners'));
     }
 
+    public function restore(Request $request)
+    {
+        $learnerDetail = LearnerDetail::withTrashed()->find($request->learner_detail_id);
+
+        if (!$learnerDetail) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Learner detail not found.',
+            ]);
+        }
+
+        // Check if plan is valid
+        if ($learnerDetail->plan_end_date && $learnerDetail->plan_end_date < now()->toDateString()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot restore learner. Plan has expired.',
+            ]);
+        }
+
+        // ✅ Restore learner_detail
+        $learnerDetail->restore();
+        $learnerDetail->status = 1;
+        $learnerDetail->save();
+
+        // ✅ Restore and update main learner (if exists)
+        if ($learnerDetail->learner_id) {
+            $learner = Learner::withTrashed()->find($learnerDetail->learner_id);
+
+            if ($learner) {
+                $learner->restore();
+                $learner->status = 1;
+                $learner->save();
+            }
+
+            // ✅ Restore related learner transactions
+            LearnerTransaction::withTrashed()
+                ->where('learner_id', $learnerDetail->learner_id)
+                ->restore();
+        } else {
+            // If no learner_id, you may use learner_detail_id in transactions (depends on your schema)
+            LearnerTransaction::withTrashed()
+                ->where('learner_detail_id', $learnerDetail->id)
+                ->restore();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Learner, learner details, and transactions restored successfully.',
+        ]);
+    }
+
+
 
    
 }

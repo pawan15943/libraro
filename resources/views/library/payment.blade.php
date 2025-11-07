@@ -191,7 +191,7 @@
 </div>
 @if($ispaid)
 <div class="row mb-4">
-    <h4 class="py-4">Transaction Detials</h4>
+    <h4 class="py-4">Transaction Details</h4>
     <div class="col-lg-12">
         <div class="table-responsive">
             <table class="table text-center data-table">

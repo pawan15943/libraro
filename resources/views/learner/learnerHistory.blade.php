@@ -188,6 +188,20 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                             <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-seat="{{$value->seat_no}}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
                         @endif
                     @endcan
+                    @if($operation == 'deleteSeat')
+                        <li>
+                            <a href="#" 
+                            data-id="{{ $learner_id }}" 
+                            data-learnerDetail="{{ $learner_detail_id }}"  
+                            data-seat="{{ $value->seat_no }}"  
+                            data-bs-toggle="tooltip" 
+                            title="Restore Learner" 
+                            class="restore-customer">
+                            <i class="fas fa-trash-restore"></i>
+                            </a>
+                        </li>
+                    @endif
+
                 </ul>
             </div>
 

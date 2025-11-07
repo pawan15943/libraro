@@ -253,6 +253,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('other/payment/store', [LearnerController::class, 'otherPaymentStore'])->name('learner.other.payment.store');
     Route::get('learner/checklist', [LearnerController::class, 'learnerChecklist'])->name('learner.checklist');
     Route::post('/learner/idcard/bulk', [LearnerController::class, 'printBulkIdCard'])->name('learner.idcard.bulk');
+   
+    Route::post('/learners/restore', [LearnerController::class, 'restore'])->name('learners.restore');
+
   });
   Route::get('seat/history/list', [LearnerController::class, 'seatHistory'])->name('seats.history');
   Route::get('seats/history/{id?}', [LearnerController::class, 'history'])->name('seats.history.show');

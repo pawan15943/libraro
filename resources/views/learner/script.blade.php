@@ -1426,54 +1426,6 @@
         }
     }
 
-    // $(document).on('click', '.delete-customer', function() {
-    //     var id = $(this).data('id');
-    //     var learnerDetail = $(this).data('learnerDetail');
-    //     var url = '{{ route('learners.destroy', ':id') }}';
-    
-    //     url = url.replace(':id', id);  
-    //     var formId='deleteSeat';
-    //     var fieldName='deleted_at';
-    //     var newValue = new Date().toISOString()
-    //     var oldValue = null;
-       
-    //     Swal.fire({
-    //         title: 'Are you sure?',
-    //         text: "You won't be able to revert this!",
-    //         icon: 'warning',
-    //         showCancelButton: true,
-    //         confirmButtonColor: '#3085d6',
-    //         cancelButtonColor: '#d33',
-    //         confirmButtonText: 'Yes, delete it!'
-    //     }).then((result) => {
-    //         if (result.isConfirmed) {
-    //             $.ajax({
-    //                 url: url,
-    //                 type: 'DELETE',
-    //                 data: {
-    //                     _token: '{{ csrf_token() }}'
-    //                 },
-    //                 success: function(response) {
-    //                     logFieldChange(id, formId, fieldName, oldValue, newValue,learnerDetail);
-    //                     Swal.fire(
-    //                         'Deleted!',
-    //                         'User has been deleted.',
-    //                         'success'
-    //                     ).then(() => {
-    //                         location.reload(); // Optionally, you can refresh the page
-    //                     });
-    //                 },
-    //                 error: function(xhr, status, error) {
-    //                     Swal.fire(
-    //                         'Error!',
-    //                         'An error occurred while deleting the student.',
-    //                         'error'
-    //                     );
-    //                 }
-    //             });
-    //         }
-    //     });
-    // });
     
 
     $(document).on('click', '.delete-customer', function () {
@@ -1545,7 +1497,7 @@
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
 
-                if (isRefund && (!refundAmount || refundAmount <= 0 || paybleRefund < refundAmount)) {
+                if (isRefund && (!refundAmount || refundAmount < 0 || paybleRefund < refundAmount)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
@@ -1706,7 +1658,7 @@
                 const remark = $('.refundRemark').val();
                 const pendingRefund = $('.pendingRefund').val();
 
-                if (isRefund && (!refundAmount || refundAmount <= 0)) {
+                if (isRefund && (!refundAmount || refundAmount < 0)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
@@ -2440,6 +2392,64 @@ function calculatePending(paid_val) {
 
 
 }
+
+$(document).on('click', '.restore-customer', function (e) {
+   
+    e.preventDefault();
+    var learnerDetail = $(this).data('learnerdetail');
+    var id = $(this).data('id');
+    var formId = 'restoreSeat';
+    var fieldName = 'seat';
+    var seat = $(this).data('seat');
+    var newValue = seat;
+    var oldValue = seat;
+    var learnerDetailId = $(this).data('learnerdetail');
+    var url = "{{ route('learners.restore') }}"; // POST route for restore
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You are about to restore this learner record.",
+        iconHtml: '<i class="fas fa-trash-restore fa-3x" style="color:#3085d6;font-size:40px;"></i>',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, restore it!',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    learner_detail_id: learnerDetailId
+                },
+                success: function (response) {
+                    if (response.success) {
+                        logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
+                        Swal.fire({
+                            title: 'Restored!',
+                            text: response.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload(); // Hard refresh (you can also update row dynamically)
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Warning!',
+                            text: response.message,
+                            icon: 'warning'
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    Swal.fire('Error!', 'An error occurred while restoring the learner.', 'error');
+                }
+            });
+        }
+    });
+});
 
 
 

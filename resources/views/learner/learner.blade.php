@@ -316,6 +316,8 @@
                     @can('has-permission', 'Delete Seat')
                     <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}"  data-seat="{{$value->seat_no}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                     @endcan
+                    
+                  
                         {{-- @can('has-permission', 'Delete Seat')
                         @if($today->lessThanOrEqualTo($threeDaysAfterStart))
                         <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
