@@ -69,7 +69,7 @@ if($customer->locker_no){
         </div>
         <div class="form-input mb-4">
             <h4 class="inner-heading">Update Plan Duration</h4>
-            <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
+            <p class="text-danger">⚠️ Warning: Changing the start date will also affect the plan end date. Please ensure you update it carefully and with full understanding of its impact.</p>
            <div class="row g-4">
 
                 <div class="col-lg-6">

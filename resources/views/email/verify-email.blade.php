@@ -51,7 +51,7 @@
         <div
             style="background-color: #000000; color: #ffffff; text-align: center; padding: 20px; font-size: 14px; font-family: 'Mulish', sans-serif; border-radius: 1rem;">
             <!-- Logo -->
-            <img src="{{url('/public/img/libraro-white.svg')}}" alt="Libraro Logo" style="margin-bottom: 15px; width: 150px;">
+            <img src="{{url('/public/img/libraro-white.webp')}}" alt="Libraro Logo" style="margin-bottom: 15px; width: 150px;">
 
             <!-- Social Links -->
             <p style="margin: 0; margin-bottom: 1rem; font-weight: 800;">Follow us on:</p>

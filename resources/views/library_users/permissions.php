@@ -67,16 +67,91 @@
                 </label>
             </div>
         </div> -->
+        <!-- New UI -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="permission-heading">
+                    <h4>Add User Permission</h4>
 
+                    <div class="accept-all">
+                        <input type="checkbox" class="me-2" id="all">
+                        <label for="all">Add All</label>
+                    </div>
+                </div>
+                <ul class="userPermissionList">
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2" id="one">
+                            <label for="one">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <input type="checkbox" class="me-2">
+                            <label for="">Permission Name</label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
+        <!-- Old Design -->
         <div class="row ">
             <div class="col-lg-12">
 
-            @php
+                @php
                 $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
-            @endphp
+                @endphp
 
-            @foreach($groupedPermissions as $categoryId => $permissions)
+                @foreach($groupedPermissions as $categoryId => $permissions)
                 <div class="row">
                     <div class="col-lg-12">
                         <h5 class='role-category-heading'>
@@ -105,7 +180,7 @@
                     </div>
                     @endforeach
                 </div>
-            @endforeach
+                @endforeach
 
             </div>
         </div>
@@ -138,7 +213,7 @@
         // Edit user
         $('.edit_user').on('click', function() {
             let user = $(this).data('user');
-           
+
 
             console.log('user', user);
             $('#user_id').val(user.id);
@@ -181,21 +256,21 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    console.log("res",response);
+                    console.log("res", response);
                     if (response.success && response.redirect) {
                         if (response.message) {
                             sessionStorage.setItem('flash_message', response.message);
                             sessionStorage.setItem('flash_type', 'success'); // or error, info, etc.
                         }
                         window.location.href = response.redirect;
-                      
+
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else if (response.success) {
                         if (response.message) {
-                                showFlashMessage(response.message, 'success');
-                            }
-                                            
+                            showFlashMessage(response.message, 'success');
+                        }
+
                         form.reset();
                         $('#datatable').DataTable().ajax.reload(null, false);
                     } else {

@@ -6243,6 +6243,7 @@ i.fa-solid.fa-check-circle.booked.paylater_class {
       overflow: hidden;
       position: relative;
       background: #fff;
+      z-index: 1;
     }
 
 
@@ -6253,7 +6254,7 @@ i.fa-solid.fa-check-circle.booked.paylater_class {
       right: -94px;
       top: -18px;
       height: 200px;
-      background: linear-gradient(45deg, #dffbff, transparent);
+      background: linear-gradient(45deg, #fff1e7, transparent);
       border-radius: 200px;
       z-index: -1;
     }

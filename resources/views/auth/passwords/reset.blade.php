@@ -35,7 +35,7 @@
          <div class="left">
             <div class="top">
                 <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.svg') }}" alt="Libraro Logo" class="logo"></a>
+                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
             </div>
             <div class="content">
                 <h2>Empower Learning,<br>
