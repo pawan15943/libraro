@@ -6393,6 +6393,10 @@ ul.userPermissionList li {
 
 
 @media screen and (max-width:480px) {
+    .revenue-info ul li:first-child {
+        width: 100% !important;
+    }
+
     .mCustomScrollbar {
         margin-right: -1rem !important;
         overflow-x: hidden;
