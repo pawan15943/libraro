@@ -6,75 +6,11 @@
 <div class="card">
     <!-- Add Library User Form -->
 
-    <form id="userSubmitForm">
-        <!-- @csrf
-        <input type="hidden" name="id"   value="{{ $editUser->id ?? '' }}">
-        <h4 class="pb-4">User Details</h4>
-        <div class="row">
-            <div class="col-lg-4">
-                <label>Name <sup class="text-danger">*</sup></label>
-                <input type="text" name="name"  class="form-control char-only my-input" value="{{ old('name', $editUser->name ?? '') }}">
-            </div>
-            <div class="col-lg-4">
-                <label>Email <sup class="text-danger">*</sup></label>
-                <input type="email" name="email"  class="form-control" autocomplete="off" value="{{ old('email', $editUser->email ?? '') }}">
-            </div>
-            <div class="col-lg-4">
-                <label>Mobile</label>
-                <input type="text" name="mobile"  class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
-            </div>
-        </div>
-
-        <div class="row g-4 mt-2">
-
-            <div class="col-lg-4">
-                <label>Password</label>
-                <input type="password" name="password"  class="form-control" autocomplete="off">
-            </div>
-
-            <div class="col-lg-4">
-                <label>Select Branch</label>
-               
-                <select name="branch_id[]" id="my-select" class="form-select" multiple>
-                        @php
-                            $selectedBranches = $editUser?->branch_id ?? [];
-                        @endphp
-
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}"
-                                {{ in_array($branch->id, $selectedBranches) ? 'selected' : '' }}>
-                                {{ $branch->name }}
-                            </option>
-                        @endforeach
-                </select>
-            </div>
-
-            <div class="col-lg-4">
-                <label>Status</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="1" {{ (old('status', $editUser->status ?? '') == 1) ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ (old('status', $editUser->status ?? '') == 0) ? 'selected' : '' }}>Inactive</option>
-                </select>
-            </div>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <h4 class="py-4">User Permissions</h4>
-            
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="checkAllPermissions">
-                <label class="form-check-label fw-bold" for="checkAllPermissions">
-                    Check All
-                </label>
-            </div>
-        </div> -->
-
-
+     <form method="POST" action="{{ route('library-users.permissions.update', $user->id) }}">
+ @csrf
         <div class="row ">
             <div class="col-lg-12">
 
-            @php
-                $selectedPermissionIds = old('permissions', $editUser?->permissions?->pluck('id')->toArray() ?? []);
-            @endphp
 
             @foreach($groupedPermissions as $categoryId => $permissions)
                 <div class="row">
@@ -89,19 +25,17 @@
                 <div class="row g-3 mt-1 mb-3">
                     @foreach($permissions as $name => $id)
                     <div class="col-md-3">
-                        <div class="form-check">
-                            <input
-                                class="form-check-input permission"
-                                type="checkbox"
-                                name="permissions[]"
-                                value="{{ $id }}"
-                                id="perm_{{ $id }}"
-                                data-permission-name="{{ $name }}"
-                                {{ in_array($id, $selectedPermissionIds) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="perm_{{ $id }}">
-                                {{ strtoupper($name) }}
-                            </label>
-                        </div>
+                                                    <div class="form-check">
+                                <input
+                                    type="checkbox"
+                                    name="permissions[]"
+                                    value="{{ $id }}"
+                                    id="perm_{{ $id }}"
+                                    class="form-check-input"
+                                    {{ $user->permissions->pluck('id')->contains($id) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="perm_{{ $id }}">{{ strtoupper($name) }}</label>
+                            </div>
+
                     </div>
                     @endforeach
                 </div>
@@ -112,7 +46,7 @@
 
         <div class="row mt-3">
             <div class="col-lg-3">
-                <button type="submit" class="btn btn-primary button" id="submit_id">Save User</button>
+                <button type="submit" class="btn btn-primary button">Save User</button>
             </div>
         </div>
     </form>

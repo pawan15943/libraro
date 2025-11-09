@@ -345,9 +345,11 @@
                             </tr>
                             @foreach ($learner->learnerDetails->skip(1) as $detail)
                             <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                 <td>{{ $learner->name }}<br>
+                                    <small>{{getSeatDisplayByMainNo($learner->seat_no) ?? 'General'}}</small>
+                                </td>
+                                <td>{{ $learner->mobile }}</td>
+                                <td>{{ $learner->email }}</td>
                                 <td>{{ $detail->plan->name ?? 'N/A' }}</td>
                                 <td>{{ $detail->plan_start_date ?? 'N/A' }}</td>
                                 <td>{{ $detail->plan_end_date ?? 'N/A' }}</td>

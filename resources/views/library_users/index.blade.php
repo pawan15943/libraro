@@ -74,7 +74,7 @@
                     <li><a href="javascript:;" class="toggle-status" data-id="{{ $user->id }}" title="Toggle Status">
                             <i class="fas {{ $user->status ? 'fa-ban text-danger' : 'fa-check text-success' }}"></i>
                         </a></li>
-                    <li><a href=""><i class="fa fa-plus"></i></a></li>
+                    <li><a href="{{ route('library-users.permissions', $user->id) }}"><i class="fa fa-plus"></i></a></li>
                     <li><a href="{{ route('library-users.create', $user->id) }}"><i class="fa fa-edit"></i></a></li>
                     <li><a href=""><i class="fa fa-trash"></i></a></li>
                 </ul>

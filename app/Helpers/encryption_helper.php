@@ -909,5 +909,30 @@ if (!function_exists('getFloor')) {
         }
 }
 
+if (!function_exists('transaction_id')) {
+        function transaction_id(){
 
+        // Fixed year
+        $year = "2025";
+
+        // Get last transaction (only for 2025 IDs)
+        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($last && !empty($last->transaction_id)) {
+            // extract last sequence (last 4 digits)
+            $lastSeq = (int)substr($last->transaction_id, -4);
+            $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            // first transaction
+            $newSeq = "0001";
+        }
+
+        // Build transaction ID
+        return  $year . "0000" . $newSeq;
+
+
+        }
+    }
 

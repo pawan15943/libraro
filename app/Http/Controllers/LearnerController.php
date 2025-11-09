@@ -3613,31 +3613,13 @@ class LearnerController extends Controller
 
     public function learnerTransactionActivity($data)
     {
-        // Fixed year
-        $year = "2000";
-
-        // Get last transaction (only for 2025 IDs)
-        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        if ($last && !empty($last->transaction_id)) {
-            // extract last sequence (last 4 digits)
-            $lastSeq = (int)substr($last->transaction_id, -4);
-            $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            // first transaction
-            $newSeq = "0001";
-        }
-
-        // Build transaction ID
-        $transactionId = $year . "0000" . $newSeq;
+       
 
         LearnerTransactionActivity::create([
             'branch_id'      => getCurrentBranch(),
             'learner_id'     => $data['learner_id'],
             'date'           => now()->format('Y-m-d'),
-            'transaction_id' => $transactionId,
+            'transaction_id' => transaction_id(),
             'particular'     => $data['particular'],
             'payment_type'   => $data['payment_type'],
             'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
@@ -3673,6 +3655,8 @@ class LearnerController extends Controller
             'is_paid'           => $data['is_paid'] ?? 0,
             'branch_id'         => getCurrentBranch(),
              'due_date'        => $data['due_date'],
+             'transaction_id' => transaction_id(),
+              
         ]);
 
         // 2. Add to LearnerTransactionActivity

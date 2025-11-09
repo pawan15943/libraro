@@ -116,6 +116,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('/library-users/create/{id?}', [LibraryUserController::class, 'create'])->name('library-users.create');
   Route::post('/library-users/store', [LibraryUserController::class, 'store'])->name('library-users.store');
   Route::post('/library-users/toggle-status/{id}', [LibraryUserController::class, 'toggleStatus']);
+  Route::get('library-users/{user}/permissions', [LibraryUserController::class, 'editPermissions'])->name('library-users.permissions');
+  Route::post('library-users/{user}/permissions', [LibraryUserController::class, 'updatePermissions'])->name('library-users.permissions.update');
+
 
   Route::post('/library/master/upload', [Controller::class, 'uploadmastercsv'])->name('library.master.upload');
   Route::post('/dashboard/data', [DashboardController::class, 'getData'])->name('dashboard.data.get');

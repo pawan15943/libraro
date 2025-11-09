@@ -10,6 +10,7 @@ use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class LibraryUserController extends Controller
 {
@@ -37,14 +38,16 @@ class LibraryUserController extends Controller
             $user->branch_names = Branch::whereIn('id', $user->branch_id)->pluck('name')->toArray();
             $user->permissions_array = $user->permissions->pluck('name')->toArray();
         }
-     
+   
          return view('library_users.index', compact('users'));
      }
     public function create($id = null){
          $editUser = null;
 
         if ($id) {
-            $editUser = LibraryUser::with('permissions')->findOrFail($id);
+            // ✅ Load roles as well for edit mode
+            $editUser = LibraryUser::findOrFail($id);
+            $editUser->load('roles');
         }
 
         $subscription = Subscription::find(Auth::user()->library_type);
@@ -61,26 +64,27 @@ class LibraryUserController extends Controller
 
 
          $branches=Branch::where('library_id',getLibraryId())->get();
-         return view('library_users.create', compact('branches','groupedPermissions','editUser'));
+         $roles=Role::where('guard_name','library_user')->get();
+         
+         return view('library_users.create', compact('branches','groupedPermissions','editUser','roles'));
      }
     public function store(Request $request)
     {
-       
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:library_users,email,' . $request->id,
             'password' => $request->id ? 'nullable|min:6' : 'required|min:6',
             'branch_id' => 'required|array|min:1',
-            'status' => 'required|in:0,1',
-            'permissions' => 'required|array|min:1',
-             'mobile' => 'required|digits:10',
+            'mobile' => 'required|digits:10',
+            'role' => 'required|string', // ✅ new required role
         ]);
         
 
         DB::beginTransaction();
        
         try {
-            $data = $request->only('name', 'email', 'mobile', 'status');
+            $data = $request->only('name', 'email', 'mobile');
 
             if ($request->filled('branch_id')) {
                 $data['branch_id'] = $request->branch_id;
@@ -90,9 +94,10 @@ class LibraryUserController extends Controller
 
             if ($request->filled('password')) {
                 $data['password'] = bcrypt($request->password);
+                  $data['original_password']=$request->password;
             }
-            $data['original_password']=$request->password;
-            
+          
+         
             // Create or update LibraryUser
             $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
 
@@ -100,8 +105,9 @@ class LibraryUserController extends Controller
                 throw new \Exception('User creation failed');
             }
 
-
-           $user->permissions()->sync($request->permissions); // pivot table
+             // ✅ Assign role instead of permissions
+                 $user->syncRoles([$request->role]);
+        //    $user->permissions()->sync($request->permissions); 
 
 
             DB::commit();
@@ -125,6 +131,29 @@ class LibraryUserController extends Controller
         }
     }
         
+public function editPermissions($id)
+{
+    $user = LibraryUser::with('permissions')->findOrFail($id);
+
+    $subscription = Subscription::find(auth()->user()->library_type);
+    $groupedPermissions = collect();
+
+    if ($subscription) {
+        $permissions = $subscription->permissions()->get();
+        $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
+    }
+
+    return view('library_users.permissions', compact('user', 'groupedPermissions'));
+}
+
+public function updatePermissions(Request $request, $id)
+{
+    $user = LibraryUser::findOrFail($id);
+     $user->permissions()->sync($request->permissions); 
+   
+    return redirect()->route('library-users.index')->with('success', 'Permissions updated successfully.');
+}
+
 
      
      

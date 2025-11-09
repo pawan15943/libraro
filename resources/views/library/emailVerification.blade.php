@@ -14,6 +14,14 @@
             </ol>
         </nav>
     </div>
+   @error('email')
+        <div class="text-danger">{{ $message }}</div>
+    @enderror
+
+<pre>
+{{ print_r(session()->all(), true) }}
+</pre>
+
 </div>
 
 <div class="card">
@@ -23,7 +31,12 @@
             <div class="row g-4">
                 <div class="col-lg-12">
                     <label for="">Enter OTP <span>*</span></label>
-                    <input type="hidden" name="email" value="{{ session('library_email') ?? session('email') }}">
+                    <input type="hidden" name="email" class="@error('email') is-invalid @enderror" value="{{ session('library_email') ?? session('email') }}">
+                    @error('email')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
                     <input type="hidden" name="user_type" value="admin">
                     <input type="text" class="form-control  @error('email_otp') is-invalid @enderror" name="email_otp" maxlength="10"
                         value="{{ old('email_otp') }}" placeholder="Enter OTP">

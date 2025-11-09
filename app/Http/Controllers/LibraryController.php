@@ -179,8 +179,11 @@ class LibraryController extends Controller
                 $otp = Str::random(6); 
                 $library->email_otp = $otp;
                 $library->save();
+               
                  \Log::info('sendVerificationEmail');
                 $this->sendVerificationEmail($library);
+
+
                 session(['library_email' => $library->email]);
 
                 return redirect()->route('verification.notice')
@@ -254,11 +257,11 @@ class LibraryController extends Controller
     public function verifyOtp(Request $request)
     {
        
-        // Validate the input  login detail all
-        $request->validate([
-            'email' => 'required|email',
-            'email_otp' => 'required',
-        ]);
+       
+        $email = session('library_email') ?? session('email');
+        if (!$email || !$request->email) {
+                return redirect()->back()->withErrors(['email_otp' => 'No email found. Please start the login flow again.Invalid OTP. Please try again.']);
+        }
 
         // Find the library by email
         $library = Library::where('email', $request->email)->first();

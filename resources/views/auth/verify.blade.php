@@ -30,6 +30,8 @@
             </div>
         </div>
         <div class="right">
+   
+
 
             <div class="middle">
                 <h2>Verify Email id via OTP</h2>

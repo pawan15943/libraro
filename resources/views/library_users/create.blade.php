@@ -25,20 +25,24 @@
                         <label>Mobile No <span class="text-danger">*</span></label>
                         <input type="text" name="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
                     </div>
-
+                  
 
                     <div class="col-lg-6">
                         <label>Select Role <span class="text-danger">*</span></label>
-
-                        <select name="role[]" class="form-select">
-
-                            <option value="">Administrator</option>
-                            <option value="">Library Manager</option>
-                            <option value="">Staff</option>
-                            <option value="">Peon</option>
-
+                      <select name="role" class="form-select">
+                            <option value="">-- Select Role --</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->name }}"
+                                    @if(isset($editUser) && $editUser->roles->isNotEmpty() && $editUser->roles->first()->name === $role->name)
+                                        selected
+                                    @endif>
+                                    {{ $role->name }}
+                                </option>
+                            @endforeach
+         
                         </select>
                     </div>
+
 
                     <div class="col-lg-6">
                         <label>Select Branch <span class="text-danger">*</span></label>
@@ -58,7 +62,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label>Upload Photo </label>
-                        <input type="file" name="mobile" class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
+                        <input type="file"  class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
                     </div>
                     <div class="col-lg-6">
                         <label>Password <span class="text-danger">*</span></label>
@@ -123,33 +127,7 @@
             allowClear: true
         });
 
-        // Edit user
-        $('.edit_user').on('click', function() {
-            let user = $(this).data('user');
-
-
-            console.log('user', user);
-            $('#user_id').val(user.id);
-            $('#name').val(user.name);
-            $('#email').val(user.email);
-            $('#mobile').val(user.mobile);
-            $('#status').val(user.status);
-
-            // Set selected branches (array of strings)
-            $('#branch_id').val(user.branch_id).trigger('change');
-
-            $('.permission').prop('checked', false);
-
-            // Re-check based on permission names
-            user.permissions_array.forEach(function(permissionName) {
-                $('input.permission').each(function() {
-                    if ($(this).data('permission-name') === permissionName) {
-                        $(this).prop('checked', true);
-                    }
-                });
-            });
-
-        });
+       
 
 
         // Form submit
@@ -210,6 +188,33 @@
                     }
                 }
             });
+        });
+         // Edit user
+        $('.edit_user').on('click', function() {
+            let user = $(this).data('user');
+
+
+            console.log('user', user);
+            $('#user_id').val(user.id);
+            $('#name').val(user.name);
+            $('#email').val(user.email);
+            $('#mobile').val(user.mobile);
+            $('#status').val(user.status);
+
+            // Set selected branches (array of strings)
+            $('#branch_id').val(user.branch_id).trigger('change');
+
+            $('.permission').prop('checked', false);
+
+            // Re-check based on permission names
+            user.permissions_array.forEach(function(permissionName) {
+                $('input.permission').each(function() {
+                    if ($(this).data('permission-name') === permissionName) {
+                        $(this).prop('checked', true);
+                    }
+                });
+            });
+
         });
 
 
