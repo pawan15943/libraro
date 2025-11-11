@@ -1,7 +1,7 @@
 @extends('layouts.library')
 @section('content')
 <!-- Content Header (Page header) -->
-@can('has-permission', 'Learner Search Bar')
+@can('has-permission', 'Search Learner')
     <div class="row justify-content-center mt-5 mb-4 find-a-learner">
         <div class="col-lg-6 text-center">
             <h2 class="font-weight-700">Search Here</h2>

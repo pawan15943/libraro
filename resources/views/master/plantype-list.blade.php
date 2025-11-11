@@ -34,17 +34,21 @@
         @if(getCurrentBranch() !=0)
     <h4>You haven’t added any Plan Type / Shift yet.</h4>
     <span> Start by creating your first Plan Type / Shift to manage it here.</span>
-  
-        <a href="{{ route('planType.create') }}" class="btn btn-primary export">
-            <i class="fa-solid fa-plus "></i> Add Plan Type / Shift Type
-        </a>
-   @else
+    @can('has-permission','Add Plan Type Master')
+    <a href="{{ route('planType.create') }}" class="btn btn-primary export">
+        <i class="fa-solid fa-plus "></i> Add Plan Type / Shift Type
+    </a>
+    @else
+    <span class="text-danger">You don't have Permission to add Plan Type / Shift</span>
+    @endcan
+    @else
     <h4>To add Plan Type, first select your Branch.</h4>
     <span> Plan names remain the same across all branches, but Plan Type can be different. That’s why you need to choose the branch before adding Plan Type. (Choose Branch in Header Dropdown)</span>
     @endif
 </div>
 
 @else
+@can('has-permission','Add Plan Type Master')
 <div class="heading-list justify-content-end mb-1">
      @if(getCurrentBranch() !=0)
     <a href="{{ route('planType.create') }}" class="btn btn-primary export">
@@ -52,6 +56,7 @@
     </a>
      @endif
 </div>
+@endcan
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)
     <div class="col-lg-4 col-md-6">

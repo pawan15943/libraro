@@ -35,19 +35,26 @@
         loop></dotlottie-wc>
     <h4>You haven’t added any Plans yet.</h4>
     <span> Start by creating your first Plan to manage it here.</span>
+    @can('has-permission','Add Plan Master')
     <div class="heading-list justify-content-end mb-4">
         <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
             <i class="fa-solid fa-plus "></i> Add Plan
         </a>
     </div>
+    @else
+    <span class="text-danger">You don't have Permission to add Plan</span>
+    @endcan
+
 </div>
 
 @else
+@can('has-permission','Add Plan Master')
 <div class="heading-list justify-content-end mb-4">
     <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Plan
     </a>
 </div>
+@endcan
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)
     <div class="col-lg-4 col-md-6">

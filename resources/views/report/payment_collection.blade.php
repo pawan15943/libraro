@@ -20,9 +20,8 @@ $currentMonth = date('m');
 </div>
 @endif
 
-
+@can('has-permission','Payment Collection Report')
 <div class="row">
-
     <div class="col-lg-12">
         <div class="filter-box">
             <h4 class="mb-3">Filter Box</h4>
@@ -80,7 +79,6 @@ $currentMonth = date('m');
 </div>
 
 <div class="row mb-4 mt-4">
-
     <div class="col-lg-12">
         <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
@@ -151,6 +149,11 @@ $currentMonth = date('m');
         </div>
     </div>
 </div>
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to View Payment Collection Report.</span>
+</div>
+@endcan
 
 <script>
     $(document).ready(function() {

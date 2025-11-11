@@ -80,7 +80,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </ul>
             </div>
         </div>
+        
         <div class="row g-4">
+            @can('has-permission', 'Welcome Banner')
             <div class="col-lg-9">
                 <div class="dashboard-Header">
                     <img src="{{url('public/img/bg-library-welcome.png')}}" alt="library" class="img-fluid rounded">
@@ -88,19 +90,22 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         Let’s Make Your <span class="typing-text"> Library the Place to Be! 📚🌟</span></h1>
                 </div>
             </div>
+            @endcan
+
+            @can('has-permission', 'Show Plan Info')
             <div class="col-lg-3">
                 <div class="active-plan-box 
-            @switch($plan->name)
-                @case('Basic Plan')
-                    basic
-                    @break
-                @case('Standard Plan')
-                    standard
-                    @break
-                @case('Premium Plan')
-                    premium
-                    @break
-            @endswitch">
+                    @switch($plan->name)
+                        @case('Basic Plan')
+                            basic
+                            @break
+                        @case('Standard Plan')
+                            standard
+                            @break
+                        @case('Premium Plan')
+                            premium
+                            @break
+                    @endswitch">
                     <div class="top-content">
                         <h4>{{$plan->name}} </h4>
                         <label for="">
@@ -127,23 +132,27 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </a>
                             </li>
-                            @if($branch?->uuid && $branch?->upi_id)
-
-                            <li>
-
-                                <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
-
-                            </li>
-                            @endif
+                            @can('has-permission','QR Seat Booking')
+                                
+                            
+                                @if($branch?->uuid && $branch?->upi_id)
+                                <li>
+                                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR">{!! QrCode::size(35)->generate(route('qr.branch', $branch->uuid)) !!} &nbsp;Download QR Code</a>
+                                </li>
+                                @endif
+                            @endcan
                         </ul>
                     </div>
                 </div>
             </div>
+            @endcan
         </div>
         @php
         $currentYear = date('Y');
         $currentMonth = date('m');
         @endphp
+
+        @can('has-permission', 'Year and Month Filter')
         <div class="row align-items-center mt-4 g-3" id="filter">
             <div class="col-lg-3">
                 <h4>Filter Dashboard Data</h4>
@@ -159,6 +168,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @endforeach
                 </select>
             </div>
+            
 
             <div class="col-lg-3">
                 <select id="dataFilter" class="form-select form-control-sm">
@@ -172,14 +182,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @endif
                 </select>
             </div>
-
+            
 
             {{-- <div class="col-lg-6">
-            <label for="dateRange" class="form-label">Select Date Range:</label>
-            <input type="text" id="dateRange" class="form-control form-control-sm" placeholder="YYYY-MM-DD to YYYY-MM-DD">
-        </div> --}}
-
+                <label for="dateRange" class="form-label">Select Date Range:</label>
+                <input type="text" id="dateRange" class="form-control form-control-sm" placeholder="YYYY-MM-DD to YYYY-MM-DD">
+            </div> --}}
+            
         </div>
+        @endcan 
+
 
         <!-- Library Main Counts -->
         <div class="row  g-4 mt-1 mb-4">
@@ -193,7 +205,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Total Booked Seats Count')
+            @can('has-permission', 'Booked Seats')
             <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                 <div class="main-count cardbg-2">
                     <span>Booked Seats</span>
@@ -214,6 +226,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
+            
+            @can('has-permission', 'Expired Seats')
             <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                 <div class="main-count cardbg-4">
                     <span>Expired Seats</span>
@@ -223,10 +237,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 </div>
             </div>
-
+            @endcan
         </div>
         <!-- End -->
-        <h4 class="mt-4">General Seats Snapshot <div class="beta">Beta</div></h4>
+
+        <!-- General Seat Counts -->
+        @can('has-permission', 'General Seat Counts')
+        <h4 class="mt-4">General Seat Overview <div class="beta">Beta</div></h4>
         <div class="col-lg-12 pb-2">
             <p class="text-danger m-0 mt-1">Note: In Libraro, you can offer two types of seats: numbered seats (with a specific seat number) and general seats (without a seat number). General seats help you earn extra revenue because those learners can sit in any available space.</p>
         </div>
@@ -289,19 +306,23 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <h6>Monthly Revene</h6>
                     <div class="d-flex">
                         <h4 id=""></h4>
-
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                     <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div> --}}
-
-
-
         </div>
-        <!-- Daily Collection -->
-        <div class="row g-4">
+        @endcan
 
+        <!-- Daily Collection -->
+         @php
+            $canBook_01 = auth()->user()->can('has-permission', 'Todays Financial Snapshot');
+            $canBook_02 = auth()->user()->can('has-permission', 'Monthly Financial Overview');
+        @endphp
+        
+        @if ($canBook_01 || $canBook_02)
+        <div class="row g-4">
+            @can('has-permission','Todays Financial Snapshot')
             <div class="col-lg-6">
                 <h4 class="my-4">Today’s Financial Snapshot</h4>
                 <div class="row g-4">
@@ -374,7 +395,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                 </div>
             </div>
-
+            @endcan
+            @can('has-permission','Monthly Financial Overview')
             <div class="col-lg-6">
                 <h4 class="my-4">Monthly Financial Overview</h4>
                 <div class="row g-4">
@@ -440,15 +462,18 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </div>
                 </div>
             </div>
+            @endcan
         </div>
-
+        @endif
+        
         <!-- Library Revenue -->
         @if(!in_array('23', toggleHideField()))
         <div class="row g-4 mb-2">
-            @can('has-permission', 'Monthly Revenues')
+             
             <div class="col-lg-8">
                 <h4 class="my-4">Online / QR Bookings</h4>
                 <div class="table-responsive" id="requests">
+                    @can('has-permission', 'QR Seat Booking')
                     <table class="table table-boredred" id="onlineRequest">
                         <thead>
                             <tr>
@@ -522,11 +547,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             @endif
                         </tbody>
                     </table>
+                    @else
+                    <span class="text-danger d-flex justify-content-center align-items-center" style="height: 265px;">You don't have permission to view QR / Online Bookings</span>
+                    @endcan
                 </div>
 
 
             </div>
-            @endcan
+            
+            @can('has-permission', 'Recent Activity')
             <div class="col-lg-4">
                 <h4 class="my-4">Recent Activity</h4>
                 <ul class="activity contents">
@@ -546,16 +575,23 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </ul>
 
             </div>
+            @endcan
         </div>
         @endcan
         <!-- End -->
+        
+        @php
+            $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');
+            $canBook_2 = auth()->user()->can('has-permission', 'This Month Bookings');
+        @endphp
 
-
+        @if($canBook_1 || $canBook_2)
         <div class="row g-4">
+            @can('has-permission', 'Till Today Bookings')
             <div class="col-lg-6">
                 <h4 class="my-4">Slot Booking Summary – Till Today</h4>
                 <div class="row g-4">
-                    @can('has-permission', 'Total Bookings')
+                  
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-3">
                             <h6>Total Slots</h6>
@@ -566,7 +602,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                         </div>
                     </div>
-                    @endcan
+                    
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-4">
                             <h6>Active Slots</h6>
@@ -589,11 +625,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </div>
                 </div>
             </div>
+            @endcan
 
+            @can('has-permission', 'This Month Bookings')
             <div class="col-lg-6">
                 <h4 class="my-4">Slot Booking Overview: This Month</h4>
                 <div class="row g-4">
-                    @can('has-permission', 'Total Booked Seats Count')
+                   
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-3">
                             <h6>Total Slots</h6>
@@ -604,7 +642,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                         </div>
                     </div>
-                    @endcan
+                    
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count bg-4">
                             <h6>Booked Slots</h6>
@@ -629,20 +667,36 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @endcan
                 </div>
             </div>
-
-
-
-
-
+            @endcan
         </div>
+        @endif
+
         @if(!in_array('18', toggleHideField()))
+        @php
+            $canBook1 = auth()->user()->can('has-permission', 'Expired in 5 Days Count');
+            $canBook2 = auth()->user()->can('has-permission', 'Extended Seats Count');
+            $canBook3 = auth()->user()->can('has-permission', 'Online Paid Count');
+            $canBook4 = auth()->user()->can('has-permission', 'Offline Paid Count');
+            $canBook5 = auth()->user()->can('has-permission', 'Pay Later Count');
+            $canBook6 = auth()->user()->can('has-permission', 'Swap Seats Count');
+            $canBook7 = auth()->user()->can('has-permission', 'Upgrade Seats Count');
+            $canBook8 = auth()->user()->can('has-permission', 'Reactive Seats Count');
+            $canBook9 = auth()->user()->can('has-permission', 'Renew Seat Count');
+            $canBook10 = auth()->user()->can('has-permission', 'Close Seat Count');
+            $canBook11 = auth()->user()->can('has-permission', 'Delete Seat Count');
+            $canBook12 = auth()->user()->can('has-permission', 'Change Plan Count');
+        @endphp
+        
+        @if($canBook1 || $canBook2 || $canBook3 ||$canBook4 || $canBook5 || $canBook6 || $canBook7 || $canBook8 || $canBook9 ||$canBook10 || $canBook11  || $canBook12)
         <h4 class="pt-4">Library Operational Activity Summary</h4>
         <div class="col-lg-12 pb-4">
             <p class="text-danger m-0 mt-1">Note: Expired and extended seat counts are calculated based on both past and current months, as the system operates on a monthly subscription model.</p>
         </div>
+        @endif
+        
         <div class="row g-4">
 
-            @can('has-permission', 'Expired in 5 Days')
+            @can('has-permission', 'Expired in 5 Days Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-1">
                     <h6>Expired in 5 Days</h6>
@@ -654,7 +708,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Extended Seats')
+
+            @can('has-permission', 'Extended Seats Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-4">
                     <h6>Extended Seats</h6>
@@ -667,8 +722,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Online Paid')
 
+            @can('has-permission', 'Online Paid Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Online Paid</h6>
@@ -680,7 +735,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Offline Paid')
+
+            @can('has-permission', 'Offline Paid Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Offline Paid</h6>
@@ -692,6 +748,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
+
+            @can('has-permission', 'Pay Later Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Pay Later</h6>
@@ -702,8 +760,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <a href="{{ route('learners.list.view', ['type' => 'other_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
+            @endcan
 
-            @can('has-permission', 'Swap Seats')
+            @can('has-permission', 'Swap Seats Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Swap Seats</h6>
@@ -716,7 +775,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Upgrade Seats')
+
+            @can('has-permission', 'Upgrade Seats Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Upgrade Seats</h6>
@@ -728,7 +788,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
-            @can('has-permission', 'Reactive Seats')
+
+            @can('has-permission', 'Reactive Seats Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Reactive Seats</h6>
@@ -741,6 +802,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
             @endcan
+            
+            @can('has-permission', 'Renew Seat Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Renew Seats</h6>
@@ -752,6 +815,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
+            @endcan
+
+            @can('has-permission', 'Close Seat Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Close Seats</h6>
@@ -763,6 +829,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <a href="{{ route('learners.list.view', ['type' => 'close_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
+            @endcan
+	
+            @can('has-permission', 'Delete Seat Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
                     <h6>Delete Seats</h6>
@@ -773,9 +842,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
+            @endcan
+
+            @can('has-permission', 'Change Plan Count')
             <div class="col-lg-2 col-md-4 col-sm-6 col-6">
                 <div class="booking-count bg-3">
-                    <h6>CHANGE PLAN</h6>
+                    <h6>Change Plan</h6>
                     <div class="d-flex">
                         <h4 id="change_plan_seat">0</h4>
                     </div>
@@ -783,6 +855,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
             </div>
+            @endcan
+
             <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
                 <div class="booking-count bg-4">
                     <h6>WhatsApp Sended</h6>
@@ -793,6 +867,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 </div>
             </div>
+
             <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
                 <div class="booking-count bg-4">
                     <h6>Email Sended</h6>
@@ -802,8 +877,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 </div>
             </div>
+
         </div>
         @endif
+
         <!-- End -->
         @can('has-permission', 'Plan wise count')
         <h4 class="my-4">Plan-Wise Booking Overview</h4>
@@ -854,14 +931,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         <!-- Available Seats -->
         @if(getCurrentBranch() !=0 || getCurrentBranch() !=null)
-
-
         <div class="row g-4 mt-2 mb-4">
             @can('has-permission', 'Avaialble Seats List')
             <div class="col-lg-4">
 
                 <!-- Show 10 availble Seats -->
-
                 <div class="seat-statistics ">
                     <h4 class="mb-3 text-center">Available Seats</h4>
                     <ul class="contents">
@@ -904,8 +978,18 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
 
                                 </div>
-                                <a href="javascript:;" data-bs-toggle="modal" class="first_popup book"
-                                    data-bs-target="#seatAllotmentModal" data-id="{{ $seat['seat_id'] }}" data-seat_no="{{ $seat['seat_no'] }}">Book</a>
+                                
+                                <a href="javascript:;" 
+                                data-bs-toggle="modal" 
+                                class="first_popup book"
+                                data-bs-target="#seatAllotmentModal"
+                                data-id="{{ $seat['seat_id'] }}" 
+                                data-seat_no="{{ $seat['seat_no'] }}"
+                                @cannot('has-permission', 'Book Seat') disabled @endcannot
+                                >
+                                    Book
+                                </a>
+                               
                             </div>
                         </li>
 
@@ -965,7 +1049,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
 
-                                    @can('has-permission', 'Plan Renews')
+                                    @can('has-permission', 'Renew Seat')
                                     <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
@@ -1050,7 +1134,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 </div>
                                 <div class="seat-status">
                                     <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p>
-                                    @can('has-permission', 'Plan Renews')
+                                    @can('has-permission', 'Renew Seat')
                                     <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew Plan</a></small>
                                     @endcan
                                 </div>
@@ -1095,8 +1179,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 <h2 class="made-inindia"><i class="fa fa-heart "></i> Proud to be Indian, driven by the spirit of 'Digital India'.</h2>
             </div>
         </div>
-
-
     </div>
     <!-- End -->
 
@@ -1408,9 +1490,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
     <script>
         function renderRevenueChart(labels, data) {
+            var canvas = document.getElementById('revenueChart');
+
+            if (!canvas) {
+               console.warn("revenueChart element not found.");
+            } else {
+
             if (Chart.getChart("revenueChart")) {
                 Chart.getChart("revenueChart").destroy();
-
             };
 
             var ctx = document.getElementById('revenueChart').getContext('2d');
@@ -1493,6 +1580,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 },
                 plugins: [ChartDataLabels] // Register the datalabels plugin
             });
+               }
         }
 
         function renderBookingCountChart(labels, data) {
@@ -1501,8 +1589,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             }
 
             if (data) {
-
-
+            var canvas = document.getElementById('bookingCountChart');
+            if (!canvas) {
+               console.warn("revenueChart element not found.");
+            } else {
                 var ctx1 = document.getElementById('bookingCountChart').getContext('2d');
                 var bookingCountChart = new Chart(ctx1, {
                     type: 'pie',
@@ -1561,6 +1651,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 });
 
             }
+        }
         }
     </script>
     <script>

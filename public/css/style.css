@@ -887,13 +887,18 @@ ul.plan-features li+li {
 
 .seat ul {
     list-style: none;
-    padding: 0;
+    padding: 0 0rem;
     position: absolute;
     bottom: -28px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 0.3rem;
+    overflow: auto;
+    width: 90%;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0.5rem ;
 }
 
 .seat ul .fa-check-circle {
@@ -2804,16 +2809,6 @@ a.btn.btn-primary.button.box-shadow.disabled.renew {
     transform: scale(1.1) !important;
 }
 
-.seat ul {
-    list-style: none;
-    padding: 0;
-    position: absolute;
-    bottom: -28px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 0.3rem;
-}
 
 .seat ul .fa-check-circle {
     font-size: 1.3rem;
@@ -6225,7 +6220,9 @@ span.chip {
     margin-right: -1.29rem !important;
     overflow-x: hidden;
 }
-
+.plan-features.mCustomScrollbar{
+        margin-right: 0rem !important;
+}
 i.fa-solid.fa-check-circle.booked.paylater_class {
     color: blue !important;
 }
@@ -6393,6 +6390,15 @@ ul.userPermissionList li {
 
 
 @media screen and (max-width:480px) {
+    .revenue-info {
+        padding: 1rem !important;
+        border-radius: 1rem !important;
+    }
+
+    .row.g-2 {
+        --bs-gutter-y: 1rem !important;
+    }
+
     .revenue-info ul li:first-child {
         width: 100% !important;
     }
@@ -6419,4 +6425,15 @@ ul.userPermissionList li {
         align-items: center;
         height: 50px;
     }
+}
+
+i.fa-solid.fa-check-circle.booked.paylater_class {
+    color: #f47e36 !important;
+}
+
+
+a[disabled] {
+    pointer-events: none;   /* Prevent click */
+    opacity: 0.5;           /* Make it look disabled */
+    cursor: not-allowed;    /* Show disabled cursor */
 }

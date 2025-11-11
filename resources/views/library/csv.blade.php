@@ -26,6 +26,8 @@
     </div>
 </div>
 
+@can('has-permission','Import Student')
+
 @if($errors->any())
 <div class="alert alert-danger">
     <ul>
@@ -233,8 +235,11 @@
         </div>
     </div>
 </div>
-
-
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to Import Students in Library.</span>
+</div>
+@endcan
 
 
 <script>

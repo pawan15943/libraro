@@ -41,9 +41,8 @@ $user = getAuthenticatedUser();
             
             @if(is_null($menu->parent_id) && $show==1  && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
                
-                 {{-- @can('has-permission', [$menu->has_permissions]) --}}
-                 @if($user)
-                 
+                  @can('has-permission', [$menu->has_permissions]) 
+                    @if($user)
                     {{-- <li class="mb-1 {{ $current_route == $menu->url ? 'active' : '' }}"> --}}
                     <li class="mb-1 ">
                         <a class="btn btn-toggle d-inline-flex align-items-center rounded border-0 {{ $menu->children->count() ? '' : 'flex-start' }} {{ $isMenuActive ? 'active' : '' }}"
@@ -72,13 +71,14 @@ $user = getAuthenticatedUser();
                                                     @if($submenu->url == 'toggle.feature' && !$iscomp)
                                                         @continue
                                                     @endif
-
+                                                @can('has-permission', [$submenu->has_permissions]) 
                                                 <li>
                                                     <a href="{{ route($submenu->url) }}"
                                                        class="{{ $current_route == $submenu->url ? 'active' : '' }}">
                                                         {{ $submenu->name }}
                                                     </a>
                                                 </li>
+                                                @endcan
                                             @endif
                                         @endif
                                     @endforeach
@@ -86,8 +86,8 @@ $user = getAuthenticatedUser();
                             </div>
                         @endif
                     </li>
-                @endif
-                {{-- @endcan --}}
+                    @endif
+                 @endcan 
             @endif
             
         @endforeach

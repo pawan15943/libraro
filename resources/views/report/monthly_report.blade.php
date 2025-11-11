@@ -1,6 +1,7 @@
 @extends('layouts.library')
 @section('content')
 
+@can('has-permission','Monthly Revenue Report')
 <div class="row">
     <div class="col-lg-12">
         <div id="export" class="mb-3"></div>
@@ -55,6 +56,11 @@
         </div>
     </div>
 </div>
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to Monthly Revenue Report.</span>
+</div>
+@endcan
 
 <script>
     $(document).ready(function () {

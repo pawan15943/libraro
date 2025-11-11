@@ -63,22 +63,27 @@
                     @can('has-permission', 'Full Night')
                     <option value="9" {{ old('day_type_id', $planType->day_type_id ?? '') == 9 ? 'selected' : '' }}>Full Night</option>
                     @endcan
+
+                    @can('has-permission', 'Custom Plan')
                     <option value="0" {{ old('day_type_id', $planType->day_type_id ?? '') == 0 ? 'selected' : '' }}>Custom</option>
+                    @endcan
                 </select>
-                <div id="custom_plan_type_input" style="margin-top: 10px; {{ (old('day_type_id', $planType->day_type_id ?? '') == 0) ? 'display:block;' : 'display:none;' }}">
-                    <label for="custom_plan_type">Custom Plan Type Name</label>
-                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->name ?? '') }}">
-                </div>
+
                 @error('day_type_id')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
                 </span>
                 @enderror
             </div>
-
+            <div class="col-lg-3" id="custom_plan_type_input" style="{{ (old('day_type_id', $planType->day_type_id ?? '') == 0) ? 'display:block;' : 'display:none;' }}">
+               
+                    <label for="custom_plan_type">Custom Plan Type Name  <span>*</span></label>
+                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->name ?? '') }}">
+                
+            </div>
             <div class="col-lg-3">
                 <label for="start_time">Start Time <span>*</span></label>
-                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time" style="pointer-events: all;" >
+                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time" style="pointer-events: all;">
                 @error('start_time')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
@@ -111,22 +116,22 @@
                 <select name="image" id="seat_color" class="form-select no-validate">
                     <option value="">Select Color</option>
                     <option value="orange" {{ (old('image', $planType->image ?? '') == 'orange') ? 'selected' : '' }}>Orange</option>
-                    <option value="light_orange" {{ (old('image', $planType->image ?? '') == 'light_orange') ? 'selected' : '' }}>Light Orange</option>
-                    <option value="green" {{ (old('image', $planType->image ?? '') == 'green') ? 'selected' : '' }}>Green</option>
-                    <option value="blue" {{ (old('image', $planType->image ?? '') == 'blue') ? 'selected' : '' }}>Blue</option>
-                </select>
-            </div> --}}
+            <option value="light_orange" {{ (old('image', $planType->image ?? '') == 'light_orange') ? 'selected' : '' }}>Light Orange</option>
+            <option value="green" {{ (old('image', $planType->image ?? '') == 'green') ? 'selected' : '' }}>Green</option>
+            <option value="blue" {{ (old('image', $planType->image ?? '') == 'blue') ? 'selected' : '' }}>Blue</option>
+            </select>
+        </div> --}}
 
 
-        </div>
-        <div class="row mt-4">
-            <div class="col-lg-3">
-                <button type="submit" id="savePlanTypeBtn" class="btn btn-primary button">
-                    <i class="fa fa-plus"></i> {{ isset($planType) ? 'Update Plan Type' : 'Add Plan Type' }}
-                </button>
-            </div>
-        </div>
-    </form>
+</div>
+<div class="row mt-4">
+    <div class="col-lg-3">
+        <button type="submit" id="savePlanTypeBtn" class="btn btn-primary button">
+            <i class="fa fa-plus"></i> {{ isset($planType) ? 'Update Plan Type' : 'Add Plan Type' }}
+        </button>
+    </div>
+</div>
+</form>
 </div>
 
 

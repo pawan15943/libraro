@@ -50,9 +50,9 @@
             <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
         </div>
     </div>
-@php
-$current_route = Route::currentRouteName();
-@endphp
+    @php
+    $current_route = Route::currentRouteName();
+    @endphp
     <div class="library-dashbaord">
         <!-- Sidebar -->
         @include('partials.library-sidebar')
@@ -109,90 +109,99 @@ $current_route = Route::currentRouteName();
         </div>
 
 
-       @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
-    <div class="right-sidebar">
-        <h4> QUICK ACTION</h4>
-        <ul>
-            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat"
-                class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
-                <a href="javascript:;" class="noseat_popup">
-                    <i class="fa fa-chair fa-2x"></i>
-                </a>
-            </li>
-            @can('has-permission', 'Learner Search Bar')
-            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
-                class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
-                <a href="{{ route('learner.search') }}">
-                    <i class="fa fa-search fa-2x"></i>
-                </a>
-            </li>
-            @endcan
+        @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+        <div class="right-sidebar">
+            <h4> QUICK ACTION</h4>
+            <ul>
 
-            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
-                class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
-                <a href="{{ route('add.expense.list') }}">
-                    <i class="fa fa-plus fa-2x"></i>
-                </a>
-            </li>
+                @can('has-permission', 'Book Seat')
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat"
+                    class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
+                    <a href="javascript:;" class="noseat_popup">
+                        <i class="fa fa-chair fa-2x"></i>
+                    </a>
+                </li>
+                @endcan
+                @can('has-permission', 'Search Learner')
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
+                    class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
+                    <a href="{{ route('learner.search') }}">
+                        <i class="fa fa-search fa-2x"></i>
+                    </a>
+                </li>
+                @endcan
 
-            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List"
-                class="{{ $current_route == 'seats.history' ? 'active' : '' }}">
-                <a href="{{ route('seats.history') }}">
-                    <i class="fa fa-list-check fa-2x"></i>
-                </a>
-            </li>
+                @can('has-permission', 'Add Daily Expense')
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
+                    class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
+                    <a href="{{ route('add.expense.list') }}">
+                        <i class="fa fa-plus fa-2x"></i>
+                    </a>
+                </li>
+                @endcan
 
-            <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD"
-                class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
-                <a href="{{ route('learner.checklist') }}">
-                    <i class="fa fa-id-card-clip fa-2x"></i>
-                </a>
-            </li>
+                <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List"
+                    class="{{ $current_route == 'seats.history' ? 'active' : '' }}">
+                    <a href="{{ route('seats.history') }}">
+                        <i class="fa fa-list-check fa-2x"></i>
+                    </a>
+                </li> -->
 
-            <li data-bs-toggle="tooltip" data-bs-placement="left"
-                data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}"
-                class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
-                <a href="{{ route('library.video-training') }}">
-                    <i class="fa fa-video fa-2x"></i>
-                </a>
-            </li>
+                @can('has-permission', 'Genrate ID Card')
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD"
+                    class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
+                    <a href="{{ route('learner.checklist') }}">
+                        <i class="fa fa-id-card-clip fa-2x"></i>
+                    </a>
+                </li>
+                @endcan
 
-            @if(!in_array('28', toggleHideField()))
+                <li data-bs-toggle="tooltip" data-bs-placement="left"
+                    data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}"
+                    class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
+                    <a href="{{ route('library.video-training') }}">
+                        <i class="fa fa-video fa-2x"></i>
+                    </a>
+                </li>
+
+                @if(!in_array('28', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback"
                     class="{{ $current_route == 'library.feedback' ? 'active' : '' }}">
                     <a href="{{ route('library.feedback') }}">
                         <i class="fa fa-comment fa-2x"></i>
                     </a>
                 </li>
-            @endif
+                @endif
 
-            @if(!in_array('21', toggleHideField()))
+                @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings"
                     class="{{ $current_route == 'library.settings' ? 'active' : '' }}">
                     <a href="{{ route('library.settings') }}">
                         <i class="fa fa-cog fa-2x fa-spin"></i>
                     </a>
                 </li>
-            @endif
-        </ul>
+                @endif
+            </ul>
 
-        <div class="control-right-sidebar">
-            <i class="fa fa-angle-right" id="sidebar_mob"></i>
+            <div class="control-right-sidebar">
+                <i class="fa fa-angle-right" id="sidebar_mob"></i>
+            </div>
         </div>
-    </div>
-@endif
+        @endif
 
-<style>
-/* Highlight active quick action */
-.right-sidebar ul li.active a {
-    color: #0d6efd; /* Bootstrap primary */
-}
-.right-sidebar ul li.active i {
-    color: #0d6efd;
-    transform: scale(1.1);
-    transition: all 0.3s ease;
-}
-</style>
+        <style>
+            /* Highlight active quick action */
+            .right-sidebar ul li.active a {
+                color: #0d6efd;
+                /* Bootstrap primary */
+            }
+
+            .right-sidebar ul li.active i {
+                color: #0d6efd;
+                transform: scale(1.1);
+                transition: all 0.3s ease;
+            }
+        </style>
 
     </div>
 
@@ -492,7 +501,7 @@ $current_route = Route::currentRouteName();
             form.reset(); // reset form fields
             window.location.href = form.action; // reload without filters
         });
-        </script>
+    </script>
 </body>
 
 </html>

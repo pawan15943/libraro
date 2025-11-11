@@ -27,17 +27,24 @@
         loop></dotlottie-wc>
 
     @if(getCurrentBranch() != 0)
+        
         <h4>You haven’t added any Floor.</h4>
         <span>Start by creating your first Floor to manage it here.</span>
+        @can('has-permission','Add Floor Master')
         <a href="{{ route('floor.create') }}" class="btn btn-primary export">
             <i class="fa-solid fa-plus"></i> Add Floor
         </a>
+        @else
+        <span class="text-danger">You don't have Permission to add Floor</span>
+        @endcan
     @else
         <h4>To add Floor, first select your Branch.</h4>
         <span>Floors are branch-specific. Please choose a branch before adding Floor. (Choose Branch in Header Dropdown)</span>
     @endif
 </div>
 @else
+
+@can('has-permission','Add Floor Master')
 <div class="heading-list justify-content-end mb-1">
     @if(getCurrentBranch() != 0)
     <a href="{{ route('floor.create') }}" class="btn btn-primary export">
@@ -45,6 +52,8 @@
     </a>
     @endif
 </div>
+@endcan
+
 
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)

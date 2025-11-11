@@ -19,6 +19,7 @@ $currentMonth = date('m');
 </div>
 @endif
 
+@can('has-permission','Attendence Report')
 
 <div class="row">
    
@@ -119,6 +120,11 @@ $currentMonth = date('m');
     </div>
 </div>
 
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to View Attendence Report.</span>
+</div>
+@endcan
 <script>
     $(document).ready(function () {
     var table = $('#datatable').DataTable({

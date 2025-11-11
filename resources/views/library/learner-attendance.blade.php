@@ -83,24 +83,7 @@ $current_route = Route::currentRouteName();
                             <span>Name</span>
                             <p>{{$value->name}} </p>
                         </li>
-                        <li>
-                            <span>Plan End Date</span>
-                            <p>
-                                @php
-                                $today = \Carbon\Carbon::today();
-                                @endphp
-
-                                @if(\Carbon\Carbon::parse($value->plan_end_date)->gte($today))
-                                <span class="text-success">
-                                    {{ $value->plan_end_date }} : Active
-                                </span>
-                                @else
-                                <span class="text-danger">
-                                    {{ $value->plan_end_date }} : Extended
-                                </span>
-                                @endif
-                            </p>
-                        </li>
+                        
                         <li>
                             <span>Punch In</span>
                             <p> {{ $value->in_time ? \Carbon\Carbon::parse($value->in_time)->format('h:i A') : '-' }}</p>
@@ -117,6 +100,24 @@ $current_route = Route::currentRouteName();
                                 <span class="text-danger">Absent</span>
                                 @else
                                 <span class="text-warning"> No Attendance</span>
+                                @endif
+                            </p>
+                        </li>
+                        <li>
+                            <span>Plan End Date</span>
+                            <p>
+                                @php
+                                $today = \Carbon\Carbon::today();
+                                @endphp
+
+                                @if(\Carbon\Carbon::parse($value->plan_end_date)->gte($today))
+                                <span class="text-success">
+                                    {{ $value->plan_end_date }} : Active
+                                </span>
+                                @else
+                                <span class="text-danger">
+                                    {{ $value->plan_end_date }} : Extended
+                                </span>
                                 @endif
                             </p>
                         </li>

@@ -1049,8 +1049,7 @@ class LibraryController extends Controller
 
 
     public function getEnquiry(){
-        $datas=LibraryEnquiry::where('branch_id',getCurrentBranch())->with('planType')->get();
-      
+        $datas=LibraryEnquiry::where('library_id',getLibraryId())->with('planType')->get();
         return view('library.enquery',compact('datas'));
     }
 
@@ -1064,7 +1063,7 @@ class LibraryController extends Controller
         
     }
 
-   public function expenceList(Request $request)
+    public function expenceList(Request $request)
     {
         // Get expense master list for dropdown
         $data = Expense::all();

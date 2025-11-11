@@ -32,22 +32,28 @@
         loop></dotlottie-wc>
 
     <!-- Masters -->
-    
-        @if(getCurrentBranch() !=0)
-        <h4>You haven’t added any library Plan / Shift Price yet.</h4>
-        <span> Start by creating your first Plan / Shift Price to manage it here.</span>
-        <a href="{{ route('planPrice.create') }}" class="btn btn-primary export">
-            <i class="fa-solid fa-plus "></i> Add Plan Type / Shifts Price
-        </a>
-        @else
-        <h4>To add Plan Prices, first select your Branch.</h4>
-        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices. (Choose Branch in Header Dropdown)</span>
-        @endif
-    
+
+    @if(getCurrentBranch() !=0)
+    <h4>You haven’t added any library Plan / Shift Price yet.</h4>
+    <span> Start by creating your first Plan / Shift Price to manage it here.</span>
+    @can('has-permission','Add Plan Price Master')
+    <a href="{{ route('planPrice.create') }}" class="btn btn-primary export">
+        <i class="fa-solid fa-plus "></i> Add Plan Type / Shifts Price
+    </a>
+    @else
+    <span class="text-danger">You don't have Permission to add Plan Price</span>
+    @endcan
+
+    @else
+    <h4>To add Plan Prices, first select your Branch.</h4>
+    <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices. (Choose Branch in Header Dropdown)</span>
+    @endif
+
 </div>
 
 @else
 <!-- Masters -->
+@can('has-permission','Add Plan Price Master')
 <div class="heading-list justify-content-end mb-1">
     @if(getCurrentBranch() !=0)
     <a href="{{ route('planPrice.create') }}" class="btn btn-primary export">
@@ -55,6 +61,8 @@
     </a>
     @endif
 </div>
+@endcan
+
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)
     <div class="col-lg-4 col-md-6">

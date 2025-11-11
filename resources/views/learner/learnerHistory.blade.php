@@ -28,9 +28,8 @@ $current_route = Route::currentRouteName();
         ></dotlottie-wc>
 
        
-            <h4>No Learner Added Yet</h4>
-            <span>You haven’t added any learners to your library yet. Start adding learners by clicking the button below.</span>
-            <div class="heading-list justify-content-end mb-1">
+                <h4>No Learners in This Category</h4>
+                <span>You don’t have any learners that are expired, deleted, or closed yet.</span>            <div class="heading-list justify-content-end mb-1">
                 @if(getCurrentBranch() !=0)
                     <a href="javascript:;" class="btn btn-primary export noseat_popup">
                         <i class="fa-solid fa-plus"></i> Book Seat
