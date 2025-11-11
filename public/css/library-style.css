@@ -208,7 +208,8 @@ a.w-auto.px-2:hover .fa {
 }
 
 .seat-info.bg-white:hover {
-    transform: scale(1.01);
+    background: linear-gradient(45deg, #f2f4ff87, #ebfdff9e);
+    transition: all .5s;
 }
 
 .seat-info ul {

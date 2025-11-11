@@ -350,7 +350,7 @@ class QrEntryController extends Controller
         $payee   = $branch->name ?? 'Library';           // dynamic payee name
         $amount  = $booking->total_amount;                        // dynamic amount
         $currency = 'INR';
-        $note     = 'Seat Booking';                      // you can extend this as needed
+        $note     = 'Book Seat';                      // you can extend this as needed
 
 
         $upiLink = "upi://pay?pa={$upiId}&pn=".urlencode($payee)."&am={$amount}&cu={$currency}&tn=".urlencode($note);

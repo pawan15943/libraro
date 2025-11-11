@@ -20,20 +20,45 @@
     {{ session('successCount') }} records imported successfully.
 </div>
 @endif
+
+
+
+
+
+@if($data->isEmpty())
+<div class="no-data-found">
+    <script
+        src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+        type="module"></script>
+
+    <dotlottie-wc
+        src="https://lottie.host/5d973bf9-2f1d-4dd5-925f-86da95dbd7b1/t7dXaWIroC.lottie"
+        style="width: 200px;height: 200px"
+        autoplay
+        loop></dotlottie-wc>
+    <h4>You haven’t added any Govt. / Private Exam names yet.</h4>
+    <span> Start by adding exams name to manage it here.</span>
+    <!-- Masters -->
+    @can('has-permission','Add Exam Master')
+    <div class="heading-list justify-content-end mb-1">
+        <a href="{{ route('exam.create') }}" class="btn btn-primary export">
+            <i class="fa-solid fa-plus "></i> Add Exam
+        </a>
+    </div>
+    @else
+    <span class="text-danger">You don't have Permission to add Exams</span>
+    @endcan
+    
+</div>
+@else
 <!-- Masters -->
+@can('has-permission','Add Exam Master')
 <div class="heading-list justify-content-end mb-1">
     <a href="{{ route('exam.create') }}" class="btn btn-primary export">
         <i class="fa-solid fa-plus "></i> Add Exam
     </a>
 </div>
-
-
-@if($data->isEmpty())
-  <p class="not-found info-message">
-<span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
-
-There is currently no Data available </p>  
-@else
+@endcan
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)
         <div class="col-lg-4 col-md-6">

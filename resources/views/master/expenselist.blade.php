@@ -36,19 +36,26 @@
     <h4>You haven’t added any library Plan / Shift Price yet.</h4>
     <span> Start by creating your first Plan / Shift Price to manage it here.</span>
     <!-- Masters -->
+    @can('has-permission','Add Expense Master')
     <div class="heading-list justify-content-end mb-1">
         <a href="{{ route('expense.create') }}" class="btn btn-primary export">
             <i class="fa-solid fa-plus "></i> Add Expense
         </a>
     </div>
+    @else
+    <span class="text-danger">You don't have Permission to add Plan Price</span>
+    @endcan
+    
 </div>
 @else
 <!-- Masters -->
+@can('has-permission','Add Expense Master')
 <div class="heading-list justify-content-end mb-1">
     <a href="{{ route('expense.create') }}" class="btn btn-primary export">
         <i class="fa-solid fa-plus "></i> Add Expense
     </a>
 </div>
+@endcan
 
 <div class="row g-4 mb-4">
     @foreach($data as $key => $value)

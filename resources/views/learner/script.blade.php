@@ -505,7 +505,31 @@
                 })
             );
                
-            if(seatNo || seatId){
+            // if(seatNo || seatId){
+            //     var seatDisplay = seatDisplayMap[seatNo] ?? seatNo;
+            //     $('#seat_no').val(seatNo);
+            //     $('#seat_id').val(seatId);
+            //     $('#seat_no_head').text('Book Seat No.: ' + seatDisplay);
+            //     @can('has-permission', 'General Seat Booking')
+            //     $('#general_seat').val('no').trigger('change');
+            //     @endcan
+            //     // Hide the seat select fields (visually only)
+            //     $('#seat_id').closest('.col-lg-6').hide();
+            //     $('#general_seat').closest('.col-lg-6').hide();
+            // }else if(toggleHiddenFields.includes('12')){
+            //      $('#seat_no_head').text('Booking Form');
+            //      $('#general_seat').val('no').trigger('change');
+            // }else{
+                
+            //     $('#seat_no_head').text('Booking Form');
+            //     $('#general_seat').val('yes').trigger('change');
+            //     // Show seat fields
+            //     $('#seat_id').closest('.col-lg-6').show();
+            //     $('#general_seat').closest('.col-lg-6').show();
+            // }
+
+
+            if (seatNo || seatId) {
                 var seatDisplay = seatDisplayMap[seatNo] ?? seatNo;
                 $('#seat_no').val(seatNo);
                 $('#seat_id').val(seatId);
@@ -514,17 +538,31 @@
                 // Hide the seat select fields (visually only)
                 $('#seat_id').closest('.col-lg-6').hide();
                 $('#general_seat').closest('.col-lg-6').hide();
-            }else if(toggleHiddenFields.includes('12')){
-                 $('#seat_no_head').text('Booking Form');
-                 $('#general_seat').val('no').trigger('change');
-            }else{
-                
+
+            } else if (toggleHiddenFields.includes('12')) {
+
                 $('#seat_no_head').text('Booking Form');
-                $('#general_seat').val('yes').trigger('change');
+                $('#general_seat').val('no').trigger('change');
+
+            } else {
+
+                $('#seat_no_head').text('Booking Form');
+                @can('has-permission', 'General Seat Booking')
+                    $('#general_seat').val('yes').trigger('change');
+                @else
+                    // User does NOT have permission → force NO and hide YES option
+                    $('#general_seat').val('no').trigger('change');
+
+                    // Hide the "yes" option from the dropdown
+                    $('#general_seat option[value="yes"]').hide();
+                @endcan
+
                 // Show seat fields
                 $('#seat_id').closest('.col-lg-6').show();
                 $('#general_seat').closest('.col-lg-6').show();
             }
+
+
             
             $('#seatAllotmentModal').modal('show');
             if ($('#general_seat').val() === 'yes') {

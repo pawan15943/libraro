@@ -19,9 +19,8 @@ $currentMonth = date('m');
 </div>
 @endif
 
-
+@can('has-permission','Upcoming Payment Report')
 <div class="row mb-4">
-   
     <div class="col-lg-12">
         <div id="export" class="mb-3"></div>
         <div class="table-responsive ">
@@ -113,7 +112,11 @@ $currentMonth = date('m');
         </div>
     </div>
 </div>
-
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to Upcoming Payment Report.</span>
+</div>
+@endcan
 <script>
     $(document).ready(function () {
         var table =$('#datatable').DataTable({

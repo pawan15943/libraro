@@ -19,7 +19,7 @@ $currentMonth = date('m');
 </div>
 @endif
 
-
+@can('has-permission','Expired Learners Report')
 <div class="row">
    
     <div class="col-lg-12">
@@ -148,7 +148,11 @@ $currentMonth = date('m');
         </div>
     </div>
 </div>
-
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to Expired Learners Report.</span>
+</div>
+@endcan
 <script>
     $(document).ready(function () {
         var table =$('#datatable').DataTable({

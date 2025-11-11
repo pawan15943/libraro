@@ -14,8 +14,8 @@
     autoplay
     loop
     ></dotlottie-wc>
-    <h4>No Learner Added Yet</h4>
-    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button below.</span>
+    <h4>No Future Bookings</h4>
+    <span>You haven’t added any learners for upcoming dates. Add learners by clicking the button below.</span>
     <!-- Masters -->
     <div class="heading-list justify-content-end mb-1">
         @if(getCurrentBranch() !=0)

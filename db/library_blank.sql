@@ -598,7 +598,7 @@ CREATE TABLE `permissions` (
 
 INSERT INTO `permissions` (`id`, `name`, `slug`, `guard_name`, `permission_category_id`, `description`, `created_at`, `updated_at`) VALUES
 (1, 'View Seat', NULL, 'library', 3, 'Allow us to view the Learners Information', '2024-10-02 06:58:33', '2024-10-23 12:51:29'),
-(2, 'Seat Booking', NULL, 'library', 3, 'Allow us to book a seat in library', '2024-10-02 06:58:33', '2024-10-23 12:52:06'),
+(2, 'Book Seat', NULL, 'library', 3, 'Allow us to book a seat in library', '2024-10-02 06:58:33', '2024-10-23 12:52:06'),
 (3, 'Edit Seat', NULL, 'library', 3, 'Allow us to edit a seat in Library', '2024-10-02 06:58:33', '2024-10-23 12:52:28'),
 (5, 'Renew Seat', NULL, 'library', 3, 'Allow us to Re-New Learner Plan in Library', '2024-10-02 06:58:33', '2024-10-23 12:54:34'),
 (6, 'Swap Seat', NULL, 'library', 3, 'Allow us to swap seat in Library', '2024-10-02 06:58:33', '2024-10-23 12:54:57'),

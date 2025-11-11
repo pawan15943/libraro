@@ -20,7 +20,7 @@ $transaction ='';
 </div>
 @endif
 
-
+@can('has-permission','Pending Payment Report')
 <div class="row">
    
     <div class="col-lg-12">
@@ -103,7 +103,6 @@ $transaction ='';
         </div>
     </div>
 </div>
-
 <div class="row mb-4 mt-4">
    
     <div class="col-lg-12">
@@ -231,6 +230,11 @@ $transaction ='';
         </div>
     </div>
 </div>
+@else
+<div class="card text-center">
+    <span class="text-danger">You don't have Permission to Pending Payment Report.</span>
+</div>
+@endcan
 
 <script>
     $(document).ready(function () {

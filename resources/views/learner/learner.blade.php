@@ -206,61 +206,58 @@
 
                     <!-- To Handle Paylater & Pending Amount Icon -->
                     @if(paylater($learner_detail_id) || pending_amt($learner_detail_id))
-                    @can('has-permission','Renew Seat')
                     <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2" >Pay Due Amount</a></li>
-                    @endcan
-
                     @endif
+
                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                         @can('has-permission','Renew Seat')
                         <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a></li>
-
                         @endcan
                     @endif
 
                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                         <!-- Sent Mail -->
-
                         @can('has-permission', 'WhatsApp Notification')
                         @if($planStatus['class']=='extedned')
                             <li>
                                 <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                     <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="Send Reminder"></i>
+                                     Send Reminder
                                 </a>
                             </li>
                         @else
                             <li>
                                 <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                     <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                     Send Reminder
                                 </a>
                             </li>
                             
                         @endif
                         {{-- <li><a href="https://web.whatsapp.com/send?phone=91{{$value->mobile}}&text=Hey!%20🌟%0A%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0A%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'whatsapp')" class="whatsapp w-auto px-2" data-bs-toggle="tooltip" data-bs-placement="bottom" data-original-title="Send WhatsApp Reminder"><i class="fa-brands fa-whatsapp pe-1"></i> Send Reminder</a></li> --}}
-
                         @endcan
+
                         <!-- Sent Mail -->
                         {{-- @can('has-permission', 'Email Notification')
-                        <li><a href="mailto:{{$value->email }}?subject=Library Seat Renewal Reminder&body=Hey!%20🌟%0D%0A%0D%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0D%0A%0D%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'email')" class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i></a></li>
+                        <li><a href="mailto:{{$value->email }}?subject=Library Seat Renewal Reminder&body=Hey!%20🌟%0D%0A%0D%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0D%0A%0D%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'email')" class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i> Send Reminder</a></li>
                         @endcan --}}
                     @endif
                     <!-- Swap Seat-->
 
                     @can('has-permission', 'Swap Seat')
-
                     <li><a href="{{route('learners.swap',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Swap Seat"><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
-
                     @endcan
 
 
                     @can('has-permission', 'Change Plan')
-
                     @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater))
                     <li><a href="{{route('learner.change.plan',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
                     @endif
+
                     @endcan
                     <!---ID Card generate-->
                     {{-- @if(!in_array('15', toggleHideField()))
+
                     <li data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card">
                     <form action="{{ route('generateIdCard') }}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -270,9 +267,12 @@
                     </form>
                     </li>
                     @endif --}}
+
+                    @can('has-permission', 'Genrate ID Card')
                     @if(!in_array('15', toggleHideField()))
                     <li><a target="_blank" href="{{ route('idCard',  $learner_detail_id) }}" class="" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card"><i class="fa-solid fa-id-card-clip"></i> </a></li>
                     @endif
+                    @endcan
                     <!-- upgrade Seat-->
                     <!-- (&& $planStatus['diff_extend_day'] <= 5) we remove this block -->
                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
@@ -288,7 +288,6 @@
                     @can('has-permission', 'Close Seat')
                     @if(!in_array('16', toggleHideField()))
                     <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{$value->id}}" data-learnerDetail="{{ $learner_detail_id }}" data-learner_detail_id="{{$learner_detail_id}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Close Plan" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
-
                     @endif
                     @endcan
                     @endif
@@ -299,7 +298,10 @@
                     @endif
                     @endcan
 
+                    @can('has-permission', 'Add Misllaneous Payment')
                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
+                    @endcan
+
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
                     <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>

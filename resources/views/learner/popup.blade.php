@@ -1,4 +1,4 @@
-@can('has-permission', 'Seat Booking')
+@can('has-permission', 'Book Seat')
 <div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
@@ -23,9 +23,9 @@
                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
-
+                                    
                                     <option value="yes">No</option>
-
+                                    
                                     <option value="no">Yes, Allot a Seat No.</option>
                                 </select>
                             </div>

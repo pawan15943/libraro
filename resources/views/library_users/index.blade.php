@@ -31,11 +31,11 @@
 </div>
 <div class="userHeadingss mt-4">
     <h4 class="m-0">Users List </h4>
-
+    @can('has-permission','Add User Master')
     <a href="{{ route('library-users.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus"></i> Add User
     </a>
-
+    @endcan
 </div>
 
 @foreach($users as $key => $user)
@@ -181,9 +181,13 @@
         <h4>You haven’t added any library users yet.</h4>
         <span>Start by creating your first user to manage it here.</span>
         <div class="heading-list justify-content-end">
+            @can('has-permission','Add User Master')
             <a href="{{ route('library-users.create') }}" class="btn btn-primary export">
                 <i class="fa-solid fa-plus"></i> Add Library User
             </a>
+            @else
+            <span class="text-danger">You don't have Permission to add Users</span>
+            @endcan
         </div>
     </div>
 </div>

@@ -65,7 +65,7 @@ $today = Carbon::today();
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Library Seats</button>
             </li>
-            @can('has-permission', 'General Seat Booked')
+            @can('has-permission', 'General Seat Booking')
             @if(!in_array('12', toggleHideField()))
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">General Seats</button>
@@ -544,13 +544,18 @@ $today = Carbon::today();
                                 </div>
                             </div>
                         </div>
+                        @can('has-permission', 'Renew Seat')
                         <div class="row justify-content-center">
                             <div class="col-lg-6">
                                 <input type="hidden" value="" id="user_id">
                                 <input type="hidden" value="" id="learner_detail_id">
+
                                 <a id="upgrade" class="btn btn-primary btn-block mt-2 button" style="height : auto;">Renew Library Membership</a>
                             </div>
                         </div>
+                        @else
+                        <span class="text-danger text-center d-block mt-2">You don't have Permission to Renew Student.</span>
+                        @endcan
                     </div>
                 </div>
             </div>
