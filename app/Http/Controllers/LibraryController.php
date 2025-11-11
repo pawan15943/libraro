@@ -257,11 +257,11 @@ class LibraryController extends Controller
     public function verifyOtp(Request $request)
     {
        
-       
-        $email = session('library_email') ?? session('email');
-        if (!$email || !$request->email) {
-                return redirect()->back()->withErrors(['email_otp' => 'No email found. Please start the login flow again.Invalid OTP. Please try again.']);
-        }
+        // Validate the input  login detail all
+        $request->validate([
+            'email' => 'required|email',
+            'email_otp' => 'required',
+        ]);
 
         // Find the library by email
         $library = Library::where('email', $request->email)->first();
