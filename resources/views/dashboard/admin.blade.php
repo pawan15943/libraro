@@ -469,10 +469,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <!-- Library Revenue -->
         @if(!in_array('23', toggleHideField()))
         <div class="row g-4 mb-2">
-            @can('has-permission', 'QR Seat Booking') 
+             
             <div class="col-lg-8">
                 <h4 class="my-4">Online / QR Bookings</h4>
                 <div class="table-responsive" id="requests">
+                    @can('has-permission', 'QR Seat Booking')
                     <table class="table table-boredred" id="onlineRequest">
                         <thead>
                             <tr>
@@ -546,11 +547,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             @endif
                         </tbody>
                     </table>
+                    @else
+                    <span class="text-danger d-flex justify-content-center align-items-center" style="height: 265px;">You don't have permission to view QR / Online Bookings</span>
+                    @endcan
                 </div>
 
 
             </div>
-            @endcan
+            
             @can('has-permission', 'Recent Activity')
             <div class="col-lg-4">
                 <h4 class="my-4">Recent Activity</h4>
