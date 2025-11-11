@@ -47,7 +47,7 @@
                     <div class="col-lg-6">
                         <label>Select Branch <span class="text-danger">*</span></label>
 
-                        <select name="branch_id[]" id="my-select" class="form-select" multiple>
+                        <select name="branch[]" id="my-select" class="form-select" multiple>
                             @php
                             $selectedBranches = $editUser?->branch_id ?? [];
                             @endphp
@@ -62,30 +62,27 @@
                     </div>
                     <div class="col-lg-6">
                         <label>Upload Photo </label>
-                        <input type="file"  class="form-control digit-only" autocomplete="off" maxlength="10" minlength="8" value="{{ old('mobile', $editUser->mobile ?? '') }}">
+                        <input type="file" name="profile_picture" class="form-control " autocomplete="off"  value="{{ old('profile_picture', $editUser->profile_picture ?? '') }}">
                     </div>
                     <div class="col-lg-6">
                         <label>Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" autocomplete="off">
+                        <input type="password" name="password" class="form-control" autocomplete="off" value="{{ old('password', $editUser->original_password ?? '') }}">
                     </div>
                     <div class="col-lg-6">
                         <label>Confirm Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" autocomplete="off">
+                        <input type="password" name="password_confirmation" class="form-control" autocomplete="off" value="{{ old('password_confirmation', $editUser->original_password ?? '') }}">
                     </div>
-
-                    <!-- <div class="col-lg-4">
-                <label>Status</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="1" {{ (old('status', $editUser->status ?? '') == 1) ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ (old('status', $editUser->status ?? '') == 0) ? 'selected' : '' }}>Inactive</option>
-                </select>
-            </div> -->
                 </div>
-
 
                 <div class="row mt-3">
                     <div class="col-lg-3">
-                        <button type="submit" class="btn btn-primary button" id="submit_id">Add User</button>
+                        <button type="submit" class="btn btn-primary button" id="submit_id">
+                            @if(isset($editUser))
+                                Update User
+                            @else
+                                Add User
+                            @endif
+                        </button>
                     </div>
                 </div>
             </form>
@@ -99,11 +96,13 @@
             </div>
             <small class="text-danger">Guideline to Upload</small>
             <ol class="upload_guideline" type="1">
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
-                <li>Guideline to Upload</li>
+             
+               <li> Upload a recent passport-size photo</li>
+                <li> Face should be centered</li>
+               <li> Avoid selfies, group photos with accessories like sunglasses or caps</li>
+             
+               <li> Eligible file types: JPG / JPEG / PNG / WEBP</li>
+                <li> File size must not exceed 1 MB</li>
             </ol>
         </div>
     </div>
@@ -126,9 +125,6 @@
             placeholder: "Select branches",
             allowClear: true
         });
-
-       
-
 
         // Form submit
         $('#userSubmitForm').on('submit', function(e) {
@@ -173,16 +169,21 @@
                         var errors = xhr.responseJSON.errors;
 
                         $.each(errors, function(key, value) {
-                            let field = $(`[name="${key}"]`);
+                            let field;
 
                             if (key.includes('.')) {
-                                const [baseKey, index] = key.split('.');
-                                field = $(`[name="${baseKey}[]"]`).eq(index);
+                                const baseKey = key.split('.')[0];
+                                field = $(`[name="${baseKey}[]"]`);
+                            } else {
+                                field = $(`[name="${key}"], [name="${key}[]"]`);
                             }
 
                             field.addClass('is-invalid');
-                            field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
+                            if (!field.next('.invalid-feedback').length) {
+                                field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
+                            }
                         });
+
                     } else {
                         alert('An unexpected error occurred.');
                     }

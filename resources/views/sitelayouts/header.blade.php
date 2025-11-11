@@ -1,7 +1,7 @@
 <header>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container">
-            <a class="navbar-brand" href="{{url('/')}}"><img src="{{ asset('public/img/libraro.svg') }}" alt="logo" class="logo"></a>
+            <a class="navbar-brand" href="{{url('/')}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>

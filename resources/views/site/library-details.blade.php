@@ -18,7 +18,7 @@
                 <form  method="POST" id="submitlibraryEnquiry">
                     @csrf
                     <div class="detailes">
-                        <input type="hidden" name="library_id" value="{{$library->id}}" id="library_id">
+                        <input type="hidden" name="branch_id" value="{{$library->id}}" >
                       
 
                         <div class="row g-4">
@@ -423,7 +423,7 @@
                         city: city
                     },
                     success: function(data) {
-                        
+                      
                         $('#library-list').empty(); 
     
                         if (data.length > 0) {
@@ -438,7 +438,7 @@
     
                             // Loop through each library and append it as a carousel item
                             $.each(data, function(index, library) {
-                                // console.log("totalseata",library.hour.seats);
+                                
                                 let libraryHTML = `
                                     <div class="item">
                                         <div class="featured-library">
@@ -463,7 +463,7 @@
                                                 </li>
                                                 <li>
                                                     <span>Avaialble Seats</span>
-                                                    <h5 class="text-success">${library.hour.seats}</h5>
+                                                    <h5 class="text-success">${library.seats}</h5>
                                                 </li>
                                                 <li>
                                                     <h5 class="text-success">Verified</h5>

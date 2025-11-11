@@ -292,7 +292,7 @@
 
         let btn = $(this);
         let dataId = btn.data('id');
-        let routeUrl ='{{ route("master.delete", ":id") }}'.replace(':id', dataId);;
+        let routeUrl ='{{ route("master.delete", ":id") }}'.replace(':id', dataId);
         let table = btn.data('table');
         let row = $('#row-' + dataId); 
 

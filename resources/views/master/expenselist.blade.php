@@ -73,7 +73,7 @@
             </div>
 
             <ul class="actionalbles">
-                <li>
+                {{-- <li>
                     <a href="javascript:void(0)"
                         class="delete"
                         data-id="{{ $value->id }}"
@@ -85,13 +85,13 @@
                         <i class="fa fa-check"></i>
                         @endif
                     </a>
-                </li>
+                </li> --}}
                 <li>
                     <a href="{{ route('expense.create', $value->id) }}" title="Edit">
                         <i class="fas fa-edit"></i>
                     </a>
                 </li>
-                <li>
+                {{-- <li>
                     <a href="javascript:void(0)"
                         class="delete-btn"
                         data-id="{{ $value->id }}"
@@ -99,7 +99,7 @@
                         title="Delete">
                         <i class="fa fa-trash"></i>
                     </a>
-                </li>
+                </li> --}}
             </ul>
         </div>
     </div>

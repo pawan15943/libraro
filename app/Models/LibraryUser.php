@@ -9,10 +9,11 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasPermissions;
 use App\Traits\HasLibraryUserPermissions;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LibraryUser extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory,SoftDeletes;
  
      use HasRoles;
      use HasLibraryUserPermissions;

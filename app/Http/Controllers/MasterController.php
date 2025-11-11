@@ -265,11 +265,19 @@ class MasterController extends Controller
         $table=$request->databasetable;
         $data=$request->all();
         $plan_type_name=null;
-       
+        $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
         if ($request->databasemodel == 'Plan'){
             $data['name']=$request->plan_id .' '.$request->type;
         }
         if ($request->databasemodel == 'PlanType'){
+           
+           if ($request->slot_hours > $branchRecord->hour) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Selected hours exceed the library’s available hours.'
+                ]);
+            }
+
             $data = $request->except(['timming']);
 
             if ($request->image == 'orange') {
@@ -320,7 +328,7 @@ class MasterController extends Controller
         if ($request->databasemodel == 'Floor') {
 
             $existing_total = Floor::where('branch_id', $request->branch_id)->sum('total_seats');
-            $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
+           
             $grand_branch_total = $branchRecord ? $branchRecord->seats : 0;
 
             $fromSeat = (int) $request->from_seat;
@@ -462,7 +470,7 @@ class MasterController extends Controller
 
         return view('master.plantype-list', compact('data'));
     }
-   public function planTypeCreate($id = null)
+    public function planTypeCreate($id = null)
     {
         $planType = null;
         if ($id) {
@@ -481,7 +489,7 @@ class MasterController extends Controller
 
         return view('master.floor-list', compact('data'));
     }
-   public function floorCreate($id = null)
+    public function floorCreate($id = null)
     {
         $floor = null;
         if ($id) {
@@ -733,7 +741,7 @@ class MasterController extends Controller
         elseif ($request->databasemodel == 'PlanType'  ) {
            
             $query = $modelClass::where($check_from_id, $check_to_id)
-                ->where('library_id', $request->library_id);
+                ->where('branch_id', $request->branch_id);
 
         }elseif($request->databasemodel == 'PlanPrice'){
             $query = $modelClass::where('plan_id', $request->plan_id)->where('plan_type_id',$request->plan_type_id)

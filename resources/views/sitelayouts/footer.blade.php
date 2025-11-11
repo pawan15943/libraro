@@ -2,7 +2,7 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-3 text-center text-md-start">
-                <img src="{{ asset('public/img/libraro-white.svg') }}" alt="logo" class="logo">
+                <img src="{{ asset('public/img/libraro-white.webp') }}" alt="logo" class="logo">
             </div>
             <div class="col-lg-3">
                 <h4 class="text-center text-md-start">Important Links</h4>

@@ -74,11 +74,18 @@ class LibraryUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:library_users,email,' . $request->id,
-            'password' => $request->id ? 'nullable|min:6' : 'required|min:6',
-            'branch_id' => 'required|array|min:1',
+            'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
+            'branch' => 'required|array|min:1',
+            'branch.*' => 'integer|exists:branches,id',
             'mobile' => 'required|digits:10',
-            'role' => 'required|string', // ✅ new required role
-        ]);
+            'role' => 'required|string', 
+            'profile_picture'=>'nullable'
+        ],
+        [
+        'branch.required' => 'Please select at least one branch.',
+        'branch.min' => 'Please select at least one branch.',
+        ]
+    );
         
 
         DB::beginTransaction();
@@ -86,8 +93,8 @@ class LibraryUserController extends Controller
         try {
             $data = $request->only('name', 'email', 'mobile');
 
-            if ($request->filled('branch_id')) {
-                $data['branch_id'] = $request->branch_id;
+            if ($request->filled('branch')) {
+                $data['branch_id'] = $request->branch;
             }
 
             $data['library_id'] = auth()->guard('library')->id();
@@ -96,8 +103,13 @@ class LibraryUserController extends Controller
                 $data['password'] = bcrypt($request->password);
                   $data['original_password']=$request->password;
             }
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+                $filePath = $file->store('user_profile_picture', 'public');
+                $data['profile_picture'] = $filePath;
+            }
           
-         
+      
             // Create or update LibraryUser
             $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
 
@@ -106,8 +118,8 @@ class LibraryUserController extends Controller
             }
 
              // ✅ Assign role instead of permissions
-                 $user->syncRoles([$request->role]);
-        //    $user->permissions()->sync($request->permissions); 
+            $user->syncRoles([$request->role]);
+            //    $user->permissions()->sync($request->permissions); 
 
 
             DB::commit();

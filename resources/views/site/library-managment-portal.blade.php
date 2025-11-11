@@ -186,7 +186,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-6">
-                    <img src="https://libraro.in/public/img/libraro.svg" alt="logo" class="logo">
+                    <img src="https://libraro.in/public/img/libraro.webp" alt="logo" class="logo">
                 </div>
                 <div class="col-lg-6"></div>
             </div>
@@ -762,7 +762,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-6">
-                    <img src="https://libraro.in/public/img/libraro-white.svg" alt="logo" class="logo">
+                    <img src="https://libraro.in/public/img/libraro-white.webp" alt="logo" class="logo">
                 </div>
             </div>
         </div>

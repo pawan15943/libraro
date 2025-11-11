@@ -330,7 +330,7 @@ class Controller extends BaseController
 
         $validator = Validator::make($data, [
             'name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s]+$/'],
-            'email' => 'required|email',
+            'email' => 'nullable|email',
             'plan' => 'required',
             'plan_type' => 'required',
             'start_date' => ['required'],
@@ -467,28 +467,46 @@ class Controller extends BaseController
 
         $paid_date = isset($data['paid_date']) ? $this->parseDate(trim($data['paid_date'])) : $start_date;
 
-        $extendDay = getExtendDays();
-        $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-        $status = $inextendDate >= Carbon::today() ? 1 : 0;
+        // if (empty($data['paid_amount']) || $paid_amount == 0) {
+        //     $is_paid = 0;
+        // } else {
+        //     $is_paid = 1;
+        // }
+        
 
-        if (empty($data['paid_amount']) || $paid_amount == 0) {
-            $is_paid = 0;
-        } else {
-            $is_paid = 1;
+        $is_paid = in_array($payment_mode, [1, 2]) ? 1 : 0;
+        if ($payment_mode == 3) {
+            $pending_amount = $paid_amount;
+            $paid_amount    = 0;
         }
-        // $is_paid = $pending_amount <= 0 ? 1 : 0;
+
+        $extendDay   = getExtendDays();
+        $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+        $currentDate  = date('Y-m-d');
+
+        if ($endDate < $currentDate && $endDate->gt($currentDate) && $is_paid == 1) {
+            $status = 1;
+        } elseif ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
+            $status = 1;
+        } else {
+            $status = 0;
+        }
+
+
         if ($status == 1) {
             \Log::info('Learner for updated', ['status1' => $status]);
             // Check if the learner already exists with active status
             $alreadyLearner = Learner::where('branch_id', getCurrentBranch())
-                ->where('email', encryptData(trim($data['email'])))
+                ->where('mobile', encryptData(trim($data['mobile'])))
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                 ->where('status', 1)
                 ->exists();
             $exist_check = Learner::where('branch_id', getCurrentBranch())
-                ->where('email', encryptData(trim($data['email'])))
+                ->where('mobile', encryptData(trim($data['mobile'])))
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                 ->where('status', 0)
                 ->exists();
-
+              \Log::info('Learner occupide and exists', ['alreadyLearner' => $alreadyLearner,'exist_check'=>$exist_check]);
             if ($alreadyLearner) {
 
                 $invalidRecords[] = array_merge($data, ['error' => 'Duplicate Entry: This data already exists in the system. Please avoid duplicate entries and check the existing records before re-uploading.']);
@@ -496,10 +514,8 @@ class Controller extends BaseController
             } else {
 
                 // Check if seat is already occupied
-                if (Learner::where('branch_id', getCurrentBranch())
-                    ->where('seat_no', trim($data['seat_no']))
-                    ->where('status', 1)->whereNotNull('seat_no')
-                    ->exists()
+                if (Learner::where('branch_id', getCurrentBranch())->where('seat_no', trim($data['seat_no']))
+                    ->where('status', 1)->whereNotNull('seat_no')->exists()
                 ) {
                     \Log::info('Learner occupide', ['status1' => $status]);
                     $first_record = Hour::first();
@@ -552,7 +568,7 @@ class Controller extends BaseController
                         return;
                     } else {
                         // Create new learner and associated records
-                        if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours) ||  empty($start_date)) {
+                        if (empty($data['name']) || empty($data['mobile']) || empty($hours) ||  empty($start_date)) {
                             $invalidRecords[] = array_merge($data, ['error' => 'Missing essential data for creating learner']);
                             return;
                         }
@@ -563,7 +579,8 @@ class Controller extends BaseController
                 } elseif ($exist_check) {
                     \Log::info('for renew data create learner detail and update learner DB', ['status1' => $status]);
                     $learnerData = Learner::where('branch_id', getCurrentBranch())
-                        ->where('email', encryptData(trim($data['email'])))
+                        ->where('mobile', encryptData(trim($data['mobile'])))
+                        ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                         ->where('status', 0)
                         ->first();
 
@@ -585,11 +602,13 @@ class Controller extends BaseController
             \Log::info('When Status : 0 Previously Paid Seat info : Leaner', ['status0' => $status]);
             // Handling non-active status (status != 1)
             $exist_check = Learner::where('branch_id', getCurrentBranch())
-                ->where('email', encryptData(trim($data['email'])))
+               ->where('mobile', encryptData(trim($data['mobile'])))
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                 ->exists();
 
             if (Learner::where('branch_id', getCurrentBranch())
-                ->where('email', encryptData(trim($data['email'])))
+                ->where('mobile', encryptData(trim($data['mobile'])))
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                 ->where('status', 1)
                 ->exists()
             ) {
@@ -600,8 +619,11 @@ class Controller extends BaseController
                 // Check if learner exists and update data
                 $already_data = LearnerDetail::where('plan_start_date', $start_date)->exists();
                 $learnerData = Learner::where('branch_id', getCurrentBranch())
-                    ->where('email', encryptData(trim($data['email'])))
+                   ->where('mobile', encryptData(trim($data['mobile'])))
+                   ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['name']))])
                     ->first();
+                \Log::info('learnerData', ['learnerData' => $learnerData]);
+                    
                 if ($already_data) {
 
                     // Update existing learner and learner detail
@@ -609,11 +631,11 @@ class Controller extends BaseController
                 }
                 if ($learnerData) {
                     \Log::info('Check if learner detaill exists with status 0 then update the details');
-                    // Update existing learner and learner detail
+                    // Update existing learner and learner detail means renew/reactive
                     $this->createLearnerDetail($learnerData->id, $plan, $status, $planType, $seat, $data, $start_date, $endDate, $joinDate, $hours, $is_paid, $planPrice, $pending_amount, $paid_date, $payment_mode);
                 }
             } else {
-                if (empty($data['name']) || empty($data['email']) || empty($data['mobile']) || empty($hours)  || empty($start_date) || empty($planPrice)) {
+                if (empty($data['name'])  || empty($data['mobile']) || empty($hours)  || empty($start_date) || empty($planPrice)) {
                     $invalidRecords[] = array_merge($data, ['error' => 'Missing essential data for creating learner']);
                     return;
                 }
@@ -685,6 +707,7 @@ class Controller extends BaseController
         $paid_amount = !empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
         $total = $planPrice + $locker_amount;
         $discount_amount = $total - $paid_amount - $pending_amount;
+        
         DB::beginTransaction();
 
         try {
@@ -694,7 +717,7 @@ class Controller extends BaseController
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
                 'name' => trim($data['name']),
-                'email' => encryptData(trim($data['email'])),
+                'email' => !empty(trim($data['email'])) ? encryptData(trim($data['email'])) : null,
                 'password' => !empty($data['mobile']) ? bcrypt(trim($data['mobile'])) : bcrypt(trim('12345678')),
                 'mobile' => !empty($data['mobile']) ? encryptData(trim($data['mobile'])) : null,
                 'dob' => $dob,
@@ -726,29 +749,36 @@ class Controller extends BaseController
 
             // Create learner transaction entry
 
-            LearnerTransaction::create([
-                'learner_id' => $learner->id,
-                'library_id' => getLibraryId(),
-                'branch_id' => getCurrentBranch(),
-                'learner_detail_id' => $learner_detail->id,  // Corrected column name
-                'total_amount' => $total,
-                'paid_amount' => $paid_amount,
-                'pending_amount' => $pending_amount,
-                'paid_date' => $paid_date,
-                'locker_amount' => $locker_amount,
-                'discount_amount' => $discount_amount,
-                'is_paid' => $pending_amount > 0 ? 0 : 1,
-            ]);
+            // LearnerTransaction::create([
+            //     'learner_id' => $learner->id,
+            //     'library_id' => getLibraryId(),
+            //     'branch_id' => getCurrentBranch(),
+            //     'learner_detail_id' => $learner_detail->id,  // Corrected column name
+            //     'total_amount' => $total,
+            //     'paid_amount' => $paid_amount,
+            //     'pending_amount' => $pending_amount,
+            //     'paid_date' => $paid_date,
+            //     'locker_amount' => $locker_amount,
+            //     'discount_amount' => $discount_amount,
+            //     'is_paid' => $pending_amount > 0 ? 0 : 1,
+            //     'transaction_id'=>transaction_id()
+            // ]);
 
-            if ($pending_amount) {
-                $tran = [
-                    'learner_id' => $learner->id,
-                    'due_date' => date('Y-m-d'),
-                    'pending_amount' => $pending_amount,
-                    'created_at' => now(),
-                ];
-                DB::table('learner_pending_transaction')->insert($tran);
-            }
+             $dataTran=[];
+            $dataTran['planPrice']=trim($data['plan_price']) ;
+            $dataTran['paid_amount']=$paid_amount ;
+            $dataTran['locker']=$locker_amount ;
+            $dataTran['discount']=$discount_amount ;
+            $dataTran['start_date']=$start_date->format('Y-m-d') ;
+            $dataTran['paid_date']=$paid_date ;
+            $dataTran['is_paid']=$pending_amount > 0 ? 0 : 1;
+            $dataTran['learner_detail_id']=$learner_detail->id ;
+            $dataTran['learner_id']= $learner->id;
+            $dataTran['payment_type']='SEAT ASSIGNMENT' ;
+            $dataTran['payment_mode']=$payment_mode;
+            $dataTran['due_date']=date('Y-m-d');
+           
+            $this->learnerTransactionAddUpdate($dataTran);
 
             // Commit the transaction if all inserts succeed
             DB::commit();
@@ -817,19 +847,35 @@ class Controller extends BaseController
             $total = $planPrice + $locker_amount;
             $discount_amount = $total - $paid_amount - $pending_amount;
             // Create learner transaction entry
-            LearnerTransaction::create([
-                'learner_id' => $learner_id,
-                'library_id' => getLibraryId(),
-                'branch_id' => getCurrentBranch(),
-                'learner_detail_id' => $learner_detail->id,
-                'total_amount' => $total,
-                'paid_amount' => $paid_amount,
-                'pending_amount' => $pending_amount,
-                'locker_amount' => $locker_amount,
-                'discount_amount' => $discount_amount,
-                'paid_date' => $paid_date,
-                'is_paid' => $pending_amount > 0 ? 0 : 1,
-            ]);
+            // LearnerTransaction::create([
+            //     'learner_id' => $learner_id,
+            //     'library_id' => getLibraryId(),
+            //     'branch_id' => getCurrentBranch(),
+            //     'learner_detail_id' => $learner_detail->id,
+            //     'total_amount' => $total,
+            //     'paid_amount' => $paid_amount,
+            //     'pending_amount' => $pending_amount,
+            //     'locker_amount' => $locker_amount,
+            //     'discount_amount' => $discount_amount,
+            //     'paid_date' => $paid_date,
+            //     'is_paid' => $pending_amount > 0 ? 0 : 1,
+            //     'transaction_id'=>transaction_id()
+            // ]);
+             $dataTran=[];
+            $dataTran['planPrice']=trim($data['plan_price']) ;
+            $dataTran['paid_amount']=$paid_amount ;
+            $dataTran['locker']=$locker_amount ;
+            $dataTran['discount']=$discount_amount ;
+            $dataTran['start_date']=$start_date->format('Y-m-d') ;
+            $dataTran['paid_date']=$paid_date ;
+            $dataTran['is_paid']=$pending_amount > 0 ? 0 : 1;
+            $dataTran['learner_detail_id']=$learner_detail->id ;
+            $dataTran['learner_id']= $learner_id;
+            $dataTran['payment_type']='RENEW' ;
+            $dataTran['payment_mode']=$payment_mode;
+            $dataTran['due_date']=date('Y-m-d');
+           
+            $this->learnerTransactionAddUpdate($dataTran);
 
 
 
@@ -878,7 +924,68 @@ class Controller extends BaseController
         $this->dataUpdateNow($learnerData->id);
     }
 
+     public function learnerTransactionAddUpdate($data)
+    {
+        // 1. Save LearnerTransaction
+         $effectivePaid = $data['planPrice'] + $data['locker'] -$data['discount'];
+        $pending_amount =  $effectivePaid - $data['paid_amount'];
+        
+        if ( $data['paid_date']) {
+            $transaction_date = $data['paid_date']->format('Y-m-d');
+        } elseif ($data['start_date']->format('Y-m-d')) {
+            $transaction_date = $data['start_date']->format('Y-m-d');
+        } else {
+            $transaction_date = date('Y-m-d');
+        }
+        $learnerTransaction = LearnerTransaction::create([
+            'learner_id'        => $data['learner_id'],
+            'library_id'        => getLibraryId(),
+            'learner_detail_id' => $data['learner_detail_id'],
+            'total_amount'      => $effectivePaid,
+            'paid_amount'       => $data['paid_amount'],
+            'pending_amount'    => $pending_amount,
+            'locker_amount'     => $data['locker'] ?? 0,
+            'discount_amount'   => $data['discount'] ?? 0,
+            'paid_date'         => $transaction_date,
+            'is_paid'           => $data['is_paid'] ?? 0,
+            'branch_id'         => getCurrentBranch(),
+             'due_date'        => $data['due_date'],
+             'transaction_id' => transaction_id(),
+              
+        ]);
 
+        // 2. Add to LearnerTransactionActivity
+        $activityData = [
+            'learner_id'   => $data['learner_id'],
+            'particular'   => 'Paid By Trans',
+            'payment_type' => $data['payment_type'],
+            'payment_mode' => $data['payment_mode'],
+            'amount'       => $data['paid_amount'],
+            'dr_cr'        => 'Cr',
+        ];
+        $this->learnerTransactionActivity($activityData);
+
+     
+        return $learnerTransaction;
+    }
+       public function learnerTransactionActivity($data)
+    {
+       
+
+        LearnerTransactionActivity::create([
+            'branch_id'      => getCurrentBranch(),
+            'learner_id'     => $data['learner_id'],
+            'date'           => now()->format('Y-m-d'),
+            'transaction_id' => transaction_id(),
+            'particular'     => $data['particular'],
+            'payment_type'   => $data['payment_type'],
+            'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
+            'amount'         => $data['amount'] ?? 0,
+            'dr_cr'          => $data['dr_cr'],
+            'created_by'     => auth()->user()->name ?? 'System'
+        ]);
+    }
+       
 
     // function dataUpdateNow($learner_id)
     // {
@@ -1712,23 +1819,24 @@ class Controller extends BaseController
         }
     }
 
-    function generateLearnerCode()
-    {
+     function generateLearnerCode() {
         $prefix = "LN";
-        $lastlearner = Learner::orderBy('id', 'DESC')
-            ->whereNotNull('learner_no')
-            ->first();
-
+      $lastlearner = Learner::withoutGlobalScopes()
+                      ->whereNotNull('learner_no')
+                      ->orderBy('id', 'DESC')
+                      ->first();
+                              
         if ($lastlearner) {
-
-            $lastNumber = intval(substr($lastlearner->learner_no, 2));
+            
+            $lastNumber = intval(substr($lastlearner->learner_no, 2)); 
             $newNumber = $lastNumber + 1;
-            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
         } else {
             $randomNumber = '000001';
         }
-
+    
         return $prefix . $randomNumber;
     }
+    
    
 }

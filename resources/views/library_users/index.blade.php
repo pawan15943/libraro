@@ -71,12 +71,20 @@
             </div>
             <div class="action">
                 <ul>
-                    <li><a href="javascript:;" class="toggle-status" data-id="{{ $user->id }}" title="Toggle Status">
+                    <li>
+                        <a href="javascript:;" class="toggle-status" data-id="{{ $user->id }}" title="Toggle Status">
                             <i class="fas {{ $user->status ? 'fa-ban text-danger' : 'fa-check text-success' }}"></i>
-                        </a></li>
+                        </a>
+                    </li>
                     <li><a href="{{ route('library-users.permissions', $user->id) }}"><i class="fa fa-plus"></i></a></li>
                     <li><a href="{{ route('library-users.create', $user->id) }}"><i class="fa fa-edit"></i></a></li>
-                    <li><a href=""><i class="fa fa-trash"></i></a></li>
+                     <li>
+                        <a href="javascript:;" class="user-delete-btn" data-id="{{ $user->id }}" data-table="LibraryUser" title="Delete">
+                    
+                             <i class="fa fa-trash text-danger"></i>
+                        </a>
+                    </li>
+                    
                 </ul>
             </div>
         </div>
@@ -158,6 +166,8 @@
                                     <i class="fas {{ $user->status ? 'fa-ban' : 'fa-check' }}"></i>
                                 </a>
                             </li>
+                           
+
                         </ul>
                     </li>
                 </ul>
@@ -217,6 +227,7 @@
     $(document).ready(function() {
         // Toggle status via AJAX post
         $('.toggle-status').on('click', function(e) {
+          
             e.preventDefault();
             let id = $(this).data('id');
 
@@ -233,7 +244,65 @@
                 alert(msg);
             });
         });
+           $('.user-delete-btn').on('click', function(e) {
+       
+           
+                e.preventDefault();
+
+                let dataId = $(this).data('id');
+                let table = $(this).data('table');
+                let routeUrl ='{{ route("master.delete", ":id") }}'.replace(':id', dataId);
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This action will delete this record!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: routeUrl,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'  // add CSRF token here
+                            },
+                            data: {
+                                table: table
+                            },
+                            success: function (response) {
+                                if (response.status === 'success') {
+                                    Swal.fire({
+                                        title: 'Deleted!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+
+                                    // Option 1: Refresh page after success
+                                    setTimeout(() => location.reload(), 1500);
+
+                                    // Option 2 (alternative): Remove row dynamically (if using DataTable)
+                                    // $('#row-' + id).fadeOut();
+                                } else {
+                                    Swal.fire('Error!', response.message, 'error');
+                                }
+                            },
+                            error: function (xhr) {
+                                Swal.fire('Error!', 'Something went wrong.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+
     });
+   
+
 </script>
 
 @include('library.script')

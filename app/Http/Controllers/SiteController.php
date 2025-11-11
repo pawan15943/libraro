@@ -381,7 +381,7 @@ class SiteController extends Controller
             'mobile' => 'required|string|max:15',
             'enquiry' => 'required|string|max:1000',
             'shift_time' => 'nullable',
-            'library_id' => 'required',
+            'branch_id' => 'required',
 
         ]);
 
@@ -393,6 +393,7 @@ class SiteController extends Controller
         }
 
         $data = $validator->validated();
+
         LibraryEnquiry::create($data);
         return response()->json([
             'status' => 'success',

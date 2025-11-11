@@ -49,7 +49,7 @@ $class=$planDetails['class'];
                         
 
                         <div class="row g-4">
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="">Last Due Date <span>*</span>
                                     @if($pendingPayment?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
                                     <small class="text-danger"><strong>Overdue</strong></small>
@@ -64,7 +64,7 @@ $class=$planDetails['class'];
                                 @enderror
 
                             </div>
-                            <div class="col-lg-6 col-6">
+                            <div class="col-lg-6">
                                 <label for="">Pending Payment </label>
                                 <input id="for_pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
                                     value="{{ intval($pendingPayment->pending_amount) }}" @readonly(true)>
@@ -72,17 +72,17 @@ $class=$planDetails['class'];
                             </div>
 
                             
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Amount want to Pay <span>*</span></label>
                                 <input id="amount_to_pay" class="form-control @error('pending_amount') is-invalid @enderror"
                                     name="pending_amount" value="{{ intval($pendingPayment->pending_amount) }}">
                                 <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
                             </div>
-                            <div class="col-lg-4 col-6 due-date-wrapper">
+                            <div class="col-lg-4 due-date-wrapper">
                                 <label for="">Next Due Date <span>*</span></label>
                                 <input type="date" class="form-control" name="due_date" id="for_pending_due_date">
                             </div>
-                            <div class="col-lg-4 col-6">
+                            <div class="col-lg-4">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>

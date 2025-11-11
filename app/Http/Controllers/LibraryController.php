@@ -1049,7 +1049,7 @@ class LibraryController extends Controller
 
 
     public function getEnquiry(){
-        $datas=LibraryEnquiry::where('library_id',getLibraryId())->with('planType')->get();
+        $datas=LibraryEnquiry::where('branch_id',getCurrentBranch())->with('planType')->get();
       
         return view('library.enquery',compact('datas'));
     }
@@ -1123,7 +1123,7 @@ class LibraryController extends Controller
         }
         
          // Fixed year
-        $year = "2000";
+        $year = "2025";
 
         // Get last transaction (only for 2025 IDs)
         $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')

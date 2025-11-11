@@ -123,7 +123,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::post('/library/master/upload', [Controller::class, 'uploadmastercsv'])->name('library.master.upload');
   Route::post('/dashboard/data', [DashboardController::class, 'getData'])->name('dashboard.data.get');
   Route::get('export-learners-csv', [Controller::class, 'exportLearnerCSV'])->name('learners.export-csv');
-  Route::get('/csv/library/upload', [Controller::class, 'showUploadForm'])->name('library.upload.form');
+  
   Route::post('/csv/library/learner/upload', [Controller::class, 'uploadCsv'])->name('library.csv.upload');
   Route::get('/export-invalid-records/library', [Controller::class, 'exportCsv'])->name('library.export.invalid.records');
   Route::post('/clear-invalid-records/library', [Controller::class, 'clearSession'])->name('library.clear.session');
@@ -174,7 +174,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/payment/error', [LibraryController::class, 'handleError'])->name('library.payment.error');
     Route::get('/toggle/feature/list', [MasterController::class, 'toggleFeature'])->name('toggle.feature');
     Route::post('/branch/update/hidefield', [MasterController::class, 'updateHidefield'])->name('branch.update.hidefield');
-
+    Route::get('/csv/library/upload', [Controller::class, 'showUploadForm'])->name('library.upload.form');
 
     Route::post('/master/store', [MasterController::class, 'storemaster'])->name('master.store');
     Route::get('/master/edit', [MasterController::class, 'masterEdit'])->name('master.edit');

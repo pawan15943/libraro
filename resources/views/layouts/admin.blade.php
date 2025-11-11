@@ -22,7 +22,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
     <link href="https://www.richtexteditor.com/rte/themes/default/rte.css" rel="stylesheet" />
-
+<meta name="format-detection" content="telephone=no">
 </head>
 
 <body>

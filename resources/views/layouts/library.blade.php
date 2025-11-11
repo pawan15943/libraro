@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="format-detection" content="telephone=no">
 </head>
 
 <body>
