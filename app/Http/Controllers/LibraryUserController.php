@@ -30,7 +30,7 @@ class LibraryUserController extends Controller
                     foreach ($currentBranches as $branchId) {
                         $query->orWhereJsonContains('branch_id', (string) $branchId); // cast to string if JSON stores values as strings
                     }
-                })
+                })->with('permissions')
                 ->get();
         }
 
@@ -38,8 +38,19 @@ class LibraryUserController extends Controller
             $user->branch_names = Branch::whereIn('id', $user->branch_id)->pluck('name')->toArray();
             $user->permissions_array = $user->permissions->pluck('name')->toArray();
         }
-   
-         return view('library_users.index', compact('users'));
+        $subscription = Subscription::find(auth()->user()->library_type);
+        $groupedPermissions = collect();
+
+        if ($subscription) {
+            $permissions = $subscription->permissions()->get();
+            $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
+        }
+
+        $total_user=$users->count();
+        $active_user=$users->where('status',1)->count();
+        $inactive_user=$users->where('status',0)->count();
+        
+         return view('library_users.index', compact('users','groupedPermissions','total_user','active_user','inactive_user'));
      }
     public function create($id = null){
          $editUser = null;
@@ -75,11 +86,12 @@ class LibraryUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:library_users,email,' . $request->id,
             'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
+            'password_confirmation' => $request->id ? 'nullable|min:6' : 'required|min:6',
             'branch' => 'required|array|min:1',
             'branch.*' => 'integer|exists:branches,id',
             'mobile' => 'required|digits:10',
             'role' => 'required|string', 
-            'profile_picture'=>'nullable'
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
         ],
         [
         'branch.required' => 'Please select at least one branch.',

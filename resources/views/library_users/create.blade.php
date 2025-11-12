@@ -91,9 +91,15 @@
     <div class="col-lg-4">
         <div class="card">
             <div class="photo text-center">
-                <img src="{{ asset('public/img/user.png')}}" id="photo" alt="user" style="width: 150px; display:block; margin:0 auto;">
+                 <img src="{{ !empty($editUser->profile_picture) 
+                        ? asset('storage/app/public/' . $editUser->profile_picture) 
+                        : asset('public/img/user.png') }}" id="photo" alt="user" style="width: 150px; display:block; margin:0 auto;">
+                @if(empty($editUser->profile_picture) )
+               
                 <p class="mt-4">Upload User Photo</p>
+                @endif
             </div>
+           
             <small class="text-danger">Guideline to Upload</small>
             <ol class="upload_guideline" type="1">
              
@@ -104,6 +110,7 @@
                <li> Eligible file types: JPG / JPEG / PNG / WEBP</li>
                 <li> File size must not exceed 1 MB</li>
             </ol>
+            
         </div>
     </div>
 </div>
