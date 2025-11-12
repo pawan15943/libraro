@@ -99,10 +99,7 @@ class LoginController extends Controller
                 }elseif(Auth::guard('library_user')->attempt($credentials, $remember)){
             
                         $user = Auth::guard('library_user')->user();
-                       
-
-                        if (!$user->hasRole('admin_user', 'library_user')) {
-                     
+                        if (!$user->roles()->exists()) {
                             $user->assignRole('admin_user');
                         }
                           

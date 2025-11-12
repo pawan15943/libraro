@@ -200,6 +200,7 @@ $user = getAuthenticatedUser();
                 
                 <div class="dropdown">
                     {{-- Mobile view: icon dropdown --}}
+                   
                     <div class="d-block d-md-none">
                         <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
@@ -216,6 +217,7 @@ $user = getAuthenticatedUser();
                                     {{ $user->library_no ?? '' }}
                                 </a>
                             </li>
+                    
                             <li>
                                 <a class="dropdown-item" href="{{ route('change.password') }}">
                                     <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -237,13 +239,23 @@ $user = getAuthenticatedUser();
 
                     {{-- Desktop view: icon and text dropdown --}}
                     <div class="d-none d-md-flex align-items-center gap-2">
-                        <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}</span>
+                        <span class="icon">{{ strtoupper(substr($user->library_name, 0, 2)) }}
+                           @if(Auth::guard('library_user')->user())
+                                {{ strtoupper(substr(getLibrary()->library_name, 0, 2)) }}
+                            @endif
+                        </span>
                         <a class="dropdown-toggle uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $user->library_name }} {{ $user->name }}
                         </a>
                         <ul class="dropdown-menu">
                             <li>
+                                @if(Auth::guard('library_user')->user())
+                                <img src="{{ !empty($user->profile_picture) ? asset('storage/app/public/' . $user->profile_picture) : asset('public/img/user.png') }}" alt="profile" class="LibraryProfile">
+
+                                @else
+                                    
                                 <img src="{{ url('public/img/user.png') }}" alt="profile" class="LibraryProfile">
+                                @endif
                             </li>
 
                             @if(Auth::guard('library')->user() || Auth::guard('library_user')->user())
@@ -251,6 +263,9 @@ $user = getAuthenticatedUser();
                                 <a class="dropdown-item text-center" href="javascript:;">
                                     <small class="text-danger">Library Unique Id</small><br>
                                     {{ $user->library_no ?? '' }}
+                                     @if(Auth::guard('library_user')->user())
+                                    {{getLibrary()->library_no}}
+                                    @endif
                                 </a>
                             </li>
                             <li>

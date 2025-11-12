@@ -71,7 +71,8 @@ class UserController extends Controller
         ]);
 
         // Get the authenticated user based on the guard
-        $user = Auth::guard('library')->user();
+      
+        $user =getAuthenticatedUser();
 
         // Check if the current password matches
         if (!Hash::check($request->current_password, $user->password)) {

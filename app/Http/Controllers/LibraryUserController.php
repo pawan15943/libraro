@@ -86,7 +86,9 @@ class LibraryUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:library_users,email,' . $request->id,
             'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
-            'password_confirmation' => 'required|min:6|confirmed',
+            'password_confirmation' => $request->id 
+            ? 'nullable|min:6' 
+            : 'required|min:6',
             'branch' => 'required|array|min:1',
             'branch.*' => 'integer|exists:branches,id',
             'mobile' => 'required|digits:10',
