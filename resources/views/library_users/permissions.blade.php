@@ -7,10 +7,18 @@
     <!-- Add Library User Form -->
 
      <form method="POST" action="{{ route('library-users.permissions.update', $user->id) }}">
- @csrf
+        @csrf
         <div class="row ">
             <div class="col-lg-12">
-
+                <!-- ✅ SELECT ALL CHECKBOX -->
+                <div class="row mb-3">
+                    <div class="col-lg-12">
+                        <div class="form-check">
+                            <input type="checkbox" id="checkAllPermissions" class="form-check-input">
+                            <label class="form-check-label fw-bold" for="checkAllPermissions">Select All Permissions</label>
+                        </div>
+                    </div>
+                </div>
 
                 @foreach($groupedPermissions as $categoryId => $permissions)
                 <div class="row">
@@ -25,13 +33,14 @@
                 <div class="row g-3 mt-1 mb-3">
                     @foreach($permissions as $name => $id)
                     <div class="col-md-3">
-                                                    <div class="form-check">
+                            <div class="form-check">
                                 <input
                                     type="checkbox"
                                     name="permissions[]"
                                     value="{{ $id }}"
                                     id="perm_{{ $id }}"
-                                    class="form-check-input"
+                                    class="form-check-input permission"
+                                    
                                     {{ $user->permissions->pluck('id')->contains($id) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="perm_{{ $id }}">{{ strtoupper($name) }}</label>
                             </div>
@@ -171,7 +180,12 @@
         });
     });
 </script>
-
+<!-- ✅ SELECT ALL JS -->
+<script>
+    $('#checkAllPermissions').on('change', function() {
+        $('.permission').prop('checked', $(this).is(':checked'));
+    });
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // For select

@@ -135,7 +135,11 @@ class HelperService
                 $details['message'] = "Plan type changed successfully. <br>
                 Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
                 break;
-
+            case 'restoreSeat':
+           
+             $details['message'] = "Seat restored successfully. <br>
+                Seat number <strong>{$operation->new_value}</strong> has been restored on {$updatedAt}.";
+                break;
             default:
                 $details['message'] = "Operation performed successfully.";
                 break;

@@ -197,7 +197,7 @@ $user = getAuthenticatedUser();
 
         <div class="profile">
             <div class="dropdown">
-                @if(!empty($user->library_name))
+                
                 <div class="dropdown">
                     {{-- Mobile view: icon dropdown --}}
                     <div class="d-block d-md-none">
@@ -272,7 +272,7 @@ $user = getAuthenticatedUser();
                         </ul>
                     </div>
                 </div>
-                @endif
+                
             </div>
         </div>
         

@@ -188,7 +188,7 @@
                 @endif
                 @if($operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
-                @elseif($operation == 'deleteSeat')
+                @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                 <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
@@ -315,7 +315,7 @@
                     <h4>{{$value->name}}
                         @if($operation == 'closeSeat')
                         <span class="extended">Closed</span>
-                        @elseif($operation == 'deleteSeat')
+                        @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
                          @else
                         <span  style="color: purple;">Upcoming</span>

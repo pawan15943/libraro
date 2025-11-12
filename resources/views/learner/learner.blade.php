@@ -188,7 +188,7 @@
                 @endif
                 @if($operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
-                @elseif($operation == 'deleteSeat')
+                @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                 <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
@@ -220,15 +220,15 @@
                         @can('has-permission', 'WhatsApp Notification')
                         @if($planStatus['class']=='extedned')
                             <li>
-                                <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
-                                    <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="Send Reminder"></i>
+                                <a class="w-auto px-2" target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                    <i class="fab fa-whatsapp me-1" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="Send Reminder"></i>
                                      Send Reminder
                                 </a>
                             </li>
                         @else
                             <li>
-                                <a target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
-                                    <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                <a class="w-auto px-2" target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                    <i class="fab fa-whatsapp me-1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
                                      Send Reminder
                                 </a>
                             </li>
@@ -333,7 +333,7 @@
                     <h4>{{$value->name}}
                         @if($operation == 'closeSeat')
                         <span class="extended">Closed</span>
-                        @elseif($operation == 'deleteSeat')
+                        @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
                          @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
