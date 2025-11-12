@@ -33,10 +33,8 @@
                 <div class="row g-3 mt-1 mb-3">
                     @foreach($permissions as $name => $id)
                     <div class="col-md-3">
-                            <div class="form-check">
-                                <input
-                                    type="checkbox"
-                                    name="permissions[]"
+                    <div class="form-check">
+                                <input type="checkbox" name="permissions[]"
                                     value="{{ $id }}"
                                     id="perm_{{ $id }}"
                                     class="form-check-input permission"

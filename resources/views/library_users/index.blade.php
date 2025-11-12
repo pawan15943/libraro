@@ -9,21 +9,21 @@
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="userBox">
-            <h4>15</h4>
+            <h4>{{$total_user}}</h4>
             <span>Total User</span>
             <img src="{{ asset('public/img/users.png')}}" alt="users" class="user-icon">
         </div>
     </div>
     <div class="col-lg-4">
         <div class="userBox">
-            <h4>15</h4>
+            <h4>{{$active_user}}</h4>
             <span>Active User</span>
             <img src="{{ asset('public/img/active.png')}}" alt="Active" class="user-icon">
         </div>
     </div>
     <div class="col-lg-4">
         <div class="userBox">
-            <h4>15</h4>
+             <h4>{{$inactive_user}}</h4>
             <span>Inactive User</span>
             <img src="{{ asset('public/img/inactive.png')}}" alt="Inactive" class="user-icon">
         </div>
@@ -42,7 +42,7 @@
 <div class="row mt-4">
     <div class="col-lg-12">
         <div class="user-list bg-white">
-            <img src="{{ asset('public/img/user.png')}}" alt="user" class="user-profile" style="width: 60px;">
+            <img src="{{ !empty($user->profile_picture) ? asset('storage/app/public/' . $user->profile_picture) : asset('public/img/user.png') }}" alt="user" class="user-profile" style="width: 60px;">
             <div class="user-infos">
                 <span>Name</span>
                 <h4>{{ $user->name }}</h4>
@@ -50,6 +50,10 @@
             <div class="user-infos">
                 <span>Contact</span>
                 <h4>{{ $user->email ?? '-' }}</h4>
+            </div>
+            <div class="user-infos">
+                <span>Role</span>
+                <h4>{{ $user->roles->first()->name ?? '-' }}</h4>
             </div>
             <div class="user-infos">
                 <span>Branche</span>
@@ -63,7 +67,12 @@
             </div>
             <div class="user-infos">
                 <span>Permissions</span>
-                <h4><a href="" style="font-weight: 600 !important;">20+</a></h4>
+                <h4>
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#permissionsModal_{{ $user->id }}" 
+                       style="font-weight: 600 !important;">{{ $user->permissions->count() ?? '0' }}+
+                    </a>
+                </h4>
+                
             </div>
             <div class="user-infos">
                 <span>Status</span>
@@ -171,6 +180,43 @@
                         </ul>
                     </li>
                 </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="permissionsModal_{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel_{{ $user->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ $user->name }} — Permissions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                @foreach($groupedPermissions as $categoryId => $permissions)
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <h5 class="role-category-heading border-bottom pb-2">
+                                {{ $categoryId 
+                                    ? \App\Models\PermissionCategory::where('id', $categoryId)->value('name') ?? 'No Category' 
+                                    : 'No Category' }}
+                            </h5>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1 mb-3">
+                        @foreach($permissions as $name => $id)
+                            @if($user->permissions->pluck('id')->contains($id))
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" checked disabled class="form-check-input">
+                                        <label class="form-check-label">{{ strtoupper($name) }}</label>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
