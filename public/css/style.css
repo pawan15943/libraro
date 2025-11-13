@@ -6216,7 +6216,7 @@ span.chip {
     flex-wrap: wrap;
 }
 
-.mCustomScrollbar {
+.content.mCustomScrollbar {
     margin-right: -1.29rem !important;
     overflow-x: hidden;
 }
