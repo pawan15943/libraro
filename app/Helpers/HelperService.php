@@ -80,6 +80,7 @@ class HelperService
     {
         $details = [
             'message' => '',
+            'operation_type'=>''
         ];
 
         if (!$operation) {
@@ -93,6 +94,8 @@ class HelperService
 
         switch ($operation->operation) {
             case 'renewSeat':
+                
+                $details['operation_type']='Renew Seat';
                 $oldPlan = Plan::where('library_id', getLibraryId())->where('id', $operation->old_value)->value('name');
                 $newPlan = Plan::where('id', $operation->new_value)->value('name');
 
@@ -101,6 +104,7 @@ class HelperService
                 break;
 
             case 'learnerUpgrade':
+                 $details['operation_type']='Upgrade Seat';
                 $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
                 $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
 
@@ -109,26 +113,31 @@ class HelperService
                 break;
 
             case 'reactive':
+                 $details['operation_type']='Reactive Seat';
                 $details['message'] = "Seat reactivated successfully. <br>
                 Seat number has been updated from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'swapseat':
+                 $details['operation_type']='Swap Seat';
                 $details['message'] = "Seat swapped successfully. <br>
                 Seat number has been changed from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'closeSeat':
+                 $details['operation_type']='Close Seat';
                 $details['message'] = "Seat closed successfully. <br>
                 Plan end has been updated from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
                 break;
 
             case 'deleteSeat':
+                 $details['operation_type']='Delete Seat';
                 $details['message'] = "Seat deleted successfully. <br>
                 Seat number <strong>{$operation->new_value}</strong> has been deleted on {$updatedAt} by {$userName}.";
                 break;
 
             case 'changePlan':
+                 $details['operation_type']='Change Plan';
                 $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
                 $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
 
@@ -136,11 +145,12 @@ class HelperService
                 Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
                 break;
             case 'restoreSeat':
-           
+                 $details['operation_type']='Restore Seat';
              $details['message'] = "Seat restored successfully. <br>
                 Seat number <strong>{$operation->new_value}</strong> has been restored on {$updatedAt}.";
                 break;
             default:
+             $details['operation_type']='';
                 $details['message'] = "Operation performed successfully.";
                 break;
         }

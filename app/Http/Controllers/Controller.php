@@ -982,7 +982,7 @@ class Controller extends BaseController
             'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
-            'created_by'     => auth()->user()->name ?? 'System'
+           
         ]);
     }
        
