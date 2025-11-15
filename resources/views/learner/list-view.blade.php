@@ -76,10 +76,13 @@
                            
                             $operation = DB::table('learner_operations_log')->where('learner_id',$data->learner_id)->where('learner_detail_id',$data->learner_detail_id)->where('operation',$data->operation)->whereDate('created_at',$data->operation_date)->first();
                             $operationDetails = HelperService::getOperationDetails($operation);
+                            
                            
                         @endphp
                          <tr>
-                            <td>{{ $learner->seat_no ?? 'GEN'}}<br>{{$operationDetails['field']}} <code> ({{$operationDetails['old']}} to  {{$operationDetails['new']}})<code></td> <!-- Seat No -->
+                            <td>{{ $learner->seat_no ?? 'GEN'}}<br>
+                               {!! $operationDetails['message'] !!}
+                                    </td> <!-- Seat No -->
                            
                             
                             <td><span class="uppercase truncate" data-bs-toggle="tooltip"

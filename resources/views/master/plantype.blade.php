@@ -56,14 +56,14 @@
                     @can('has-permission', 'Second Half')
                     <option value="3" {{ old('day_type_id', $planType->day_type_id ?? '') == 3 ? 'selected' : '' }}>Second Half</option>
                     @endcan
-
+                    @if($total_hour =='24' || $total_hour ==24)
                     @can('has-permission', 'All Day')
                     <option value="8" {{ old('day_type_id', $planType->day_type_id ?? '') == 8 ? 'selected' : '' }}>All Day</option>
                     @endcan
                     @can('has-permission', 'Full Night')
                     <option value="9" {{ old('day_type_id', $planType->day_type_id ?? '') == 9 ? 'selected' : '' }}>Full Night</option>
                     @endcan
-
+                    @endif
                     @can('has-permission', 'Custom Plan')
                     <option value="0" {{ old('day_type_id', $planType->day_type_id ?? '') == 0 ? 'selected' : '' }}>Custom</option>
                     @endcan

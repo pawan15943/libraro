@@ -31,6 +31,8 @@ use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Facades\Auth;
 use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Gate;
+
 
 
 class LearnerController extends Controller
@@ -356,7 +358,9 @@ class LearnerController extends Controller
         }
 
         // Creation
-  
+        try {
+
+        DB::beginTransaction();
         $customer = Learner::create([
             'seat_no' => $seat_no,
             'name' => $request->input('name'),
@@ -421,11 +425,28 @@ class LearnerController extends Controller
             $this->dataUpdate();
         }
      
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Learner created successfully!',
+            ], 201);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Learner created successfully!',
-        ], 201);
+            } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            \Log::error("Learner Create Error: " . $e->getMessage(), [
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong while creating learner!',
+                'error' => $e->getMessage(), // remove in production
+            ], 500);
+        }
+
     }
      //learner  change plan 
     public function changePlanUpdate(Request $request, $id = null)
@@ -441,7 +462,6 @@ class LearnerController extends Controller
             'user_id' => 'required|exists:learners,id',
             'learner_detail' => 'required|exists:learner_detail,id',
             'discountType' => 'nullable|in:amount,percentage',
-          
             'discount_amount' => [
                 'required_if:discountType,amount,percentage', 
                 
@@ -468,7 +488,7 @@ class LearnerController extends Controller
 
         }
 
-         if (!Auth::user()->can('has-permission', 'Change Plan')) {
+         if (!Gate::allows('has-permission', 'Change Plan')) {
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
         }
          DB::beginTransaction();
@@ -1584,7 +1604,7 @@ class LearnerController extends Controller
             // if ($hours > ($total_hour - ($total_cust_hour - ($learner_detail->hours ?? 0)))) {
             //     return ['error' => true, 'message' => 'You cannot select this plan type as it exceeds the available hours.'];
             // }
-
+           
             if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
                 return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
             }
@@ -1961,8 +1981,9 @@ class LearnerController extends Controller
             }
 
             if (!empty($filters['future_booking'])) {
-                $query->whereDate('learner_detail.plan_start_date', '>', now());
+                $query->whereDate('learner_detail.plan_start_date', '>', today());
             }
+
               
         } else {
            
@@ -2018,9 +2039,6 @@ class LearnerController extends Controller
                 ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC');
         }
 
-
-       
-        
         return $paginate
         ? $query->paginate($perPage)
         : $query->get();
@@ -3625,7 +3643,6 @@ class LearnerController extends Controller
             'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
-            'created_by'     => auth()->user()->name ?? 'System'
         ]);
     }
 
