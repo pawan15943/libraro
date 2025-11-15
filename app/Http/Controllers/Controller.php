@@ -485,13 +485,16 @@ class Controller extends BaseController
         $currentDate  = date('Y-m-d');
 
         if ($endDate < $currentDate && $endDate->gt($currentDate) && $is_paid == 1) {
+           
             $status = 1;
         } elseif ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
+           
             $status = 1;
         } else {
+            
             $status = 0;
         }
-
+      
 
         if ($status == 1) {
             \Log::info('Learner for updated', ['status1' => $status]);
@@ -924,7 +927,7 @@ class Controller extends BaseController
         $this->dataUpdateNow($learnerData->id);
     }
 
-     public function learnerTransactionAddUpdate($data)
+    public function learnerTransactionAddUpdate($data)
     {
         // 1. Save LearnerTransaction
          $effectivePaid = $data['planPrice'] + $data['locker'] -$data['discount'];
@@ -968,7 +971,7 @@ class Controller extends BaseController
      
         return $learnerTransaction;
     }
-       public function learnerTransactionActivity($data)
+    public function learnerTransactionActivity($data)
     {
        
 
@@ -985,43 +988,8 @@ class Controller extends BaseController
            
         ]);
     }
-       
-
-    // function dataUpdateNow($learner_id)
-    // {
-
-
-    //     $userUpdate = Learner::where('branch_id', getCurrentBranch())->where('id', $learner_id)->where('status', 1)->first();
-
-
-    //     $today = date('Y-m-d');
-    //     $customerdatas = LearnerDetail::where('learner_id', $learner_id)->where('status', 1)->get();
-
-    //     $extend_day = getExtendDays();
-    //     foreach ($customerdatas as $customerdata) {
-    //         $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
-    //         $current_date = Carbon::today();
-    //         $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //             ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
-    //             ->exists();
-    //         $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //             ->where('plan_end_date', '<', $current_date->copy()->addDays(5))
-    //             ->exists();
-
-    //         $isRenewed = $hasFuturePlan && $hasPastPlan;
-    //         if ($planEndDateWithExtension->lte($today)) {
-    //             $userUpdate->update(['status' => 0]);
-    //             $customerdata->update(['status' => 0]);
-    //         } elseif ($isRenewed) {
-    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
-    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
-    //         } else {
-    //             $userUpdate->update(['status' => 1]);
-    //             LearnerDetail::where('learner_id', $userUpdate->learner_id)->where('status', 0)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $today)->update(['status' => 1]);
-    //         }
-    //     }
-    // }
-      public function dataUpdateNow($learner_id)
+   
+    public function dataUpdateNow($learner_id)
     {
         $today = Carbon::today();
         $futureCheckDate = $today->copy()->addDays(5);
@@ -1046,16 +1014,23 @@ class Controller extends BaseController
             $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
                 ->where('plan_end_date', '<', $futureCheckDate)
                 ->exists();
+            
 
             $isRenewed = $hasFuturePlan && $hasPastPlan;
+            $hasfutureBooking=LearnerDetail::where('learner_id', $customerdata->learner_id)
+                ->whereDate('learner_detail.plan_start_date', '>', today())
+                ->where('status', 0)
+                ->exists();
 
-            if ($planEndDateWithExtension->lte($today)) {
+            if ($planEndDateWithExtension->lte($today) || $hasfutureBooking) {
+                
                 Learner::where('id', $customerdata->learner_id)
                     ->where('status', '!=', 0)
                     ->update(['status' => 0]);
 
                 $customerdata->update(['status' => 0]);
             } elseif ($isRenewed) {
+               
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>', $futureCheckDate)
@@ -1065,6 +1040,7 @@ class Controller extends BaseController
                     ->where('plan_end_date', '<', $today)
                     ->update(['status' => 0]);
             } else {
+           
                 Learner::where('id', $customerdata->learner_id)
                     ->where('status', '!=', 1)
                     ->update(['status' => 1]);
@@ -1837,6 +1813,39 @@ class Controller extends BaseController
     
         return $prefix . $randomNumber;
     }
-    
+    // function dataUpdateNow($learner_id)
+    // {
+
+
+    //     $userUpdate = Learner::where('branch_id', getCurrentBranch())->where('id', $learner_id)->where('status', 1)->first();
+
+
+    //     $today = date('Y-m-d');
+    //     $customerdatas = LearnerDetail::where('learner_id', $learner_id)->where('status', 1)->get();
+
+    //     $extend_day = getExtendDays();
+    //     foreach ($customerdatas as $customerdata) {
+    //         $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+    //         $current_date = Carbon::today();
+    //         $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
+    //             ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
+    //             ->exists();
+    //         $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
+    //             ->where('plan_end_date', '<', $current_date->copy()->addDays(5))
+    //             ->exists();
+
+    //         $isRenewed = $hasFuturePlan && $hasPastPlan;
+    //         if ($planEndDateWithExtension->lte($today)) {
+    //             $userUpdate->update(['status' => 0]);
+    //             $customerdata->update(['status' => 0]);
+    //         } elseif ($isRenewed) {
+    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
+    //             LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
+    //         } else {
+    //             $userUpdate->update(['status' => 1]);
+    //             LearnerDetail::where('learner_id', $userUpdate->learner_id)->where('status', 0)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $today)->update(['status' => 1]);
+    //         }
+    //     }
+    // }
    
 }

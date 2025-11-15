@@ -528,9 +528,9 @@ class ReportController extends Controller
                 YEAR(created_at) as year, 
                 MONTH(created_at) as month 
             FROM learner_operations_log
-            WHERE library_id = ?
+            WHERE branch_id = ?
             ORDER BY year DESC, month ASC
-        ", [getLibraryId()]);
+        ", [getCurrentBranch()]);
 
         $collection = collect($data);
 
@@ -538,7 +538,7 @@ class ReportController extends Controller
         $months = $collection->pluck('month')->unique()->values();
 
 
-        $query = LearnerOperationsLog::where('library_id', getLibraryId())
+        $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
             ->with('learner');
        
 
@@ -585,9 +585,9 @@ class ReportController extends Controller
                 YEAR(date) as year, 
                 MONTH(date) as month 
             FROM attendances
-            WHERE library_id = ?
+            WHERE branch_id = ?
             ORDER BY year DESC, month ASC
-        ", [getLibraryId()]);
+        ", [getCurrentBranch()]);
 
         $collection = collect($data);
 
@@ -597,9 +597,9 @@ class ReportController extends Controller
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
         $daymonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $learners = Learner::where('library_id',getLibraryId())->get();
+        $learners = Learner::where('branch_id',getCurrentBranch())->get();
 
-       $attendanceRecords = Attendance::where('library_id', getLibraryId())
+       $attendanceRecords = Attendance::where('branch_id', getCurrentBranch())
         ->where('branch_id', getCurrentBranch())
         ->whereYear('date', $year)
         ->whereMonth('date', $month)

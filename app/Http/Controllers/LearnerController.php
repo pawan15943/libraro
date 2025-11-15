@@ -358,7 +358,7 @@ class LearnerController extends Controller
         }
 
         // Creation
-    try {
+        try {
 
         DB::beginTransaction();
         $customer = Learner::create([
@@ -462,7 +462,6 @@ class LearnerController extends Controller
             'user_id' => 'required|exists:learners,id',
             'learner_detail' => 'required|exists:learner_detail,id',
             'discountType' => 'nullable|in:amount,percentage',
-          
             'discount_amount' => [
                 'required_if:discountType,amount,percentage', 
                 
@@ -1982,8 +1981,9 @@ class LearnerController extends Controller
             }
 
             if (!empty($filters['future_booking'])) {
-                $query->whereDate('learner_detail.plan_start_date', '>', now());
+                $query->whereDate('learner_detail.plan_start_date', '>', today());
             }
+
               
         } else {
            
@@ -2039,9 +2039,6 @@ class LearnerController extends Controller
                 ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC');
         }
 
-
-       
-        
         return $paginate
         ? $query->paginate($perPage)
         : $query->get();
