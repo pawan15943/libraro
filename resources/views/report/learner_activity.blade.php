@@ -125,9 +125,8 @@ $currentMonth = date('m');
                     @foreach($learners as $value)
                    
                     <tr>
-                        <td>{{getSeatDisplayByMainNo($value->learner->seat_no) ?? 'General'}}<br>
-                            
-                        </td>
+                        <td>{{ getSeatDisplayByMainNo($value->learner?->seat_no) ?? 'General' }}</td>
+
                         <td class="text-uppercase">{{$value->learner->name ?? ''}}</td>
                      
                        <td>{{$value->operation ?? ''}}</td>

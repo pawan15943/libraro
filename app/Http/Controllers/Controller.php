@@ -58,15 +58,17 @@ class Controller extends BaseController
             $branch_slug=null;
         }
         if ($request->type == 'learner') {
+            // id is tran id and learner_id 
            
-            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $request->id)
-                ->with(['plan', 'planType'])
-                ->first();
-
-           $data = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $learnerDeatail->id)->where('is_paid', 1)->first();
-
             
-            $user = Learner::where('id', $data->learner_id)->first();
+
+           $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
+
+          
+           $user = Learner::where('id', $request->learner_id)->first();
+            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $request->learner_detail_id)
+            ->with(['plan', 'planType'])
+            ->first();
 
             $transactionDate = $data->paid_date;
             $paymentMode = $learnerDeatail->payment_mode;

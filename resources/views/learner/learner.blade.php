@@ -381,6 +381,7 @@
                                 @csrf
                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
                                 <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">
+                                <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
                                 <input type="hidden" name="type" value="learner">
                                 <button type="submit">
                                     <i class="fa fa-download receipt"></i>
