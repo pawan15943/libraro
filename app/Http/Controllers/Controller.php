@@ -65,8 +65,8 @@ class Controller extends BaseController
            $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
 
           
-           $user = Learner::where('id', $request->learner_id)->first();
-            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $request->learner_detail_id)
+           $user = Learner::where('id', $data->learner_id)->first();
+            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $data->learner_detail_id)
             ->with(['plan', 'planType'])
             ->first();
 

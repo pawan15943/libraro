@@ -250,6 +250,7 @@
                         <tbody>
                             @foreach($renew_detail as $key => $value)
                             @php
+                              $learner_id=$value->learner_id;
                             $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$value->id)->where('is_paid',1)->first();
                             @endphp
                             <tr>
@@ -272,9 +273,12 @@
                                         @can('has-permission', 'Receipt Generation')
                                         @if($value->is_paid==1)
                                         <li>
+
                                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
-                                                <input type="hidden" name="id" value="{{ $value->id ?? 'NA'}}">
+                                                <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                                                <input type="hidden" name="learner_detail_id" value="{{ $value->id ?? 'NA'}}">
+                                                <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
                                                 <button type="submit">
                                                     <i class="fa fa-print"></i>
@@ -318,7 +322,11 @@
                                 <td>{{ $learner->mobile }}</td>
                                 <td>{{ $learner->email }}</td>
                                 @if ($learner->learnerDetails->isNotEmpty())
-                                @php $firstDetail = $learner->learnerDetails->first(); @endphp
+                                @php
+                                 $firstDetail = $learner->learnerDetails->first(); 
+                                $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$firstDetail->id)->first();
+
+                                 @endphp
                                 <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
                                 <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td>
                                 <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td>
@@ -329,12 +337,17 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
-                                                <input type="hidden" name="id" value="{{ $firstDetail->id }}">
+                                                <input type="hidden" name="learner_id" value="{{$learner->id}}">
+                                                <input type="hidden" name="learner_detail_id" value="{{ $firstDetail->id ?? 'NA'}}">
+                                                <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
-                                                <button type="submit"><i class="fa fa-print"></i></button>
+                                                <button type="submit">
+                                                    <i class="fa fa-print"></i>
+                                                </button>
                                             </form>
+                                         
                                         </li>
                                         @endcan
                                     </ul>
@@ -344,6 +357,9 @@
                                 @endif
                             </tr>
                             @foreach ($learner->learnerDetails->skip(1) as $detail)
+                            @php
+                                $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$detail->id)->first();
+                            @endphp
                             <tr>
                                  <td>{{ $learner->name }}<br>
                                     <small>{{getSeatDisplayByMainNo($learner->seat_no) ?? 'General'}}</small>
@@ -360,12 +376,17 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
-                                                <input type="hidden" name="id" value="{{ $detail->id }}">
+                                                <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                                                <input type="hidden" name="learner_detail_id" value="{{ $detail->id ?? 'NA'}}">
+                                                <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
-                                                <button type="submit"><i class="fa fa-print"></i></button>
+                                                <button type="submit">
+                                                    <i class="fa fa-print"></i>
+                                                </button>
                                             </form>
+                                        
                                         </li>
                                         @endcan
                                     </ul>

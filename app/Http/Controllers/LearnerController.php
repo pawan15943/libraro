@@ -3141,7 +3141,7 @@ class LearnerController extends Controller
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
                 ->with(['planType'])
-                ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'))
+                ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'),'attendances.in_time','attendances.out_time')
                 ->get();
         } else {
              $learners = collect();

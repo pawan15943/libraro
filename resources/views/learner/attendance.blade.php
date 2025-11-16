@@ -116,7 +116,7 @@
                                     type="checkbox"
                                     id="myToggle{{ $value->learner_id }}"
                                     data-learner="{{ $value->learner_id }}"
-                                    {{ $value->attendance == 1 ? 'checked' : '' }}>
+                                    {{ $value->in_time ? 'checked' : '' }}>
                             </div>
                         </li>
 
@@ -128,7 +128,7 @@
                                     class="form-check-input outToggle"
                                     type="checkbox"
                                     id="outToggle{{ $value->learner_id }}"
-                                    data-learner="{{ $value->learner_id }}">
+                                    data-learner="{{ $value->learner_id }}" {{ $value->out_time ? 'checked' : '' }}>
                             </div>
                         </li>
 

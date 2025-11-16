@@ -100,6 +100,10 @@ $currentMonth = date('m');
 
                 <tbody>
                     @foreach($learners as $value)
+                    @php
+                        $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$value->learner_detail_id)->first();
+
+                    @endphp
 
                     <tr>
                         <td>{{getSeatDisplayByMainNo($value->learner->seat_no) ?? 'General'}}<br> </td>
@@ -123,7 +127,7 @@ $currentMonth = date('m');
 
                                     <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
-                                        <input type="hidden" name="id" value="{{ $value->learner_detail_id ?? 'NA'}}">
+                                        <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                         <input type="hidden" name="type" value="learner">
 
                                         <button type="submit">

@@ -1049,7 +1049,7 @@ class LibraryController extends Controller
 
 
     public function getEnquiry(){
-        $datas=LibraryEnquiry::where('library_id',getLibraryId())->with('planType')->get();
+        $datas=LibraryEnquiry::where('branch_id',getCurrentBranch())->with('planType')->get();
         return view('library.enquery',compact('datas'));
     }
 
