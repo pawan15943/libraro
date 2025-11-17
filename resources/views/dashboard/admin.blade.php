@@ -1023,27 +1023,29 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                     <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
                                     <small class="capitalise">{{$value->name ?? ''}} </small>
-                                    @if($value->planType->name=='First Half')
-                                    <small>(FH)</small>
-                                    @elseif($value->planType->name=='Second Half')
-                                    <small>(SH) </small>
-                                    @elseif($value->planType->name=='Hourly Slot 1')
-                                    <small>(H1) </small>
-                                    @elseif($value->planType->name=='Hourly Slot 2')
-                                    <small>(H2) </small>
-                                    @elseif($value->planType->name=='Hourly Slot 3')
-                                    <small>(H3) </small>
-                                    @elseif($value->planType->name=='Hourly Slot 4')
-                                    <small>(H4) </small>
-                                    @elseif($value->planType->name=='Full Day')
-                                    <small>(FD) </small>
-                                    @elseif($value->planType->name=='Full Night')
-                                    <small>(FN) </small>
-                                    @elseif($value->planType->name=='All Day')
+                                   
+                                    @if(optional($value->planType)->name == 'First Half')
+                                        <small>(FH)</small>
+                                    @elseif(optional($value->planType)->name == 'Second Half')
+                                        <small>(SH)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 1')
+                                        <small>(H1)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 2')
+                                        <small>(H2)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 3')
+                                        <small>(H3)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 4')
+                                        <small>(H4)</small>
+                                    @elseif(optional($value->planType)->name == 'Full Day')
+                                        <small>(FD)</small>
+                                    @elseif(optional($value->planType)->name == 'Full Night')
+                                        <small>(FN)</small>
+                                     @elseif(optional($value->planType)->name=='All Day')
                                     <small>(AD) </small>
                                     @else
-                                    <small>{{ $value->planType->name }}</small>
+                                    <small>{{ optional($value->planType)->name }}</small>
                                     @endif
+
                                     
                                 </div>
                                 <div class="seat-status">
