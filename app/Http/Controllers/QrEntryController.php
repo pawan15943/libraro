@@ -505,13 +505,13 @@ class QrEntryController extends Controller
                 $seat_no = $bookingurl->seat_no;
             }
             if($request->direct_validate){
-                $planPrice= $booking->plan_price_id;
-                $start_date = Carbon::parse($booking->plan_start_date);
-                $plan_id = $booking->plan_id;
-                $plan_type_id = $booking->plan_type_id;
+                $planPrice= $bookingurl->plan_price_id;
+                $start_date = Carbon::parse($bookingurl->plan_start_date);
+                $plan_id = $bookingurl->plan_id;
+                $plan_type_id = $bookingurl->plan_type_id;
                 $locker_no=null;
-                $total_amt=$booking->plan_price_id;
-                $new_paid=$booking->plan_price_id;
+                $total_amt=$bookingurl->plan_price_id;
+                $new_paid=$bookingurl->plan_price_id;
                 $pending_amount=0;
                 $locker=0;
                 $discount=0;
