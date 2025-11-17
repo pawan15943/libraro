@@ -776,7 +776,7 @@ class QrEntryController extends Controller
 
                     $learnerController->dataUpdate();
                 }
-                $booking->delete();
+                $bookingurl->delete();
 
             DB::commit();
 
