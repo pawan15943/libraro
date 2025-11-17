@@ -812,23 +812,19 @@ if (!function_exists('generateSeatNumbers')) {
             foreach ($floors as $floor) {
                 $startSeat = $floor->from_seat ?? 1;
                 $endSeat   = $floor->to_seat ?? 0;
-                $floorSeatNo = 1;
+              
 
-                // Extract floor number from name, e.g. "Floor 1" → "F1"
-               
 
-                // Generate seat mapping
-                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+               for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
                     $result[] = [
-                        'main' => $mainSeatNo,
-                        'floor' => $floorSeatNo,
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
                         'floor_name' => $floor->name,
-                        'floor_no'=>$floor->floor_no,
-                        'display' => 'Seat No - '. $floorSeatNo . ' (' .$floor->name.')'
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - '. $seatNo . ' (' . $floor->name . ')'
                     ];
 
                     $mainSeatNo++;
-                    $floorSeatNo++;
                 }
             }
         }

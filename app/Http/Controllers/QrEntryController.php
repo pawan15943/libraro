@@ -479,7 +479,7 @@ class QrEntryController extends Controller
 
         ];
        
-       
+      
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -496,12 +496,13 @@ class QrEntryController extends Controller
             $learnerController = app(\App\Http\Controllers\LearnerController::class);
 
          
-            $booking=Booking::find($request->booking_id);
+            $bookingurl=Booking::find($request->booking_id);
+          
             
             if ($request->seat_no && $request->seat_no!='gen') {
                 $seat_no = $request->input('seat_no');
             } else {
-                $seat_no = $booking->seat_no;
+                $seat_no = $bookingurl->seat_no;
             }
             if($request->direct_validate){
                 $planPrice= $booking->plan_price_id;
@@ -533,7 +534,7 @@ class QrEntryController extends Controller
                 $paid_amount = (float) $request->input('paid_amount', 0);
                 $pending_amount = $request->input('pending_amount');
                 $diff_amount    = $request->input('diffrence_amount');
-                $already_paid  =$booking->total_amount;
+                $already_paid  =$bookingurl->total_amount;
                 
                 $refund = 0;
                 $pending_refund = 0;
@@ -624,7 +625,6 @@ class QrEntryController extends Controller
             }
 
            
-
             if ($seat_no && !$request->learner_id) {
                   $existingBookingsWithoutPlan = $this->getLearnersByLibrary()
                 ->where('learner_detail.seat_no', '=', $seat_no)
@@ -673,6 +673,7 @@ class QrEntryController extends Controller
                 }
             }
 
+
             $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
         
 
@@ -696,6 +697,7 @@ class QrEntryController extends Controller
                 //     $customerEmail = $booking->email 
                 // ? encryptData($booking->email) 
                 // : ($request->filled('email') ? encryptData($request->input('email')) : null);
+               
             if($request->learner_id){
                 $customer=Learner::find($request->learner_id);
                 $customer->seat_no=$seat_no;
@@ -704,15 +706,15 @@ class QrEntryController extends Controller
             }else{
                 $customer = Learner::create([
                 'seat_no' => $seat_no,
-                'name' => $booking->name,
-                'mobile' =>encryptData($booking->mobile),
+                'name' => $bookingurl->name,
+                'mobile' =>encryptData($bookingurl->mobile),
                 // 'email' => $customerEmail,
                 // 'dob' => $booking->dob,
                 'hours' => $hours,
                 'status' => $status,
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
-                'password' => $booking->password,
+                'password' => $bookingurl->password,
                 'learner_no'=>$learnerController->generateLearnerCode(),
                 'locker_no'=>$locker_no ?? null ,
                 ]);
@@ -736,8 +738,8 @@ class QrEntryController extends Controller
                 'status' => $status,
             ]);
 
-            if ($booking->created_at) {
-                $transaction_date = $booking->created_at;
+            if ($bookingurl->created_at) {
+                $transaction_date = $bookingurl->created_at;
             } else {
                 $transaction_date =null;
             }

@@ -445,7 +445,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <!-- Library Revenue -->
         @if(!in_array('23', toggleHideField()))
         <div class="row g-4 mb-2">
-            @can('has-permission', 'Monthly Revenues')
+            {{-- @can('has-permission', 'Monthly Revenues') --}}
             <div class="col-lg-8">
                 <h4 class="my-4">Online / QR Bookings</h4>
                 <div class="table-responsive" id="requests">
@@ -526,7 +526,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
 
             </div>
-            @endcan
+            {{-- @endcan --}}
             <div class="col-lg-4">
                 <h4 class="my-4">Recent Activity</h4>
                 <ul class="activity contents">
