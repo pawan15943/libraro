@@ -875,7 +875,8 @@ class LearnerController extends Controller
             ], 422);
         }
         if($request->payment_type=='RENEW'){
-             if (!Auth::user()->can('has-permission', 'Renew Seat')) {
+            if (!Gate::allows('has-permission', 'Renew Seat')) {
+            //  if (!Auth::user()->can('has-permission', 'Renew Seat')) {
                 return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
             }
         }
@@ -1138,7 +1139,8 @@ class LearnerController extends Controller
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-        if (!Auth::user()->can('has-permission', 'Renew Seat')) {
+         if (!Gate::allows('has-permission', 'Reactive Seat')) {
+        // if (!Auth::user()->can('has-permission', 'Reactive Seat')) {
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
         }
 
