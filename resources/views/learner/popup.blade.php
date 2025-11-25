@@ -188,8 +188,6 @@
 
                         <div id="idProofFields" style="display: none;">
                             <div class="row g-3">
-                                
-
                                 @if(!in_array('5', toggleHideField()))
                                 <div class="col-lg-6">
                                     <label for="">Id Proof Received </label>
@@ -206,7 +204,6 @@
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
                                     <input type="file" class="form-control" name="id_proof_file" id="id_proof_file"
                                         autocomplete="off">
-
                                     <a href="javascript:;" id="viewButton" style="display: none;">
                                         <i class="fa fa-eye"></i> View Uploaded File
                                     </a>

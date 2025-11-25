@@ -6,7 +6,8 @@
 <p class="not-found info-message">
     <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
 
-    There is currently no history available for this seat for any learners.</p>
+    There is currently no history available for this seat for any learners.
+</p>
 @else
 
 
@@ -51,7 +52,11 @@ $learner_id=$value->learner_id;
 
             </div>
 
-            <div class="seat-actions"></div>
+            <div class="seat-actions">
+                <ul>
+                    <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Details" class="w-auto px-2"><i class="fa-solid fa-eye me-1"></i> View Seat Details</a></li>
+                </ul>
+            </div>
             <div class="seat-informarion">
                 @if(!empty($learner) && !empty($learner->profile_picture))
                 <img src="{{ asset($learner->profile_picture) }}" alt="profile">
@@ -67,20 +72,6 @@ $learner_id=$value->learner_id;
                         <span class="extended">Deleted</span>
                         @else
                         <span class=" {{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }} ps-1">{{$planStatus['status']}}</span>
-                        @endif
-
-                    </div>
-                    
-                    <div class="seat-actions">
-                        <ul>
-                            <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Details" class="w-auto px-2"><i class="fa-solid fa-eye me-1"></i> View Seat Details</a></li>
-                        </ul>
-                    </div>
-                    <div class="seat-informarion">
-                        @if(!empty($learner) && !empty($learner->profile_picture))
-                            <img src="{{ asset($learner->profile_picture) }}" alt="profile">
-                        @else
-                            <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile">
                         @endif
 
                     </h4>

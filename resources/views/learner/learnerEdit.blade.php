@@ -274,18 +274,22 @@ if($customer->locker_no){
                         <span>Full Name</span>
                         <h4>{{ $customer->name }}</h4>
                     </li>
+                    @if(!in_array('2', toggleHideField()))
                     <li>
                         <span>DOB</span>
                         <h4>{{ $customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'DOB Not Available' }}</h4>
                     </li>
+                    @endif
                     <li>
                         <span>Mobile</span>
                         <h4>+91-{{ $customer->mobile }}</h4>
                     </li>
+                    @if(!in_array('1', toggleHideField()))
                     <li>
                         <span>Email</span>
                         <h4><a href="mailto:{{$customer->email}}" class="text-white"> {!! $customer->email ? $customer->email : 'Email ID Not Available' !!} </a></h4>
                     </li>
+                    @endif
                 </ul>
             </div>
 
