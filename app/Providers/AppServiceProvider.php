@@ -355,7 +355,18 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Find a Learner' => route('learner.search'),
             ],
-
+            'notifications.subscription' => [
+                'Dashboard' => route('library.home'),
+                'Buy Message Subscription' => route('notifications.subscription'),
+            ],
+            'notifications.settings' => [
+                'Dashboard' => route('library.home'),
+                'Notification Console' => route('notifications.settings'),
+            ],
+            'notification.dashboard' => [
+                'Dashboard' => route('library.home'),
+                'Notification Dashboard' => route('notification.dashboard'),
+            ],
 
             // Learner Bread crumb
 
@@ -497,6 +508,10 @@ class AppServiceProvider extends ServiceProvider
             'library-users.create' => 'Create Library User',
             'library-users.index' => 'Library Users List',
             'learner.checklist' => 'Print ID card in bulk',
+            'notifications.subscription' =>  'Buy Message Subscription',
+            'notifications.settings' =>  'Notification Console',
+            'notification.dashboard' =>  'Notification Dashbaord'
+            
         ];
 
         return $titles[$routeName] ?? ucfirst(str_replace('.', ' ', $routeName));

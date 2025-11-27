@@ -13,6 +13,7 @@ use App\Models\Library;
 use App\Models\Subscription;
 use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
+use App\Models\NotificationChannelSetting;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PlanPrice;
@@ -930,5 +931,83 @@ if (!function_exists('transaction_id')) {
 
 
         }
+}
+//for menual messages
+if (!function_exists('notificationActive')) {
+
+    function notificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('remaining', '>', 0)
+            ->exists();
+
+      
     }
+}
+if (!function_exists('wabaNotificationActive')) {
+
+    function wabaNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','waba')
+            ->where('remaining', '>', 0)
+            ->exists();
+    }
+}
+if (!function_exists('textNotificationActive')) {
+
+    function textNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','text')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+       
+    }
+}
+if (!function_exists('autowabaNotificationActive')) {
+
+    function autowabaNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+         $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','waba')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+        if (!$hasCredits) {
+            return false;
+        }
+
+        // Step 2: Check template settings for the current branch
+        return NotificationChannelSetting::where('branch_id', getCurrentBranch())->whereNotNull('waba_template_id')->exists();
+    }
+}
+if (!function_exists('autotextNotificationActive')) {
+
+    function autotextNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+         $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','text')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+        if (!$hasCredits) {
+            return false;
+        }
+
+        // Step 2: Check template settings for the current branch
+        return NotificationChannelSetting::where('branch_id', getCurrentBranch())->whereNotNull('text_template_id')->exists();
+    }
+}
 

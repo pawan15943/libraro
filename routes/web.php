@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\QrEntryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
@@ -212,6 +214,20 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
     Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
     Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
+
+    Route::get('notifications/subscription', [NotificationSentController::class, 'index'])->name('notifications.subscription');
+    Route::post('notifications/subscription/purchase', [NotificationSentController::class, 'purchase'])->name('notifications.subscription.purchase');
+    Route::get('notifications/settings', [NotificationSentController::class, 'settingsForm'])->name('notifications.settings');
+    Route::post('notifications/settings/store', [NotificationSentController::class, 'settingStore'])->name('notification.settings.save');
+    
+
+    Route::get('/notification/payment/verify', [NotificationSentController::class, 'verifyPayment'])->name('notification.payment.verify');
+    Route::get('/notification/dashboard', [NotificationSentController::class, 'dashboard'])->name('notification.dashboard');
+    Route::post('/notification/render-message', [NotificationSentController::class, 'renderMessage'])->name('notification.renderMessage');
+    Route::post('/notification/send-message',[NotificationSentController::class, 'sendMessage'])->name('notification.sendMessage');
+    Route::post('/get-learner-mobiles', [NotificationSentController::class, 'getLearnerMobiles'])->name('notification.getLearnerMobiles');
+
+
   });
 
   Route::prefix('library/learners')->group(function () {
