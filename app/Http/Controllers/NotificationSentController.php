@@ -639,8 +639,8 @@ class NotificationSentController extends Controller
     public function sendWaba($mobile, $message)
     {
 
-        $sid    = env('TWILIO_SID') ?? 'AC6a550bf832bc1a0f4e5104d7e193de6d';
-        $token  = env('TWILIO_AUTH_TOKEN') ?? '6f1c063bac212139fadb9363f16f07d5';
+        $sid    = env('TWILIO_SID') ;
+        $token  = env('TWILIO_AUTH_TOKEN');
        \Log::info('TWILIO_SID',['TWILIO_SID'=>$sid,'TWILIO_AUTH_TOKEN'=>$token]);
          if (!$sid || !$token ) {
             return [
