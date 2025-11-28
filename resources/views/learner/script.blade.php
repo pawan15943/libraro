@@ -2532,6 +2532,17 @@ function loadLearnerMobiles(learnerId,mobileId) {
         }
     });
 }
+// Show Form Errors
+function showFormErrors2(errors) {
+    $(".is-invalid").removeClass("is-invalid");
+    $(".invalid-feedback").remove();
+
+    $.each(errors, function(key, value) {
+        const field = $("[name='" + key + "']");
+        field.addClass("is-invalid");
+        field.after('<div class="invalid-feedback">' + value[0] + '</div>');
+    });
+}
 
 $(document).on('click', '.open-waba', function () {
 
@@ -2544,7 +2555,7 @@ $(document).on('click', '.open-waba', function () {
 // When template changes → get both values and render final message
 $('#waba_template_select').on('change', function () {
 
-    let learner_id = $('#modal_learner_id').val();
+    let learner_idm = $('#modal_learner_id').val();
     let template_id = $(this).val();
 
      let errors = {};
@@ -2553,7 +2564,7 @@ $('#waba_template_select').on('change', function () {
     if (!learner_id) errors.learner_id = ["Invalid learner ID."];
 
     if (Object.keys(errors).length > 0) {
-        showFormErrors(errors);
+        showFormErrors2(errors);
         return; // stop here
     }
 
@@ -2563,7 +2574,7 @@ $('#waba_template_select').on('change', function () {
         data: {
             _token: "{{ csrf_token() }}",
             template_id: template_id,
-            learner_id: learner_id
+            learner_id: learner_idm
         },
         success: function (res) {
             $('#waba_final_message').val(res.message);
@@ -2578,6 +2589,7 @@ $('#sendWabaMessage').on('click', function (e) {
     let message = $('#waba_final_message').val();
      let learner_id = $('#modal_learner_id').val();
      let mobileNo = $('#learner_mobile_select').val();
+   
 
     let errors = {};
 
@@ -2587,7 +2599,7 @@ $('#sendWabaMessage').on('click', function (e) {
     if (!learner_id) errors.learner_id = ["Invalid learner ID."];
 
     if (Object.keys(errors).length > 0) {
-        showFormErrors(errors);
+        showFormErrors2(errors);
         return; // stop here
     }
 
@@ -2615,7 +2627,7 @@ $('#sendWabaMessage').on('click', function (e) {
 
         error: function (xhr) {
             if (xhr.status === 422) {
-                showFormErrors(xhr.responseJSON.errors);
+                showFormErrors2(xhr.responseJSON.errors);
             } else {
                 toastr.error("Something went wrong!");
             }
@@ -2644,7 +2656,7 @@ $('#text_template_select').on('change', function () {
     if (!learner_id) errors.learner_id = ["Invalid learner ID."];
 
     if (Object.keys(errors).length > 0) {
-        showFormErrors(errors);
+        showFormErrors2(errors);
         return; // stop here
     }
 
@@ -2678,7 +2690,7 @@ $('#sendTextMessage').on('click', function (e) {
     if (!learner_id) errors.learner_id = ["Invalid learner ID."];
 
     if (Object.keys(errors).length > 0) {
-        showFormErrors(errors);
+        showFormErrors2(errors);
         return; // stop here
     }
 

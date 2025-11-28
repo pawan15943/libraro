@@ -238,7 +238,8 @@ class NotificationSentController extends Controller
                 'nt.id as template_id',
                 'nt.type',
                 'nt.template_message',
-                'nt.template_name','nt.template_code'
+                'nt.template_name',
+                'nt.template_code'
             )
             ->orderBy('o.id')
             ->where('nt.is_custom', 0)
@@ -248,13 +249,13 @@ class NotificationSentController extends Controller
 
         // 3. EDIT MODE → Load existing settings (first branch or requested branch)
         // If user selects branch first, use request branch, else take first branch for auto edit load.
-       
+
         $selectedBranchId = $request->branch_id ?? getCurrentBranch();
         $existing = DB::table('notification_channel_settings')
             ->where('branch_id', $selectedBranchId)
             ->first();
-      
-        
+
+
 
         // If no existing settings → empty arrays (ADD mode)
         $oldText  = $existing ? json_decode($existing->text_template_id, true)  : [];
@@ -283,54 +284,54 @@ class NotificationSentController extends Controller
             'settings.*.waba_template_id' => 'WABA template',
         ]);
 
-        
+
         $branchId = $request->branch_ids;
         $settings  = $request->settings;
         $messageTime = $request->message_time ?? [];
         $messageTimeJson = empty($messageTime) ? null : json_encode($messageTime);
 
-      
 
-            $textArr = [];
-            $wabaArr = [];
-            $emailArr = [];
 
-            foreach ($settings as $opId => $row) {
+        $textArr = [];
+        $wabaArr = [];
+        $emailArr = [];
 
-                if (!empty($row['text_template_id'])) {
-                    $textArr[] = (int)$row['text_template_id'];
-                }
+        foreach ($settings as $opId => $row) {
 
-                if (!empty($row['waba_template_id'])) {
-                    $wabaArr[] = (int)$row['waba_template_id'];
-                }
-
-                if (!empty($row['email_template_id'] ?? null)) {
-                    $emailArr[] = (int)$row['email_template_id'];
-                }
+            if (!empty($row['text_template_id'])) {
+                $textArr[] = (int)$row['text_template_id'];
             }
 
-            DB::table('notification_channel_settings')
-                ->updateOrInsert(
-                    ['branch_id' => $branchId],
-                    [
-                        'text_template_id'  => empty($textArr)  ? null : json_encode($textArr),
-                        'waba_template_id'  => empty($wabaArr)  ? null : json_encode($wabaArr),
-                        'email_template_id' => empty($emailArr) ? null : json_encode($emailArr),
-                        'message_time'      => $messageTimeJson,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-            );
-      
+            if (!empty($row['waba_template_id'])) {
+                $wabaArr[] = (int)$row['waba_template_id'];
+            }
 
-            return redirect()
-                ->route('notification.dashboard')
-                ->with('success', 'Settings saved successfully.');
+            if (!empty($row['email_template_id'] ?? null)) {
+                $emailArr[] = (int)$row['email_template_id'];
+            }
+        }
+
+        DB::table('notification_channel_settings')
+            ->updateOrInsert(
+                ['branch_id' => $branchId],
+                [
+                    'text_template_id'  => empty($textArr)  ? null : json_encode($textArr),
+                    'waba_template_id'  => empty($wabaArr)  ? null : json_encode($wabaArr),
+                    'email_template_id' => empty($emailArr) ? null : json_encode($emailArr),
+                    'message_time'      => $messageTimeJson,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+
+
+        return redirect()
+            ->route('notification.dashboard')
+            ->with('success', 'Settings saved successfully.');
     }
 
 
-    
+
     public function dashboard()
     {
         if (!notificationActive()) {
@@ -366,7 +367,7 @@ class NotificationSentController extends Controller
 
                     return $row;
                 });
-            
+
 
             // Fetch SMS logs
             $textlogs = DB::table('notification_logs as nl')
@@ -414,7 +415,7 @@ class NotificationSentController extends Controller
                 ->where('library_id', getLibraryId())
                 ->where('channel', 'text')
                 ->sum('used');
-            return view('notification.dashboard', compact('logs','textlogs', 'wabaRemaining', 'wabaUsed', 'textRemaining', 'textUsed'));
+            return view('notification.dashboard', compact('logs', 'textlogs', 'wabaRemaining', 'wabaUsed', 'textRemaining', 'textUsed'));
         }
     }
     public function renderMessage(Request $request)
@@ -438,7 +439,7 @@ class NotificationSentController extends Controller
         $replace = [
             '{{learner_name}}' => $student->name,
             '{{seat_no}}'     => $student->seat_no,
-             '{{library_name}}'=>getLibrary()->library_name,
+            '{{library_name}}' => getLibrary()->library_name,
             '{{mobile}}'      => $student->mobile,
         ];
 
@@ -472,7 +473,7 @@ class NotificationSentController extends Controller
     public function autoMessage($learner_id, $type, $template_code)
     {
 
-        \LOG::info('aumessage start',['learner_id'=>$learner_id,'type'=>$type,'template_code'=>$template_code]);
+        \LOG::info('aumessage start', ['learner_id' => $learner_id, 'type' => $type, 'template_code' => $template_code]);
         // 1. Template
         $template = NotificationTemplate::where('type', $type)
             ->where('template_code', $template_code)
@@ -485,21 +486,21 @@ class NotificationSentController extends Controller
 
         // 2. Learner
         $learner = Learner::withTrashed()->where('id', $learner_id)
-            ->select('sended_message_type', 'mobile','name')
+            ->select('sended_message_type', 'mobile', 'name')
             ->first();
 
         if (!$learner || empty($learner->mobile)) {
             return;
         }
 
-            // 3. Prepare dynamic values
+        // 3. Prepare dynamic values
         $replace = [
-            '{{learner_name}}'=> $learner->name,
+            '{{learner_name}}' => $learner->name,
             '{{seat_no}}'     => $learner->seat_no,
             '{{mobile}}'      => $learner->mobile,
-            '{{library_name}}'=>getLibrary()->library_name
+            '{{library_name}}' => getLibrary()->library_name
         ];
-        \LOG::info('automessage',['template'=>$template,'learner'=>$learner]);
+        \LOG::info('automessage', ['template' => $template, 'learner' => $learner]);
         // 4. Replace dynamic values
         $finalMessage = str_replace(array_keys($replace), array_values($replace), $template->message);
 
@@ -511,14 +512,14 @@ class NotificationSentController extends Controller
             'mobileNo'    => $learner->mobile
         ];
         // 4. Channel settings
-       $wabaSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
+        $wabaSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
             ->whereJsonContains('waba_template_id', $template->template_id)
             ->exists();
 
         $textSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
             ->whereJsonContains('text_template_id', $template->template_id)
             ->exists();
-        \LOG::info('automessage',['data'=>$data,'type'=>$type,'wabasetting'=>$wabaSetting,'ismobile'=>in_array($learner->sended_message_type, ['whatsapp', 'both'])]);
+        \LOG::info('automessage', ['data' => $data, 'type' => $type, 'wabasetting' => $wabaSetting, 'ismobile' => in_array($learner->sended_message_type, ['whatsapp', 'both'])]);
 
         // 5. Send WABA
         if (
@@ -526,7 +527,7 @@ class NotificationSentController extends Controller
             $wabaSetting &&
             in_array($learner->sended_message_type, ['whatsapp', 'both'])
         ) {
-             \Log::info('autoMessage sendmessage call');
+            \Log::info('autoMessage sendmessage call');
             $this->sendMessage(new \Illuminate\Http\Request($data));
             return;
         }
@@ -544,7 +545,7 @@ class NotificationSentController extends Controller
 
     public function sendMessage(Request $request)
     {
-        
+
         $request->validate([
             'learner_id'  => 'required|integer',
             'template_id' => 'required|integer',
@@ -561,8 +562,8 @@ class NotificationSentController extends Controller
 
         $channel = $template->type; // text / waba / email
 
-        \Log::info('sendMessage',['learner'=>$request->learner_id,'channel'=>$channel,'template_name'=>$request->template_id]);
-      
+        \Log::info('sendMessage', ['learner' => $request->learner_id, 'channel' => $channel, 'template_name' => $request->template_id]);
+
 
         // 2. Send Message via APIs
 
@@ -595,7 +596,7 @@ class NotificationSentController extends Controller
         }
 
         $delivery = json_decode($deliveryStatus, true);
-        \LOG::info(['delivery status'=>$delivery['status']]);
+        \LOG::info(['delivery status' => $delivery['status']]);
 
         if (!empty($delivery['status']) && $delivery['status'] === 'success') {
 
@@ -639,10 +640,11 @@ class NotificationSentController extends Controller
     public function sendWaba($mobile, $message)
     {
 
-        $sid    = env('TWILIO_SID') ;
+        $sid    = env('TWILIO_SID');
         $token  = env('TWILIO_AUTH_TOKEN');
-       \Log::info('TWILIO_SID',['TWILIO_SID'=>$sid,'TWILIO_AUTH_TOKEN'=>$token]);
-         if (!$sid || !$token ) {
+        \Log::info('TWILIO_SID', ['TWILIO_SID' => $sid, 'TWILIO_AUTH_TOKEN' => $token]);
+        if (!$sid || !$token) {
+             \Log::info('Twilio credentials missing in .env');
             return [
                 'status' => 'error',
                 'error' => 'Twilio credentials missing in .env'
@@ -650,7 +652,7 @@ class NotificationSentController extends Controller
         }
 
         try {
-             $twilio = new Client($sid, $token);
+            $twilio = new Client($sid, $token);
             $response = $twilio->messages->create(
                 "whatsapp:+91" . $mobile,
                 [
@@ -663,8 +665,6 @@ class NotificationSentController extends Controller
                 'status' => 'success',
                 'sid'    => $response->sid,
             ];
-
-          
         } catch (\Exception $e) {
 
             return [
@@ -702,6 +702,4 @@ class NotificationSentController extends Controller
             ];
         }
     }
-
-
 }

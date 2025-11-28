@@ -229,7 +229,8 @@
                             @if(wabaNotificationActive())
                             <li>
                                 <a  target="_blank" href="javascript:;" 
-                                data-bs-toggle="modal" 
+                                data-bs-toggle="modal"  class="open-waba"
+                                data-bs-toggle="modal"  
                                  data-learner_id="{{$learner_id}}"
                                 data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders">
                                     <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="Send Reminder"></i>
@@ -240,8 +241,7 @@
                             @if(textNotificationActive())
                             <li>
                                 <a  target="_blank" href="javascript:;" 
-                                data-bs-toggle="modal" 
-                                 data-learner_id="{{$learner_id}}"
+                                 data-learner_id="{{$learner_id}}"class="open-text"
                                 data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders">
                                     <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="Send Text Reminder"></i>
                                 </a>
