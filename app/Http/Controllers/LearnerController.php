@@ -1728,16 +1728,16 @@ class LearnerController extends Controller
             // if ($hours > ($total_hour - ($total_cust_hour - ($learner_detail->hours ?? 0)))) {
             //     return ['error' => true, 'message' => 'You cannot select this plan type as it exceeds the available hours.'];
             // }
-           
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
+
+            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
                 return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
             }
 
-            if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+            if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
                 return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
             }
 
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
+            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
                 if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id) == false) {
                     return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
                 }

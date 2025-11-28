@@ -479,7 +479,7 @@ class QrEntryController extends Controller
 
         ];
        
-       
+      
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -497,6 +497,7 @@ class QrEntryController extends Controller
 
          
             $bookingurl=Booking::find($request->booking_id);
+          
             
             if ($request->seat_no && $request->seat_no!='gen') {
                 $seat_no = $request->input('seat_no');
@@ -624,7 +625,6 @@ class QrEntryController extends Controller
             }
 
            
-
             if ($seat_no && !$request->learner_id) {
                   $existingBookingsWithoutPlan = $this->getLearnersByLibrary()
                 ->where('learner_detail.seat_no', '=', $seat_no)
@@ -673,6 +673,7 @@ class QrEntryController extends Controller
                 }
             }
 
+
             $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
         
 
@@ -696,6 +697,7 @@ class QrEntryController extends Controller
                 //     $customerEmail = $booking->email 
                 // ? encryptData($booking->email) 
                 // : ($request->filled('email') ? encryptData($request->input('email')) : null);
+               
             if($request->learner_id){
                 $customer=Learner::find($request->learner_id);
                 $customer->seat_no=$seat_no;
