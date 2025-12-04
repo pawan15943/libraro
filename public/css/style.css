@@ -2266,6 +2266,7 @@ input {
     border-radius: 5px;
     font-weight: 600 !important;
 }
+
 .form-check-input:checked {
     background-color: navy;
     border-color: #3F51B5;
@@ -6397,6 +6398,39 @@ ul.userPermissionList li {
     font-style: italic;
 }
 
+/* Reacnt Activity CSS */
+ul.reacentActivity {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.reacentActivity h6 {
+    font-size: .9rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+ul.reacentActivity span {
+    font-size: .8rem;
+    margin: 0;
+}
+
+ul.reacentActivity .d-flex small {
+    font-style: italic;
+    font-size: .7rem;
+}
+
+ul.reacentActivity .d-flex {
+    justify-content: space-between;
+    margin-top: .2rem;
+}
+
+ul.reacentActivity li {
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
 
 @media screen and (max-width:480px) {
     .revenue-info {
@@ -6435,7 +6469,8 @@ ul.userPermissionList li {
         height: 50px;
     }
 
-    canvas#bookingCountChart,canvas#revenueChart {
+    canvas#bookingCountChart,
+    canvas#revenueChart {
         width: 100%;
         height: 100%;
     }
