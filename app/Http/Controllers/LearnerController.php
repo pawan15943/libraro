@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
+use App\Http\Controllers\NotificationSentController;
 
 
 
@@ -356,74 +357,97 @@ class LearnerController extends Controller
         if ($validated['error']) {
             return response()->json(['error' => true, 'message' => $validated['message']], 422);
         }
-
         // Creation
         try {
 
-        DB::beginTransaction();
-        $customer = Learner::create([
-            'seat_no' => $seat_no,
-            'name' => $request->input('name'),
-            'mobile' => encryptData($request->input('mobile')),
-            'email' => $request->input('email') ? encryptData($request->input('email')) : null,
-            'dob' => $request->input('dob'),
-            'id_proof_name' => $request->input('id_proof_name'),
-            'id_proof_file' => $id_proof_file,
-            'hours' => $validated['hours'],
-            'status' => $validated['status'],
-            'library_id' => getLibraryId(),
-            'password' => bcrypt($request->mobile),
-            'branch_id' => getCurrentBranch(),
-            'learner_no'=>$this->generateLearnerCode(),
-            'father_name' => $request->input('father_name'),
-            'alternate_mobile' => $request->input('alternate_mobile'),
-            'remark' => $request->input('remark'),
-            'profile_picture'=>$profile_picture,
-            'address' => $request->input('address'),
-            'locker_no'=>$request->input('locker_no') ?? null ,
-        ]);
+            DB::beginTransaction();
+            $customer = Learner::create([
+                'seat_no' => $seat_no,
+                'name' => $request->input('name'),
+                'mobile' => encryptData($request->input('mobile')),
+                'email' => $request->input('email') ? encryptData($request->input('email')) : null,
+                'dob' => $request->input('dob'),
+                'id_proof_name' => $request->input('id_proof_name'),
+                'id_proof_file' => $id_proof_file,
+                'hours' => $validated['hours'],
+                'status' => $validated['status'],
+                'library_id' => getLibraryId(),
+                'password' => bcrypt($request->mobile),
+                'branch_id' => getCurrentBranch(),
+                'learner_no'=>$this->generateLearnerCode(),
+                'father_name' => $request->input('father_name'),
+                'alternate_mobile' => $request->input('alternate_mobile'),
+                'remark' => $request->input('remark'),
+                'profile_picture'=>$profile_picture,
+                'address' => $request->input('address'),
+                'locker_no'=>$request->input('locker_no') ?? null ,
+                'sended_message_type'=>$request->input('sended_message_type') ?? 'no'
+            ]);
 
-        $learner_detail = LearnerDetail::create([
-            'learner_id' => $customer->id,
-            'plan_id' => $plan_id,
-            'plan_type_id' => $plan_type_id,
-            'plan_price_id' => $planPrice,
-            'plan_start_date' => $start_date->format('Y-m-d'),
-            'plan_end_date' => $validated['end_date']->format('Y-m-d'),
-            'join_date' =>  $start_date->format('Y-m-d'),
-            'hour' =>$validated['hours'],
-            'library_id' => getLibraryId(),
-            'is_paid' => 1,
-            'status' => $validated['status'],
-            'payment_mode' => $payment_mode,
-            'seat_no' => $seat_no,
-            'branch_id' => getCurrentBranch(),
-            'exam_id' => $request->input('exam_id') ?? null,
-        ]);
-         if ($payment_mode == 3) {
-            $pending_amount = $paid_amount;
-            $paid_amount    = 0;
-        }
-       
-        $data=[];
-        $data['planPrice']=$planPrice ;
-        $data['paid_amount']=$paid_amount ;
-        $data['locker']=$locker ;
-        $data['discount']=$discount ;
-        $data['start_date']=$start_date ;
-        $data['paid_date']=$transaction_date ;
-        $data['is_paid']=$validated['is_paid'];
-        $data['learner_detail_id']=$learner_detail->id ;
-        $data['learner_id']=$customer->id ;
-        $data['payment_type']='SEAT ASSIGNMENT' ;
-        $data['payment_mode']=$payment_mode;
-        $data['due_date']=$due_date;
-       $this->learnerTransactionAddUpdate($data);
+            $learner_detail = LearnerDetail::create([
+                'learner_id' => $customer->id,
+                'plan_id' => $plan_id,
+                'plan_type_id' => $plan_type_id,
+                'plan_price_id' => $planPrice,
+                'plan_start_date' => $start_date->format('Y-m-d'),
+                'plan_end_date' => $validated['end_date']->format('Y-m-d'),
+                'join_date' =>  $start_date->format('Y-m-d'),
+                'hour' =>$validated['hours'],
+                'library_id' => getLibraryId(),
+                'is_paid' => 1,
+                'status' => $validated['status'],
+                'payment_mode' => $payment_mode,
+                'seat_no' => $seat_no,
+                'branch_id' => getCurrentBranch(),
+                'exam_id' => $request->input('exam_id') ?? null,
+            ]);
+            if ($payment_mode == 3) {
+                $pending_amount = $paid_amount;
+                $paid_amount    = 0;
+            }
+        
+            $data=[];
+            $data['planPrice']=$planPrice ;
+            $data['paid_amount']=$paid_amount ;
+            $data['locker']=$locker ;
+            $data['discount']=$discount ;
+            $data['start_date']=$start_date ;
+            $data['paid_date']=$transaction_date ;
+            $data['is_paid']=$validated['is_paid'];
+            $data['learner_detail_id']=$learner_detail->id ;
+            $data['learner_id']=$customer->id ;
+            $data['payment_type']='SEAT ASSIGNMENT' ;
+            $data['payment_mode']=$payment_mode;
+            $data['due_date']=$due_date;
 
-        if ($validated['status'] == 1) {
+            $this->learnerTransactionAddUpdate($data);
 
-            $this->dataUpdate();
-        }
+            if ($validated['status'] == 1) {
+
+                $this->dataUpdate();
+            }
+            try{
+                    $noti = new NotificationSentController;
+
+                    if (autowabaNotificationActive()) {
+                            \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($customer->id, 'waba', 'book-waba');
+                    }else{
+                            \Log::info('nowaba seond part swap');
+                    }
+                    if (autotextNotificationActive()) {
+                            \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($customer->id, 'text', 'book-sms');
+                    }else{
+                            \Log::info('no text seond part swap');
+                    }
+             } catch (\Throwable $e) {
+                    // Log the error (won't break your main code)
+                    \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                       
+                        'exception' => $e
+                    ]);
+            }
      
             DB::commit();
             return response()->json([
@@ -431,7 +455,7 @@ class LearnerController extends Controller
                 'message' => 'Learner created successfully!',
             ], 201);
 
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
 
             DB::rollBack();
 
@@ -508,13 +532,25 @@ class LearnerController extends Controller
        
         $start_date= Carbon::parse($LearnerDetail->plan_start_date);
         if($plan_id){
-            $months = Plan::where('id', $plan_id)->value('plan_id');
-             $duration = $months ?? 0;
-             $type     = Plan::where('id', $plan_id)->value('type');
+           $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
               switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
+                    break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -667,7 +703,65 @@ class LearnerController extends Controller
             $LearnerDetail->hour = $hours;
             $LearnerDetail->save();
         }
-           
+            if ($data['payment_type'] == 'CHANGE PLAN') {
+
+                try {
+
+                    $noti = new NotificationSentController;
+
+                    // WABA Notification
+                    if (autowabaNotificationActive()) {
+                        \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($data['learner_id'], 'waba', 'change-plan-waba');
+                    }
+
+                    // TEXT Notification
+                    if (autotextNotificationActive()) {
+                        \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($data['learner_id'], 'text', 'change-plan-sms');
+                    }
+
+                } catch (\Throwable $e) {
+
+                    // Log the error (won't break your main code)
+                    \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                       
+                        'exception' => $e
+                    ]);
+
+                 
+                }
+            }
+
+            if ($data['payment_type'] == 'UPGRADE') {
+
+                try {
+
+                    $noti = new NotificationSentController;
+
+                    // WABA Notification
+                    if (autowabaNotificationActive()) {
+                        \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($data['learner_id'], 'waba', 'upgrade-waba');
+                    }
+
+                    // TEXT Notification
+                    if (autotextNotificationActive()) {
+                        \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($data['learner_id'], 'text', 'upgrade-sms');
+                    }
+
+                } catch (\Throwable $e) {
+
+                    // Log the error (won't break your main code)
+                    \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                       
+                        'exception' => $e
+                    ]);
+
+                 
+                }
+            }
 
 
         $this->dataUpdate();
@@ -863,6 +957,7 @@ class LearnerController extends Controller
             ],
 
         ];
+       
          
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -909,9 +1004,13 @@ class LearnerController extends Controller
             $hours = $planType->slot_hours;
 
             $plan_id=$request->plan_id;
-            $months = Plan::where('id', $plan_id)->value('plan_id');
-            $duration = $months ?? 0;
-            $type     = Plan::where('id', $plan_id)->value('type'); 
+           $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             
             $start_date = Carbon::parse($learner_detail->plan_end_date)->addDay();
@@ -920,7 +1019,15 @@ class LearnerController extends Controller
             switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
+                    break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -1086,6 +1193,46 @@ class LearnerController extends Controller
                 ->update(['status' => 0]);
             }
             $customer->save();
+            try{
+                if($payment_type=="RENEW"){
+                $noti = new NotificationSentController;
+
+                    if (autowabaNotificationActive()) {
+                            \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($customer->id, 'waba', 'renew-waba');
+                    }else{
+                            \Log::info('nowaba seond part RENEW');
+                    }
+                    if (autotextNotificationActive()) {
+                            \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($customer->id, 'text', 'renew-sms');
+                    }else{
+                            \Log::info('no text seond part RENEW');
+                    }  
+                }
+                if($payment_type=="UPGRADE"){
+                $noti = new NotificationSentController;
+
+                    if (autowabaNotificationActive()) {
+                            \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($customer->id, 'waba', 'upgrade-waba');
+                    }else{
+                            \Log::info('nowaba seond part upgrade');
+                    }
+                    if (autotextNotificationActive()) {
+                            \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($customer->id, 'text', 'upgrade-sms');
+                    }else{
+                            \Log::info('no text seond part upgrade');
+                    }  
+                }
+            } catch (\Throwable $e) {
+                    // Log the error (won't break your main code)
+                    \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                       
+                        'exception' => $e
+                    ]);
+            }
             DB::commit();
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1160,9 +1307,13 @@ class LearnerController extends Controller
 
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $plan_id = $request->input('plan_id');
-            $months = Plan::where('id', $plan_id)->value('plan_id'); 
-            $duration = $months ?? 0;
-            $type = Plan::where('id', $plan_id)->value('type');
+            $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             $paid_amount = (float) $request->input('paid_amount', 0);
             $locker = (float) $request->input('locker_amount', 0);
@@ -1197,7 +1348,13 @@ class LearnerController extends Controller
                     $endDate = $start_date->copy()->addWeeks($duration);
                     break;
                 case 'MONTH':
-                    $endDate = $start_date->copy()->addMonths($duration);
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays -1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
                     break;
                 case 'YEAR':
                     $endDate = $start_date->copy()->addYears($duration);
@@ -1524,17 +1681,25 @@ class LearnerController extends Controller
                 $startDate = Carbon::parse($request->input('plan_start_date'));
 
                 // Fetch both duration and type in one query
-                $plan = Plan::select('plan_id as duration', 'type')->find($request->input('plan_id'));
+                $plan = Plan::select('plan_id as duration', 'type','monthdays')->find($request->input('plan_id'));
 
                 if ($plan) {
                     $duration = $plan->duration;
                     $type = strtoupper($plan->type);
-
+                    $monthdays = $plan->monthdays;
                     // Calculate end date based on type
                     switch (strtoupper($type)) {
                         case 'DAY':   $endDate = $startDate->copy()->addDays($duration); break;
                         case 'WEEK':  $endDate = $startDate->copy()->addWeeks($duration); break;
-                        case 'MONTH': $endDate = $startDate->copy()->addMonths($duration); break;
+                       case 'MONTH':
+                        if (!empty($monthdays)) {
+                            // Use exact number of days defined for this month plan
+                            $endDate = $startDate->copy()->addDays($monthdays - 1);
+                        } else {
+                            // Fallback to month-wise duration
+                            $endDate = $startDate->copy()->addMonths($duration);
+                        }
+                        break;
                         case 'YEAR':  $endDate = $startDate->copy()->addYears($duration); break;
                         default:      $endDate = $startDate; break;
                     }
@@ -1556,8 +1721,10 @@ class LearnerController extends Controller
     // custome validation
     private function validateLearnerCustom($plan_id, $plan_type_id, $start_date, $planPrice, $paid_amount, $locker, $discount, $seat_no, $due_date, $payment_mode, $learner_detail_id)
     {
-        $duration = Plan::where('id', $plan_id)->value('plan_id'); 
-        $type     = Plan::where('id', $plan_id)->value('type');  
+        $planData=Plan::where('id', $plan_id)->select('plan_id','type','monthdays')->first();
+        $duration = $planData->plan_id; 
+        $type     = $planData->type;  
+        $monthdays= $planData->monthdays;  
 
         $effectivePaid   = $planPrice + $locker - $discount;
         $pending_amount  = $effectivePaid - $paid_amount;
@@ -1580,7 +1747,15 @@ class LearnerController extends Controller
         switch (strtoupper($type)) {
             case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
             case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-            case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+            case 'MONTH':
+            if (!empty($monthdays)) {
+              
+                $endDate = $start_date->copy()->addDays($monthdays- 1);
+            } else {
+               
+                $endDate = $start_date->copy()->addMonths($duration);
+            }
+            break;
             case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
             default:      $endDate = $start_date; break;
         }
@@ -1606,16 +1781,16 @@ class LearnerController extends Controller
             // if ($hours > ($total_hour - ($total_cust_hour - ($learner_detail->hours ?? 0)))) {
             //     return ['error' => true, 'message' => 'You cannot select this plan type as it exceeds the available hours.'];
             // }
-           
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
+
+            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
                 return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
             }
 
-            if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+            if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
                 return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
             }
 
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
+            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
                 if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id) == false) {
                     return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
                 }
@@ -2573,6 +2748,7 @@ class LearnerController extends Controller
                 ) {
                     throw new Exception('The new seat is not available for your plan type.');
                 } else {
+                   
 
                     // Update the learner's seat_id and seat_no
                     $data = Learner::findOrFail($request->learner_id);
@@ -2581,6 +2757,28 @@ class LearnerController extends Controller
                     $learner_detail = LearnerDetail::where('learner_id', $request->learner_id)->update([
                         'seat_no' => $newSeatId,
                     ]);
+                    try{
+                        $noti = new NotificationSentController;
+
+                        if (autowabaNotificationActive()) {
+                            \Log::info('autowabaNotificationActive');
+                            $noti->autoMessage($request->learner_id, 'waba', 'swapseat-waba');
+                        }else{
+                            \Log::info('nowaba seond part swap');
+                        }
+                        if (autotextNotificationActive()) {
+                            \Log::info('autotextNotificationActive');
+                            $noti->autoMessage($request->learner_id, 'text', 'swapseat-text');
+                        }else{
+                            \Log::info('no text seond part swap');
+                        }
+                    } catch (\Throwable $e) {
+                        // Log the error (won't break your main code)
+                        \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                        
+                            'exception' => $e
+                        ]);
+                    }
                 }
             });
 
@@ -2785,6 +2983,8 @@ class LearnerController extends Controller
                         DB::table('learner_request')->where('learner_id', $id)->delete();
                         $customer->forceDelete();
 
+                        
+
                 } else{
 
                     $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id',$request->learnerDetail)->first();
@@ -2811,18 +3011,49 @@ class LearnerController extends Controller
                         $customer->save();
                         $customer->delete();
                         if ($request->isRefund && $request->refundAmount > 0){
+                             
                             $data=[];
                             $data['learner_id']=$id;
-                            $data['particular']='Delete Plan';
+                            $data['particular']='Delete Seat';
                             $data['payment_type']='REFUND';
                             $data['payment_mode']=1;
                             $data['amount']=$request->refundAmount ?? 0;
                             $data['dr_cr']='Dr';
                             $this->learnerTransactionActivity($data);
+                           
                         }
-                        
-                    
+
+                        try{
+                            $noti = new NotificationSentController;
+                            if (autowabaNotificationActive()) {
+                                if($request->isRefund){
+                                    $template_code='refund-waba';
+                                }else{
+                                    $template_code='delete-waba';
+                                }
+                                    \Log::info('autowabaNotificationActive');
+                                $noti->autoMessage($customer->id, 'waba', $template_code);
+                            }
+                            if (autotextNotificationActive()) {
+                                if($request->isRefund){
+                                    $template_code_sms='refund-sms';
+                                }else{
+                                    $template_code_sms='delete-sms';
+                                }
+                                    \Log::info('autotextNotificationActive');
+                                $noti->autoMessage($customer->id, 'text', $template_code_sms);
+                            }
+                        } catch (\Throwable $e) {
+                            // Log the error (won't break your main code)
+                            \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                            
+                                'exception' => $e
+                            ]);
+                        }
+                 
                     } 
+
+                   
                 }
             });
 
@@ -2871,15 +3102,31 @@ class LearnerController extends Controller
                     if ($request->isRefund && $request->refundAmount > 0){
                         $data=[];
                         $data['learner_id']=$request->learner_id;
-                        $data['particular']='Close Plan';
+                        $data['particular']='Close Seat';
                         $data['payment_type']='REFUND';
                         $data['payment_mode']=1;
                         $data['amount']=$request->refundAmount ?? 0;
                         $data['dr_cr']='Dr';
                         $this->learnerTransactionActivity($data);
                     }
-                    
-                   
+                    try{
+                        $noti = new NotificationSentController;
+
+                        if (autowabaNotificationActive()) {
+                                \Log::info('autowabaNotificationActive');
+                            $noti->autoMessage($customer->id, 'waba', 'close-waba');
+                        }
+                        if (autotextNotificationActive()) {
+                                \Log::info('autotextNotificationActive');
+                            $noti->autoMessage($customer->id, 'text', 'close-sms');
+                        }
+                     } catch (\Throwable $e) {
+                        // Log the error (won't break your main code)
+                        \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                        
+                            'exception' => $e
+                        ]);
+                    }
                 } 
             });
 
@@ -3587,6 +3834,27 @@ class LearnerController extends Controller
                 $data['amount']=$request->fees;
                 $data['dr_cr']=$dr_cr;
                 $this->learnerTransactionActivity($data);
+                if($payment_type=='REFUND'){
+                    try{
+                        $noti = new NotificationSentController;
+
+                        if (autowabaNotificationActive()) {
+                                \Log::info('autowabaNotificationActive');
+                            $noti->autoMessage($data['learner_id'], 'waba', 'refund-waba');
+                        }
+                        if (autotextNotificationActive()) {
+                                \Log::info('autotextNotificationActive');
+                            $noti->autoMessage($data['learner_id'], 'text', 'refund-sms');
+                        }
+                    } catch (\Throwable $e) {
+                        // Log the error (won't break your main code)
+                        \Log::error('Notification sending failed: ' . $e->getMessage(), [
+                        
+                            'exception' => $e
+                        ]);
+                    }
+                }
+
                 if($payment_type=='REFUND'){
                     return redirect('library/learners/history/list')->with('success', 'Refund Processed Successfully.');
                 }else{

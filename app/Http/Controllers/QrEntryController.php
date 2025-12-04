@@ -259,15 +259,28 @@ class QrEntryController extends Controller
             
            
             $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
-            $duration = $months ?? 0;
-            $type     = Plan::where('id', $validated['plan_id'])->value('type');
+            $planData = Plan::where('id', $validated['plan_id'])
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
             switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                if (!empty($monthdays)) {
+                    // Use exact number of days defined for this month plan
+                    $endDate = $start_date->copy()->addDays($monthdays - 1);
+                } else {
+                    // Fallback to month-wise duration
+                    $endDate = $start_date->copy()->addMonths($duration);
+                }
+                break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -479,7 +492,7 @@ class QrEntryController extends Controller
 
         ];
        
-       
+      
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -496,21 +509,22 @@ class QrEntryController extends Controller
             $learnerController = app(\App\Http\Controllers\LearnerController::class);
 
          
-            $booking=Booking::find($request->booking_id);
+            $bookingurl=Booking::find($request->booking_id);
+          
             
             if ($request->seat_no && $request->seat_no!='gen') {
                 $seat_no = $request->input('seat_no');
             } else {
-                $seat_no = $booking->seat_no;
+                $seat_no = $bookingurl->seat_no;
             }
             if($request->direct_validate){
-                $planPrice= $booking->plan_price_id;
-                $start_date = Carbon::parse($booking->plan_start_date);
-                $plan_id = $booking->plan_id;
-                $plan_type_id = $booking->plan_type_id;
+                $planPrice= $bookingurl->plan_price_id;
+                $start_date = Carbon::parse($bookingurl->plan_start_date);
+                $plan_id = $bookingurl->plan_id;
+                $plan_type_id = $bookingurl->plan_type_id;
                 $locker_no=null;
-                $total_amt=$booking->plan_price_id;
-                $new_paid=$booking->plan_price_id;
+                $total_amt=$bookingurl->plan_price_id;
+                $new_paid=$bookingurl->plan_price_id;
                 $pending_amount=0;
                 $locker=0;
                 $discount=0;
@@ -533,7 +547,7 @@ class QrEntryController extends Controller
                 $paid_amount = (float) $request->input('paid_amount', 0);
                 $pending_amount = $request->input('pending_amount');
                 $diff_amount    = $request->input('diffrence_amount');
-                $already_paid  =$booking->total_amount;
+                $already_paid  =$bookingurl->total_amount;
                 
                 $refund = 0;
                 $pending_refund = 0;
@@ -571,10 +585,15 @@ class QrEntryController extends Controller
 
             }
            
-            $months = Plan::where('id', $plan_id)->value('plan_id'); 
-            $duration = $months ?? 0;
             
-          
+            
+          $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
             
             
             $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
@@ -593,9 +612,16 @@ class QrEntryController extends Controller
                 case 'WEEK':
                     $endDate = $start_date->copy()->addWeeks($duration);
                     break;
-                case 'MONTH':
-                    $endDate = $start_date->copy()->addMonths($duration);
+                 case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
                     break;
+                    
                 case 'YEAR':
                     $endDate = $start_date->copy()->addYears($duration);
                     break;
@@ -624,7 +650,6 @@ class QrEntryController extends Controller
             }
 
            
-
             if ($seat_no && !$request->learner_id) {
                   $existingBookingsWithoutPlan = $this->getLearnersByLibrary()
                 ->where('learner_detail.seat_no', '=', $seat_no)
@@ -673,6 +698,7 @@ class QrEntryController extends Controller
                 }
             }
 
+
             $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
         
 
@@ -696,6 +722,7 @@ class QrEntryController extends Controller
                 //     $customerEmail = $booking->email 
                 // ? encryptData($booking->email) 
                 // : ($request->filled('email') ? encryptData($request->input('email')) : null);
+               
             if($request->learner_id){
                 $customer=Learner::find($request->learner_id);
                 $customer->seat_no=$seat_no;
@@ -704,15 +731,15 @@ class QrEntryController extends Controller
             }else{
                 $customer = Learner::create([
                 'seat_no' => $seat_no,
-                'name' => $booking->name,
-                'mobile' =>encryptData($booking->mobile),
+                'name' => $bookingurl->name,
+                'mobile' =>encryptData($bookingurl->mobile),
                 // 'email' => $customerEmail,
                 // 'dob' => $booking->dob,
                 'hours' => $hours,
                 'status' => $status,
                 'library_id' => getLibraryId(),
                 'branch_id' => getCurrentBranch(),
-                'password' => $booking->password,
+                'password' => $bookingurl->password,
                 'learner_no'=>$learnerController->generateLearnerCode(),
                 'locker_no'=>$locker_no ?? null ,
                 ]);
@@ -736,8 +763,8 @@ class QrEntryController extends Controller
                 'status' => $status,
             ]);
 
-            if ($booking->created_at) {
-                $transaction_date = $booking->created_at;
+            if ($bookingurl->created_at) {
+                $transaction_date = $bookingurl->created_at;
             } else {
                 $transaction_date =null;
             }
@@ -774,7 +801,7 @@ class QrEntryController extends Controller
 
                     $learnerController->dataUpdate();
                 }
-                $booking->delete();
+                $bookingurl->delete();
 
             DB::commit();
 

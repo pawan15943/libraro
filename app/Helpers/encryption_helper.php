@@ -13,6 +13,7 @@ use App\Models\Library;
 use App\Models\Subscription;
 use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
+use App\Models\NotificationChannelSetting;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PlanPrice;
@@ -812,23 +813,19 @@ if (!function_exists('generateSeatNumbers')) {
             foreach ($floors as $floor) {
                 $startSeat = $floor->from_seat ?? 1;
                 $endSeat   = $floor->to_seat ?? 0;
-                $floorSeatNo = 1;
+              
 
-                // Extract floor number from name, e.g. "Floor 1" → "F1"
-               
 
-                // Generate seat mapping
-                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+               for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
                     $result[] = [
-                        'main' => $mainSeatNo,
-                        'floor' => $floorSeatNo,
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
                         'floor_name' => $floor->name,
-                        'floor_no'=>$floor->floor_no,
-                        'display' => 'Seat No - '. $floorSeatNo . ' (' .$floor->name.')'
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - '. $seatNo . ' (' . $floor->name . ')'
                     ];
 
                     $mainSeatNo++;
-                    $floorSeatNo++;
                 }
             }
         }
@@ -839,7 +836,7 @@ if (!function_exists('generateSeatNumbers')) {
                 'main' => $mainSeatNo,
                 'floor' => null,
                 'floor_name' => null,
-                'display' => 'Seat No - ' . $mainSeatNo // fallback label like F--19
+                'display' => 'Seat No - ' . $mainSeatNo 
             ];
             $mainSeatNo++;
         }
@@ -934,5 +931,83 @@ if (!function_exists('transaction_id')) {
 
 
         }
+}
+//for menual messages
+if (!function_exists('notificationActive')) {
+
+    function notificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('remaining', '>', 0)
+            ->exists();
+
+      
     }
+}
+if (!function_exists('wabaNotificationActive')) {
+
+    function wabaNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','waba')
+            ->where('remaining', '>', 0)
+            ->exists();
+    }
+}
+if (!function_exists('textNotificationActive')) {
+
+    function textNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+        return $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','text')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+       
+    }
+}
+if (!function_exists('autowabaNotificationActive')) {
+
+    function autowabaNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+         $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','waba')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+        if (!$hasCredits) {
+            return false;
+        }
+
+        // Step 2: Check template settings for the current branch
+        return NotificationChannelSetting::where('branch_id', getCurrentBranch())->whereNotNull('waba_template_id')->exists();
+    }
+}
+if (!function_exists('autotextNotificationActive')) {
+
+    function autotextNotificationActive()
+    {
+        // Step 1: Check if library has ANY remaining credits
+         $hasCredits = DB::table('notification_credits_usage')
+            ->where('library_id', getLibraryId())
+            ->where('channel','text')
+            ->where('remaining', '>', 0)
+            ->exists();
+
+        if (!$hasCredits) {
+            return false;
+        }
+
+        // Step 2: Check template settings for the current branch
+        return NotificationChannelSetting::where('branch_id', getCurrentBranch())->whereNotNull('text_template_id')->exists();
+    }
+}
 

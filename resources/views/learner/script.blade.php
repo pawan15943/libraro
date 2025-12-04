@@ -933,6 +933,7 @@
             var locker_amount = parseFloat($('#locker_amount_book').val()) || 0;
             var due_date = $('#due_date').val();
             var locker_no = $('#locker_no').val();
+            var sended_message_type = $('#sended_message_type').val();
             var errors = {};
             var discountRaw = parseFloat($('#discount_amount').val()) || 0;
             var discountType = $('#discountType').val();
@@ -2491,8 +2492,241 @@ $(document).on('click', '.restore-customer', function (e) {
     });
 });
 
+// for Waba send all function
+function loadLearnerMobiles(learnerId,mobileId) {
+    
 
+    $.ajax({
+        url: "{{ route('notification.getLearnerMobiles') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            learner_id: learnerId
+        },
+        success: function (res) {
+            console.log(res.mobiles);
+             let mobileSelect = $('#' + mobileId); 
+            mobileSelect.empty();   // clear previous
+            mobileSelect.prop('disabled', false); // enable by default
 
+            // --- CASE 1: No mobile found ---
+            if (!res.mobiles || res.mobiles.length === 0) {
+                mobileSelect.append(`<option value="">No Mobile Found</option>`);
+                mobileSelect.prop('disabled', true);
+                return;
+            }
+
+            // --- CASE 2: Only 1 mobile number ---
+            if (res.mobiles.length === 1) {
+                let single = res.mobiles[0];
+
+                mobileSelect.append(`<option value="${single}" selected>${single}</option>`);
+                mobileSelect.prop('disabled', true);  // disable the dropdown
+                return;
+            }
+
+            // --- CASE 3: Multiple numbers available ---
+            mobileSelect.append(`<option value="">Select Mobile</option>`);
+
+            res.mobiles.forEach(function (m) {
+                mobileSelect.append(`<option value="${m}">${m}</option>`);
+            });
+        }
+    });
+}
+// Show Form Errors
+function showFormErrors2(errors) {
+    $(".is-invalid").removeClass("is-invalid");
+    $(".invalid-feedback").remove();
+
+    $.each(errors, function(key, value) {
+        const field = $("[name='" + key + "']");
+        field.addClass("is-invalid");
+        field.after('<div class="invalid-feedback">' + value[0] + '</div>');
+    });
+}
+
+$(document).on('click', '.open-waba', function () {
+
+    let learnerId = $(this).data('learner_id');
+    $('#modal_learner_id').val(learnerId);
+
+    // Load mobiles in dropdown
+    loadLearnerMobiles(learnerId,'learner_mobile_select');
+});
+// When template changes → get both values and render final message
+$('#waba_template_select').on('change', function () {
+
+    let learner_idm = $('#modal_learner_id').val();
+    let template_id = $(this).val();
+
+     let errors = {};
+
+    if (!template_id) errors.template_id = ["Please select a template."];
+    if (!learner_idm) errors.learner_idm = ["Invalid learner ID."];
+
+    if (Object.keys(errors).length > 0) {
+        showFormErrors2(errors);
+        return; // stop here
+    }
+
+    $.ajax({
+        url: "{{ route('notification.renderMessage') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            template_id: template_id,
+            learner_id: learner_idm
+        },
+        success: function (res) {
+            $('#waba_final_message').val(res.message);
+        }
+    });
+
+});
+$('#sendWabaMessage').on('click', function (e) {
+    e.preventDefault();    
+    e.stopPropagation();   
+    let templateId = $('#waba_template_select').val();
+    let message = $('#waba_final_message').val();
+     let learner_id = $('#modal_learner_id').val();
+     let mobileNo = $('#learner_mobile_select').val();
+   
+
+    let errors = {};
+
+    if (!templateId) errors.template_id = ["Please select a template."];
+    if (!mobileNo) errors.mobileNo = ["Please select mobile number."];
+    if (!message) errors.message = ["Message cannot be empty."];
+    if (!learner_id) errors.learner_id = ["Invalid learner ID."];
+
+    if (Object.keys(errors).length > 0) {
+        showFormErrors2(errors);
+        return; // stop here
+    }
+
+    $.ajax({
+        url: "{{ route('notification.sendMessage') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            learner_id: learner_id,
+            template_id: templateId,
+            message: message,
+            mobileNo: mobileNo,
+        },
+        success: function (res) {
+            toastr.success("Message sent successfully!");
+
+            $('#wabaSendModel').modal('hide');
+
+            // Reset form
+            $('#modal_learner_id').val('');
+            $('#waba_template_select').val('').trigger('change');
+            $('#learner_mobile_select').val('').trigger('change');
+            $('#waba_final_message').val('');
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 422) {
+                showFormErrors2(xhr.responseJSON.errors);
+            } else {
+                toastr.error("Something went wrong!");
+            }
+        }
+    });
+});
+
+// for text message
+$(document).on('click', '.open-text', function () {
+
+    let learnerId = $(this).data('learner_id');
+    $('#modal_learner_id2').val(learnerId);
+
+    // Load mobiles in dropdown
+    loadLearnerMobiles(learnerId,'learner_mobile_select2');
+});
+// When template changes → get both values and render final message
+$('#text_template_select').on('change', function () {
+
+    let learner_id = $('#modal_learner_id2').val();
+    let template_id = $(this).val();
+
+     let errors = {};
+
+    if (!template_id) errors.template_id = ["Please select a template."];
+    if (!learner_id) errors.learner_id = ["Invalid learner ID."];
+
+    if (Object.keys(errors).length > 0) {
+        showFormErrors2(errors);
+        return; // stop here
+    }
+
+    $.ajax({
+        url: "{{ route('notification.renderMessage') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            template_id: template_id,
+            learner_id: learner_id
+        },
+        success: function (res) {
+            $('#text_final_message').val(res.message);
+        }
+    });
+
+});
+$('#sendTextMessage').on('click', function (e) {
+    e.preventDefault();    
+    e.stopPropagation();   
+    let templateId = $('#text_template_select').val();
+    let message = $('#text_final_message').val();
+     let learner_id = $('#modal_learner_id2').val();
+     let mobileNo = $('#learner_mobile_select2').val();
+
+    let errors = {};
+
+    if (!templateId) errors.template_id = ["Please select a template."];
+    if (!mobileNo) errors.mobileNo = ["Please select mobile number."];
+    if (!message) errors.message = ["Message cannot be empty."];
+    if (!learner_id) errors.learner_id = ["Invalid learner ID."];
+
+    if (Object.keys(errors).length > 0) {
+        showFormErrors2(errors);
+        return; // stop here
+    }
+
+    $.ajax({
+        url: "{{ route('notification.sendMessage') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            learner_id: learner_id,
+            template_id: templateId,
+            message: message,
+            mobileNo: mobileNo,
+        },
+        success: function (res) {
+            toastr.success("Message sent successfully!");
+
+            $('#textSendModel').modal('hide');
+
+            // Reset form
+            $('#modal_learner_id2').val('');
+            $('#text_template_select').val('').trigger('change');
+            $('#learner_mobile_select2').val('').trigger('change');
+            $('#text_final_message').val('');
+        },
+
+        error: function (xhr) {
+            if (xhr.status === 422) {
+                showFormErrors(xhr.responseJSON.errors);
+            } else {
+                toastr.error("Something went wrong!");
+            }
+        }
+    });
+});
 
 
 //  end 

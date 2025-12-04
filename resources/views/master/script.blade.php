@@ -175,6 +175,7 @@
                 
                         $('#plan_id').val(response.Plan.plan_id);
                         $('#type').val(response.Plan.type);
+                        
 
                         $('#savePlanBtn').text('Update Plan');
                     }

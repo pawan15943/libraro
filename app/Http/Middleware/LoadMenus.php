@@ -10,6 +10,8 @@ use App\Models\Library;
 use App\Models\LibrarySetting;
 use App\Models\LibraryTransaction;
 use App\Models\Menu;
+use App\Models\NotificationChannelSetting;
+use App\Models\NotificationTemplate;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
@@ -274,20 +276,58 @@ class LoadMenus
                 $this->statusInactive();
                 $this->updateLibraryStatus();
                 $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
-                    $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->latest('end_date')->value('end_date')??0;
-                  
-                     if ($lib_enddate) { // only if there is an end date
-                        $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
-                        $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
-                        $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
-                    } else {
-                        $diffInExtensionDays = null;
-                        $inExtension_lib = false;
-                    }
+                $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->latest('end_date')->value('end_date')??0;
+                
+                if ($lib_enddate) { // only if there is an end date
+                    $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
+                    $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
+                    $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
+                } else {
+                    $diffInExtensionDays = null;
+                    $inExtension_lib = false;
+                }
+
+                $notificationSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
+                    ->select('waba_template_id', 'text_template_id')
+                    ->first();
+
+                // Decode JSON
+                $wabaIds = json_decode($notificationSetting->waba_template_id ?? '[]', true);
+                $textIds = json_decode($notificationSetting->text_template_id ?? '[]', true);
+
+                // Fetch WABA templates with operation name
+                $wabaTemplates = NotificationTemplate::where('type', 'waba')->where('is_custom',0)
+                    ->join('operations', 'operations.id', '=', 'notification_templates.operation_id')
+                    ->select(
+                        'notification_templates.id',
+                        'notification_templates.operation_id',
+                        'notification_templates.template_name',
+                        'notification_templates.template_message',
+                        'operations.name as operation_name'
+                    )
+                    ->get();
+
+                // Fetch Text templates with operation name
+                $textTemplates = NotificationTemplate::where('type', 'text')->where('is_custom',0)
+                    ->join('operations', 'operations.id', '=', 'notification_templates.operation_id')
+                    ->select(
+                        'notification_templates.id',
+                        'notification_templates.operation_id',
+                        'notification_templates.template_name',
+                        'notification_templates.template_message',
+                        'operations.name as operation_name'
+                    )
+                    ->get();
+                
+
+
             }else{
                 $diffInExtensionDays='';
                 $inExtension_lib='';
                 $lib_extenday='';
+                $wabaTemplates ='';
+                $textTemplates ='';
+               
             }
         
             $exams=DB::table('exams')->get();
@@ -329,6 +369,9 @@ class LoadMenus
             View::share('diffInExtensionDays', $diffInExtensionDays);
             View::share('inExtension_lib', $inExtension_lib);
             View::share('lib_extenday', $lib_extenday);
+            View::share('wabaTemplates', $wabaTemplates);
+            View::share('textTemplates', $textTemplates);
+          
           
         }
         if (getAuthenticatedUser() && Auth::guard('library')->check()) {
