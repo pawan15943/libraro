@@ -485,18 +485,25 @@ $today = Carbon::today();
                                         <span>Seat Owner Name</span>
                                         <h5 id="owner" class="uppercase">NA</h5>
                                     </div>
+                                    @if(!in_array('2', toggleHideField()))
                                     <div class="col-lg-6 col-6">
                                         <span>Date Of Birth </span>
                                         <h5 id="learner_dob">NA</h5>
                                     </div>
+                                    @endif
+
                                     <div class="col-lg-6 col-6">
                                         <span>Mobile Number</span>
                                         <h5 id="learner_mobile">NA</h5>
                                     </div>
+                                    @if(!in_array('1', toggleHideField()))
                                     <div class="col-lg-6 col-6">
                                         <span>Email Id</span>
                                         <h5 id="learner_email">NA</h5>
                                     </div>
+                                    @endif
+
+                                    
                                 </div>
                             </div>
                             <div class="action-box">

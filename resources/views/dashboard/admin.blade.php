@@ -4,30 +4,59 @@
 
 @section('content')
 
-<div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
+<div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="branchQRLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow-sm">
+            <div class="modal-header"> <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div>
+
+            <div class="modal-body">
                 @if($branch?->uuid)
+                    <div class="card border-0 text-center p-4">
+                        <div class="card-body">
+                            <p>With the help of this QR code you can Book and Re-New Library Seats.</p>
+                            <p class="text-muted mb-3">
+                                <b>{{ $branch->name ?? 'Vikas Library' }}</b>
+                            </p>
 
-                <div id="qrPreview" class="mb-4">
+                            <div class="d-inline-block p-3 bg-light rounded">
+                                <div id="qrPreview">
+                                    {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
+                                </div>
+                            </div>
 
-                    {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
-                </div>
+                            <p class="mt-3 mb-0 text-muted small">
+                                Scan to join <b>{{ $branch->name ?? 'this Library' }}</b>
+                            </p>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                        @if($branch?->uuid)
+                            <a href="{{ route('branch.qr.pdf', $branch->uuid) }}"
+                            target="_blank"
+                            class="btn btn-sm btn-success d-flex align-items-center button" style="    padding: .5rem 1.2rem;">
+                                <i class="bi bi-download me-1"></i>
+                                Download
+                            </a>
+                        @endif
+                        <a  href="https://wa.me/?text={{ urlencode('Join the library: ' . route('qr.branch', $branch->uuid)) }}"
+                            target="_blank"
+                            class="btn btn-sm btn-outline-secondary d-flex align-items-center" style="    padding: .5rem 1.2rem;">
+                            <i class="bi bi-whatsapp me-1"></i>
+                            Share
+                        </a>
+                    </div>
+                    </div>
 
-                <a href="{{ route('branch.qr.pdf', $branch->uuid) }}" target="_blank" class="btn d-inline-block button btn-sm">Print QR</a>
+                    
+                @else
+                    <p class="text-muted text-center mb-0">
+                        QR code is not available for this branch.
+                    </p>
                 @endif
-                {{-- <button class="btn button btn-sm" onclick="printQR(this)">Print QR</button>
-        <button class="btn button btn-sm" onclick="downloadQR(this)">Download QR</button> --}}
             </div>
-
         </div>
     </div>
 </div>
+
 @php
 use App\Helpers\HelperService;
 @endphp
@@ -565,7 +594,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     $operationDetails = HelperService::getOperationDetails($value);
                     @endphp
 
-                    <li>
+                    <li class="">
                         {!! $operationDetails['message'] !!}
                     </li>
                     @endforeach

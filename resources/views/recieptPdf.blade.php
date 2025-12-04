@@ -76,7 +76,6 @@
             max-width: 270px;
             font-size: 14px;
             line-height: 22px;
-            margin-bottom: 15px;
         }
 
         .address_header a {
@@ -96,6 +95,7 @@
     <div class="receipt_wrapper">
         <!-- header -->
         <div class="receipt_header">
+          
             <div class="logo" style="display: flex; gap:1rem; align-items:center;">
                @php
                 if($branch_logo && file_exists(public_path($branch_logo))){
@@ -110,9 +110,9 @@
                
             </div>
             <div class="address_header text-right">
-                <h4><?php echo isset($library_name) ? $library_name : ''; ?></h4>
+                <h4 style="text-transform: uppercase; margin-top:1rem;"><?php echo isset($library_name) ? $library_name : ''; ?></h4>
                 <div class="address">
-                    <p><?php echo isset($library_address) ? $library_address : ''; ?></p>
+                    <p>Address : <?php echo isset($library_address) ? $library_address : ''; ?></p>
                 </div>
                 <a href="mailto:<?php echo isset($library_email) ? $library_email : ''; ?>" title="Library Email Id">
                     Email: <?php echo isset($library_email) ? $library_email : ''; ?>
@@ -221,6 +221,15 @@
                     </td>
                 </tr>
             </tbody>
+        </table>
+
+        <table style="width: 100%;">
+          <tr>
+            <td>
+              <p style="text-align: Center;"><b>Website :</b> www.libraro.in | <b>Call Us :</b> <a href="+91-8114479678">+91-8114479678</a></p>
+              <p style="text-align: Center;"><b>HEAD OFFICE :</b> KOTA RAJASTHAN, 324005</p>
+            </td>
+          </tr>
         </table>
     </div>
 </body>

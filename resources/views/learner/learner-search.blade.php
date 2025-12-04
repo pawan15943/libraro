@@ -17,7 +17,7 @@
                         
                     </div>
                 </div>
-
+                <p class="text-center mt-2 text-secondary">Here you see all the learners who are active or expired.</p>
                 <div class="row mt-3">
                     <div class="col-lg-12 text-center">
                         <button class="btn btn-primary button">

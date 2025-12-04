@@ -19,14 +19,20 @@
                         <span>Full Name</span>
                         <h4>{{ $customer->name ?? 'Not Updated Yet' }}</h4>
                     </li>
+
+                    @if(!in_array('2', toggleHideField()))
                     <li>
                         <span>DOB</span>
                         <h4>{{ $customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'Not Updated Yet' }}</h4>
                     </li>
+                    @endif
+
+                    
                     <li>
                         <span>Mobile</span>
                         <h4>{{ $customer->mobile ? '+91-'.$customer->mobile : 'Not Updated Yet' }}</h4>
                     </li>
+                    @if(!in_array('1', toggleHideField()))
                     <li>
                         <span>Email</span>
                         <h4>
@@ -35,6 +41,7 @@
                             </a>
                         </h4>
                     </li>
+                    @endif
                 </ul>
             </div>
 

@@ -898,7 +898,7 @@ ul.plan-features li+li {
     width: 90%;
     align-items: center;
     justify-content: center;
-    padding-top: 0.5rem ;
+    padding-top: 0.5rem;
 }
 
 .seat ul .fa-check-circle {
@@ -2263,9 +2263,13 @@ input {
     font-family: 'Mulish', sans-serif !important;
     color: #000 !important;
     font-size: .85rem !important;
-    padding: 10px;
     border-radius: 5px;
     font-weight: 600 !important;
+}
+
+.form-check-input:checked {
+    background-color: navy;
+    border-color: #3F51B5;
 }
 
 /* Style placeholder text */
@@ -6216,13 +6220,15 @@ span.chip {
     flex-wrap: wrap;
 }
 
-.mCustomScrollbar {
+.plan-features.mCustomScrollbar {
+    margin-right: 0rem !important;
+}
+
+.seat-statistics>ul {
     margin-right: -1.29rem !important;
     overflow-x: hidden;
 }
-.plan-features.mCustomScrollbar{
-        margin-right: 0rem !important;
-}
+
 i.fa-solid.fa-check-circle.booked.paylater_class {
     color: blue !important;
 }
@@ -6311,6 +6317,10 @@ i.fa-solid.fa-check-circle.booked.paylater_class {
     color: #000;
 }
 
+.user-infos {
+    width: 15%;
+}
+
 .user-infos span {
     color: #ababab;
     font-size: .8rem;
@@ -6388,6 +6398,39 @@ ul.userPermissionList li {
     font-style: italic;
 }
 
+/* Reacnt Activity CSS */
+ul.reacentActivity {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.reacentActivity h6 {
+    font-size: .9rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+ul.reacentActivity span {
+    font-size: .8rem;
+    margin: 0;
+}
+
+ul.reacentActivity .d-flex small {
+    font-style: italic;
+    font-size: .7rem;
+}
+
+ul.reacentActivity .d-flex {
+    justify-content: space-between;
+    margin-top: .2rem;
+}
+
+ul.reacentActivity li {
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
 
 @media screen and (max-width:480px) {
     .revenue-info {
@@ -6425,6 +6468,12 @@ ul.userPermissionList li {
         align-items: center;
         height: 50px;
     }
+
+    canvas#bookingCountChart,
+    canvas#revenueChart {
+        width: 100%;
+        height: 100%;
+    }
 }
 
 i.fa-solid.fa-check-circle.booked.paylater_class {
@@ -6433,7 +6482,10 @@ i.fa-solid.fa-check-circle.booked.paylater_class {
 
 
 a[disabled] {
-    pointer-events: none;   /* Prevent click */
-    opacity: 0.5;           /* Make it look disabled */
-    cursor: not-allowed;    /* Show disabled cursor */
+    pointer-events: none;
+    /* Prevent click */
+    opacity: 0.5;
+    /* Make it look disabled */
+    cursor: not-allowed;
+    /* Show disabled cursor */
 }

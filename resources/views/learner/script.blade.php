@@ -1692,16 +1692,18 @@
                 });
             },
             preConfirm: () => {
-                const isRefund = $('.isRefund').is(':checked');
-                const refundAmount = $('.refundAmount').val();
+               const isRefund = $('.isRefund').is(':checked');
+                const refundAmount = parseFloat($('.refundAmount').val()) || 0;
                 const remark = $('.refundRemark').val();
-                const pendingRefund = $('.pendingRefund').val();
-
-                if (isRefund && (!refundAmount || refundAmount < 0)) {
+                const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
+                console.log('pendingRefund',pendingRefund);
+                console.log('refundAmount',refundAmount);
+                console.log('paybleRefund',paybleRefund);
+                
+                if (isRefund && (!refundAmount || refundAmount < 0 || paybleRefund < refundAmount)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
-
                 if (isRefund && refundAmount !== paybleRefund && (pendingRefund < 0 || (pendingRefund+refundAmount) > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;

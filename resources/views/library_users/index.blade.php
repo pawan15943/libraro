@@ -47,10 +47,10 @@
                 <span>Name</span>
                 <h4>{{ $user->name }}</h4>
             </div>
-            <div class="user-infos">
+            <!-- <div class="user-infos">
                 <span>Contact</span>
                 <h4>{{ $user->email ?? '-' }}</h4>
-            </div>
+            </div> -->
             <div class="user-infos">
                 <span>Role</span>
                 <h4>{{ $user->roles->first()->name ?? '-' }}</h4>
@@ -74,10 +74,10 @@
                 </h4>
                 
             </div>
-            <div class="user-infos">
+            <!-- <div class="user-infos">
                 <span>Status</span>
                 <h4>{{ $user->status ? 'Active' : 'Inactive' }}</h4>
-            </div>
+            </div> -->
             <div class="action">
                 <ul>
                     <li>
@@ -99,91 +99,7 @@
         </div>
     </div>
 </div>
-<div class="card p-0 d-none">
 
-    <div class="row gx-0">
-        <div class="col-lg-12">
-            <div class="revenue-info border-0">
-                <ul>
-                    <!-- Icon / S.No placeholder -->
-                    <li style="width: 5%;">
-                        <div class="icon">
-                            <i class="fa fa-user"></i>
-                        </div>
-                    </li>
-
-                    <!-- Name -->
-                    <li style="width: 20%;">
-                        <span>Name</span>
-                        <p class="uppercase truncate d-block"></p>
-                    </li>
-
-                    <!-- Email -->
-                    <li>
-                        <span>Email</span>
-                        <p class="truncate"></p>
-                    </li>
-
-                    <!-- Mobile -->
-                    <li>
-                        <span>Mobile</span>
-                        <p>{{ $user->mobile ?? '-' }}</p>
-                    </li>
-
-                    <!-- Branch -->
-                    <li>
-                        <span>Branch</span>
-                        <p>
-
-                        </p>
-                    </li>
-
-                    <!-- Status -->
-                    <li style="width: 7%;">
-                        <span>Status</span>
-                        <p></p>
-                    </li>
-
-                    <!-- Permissions -->
-                    <li style="width: 18% !important">
-                        <span>Permissions</span>
-                        <p class="permission-chips">
-                            @php
-                            $perms = $user->getPermissionNames()->toArray();
-                            @endphp
-
-                            @if(!empty($perms))
-                            @foreach($perms as $perm)
-                            <span class="chip">{{ $perm }}</span>
-                            @endforeach
-                            @else
-                            <span>-</span>
-                            @endif
-                        </p>
-                    </li>
-
-                    <!-- Action -->
-                    <li style="width:8%;">
-                        <ul class="actionalbles userAction">
-                            <li>
-                                <a href="{{ route('library-users.create', $user->id) }}" title="Edit">
-                                    <i class="fa-solid fa-chair"></i>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:;" class="toggle-status" data-id="{{ $user->id }}" title="Toggle Status">
-                                    <i class="fas {{ $user->status ? 'fa-ban' : 'fa-check' }}"></i>
-                                </a>
-                            </li>
-                           
-
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
 <div class="modal fade" id="permissionsModal_{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel_{{ $user->id }}" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
