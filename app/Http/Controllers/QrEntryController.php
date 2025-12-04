@@ -259,15 +259,28 @@ class QrEntryController extends Controller
             
            
             $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
-            $duration = $months ?? 0;
-            $type     = Plan::where('id', $validated['plan_id'])->value('type');
+            $planData = Plan::where('id', $validated['plan_id'])
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
             switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                if (!empty($monthdays)) {
+                    // Use exact number of days defined for this month plan
+                    $endDate = $start_date->copy()->addDays($monthdays - 1);
+                } else {
+                    // Fallback to month-wise duration
+                    $endDate = $start_date->copy()->addMonths($duration);
+                }
+                break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -572,10 +585,15 @@ class QrEntryController extends Controller
 
             }
            
-            $months = Plan::where('id', $plan_id)->value('plan_id'); 
-            $duration = $months ?? 0;
             
-          
+            
+          $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
             
             
             $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
@@ -594,9 +612,16 @@ class QrEntryController extends Controller
                 case 'WEEK':
                     $endDate = $start_date->copy()->addWeeks($duration);
                     break;
-                case 'MONTH':
-                    $endDate = $start_date->copy()->addMonths($duration);
+                 case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
                     break;
+                    
                 case 'YEAR':
                     $endDate = $start_date->copy()->addYears($duration);
                     break;

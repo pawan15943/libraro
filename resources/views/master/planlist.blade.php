@@ -74,6 +74,13 @@
                         <span>Plan Name</span>
                         <p class="m-0">{{ $value->name }}</p>
                     </li>
+                    @if($value->monthdays) 
+                    
+                    <li>
+                        <span>Plan Days</span>
+                        <p class="m-0">{{ $value->monthdays }}</p>
+                    </li>
+                    @endif
                 </ul>
             </div>
 

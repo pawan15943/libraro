@@ -259,7 +259,7 @@ class MasterController extends Controller
     
     public function storemaster(Request $request, $id = null)
     {
-        
+       
         $this->validationfunction($request);
         $modelClass = 'App\\Models\\' . $request->databasemodel;
         $table=$request->databasetable;
@@ -983,7 +983,7 @@ class MasterController extends Controller
     {
         
         if(getCurrentBranch() !=0){
-            $data = PlanPrice::with([
+            $data = PlanPrice::where('branch_id',getCurrentBranch())->with([
             'plan' => function ($query) {
                 $query->withTrashed();
             },

@@ -36,7 +36,7 @@
         <input type="hidden" name="databasemodel" value="Plan">
         <input type="hidden" name="redirect" value="{{ route('plan.index') }}">
         <div class="row g-4">
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <label for="">Type <span>*</span></label>
                 <select class="form-select @error('type') is-invalid @enderror" name="type" id="type">
                     <option value="">Select Type</option>
@@ -53,7 +53,7 @@
                 @enderror
 
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <label for="">Plan (Accept only digits)<span>*</span></label>
                 <input type="text" class="form-control digit-only @error('plan_id') is-invalid @enderror" name="plan_id" id="plan_id" value="{{ old('plan_id', $plan->plan_id ?? '') }}" placeholder="Ex : 1 for 1 Month & 2 for 2 Month">
                 @error('plan_id')
@@ -62,7 +62,29 @@
                 </span>
                 @enderror
             </div>
-            <div class="col-lg-3">
+
+            <div class="col-lg-4">
+                <label for="">Monthly Days</label>
+               <select class="form-select @error('monthdays') is-invalid @enderror" name="monthdays" id="monthdays" 
+                        data-selected="{{ old('monthdays', isset($plan) ? $plan->monthdays : '') }}">
+                    <option value="">Select Month Days Option</option>
+                    <option value="28">28 Days</option>
+                    <option value="30">30 Days</option>
+                    <option value="">Automatic (Calendar Wise)</option>
+                </select>
+
+                @error('monthdays')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                @enderror
+            </div>
+
+
+           
+        </div>
+        <div class="row mt-4">
+             <div class="col-lg-3">
                 <button type="submit" class="btn btn-primary button" id="savePlanBtn"><i class="fa fa-plus"></i>
                     @if(isset($plan)) Edit Plan @else Add Plan @endif
                 </button>
@@ -79,6 +101,65 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+
+<script>
+   $(document).ready(function () {
+
+        function updateMonthDays() {
+            let type = $("#type").val();
+            let plan = parseInt($("#plan_id").val());
+            let monthDaysDropdown = $("#monthdays");
+
+            // get selected value from old input or edit mode
+            let selectedValue = monthDaysDropdown.attr("data-selected");
+
+            // Hide if not MONTH
+            if (type !== "MONTH") {
+                monthDaysDropdown.html('<option value="">Select Month Days Option</option>');
+                monthDaysDropdown.closest('.col-lg-4').hide();
+                return;
+            }
+
+            // Show dropdown
+            monthDaysDropdown.closest('.col-lg-4').show();
+            monthDaysDropdown.empty();
+
+            // If plan invalid
+            if (!plan || plan <= 0) {
+                monthDaysDropdown.append('<option value="">Select Month Days Option</option>');
+                return;
+            }
+
+            // Create options
+            if (plan === 1) {
+                monthDaysDropdown.append('<option value="28">28 Days</option>');
+                monthDaysDropdown.append('<option value="30">30 Days</option>');
+                monthDaysDropdown.append('<option value="">Automatic (Calendar Wise)</option>');
+            } else {
+                monthDaysDropdown.append('<option value="' + (28 * plan) + '">' + (28 * plan) + ' Days</option>');
+                monthDaysDropdown.append('<option value="' + (30 * plan) + '">' + (30 * plan) + ' Days</option>');
+                monthDaysDropdown.append('<option value="">' + plan + ' Months (Calendar Wise)</option>');
+            }
+
+            // ----- AUTO SELECT LOGIC -----
+
+            // case 1: if selected value exists → keep it
+            if (selectedValue !== null && selectedValue !== undefined && selectedValue !== "") {
+                monthDaysDropdown.val(selectedValue);
+            } 
+            else {
+                // case 2: blank/null → auto-select Calendar Wise ("")
+                monthDaysDropdown.val("");
+            }
+        }
+
+        $("#type").change(updateMonthDays);
+        $("#plan_id").keyup(updateMonthDays);
+
+        updateMonthDays(); // run on page load for edit mode
+    });
+
+</script>
 
 <script>
     (function($) {

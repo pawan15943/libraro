@@ -117,6 +117,14 @@ if($customer->locker_no){
                         </span>
                     @enderror
                 </div>
+                @php
+                $start = \Carbon\Carbon::parse($customer->plan_start_date);
+                $end   = \Carbon\Carbon::parse($customer->plan_end_date);
+                $inclusive_days = $start->diffInDays($end) + 1;   // always inclusive
+                @endphp
+
+                <input type="hidden" id="total_days" value="{{ $inclusive_days }}">
+
             </div>
             
         </div>
@@ -137,7 +145,7 @@ if($customer->locker_no){
                     @enderror
                 </div>
                 @endif
-                    @if(!in_array('30', toggleHideField()))
+                @if(!in_array('30', toggleHideField()))
                 <div class="col-lg-6 ">
                     <label for="alternate_mobile">Alternate Mobile No.</label>
                     <input type="text" class="form-control @error('alternate_mobile') is-invalid @enderror digit-only" name="alternate_mobile"  maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No." value="{{ old('alternate_mobile', $customer->alternate_mobile) }}">
@@ -709,76 +717,108 @@ if($customer->locker_no){
 </div>
 
 @endif
-<script>
+{{-- <script>
     document.addEventListener('DOMContentLoaded', function () {
-    const startInput = document.getElementById('plan_start_date_edit');
-    const endInput = document.getElementById('plan_end_date_edit');
-    const planSelect = document.getElementById('plan_id'); // Plan dropdown
-    const planTypeSelect = document.getElementById('plan_type'); // Plan type dropdown (if needed)
+        const startInput = document.getElementById('plan_start_date_edit');
+        const endInput = document.getElementById('plan_end_date_edit');
+        const planSelect = document.getElementById('plan_id'); // Plan dropdown
+        const planTypeSelect = document.getElementById('plan_type'); // Plan type dropdown (if needed)
 
-    function calculateEndDate() {
-        const startDate = new Date(startInput.value);
-        if (!(startDate instanceof Date) || isNaN(startDate)) return;
+        function calculateEndDate() {
+            const startDate = new Date(startInput.value);
+            if (!(startDate instanceof Date) || isNaN(startDate)) return;
 
-        // Get selected plan duration
-        let planText = planSelect.value; // e.g. "3 MONTH", "1 Month"
-        let duration = 1; // default 1
-        let type = "DAY"; // default DAY
+            // Get selected plan duration
+            let planText = planSelect.value; // e.g. "3 MONTH", "1 Month"
+            let duration = 1; // default 1
+            let type = "DAY"; // default DAY
 
-        if (planText) {
-            // Extract number and unit
-            const match = planText.match(/(\d+)\s*(DAY|DAYS|WEEK|WEEKS|MONTH|MONTHS|YEAR|YEARS)/i);
-            if (match) {
-                duration = parseInt(match[1]);
-                type = match[2].toUpperCase();
+            if (planText) {
+                // Extract number and unit
+                const match = planText.match(/(\d+)\s*(DAY|DAYS|WEEK|WEEKS|MONTH|MONTHS|YEAR|YEARS)/i);
+                if (match) {
+                    duration = parseInt(match[1]);
+                    type = match[2].toUpperCase();
+                }
             }
+
+            // Copy start date
+            const endDate = new Date(startDate);
+
+            // Calculate end date like PHP Carbon
+            switch (type) {
+                case 'DAY':
+                case 'DAYS':
+                    endDate.setDate(endDate.getDate() + duration - 1);
+                    break;
+                case 'WEEK':
+                case 'WEEKS':
+                    endDate.setDate(endDate.getDate() + (duration * 7) - 1);
+                    break;
+                case 'MONTH':
+                case 'MONTHS':
+                    endDate.setMonth(endDate.getMonth() + duration);
+                    endDate.setDate(endDate.getDate() - 1);
+                    break;
+                case 'YEAR':
+                case 'YEARS':
+                    endDate.setFullYear(endDate.getFullYear() + duration);
+                    endDate.setDate(endDate.getDate() - 1);
+                    break;
+                default:
+                    break;
+            }
+
+            // Format yyyy-mm-dd
+            const yyyy = endDate.getFullYear();
+            const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(endDate.getDate()).padStart(2, '0');
+            endInput.value = `${yyyy}-${mm}-${dd}`;
         }
 
-        // Copy start date
-        const endDate = new Date(startDate);
+        // Recalculate on start date change or plan change
+        startInput.addEventListener('change', calculateEndDate);
+        planSelect.addEventListener('change', calculateEndDate);
 
-        // Calculate end date like PHP Carbon
-        switch (type) {
-            case 'DAY':
-            case 'DAYS':
-                endDate.setDate(endDate.getDate() + duration - 1);
-                break;
-            case 'WEEK':
-            case 'WEEKS':
-                endDate.setDate(endDate.getDate() + (duration * 7) - 1);
-                break;
-            case 'MONTH':
-            case 'MONTHS':
-                endDate.setMonth(endDate.getMonth() + duration);
-                endDate.setDate(endDate.getDate() - 1);
-                break;
-            case 'YEAR':
-            case 'YEARS':
-                endDate.setFullYear(endDate.getFullYear() + duration);
-                endDate.setDate(endDate.getDate() - 1);
-                break;
-            default:
-                break;
+        // Optional: recalc on plan type change if needed
+        if(planTypeSelect){
+            planTypeSelect.addEventListener('change', calculateEndDate);
         }
 
-        // Format yyyy-mm-dd
-        const yyyy = endDate.getFullYear();
-        const mm = String(endDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(endDate.getDate()).padStart(2, '0');
-        endInput.value = `${yyyy}-${mm}-${dd}`;
-    }
+        // Initial calculation if start date already filled
+        if (startInput.value) calculateEndDate();
+    });
 
-    // Recalculate on start date change or plan change
-    startInput.addEventListener('change', calculateEndDate);
-    planSelect.addEventListener('change', calculateEndDate);
 
-    // Optional: recalc on plan type change if needed
-    if(planTypeSelect){
-        planTypeSelect.addEventListener('change', calculateEndDate);
-    }
+</script> --}}
+<script>
+$(document).ready(function () {
 
-    // Initial calculation if start date already filled
-    if (startInput.value) calculateEndDate();
+    $("#plan_start_date_edit").on("change", function () {
+
+        let startDate = $(this).val();
+        let totalDays = parseInt($("#total_days").val()); // inclusive days
+
+        // If missing data, do nothing
+        if (!startDate || !totalDays || totalDays < 1) return;
+
+        let start = new Date(startDate);
+
+        // Inclusive means: add (days - 1)
+        start.setDate(start.getDate() + (totalDays - 1));
+
+        // Format to yyyy-mm-dd
+        let yyyy = start.getFullYear();
+        let mm = ("0" + (start.getMonth() + 1)).slice(-2);
+        let dd = ("0" + start.getDate()).slice(-2);
+
+        let formatted = `${yyyy}-${mm}-${dd}`;
+
+        // UPDATE THE END DATE
+        $("#plan_end_date_edit").val(formatted).trigger("change");
+
+    });
+
 });
 
 

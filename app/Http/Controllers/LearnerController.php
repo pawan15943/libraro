@@ -357,7 +357,6 @@ class LearnerController extends Controller
         if ($validated['error']) {
             return response()->json(['error' => true, 'message' => $validated['message']], 422);
         }
-
         // Creation
         try {
 
@@ -533,13 +532,25 @@ class LearnerController extends Controller
        
         $start_date= Carbon::parse($LearnerDetail->plan_start_date);
         if($plan_id){
-            $months = Plan::where('id', $plan_id)->value('plan_id');
-             $duration = $months ?? 0;
-             $type     = Plan::where('id', $plan_id)->value('type');
+           $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
               switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
+                    break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -992,9 +1003,13 @@ class LearnerController extends Controller
             $hours = $planType->slot_hours;
 
             $plan_id=$request->plan_id;
-            $months = Plan::where('id', $plan_id)->value('plan_id');
-            $duration = $months ?? 0;
-            $type     = Plan::where('id', $plan_id)->value('type'); 
+           $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             
             $start_date = Carbon::parse($learner_detail->plan_end_date)->addDay();
@@ -1003,7 +1018,15 @@ class LearnerController extends Controller
             switch (strtoupper($type)) {
                 case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
                 case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+                case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
+                    break;
                 case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
                 default:      $endDate = $start_date; break;
             }
@@ -1282,9 +1305,13 @@ class LearnerController extends Controller
 
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $plan_id = $request->input('plan_id');
-            $months = Plan::where('id', $plan_id)->value('plan_id'); 
-            $duration = $months ?? 0;
-            $type = Plan::where('id', $plan_id)->value('type');
+            $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
 
             $paid_amount = (float) $request->input('paid_amount', 0);
             $locker = (float) $request->input('locker_amount', 0);
@@ -1319,7 +1346,13 @@ class LearnerController extends Controller
                     $endDate = $start_date->copy()->addWeeks($duration);
                     break;
                 case 'MONTH':
-                    $endDate = $start_date->copy()->addMonths($duration);
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $start_date->copy()->addDays($monthdays -1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $start_date->copy()->addMonths($duration);
+                    }
                     break;
                 case 'YEAR':
                     $endDate = $start_date->copy()->addYears($duration);
@@ -1646,17 +1679,25 @@ class LearnerController extends Controller
                 $startDate = Carbon::parse($request->input('plan_start_date'));
 
                 // Fetch both duration and type in one query
-                $plan = Plan::select('plan_id as duration', 'type')->find($request->input('plan_id'));
+                $plan = Plan::select('plan_id as duration', 'type','monthdays')->find($request->input('plan_id'));
 
                 if ($plan) {
                     $duration = $plan->duration;
                     $type = strtoupper($plan->type);
-
+                    $monthdays = $plan->monthdays;
                     // Calculate end date based on type
                     switch (strtoupper($type)) {
                         case 'DAY':   $endDate = $startDate->copy()->addDays($duration); break;
                         case 'WEEK':  $endDate = $startDate->copy()->addWeeks($duration); break;
-                        case 'MONTH': $endDate = $startDate->copy()->addMonths($duration); break;
+                       case 'MONTH':
+                        if (!empty($monthdays)) {
+                            // Use exact number of days defined for this month plan
+                            $endDate = $startDate->copy()->addDays($monthdays - 1);
+                        } else {
+                            // Fallback to month-wise duration
+                            $endDate = $startDate->copy()->addMonths($duration);
+                        }
+                        break;
                         case 'YEAR':  $endDate = $startDate->copy()->addYears($duration); break;
                         default:      $endDate = $startDate; break;
                     }
@@ -1678,8 +1719,10 @@ class LearnerController extends Controller
     // custome validation
     private function validateLearnerCustom($plan_id, $plan_type_id, $start_date, $planPrice, $paid_amount, $locker, $discount, $seat_no, $due_date, $payment_mode, $learner_detail_id)
     {
-        $duration = Plan::where('id', $plan_id)->value('plan_id'); 
-        $type     = Plan::where('id', $plan_id)->value('type');  
+        $planData=Plan::where('id', $plan_id)->select('plan_id','type','monthdays')->first();
+        $duration = $planData->plan_id; 
+        $type     = $planData->type;  
+        $monthdays= $planData->monthdays;  
 
         $effectivePaid   = $planPrice + $locker - $discount;
         $pending_amount  = $effectivePaid - $paid_amount;
@@ -1702,7 +1745,15 @@ class LearnerController extends Controller
         switch (strtoupper($type)) {
             case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
             case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-            case 'MONTH': $endDate = $start_date->copy()->addMonths($duration); break;
+            case 'MONTH':
+            if (!empty($monthdays)) {
+              
+                $endDate = $start_date->copy()->addDays($monthdays- 1);
+            } else {
+               
+                $endDate = $start_date->copy()->addMonths($duration);
+            }
+            break;
             case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
             default:      $endDate = $start_date; break;
         }

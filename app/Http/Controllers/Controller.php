@@ -410,8 +410,16 @@ class Controller extends BaseController
 
         $payment_mode = !empty($data['payment_mode']) ? $this->getPaymentMode(trim($data['payment_mode'])) : 2;
         $hours = $planType->slot_hours;
-        $duration = Plan::where('id', $plan->id)->value('plan_id');
-        $type = Plan::where('id', $plan->id)->value('type');
+        
+       
+        $planData = Plan::where('id', $plan->id)
+            ->select('plan_id', 'type', 'monthdays')
+            ->first();
+
+        $duration  = $planData->plan_id ?? 0; 
+        $type      = $planData->type;
+        $monthdays = $planData->monthdays;
+
         $type = strtoupper($type);
         $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y', 'd.m.Y', 'd M Y', 'd F Y'];
         $rawDate = trim($data['start_date']);
@@ -445,8 +453,14 @@ class Controller extends BaseController
             case 'WEEK':
                 $endDate = $start_date->copy()->addWeeks($duration);
                 break;
-            case 'MONTH':
-                $endDate = $start_date->copy()->addMonths($duration);
+           case 'MONTH':
+                if (!empty($monthdays)) {
+                    // Use exact number of days defined for this month plan
+                    $endDate = $start_date->copy()->addDays($monthdays - 1);
+                } else {
+                    // Fallback to month-wise duration
+                    $endDate = $start_date->copy()->addMonths($duration);
+                }
                 break;
             case 'YEAR':
                 $endDate = $start_date->copy()->addYears($duration);
