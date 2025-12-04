@@ -42,7 +42,7 @@
                 <select name="plan_id" id="price_plan_id" class="form-select @error('plan_id') is-invalid @enderror event">
                     <option value="">Select Plan</option>
                     @foreach ($plans as $value)
-                    @if($value->plan_id==1)
+                    @if(($value->plan_id==1 && $value->type=='MONTH') || $value->type!='MONTH')
                     <option value="{{ $value->id }}" {{ isset($planPrice) && $planPrice->plan_id == $value->id ? 'selected' : '' }}>
                         {{ $value->name }}
                     </option>

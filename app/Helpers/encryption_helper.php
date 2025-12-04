@@ -175,40 +175,56 @@ if (!function_exists('getPlanPrice')) {
             $libraryId = getLibraryId();
         }
 
-        $plan_price_all = PlanPrice::withoutGlobalScopes()
-            ->leftJoin('plans', function ($join) use ($libraryId) {
-                $join->on('plan_prices.plan_id', '=', 'plans.id')
-                    ->where('plans.library_id', $libraryId);
-            })
+        $alreadyPrice=PlanPrice::withoutGlobalScopes()
+            ->where('plan_id', $plan_id)
+            ->where('plan_type_id', $plan_type_id)
+            ->where('library_id', $libraryId)
+            ->where('branch_id', $branchId)
+            ->select('price') ->first();
 
-            ->where('plans.plan_id', 1)
-            ->where('plans.type', 'MONTH')
-            ->where('plan_prices.plan_type_id', $plan_type_id)
-            ->where('plan_prices.library_id', $libraryId)
-            ->where('plan_prices.branch_id', $branchId)
-            ->select('plan_prices.price')
-            ->first();
-          
+        if($alreadyPrice){
+            return round($alreadyPrice->price, 2);
+        }else{
 
-        $plan = Plan::where('id', $plan_id)->first();
-        
+            $plan_price_all = PlanPrice::withoutGlobalScopes()
+                ->leftJoin('plans', function ($join) use ($libraryId) {
+                    $join->on('plan_prices.plan_id', '=', 'plans.id')
+                        ->where('plans.library_id', $libraryId);
+                })
 
-        if ($plan_price_all && $plan) {
+                ->where('plans.plan_id', 1)
+                ->where('plans.type', 'MONTH')
+                ->where('plan_prices.plan_type_id', $plan_type_id)
+                ->where('plan_prices.library_id', $libraryId)
+                ->where('plan_prices.branch_id', $branchId)
+                ->select('plan_prices.price')
+                ->first();
+            
 
-            if ($plan->type == 'MONTH') {
-                $PlanpPrice = $plan_price_all->price * $plan->plan_id;
-            } elseif ($plan->type == 'YEAR') {
-                $PlanpPrice = $plan_price_all->price * $plan->plan_id * 12;
-            } elseif ($plan->type == 'WEEK') {
-                $PlanpPrice = ($plan_price_all->price / 4) * $plan->plan_id;
-            } else {
-                $PlanpPrice = ($plan_price_all->price / 30) * $plan->plan_id;
+            $plan = Plan::where('id', $plan_id)->first();
+            
+            
+            if ($plan_price_all && $plan) {
+
+                if ($plan->type == 'MONTH') {
+                    $PlanpPrice = $plan_price_all->price * $plan->plan_id;
+                } elseif ($plan->type == 'YEAR') {
+                    $PlanpPrice = $plan_price_all->price * $plan->plan_id * 12;
+                } elseif ($plan->type == 'WEEK') {
+                    $PlanpPrice = ($plan_price_all->price / 4) * $plan->plan_id;
+                } else {
+                    if($plan->monthdays){
+                        $PlanpPrice = ($plan_price_all->price / $plan->monthdays) * $plan->plan_id;
+                    }else{
+                        $PlanpPrice = ($plan_price_all->price / 30) * $plan->plan_id;
+                    }
+                }
+
+                return round($PlanpPrice, 2);
             }
 
-            return round($PlanpPrice, 2);
+            return 0; // or null or handle if price or plan not found
         }
-
-        return 0; // or null or handle if price or plan not found
     }
 }
 

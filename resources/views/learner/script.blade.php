@@ -2518,16 +2518,21 @@ function loadLearnerMobiles(learnerId,mobileId) {
             if (res.mobiles.length === 1) {
                 let single = res.mobiles[0];
 
-                mobileSelect.append(`<option value="${single}" selected>${single}</option>`);
+                mobileSelect.append(`<option value="${single}" selected>${'+91-'+single}</option>`);
                 mobileSelect.prop('disabled', true);  // disable the dropdown
                 return;
             }
 
             // --- CASE 3: Multiple numbers available ---
             mobileSelect.append(`<option value="">Select Mobile</option>`);
-
+            var x = 0;
             res.mobiles.forEach(function (m) {
-                mobileSelect.append(`<option value="${m}">${m}</option>`);
+                x++;
+                if(x===1){
+                mobileSelect.append(`<option value="${m}">${'+91-'+m+' (primary-mobile)'}</option>`);
+                } else{
+                mobileSelect.append(`<option value="${m}">${'+91-'+m+' (parent-number)'}</option>`);
+                }
             });
         }
     });
