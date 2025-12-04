@@ -461,8 +461,8 @@ class NotificationSentController extends Controller
             $mobiles[] = $learner->mobile;
         }
 
-        if ($learner->alt_mobile) {
-            $mobiles[] = $learner->alt_mobile;
+        if ($learner->alternate_mobile) {
+            $mobiles[] = $learner->alternate_mobile;
         }
 
         return response()->json([

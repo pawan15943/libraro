@@ -2502,7 +2502,7 @@ function loadLearnerMobiles(learnerId,mobileId) {
             learner_id: learnerId
         },
         success: function (res) {
-
+            console.log(res.mobiles);
              let mobileSelect = $('#' + mobileId); 
             mobileSelect.empty();   // clear previous
             mobileSelect.prop('disabled', false); // enable by default
