@@ -154,7 +154,7 @@
 $learner = myLearner($user->learner_id);
 $planStatus = getPlanStatusDetails($user->plan_end_date);
  $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
-$learner_id=$learner ?? $learner->id;
+$learner_id = optional($learner)->id;
  $learner_detail_id=$user->learner_detail_id;
 $transaction = learnerTransaction($learner_id, $learner_detail_id);      
 
