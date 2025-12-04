@@ -2561,7 +2561,7 @@ $('#waba_template_select').on('change', function () {
      let errors = {};
 
     if (!template_id) errors.template_id = ["Please select a template."];
-    if (!learner_id) errors.learner_id = ["Invalid learner ID."];
+    if (!learner_idm) errors.learner_idm = ["Invalid learner ID."];
 
     if (Object.keys(errors).length > 0) {
         showFormErrors2(errors);
