@@ -322,9 +322,9 @@ class SiteController extends Controller
     public function libraryDetail($slug)
     {
         $features = DB::table('features')->whereNull('deleted_at')->get();
-        $branch = Branch::where('slug', $slug)->with('state', 'city', 'library.subscription', 'library')->first();
+        $library = Branch::where('slug', $slug)->with('state', 'city', 'library.subscription', 'library')->first();
 
-        if (empty($branch)) {
+        if (empty($library)) {
             return view('errors.404');
         } else {
            
@@ -339,17 +339,17 @@ class SiteController extends Controller
                     'plan_prices.price',
                     'plans.plan_id'
                 )
-                ->where('plan_prices.branch_id', $branch->id) 
+                ->where('plan_prices.branch_id', $library->id) 
                 ->where('plans.plan_id', 1)
                 ->get();
                
 
-            $total_seat = Hour::withoutGlobalScopes()->where('branch_id', $branch->id)->value('seats') ?? 0;
+            $total_seat = Hour::withoutGlobalScopes()->where('branch_id', $library->id)->value('seats') ?? 0;
 
-            $operating = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
+            $operating = PlanType::withoutGlobalScopes()->where('branch_id', $library->id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
 
-            $learnerFeedback = LearnerFeedback::where('library_id', $branch->library_id)->with(['learner'])->get();
-            $libraryplantype = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->pluck('name', 'id');
+            $learnerFeedback = LearnerFeedback::where('library_id', $library->library_id)->with(['learner'])->get();
+            $libraryplantype = PlanType::withoutGlobalScopes()->where('branch_id', $library->id)->pluck('name', 'id');
         }
       
 
