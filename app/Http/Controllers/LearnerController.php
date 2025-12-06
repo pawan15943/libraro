@@ -404,6 +404,9 @@ class LearnerController extends Controller
             if ($payment_mode == 3) {
                 $pending_amount = $paid_amount;
                 $paid_amount    = 0;
+                if(!$due_date){
+                    $due_date=date('Y-m-d');
+                }
             }
         
             $data=[];
@@ -2586,7 +2589,7 @@ class LearnerController extends Controller
   
     public function getSwapUser($id)
     {
-
+       
         $customerId = $id;
         $firstRecord = Hour::first();
         $totalHour = $firstRecord ? $firstRecord->hour : null;
@@ -2734,7 +2737,7 @@ class LearnerController extends Controller
 
                 $newSeatNo = $request->seat_id;
 
-                $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $newSeatNo)->sum('hours');
+                $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $newSeatNo)->where('status',1)->sum('hours');
                 $new_seat_remainig = $total_hour - $total_cust_hour;
 
                 if ($request->seat_id && ($customer->hours > $new_seat_remainig)) {
