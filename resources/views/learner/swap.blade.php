@@ -71,11 +71,10 @@ $class=$planDetails['class'];
                             </span>
                             @enderror
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <input type="hidden" value="{{ $customer->seat_no }}" id="swap_old_value">
                             <label>Current Seat Status</label>
-                            <h4 id="swap_status"></h4>
-
+                            <div id="swap_status"></div>
                         </div>
 
                     </div>

@@ -1236,10 +1236,13 @@
                     dataType: 'json',
                     success: function(html) {
                         if(html == 1) {
-                            $('#swap_status').append("Available");
+                            $('#swap_status').html('<h4 style="color:green !important;">Seat is Available to swap.</h4>');
                             $("#swapsubmit").prop('disabled', false); 
-                        } else {
-                            $('#swap_status').append("Not Available");
+                        }else if(html == 2) {
+                            $('#swap_status').html('<h4 style="color:red !important;">Seat is already booked for future, currently not available to swap.</h4>');
+                            $("#swapsubmit").prop('disabled', true); 
+                        }else {
+                            $('#swap_status').html('<h4 style="color:red !important;">Not Available</h4>');
                             $("#swapsubmit").prop('disabled', true); 
                         }
                     }

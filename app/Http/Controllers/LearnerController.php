@@ -2950,6 +2950,18 @@ class LearnerController extends Controller
             }
         }
 
+        // for future booking
+         $futurebookings = $this->getLearnersByLibrary()
+            ->where('learner_detail.seat_no', $request->new_seat_id)
+            ->where('learner_detail.plan_type_id',$request->plan_type_id)
+            ->where('learner_detail.plan_start_date','>',date('Y-m-d'))
+            ->get(['plan_start_date','plan_end_date']);
+        $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->select('plan_start_date','plan_end_date')->first();
+        $customerStart = $customer_detail->plan_start_date;
+        $customerEnd   = $customer_detail->plan_end_date;
+       
+        // all future booking get
+
         if ($customer->hours > $new_seat_remaining) {
             $status = 0;
         } elseif ($count == 1) {
@@ -2960,6 +2972,23 @@ class LearnerController extends Controller
             $status = 1;
         } else {
             $status = 1;
+        }
+
+        
+        foreach ($futurebookings as $fb) {
+
+            $futureStart = $fb->plan_start_date;
+            $futureEnd   = $fb->plan_end_date;
+
+            // Check if date ranges overlap
+            if (
+                ($futureStart >= $customerStart && $futureStart <= $customerEnd) ||  // starts inside customer range
+                ($futureEnd >= $customerStart && $futureEnd <= $customerEnd) ||      // ends inside
+                ($futureStart <= $customerStart && $futureEnd >= $customerEnd)       // covers entire customer range
+            ) {
+                $status = 2;
+                break; // no need to check more
+            }
         }
 
         return response()->json($status);
