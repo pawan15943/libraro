@@ -505,30 +505,7 @@
                 })
             );
                
-            // if(seatNo || seatId){
-            //     var seatDisplay = seatDisplayMap[seatNo] ?? seatNo;
-            //     $('#seat_no').val(seatNo);
-            //     $('#seat_id').val(seatId);
-            //     $('#seat_no_head').text('Book Seat No.: ' + seatDisplay);
-            //     @can('has-permission', 'General Seat Booking')
-            //     $('#general_seat').val('no').trigger('change');
-            //     @endcan
-            //     // Hide the seat select fields (visually only)
-            //     $('#seat_id').closest('.col-lg-6').hide();
-            //     $('#general_seat').closest('.col-lg-6').hide();
-            // }else if(toggleHiddenFields.includes('12')){
-            //      $('#seat_no_head').text('Booking Form');
-            //      $('#general_seat').val('no').trigger('change');
-            // }else{
-                
-            //     $('#seat_no_head').text('Booking Form');
-            //     $('#general_seat').val('yes').trigger('change');
-            //     // Show seat fields
-            //     $('#seat_id').closest('.col-lg-6').show();
-            //     $('#general_seat').closest('.col-lg-6').show();
-            // }
-
-
+  
             if (seatNo || seatId) {
                 var seatDisplay = seatDisplayMap[seatNo] ?? seatNo;
                 $('#seat_no').val(seatNo);
@@ -982,11 +959,7 @@
                 errors.paid_amount = 'Paid amount is required.';
             }
 
-            // console.log('paid_amount',paid_amount);
-            // console.log('plan_price_value',plan_price_value);
-            // console.log('locker_amount',locker_amount);
-            // console.log('discount_amount',discount_amount);
-                
+              
             if(paid_amount > (plan_price_value +locker_amount- discount_amount)){
                 errors.paid_amount = 'Paid amount should not be greater than the total amount.';
             }
@@ -1236,10 +1209,13 @@
                     dataType: 'json',
                     success: function(html) {
                         if(html == 1) {
-                            $('#swap_status').append("Available");
+                            $('#swap_status').html('<h4 style="color:green !important;">Seat is Available to swap.</h4>');
                             $("#swapsubmit").prop('disabled', false); 
-                        } else {
-                            $('#swap_status').append("Not Available");
+                        }else if(html == 2) {
+                            $('#swap_status').html('<h4 style="color:red !important;">Seat is already booked for future, currently not available to swap.</h4>');
+                            $("#swapsubmit").prop('disabled', true); 
+                        }else {
+                            $('#swap_status').html('<h4 style="color:red !important;">Not Available</h4>');
                             $("#swapsubmit").prop('disabled', true); 
                         }
                     }

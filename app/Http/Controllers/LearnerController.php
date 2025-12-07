@@ -404,6 +404,9 @@ class LearnerController extends Controller
             if ($payment_mode == 3) {
                 $pending_amount = $paid_amount;
                 $paid_amount    = 0;
+                if(!$due_date){
+                    $due_date=date('Y-m-d');
+                }
             }
         
             $data=[];
@@ -511,6 +514,7 @@ class LearnerController extends Controller
              return redirect()->back()->with('error', 'Total available hours not set.');
 
         }
+      
 
          if (!Gate::allows('has-permission', 'Change Plan')) {
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
@@ -655,7 +659,10 @@ class LearnerController extends Controller
             $pending_refund = 0;
             $dr_cr='Cr';
         }
-        if(($pending_amount > 0 || $pending_refund!=0) && !$request->due_date){
+        
+        $due_date = $request->due_date ?? ($learnerTransaction->due_date ?? null);
+
+        if(($pending_amount > 0 || $pending_refund!=0) && empty($due_date) && !$payment_mode){
             return redirect()->back()->with('error', 'Due date is required');
         }
         if ($pending_amount < 0) {
@@ -672,8 +679,8 @@ class LearnerController extends Controller
             $learnerTransaction->paid_amount    = $paid_amount;
             $learnerTransaction->pending_amount = $pending_amount;
             $learnerTransaction->refund         = $pending_refund;   // keep refund only if negative diff
-            $learnerTransaction->due_date       = $request->due_date ?? null;
-            $learnerTransaction->discount_amount       =$discount; 
+            $learnerTransaction->due_date       = $due_date ?? null;
+            $learnerTransaction->discount_amount =$discount; 
            
             $learnerTransaction->save();
 
@@ -1121,9 +1128,10 @@ class LearnerController extends Controller
             } else {
                 $transaction_date =null;
             }
-           
-           
-            
+
+            $due_date = $request->due_date ?? null;
+
+       
             if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode!=3) && $request->expectsJson()) {
                 return response()->json([
                     'error' => true,
@@ -1131,7 +1139,7 @@ class LearnerController extends Controller
                 ], 422);
                 die;
             }
-            if (($pending_amount > 0) && (!$request->due_date)  && $request->expectsJson() && $payment_mode!=3) {
+            if (($pending_amount > 0) &&  empty($due_date)  && $request->expectsJson() && $payment_mode!=3) {
                 return response()->json([
                     'error' => true,
                     'message' => 'Due date is required',
@@ -1142,7 +1150,7 @@ class LearnerController extends Controller
                 return redirect()->back()->with('error', 'Paid amount is not valid');
              }
 
-            if (($pending_amount > 0) && (!$request->due_date) && $payment_mode!=3) {
+            if (($pending_amount > 0) && ( empty($due_date)) && $payment_mode!=3) {
                return redirect()->back()->with('error', 'Due date is required');
             }
             
@@ -2586,7 +2594,7 @@ class LearnerController extends Controller
   
     public function getSwapUser($id)
     {
-
+       
         $customerId = $id;
         $firstRecord = Hour::first();
         $totalHour = $firstRecord ? $firstRecord->hour : null;
@@ -2734,7 +2742,7 @@ class LearnerController extends Controller
 
                 $newSeatNo = $request->seat_id;
 
-                $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $newSeatNo)->sum('hours');
+                $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $newSeatNo)->where('status',1)->sum('hours');
                 $new_seat_remainig = $total_hour - $total_cust_hour;
 
                 if ($request->seat_id && ($customer->hours > $new_seat_remainig)) {
@@ -2947,6 +2955,20 @@ class LearnerController extends Controller
             }
         }
 
+        // for future booking
+         $futurebookings = $this->getLearnersByLibrary()
+            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where('learner_detail.seat_no', $request->new_seat_id)
+            ->where('learner_detail.plan_start_date','>',date('Y-m-d'))
+            ->get(['plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time']);
+        $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time')->first();
+        $customerStartDate = Carbon::parse($customer_detail->plan_start_date)->toDateString();
+        $customerEndDate   = Carbon::parse($customer_detail->plan_end_date)->toDateString();
+        $customerStartTime = $customer_detail->start_time;
+        $customerEndTime   = $customer_detail->end_time;
+       
+        // all future booking get
+
         if ($customer->hours > $new_seat_remaining) {
             $status = 0;
         } elseif ($count == 1) {
@@ -2958,6 +2980,38 @@ class LearnerController extends Controller
         } else {
             $status = 1;
         }
+
+        
+        foreach ($futurebookings as $fb) {
+
+            $futureStartDate = Carbon::parse($fb->plan_start_date)->toDateString();
+            $futureEndDate   = Carbon::parse($fb->plan_end_date)->toDateString();
+
+            $futureStartTime = $fb->start_time;
+            $futureEndTime   = $fb->end_time;
+
+            // 1. Date Overlap
+            $dateOverlap = (
+                ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
+                ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
+                ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
+            );
+
+            if (!$dateOverlap) continue;
+
+            // 2. Time Overlap
+            $timeOverlap = (
+                $futureStartTime < $customerEndTime &&
+                $futureEndTime > $customerStartTime
+            );
+
+            if ($timeOverlap) {
+                $status = 2; // Future booking clash
+                break;
+            }
+        }
+
+
 
         return response()->json($status);
     }

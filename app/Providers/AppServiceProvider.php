@@ -164,6 +164,11 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Swap Seat' => route('learners.swap', $parameters)
             ],
+             'learner.change.plan' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Change Plan' => route('learner.change.plan', $parameters)
+            ],
             'learners.upgrade.renew' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
@@ -510,7 +515,8 @@ class AppServiceProvider extends ServiceProvider
             'learner.checklist' => 'Print ID card in bulk',
             'notifications.subscription' =>  'Buy Message Subscription',
             'notifications.settings' =>  'Notification Console',
-            'notification.dashboard' =>  'Notification Dashbaord'
+            'notification.dashboard' =>  'Notification Dashbaord',
+            'learner.change.plan' => 'Learner Change Plan'
             
         ];
 

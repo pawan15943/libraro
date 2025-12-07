@@ -346,10 +346,10 @@ class SiteController extends Controller
 
             $total_seat = Hour::withoutGlobalScopes()->where('branch_id', $library->id)->value('seats') ?? 0;
 
-            $operating = PlanType::withoutGlobalScopes()->where('library_id', $library->library_id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
+            $operating = PlanType::withoutGlobalScopes()->where('branch_id', $library->id)->where('day_type_id', 1)->select('start_time', 'end_time')->first();
 
             $learnerFeedback = LearnerFeedback::where('library_id', $library->library_id)->with(['learner'])->get();
-            $libraryplantype = PlanType::withoutGlobalScopes()->where('library_id', $library->library_id)->pluck('name', 'id');
+            $libraryplantype = PlanType::withoutGlobalScopes()->where('branch_id', $library->id)->pluck('name', 'id');
         }
       
 
