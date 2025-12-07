@@ -2964,8 +2964,8 @@ class LearnerController extends Controller
         $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time')->first();
         $customerStartDate = Carbon::parse($customer_detail->plan_start_date)->toDateString();
         $customerEndDate   = Carbon::parse($customer_detail->plan_end_date)->toDateString();
-        $customerStartTime = $customer->start_time;
-        $customerEndTime   = $customer->end_time;
+        $customerStartTime = $customer_detail->start_time;
+        $customerEndTime   = $customer_detail->end_time;
        
         // all future booking get
 
