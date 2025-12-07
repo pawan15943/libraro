@@ -6399,12 +6399,41 @@ ul.userPermissionList li {
 }
 
 .text-information {
-    color: #5A6F8A !important;
+    color: red !important;
     font-size: .8rem !important;
     line-height: 17px;
     display: block;
     margin-bottom: .3rem;
     margin-top: .3rem;
+}
+
+.how-use p{
+    font-size: 1rem;
+    margin-top: 1.5rem;
+}
+
+ul.how-it-work {
+    list-style: number;
+    margin: 0;
+    padding: 0 1rem;
+}
+
+.how-use h4.d-flex.justify-content-between.align-items-center {
+    font-size: 1rem;
+}
+
+ul.how-it-work ul{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.how-it-work li {
+    padding: .3rem 0;
+}
+
+.how-use span.toggle-icon {
+    font-size: 1.2rem;
 }
 
 /* Reacnt Activity CSS */
