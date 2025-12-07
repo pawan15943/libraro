@@ -662,7 +662,7 @@ class LearnerController extends Controller
         
         $due_date = $request->due_date ?? ($learnerTransaction->due_date ?? null);
 
-        if(($pending_amount > 0 || $pending_refund!=0) && empty($due_date)){
+        if(($pending_amount > 0 || $pending_refund!=0) && empty($due_date) && !$payment_mode){
             return redirect()->back()->with('error', 'Due date is required');
         }
         if ($pending_amount < 0) {
