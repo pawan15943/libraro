@@ -485,6 +485,7 @@
             $('#countsContainer').hide(); // Initially hide the counts container
 
             $('#filter').on('click', function(e) {
+                
                 e.preventDefault(); // Prevent default action
                 $('#filterContainer').toggle(); // Toggle visibility
             });

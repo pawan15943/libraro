@@ -6407,6 +6407,8 @@ ul.userPermissionList li {
     margin-top: .3rem;
 }
 
+
+
 .how-use p{
     font-size: 1rem;
     margin-top: 1.5rem;
@@ -6526,4 +6528,13 @@ a[disabled] {
     /* Make it look disabled */
     cursor: not-allowed;
     /* Show disabled cursor */
+}
+
+
+.swal2-popup.swal2-modal.swal2-show {
+    border-radius: 1.5rem !important;
+}
+
+.swal2-styled {
+    border-radius: 3rem !important;
 }

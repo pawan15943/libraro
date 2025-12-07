@@ -41,13 +41,27 @@
                 <label for="">Operating Hours <span>*</span></label>
                 <select class="form-select @error('hour') is-invalid @enderror" name="hour" id="hour">
                     <option value="">Select Hour</option>
-                    <option value="16" {{ old('hour', isset($hour) ? $hour->hour : '') == 16 ? 'selected' : '' }}>16</option>
-                    <option value="14" {{ old('hour', isset($hour) ? $hour->hour : '') == 14 ? 'selected' : '' }}>14</option>
+
+                    <option value="10" {{ old('hour', isset($hour) ? $hour->hour : '') == 10 ? 'selected' : '' }}>10</option>
+                    <option value="11" {{ old('hour', isset($hour) ? $hour->hour : '') == 11 ? 'selected' : '' }}>11</option>
                     <option value="12" {{ old('hour', isset($hour) ? $hour->hour : '') == 12 ? 'selected' : '' }}>12</option>
+                    <option value="13" {{ old('hour', isset($hour) ? $hour->hour : '') == 13 ? 'selected' : '' }}>13</option>
+                    <option value="14" {{ old('hour', isset($hour) ? $hour->hour : '') == 14 ? 'selected' : '' }}>14</option>
+                    <option value="15" {{ old('hour', isset($hour) ? $hour->hour : '') == 15 ? 'selected' : '' }}>15</option>
+                    <option value="16" {{ old('hour', isset($hour) ? $hour->hour : '') == 16 ? 'selected' : '' }}>16</option>
+                    <option value="17" {{ old('hour', isset($hour) ? $hour->hour : '') == 17 ? 'selected' : '' }}>17</option>
+                    <option value="18" {{ old('hour', isset($hour) ? $hour->hour : '') == 18 ? 'selected' : '' }}>18</option>
+                    <option value="19" {{ old('hour', isset($hour) ? $hour->hour : '') == 19 ? 'selected' : '' }}>19</option>
+                    <option value="20" {{ old('hour', isset($hour) ? $hour->hour : '') == 20 ? 'selected' : '' }}>20</option>
+                    <option value="21" {{ old('hour', isset($hour) ? $hour->hour : '') == 21 ? 'selected' : '' }}>21</option>
+                    <option value="22" {{ old('hour', isset($hour) ? $hour->hour : '') == 22 ? 'selected' : '' }}>22</option>
+                    <option value="23" {{ old('hour', isset($hour) ? $hour->hour : '') == 23 ? 'selected' : '' }}>23</option>
+
                     @can('has-permission','All Day')
                     <option value="24" {{ old('hour', isset($hour) ? $hour->hour : '') == 24 ? 'selected' : '' }}>24</option>
                     @endif
                 </select>
+
                 @error('hour')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
