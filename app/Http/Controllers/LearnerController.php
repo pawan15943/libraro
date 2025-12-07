@@ -3026,16 +3026,20 @@ class LearnerController extends Controller
 
                 if ($request->permanent == '1') {
 
-                    $detail = LearnerDetail::where('learner_id', $id)->select('plan_start_date')->first();
+                    // $detail = LearnerDetail::where('learner_id', $id)->select('plan_start_date')->first();
                    // $threeDaysAfterStart = \Carbon\Carbon::parse($detail->plan_start_date)->addDays(3);
-
+                   if($request->deleteAll==1){
+                        LearnerTransactionActivity::where('learner_id', $id)->forceDelete();
+                   }else{
                         LearnerTransactionActivity::where('learner_id', $id)->update([
                             'learner_id' => null
                         ]);;
-                            LearnerFeedback::where('learner_id', $id)->forceDelete();
-                        DB::table('learner_operations_log')->where('learner_id', $id)->delete();
-                        DB::table('learner_request')->where('learner_id', $id)->delete();
-                        $customer->forceDelete();
+                   }
+                      
+                    LearnerFeedback::where('learner_id', $id)->forceDelete();
+                    DB::table('learner_operations_log')->where('learner_id', $id)->delete();
+                    DB::table('learner_request')->where('learner_id', $id)->delete();
+                    $customer->forceDelete();
 
                         
 
@@ -4109,10 +4113,51 @@ class LearnerController extends Controller
                 $learner->save();
             }
 
-            // ✅ Restore related learner transactions
+        // Restore related learner transactions
+            $refundExist = LearnerTransactionActivity::where('learner_id', $learnerDetail->learner_id)
+                ->where('payment_type', 'REFUND')
+                ->where('amount', '>', 0)
+                ->orderBy('id', 'DESC')
+                ->exists();
+
+            if ($refundExist) {
+
+                $refund = LearnerTransactionActivity::where('learner_id', $learnerDetail->learner_id)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+
+                $data = [
+                    'learner_id'   => $learnerDetail->learner_id,
+                    'particular'   => 'Restore Seat',
+                    'payment_type' => 'RESTORE',
+                    'payment_mode' => 1,
+                    'amount'       => $refund->amount ?? 0,
+                    'dr_cr'        => 'Cr',
+                ];
+
+                $this->learnerTransactionActivity($data);
+            }
+
+
+            // Check refund column
+            $trans = LearnerTransaction::withTrashed()
+                ->where('learner_id', $learnerDetail->learner_id)
+                ->orderBy('id', 'DESC')
+                ->select('refund')
+                ->first();
+
+            if ($trans && $trans->refund > 0) {
+                LearnerTransaction::withTrashed()
+                    ->where('learner_id', $learnerDetail->learner_id)
+                    ->update(['refund' => null]);
+            }
+
+
+            // Restore soft deleted records
             LearnerTransaction::withTrashed()
                 ->where('learner_id', $learnerDetail->learner_id)
                 ->restore();
+
         } else {
             // If no learner_id, you may use learner_detail_id in transactions (depends on your schema)
             LearnerTransaction::withTrashed()
