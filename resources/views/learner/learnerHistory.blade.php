@@ -154,15 +154,15 @@ $operation = optional(getLearnerOperation($learner_detail_id))->operation;
                 
 
                 @if($operation == 'closeSeat')
-                <span class="extended" style="display: inline-block !important;"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                <span class="extended" style="display: inline-block !important;"> Closed on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
-                <span class="extended" style="display: inline-block !important;"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                <span class="extended" style="display: inline-block !important;"> Deleted on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
                 @else
                 {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                 @endif
                 <span style="display: inline-block !important; ">
                 @if(round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) != 0)
-                    Pending Refund : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
+                    Refund due : {{ round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0) }}
                 @endif                
                 </span>
             </div>
