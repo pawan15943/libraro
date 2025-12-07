@@ -2962,8 +2962,8 @@ class LearnerController extends Controller
             ->where('learner_detail.plan_start_date','>',date('Y-m-d'))
             ->get(['plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time']);
         $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time')->first();
-        $customerStartDate = $customer_detail->plan_start_date;
-        $customerEndDate   = $customer_detail->plan_end_date;
+        $customerStartDate = Carbon::parse($customer_detail->plan_start_date)->toDateString();
+        $customerEndDate   = Carbon::parse($customer_detail->plan_end_date)->toDateString();
         $customerStartTime = $customer->start_time;
         $customerEndTime   = $customer->end_time;
        
@@ -2984,39 +2984,33 @@ class LearnerController extends Controller
         
         foreach ($futurebookings as $fb) {
 
-            $futureStartDate = $fb->plan_start_date;
-            $futureEndDate   = $fb->plan_end_date;
+            $futureStartDate = Carbon::parse($fb->plan_start_date)->toDateString();
+            $futureEndDate   = Carbon::parse($fb->plan_end_date)->toDateString();
 
             $futureStartTime = $fb->start_time;
             $futureEndTime   = $fb->end_time;
 
-            // ------------------------------
-            // 1️⃣ DATE RANGE OVERLAP CHECK
-            // ------------------------------
+            // 1. Date Overlap
             $dateOverlap = (
                 ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
                 ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
                 ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
             );
 
-            if (!$dateOverlap) {
-                continue; // no date overlap, skip
-            }
+            if (!$dateOverlap) continue;
 
-            // ------------------------------
-            // 2️⃣ TIME RANGE OVERLAP CHECK
-            // ------------------------------
+            // 2. Time Overlap
             $timeOverlap = (
-                ($futureStartTime < $customerEndTime) &&
-                ($futureEndTime > $customerStartTime)
+                $futureStartTime < $customerEndTime &&
+                $futureEndTime > $customerStartTime
             );
 
-            // If both DATE and TIME overlap → seat not available
             if ($timeOverlap) {
-                $status = 2;
+                $status = 2; // Future booking clash
                 break;
             }
         }
+
 
 
         return response()->json($status);
