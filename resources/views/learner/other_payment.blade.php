@@ -24,25 +24,28 @@ $class=$planDetails['class'];
                         <span>Full Name</span>
                         <h4>{{ $customer->learner->name }}</h4>
                     </li>
+                    @if(!in_array('2', toggleHideField()))
                     <li>
                         <span>DOB</span>
                         <h4>{{ $customer->learner->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'DOB Not Available' }}</h4>
                     </li>
+                    @endif
                     <li>
                         <span>Mobile</span>
                         <h4>+91-{{ $customer->learner->mobile }}</h4>
                     </li>
+                    @if(!in_array('1', toggleHideField()))
                     <li>
                         <span>Email</span>
                         <h4><a href="mailto:{{$customer->email}}" class="text-white"> {!! $customer->learner->email ? $customer->learner->email : 'Email ID Not Available' !!} </a></h4>
                     </li>
+                    @endif
                 </ul>
             </div>
 
             <div class="form-input mb-4">
                 <h4 class="inner-heading">Other Payment</h4>
-                <div class="tip"><i class="fa-solid fa-gem pe-1"></i> Learners can request to change their current  seat to another available seat. If the requested seat is available, the learner’s current seat will be swapped with the
-                 new one.</div>
+                <div class="tip"><i class="fa-solid fa-gem pe-1"></i> If you want to take any extra payment from a student, use this option. It will add the payment to your revenue.</div>
                 <form action="{{route('learner.other.payment.store')}}" method="POST" enctype="multipart/form-data" id="other-payment_page"  class="payment_page">
                     @csrf
                     @method('POST')

@@ -6398,6 +6398,15 @@ ul.userPermissionList li {
     font-style: italic;
 }
 
+.text-information {
+    color: #5A6F8A !important;
+    font-size: .8rem !important;
+    line-height: 17px;
+    display: block;
+    margin-bottom: .3rem;
+    margin-top: .3rem;
+}
+
 /* Reacnt Activity CSS */
 ul.reacentActivity {
     list-style: none;

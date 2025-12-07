@@ -3,7 +3,7 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
-<!-- Branch Selector -->
+
 
 @if(session('error'))
     <div class="alert alert-danger">
@@ -28,7 +28,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
             <div class="row g-4">
                 <!-- Branch Name -->
                 <div class="col-lg-6">
-                    <label for="name"> Library Branch Name <span>*</span></label>
+                    <label for="name"> Branch Name <span>*</span></label>
                     <input type="text" id="name"
                             class="form-control @error('name') is-invalid @enderror"
                             name="name"
@@ -40,9 +40,10 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <small class="text-information">Note : For internal use only. You can’t change this later.</small>
                 </div>
                     <div class="col-lg-6">
-                    <label for="name"> Display Library Branch Name <span>*</span></label>
+                    <label for="name"> Branch Display Name <span>*</span></label>
                     <input type="text" 
                             class="form-control @error('display_name') is-invalid @enderror"
                             name="display_name"
@@ -54,6 +55,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <small class="text-information">Note : This will be visible in your online listing.</small>
                 </div>
 
                 <!-- Branch Email -->
@@ -78,9 +80,10 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                     @error('mobile')
                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
+                    
                 </div>
                 @can('has-permission','QR Seat Booking')
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                         <label for="mobile">UPI ID(for payment receive)<span>*</span></label>
                         <input type="text" 
                                 class="form-control  @error('upi_id') is-invalid @enderror"
@@ -89,6 +92,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         @error('upi_id')
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
+                        <small class="text-information">Note : Add your UPI ID to enable online and QR-code bookings from your listing page.</small>
                     </div>
                 @endcan
             </div>
@@ -107,12 +111,12 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                     @error('working_days')
                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
-                    <span class="text-info">You can edit this according to your Library</span>
+                    <small class="text-information">Note : You can edit this according to your Library</small>
                 </div>
 
                 <!-- Branch Description -->
-                    <div class="col-lg-12">
-                    <label for="description">Library Description </label>
+                <div class="col-lg-12">
+                    <label for="description">Tell us about your library: when it began and what you provide for your learners. </label>
                     <textarea id="description"
                                 class="form-control  @error('description') is-invalid @enderror"
                                 name="description" rows="5"
@@ -124,18 +128,35 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
 
                 <!-- Library Category -->
                 <div class="col-lg-12">
-                    <label for="library_category">Library Category </label>
+                    <label for="library_category">Library Category</label>
                     <select name="library_category" id="library_category"
                             class="form-select @error('library_category') is-invalid @enderror">
+
                         <option value="">Select Category</option>
-                        <option value="Public" {{ old('library_category', $branch->library_category ?? '') == 'Public' ? 'selected' : '' }}>Public</option>
-                        <option value="Private" {{ old('library_category', $branch->library_category ?? '') == 'Private' ? 'selected' : '' }}>Private</option>
+
+                        {{-- Show existing DB value if it’s not in the list --}}
+                        @if($branch->library_category && !in_array($branch->library_category, ['Public','Private']))
+                            <option value="{{ $branch->library_category }}" selected>
+                                {{ $branch->library_category }}
+                            </option>
+                        @endif
+
+                        <option value="Public"
+                            {{ old('library_category', $branch->library_category ?? '') === 'Public' ? 'selected' : '' }}>
+                            Public
+                        </option>
+
+                        <option value="Private"
+                            {{ old('library_category', $branch->library_category ?? '') === 'Private' ? 'selected' : '' }}>
+                            Private
+                        </option>
+
                     </select>
+
                     @error('library_category')
                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
                 </div>
-
             </div>
         </div>
         @endif 
@@ -152,6 +173,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <small class="text-information">Note : Add your correct address to show it on your listing page.”</small>
                 </div>
 
                 <div class="col-lg-4">
@@ -242,6 +264,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <small class="text-information">Note : Enter 0 if you don’t offer lockers.</small>
                 </div>
                 <div class="col-lg-6">
                     <label for="">Extend Days <span>*</span></label>
@@ -251,6 +274,7 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
+                    <small class="text-information">Note : Enter days allowed after plan expiry.</small>
                 </div>
                 
                 <div class="col-lg-6">
@@ -370,7 +394,8 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                     @else
                         <!-- Show empty preview or placeholder -->
-                        <p class="text-muted">No logo uploaded</p>
+                        <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        <p class="text-muted text-center">No logo uploaded</p>
                     @endif
                 </div>
                     <div class="progress">
@@ -385,8 +410,9 @@ method="POST"enctype="multipart/form-data"  id="branchUpdate">
                         </span>
                         @enderror
                     </label>
-                    <small class="text-info d-block">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
+                    <small class="text-info d-block" style="font-size: .8rem;">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
                     <div id="logoUploadError" class="text-danger mt-2"></div>
+                    <small class="text-information">Upload a logo to display it in your account and on receipts.</small>
 
                 </div>
 
