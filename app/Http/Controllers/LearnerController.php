@@ -2957,13 +2957,15 @@ class LearnerController extends Controller
 
         // for future booking
          $futurebookings = $this->getLearnersByLibrary()
+            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $request->new_seat_id)
-            ->where('learner_detail.plan_type_id',$request->plan_type_id)
             ->where('learner_detail.plan_start_date','>',date('Y-m-d'))
-            ->get(['plan_start_date','plan_end_date']);
-        $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->select('plan_start_date','plan_end_date')->first();
-        $customerStart = $customer_detail->plan_start_date;
-        $customerEnd   = $customer_detail->plan_end_date;
+            ->get(['plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time']);
+        $customer_detail=LearnerDetail::where('learner_id',$request->user_id)->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('plan_start_date','plan_end_date','plan_types.start_time', 'plan_types.end_time')->first();
+        $customerStartDate = $customer_detail->plan_start_date;
+        $customerEndDate   = $customer_detail->plan_end_date;
+        $customerStartTime = $customer->start_time;
+        $customerEndTime   = $customer->end_time;
        
         // all future booking get
 
@@ -2982,19 +2984,40 @@ class LearnerController extends Controller
         
         foreach ($futurebookings as $fb) {
 
-            $futureStart = $fb->plan_start_date;
-            $futureEnd   = $fb->plan_end_date;
+            $futureStartDate = $fb->plan_start_date;
+            $futureEndDate   = $fb->plan_end_date;
 
-            // Check if date ranges overlap
-            if (
-                ($futureStart >= $customerStart && $futureStart <= $customerEnd) ||  // starts inside customer range
-                ($futureEnd >= $customerStart && $futureEnd <= $customerEnd) ||      // ends inside
-                ($futureStart <= $customerStart && $futureEnd >= $customerEnd)       // covers entire customer range
-            ) {
+            $futureStartTime = $fb->start_time;
+            $futureEndTime   = $fb->end_time;
+
+            // ------------------------------
+            // 1️⃣ DATE RANGE OVERLAP CHECK
+            // ------------------------------
+            $dateOverlap = (
+                ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
+                ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
+                ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
+            );
+
+            if (!$dateOverlap) {
+                continue; // no date overlap, skip
+            }
+
+            // ------------------------------
+            // 2️⃣ TIME RANGE OVERLAP CHECK
+            // ------------------------------
+            $timeOverlap = (
+                ($futureStartTime < $customerEndTime) &&
+                ($futureEndTime > $customerStartTime)
+            );
+
+            // If both DATE and TIME overlap → seat not available
+            if ($timeOverlap) {
                 $status = 2;
-                break; // no need to check more
+                break;
             }
         }
+
 
         return response()->json($status);
     }
