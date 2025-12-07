@@ -514,6 +514,7 @@ class LearnerController extends Controller
              return redirect()->back()->with('error', 'Total available hours not set.');
 
         }
+      
 
          if (!Gate::allows('has-permission', 'Change Plan')) {
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
@@ -658,7 +659,10 @@ class LearnerController extends Controller
             $pending_refund = 0;
             $dr_cr='Cr';
         }
-        if(($pending_amount > 0 || $pending_refund!=0) && !$request->due_date){
+        
+        $due_date = $request->due_date ?? ($learnerTransaction->due_date ?? null);
+
+        if(($pending_amount > 0 || $pending_refund!=0) && empty($due_date)){
             return redirect()->back()->with('error', 'Due date is required');
         }
         if ($pending_amount < 0) {
@@ -675,8 +679,8 @@ class LearnerController extends Controller
             $learnerTransaction->paid_amount    = $paid_amount;
             $learnerTransaction->pending_amount = $pending_amount;
             $learnerTransaction->refund         = $pending_refund;   // keep refund only if negative diff
-            $learnerTransaction->due_date       = $request->due_date ?? null;
-            $learnerTransaction->discount_amount       =$discount; 
+            $learnerTransaction->due_date       = $due_date ?? null;
+            $learnerTransaction->discount_amount =$discount; 
            
             $learnerTransaction->save();
 
@@ -1124,9 +1128,10 @@ class LearnerController extends Controller
             } else {
                 $transaction_date =null;
             }
-           
-           
-            
+
+            $due_date = $request->due_date ?? null;
+
+       
             if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode!=3) && $request->expectsJson()) {
                 return response()->json([
                     'error' => true,
@@ -1134,7 +1139,7 @@ class LearnerController extends Controller
                 ], 422);
                 die;
             }
-            if (($pending_amount > 0) && (!$request->due_date)  && $request->expectsJson() && $payment_mode!=3) {
+            if (($pending_amount > 0) &&  empty($due_date)  && $request->expectsJson() && $payment_mode!=3) {
                 return response()->json([
                     'error' => true,
                     'message' => 'Due date is required',
@@ -1145,7 +1150,7 @@ class LearnerController extends Controller
                 return redirect()->back()->with('error', 'Paid amount is not valid');
              }
 
-            if (($pending_amount > 0) && (!$request->due_date) && $payment_mode!=3) {
+            if (($pending_amount > 0) && ( empty($due_date)) && $payment_mode!=3) {
                return redirect()->back()->with('error', 'Due date is required');
             }
             

@@ -263,7 +263,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
                         <div class="col-lg-4">
-                            <label for="">Choose Due Date<span>*</span></label>
+                            <label for="">Choose Due Date</label>
                             <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
                             @error('due_date')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
