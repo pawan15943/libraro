@@ -1468,8 +1468,12 @@
                 <div class="row g-4 delete">
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input isRefund" type="checkbox">
+                            <input class="form-check-input refundType isRefund" type="checkbox">
                             <label class="form-check-label">Do you want to Refund</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
+                            <label class="form-check-label">Do you want to Without Refund</label>
                         </div>
                     </div>
                 
@@ -1497,8 +1501,15 @@
             cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, delete it!',
             didOpen: () => {
-                $('.isRefund').on('change', function () {
+               
+
+                 $('.refundType').on('change', function () {
+
                     if ($(this).is(':checked')) {
+                        $('.refundType').not(this).prop('checked', false);
+                    }
+
+                    if ($('.isRefund').is(':checked')) {
                         $('.refundAmountDiv').show();
                     } else {
                         $('.refundAmountDiv').hide();
@@ -1508,6 +1519,13 @@
             },
             preConfirm: () => {
                 const isRefund = $('.isRefund').is(':checked');
+                const withoutRefundSelected = $('.refundNo').is(':checked');
+
+                // ⭐ REQUIRED VALIDATION — at least ONE must be selected
+                if (!isRefund && !withoutRefundSelected) {
+                    Swal.showValidationMessage('Please select one from Refund or Without Refund');
+                    return false;
+                }
                 const refundAmount = parseFloat($('.refundAmount').val()) || 0;
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
@@ -1568,12 +1586,62 @@
         var oldValue = seat;
         Swal.fire({
             title: 'Are you sure?',
-            text: "This action will permanently delete the learner record.",
+             html: `
+            <p style="margin-bottom:10px;">This action will permanently delete the learner record.</p>
+            
+            <div style="text-align:left;">
+                <div class="form-check">
+                    <input class="form-check-input delete-all-yes" type="checkbox" id="deleteAllYes">
+                    <label class="form-check-label" for="deleteAllYes"> Delete ALL related records (YES) </label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input delete-all-no" type="checkbox" id="deleteAllNo">
+                    <label class="form-check-label" for="deleteAllNo"> Delete ONLY this main record (NO) </label>
+                </div>
+
+                <small class="text-danger required-msg" style="display:none;">
+                    Please select one option.
+                </small>
+            </div>
+        `,
             iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, delete it!',
+            didOpen: () => {
+
+                // Make checkboxes mutually exclusive
+                $('.delete-all-yes').change(function () {
+                    if ($(this).is(':checked')) {
+                        $('.delete-all-no').prop('checked', false);
+                    }
+                });
+
+                $('.delete-all-no').change(function () {
+                    if ($(this).is(':checked')) {
+                        $('.delete-all-yes').prop('checked', false);
+                    }
+                });
+            },
+
+            preConfirm: () => {
+
+                let yesChecked = $('.delete-all-yes').is(':checked');
+                let noChecked = $('.delete-all-no').is(':checked');
+
+                if (!yesChecked && !noChecked) {
+                    $('.required-msg').show();
+                    Swal.showValidationMessage('You must choose YES or NO');
+                    return false;
+                }
+
+                return {
+                    deleteAll: yesChecked ? 1 : 0,
+                    learnerDetail: learnerDetail
+                };
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -1581,8 +1649,9 @@
                     type: 'DELETE',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        learnerDetail: learnerDetail,
-                        permanent: permanent
+                        learnerDetail: result.value.learnerDetail,
+                        permanent: permanent,
+                        deleteAll: result.value.deleteAll
                     },
                     success: function (response) {
                         // Optional logging function call
