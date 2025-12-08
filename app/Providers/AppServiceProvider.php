@@ -367,6 +367,11 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Notification Dashboard' => route('notification.dashboard'),
             ],
+            'general.seat.history'=>[
+                'Dashboard' => route('library.home'),
+                'Seat Booking History' => route('seats.history'),
+                'Expired Learner History' => route('seats.history.show'),
+            ],
 
             // Learner Bread crumb
 
@@ -510,7 +515,8 @@ class AppServiceProvider extends ServiceProvider
             'learner.checklist' => 'Print ID card in bulk',
             'notifications.subscription' =>  'Buy Message Subscription',
             'notifications.settings' =>  'Notification Console',
-            'notification.dashboard' =>  'Notification Dashbaord'
+            'notification.dashboard' =>  'Notification Dashbaord',
+            'general.seat.history'=>'General Seat History',
             
         ];
 

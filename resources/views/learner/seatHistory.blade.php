@@ -54,6 +54,7 @@
                 
                 $due_date = null;
                 }
+                $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
             @endphp
 
             <div class="row">
@@ -64,9 +65,9 @@
                             <span>Seat No.: {{ getSeatDisplayByMainNo($seat->seat_no) }}</span>
                         
                             @if($operation == 'closeSeat')
-                            <span class="extended"> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                            <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                             @elseif($operation == 'deleteSeat' && $user->deleted_at !=null)
-                            <span class="extended"> Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                            <span class="extended"> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                             @else
                             {!! getUserStatusWithSpan($user->plan_end_date,$learner_id) !!}
                             @endif
