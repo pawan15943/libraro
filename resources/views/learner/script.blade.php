@@ -1483,11 +1483,11 @@
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount" maxlength='4'>
+                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount digit-only" maxlength='4'>
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund" maxlength='4'>
+                        <input type="text" placeholder="Enter Amount" class="form-control digit-only pendingRefund" maxlength='4'>
                     </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
@@ -1501,22 +1501,26 @@
             cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, delete it!',
             didOpen: () => {
-               
 
-                 $('.refundType').on('change', function () {
+                let popup = Swal.getPopup();
 
+                $(popup).find('.refundType').on('change', function () {
+
+                    // Make checkboxes exclusive
                     if ($(this).is(':checked')) {
-                        $('.refundType').not(this).prop('checked', false);
+                        $(popup).find('.refundType').not(this).prop('checked', false);
                     }
 
-                    if ($('.isRefund').is(':checked')) {
-                        $('.refundAmountDiv').show();
+                    // If Refund selected → show all refundAmountDiv
+                    if ($(popup).find('.isRefund').is(':checked')) {
+                        $(popup).find('.refundAmountDiv').css('display', 'block');
                     } else {
-                        $('.refundAmountDiv').hide();
-                        $('.paybleRefund, .refundAmount, .pendingRefund, .refundRemark').val('');
+                        // Otherwise hide
+                        $(popup).find('.refundAmountDiv').css('display', 'none');
                     }
                 });
             },
+
             preConfirm: () => {
                 const isRefund = $('.isRefund').is(':checked');
                 const withoutRefundSelected = $('.refundNo').is(':checked');

@@ -27,6 +27,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class MasterController extends Controller
 {
@@ -167,8 +168,6 @@ class MasterController extends Controller
         return redirect()->route('permissions') ->with('success', $message);
     }
 
-
-  
     public function deletePermission($permissionId)
     {
         $permission = Permission::findOrFail($permissionId);
@@ -190,9 +189,6 @@ class MasterController extends Controller
         return redirect()->back()->with('success', 'Permission successfully deleted from the subscription.');
     }
     
-    
-
-    
     public function getPermissions($id)
     {
         $subscription = Subscription::with('permissions')->find($id);
@@ -205,9 +201,6 @@ class MasterController extends Controller
   
         return response()->json(['permissions' => $permissions]);
     }
-
-
-    
 
     public function assignPermissionsToSubscription(Request $request)
     {
@@ -276,6 +269,21 @@ class MasterController extends Controller
                     'error' => true,
                     'message' => 'Selected hours exceed the library’s available hours.'
                 ]);
+            }
+            
+           
+            $minTime = PlanType::min('start_time');
+            $maxTime = PlanType::max('end_time');
+
+            $start = Carbon::parse($request->start_time);
+            $end   = Carbon::parse($request->end_time);
+
+            $globalMin = Carbon::parse($minTime);
+            $globalMax = Carbon::parse($maxTime);
+
+            // 1. Check within allowed time range
+            if ($start->lt($globalMin) || $end->gt($globalMax)) {
+                return back()->with('error', "Time must be between $minTime and $maxTime.");
             }
 
             $data = $request->except(['timming']);
@@ -360,6 +368,7 @@ class MasterController extends Controller
              
                 $this->conditionFunction($request,$plan_type_name);
             }
+           
                
             unset($data['databasemodel']); 
             unset($data['databasetable']); 
@@ -442,8 +451,6 @@ class MasterController extends Controller
 
 
     }
-    
-  
     
     public function masterEdit(Request $request){
         
@@ -610,7 +617,7 @@ class MasterController extends Controller
         return view('master.tokenmoney', compact('token_amount'));
     }
     
-        public function examView()
+    public function examView()
     {
       
         $data = DB::table('exams')->get(); 
@@ -670,42 +677,42 @@ class MasterController extends Controller
             }
         }
     }
-     public function deleteMaster(Request $request, $id){
-        $table = $request->input('table');
-        $modelClass = 'App\\Models\\' . $table;
-      
-        if (!class_exists($modelClass)) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
-        }
-        $data = $modelClass::withTrashed()->find($id);
-         if (!$data) {
-            return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
-        }
+    public function deleteMaster(Request $request, $id){
+    $table = $request->input('table');
+    $modelClass = 'App\\Models\\' . $table;
+    
+    if (!class_exists($modelClass)) {
+        return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
+    }
+    $data = $modelClass::withTrashed()->find($id);
+        if (!$data) {
+        return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+    }
 
-            if ($modelClass === 'App\\Models\\Floor') {
-                
-                $data->delete(); // permanently deletes because no SoftDeletes
-                $status = 'permanently deleted';
+        if ($modelClass === 'App\\Models\\Floor') {
+            
+            $data->delete(); // permanently deletes because no SoftDeletes
+            $status = 'permanently deleted';
+        } else {
+            
+            // For models with soft deletes
+            if (method_exists($modelClass, 'trashed') && $data->trashed()) {
+                $data->restore();
+                $status = 'activated';
             } else {
-               
-                // For models with soft deletes
-                if (method_exists($modelClass, 'trashed') && $data->trashed()) {
-                    $data->restore();
-                    $status = 'activated';
-                } else {
-                    $data->delete();
-                    $status = 'deactivated';
-                }
+                $data->delete();
+                $status = 'deactivated';
             }
-                return response()->json([
-                'status' => 'success',
-                'message' => 'Data successfully ' . $status,
-                'data_status' => $status
-            ]);
+        }
+            return response()->json([
+            'status' => 'success',
+            'message' => 'Data successfully ' . $status,
+            'data_status' => $status
+        ]);
 
 
-        
-     }
+    
+    }
     
 
 
@@ -749,7 +756,7 @@ class MasterController extends Controller
             
         }elseif($request->databasemodel=='Hour'){
             
-            $query =DB::table('hour')->where('branch_id', $request->branch_id);
+            $query =Hour::where('branch_id', $request->branch_id);
             if($request->hour <24 && (PlanType::where('day_type_id',1)->value('slot_hours') != $request->hour)){
                 throw new \Exception('Hour Not valid');
             }
@@ -779,6 +786,7 @@ class MasterController extends Controller
         }
        
         if($request->databasemodel == 'PlanType'){
+           
             $request->validate([
                 'day_type_id' => 'required',
                 'start_time' => 'required',
