@@ -3151,9 +3151,20 @@ class LearnerController extends Controller
                             $customer->remark =  $request->remark;
                         }
                     // Delete associated LearnerTransaction records
-                    LearnerDetail::where('id', $request->learnerDetail)->update([
-                        'plan_end_date' => $today, 'status' => 0
-                    ]);
+                    $exists = LearnerDetail::where('id', $request->learnerDetail)->where('plan_start_date', '>', date('Y-m-d')) ->exists();
+
+                    if ($exists) {
+                        LearnerDetail::where('id', $request->learnerDetail)->update([
+                            'plan_start_date' => $today,
+                            'plan_end_date'   => $today,
+                            'status'          => 0
+                        ]);
+                    } else {
+                        LearnerDetail::where('id', $request->learnerDetail)->update([
+                            'plan_end_date' => $today,
+                            'status'        => 0
+                        ]);
+                    }
 
                     $customer->status = 0;
                     $customer->save();

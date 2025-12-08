@@ -1447,7 +1447,6 @@
         var id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
         var seat = $(this).data('seat');
-     
         var paybleRefund = parseFloat($(this).data('payblerefund'));
 
         var url = '{{ route('learners.destroy', ':id') }}';
@@ -1530,11 +1529,14 @@
                     Swal.showValidationMessage('Please select one from Refund or Without Refund');
                     return false;
                 }
-                const refundAmount = parseFloat($('.refundAmount').val()) || 0;
+                let refundValue = $('.refundAmount').val();
+                let refundAmount = parseFloat(refundValue);
+
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
 
-                if (isRefund && (!refundAmount || refundAmount < 0 || paybleRefund < refundAmount)) {
+                
+                if (isRefund && (refundValue === "" || isNaN(refundAmount) || refundAmount < 0 || refundAmount > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
@@ -1683,9 +1685,7 @@
     $(document).on('click', '.link-close-plan', function() {
        var learner_id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
-        var paybleRefund = $(this).data('payblerefund');
-        console.log(learner_id);
-
+        var paybleRefund = parseFloat($(this).data('payblerefund'));
         var url = '{{ route('learners.close') }}'; // Adjust the route as necessary
         var oldValue=this.getAttribute('data-plan_end_date');
         var formId='closeSeat';
@@ -1702,8 +1702,12 @@
                 <div class="row g-4 delete">
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input isRefund" type="checkbox">
+                            <input class="form-check-input refundType isRefund" type="checkbox">
                             <label class="form-check-label">Do you want to Refund</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
+                            <label class="form-check-label">Do you want to Without Refund</label>
                         </div>
                     </div>
                 
@@ -1730,26 +1734,40 @@
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, Close it!',
-            didOpen: () => {
-                $('.isRefund').on('change', function () {
+           didOpen: () => {
+
+                let popup = Swal.getPopup();
+
+                $(popup).find('.refundType').on('change', function () {
+
+                    // Make checkboxes exclusive
                     if ($(this).is(':checked')) {
-                        $('.refundAmountDiv').show();
+                        $(popup).find('.refundType').not(this).prop('checked', false);
+                    }
+
+                    // If Refund selected → show all refundAmountDiv
+                    if ($(popup).find('.isRefund').is(':checked')) {
+                        $(popup).find('.refundAmountDiv').css('display', 'block');
                     } else {
-                        $('.refundAmountDiv').hide();
-                        $('.paybleRefund, .refundAmount, .pendingRefund, .refundRemark').val('');
+                        // Otherwise hide
+                        $(popup).find('.refundAmountDiv').css('display', 'none');
                     }
                 });
             },
             preConfirm: () => {
                const isRefund = $('.isRefund').is(':checked');
-                const refundAmount = parseFloat($('.refundAmount').val()) || 0;
+               const withoutRefundSelected = $('.refundNo').is(':checked');
+                let refundValue = $('.refundAmount').val();
+                let refundAmount = parseFloat(refundValue);
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
-                console.log('pendingRefund',pendingRefund);
-                console.log('refundAmount',refundAmount);
-                console.log('paybleRefund',paybleRefund);
-                
-                if (isRefund && (!refundAmount || refundAmount < 0 || paybleRefund < refundAmount)) {
+              
+                 // ⭐ REQUIRED VALIDATION — at least ONE must be selected
+                if (!isRefund && !withoutRefundSelected) {
+                    Swal.showValidationMessage('Please select one from Refund or Without Refund');
+                    return false;
+                }
+                if (isRefund && (refundValue === "" || isNaN(refundAmount) || refundAmount < 0 || refundAmount > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
                 }
