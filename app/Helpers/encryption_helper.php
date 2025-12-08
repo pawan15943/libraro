@@ -774,7 +774,7 @@ if (!function_exists('getLearnerOperation')) {
         $operation = DB::table('learner_operations_log')
             ->where('learner_detail_id', $learnerDetailId)
             ->orderByDesc('id') // latest operation
-            ->select('operation')
+            ->select('operation','created_at')
             ->first();
 
         return $operation ?? null;

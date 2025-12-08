@@ -27,6 +27,7 @@ There is currently no history available for this General seat for any learners.<
         }
         $learner=myLearner($value->learner_id);
         $operation = optional(getLearnerOperation($learner_detail_id))->operation;
+        $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
         $learner_id=$value->learner_id;
         @endphp
         <div class="row">
@@ -41,9 +42,9 @@ There is currently no history available for this General seat for any learners.<
                         @endif
 
                         @if($operation == 'closeSeat')
-                        <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                        <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
-                        <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                        <span class="extended"> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                         @else
                         {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                         @endif

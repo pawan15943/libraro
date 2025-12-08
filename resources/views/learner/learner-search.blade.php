@@ -58,6 +58,7 @@
             $today = \Carbon\Carbon::now();
             $threeDaysAfterStart  = \Carbon\Carbon::parse($value->plan_start_date)->addDays(3);
             $operation = optional(getLearnerOperation($learner_detail_id))->operation;
+            $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
             $learner_id=$value->id;
         @endphp
     <div class="row ">
@@ -71,9 +72,9 @@
                     <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
                     @endif
                     @if($operation == 'closeSeat')
-                    <span class="extended"> Closed Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                    <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                     @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
-                    <span class="extended"> Deleted Seat on {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</span>
+                    <span class="extended"> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                     @else
                     {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
                     @endif
