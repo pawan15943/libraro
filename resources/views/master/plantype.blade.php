@@ -26,7 +26,9 @@
     <div class="col-lg-12">
         <p class="info-message">
             <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
-            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif Plan Type / Shifts for your library.
+            <b>Important :</b> Here you can @if(isset($plans)) Add @else Edit @endif Plan Type / Shifts for your library.<br>
+            <b>Operating Hour:</b> {{$operatingHour->hour}}<br>
+            <b>Note:</b>Shift hours can’t be outside the library’s opening hours. Make sure your times fit within them.
         </p>
     </div>
 </div>

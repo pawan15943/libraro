@@ -283,7 +283,7 @@ class MasterController extends Controller
 
             // 1. Check within allowed time range
             if ($start->lt($globalMin) || $end->gt($globalMax)) {
-                return back()->with('error', "Time must be between $minTime and $maxTime.");
+                return back()->with('error', "You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.");
             }
 
             $data = $request->except(['timming']);
@@ -479,6 +479,7 @@ class MasterController extends Controller
     }
     public function planTypeCreate($id = null)
     {
+        
         $planType = null;
         if ($id) {
             $planType = PlanType::find($id);  // Load existing record for edit
@@ -486,8 +487,9 @@ class MasterController extends Controller
                 return redirect()->route('planType.create')->with('error', 'Plan type not found.');
             }
         }
+        $operatingHour=Hour::select('hour')->first();
         // Pass $planType to view, it will be null for add and model instance for edit
-        return view('master.plantype', compact('planType'));
+        return view('master.plantype', compact('planType','operatingHour'));
     }
      public function floorView()
     {
