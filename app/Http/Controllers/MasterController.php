@@ -281,9 +281,17 @@ class MasterController extends Controller
             $globalMin = Carbon::parse($minTime);
             $globalMax = Carbon::parse($maxTime);
 
+            if ($end->lessThanOrEqualTo($globalMin)) {
+                $end->addDay();
+            }
+            $totalHours = $globalMin->diffInHours($end);
+
             // 1. Check within allowed time range
-            if ($start->lt($globalMin) || $end->gt($globalMax)) {
-                return back()->with('error', "You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.");
+            if ($totalHours > $branchRecord->hour) {
+                 return response()->json([
+                    'error' => true,
+                    'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
+                ]);
             }
 
             $data = $request->except(['timming']);
