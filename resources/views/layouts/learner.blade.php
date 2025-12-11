@@ -21,21 +21,23 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
-<meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
+
+    <meta name="format-detection" content="telephone=no">
 </head>
 
 <body>
-<!-- New Design Dahsbard Library -->
-<div class="support-container">
-    <div class="support-icon" onclick="toggleSupportCard()">
-        <i class="fa-solid fa-phone-volume"></i>
+    <!-- New Design Dahsbard Library -->
+    <div class="support-container">
+        <div class="support-icon" onclick="toggleSupportCard()">
+            <i class="fa-solid fa-phone-volume"></i>
+        </div>
+        <div class="support-card" id="supportCard" style="display:none;">
+            <p><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
+            <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
+            <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
+        </div>
     </div>
-    <div class="support-card" id="supportCard" style="display:none;">
-        <p><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
-        <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
-        <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
-    </div>
-</div>
 
 
     <div class="library-dashbaord">
@@ -54,7 +56,11 @@
                     @yield('content')
                     <script>
                         // Session expiration popup logic here
-                        const sessionLifetime = {{config('session.lifetime')}}* 60; // Convert to seconds
+                        const sessionLifetime = {
+                            {
+                                config('session.lifetime')
+                            }
+                        }* 60; // Convert to seconds
                         const warningTime = sessionLifetime - 60; // Show popup 1 minute before expiration
 
                         setTimeout(function() {
@@ -80,7 +86,7 @@
 
 
     </div>
-   
+
 
 
 
@@ -91,12 +97,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  
+
     <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js"></script>
-        
+
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
@@ -105,7 +111,7 @@
 
     <script src="{{ url('public/js/main-scripts.js') }}"></script>
     <script src="{{ url('public/js/main-validation.js') }}"></script>
-   
+
 
 
     <script>
@@ -168,14 +174,14 @@
                 $('.sidebar').toggleClass('w-120');
             });
 
-            
+
         });
         $(document).ready(function() {
             $('#sidebar_mob').on('click', function() {
                 $('.sidebar').toggleClass('w-120');
             });
 
-            
+
         });
     </script>
     <script>
@@ -244,11 +250,11 @@
         });
     </script>
 
-<script>
-    function toggleSupportCard() {
-        $('#supportCard').toggle();
-    }
-</script>
+    <script>
+        function toggleSupportCard() {
+            $('#supportCard').toggle();
+        }
+    </script>
 
 </body>
 

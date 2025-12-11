@@ -27,7 +27,7 @@
                     </li>
                     @endif
 
-                    
+
                     <li>
                         <span>Mobile</span>
                         <h4>{{ $customer->mobile ? '+91-'.$customer->mobile : 'Not Updated Yet' }}</h4>
@@ -130,13 +130,13 @@
                             Not Updated Yet
                             @endif
 
-                           
+
 
                         </h4>
-                         {{-- ID Proof File --}}
-                            @if(!empty($customer->id_proof_file))
-                            <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150" class="circle" alt="ID Proof">
-                            @endif
+                        {{-- ID Proof File --}}
+                        @if(!empty($customer->id_proof_file))
+                        <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150" class="circle" alt="ID Proof">
+                        @endif
                     </li>
                     <li>
                         <span>Seat Created At</span>
@@ -257,7 +257,7 @@
                         <tbody>
                             @foreach($renew_detail as $key => $value)
                             @php
-                              $learner_id=$value->learner_id;
+                            $learner_id=$value->learner_id;
                             $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$value->id)->where('is_paid',1)->first();
                             @endphp
                             <tr>
@@ -330,10 +330,10 @@
                                 <td>{{ $learner->email }}</td>
                                 @if ($learner->learnerDetails->isNotEmpty())
                                 @php
-                                 $firstDetail = $learner->learnerDetails->first(); 
+                                $firstDetail = $learner->learnerDetails->first();
                                 $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$firstDetail->id)->first();
 
-                                 @endphp
+                                @endphp
                                 <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
                                 <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td>
                                 <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td>
@@ -344,7 +344,7 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 <input type="hidden" name="learner_id" value="{{$learner->id}}">
                                                 <input type="hidden" name="learner_detail_id" value="{{ $firstDetail->id ?? 'NA'}}">
@@ -354,7 +354,7 @@
                                                     <i class="fa fa-print"></i>
                                                 </button>
                                             </form>
-                                         
+
                                         </li>
                                         @endcan
                                     </ul>
@@ -365,10 +365,10 @@
                             </tr>
                             @foreach ($learner->learnerDetails->skip(1) as $detail)
                             @php
-                                $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$detail->id)->first();
+                            $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$detail->id)->first();
                             @endphp
                             <tr>
-                                 <td>{{ $learner->name }}<br>
+                                <td>{{ $learner->name }}<br>
                                     <small>{{getSeatDisplayByMainNo($learner->seat_no) ?? 'General'}}</small>
                                 </td>
                                 <td>{{ $learner->mobile }}</td>
@@ -383,7 +383,7 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                             <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
                                                 <input type="hidden" name="learner_detail_id" value="{{ $detail->id ?? 'NA'}}">
@@ -393,7 +393,7 @@
                                                     <i class="fa fa-print"></i>
                                                 </button>
                                             </form>
-                                        
+
                                         </li>
                                         @endcan
                                     </ul>
@@ -411,11 +411,7 @@
     </div>
 
     <div class="col-lg-3 order-1 order-md-2">
-
-
-
         <!-- End -->
-
         <div class="seatnumber">
             @php
             $planDetails = getPlanStatusDetails($customer->plan_end_date);
