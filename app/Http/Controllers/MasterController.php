@@ -143,6 +143,7 @@ class MasterController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
            'permission_category_id' => 'required|exists:permission_categories,id',
+           'slug'=>'nullable|string',
         ]);
 
         
@@ -156,11 +157,11 @@ class MasterController extends Controller
         if ($permissionId) {
           
             $permission = Permission::findOrFail($permissionId);
-            $permission->update($request->only('name', 'description', 'guard_name', 'permission_category_id'));
+            $permission->update($request->only('name', 'description', 'guard_name', 'permission_category_id','slug'));
             $message = 'Permission updated successfully.';
         } else {
             
-            $permission = Permission::create($request->only('name', 'description', 'guard_name', 'permission_category_id'));
+            $permission = Permission::create($request->only('name', 'description', 'guard_name', 'permission_category_id','slug'));
           
             $message = 'Permission added successfully.';
         }

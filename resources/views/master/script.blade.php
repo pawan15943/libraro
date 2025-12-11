@@ -337,6 +337,33 @@
         });
     });
 
+    $(document).on('change', '.event', function () {
+
+    let plan_id = $('#price_plan_id').val();
+    let plan_type_id = $('#master_plan_type_id').val();
+   
+
+    if (plan_id !== "" && plan_type_id !== "") {
+
+        $.ajax({
+            url: "{{ route('getPricePlanwise') }}",
+            method: "GET",
+            data: {
+                plan_id: plan_id,
+                plan_type_id: plan_type_id
+            },
+            success: function (res) {
+               
+                $("#master_price").val(res); // Auto-fill price
+            }
+        });
+
+    } else {
+        $("#master_price").val(""); // Reset if any dropdown empty
+    }
+});
+
+
 
 </script>
 

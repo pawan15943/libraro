@@ -111,53 +111,7 @@ class LearnerController extends Controller
 
         return Validator::make($request->all(), $rules);
     }
-    // protected function dataUpdate()
-    // {
-    //     Log::info('Starting dataUpdate function');
-
-    //     $userUpdates = Learner::get();
-
-    //     foreach ($userUpdates as $userUpdate) {
-    //         $today = date('Y-m-d');
-    //         $customerdatas = LearnerDetail::where('learner_id', $userUpdate->id)->get();
-
-    //         $extend_day = getExtendDays();
-    //         foreach ($customerdatas as $customerdata) {
-    //             $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
-               
-    //             $current_date = Carbon::today();
-    //             $hasFuturePlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //                 ->where('plan_end_date', '>', $current_date->copy()->addDays(5))->where('status', 0)
-    //                 ->exists();
-    //             $hasPastPlan = LearnerDetail::where('learner_id', $userUpdate->id)
-    //                 ->where('plan_end_date', '<=', $current_date->copy()->addDays(5))
-    //                 ->exists();
-
-    //             $isRenewed = $hasFuturePlan && $hasPastPlan;
-
-    //             if ($planEndDateWithExtension->lte($today)) {
-    //                 $userUpdate->update(['status' => 0]);
-    //                 $customerdata->update(['status' => 0]);
-    //                 \Log::info("Updated Learner ID {$userUpdate->id} and Customer Data ID {$customerdata->id} to status 0.");
-    //             } elseif ($isRenewed) {
-    //                 LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_start_date', '<=', $today)->where('plan_end_date', '>', $current_date->copy()->addDays(5))->update(['status' => 1]);
-    //                 LearnerDetail::where('learner_id', $userUpdate->id)->where('plan_end_date', '<', $today)->update(['status' => 0]);
-    //             } else {
-    //                 Log::info("Else Learner ID");
-    //                  Learner::where('id', $customerdata->learner_id)
-    //                 ->where('status', '!=', 1)
-    //                 ->update(['status' => 1]);
-
-    //                 LearnerDetail::where('learner_id', $userUpdate->id)
-    //                     ->where('status', 0)
-    //                     ->where('plan_start_date', '<=', $today)
-    //                     ->where('plan_end_date', '>', $today)
-    //                     ->update(['status' => 1]);
-    //                 \Log::info("Updated Learner ID {$userUpdate->id} to status 1.");
-    //             }
-    //         }
-    //     }
-    // }
+ 
      public function dataUpdate()
     {
         $today = Carbon::today();
@@ -1845,8 +1799,6 @@ class LearnerController extends Controller
         ];
     }
 
-    
-
     public function checkPlanTypeSeatWise($seatNo,$requestPlanType)
     {
 
@@ -2488,7 +2440,7 @@ class LearnerController extends Controller
 
 
         $available_seat = $this->learnerService->getAvailableSeats();
-        $customer_status = learner::where('id', $customerId)->first();
+        $customer_status = Learner::where('id', $customerId)->first();
      
         $status = $customer_status->status ?? 0;
         $detailStatus = $customer_status->status ?? 0;
@@ -3016,7 +2968,7 @@ class LearnerController extends Controller
         return response()->json($status);
     }
 
-   public function destroy(Request $request, $id)
+    public function destroy(Request $request, $id)
     {
        
         try {
@@ -3239,9 +3191,6 @@ class LearnerController extends Controller
         return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment','filteredPlanTypes'));
     }
 
-    
-
-
     public function learnerExpire(Request $request, $id = null)
     {
 
@@ -3414,9 +3363,77 @@ class LearnerController extends Controller
 
     public function learnerProfile()
     {
-        $learner = LearnerDetail::withoutGlobalScopes()->where('learner_id', getLibraryId())->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
+        
+        // $learner = LearnerDetail::withoutGlobalScopes()->where('learner_id', getLibraryId())->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
+        $customerId = getAuthenticatedUser()->id ;
+        $is_renew = $this->learnerService->getRenewalStatus($customerId);
 
-        return view('learner.profile', compact('learner'));
+        $today = Carbon::today();
+        $hasFuturePlan = LearnerDetail::where('learner_id', $customerId)
+            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
+            ->exists();
+        $hasPastPlan = LearnerDetail::where('learner_id', $customerId)
+            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
+            ->exists();
+
+        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+
+        $available_seat = $this->learnerService->getAvailableSeats();
+        $customer_status = getAuthenticatedUser();
+     
+        $status = $customer_status->status ?? 0;
+        $detailStatus = $customer_status->status ?? 0;
+        $customer = $this->fetchCustomerData($customerId, $is_renew, $status, $detailStatus);
+
+        //renew History
+        $renew_detail = LearnerDetail::where('learner_detail.learner_id', $customerId)
+            ->with(['plan', 'planType'])
+            ->get();
+            
+        //seat history
+
+        if($customer->seat_no){
+            $seat_history = $this->getAllLearnersByLibrary()
+            ->where('seat_no', $customer->seat_no)
+            ->where('id', '!=', $customerId)
+            ->get();
+        }else{
+            $seat_history=null;
+        }
+       
+
+        $transaction = LearnerTransaction::where('learner_id', $customerId)->where('learner_detail_id', $customer->learner_detail_id)
+            ->orderBy('id', 'DESC')
+            ->first();
+
+
+
+        $all_transactions = LearnerTransaction::where('learner_id', $customerId)->where('is_paid', 1)->get();
+
+
+        $customer['renew_update'] = $is_renew_update;
+        if (isset($transaction) && $transaction->pending_amount > 0 &&  overdue($customerId, $transaction->pending_amount)) {
+            $customer['pending'] = $transaction->pending_amount;
+            $customer['overdue'] = "Overdue";
+        } elseif (isset($transaction) && $transaction->pending_amount > 0) {
+            $customer['pending'] = $transaction->pending_amount;
+            $customer['overdue'] = '';
+        } else {
+            $customer['pending'] = '';
+            $customer['overdue'] = '';
+        }
+        $customer['floor_seat_no']=getSeatDisplayByMainNo($customer->seat_no);
+
+        $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
+
+        $learnerlog = DB::table('learner_operations_log')
+            ->select('learner_id', 'created_at', DB::raw('MAX(operation) as operation'))
+            ->where('learner_id', $customerId)
+            ->groupBy('learner_id', 'created_at')
+            ->get();
+
+        return view('learner.profile', compact('customer', 'available_seat', 'renew_detail', 'seat_history', 'transaction', 'all_transactions', 'learner_request', 'learnerlog'));
+
     }
 
     public function learnerRequest()
@@ -3851,7 +3868,7 @@ class LearnerController extends Controller
         return $prefix . $randomNumber;
     }
 
-   public function makeOtherPayment(Request $request)
+    public function makeOtherPayment(Request $request)
     {
 
         $customer_detail_id = $request->id;
@@ -3862,7 +3879,7 @@ class LearnerController extends Controller
         return view('learner.other_payment', compact('customer','tokenMoney'));
     }
     
-   public function otherPaymentStore(Request $request)
+    public function otherPaymentStore(Request $request)
     {
       
         $request->validate([
@@ -3938,8 +3955,6 @@ class LearnerController extends Controller
             return redirect()->back()->with('error', 'An error occurred while processing payment.');
         }
     }
-
-    
 
     public function learnerIdCard($id){
         $learner_detail = LearnerDetail::where('id', $id)->with([ 'learner'])->first();
@@ -4181,6 +4196,158 @@ class LearnerController extends Controller
             'message' => 'Learner, learner details, and transactions restored successfully.',
         ]);
     }
+
+    //assign gift days
+    public function giftDaysAssign(Request $request)
+    {
+        $request->validate([
+            'learner_id' => 'required|integer',
+            'gift_days' => 'required|integer'
+        ]);
+
+        // Fetch active learner
+        $student = LearnerDetail::where('learner_id', $request->learner_id)
+            ->where('status', 1)
+            ->latest()
+            ->firstOrFail();
+
+        $newGiftDays = (int)$request->gift_days;
+
+        // Fetch or create gift days entry
+        $gift = DB::table('learner_gift_days')
+            ->where('learner_id', $request->learner_id)
+            ->first();
+
+        if (!$gift) {
+            // Create first entry
+            DB::table('learner_gift_days')->insert([
+                'learner_id' => $request->learner_id,
+                'total_gift_days' => max($newGiftDays, 0), // no negative first time
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Update plan_end_date
+            if ($newGiftDays > 0) {
+                $student->plan_end_date = Carbon::parse($student->plan_end_date)->addDays($newGiftDays);
+                $student->save();
+            }
+
+            return response()->json([
+                "status" => true,
+                "message" => $newGiftDays . " Gift Days added successfully"
+            ]);
+        }
+
+        // --- If record already exists ---
+        $oldTotal = $gift->total_gift_days;
+
+        if($oldTotal > $newGiftDays ){
+            // in this new days lessthen to old so decrement that new days
+            $incrementDecrementDay = $oldTotal - $newGiftDays;
+            $increment=false;
+        }else{
+             // in this new days greater then to old so increment that new days
+            $incrementDecrementDay = $newGiftDays - $oldTotal;
+             $increment=true;
+        }
+
+
+
+        // Update gift table
+        DB::table('learner_gift_days')
+            ->where('learner_id', $request->learner_id)
+            ->update([
+                'total_gift_days' => $newGiftDays,
+                'updated_at' => now()
+            ]);
+
+        // Update plan_end_date
+        if ($increment==true) {
+            $student->plan_end_date = Carbon::parse($student->plan_end_date)->addDays($incrementDecrementDay);
+        } else {
+            $student->plan_end_date = Carbon::parse($student->plan_end_date)->subDays(abs($incrementDecrementDay));
+        }
+
+        $student->save();
+
+        // Response
+        return response()->json([
+            "status" => true,
+            "message" => "Gift days updated successfully! Current Total: " . $newGiftDays
+        ]);
+    }
+
+   public function getGiftDays(Request $request)
+    {
+        $total = DB::table('learner_gift_days')
+            ->where('learner_id', $request->learner_id)
+            ->orderByDesc('id')
+            ->value('total_gift_days');
+
+        return response()->json([
+            'total_gift_days' => $total ?? 0
+        ]);
+    }
+
+    public function freezeUnfreeze(Request $request)
+    {
+        
+        $detail = LearnerDetail::findOrFail($request->learnerDetail);
+
+        // If status = 1 → Freeze
+        if ($request->status == 1) {
+
+            if ($detail->status == 2) {
+                return response()->json(['status' => false, 'message' => 'Plan already frozen']);
+            }
+
+            $detail->freeze_start_date = now();
+            $detail->status = 2; // Frozen
+            $detail->save();
+            Learner::findOrFail($detail->learner_id)->update([
+                'status'=>2
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Plan frozen successfully!'
+            ]);
+        }
+
+        // If status = 2 → Unfreeze
+        if ($request->status == 2) {
+
+            if ($detail->status != 2) {
+                return response()->json(['status' => false, 'message' => 'Plan is not frozen']);
+            }
+
+            $freezeStart = Carbon::parse($detail->freeze_start_date);
+            $frozenDays = $freezeStart->diffInDays(Carbon::today());
+
+            if ($frozenDays > 0) {
+                $detail->plan_end_date = Carbon::parse($detail->plan_end_date)->addDays($frozenDays);
+            }
+
+            $detail->freeze_start_date = null;
+            $detail->status = 1; // Active
+            $detail->save();
+             Learner::findOrFail($detail->learner_id)->update([
+                'status'=>1
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => "Plan unfrozen successfully! Frozen days added: $frozenDays"
+            ]);
+        }
+
+        return response()->json(['status' => false, 'message' => 'Invalid operation']);
+    }
+
+
+
+
 
 
 

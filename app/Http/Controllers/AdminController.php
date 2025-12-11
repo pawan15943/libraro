@@ -49,7 +49,7 @@ class AdminController extends Controller
 
         $subscription = $request->library_type;
         Log::info('library_id',['library_id'=>$request->library_id]);
-        $library_tra =LibraryTransaction::withoutGlobalScopes()->where('library_id', $request->library_id)
+        $library_tra =LibraryTransaction::withoutGlobalScopes()->where('library_id', $request->library_id)->whereNotNull('end_date')
             ->orderBy('id', 'DESC')
             ->first();
         Log::info('NEW payment detected, updating status',['library_tra'=>$library_tra]);

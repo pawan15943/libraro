@@ -274,6 +274,11 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/learner/idcard/bulk', [LearnerController::class, 'printBulkIdCard'])->name('learner.idcard.bulk');
    
     Route::post('/learners/restore', [LearnerController::class, 'restore'])->name('learners.restore');
+    Route::post('/assign-gift-days', [LearnerController::class, 'giftDaysAssign'])->name('assign.gift.days');
+    Route::post('/get-gift-days', [LearnerController::class, 'getGiftDays']) ->name('get.gift.days');
+    Route::post('/freeze-unfreeze', [LearnerController::class, 'freezeUnfreeze'])->name('freeze.unfreeze');
+
+
 
   });
   Route::get('seat/history/list', [LearnerController::class, 'seatHistory'])->name('seats.history');

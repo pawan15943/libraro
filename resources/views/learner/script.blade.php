@@ -2799,6 +2799,140 @@ $('#sendTextMessage').on('click', function (e) {
         }
     });
 });
+//Gift Days Functionality
+$(document).on('click', '.giftDaysBtn', function () {
+
+    let learner_id = $(this).data('learner_id');
+
+    // First fetch existing gift days
+    $.ajax({
+        url: "{{ route('get.gift.days') }}",
+        type: "POST",
+        data: {
+            learner_id: learner_id,
+            _token: "{{ csrf_token() }}"
+        },
+        success: function (res) {
+
+            let existingDays = res.total_gift_days ?? 0;
+
+            Swal.fire({
+                title: "Assign Gift Days",
+                input: 'number',
+                inputLabel: 'Enter number of gift days (+/- allowed)',
+                inputValue: existingDays,   // PREFILL VALUE HERE
+                inputPlaceholder: 'e.g. 5',
+                showCancelButton: true,
+                confirmButtonText: 'Save',
+                cancelButtonText: 'Cancel',
+                inputAttributes: {
+                    step: 1
+                },
+                preConfirm: (value) => {
+                    if (value === "" || isNaN(value)) {
+                        Swal.showValidationMessage('Please enter a valid number');
+                    } else {
+                        return value;
+                    }
+                }
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        url: "{{ route('assign.gift.days') }}",
+                        type: "POST",
+                        data: {
+                            learner_id: learner_id,
+                            gift_days: result.value,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function (response) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Gift Days Updated!",
+                                text: response.message
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: "Something went wrong!"
+                            });
+                        }
+                    });
+
+                }
+            });
+
+        }
+    });
+
+});
+
+//Frozen
+$(document).on('click', '.freezDaysBtn', function () {
+
+    let status = $(this).data('status'); // 1 = Active, 2 = Frozen
+    let learnerDetail = $(this).data('learnerdetail');
+    let learner_id = $(this).data('learner_id');
+
+    let title = status == 1 
+        ? "Freeze Plan?"
+        : "Unfreeze Plan?";
+
+    let text = status == 1 
+        ? "Are you sure you want to freeze this learner's plan? Today's date will be saved as freeze start date."
+        : "Are you sure you want to unfreeze? Frozen days will be added to plan end date.";
+
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: status == 1 ? "Yes, Freeze" : "Yes, Unfreeze",
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+
+        if (result.isConfirmed) {
+
+            $.ajax({
+                 url: "{{ route('freeze.unfreeze') }}",
+                type: "POST",
+                data: {
+                    learnerDetail: learnerDetail,
+                    learner_id: learner_id,
+                     status: status,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function (response) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: response.message
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Something went wrong!"
+                    });
+                }
+            });
+
+        }
+    });
+
+});
+
+
+
 
 
 //  end 

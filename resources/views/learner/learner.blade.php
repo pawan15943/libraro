@@ -338,6 +338,18 @@
                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                     @endcan
 
+                    @can('has-permission', 'Gift Days')
+                    @if(!in_array('33', toggleHideField()))
+                    <li><a href="javascript:;" class="giftDaysBtn" data-learner_id="{{$learner_id}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Gift Days"><i class="fa-solid fa-gift"></i></a></li>
+                    @endif
+                    @endcan
+
+                    @can('has-permission', 'Freez Days')
+                    @if(!in_array('34', toggleHideField()))
+                    <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze / Unfreeze"> <i class="fa-solid fa-snowflake"></i></a></li>
+                    @endif
+                    @endcan
+
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')
                     <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>

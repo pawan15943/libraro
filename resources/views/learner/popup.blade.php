@@ -274,7 +274,7 @@
 
                         <div class="row mt-4">
                             <div class="col-lg-4">
-                                <input type="submit" class="btn btn-primary btn-block button" value="Book Library Seat Now" autocomplete="off">
+                                <button type="submit" class="btn btn-primary btn-block button">Book Seat Now</button>
                             </div>
                         </div>
 

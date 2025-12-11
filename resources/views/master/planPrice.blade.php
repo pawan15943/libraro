@@ -58,7 +58,7 @@
 
             <div class="col-lg-4">
                 <label> Plan Type<sup class="text-danger">*</sup></label>
-                <select name="plan_type_id" id="plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror event">
+                <select name="plan_type_id" id="master_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror event">
                     <option value="">Select Plan Type</option>
                     @foreach($plantypes as $planType)
                     <option value="{{ $planType->id }}" {{ isset($planPrice) && $planPrice->plan_type_id == $planType->id ? 'selected' : '' }}>
@@ -76,12 +76,13 @@
 
             <div class="col-lg-4">
                 <label for="">Plan Price <span>*</span></label>
-                <input type="text" name="price" class="form-control digit-only @error('price') is-invalid @enderror" id="price" placeholder="Enter Price" value="{{ old('price', isset($planPrice) ? $planPrice->price : '') }}">
+                <input type="text" name="price" class="form-control digit-only @error('price') is-invalid @enderror" id="master_price" placeholder="Enter Price" value="{{ old('price', isset($planPrice) ? $planPrice->price : '') }}">
                 @error('price')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
                 </span>
                 @enderror
+                <small class="text-danger">Price is system-calculated; you can change it.</small>
             </div>
 
             <div class="col-lg-2">
