@@ -1588,6 +1588,11 @@ class DashboardController extends Controller
         return (intval($num) == $num) ? intval($num) : number_format($num, 2, '.', '');
     }
 
+    public function howToUse(){
+        $howtoUseContent = DB::table('how-to-use')->get();
+        return view('library.how-to-use', compact('howtoUseContent'));
+    }
+
 
     
     

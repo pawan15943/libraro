@@ -15,7 +15,7 @@ $user = getAuthenticatedUser();
 
 
 
-<div class="header">
+<div class="header learner">
     <div class="d-flex" style="gap:1rem">
         <div class="conatent flex" style="flex: 1;">
             <i class="fa fa-bars mr-2" id="sidebar"></i>

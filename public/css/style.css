@@ -648,6 +648,13 @@ nav ol {
     box-shadow: 1px 0 5px #00000021 !important;
 }
 
+.content-area .header.learner {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    box-shadow: none !important;
+}
+
 
 /* Navbar */
 .content-area .header {
@@ -679,6 +686,12 @@ nav ol {
     padding: 0 .5rem;
     background: linear-gradient(180deg, #eafdff, transparent);
     /* overflow-x: hidden; */
+}
+
+.content-area .content.learner {
+    background: #f1f3ff;
+    border-radius: .7rem;
+    margin: .5rem;
 }
 
 .mt-5 {
@@ -715,11 +728,20 @@ label.permission input[type="checkbox"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: 600;
+    font-weight: 500;
     background: #000;
     color: var(--c5);
     padding: .5rem;
     font-size: .8rem;
+    font-family: 'outfit', 'sans-sarif';
+
+}
+
+.content-area .footer.learner {
+    background: #fff;
+    color: #000;
+    font-family: 'outfit', 'sans-sarif';
+    font-weight: 500;
 }
 
 .w-120 {
@@ -2376,6 +2398,10 @@ table td {
     height: 60px;
     padding: 0 1.5rem;
     box-shadow: 1px 0 15px #00000025 !important;
+}
+
+.header.learner .d-flex {
+    box-shadow: none !important;
 }
 
 .header .d-flex a {
@@ -5631,21 +5657,24 @@ ul.social li a .fab {
 
 .dashboard.learner ul.features li {
     background: #fff;
-    box-shadow: 1px 0 5px #00000045;
+    /* box-shadow: 1px 0 5px #00000045; */
     border-radius: 1rem;
     text-align: center;
     padding: 1.5rem;
 }
 
 .dashboard.learner ul.features li img {
-    width: 75px;
+    width: 50px;
     display: block;
     margin: 1.5rem auto;
 }
 
 .dashboard.learner ul.features li p {
-    font-weight: 700;
+    font-weight: 500;
     margin: 0;
+    font-family: 'outfit', 'sans-sarif';
+    color: #878787;
+    font-size: .8rem;
 }
 
 .form-switch .form-check-input:checked {
@@ -6410,7 +6439,7 @@ ul.userPermissionList li {
 
 
 
-.how-use p{
+.how-use p {
     font-size: 1rem;
     margin-top: 1.5rem;
 }
@@ -6425,7 +6454,7 @@ ul.how-it-work {
     font-size: 1rem;
 }
 
-ul.how-it-work ul{
+ul.how-it-work ul {
     list-style: none;
     padding: 0;
     margin: 0;

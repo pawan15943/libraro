@@ -227,6 +227,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/notification/send-message',[NotificationSentController::class, 'sendMessage'])->name('notification.sendMessage');
     Route::post('/get-learner-mobiles', [NotificationSentController::class, 'getLearnerMobiles'])->name('notification.getLearnerMobiles');
 
+    Route::get('/how-to-use', [DashboardController::class, 'howToUse'])->name('library.how-to-use');
+
 
   });
 
