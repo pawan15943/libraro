@@ -1,0 +1,1 @@
+<div class="footer learner">@ {{date('Y')}} All Rights Reserved by Libraro.</div>

@@ -48,7 +48,7 @@
 
 
             <!-- Begin Page Content -->
-            <div class="content">
+            <div class="content learner">
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
                     @yield('content')
@@ -75,7 +75,7 @@
 
 
             <!-- Footer  -->
-            @include('partials.footer')
+            @include('partials.learner-footer')
         </div>
 
 
