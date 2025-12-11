@@ -394,7 +394,9 @@ Route::middleware(['auth:learner'])->group(function () {
   Route::get('learner/IdCard', [LearnerController::class, 'IdCard'])->name('my-library-id');
   Route::get('learner/support', [LearnerController::class, 'support'])->name('support');
   Route::get('learner/blog', [LearnerController::class, 'blog'])->name('learner.blog');
-  Route::get('learner/blog/detail/show', [LearnerController::class, 'blogDetailShow'])->name('blog.detail.show');
+  
+  Route::get('learner/blog/detail/show/{slug}', [LearnerController::class, 'blogDetailShow'])->name('blog.detail.show');
+  
   Route::get('learner/feadback', [LearnerController::class, 'feadback'])->name('learner.feadback');
   Route::get('learner/suggestions', [LearnerController::class, 'suggestions'])->name('learner.suggestions');
   Route::get('learner/attendance', [LearnerController::class, 'attendance'])->name('my-attendance');

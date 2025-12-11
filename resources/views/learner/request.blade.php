@@ -1,9 +1,7 @@
 @extends('layouts.learner')
 @section('content')
 
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
+
 <div class="card mb-4">
 
     <h4 class="mb-4">Add Request</h4>

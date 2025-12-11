@@ -46,7 +46,16 @@
             <!-- Header -->
             @include('partials.learner-header')
 
-
+            @if (session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+            @endif
+            @if (session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+            @endif
             <!-- Begin Page Content -->
             <div class="content learner">
                 <div class="container-fluid">
