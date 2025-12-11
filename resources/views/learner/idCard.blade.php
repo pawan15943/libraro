@@ -14,7 +14,7 @@
             <!-- Personal Info -->
             <div class="learner-info mt-4">
                 <h4>{{ Auth::user()->name }}</h4>
-                <h6>Library Id {{$library_name->library_no}}</h6>
+                <h6>Library Id {{$library_no->library_no}}</h6>
             </div>
             <hr>
             <!-- Plan Info -->

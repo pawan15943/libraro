@@ -33,8 +33,7 @@ use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\NotificationSentController;
-
-
+use App\Models\Category;
 
 class LearnerController extends Controller
 {
@@ -3438,7 +3437,9 @@ class LearnerController extends Controller
 
     public function learnerRequest()
     {
-        $learner_request = DB::table('learner_request')->where('learner_id', getLibraryId())->get();
+       
+        $learner_request = DB::table('learner_request')->where('learner_id', getAuthenticatedUser()->id)->get();
+       
         return view('learner.request', compact('learner_request'));
     }
 
@@ -3611,9 +3612,10 @@ class LearnerController extends Controller
         
         $data = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
 
-        $library_name = Branch::where('id', Auth::user()->branch_id)->select('name as library_name', 'features')->first();
+        $library_name = Branch::where('id', Auth::user()->branch_id)->select('name as library_name', 'features','library_id')->first();
+        $library_no=Library::where('id',$library_name->library_id)->select("library_no")->first();
 
-        return view('learner.idCard', compact('library_name', 'data'));
+        return view('learner.idCard', compact('library_name', 'data','library_no'));
     }
     public function support()
     {
@@ -3771,9 +3773,13 @@ class LearnerController extends Controller
 
     public function blogDetailShow($slug)
     {
-
+       
         $data = Blog::where('page_slug', $slug)->first();
-        return view('site.blog-details', compact('data'));
+        $data->tags = json_decode($data->tags, true);
+        $categoryIds = json_decode($data->categories_id, true) ?? [];
+        $categories = Category::whereIn('id', $categoryIds)->get();
+        return view('learner.blog-details', compact('data','categories'));
+ 
     }
 
     public function pendingPayment(Request $request)
