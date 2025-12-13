@@ -58,6 +58,7 @@ class LoginController extends Controller
 
         $credentials = $request->only('email', 'password');
         $remember = $request->has('remember');
+        
 
         switch ($request->input('user_type')) {
             case 'superadmin':

@@ -97,15 +97,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             <div class="col-lg-6">
 
-                <ul class="QuickAction d-none">
-                    @can('has-permission', 'General Seat Booked')
-                    <li>
-                        <a href="javascript:;" class=" noseat_popup">
-                            <i class="fa-solid fa-check-circle available"></i> Book a General Seat
-                        </a>
-                    </li>
-                    @endcan
-                    <li><a href="{{ route('seats.history') }}"><i class="fa fa-book available"></i> Library Register</a></li>
+                <ul class="QuickAction">
+
+                    
+                    <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
                 </ul>
             </div>
         </div>

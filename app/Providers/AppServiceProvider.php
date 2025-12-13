@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
                 // Step 1: Get used hours for each seat
                 $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
                     ->whereNotNull('seat_no')
-                    ->groupBy('seat_no')->where('status',1)
+                    ->groupBy('seat_no')->where('status', 1)
                     ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
                 $availableSeats = collect();
@@ -119,7 +119,7 @@ class AppServiceProvider extends ServiceProvider
                 'Library Profile' => route('profile')
             ],
 
-            
+
             'get.learner.attendance' => [
                 'Dashboard' => route('home'),
                 'Daily Attendance Summery' => route('get.learner.attendance')
@@ -164,7 +164,7 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Swap Seat' => route('learners.swap', $parameters)
             ],
-             'learner.change.plan' => [
+            'learner.change.plan' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
                 'Change Plan' => route('learner.change.plan', $parameters)
@@ -372,11 +372,16 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Notification Dashboard' => route('notification.dashboard'),
             ],
-            'general.seat.history'=>[
+            'general.seat.history' => [
                 'Dashboard' => route('library.home'),
                 'Seat Booking History' => route('seats.history'),
                 'Expired Learner History' => route('seats.history.show'),
             ],
+            'library.how-to-use' => [
+                'Dashboard' => route('library.home'),
+                'How to Use Libraro' => route('library.how-to-use'),
+            ],
+
 
             // Learner Bread crumb
 
@@ -522,8 +527,9 @@ class AppServiceProvider extends ServiceProvider
             'notifications.settings' =>  'Notification Console',
             'notification.dashboard' =>  'Notification Dashbaord',
             'learner.change.plan' => 'Learner Change Plan',
-            'general.seat.history'=>'General Seat History',
-            
+            'general.seat.history' => 'General Seat History',
+            'library.how-to-use' => 'How to Use Library',
+
         ];
 
         return $titles[$routeName] ?? ucfirst(str_replace('.', ' ', $routeName));
