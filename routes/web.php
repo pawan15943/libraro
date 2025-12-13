@@ -16,6 +16,7 @@ use App\Http\Controllers\DataController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\LibraryReferralController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\QrEntryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
@@ -228,6 +230,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/get-learner-mobiles', [NotificationSentController::class, 'getLearnerMobiles'])->name('notification.getLearnerMobiles');
 
     Route::get('/how-to-use', [DashboardController::class, 'howToUse'])->name('library.how-to-use');
+    Route::get('daily-dashboard',[ServiceController::class,'daily_dashboard'])->name('daily_dashboard');
+    Route::get('/referral/dashboard', [LibraryReferralController::class, 'dashboard'])->name('referral.dashboard');
 
 
   });

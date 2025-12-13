@@ -39,7 +39,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-
+use App\Helpers\ReferralHelper; 
 
 
 class LibraryController extends Controller
@@ -178,12 +178,13 @@ class LibraryController extends Controller
                
                 $otp = Str::random(6); 
                 $library->email_otp = $otp;
+                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
                 $library->save();
                
                  \Log::info('sendVerificationEmail');
                 $this->sendVerificationEmail($library);
-
-
+                
+                
                 session(['library_email' => $library->email]);
 
                 return redirect()->route('verification.notice')
