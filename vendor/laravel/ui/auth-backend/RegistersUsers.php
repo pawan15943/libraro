@@ -2,10 +2,12 @@
 
 namespace Illuminate\Foundation\Auth;
 
+use App\Models\Library;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\LibraryReferralVisit;
 
 trait RegistersUsers
 {
@@ -16,8 +18,23 @@ trait RegistersUsers
      *
      * @return \Illuminate\View\View
      */
-    public function showRegistrationForm()
+    public function showRegistrationForm(Request $request)
     {
+        if ($request->ref) {
+
+        $referrer = Library::where('referral_code', $request->ref)->first();
+
+        if ($referrer) {
+
+            LibraryReferralVisit::create([
+                'referrer_library_id' => $referrer->id,
+                'referral_code'       => $request->ref,
+                'referral_type'       => $request->has('qr') ? 'qr' : 'link',
+                'ip_address'          => $request->ip(),
+                'user_agent'          => $request->userAgent(),
+            ]);
+        }
+    }
         return view('auth.register');
     }
 

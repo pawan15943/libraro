@@ -71,6 +71,8 @@
                 <small>Register Now and Unlock Exciting Opportunities!</small>
                 <form action="{{ route('library.store') }}" method="POST" class="validateForm" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="referral_code" value="{{ request('ref') }}">
+
                     <div class="row g-3 mt-1">
                         <div class="col-lg-12">
                             <label>Library Name<span>*</span></label>
@@ -141,11 +143,11 @@
                     <div class="col-lg-12">
                         <button type="submit" value="Login" class="btn btn-primary button">Register Now</button>
                     </div>
+                    
                     <div class="col-lg-12 text-center">
                         <p>Already a member? <a href="{{route('login.library')}}" class="links d-inline"><em>Log in now.</em></a>
                         </p>
                     </div>
-
             </div>
             </form>
         </div>

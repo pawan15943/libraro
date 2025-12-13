@@ -39,8 +39,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use App\Helpers\ReferralHelper; 
-
+use App\Helpers\ReferralHelper;
+use App\Models\LibraryReferral;
 
 class LibraryController extends Controller
 {
@@ -180,6 +180,26 @@ class LibraryController extends Controller
                 $library->email_otp = $otp;
                 $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
                 $library->save();
+                
+                if ($request->referral_code) {
+                    $referrer = Library::where('referral_code', $request->referral_code)->first();
+
+                    if ($referrer && $referrer->id !== $library->id) {
+
+                        $library->referred_by = $referrer->id;
+                        $library->save();
+
+                        LibraryReferral::create([
+                            'referrer_library_id' => $referrer->id,
+                            'referred_library_id' => $library->id,
+                            'referral_code' => $request->referral_code,
+                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
+                            'status' => 'completed'
+                        ]);
+                    }
+                }
+                
+                
                
                  \Log::info('sendVerificationEmail');
                 $this->sendVerificationEmail($library);
