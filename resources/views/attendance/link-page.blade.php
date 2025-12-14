@@ -16,7 +16,7 @@
                         <li><input type="text" id="learner_mobile" placeholder="Mobile Number"></li>
                     </ul>
 
-                    <button   button id="verifyBtn">Next</button>
+                    <button id="verifyBtn">Next</button>
                         <div id="verifyMsg"></div>
 
                         <button id="startScannerBtn" class="btn btn-primary mt-3" style="display:none;">
