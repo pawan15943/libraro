@@ -24,7 +24,8 @@
                             Start Scanner
                         </button>
 
-                        <div id="reader" class="mt-3"></div>
+                        <div id="reader" style="width:300px;height:300px;"></div>
+
 
                     </div>
                 </div>
@@ -57,68 +58,84 @@
         });
     }); 
     $(document).ready(function () {
-    $('#startScannerBtn').on('click', function () {
-           alert('Start Scanner button clicked');
-        openScanner(); // ✅ allowed on mobile
+        $('#startScannerBtn').on('click', function () {
+            alert('Start Scanner button clicked');
+            openScanner(); // ✅ allowed on mobile
+        });
     });
-});
     
-        let scanner = null;
+    let scanner = null;
 
-        function openScanner() {
-            alert('openScanner() called');
+    function openScanner() {
+        alert('openScanner() called');
 
-            if (typeof Html5Qrcode === 'undefined') {
-                alert('Html5Qrcode NOT loaded');
-                return;
-            }
+        // 🔴 Ensure library loaded
+        if (typeof Html5Qrcode === 'undefined') {
+            alert('Html5Qrcode NOT loaded');
+            return;
+        }
 
-            alert('Html5Qrcode loaded');
+        // 🔴 Ensure container exists & visible
+        const reader = document.getElementById('reader');
+        if (!reader || reader.offsetHeight === 0) {
+            alert('Scanner container not visible');
+            return;
+        }
 
-            if (scanner) {
-                alert('Scanner already running');
-                return;
-            }
-
-            scanner = new Html5Qrcode("reader");
-
-            scanner.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    disableFlip: true
-                },
-                function (decodedText) {
-                    alert('QR scanned');
-                    submitScan(decodedText);
-                }
-            ).catch(err => {
-                alert('Camera error: ' + err);
-                console.error(err);
+        // 🔴 Always reset scanner before start
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+                startCamera();
+            }).catch(() => {
+                scanner = null;
+                startCamera();
             });
+        } else {
+            startCamera();
         }
+    }
 
+    function startCamera() {
+        alert('Starting camera');
 
-    
+        scanner = new Html5Qrcode("reader");
+
+        scanner.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                disableFlip: true
+            },
+            function (decodedText) {
+                submitScan(decodedText);
+            }
+        ).catch(err => {
+            alert('Camera error: ' + err);
+            scanner = null;
+        });
+    }
+
     function submitScan(qrText) {
-    $.ajax({
-        url: "{{ route('store.scan.attendance') }}",
-        type: 'POST',
-        data: {
-            _token: "{{ csrf_token() }}",
-            qr: qrText,
-            verify_token: localStorage.getItem('verify_token')
-        },
-        success: function (res) {
-            $('#scanMsg').text(res.message).addClass('text-success');
-            scanner.stop();
-        },
-        error: function (xhr) {
-            $('#scanMsg').text(xhr.responseJSON.message).addClass('text-danger');
-        }
-    });
-}
+        $.ajax({
+            url: "{{ route('store.scan.attendance') }}",
+            type: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}",
+                qr: qrText,
+                verify_token: localStorage.getItem('verify_token')
+            },
+            success: function (res) {
+                $('#scanMsg').text(res.message).addClass('text-success');
+                scanner.stop();
+            },
+            error: function (xhr) {
+                $('#scanMsg').text(xhr.responseJSON.message).addClass('text-danger');
+            }
+        });
+    }
 
 
 </script>
