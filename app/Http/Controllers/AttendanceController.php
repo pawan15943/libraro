@@ -50,9 +50,10 @@ class AttendanceController extends Controller
             'uid' => 'required',
             'mobile' => 'required'
         ]);
+       
 
-        $learner = Learner::where('learner_no', $request->uid)->where('mobile', $request->mobile)->first();
-
+        $learner = Learner::where('learner_no', $request->uid) ->where('mobile', hash('sha256', $request->mobile))->first();
+        
         if (!$learner) {
             return response()->json([
                 'status' => false,
