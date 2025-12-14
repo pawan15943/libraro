@@ -150,7 +150,7 @@
    
 
     function submitScan(qrText) {
-        let data = JSON.parse(getCookie('attendance_learner'));
+       
         $.ajax({
             url: "{{ route('store.scan.attendance') }}",
             type: "POST",
@@ -158,7 +158,7 @@
                 _token: "{{ csrf_token() }}",
                 qr: qrText,
                 learner_id: data.learner_id,
-                verify_token: data.token
+                verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
                 alert(res.message);

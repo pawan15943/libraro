@@ -73,16 +73,10 @@ class AttendanceController extends Controller
             'verify_token' => $verifyToken,
         ]);
 
-         Cookie::queue(
-            Cookie::make(
-                'learner_key',
-                $learner->learner_key,
-                60 * 24 * 30, // 30 days
-                null,
-                null,
-                true, // HTTPS only
-                true  // HTTP only
-            )
+        $cookieValue = hash_hmac('sha256', $learner->id, config('app.key'));
+
+        Cookie::queue(
+            Cookie::make('learner_key', $cookieValue, 60 * 24 * 30) // 30 days
         );
 
         return response()->json([
@@ -92,13 +86,14 @@ class AttendanceController extends Controller
     
     public function autoVerify(Request $request)
     {
-        $learnerKey = $request->cookie('learner_key');
-
-        if (!$learnerKey) {
-            return response()->json(['status'=>false]);
+       $cookie = $request->cookie('learner_key');
+        if (!$cookie) {
+            return response()->json(['status' => false]);
         }
 
-        $learner = Learner::where('attendance_key', $learnerKey)->first();
+        $learner = Learner::all()->first(function ($l) use ($cookie) {
+            return hash_hmac('sha256', $l->id, config('app.key')) === $cookie;
+        });
         if (!$learner) {
             return response()->json(['status'=>false]);
         }
