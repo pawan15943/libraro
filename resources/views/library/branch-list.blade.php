@@ -3,10 +3,6 @@
 
 <!-- Breadcrumb -->
 
-
-
-
-
 @if($branches->isEmpty())
 <div class="no-data-found">
     <script
