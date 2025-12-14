@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class LibraryReferralVisit extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 }

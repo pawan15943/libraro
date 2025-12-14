@@ -2095,8 +2095,12 @@ class LearnerController extends Controller
             } else {
               
                 // Apply default status conditions if no status filter is provided
-                $query->where('learners.status', $status)
-                    ->where('learner_detail.status', $detailStatus);
+                if($status==1 && $detailStatus==1){
+                    $query->whereIn('learners.status', [1,2])->whereIn('learner_detail.status', [1,2]);
+                }else{
+                    $query->where('learners.status', $status)->where('learner_detail.status', $detailStatus);
+                }
+                
             }
             
             if (!empty($filters['seat_no'])) {

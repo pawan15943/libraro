@@ -178,6 +178,30 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="redeemModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" action="{{ route('library.redeem') }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Confirm Redemption</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>You will redeem <b>30 points</b> (3 referrals).</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        Confirm Redeem
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 <div class="refer-and-earn-main my-4">
     <!-- Hero Banner -->
@@ -189,23 +213,35 @@
                     <p>Use our Refer & Earn module to invite other library owners. Each successful referral
                         rewards you with exclusive benefits.</p>
                 </div>
-                <img src="{{ asset('public/img/refer-earn.png')}}" alt="Refer & Earn">
+                <img src="{{ asset('public/img/refer-earn.png') }}" alt="Refer & Earn">
             </div>
         </div>
+        @if($is_redeem)
+        <button class="btn btn-warning mt-3"
+                data-bs-toggle="modal"
+                data-bs-target="#redeemModal">
+            Redeem Now ({{ $earnReward }} pts)
+        </button>
+        @else
+        <small class="text-muted d-block mt-2">
+            {{ $earnReward }}
+        </small>
+        @endif
+
     </div>
 
-    <div class="row  justify-content-center mt-4 text-center">
+    <div class="row justify-content-center mt-4 text-center">
         <div class="col-lg-10">
             <div class="row g-4 justify-content-center">
                 <div class="col-lg-4">
                     <div class="bg-white p-3 rounded-4 border">
-                        <h4>10</h4>
+                        <h4>{{ $maxReferrals }}</h4>
                         <span class="refral">Max Referrals</span>
                     </div>
                 </div>
                 <div class="col-lg-4">
                     <div class="bg-white p-3 rounded-4 border">
-                        <h4>5</h4>
+                        <h4>{{ $availableReferrals }}</h4>
                         <span class="refral">Max Available</span>
                     </div>
                 </div>
@@ -230,62 +266,110 @@
                     Completed
                 </button>
             </div>
-            <!-- Tab Content -->
+
             <div class="tab-content p-4 bg-white border rounded-4 mt-3">
 
-                <!-- TAB 1: Refer Methods -->
+                <!-- TAB 1 -->
                 <div class="tab-pane fade show active" id="tabRefer">
                     <div class="row jusitify-content-center">
                         <div class="col-lg-6">
                             <h5 class="fw-bold mb-2">Refer by Code</h5>
-                            <div
-                                class="d-flex p-3 border rounded-4 justify-content-between align-items-center mb-3">
-                                <span class="fw-bold fs-5">REF12345</span>
-                                <button class="btn btn-outline-primary btn-sm copy"><i
-                                        class="fa fa-copy"></i></button>
+                            <div class="d-flex p-3 border rounded-4 justify-content-between align-items-center mb-3">
+                                <span class="fw-bold fs-5">{{ $referralCode }}</span>
+                                <button class="btn btn-outline-primary btn-sm copy"
+                                    data-copy="{{ $referralCode }}">
+                                    <i class="fa fa-copy"></i>
+                                </button>
                             </div>
                         </div>
+
                         <div class="col-lg-6">
                             <h5 class="fw-bold mb-2">Refer by Link</h5>
-                            <div
-                                class="d-flex p-3 border rounded-4 justify-content-between align-items-center mb-3">
-                                <span class="text-truncate">https://yourapp.com/ref/REF12345</span>
-                                <button class="btn btn-outline-primary btn-sm copy"><i
-                                        class="fa fa-copy"></i></button>
+                            <div class="d-flex p-3 border rounded-4 justify-content-between align-items-center mb-3">
+                                <span class="text-truncate">{{ $referralLink }}</span>
+                                <button class="btn btn-outline-primary btn-sm copy"
+                                    data-copy="{{ $referralLink }}">
+                                    <i class="fa fa-copy"></i>
+                                </button>
                             </div>
                         </div>
+
                         <div class="col-lg-12">
                             <div class="text-center mt-3">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=REF12345"
+                                <img
+                                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($referralLink) }}"
                                     class="rounded-4 p-3 shadow-sm">
                             </div>
                             <h5 class="fw-bold mb-2 mt-2 text-center">Refer by QR</h5>
-
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: Your Referrals -->
+                <!-- TAB 2 -->
                 <div class="tab-pane fade" id="tabYourRef">
                     <div class="row">
                         <h5 class="fw-bold mb-3">Your Referrals</h5>
 
+                        @if($yourReferrals->count())
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Referral Code</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($yourReferrals as $ref)
+                                <tr>
+                                    <td>{{ $ref->referral_code }}</td>
+                                    <td>{{ ucfirst($ref->referral_type) }}</td>
+                                    <td><span class="badge bg-warning">Pending</span></td>
+                                    <td>{{ \Carbon\Carbon::parse($ref->created_at)->format('d M Y') }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @else
                         <div class="text-center py-5 text-muted">
                             <i class="bi bi-people fs-1 mb-2"></i>
                             <p>No new referrals yet</p>
                         </div>
+                        @endif
                     </div>
                 </div>
 
-                <!-- TAB 3: Completed Referrals -->
+                <!-- TAB 3 -->
                 <div class="tab-pane fade" id="tabCompleted">
                     <div class="row">
                         <h5 class="fw-bold mb-3">Completed Referrals</h5>
 
+                        @if($completedList->count())
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Referral Code</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($completedList as $ref)
+                                <tr>
+                                    <td>{{ $ref->referral_code }}</td>
+                                    <td>{{ ucfirst($ref->referral_type) }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ref->updated_at)->format('d M Y') }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @else
                         <div class="text-center py-5 text-muted">
                             <i class="bi bi-check2-circle fs-1 mb-2"></i>
                             <p>No completed referrals yet</p>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -304,7 +388,57 @@
         </div>
     </div>
 </div>
+
+
+{{-- <div class="container">
+    <h4 class="mb-4">Refer Another Library</h4> --}}
+
+    {{-- Referral Summary --}}
+    {{-- <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card p-3">Total Referrals <br><b>{{ $total }}</b></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">Completed <br><b>{{ $completed }}</b></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">Pending <br><b>{{ $pending }}</b></div>
+        </div>
+    </div> --}}
+
+    {{-- Referral Code --}}
+    {{-- <div class="card mb-3">
+        <div class="card-body">
+            <h6>Referral Code</h6>
+            <input type="text" class="form-control" value="{{ auth()->user()->referral_code }}" readonly>
+        </div>
+    </div> --}}
+
+    {{-- Referral Link --}}
+    {{-- <div class="card mb-3">
+        <div class="card-body">
+            <h6>Referral Link</h6>
+            <input type="text" class="form-control" value="{{ url('/library/register?ref='.auth()->user()->referral_code) }}" readonly>
+        </div>
+    </div> --}}
+
+    {{-- QR Code --}}
+    {{-- <div class="card mb-3">
+        <div class="card-body text-center">
+            <h6>Referral QR Code</h6>
+            {!! QrCode::size(180)->generate(url('/library/register?ref='.auth()->user()->referral_code)) !!}
+        </div>
+    </div> --}}
+{{-- </div> --}}
 <script>
+document.querySelectorAll('.copy').forEach(btn => {
+    btn.addEventListener('click', function () {
+        navigator.clipboard.writeText(this.dataset.copy);
+        new bootstrap.Toast(document.getElementById('copyToast')).show();
+    });
+});
+</script>
+{{-- <script>
     $(".copy").on("click", function() {
         let textToCopy = $(this).text().trim();
 
@@ -336,5 +470,5 @@
         let toast = new bootstrap.Toast(toastEl[0]);
         toast.show();
     }
-</script>
+</script> --}}
 @endsection
