@@ -344,11 +344,11 @@
                     @endif
                     @endcan
 
-                    @can('has-permission', 'Freez Days')
+                    {{-- @can('has-permission', 'Freez Days') --}}
                     @if(!in_array('34', toggleHideField()))
-                    <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze / Unfreeze"> <i class="fa-solid fa-snowflake"></i></a></li>
+                    <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze / Unfreeze"> <i class="fa-solid fa-snowflake"></i></a></li>
                     @endif
-                    @endcan
+                    {{-- @endcan --}}
 
                     <!-- View Seat Info -->
                     @can('has-permission', 'View Seat')

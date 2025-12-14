@@ -344,7 +344,7 @@ if (!function_exists('getUserStatusWithSpan')) {
             $startfrom=null;
         }
          
-        if(Learner::where('id',$learner_id)->where('status',2)->exists()){
+        if(Learner::where('id',$learner_id)->where('frozen_status',1)->exists()){
             return '<span class="text-success">Frozen</span>';
         }
         elseif ($diffInDays > 0 && !$isfuture_booking) {

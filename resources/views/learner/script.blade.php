@@ -640,25 +640,25 @@
                             $('#upgrade').hide();
                         }
                        
-                        var extendDay=html.diffExtendDay;
-                        var message = '';
+                        // var extendDay=html.diffExtendDay;
+                        // var message = '';
                        
                         // Applying the conditions as per your Laravel blade logic
-                        if(is_renew_update == 1){
-                            message = `<h5 class="text-success">Plan will Expires in ${daysRemaining} days.</h5><p class="text-info">Notice : You have a new plan in the queue. Once your current plan expires, your new plan will automatically activate.</p>`;
-                        }else if (daysRemaining > 0) {
-                            message = `<h5 class="text-success">Plan Expires in ${daysRemaining} days</h5>`;
-                        } else if (daysRemaining < 0 && extendDay > 0) {
-                            message = `<h5 class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are ${Math.abs(extendDay)} days.</h5>`;
-                        } else if (daysRemaining < 0 && extendDay == 0) {
-                            message = `<h5 class="text-danger extedned fs-10 d-block">Seat Expire Today</h5>`;
-                        } else if (daysRemaining == 0 && extendDay > 0) {
-                            message = `<h5 class="text-danger extedned fs-10 d-block">Plan Expires Today. Extend Days Starts Today</h5>`;
-                        }else {
-                            message = `<h5 class="text-warning fs-10 d-block">Plan Expired ${Math.abs(daysRemaining)} days ago</h5>`;
-                        }
+                        // if(is_renew_update == 1){
+                        //     message = `<h5 class="text-success">Plan will Expires in ${daysRemaining} days.</h5><p class="text-info">Notice : You have a new plan in the queue. Once your current plan expires, your new plan will automatically activate.</p>`;
+                        // }else if (daysRemaining > 0) {
+                        //     message = `<h5 class="text-success">Plan Expires in ${daysRemaining} days</h5>`;
+                        // } else if (daysRemaining < 0 && extendDay > 0) {
+                        //     message = `<h5 class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are ${Math.abs(extendDay)} days.</h5>`;
+                        // } else if (daysRemaining < 0 && extendDay == 0) {
+                        //     message = `<h5 class="text-danger extedned fs-10 d-block">Seat Expire Today</h5>`;
+                        // } else if (daysRemaining == 0 && extendDay > 0) {
+                        //     message = `<h5 class="text-danger extedned fs-10 d-block">Plan Expires Today. Extend Days Starts Today</h5>`;
+                        // }else {
+                        //     message = `<h5 class="text-warning fs-10 d-block">Plan Expired ${Math.abs(daysRemaining)} days ago</h5>`;
+                        // }
 
-                        $('#extendday').html(message);
+                        $('#extendday').html(html.seat_status);
                     }
                 });
             }
@@ -2876,15 +2876,15 @@ $(document).on('click', '.giftDaysBtn', function () {
 //Frozen
 $(document).on('click', '.freezDaysBtn', function () {
 
-    let status = $(this).data('status'); // 1 = Active, 2 = Frozen
+    let status = $(this).data('status'); // 0 = Active,1=freez 2 = unfreez
     let learnerDetail = $(this).data('learnerdetail');
     let learner_id = $(this).data('learner_id');
 
-    let title = status == 1 
+    let title = status == 0 
         ? "Freeze Plan?"
         : "Unfreeze Plan?";
 
-    let text = status == 1 
+    let text = status == 0 
         ? "Are you sure you want to freeze this learner's plan? Today's date will be saved as freeze start date."
         : "Are you sure you want to unfreeze? Frozen days will be added to plan end date.";
 
@@ -2893,7 +2893,7 @@ $(document).on('click', '.freezDaysBtn', function () {
         text: text,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: status == 1 ? "Yes, Freeze" : "Yes, Unfreeze",
+        confirmButtonText: status == 0 ? "Yes, Freeze" : "Yes, Unfreeze",
         cancelButtonText: "Cancel"
     }).then((result) => {
 
