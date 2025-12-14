@@ -2487,6 +2487,7 @@ class LearnerController extends Controller
             $customer['overdue'] = '';
         }
         $customer['floor_seat_no']=getSeatDisplayByMainNo($customer->seat_no);
+        $customer['seat_status']=getUserStatusWithSpan($customer->plan_end_date,$customer->learner_id);
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 
@@ -4305,18 +4306,17 @@ class LearnerController extends Controller
         
         $detail = LearnerDetail::findOrFail($request->learnerDetail);
 
-        // If status = 1 → Freeze
-        if ($request->status == 1) {
+        // If status = 0 → Freeze
+        if ($request->status == 0) {
 
-            if ($detail->status == 2) {
-                return response()->json(['status' => false, 'message' => 'Plan already frozen']);
+            if ($detail->status == 0) {
+                return response()->json(['status' => false, 'message' => 'Plan Expired']);
             }
 
             $detail->freeze_start_date = now();
-            $detail->status = 2; // Frozen
             $detail->save();
             Learner::findOrFail($detail->learner_id)->update([
-                'status'=>2
+                'frozen_status'=>1
             ]);
 
             return response()->json([
@@ -4325,11 +4325,11 @@ class LearnerController extends Controller
             ]);
         }
 
-        // If status = 2 → Unfreeze
-        if ($request->status == 2) {
+        // If status = 1 → Unfreeze
+        if ($request->status == 1) {
 
-            if ($detail->status != 2) {
-                return response()->json(['status' => false, 'message' => 'Plan is not frozen']);
+            if ($detail->status == 0) {
+                return response()->json(['status' => false, 'message' => 'Plan Expired']);
             }
 
             $freezeStart = Carbon::parse($detail->freeze_start_date);
@@ -4340,10 +4340,9 @@ class LearnerController extends Controller
             }
 
             $detail->freeze_start_date = null;
-            $detail->status = 1; // Active
             $detail->save();
              Learner::findOrFail($detail->learner_id)->update([
-                'status'=>1
+                'frozen_status'=>2 //unfreez status 2
             ]);
 
             return response()->json([
