@@ -232,6 +232,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/how-to-use', [DashboardController::class, 'howToUse'])->name('library.how-to-use');
     Route::get('daily-dashboard',[ServiceController::class,'daily_dashboard'])->name('daily_dashboard');
     Route::get('/referral/dashboard', [LibraryReferralController::class, 'dashboard'])->name('referral.dashboard');
+    Route::post('/library/redeem', [LibraryReferralController::class, 'redeem'])->name('library.redeem');
 
 
   });
