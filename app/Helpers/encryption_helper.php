@@ -344,8 +344,10 @@ if (!function_exists('getUserStatusWithSpan')) {
             $startfrom=null;
         }
          
-
-        if ($diffInDays > 0 && !$isfuture_booking) {
+        if(Learner::where('id',$learner_id)->where('status',2)->exists()){
+            return '<span class="text-success">Frozen</span>';
+        }
+        elseif ($diffInDays > 0 && !$isfuture_booking) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         }elseif($is_renew_update){
              return '<span class="text-success"> 1 Plan in Queue</span>';
