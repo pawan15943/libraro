@@ -26,7 +26,6 @@
 
                         <div id="reader" style="width:300px;height:300px;"></div>
 
-
                     </div>
                 </div>
             </div>
