@@ -138,7 +138,7 @@
 
     function submitScan(qrText) {
     $.ajax({
-        url: "{{ route('attendance.scan') }}",
+        url: "{{ route('store.scan.attendance') }}",
         type: "POST",
         data: {
             _token: "{{ csrf_token() }}",
