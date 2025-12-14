@@ -165,7 +165,11 @@ class AttendanceController extends Controller
             return response()->json(['message'=>'Unauthorized'], 403);
         }
         
-
+          \Log::info('SESSION CHECK', [
+            'verified' => session('attendance_verified'),
+            'session_token' => session('verify_token'),
+            'request_token' => $request->verify_token
+        ]);
 
         // 2. Validate QR (your existing logic)
         $branchId = $this->validateQrToken($request->qr);
@@ -178,7 +182,8 @@ class AttendanceController extends Controller
             'branch_id' => $branchId
         ]);
 
-        
+      
+
        
         // Extract variables from the request
             $learnerId =session('learner_id');
@@ -194,7 +199,7 @@ class AttendanceController extends Controller
             if ($existingAttendance) {
 
                  $existingAttendance->out_time = $currentTime;
-                 if($existingAttendance->in_time){
+                 if (!$existingAttendance->in_time){
                     $existingAttendance->in_time = $currentTime;
                  }
 

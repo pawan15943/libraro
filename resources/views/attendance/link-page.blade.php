@@ -35,35 +35,13 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        // let cookie = getCookie('attendance_learner');
-
-        // if (cookie) {
-        //     try {
-        //         let data = JSON.parse(cookie);
-        //         if (data.learner_id && data.token) {
-        //             $('#verifyMsg').text('Welcome back! Ready to scan.');
-        //             $('#startScannerBtn').show();
-        //         }
-        //     } catch (e) {
-        //         console.log('Invalid cookie');
-        //     }
-        // }
-        $.post("{{ url('/attendance/auto-verify') }}", {
-            _token: "{{ csrf_token() }}"
-        }, function (res) {
-            if (res.status) {
-                localStorage.setItem('verify_token', res.verify_token);
-                $('#learner_no_uid, #learner_mobile, #verifyLearner').hide();
-                $('#startScannerBtn').show();
-            }
+    
+     $(document).ready(function () {
+        $('#startScannerBtn').on('click', function () {
+            alert('Start Scanner button clicked');
+            openScanner(); // ✅ allowed on mobile
         });
     });
-    // function getCookie(name) {
-    //     let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    //     return match ? decodeURIComponent(match[2]) : null;
-    // }
-
 
     $('#verifyLearner').on('click', function () {
        
@@ -86,12 +64,7 @@
             }
         });
     }); 
-    $(document).ready(function () {
-        $('#startScannerBtn').on('click', function () {
-            alert('Start Scanner button clicked');
-            openScanner(); // ✅ allowed on mobile
-        });
-    });
+   
     
     let scanner = null;
 
@@ -147,8 +120,6 @@
         });
     }
 
-   
-
     function submitScan(qrText) {
        
         $.ajax({
@@ -157,7 +128,6 @@
             data: {
                 _token: "{{ csrf_token() }}",
                 qr: qrText,
-                learner_id: data.learner_id,
                 verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
@@ -182,6 +152,18 @@
         });
     }
 
+    $(document).ready(function () {
+  
+        $.post("{{ url('/attendance/auto-verify') }}", {
+            _token: "{{ csrf_token() }}"
+        }, function (res) {
+            if (res.status) {
+                localStorage.setItem('verify_token', res.verify_token);
+                $('#learner_no_uid, #learner_mobile, #verifyLearner').hide();
+                $('#startScannerBtn').show();
+            }
+        });
+    });
 </script>
 
 @endsection
