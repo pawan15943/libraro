@@ -60,19 +60,22 @@ class AttendanceController extends Controller
             ], 401);
         }
 
-        // Create short-lived verification token
-        $token = Str::random(40);
-
-        session([
-            'attendance_verified' => true,
-            'learner_id' => $learner->id,
-            'verify_token' => $token,
-        ]);
+        $token = hash_hmac(
+            'sha256',
+            $learner->id . '|' . now()->timestamp,
+            config('app.key')
+        );
 
         return response()->json([
             'status' => true,
+            'learner_id' => $learner->id,
             'verify_token' => $token
-        ]);
+        ])->withCookie(
+            cookie('attendance_learner', json_encode([
+                'learner_id' => $learner->id,
+                'token' => $token
+            ]), 60 * 24 * 7) // 7 days
+        );
     }
     //Scanner opens ->Learner scans CURRENT QR
     private function validateQrToken(string $qrToken)
@@ -122,22 +125,16 @@ class AttendanceController extends Controller
     public function scanAttendance(Request $request)
     {
         \Log::info('SCAN REQUEST RECEIVED', $request->all());
-        // 1. Check learner verification
-        if (!session('attendance_verified') || !$request->verify_token) {
-            return response()->json([
-                'message' => 'Learner not verified'
-            ], 403);
-        }
+            $expected = hash_hmac(
+                'sha256',
+                $request->learner_id . '|' . session()->get('verify_time', now()->timestamp),
+                config('app.key')
+            );
 
-        if ($request->verify_token !== session('verify_token')) {
-            return response()->json([
-                'message' => 'Verification expired'
-            ], 403);
-        }
-        \Log::info('VERIFICATION OK', [
-            'learner_id' => session('learner_id'),
-            'verify_token' => session('verify_token')
-        ]);
+            if (!$request->verify_token) {
+                return response()->json(['message'=>'Verification required'], 403);
+            }
+        
 
 
         // 2. Validate QR (your existing logic)
@@ -190,10 +187,16 @@ class AttendanceController extends Controller
                 
             ]);
 
-        session()->forget(['attendance_verified', 'verify_token']);
+        
         return response()->json([
             'message' => 'Thank You! Attendance marked'
         ]);
+    }
+
+
+    //Success Page
+    public function markSuccess(){
+        return view('attendance.success');
     }
 
     public function scan(Request $request)

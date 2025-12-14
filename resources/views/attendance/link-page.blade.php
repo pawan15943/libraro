@@ -11,12 +11,21 @@
                             <h2> Library</h2>
                             <span class="text-message">Please Fill and proceed.</span>
                         </div>
-                        <ul class="action-list">
-                            <li><input type="text" id="learner_no_uid" placeholder="Learner No."></li>
-                            <li><input type="text" id="learner_mobile" placeholder="Mobile Number"></li>
-                          
-                        </ul>
-                        <button id="verifyLearner">Next</button>
+                       @if(!$learnerVerified)
+                            <ul class="action-list">
+                                <li><input type="text" id="learner_no_uid" placeholder="Learner No."></li>
+                                <li><input type="text" id="learner_mobile" placeholder="Mobile Number"></li>
+                            </ul>
+
+                            <button id="verifyLearner">Next</button>
+                        @else
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    $('#startScannerBtn').show();
+                                });
+                            </script>
+                        @endif
+
 
                         <div id="verifyMsg"></div>
 
@@ -36,6 +45,27 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
+    $(document).ready(function () {
+        let cookie = getCookie('attendance_learner');
+
+        if (cookie) {
+            try {
+                let data = JSON.parse(cookie);
+                if (data.learner_id && data.token) {
+                    $('#verifyMsg').text('Welcome back! Ready to scan.');
+                    $('#startScannerBtn').show();
+                }
+            } catch (e) {
+                console.log('Invalid cookie');
+            }
+        }
+    });
+    function getCookie(name) {
+        let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+
+
     $('#verifyLearner').on('click', function () {
        
         $.ajax({
@@ -117,56 +147,40 @@
         });
     }
 
-    // function submitScan(qrText) {
-    //     $.ajax({
-    //         url: "{{ route('store.scan.attendance') }}",
-    //         type: 'POST',
-    //         data: {
-    //             _token: "{{ csrf_token() }}",
-    //             qr: qrText,
-    //             verify_token: localStorage.getItem('verify_token')
-    //         },
-    //         success: function (res) {
-    //             $('#scanMsg').text(res.message).addClass('text-success');
-    //             scanner.stop();
-    //         },
-    //         error: function (xhr) {
-    //             $('#scanMsg').text(xhr.responseJSON.message).addClass('text-danger');
-    //         }
-    //     });
-    // }
+   
 
     function submitScan(qrText) {
-    $.ajax({
-        url: "{{ route('store.scan.attendance') }}",
-        type: "POST",
-        data: {
-            _token: "{{ csrf_token() }}",
-            qr: qrText,
-            verify_token: localStorage.getItem('verify_token'),
-            
-        },
-        success: function (res) {
-            alert(res.message);
-            $('#scanMsg').text(res.message).addClass('text-success');
-
-            // Stop camera after success
-            if (scanner) {
-                scanner.stop();
-                scanner.clear();
-                scanner = null;
+        let data = JSON.parse(getCookie('attendance_learner'));
+        $.ajax({
+            url: "{{ route('store.scan.attendance') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                qr: qrText,
+                learner_id: data.learner_id,
+                verify_token: data.token
+            },
+            success: function (res) {
+                alert(res.message);
+                
+                window.location.href = '/attendance/success';
+                // Stop camera after success
+                if (scanner) {
+                    scanner.stop();
+                    scanner.clear();
+                    scanner = null;
+                }
+            },
+            error: function (xhr) {
+                let msg = 'Scan failed';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
+                $('#scanMsg').text(msg).addClass('text-danger');
             }
-        },
-        error: function (xhr) {
-            let msg = 'Scan failed';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                msg = xhr.responseJSON.message;
-            }
-            alert(msg);
-            $('#scanMsg').text(msg).addClass('text-danger');
-        }
-    });
-}
+        });
+    }
 
 </script>
 

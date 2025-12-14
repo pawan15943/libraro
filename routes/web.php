@@ -104,6 +104,8 @@ Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('boo
 Route::get('/qr/attendance/link', [AttendanceController::class, 'showLink'])->name('qr.attendance.link');
 Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'])->name('store.scan.attendance');
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
+Route::get('/attendance/success', [AttendanceController::class, 'markSuccess'])->name('attendance.success');
+
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
   // Route::middleware(['auth:library','log.requests'])->group(function () {
