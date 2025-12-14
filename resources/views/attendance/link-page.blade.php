@@ -32,7 +32,9 @@
         </div>
     </div>
 </div>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <script>
     $('#verifyLearner').on('click', function () {
        
@@ -54,15 +56,29 @@
             }
         });
     }); 
+    $(document).ready(function () {
     $('#startScannerBtn').on('click', function () {
+           alert('Start Scanner button clicked');
         openScanner(); // ✅ allowed on mobile
     });
 
-    $(document).ready(function () {
+    
         let scanner = null;
 
         function openScanner() {
-            if (scanner) return;
+            alert('openScanner() called');
+
+            if (typeof Html5Qrcode === 'undefined') {
+                alert('Html5Qrcode NOT loaded');
+                return;
+            }
+
+            alert('Html5Qrcode loaded');
+
+            if (scanner) {
+                alert('Scanner already running');
+                return;
+            }
 
             scanner = new Html5Qrcode("reader");
 
@@ -74,10 +90,11 @@
                     disableFlip: true
                 },
                 function (decodedText) {
+                    alert('QR scanned');
                     submitScan(decodedText);
                 }
             ).catch(err => {
-                alert('Camera permission denied or unavailable');
+                alert('Camera error: ' + err);
                 console.error(err);
             });
         }
