@@ -167,6 +167,9 @@ class AttendanceController extends Controller
             if ($existingAttendance) {
 
                  $existingAttendance->out_time = $currentTime;
+                 if($existingAttendance->in_time){
+                    $existingAttendance->in_time = $currentTime;
+                 }
 
                 $existingAttendance->save();
             } else {
