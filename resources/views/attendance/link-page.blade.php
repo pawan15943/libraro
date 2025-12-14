@@ -19,6 +19,13 @@
                         <button id="verifyLearner">Next</button>
 
                         <div id="verifyMsg"></div>
+
+                        <button id="startScannerBtn" class="btn btn-primary mt-3" style="display:none;">
+                            Start Scanner
+                        </button>
+
+                        <div id="reader" class="mt-3"></div>
+
                     </div>
                 </div>
             </div>
@@ -40,25 +47,43 @@
             success: function (res) {
                 localStorage.setItem('verify_token', res.verify_token);
                 $('#verifyMsg').text('Verified. Opening scanner...');
-                openScanner();
+                $('#startScannerBtn').show();
             },
             error: function (xhr) {
                 $('#verifyMsg').text(xhr.responseJSON.message);
             }
         });
     }); 
-    function openScanner() {
-        scanner = new Html5Qrcode("reader");
+    $('#startScannerBtn').on('click', function () {
+        openScanner(); // ✅ allowed on mobile
+    });
 
-        scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            function (qrText) {
-                submitScan(qrText);
-            }
-        );
-    }
+    $(document).ready(function () {
+        let scanner = null;
 
+        function openScanner() {
+            if (scanner) return;
+
+            scanner = new Html5Qrcode("reader");
+
+            scanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    disableFlip: true
+                },
+                function (decodedText) {
+                    submitScan(decodedText);
+                }
+            ).catch(err => {
+                alert('Camera permission denied or unavailable');
+                console.error(err);
+            });
+        }
+
+
+    });
     function submitScan(qrText) {
     $.ajax({
         url: "{{ route('store.scan.attendance') }}",
