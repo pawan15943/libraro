@@ -144,7 +144,7 @@
             _token: "{{ csrf_token() }}",
             qr: qrText,
             verify_token: localStorage.getItem('verify_token'),
-            time: 'in'
+            
         },
         success: function (res) {
             alert(res.message);

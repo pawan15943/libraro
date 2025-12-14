@@ -156,7 +156,7 @@ class AttendanceController extends Controller
         // Extract variables from the request
             $learnerId =session('learner_id');
             $attendance = 1;
-            $date = today();
+            $date = date('Y-m-d');
             $currentTime = now();
             $libraryId=Branch::where('id',$branchId)->select('library_id')->first();
 
@@ -184,7 +184,7 @@ class AttendanceController extends Controller
             \Log::info('ATTENDANCE SAVE DATA', [
                 'learner_id' => $learnerId,
                 'date' => $date,
-                'time_type' => $request->time
+                
             ]);
 
         session()->forget(['attendance_verified', 'verify_token']);
