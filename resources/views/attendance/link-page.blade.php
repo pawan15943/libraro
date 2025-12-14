@@ -61,7 +61,7 @@
            alert('Start Scanner button clicked');
         openScanner(); // ✅ allowed on mobile
     });
-
+});
     
         let scanner = null;
 
@@ -100,7 +100,7 @@
         }
 
 
-    });
+    
     function submitScan(qrText) {
     $.ajax({
         url: "{{ route('store.scan.attendance') }}",
