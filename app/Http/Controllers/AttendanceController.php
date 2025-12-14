@@ -121,6 +121,7 @@ class AttendanceController extends Controller
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
     public function scanAttendance(Request $request)
     {
+        \Log::info('SCAN REQUEST RECEIVED', $request->all());
         // 1. Check learner verification
         if (!session('attendance_verified') || !$request->verify_token) {
             return response()->json([
@@ -133,6 +134,11 @@ class AttendanceController extends Controller
                 'message' => 'Verification expired'
             ], 403);
         }
+        \Log::info('VERIFICATION OK', [
+            'learner_id' => session('learner_id'),
+            'verify_token' => session('verify_token')
+        ]);
+
 
         // 2. Validate QR (your existing logic)
         $branchId = $this->validateQrToken($request->qr);
@@ -141,6 +147,9 @@ class AttendanceController extends Controller
                 'message' => 'QR expired or invalid'
             ], 403);
         }
+        \Log::info('QR VALIDATION RESULT', [
+            'branch_id' => $branchId
+        ]);
 
         
        
@@ -157,14 +166,8 @@ class AttendanceController extends Controller
 
             if ($existingAttendance) {
 
-                if ($request->time == 'in') {
-                    $existingAttendance->in_time = $currentTime;
-                } elseif ($request->time == 'out') {
-                    $existingAttendance->out_time = $currentTime;
-                }
+                 $existingAttendance->out_time = $currentTime;
 
-                // Update attendance status
-                $existingAttendance->attendance = $attendance;
                 $existingAttendance->save();
             } else {
                 // // 3. Mark attendance (safe)
@@ -172,12 +175,18 @@ class AttendanceController extends Controller
                     'learner_id' => $learnerId,
                     'attendance' => $attendance,
                     'date' => $date,
-                    'in_time' => $request->time == 'in' ? $currentTime : null,
-                    'out_time' => $request->time == 'out' ? $currentTime : null,
+                    'in_time' => $currentTime ? $currentTime : null,
+                    'out_time' => $currentTime ? $currentTime : null,
                     'library_id' => $libraryId->library_id,
                     'branch_id' => $branchId,
                 ]);
             }
+            \Log::info('ATTENDANCE SAVE DATA', [
+                'learner_id' => $learnerId,
+                'date' => $date,
+                'time_type' => $request->time
+            ]);
+
         session()->forget(['attendance_verified', 'verify_token']);
         return response()->json([
             'message' => 'Thank You! Attendance marked'

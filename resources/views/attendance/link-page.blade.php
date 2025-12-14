@@ -117,25 +117,56 @@
         });
     }
 
-    function submitScan(qrText) {
-        $.ajax({
-            url: "{{ route('store.scan.attendance') }}",
-            type: 'POST',
-            data: {
-                _token: "{{ csrf_token() }}",
-                qr: qrText,
-                verify_token: localStorage.getItem('verify_token')
-            },
-            success: function (res) {
-                $('#scanMsg').text(res.message).addClass('text-success');
-                scanner.stop();
-            },
-            error: function (xhr) {
-                $('#scanMsg').text(xhr.responseJSON.message).addClass('text-danger');
-            }
-        });
-    }
+    // function submitScan(qrText) {
+    //     $.ajax({
+    //         url: "{{ route('store.scan.attendance') }}",
+    //         type: 'POST',
+    //         data: {
+    //             _token: "{{ csrf_token() }}",
+    //             qr: qrText,
+    //             verify_token: localStorage.getItem('verify_token')
+    //         },
+    //         success: function (res) {
+    //             $('#scanMsg').text(res.message).addClass('text-success');
+    //             scanner.stop();
+    //         },
+    //         error: function (xhr) {
+    //             $('#scanMsg').text(xhr.responseJSON.message).addClass('text-danger');
+    //         }
+    //     });
+    // }
 
+    function submitScan(qrText) {
+    $.ajax({
+        url: "{{ route('attendance.scan') }}",
+        type: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            qr: qrText,
+            verify_token: localStorage.getItem('verify_token'),
+            time: 'in'
+        },
+        success: function (res) {
+            alert(res.message);
+            $('#scanMsg').text(res.message).addClass('text-success');
+
+            // Stop camera after success
+            if (scanner) {
+                scanner.stop();
+                scanner.clear();
+                scanner = null;
+            }
+        },
+        error: function (xhr) {
+            let msg = 'Scan failed';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                msg = xhr.responseJSON.message;
+            }
+            alert(msg);
+            $('#scanMsg').text(msg).addClass('text-danger');
+        }
+    });
+}
 
 </script>
 
