@@ -11,20 +11,10 @@
                             <h2> Library</h2>
                             <span class="text-message">Please Fill and proceed.</span>
                         </div>
-                       @if(!$learnerVerified)
-                            <ul class="action-list">
-                                <li><input type="text" id="learner_no_uid" placeholder="Learner No."></li>
-                                <li><input type="text" id="learner_mobile" placeholder="Mobile Number"></li>
-                            </ul>
-
-                            <button id="verifyLearner">Next</button>
-                        @else
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    $('#startScannerBtn').show();
-                                });
-                            </script>
-                        @endif
+                      <ul class="action-list">
+                        <li><input type="text" id="learner_no_uid" placeholder="Learner No."></li>
+                        <li><input type="text" id="learner_mobile" placeholder="Mobile Number"></li>
+                    </ul>
 
 
                         <div id="verifyMsg"></div>
@@ -46,24 +36,33 @@
 
 <script>
     $(document).ready(function () {
-        let cookie = getCookie('attendance_learner');
+        // let cookie = getCookie('attendance_learner');
 
-        if (cookie) {
-            try {
-                let data = JSON.parse(cookie);
-                if (data.learner_id && data.token) {
-                    $('#verifyMsg').text('Welcome back! Ready to scan.');
-                    $('#startScannerBtn').show();
-                }
-            } catch (e) {
-                console.log('Invalid cookie');
+        // if (cookie) {
+        //     try {
+        //         let data = JSON.parse(cookie);
+        //         if (data.learner_id && data.token) {
+        //             $('#verifyMsg').text('Welcome back! Ready to scan.');
+        //             $('#startScannerBtn').show();
+        //         }
+        //     } catch (e) {
+        //         console.log('Invalid cookie');
+        //     }
+        // }
+        $.post("{{ url('/attendance/auto-verify') }}", {
+            _token: "{{ csrf_token() }}"
+        }, function (res) {
+            if (res.status) {
+                localStorage.setItem('verify_token', res.verify_token);
+                $('#learner_no_uid, #learner_mobile, #verifyLearner').hide();
+                $('#startScannerBtn').show();
             }
-        }
+        });
     });
-    function getCookie(name) {
-        let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-        return match ? decodeURIComponent(match[2]) : null;
-    }
+    // function getCookie(name) {
+    //     let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    //     return match ? decodeURIComponent(match[2]) : null;
+    // }
 
 
     $('#verifyLearner').on('click', function () {
@@ -78,6 +77,7 @@
             },
             success: function (res) {
                 localStorage.setItem('verify_token', res.verify_token);
+                $('#learner_no_uid, #learner_mobile, #verifyLearner').hide();
                 $('#verifyMsg').text('Verified. Opening scanner...');
                 $('#startScannerBtn').show();
             },

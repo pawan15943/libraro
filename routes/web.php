@@ -105,6 +105,7 @@ Route::get('/qr/attendance/link', [AttendanceController::class, 'showLink'])->na
 Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'])->name('store.scan.attendance');
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
 Route::get('/attendance/success', [AttendanceController::class, 'markSuccess'])->name('attendance.success');
+Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify']);
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {

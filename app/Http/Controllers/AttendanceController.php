@@ -8,6 +8,7 @@ use App\Models\Learner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
+use Illuminate\Support\Facades\Cookie;
 
 class AttendanceController extends Controller
 {
@@ -60,23 +61,60 @@ class AttendanceController extends Controller
             ], 401);
         }
 
-        $token = hash_hmac(
+        $verifyToken = hash_hmac(
             'sha256',
             $learner->id . '|' . now()->timestamp,
             config('app.key')
         );
 
+        session([
+            'attendance_verified' => true,
+            'learner_id' => $learner->id,
+            'verify_token' => $verifyToken,
+        ]);
+
+         Cookie::queue(
+            Cookie::make(
+                'learner_key',
+                $learner->learner_key,
+                60 * 24 * 30, // 30 days
+                null,
+                null,
+                true, // HTTPS only
+                true  // HTTP only
+            )
+        );
+
+        return response()->json([
+            'verify_token' => $verifyToken
+        ]);
+    }
+    
+    public function autoVerify(Request $request)
+    {
+        $learnerKey = $request->cookie('learner_key');
+
+        if (!$learnerKey) {
+            return response()->json(['status'=>false]);
+        }
+
+        $learner = Learner::where('attendance_key', $learnerKey)->first();
+        if (!$learner) {
+            return response()->json(['status'=>false]);
+        }
+
+        session([
+            'attendance_verified' => true,
+            'learner_id' => $learner->id,
+            'verify_token' => Str::random(40)
+        ]);
+
         return response()->json([
             'status' => true,
-            'learner_id' => $learner->id,
-            'verify_token' => $token
-        ])->withCookie(
-            cookie('attendance_learner', json_encode([
-                'learner_id' => $learner->id,
-                'token' => $token
-            ]), 60 * 24 * 7) // 7 days
-        );
+            'verify_token' => session('verify_token')
+        ]);
     }
+
     //Scanner opens ->Learner scans CURRENT QR
     private function validateQrToken(string $qrToken)
     {
@@ -125,15 +163,12 @@ class AttendanceController extends Controller
     public function scanAttendance(Request $request)
     {
         \Log::info('SCAN REQUEST RECEIVED', $request->all());
-            $expected = hash_hmac(
-                'sha256',
-                $request->learner_id . '|' . session()->get('verify_time', now()->timestamp),
-                config('app.key')
-            );
 
-            if (!$request->verify_token) {
-                return response()->json(['message'=>'Verification required'], 403);
-            }
+
+        if (!session('attendance_verified') ||
+            $request->verify_token !== session('verify_token')) {
+            return response()->json(['message'=>'Unauthorized'], 403);
+        }
         
 
 
@@ -187,7 +222,7 @@ class AttendanceController extends Controller
                 
             ]);
 
-        
+        session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'message' => 'Thank You! Attendance marked'
         ]);
