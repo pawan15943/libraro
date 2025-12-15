@@ -199,3 +199,33 @@ $(document).ready(function () {
   });
 });
 
+function saveOffline(qr) {
+    let queue = JSON.parse(localStorage.getItem('offlineAttendance')) || [];
+    queue.push({
+        qr: qr,
+        uid: localStorage.getItem('uid'),
+        mobile: localStorage.getItem('mobile'),
+        time: Date.now()
+    });
+    localStorage.setItem('offlineAttendance', JSON.stringify(queue));
+}
+
+window.addEventListener('online', syncOffline);
+
+function syncOffline() {
+    let queue = JSON.parse(localStorage.getItem('offlineAttendance')) || [];
+
+    queue.forEach(item => {
+        fetch('library/attendance/scan', {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                'X-CSRF-TOKEN':'{{ csrf_token() }}'
+            },
+            body: JSON.stringify(item)
+        });
+    });
+
+    localStorage.removeItem('offlineAttendance');
+}
+
