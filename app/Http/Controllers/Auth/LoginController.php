@@ -62,7 +62,7 @@ class LoginController extends Controller
         switch ($request->input('user_type')) {
             case 'superadmin':
                 if (Auth::guard('web')->attempt($credentials, $remember)) {
-                    logoutOtherGuards('web'); // 🔥 IMPORTANT
+                    
                     return redirect()->intended(route('home'));
                 } else {
                     // re-direct to learner login 2

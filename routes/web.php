@@ -308,7 +308,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 });
  
 // Routes for superadmin and admin users
-Route::middleware(['auth:web','enforce.guard:web'])->group(function () {
+Route::middleware(['auth:web'])->group(function () {
   Route::post('library/storedata', [LibraryController::class, 'libraryStore'])->name('library.storedata');
 
   Route::post('library/verify/otp', [AdminController::class, 'libraryVerify'])->name('library.verify.otp');
