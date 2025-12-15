@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use Illuminate\Support\Facades\Mail;
+use Auth;
 class SiteController extends Controller
 {
     public function aboutUs()
@@ -321,6 +322,7 @@ class SiteController extends Controller
 
     public function libraryDetail($slug)
     {
+        
         $features = DB::table('features')->whereNull('deleted_at')->get();
         $library = Branch::where('slug', $slug)->with('state', 'city', 'library.subscription', 'library')->first();
 
