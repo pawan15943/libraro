@@ -35,7 +35,7 @@
             <button class="btn btn-primary" id="startScanner">
                 Start Scanner
             </button>
-            <div id="reader" class="mt-3"></div>
+            <div id="reader" style="width:300px;margin:auto;"></div>
             <p id="scanMsg" class="mt-2"></p>
         </div>
 
@@ -46,9 +46,11 @@
 
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 
 <script>
-    console.log('ATTENDANCE SCRIPT LOADED');
+  
 let backupQR = null;
 let qrInterval = null;
 let scanner = null;
@@ -89,9 +91,47 @@ qrInterval = setInterval(loadQR, 5000);
    SCANNER TAB
 =================================*/
 
+// $('#startScanner').on('click', function () {
+
+//     if (scanner) return; // already running
+
+//     scanner = new Html5Qrcode("reader");
+
+//     scanner.start(
+//         { facingMode: "environment" },
+//         {
+//             fps: 10,
+//             qrbox: { width: 250, height: 250 },
+//             disableFlip: true
+//         },
+//         function (decodedText) {
+//             submitScan(decodedText);
+//         }
+//     );
+// });
+
+// function submitScan(qrData) {
+//     $.ajax({
+//         url: "{{ route('library.attendance.scan') }}",
+//         type: 'POST',
+//         data: {
+//             _token: '{{ csrf_token() }}',
+//             qr: qrData,
+//             uid: localStorage.getItem('uid'),
+//             mobile: localStorage.getItem('mobile')
+//         },
+//         success: function (res) {
+//             $('#scanMsg').text(res.message).addClass('text-success');
+//         },
+//         error: function () {
+//             $('#scanMsg').text('Scan failed. Try again').addClass('text-danger');
+//         }
+//     });
+// }
+let isProcessing = false;
 $('#startScanner').on('click', function () {
 
-    if (scanner) return; // already running
+    if (scanner) return;
 
     scanner = new Html5Qrcode("reader");
 
@@ -102,27 +142,44 @@ $('#startScanner').on('click', function () {
             qrbox: { width: 250, height: 250 },
             disableFlip: true
         },
-        function (decodedText) {
-            submitScan(decodedText);
-        }
-    );
-});
+        function (qrText) {
+            if (isProcessing) return;
 
-function submitScan(qrData) {
+            isProcessing = true;
+            submitScan(qrText);
+
+            setTimeout(() => {
+                isProcessing = false;
+            }, 1500);
+        }
+    ).catch(err => {
+        alert('Camera error: ' + err);
+        scanner = null;
+    });
+});
+function submitScan(qrText) {
     $.ajax({
-        url: '/attendance/scan',
-        type: 'POST',
+        url: "{{ route('library.attendance.scan') }}",
+        type: "POST",
         data: {
-            _token: '{{ csrf_token() }}',
-            qr: qrData,
-            uid: localStorage.getItem('uid'),
-            mobile: localStorage.getItem('mobile')
+            _token: "{{ csrf_token() }}",
+            qr: qrText
         },
         success: function (res) {
-            $('#scanMsg').text(res.message).addClass('text-success');
+            $('#msg')
+                .text(res.message)
+                .removeClass('text-danger')
+                .addClass('text-success');
         },
-        error: function () {
-            $('#scanMsg').text('Scan failed. Try again').addClass('text-danger');
+        error: function (xhr) {
+            let msg = 'Scan failed';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                msg = xhr.responseJSON.message;
+            }
+            $('#msg')
+                .text(msg)
+                .removeClass('text-success')
+                .addClass('text-danger');
         }
     });
 }

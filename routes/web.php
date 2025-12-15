@@ -241,7 +241,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/library/redeem', [LibraryReferralController::class, 'redeem'])->name('library.redeem');
     Route::get('/attendance/apply', [AttendanceController::class, 'index']);
     Route::get('/attendance/qr', [AttendanceController::class, 'generate'])->name('attendance.qrcode');
-    Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
+    Route::post('/attendance/scan', [AttendanceController::class, 'scan'])->name('library.attendance.scan');
     
 
 
