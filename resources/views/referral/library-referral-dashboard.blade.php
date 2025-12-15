@@ -95,9 +95,10 @@
     }
 
     @media screen and (max-width: 768px) {
-        .refer-and-earn{
+        .refer-and-earn {
             padding: 1.5rem !important;
         }
+
         .refer-and-earn-main .refer-and-earn {
             flex-direction: column;
             text-align: center;
@@ -216,17 +217,21 @@
                 <img src="{{ asset('public/img/refer-earn.png') }}" alt="Refer & Earn">
             </div>
         </div>
-        @if($is_redeem)
-        <button class="btn btn-warning mt-3"
-                data-bs-toggle="modal"
-                data-bs-target="#redeemModal">
-            Redeem Now ({{ $earnReward }} pts)
-        </button>
-        @else
-        <small class="text-muted d-block mt-2">
-            {{ $earnReward }}
-        </small>
-        @endif
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                @if($is_redeem)
+                <button class="btn btn-warning mt-3"
+                    data-bs-toggle="modal"
+                    data-bs-target="#redeemModal">
+                    Redeem Now ({{ $earnReward }} pts)
+                </button>
+                @else
+                <small class="text-muted d-block mt-2">
+                    Earned Reward Points : {{ $earnReward }}
+                </small>
+                @endif
+            </div>
+        </div>
 
     </div>
 
@@ -393,37 +398,37 @@
 {{-- <div class="container">
     <h4 class="mb-4">Refer Another Library</h4> --}}
 
-    {{-- Referral Summary --}}
-    {{-- <div class="row mb-4">
+{{-- Referral Summary --}}
+{{-- <div class="row mb-4">
         <div class="col-md-3">
             <div class="card p-3">Total Referrals <br><b>{{ $total }}</b></div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-3">Completed <br><b>{{ $completed }}</b></div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-3">Pending <br><b>{{ $pending }}</b></div>
-        </div>
-    </div> --}}
+</div>
+<div class="col-md-3">
+    <div class="card p-3">Completed <br><b>{{ $completed }}</b></div>
+</div>
+<div class="col-md-3">
+    <div class="card p-3">Pending <br><b>{{ $pending }}</b></div>
+</div>
+</div> --}}
 
-    {{-- Referral Code --}}
-    {{-- <div class="card mb-3">
+{{-- Referral Code --}}
+{{-- <div class="card mb-3">
         <div class="card-body">
             <h6>Referral Code</h6>
             <input type="text" class="form-control" value="{{ auth()->user()->referral_code }}" readonly>
-        </div>
-    </div> --}}
+</div>
+</div> --}}
 
-    {{-- Referral Link --}}
-    {{-- <div class="card mb-3">
+{{-- Referral Link --}}
+{{-- <div class="card mb-3">
         <div class="card-body">
             <h6>Referral Link</h6>
             <input type="text" class="form-control" value="{{ url('/library/register?ref='.auth()->user()->referral_code) }}" readonly>
-        </div>
-    </div> --}}
+</div>
+</div> --}}
 
-    {{-- QR Code --}}
-    {{-- <div class="card mb-3">
+{{-- QR Code --}}
+{{-- <div class="card mb-3">
         <div class="card-body text-center">
             <h6>Referral QR Code</h6>
             {!! QrCode::size(180)->generate(url('/library/register?ref='.auth()->user()->referral_code)) !!}
@@ -431,12 +436,12 @@
     </div> --}}
 {{-- </div> --}}
 <script>
-document.querySelectorAll('.copy').forEach(btn => {
-    btn.addEventListener('click', function () {
-        navigator.clipboard.writeText(this.dataset.copy);
-        new bootstrap.Toast(document.getElementById('copyToast')).show();
+    document.querySelectorAll('.copy').forEach(btn => {
+        btn.addEventListener('click', function() {
+            navigator.clipboard.writeText(this.dataset.copy);
+            new bootstrap.Toast(document.getElementById('copyToast')).show();
+        });
     });
-});
 </script>
 {{-- <script>
     $(".copy").on("click", function() {
