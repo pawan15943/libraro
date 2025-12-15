@@ -9,27 +9,40 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthenticateLibraryOrUser
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
+   
    public function handle($request, Closure $next)
     {
+        $activeGuard = null;
+
+        // 1️⃣ Detect active guard (priority order)
         if (Auth::guard('library')->check()) {
-            Auth::shouldUse('library');
-            
+            $activeGuard = 'library';
         } elseif (Auth::guard('library_user')->check()) {
-            Auth::shouldUse('library_user');
-        } else {
-            // If the request expects JSON (e.g. from AJAX)
+            $activeGuard = 'library_user';
+        }
+
+        // 2️⃣ If no guard authenticated → unauthenticated
+        if (!$activeGuard) {
+
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
 
-            // Redirect to appropriate login route
             return $this->redirectTo($request);
         }
+
+        // 3️⃣ 🔥 ENFORCE SINGLE GUARD (CORE FIX)
+        foreach (array_keys(config('auth.guards')) as $guard) {
+            if ($guard !== $activeGuard && Auth::guard($guard)->check()) {
+                Auth::guard($guard)->logout();
+            }
+        }
+
+        // 4️⃣ Tell Laravel which guard to use
+        Auth::shouldUse($activeGuard);
+
+        // Optional (debug / audit)
+        session(['active_guard' => $activeGuard]);
 
         return $next($request);
     }

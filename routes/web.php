@@ -98,6 +98,9 @@ Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploa
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
 Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
+Route::get('/find-my-library', function () {
+      return view('site.find-my-library');
+    });
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
@@ -303,11 +306,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     ]);
   })->name('locker.no');
 });
-  Route::get('/find-my-library', function () {
-      return view('site.find-my-library');
-    });
+ 
 // Routes for superadmin and admin users
-Route::middleware(['auth:web'])->group(function () {
+Route::middleware(['auth:web','enforce.guard:web'])->group(function () {
   Route::post('library/storedata', [LibraryController::class, 'libraryStore'])->name('library.storedata');
 
   Route::post('library/verify/otp', [AdminController::class, 'libraryVerify'])->name('library.verify.otp');
@@ -379,7 +380,7 @@ Route::middleware(['auth:web'])->group(function () {
   });
 });
 
-Route::middleware(['auth:learner'])->group(function () {
+Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
   Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
   Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');
