@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Branch;
 use App\Models\Learner;
+use App\Models\LearnerDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
+use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
@@ -270,11 +272,20 @@ public function scan(Request $request)
         \Log::warning('Learner not found');
         return response()->json(['message' => 'Learner not found'], 404);
     }
+    $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
 
-    /* 4️⃣ Plan validation */
-    if ($learner->plan_end_date < today()) {
-      
-        return response()->json(['message' => 'Plan expired'], 403);
+    /* 1️⃣ No active plan */
+    if (!$learnerDetail) {
+        return response()->json([
+            'message' => 'No active plan found'
+        ], 403);
+    }
+
+    /* 2️⃣ Plan expired check */
+    if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
+        return response()->json([
+            'message' => 'Plan expired'
+        ], 403);
     }
 
     /* 5️⃣ Attendance logic */
