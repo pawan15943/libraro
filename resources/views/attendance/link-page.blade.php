@@ -35,6 +35,12 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
+    const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
+    const audioExpired = new Audio("{{asset('public/audio/expired.mp3')}}");
+    const audioError   = new Audio("{{asset('public/audio/error.mp3')}}");
+    audioSuccess.preload = 'auto';
+    audioExpired.preload = 'auto';
+    audioError.preload   = 'auto';
     
      $(document).ready(function () {
         $('#startScannerBtn').on('click', function () {
@@ -131,9 +137,23 @@
                 verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
-                alert(res.message);
                 
-                window.location.href = '/attendance/success';
+                
+                // window.location.href = '/attendance/success';
+
+                // ✅ Show message
+                document.getElementById('qrMsg').innerText = res.message;
+                // 🔊 PLAY SOUND BASED ON MESSAGE
+                if (res.status === 'success') {
+                    audioSuccess.play();
+                }
+                else if (res.status === 'expired') {
+                    audioExpired.play();
+                }
+                else {
+                    audioError.play();
+                }
+
                 // Stop camera after success
                 if (scanner) {
                     scanner.stop();
@@ -146,8 +166,8 @@
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
-                alert(msg);
-                $('#scanMsg').text(msg).addClass('text-danger');
+                audioError.play();
+                $('#qrMsg').text(msg).addClass('text-danger');
             }
         });
     }

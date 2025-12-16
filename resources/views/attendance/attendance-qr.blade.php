@@ -27,7 +27,7 @@
         <!-- QR TAB -->
         <div class="tab-pane fade show active text-center" id="qrTab">
             <img id="qrImg" class="img-fluid mb-2" style="max-width:260px;">
-            <p class="text-muted small">QR refreshes every 5 seconds</p>
+            <p id="qrMsg" class="mt-2"></p>
         </div> 
 
         <!-- SCANNER TAB -->
@@ -54,7 +54,6 @@ let qrInterval = null;
 let scanner = null;
 let scanDone = false;
 const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
-
 const audioExpired = new Audio("{{asset('public/audio/expired.mp3')}}");
 const audioError   = new Audio("{{asset('public/audio/error.mp3')}}");
 audioSuccess.preload = 'auto';
@@ -98,8 +97,6 @@ qrInterval = setInterval(loadQR, 5000);
 ============================ */
 document.getElementById('startScanner').addEventListener('click', function () {
 
-    alert('Starting scanner');
-    console.log('audioSuccess',audioSuccess);
 
     if (scanner) return;
 
@@ -119,7 +116,6 @@ document.getElementById('startScanner').addEventListener('click', function () {
             if (scanDone) return; // ✅ one scan only
             scanDone = true;
 
-            console.log('SCANNED:', decodedText);
 
             document.getElementById('scanMsg').innerText =
                 'QR detected. Processing...';
@@ -151,19 +147,16 @@ function submitScan(qrText) {
         // ✅ Show message
         document.getElementById('scanMsg').innerText = res.message;
          // 🔊 PLAY SOUND BASED ON MESSAGE
-        if (res.message.toLowerCase().includes('attendance') ||
-            res.message.toLowerCase().includes('punch')) {
-
+        if (res.status === 'success') {
             audioSuccess.play();
-
-        } else if (res.message.toLowerCase().includes('expired')) {
-
+        }
+        else if (res.status === 'expired') {
             audioExpired.play();
-
-        } else {
-
+        }
+        else {
             audioError.play();
         }
+
 
         // ✅ Stop scanner properly
         if (scanner) {
