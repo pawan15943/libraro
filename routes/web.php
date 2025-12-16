@@ -106,6 +106,9 @@ Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
 Route::get('/attendance/success', [AttendanceController::class, 'markSuccess'])->name('attendance.success');
 Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify']);
+Route::get('/find-my-library', function () {
+      return view('site.find-my-library');
+    });
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
@@ -325,9 +328,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     ]);
   })->name('locker.no');
 });
-  Route::get('/find-my-library', function () {
-      return view('site.find-my-library');
-    });
+ 
 // Routes for superadmin and admin users
 Route::middleware(['auth:web'])->group(function () {
   Route::post('library/storedata', [LibraryController::class, 'libraryStore'])->name('library.storedata');
@@ -401,7 +402,7 @@ Route::middleware(['auth:web'])->group(function () {
   });
 });
 
-Route::middleware(['auth:learner'])->group(function () {
+Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
   Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
   Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');

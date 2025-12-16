@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\CurrentBranch;
 use Illuminate\Support\Facades\App;
+use Log;
+
 
 trait HasBranch
 {

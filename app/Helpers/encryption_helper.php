@@ -22,6 +22,18 @@ use App\Models\PlanType;
 use App\Models\Setting;
 use Carbon\Carbon;
 
+
+if (!function_exists('logoutOtherGuards')) {
+    function logoutOtherGuards(string $currentGuard): void
+    {
+        foreach (array_keys(config('auth.guards')) as $guard) {
+            if ($guard !== $currentGuard && Auth::guard($guard)->check()) {
+                Auth::guard($guard)->logout();
+            }
+        }
+    }
+}
+
 if (!function_exists('getAuthenticatedUser')) {
     function getAuthenticatedUser()
     {
