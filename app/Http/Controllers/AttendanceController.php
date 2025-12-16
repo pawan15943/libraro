@@ -292,7 +292,7 @@ public function scan(Request $request)
             'attendance' => 1
         ]);
 
-        \Log::info('Punch IN', compact('learnerId'));
+        
 
         return response()->json([
             'message' => 'Punch IN successful'
@@ -305,7 +305,7 @@ public function scan(Request $request)
         'attendance' => 1
     ]);
 
-    \Log::info('Punch OUT', compact('learnerId'));
+    
 
     return response()->json([
         'message' => 'Punch OUT successful'
