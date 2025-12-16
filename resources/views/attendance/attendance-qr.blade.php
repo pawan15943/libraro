@@ -98,6 +98,7 @@ qrInterval = setInterval(loadQR, 5000);
 document.getElementById('startScanner').addEventListener('click', function () {
 
     alert('Starting scanner');
+    console.log('audioSuccess',audioSuccess);
 
     if (scanner) return;
 
