@@ -275,7 +275,12 @@
 <body>
      <div class="print-container">
         @foreach($learner_details as $key => $learner_detail)
-            
+           @php
+            $payload=$learner_detail->learner->id;
+            $signature = hash_hmac('sha256', $payload, config('app.key'));
+
+            $qrData = base64_encode($payload . '|' . $signature);
+           @endphp 
         
         <div class="card front">
             <div class="profiile">
@@ -307,7 +312,7 @@
                         <p class="m-0">{{ $learner_detail->plan_end_date ?? ''}}</p>
                     </li>
                 </ul>
-                <div class="barcode">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>
+                <div class="barcode">{!! QrCode::size(100)->generate($qrData) !!}</div>
             </div>
             <div class="library-name">{{$branch->display_name ?? $branch->name}}</div>
         </div>

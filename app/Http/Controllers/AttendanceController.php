@@ -234,47 +234,44 @@ class AttendanceController extends Controller
         return view('attendance.success');
     }
 
-   public function scan(Request $request)
+public function scan(Request $request)
 {
-    /* ---------------------------
-       1. Decode Learner QR
-    --------------------------- */
+    \Log::info('SCAN HIT', $request->all());
+
+    /* 1️⃣ Decode QR */
     $decoded = base64_decode($request->qr, true);
     if (!$decoded) {
+        \Log::warning('QR decode failed');
         return response()->json(['message' => 'Invalid QR'], 403);
     }
 
     [$learnerId, $signature] = explode('|', $decoded);
 
-    $expected = hash_hmac(
-        'sha256',
-        $learnerId,
-        config('app.key')
-    );
+    /* 2️⃣ Verify QR signature */
+    $expected = hash_hmac('sha256', $learnerId, config('app.key'));
 
     if (!hash_equals($expected, $signature)) {
+        \Log::warning('QR signature mismatch', compact('learnerId'));
         return response()->json(['message' => 'QR tampered'], 403);
     }
 
-    /* ---------------------------
-       2. Learner validation
-    --------------------------- */
+    /* 3️⃣ Learner validation */
     $learner = Learner::where('id', $learnerId)
         ->where('status', 1)
         ->first();
 
     if (!$learner) {
+        \Log::warning('Learner not found', compact('learnerId'));
         return response()->json(['message' => 'Learner not found'], 404);
     }
 
-    // Plan active check
+    /* 4️⃣ Plan validation */
     if ($learner->plan_end_date < today()) {
+        \Log::warning('Plan expired', compact('learnerId'));
         return response()->json(['message' => 'Plan expired'], 403);
     }
 
-    /* ---------------------------
-       3. Attendance logic
-    --------------------------- */
+    /* 5️⃣ Attendance logic */
     $attendance = Attendance::where('learner_id', $learnerId)
         ->where('date', today())
         ->first();
@@ -288,21 +285,26 @@ class AttendanceController extends Controller
             'attendance' => 1
         ]);
 
+        \Log::info('Punch IN', compact('learnerId'));
+
         return response()->json([
-            'message' => 'Punch In successful'
+            'message' => 'Punch IN successful'
         ]);
     }
 
-    // Punch Out (last scan wins)
+    // Punch OUT
     $attendance->update([
         'out_time' => now(),
         'attendance' => 1
     ]);
 
+    \Log::info('Punch OUT', compact('learnerId'));
+
     return response()->json([
-        'message' => 'Punch Out successful'
+        'message' => 'Punch OUT successful'
     ]);
 }
+
 
 
 }

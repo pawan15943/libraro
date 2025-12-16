@@ -35,14 +35,12 @@
             <button class="btn btn-primary" id="startScanner">
                 Start Scanner
             </button>
-            <div id="reader" style="width:300px;margin:auto;"></div>
+            <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
             <p id="scanMsg" class="mt-2"></p>
         </div>
 
     </div>
 </div>
-
-
 
 
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -54,7 +52,7 @@
 let backupQR = null;
 let qrInterval = null;
 let scanner = null;
-
+let isScanning = false;
 /* ===============================
    QR TAB – jQuery AJAX
 =================================*/
@@ -65,7 +63,7 @@ function loadQR() {
         type: 'GET',
         dataType: 'json',
         success: function (data) {
-            console.log('QR RESPONSE:', data); 
+            
             backupQR = data.fallback;
             showQR(data.primary);
         },
@@ -87,51 +85,43 @@ loadQR();
 qrInterval = setInterval(loadQR, 5000);
 
 
-/* ===============================
-   SCANNER TAB
-=================================*/
+/* ============================
+   START SCANNER (SAFE WAY)
+============================ */
+document.getElementById('startScanner').addEventListener('click', function () {
 
-// $('#startScanner').on('click', function () {
+    alert('Start Scanner clicked');
 
-//     if (scanner) return; // already running
+    // Ensure tab is visible
+    const tab = new bootstrap.Tab(
+        document.querySelector('button[data-bs-target="#scannerTab"]')
+    );
+    tab.show();
 
-//     scanner = new Html5Qrcode("reader");
+    // Delay is REQUIRED
+    setTimeout(startScannerCamera, 300);
+});
 
-//     scanner.start(
-//         { facingMode: "environment" },
-//         {
-//             fps: 10,
-//             qrbox: { width: 250, height: 250 },
-//             disableFlip: true
-//         },
-//         function (decodedText) {
-//             submitScan(decodedText);
-//         }
-//     );
-// });
+/* ============================
+   CAMERA START
+============================ */
+function startScannerCamera() {
 
-// function submitScan(qrData) {
-//     $.ajax({
-//         url: "{{ route('library.attendance.scan') }}",
-//         type: 'POST',
-//         data: {
-//             _token: '{{ csrf_token() }}',
-//             qr: qrData,
-//             uid: localStorage.getItem('uid'),
-//             mobile: localStorage.getItem('mobile')
-//         },
-//         success: function (res) {
-//             $('#scanMsg').text(res.message).addClass('text-success');
-//         },
-//         error: function () {
-//             $('#scanMsg').text('Scan failed. Try again').addClass('text-danger');
-//         }
-//     });
-// }
-let isProcessing = false;
-$('#startScanner').on('click', function () {
+    alert('Starting camera');
 
-    if (scanner) return;
+    // Safety reset
+    if (scanner) {
+        scanner.stop().then(() => {
+            scanner.clear();
+            scanner = null;
+            initScanner();
+        });
+    } else {
+        initScanner();
+    }
+}
+
+function initScanner() {
 
     scanner = new Html5Qrcode("reader");
 
@@ -143,50 +133,59 @@ $('#startScanner').on('click', function () {
             disableFlip: true
         },
         function (qrText) {
-            if (isProcessing) return;
 
-            isProcessing = true;
+            if (isScanning) return;
+            isScanning = true;
+
+            document.getElementById('scanMsg').innerText =
+                'QR detected. Processing...';
+
             submitScan(qrText);
 
-            setTimeout(() => {
-                isProcessing = false;
-            }, 1500);
+            setTimeout(() => isScanning = false, 2000);
         }
     ).catch(err => {
         alert('Camera error: ' + err);
         scanner = null;
     });
-});
+}
+
+/* ============================
+   SUBMIT SCAN
+============================ */
 function submitScan(qrText) {
-    $.ajax({
-        url: "{{ route('library.attendance.scan') }}",
-        type: "POST",
-        data: {
-            _token: "{{ csrf_token() }}",
-            qr: qrText
+    alert("submitscan start");
+    fetch("{{ route('library.attendance.scan') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        success: function (res) {
-            $('#msg')
-                .text(res.message)
-                .removeClass('text-danger')
-                .addClass('text-success');
-        },
-        error: function (xhr) {
-            let msg = 'Scan failed';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                msg = xhr.responseJSON.message;
-            }
-            $('#msg')
-                .text(msg)
-                .removeClass('text-success')
-                .addClass('text-danger');
-        }
+        body: JSON.stringify({ qr: qrText })
+    })
+    .then(res => res.json())
+    .then(res => {
+        document.getElementById('scanMsg').innerText = res.message;
+    })
+    .catch(() => {
+        document.getElementById('scanMsg').innerText =
+            'Network error. Try again.';
     });
 }
 
-/* ===============================
-   STOP SCANNER WHEN TAB CHANGES
-=================================*/
+/* ============================
+   STOP CAMERA ON TAB CHANGE
+============================ */
+document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', function (e) {
+        if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+            });
+        }
+    });
+});
 
 $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
     let target = $(e.target).data('bs-target');
