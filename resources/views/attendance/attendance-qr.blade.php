@@ -53,7 +53,7 @@ let backupQR = null;
 let qrInterval = null;
 let scanner = null;
 let scanDone = false;
-const audioSuccess = new Audio("{{ asset('audio/success.mp3') }}");
+const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
 
 const audioExpired = new Audio("{{asset('public/audio/expired.mp3')}}");
 const audioError   = new Audio("{{asset('public/audio/error.mp3')}}");
