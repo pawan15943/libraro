@@ -18,7 +18,7 @@
     }
 
     .refer-and-earn-main .refer-and-earn img {
-        width: 400px;
+        width: 300px;
     }
 
 
@@ -110,6 +110,30 @@
         }
 
     }
+
+    .rewardsCreadit {
+        background: linear-gradient(45deg, goldenrod, #99710e);
+        padding: 1.5rem;
+        border-radius: .8rem;
+        margin-top: -2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .rewardsCreadit button {
+        margin: 0 !IMPORTANT;
+        border-radius: 2rem;
+        font-family: 'outfit', 'sans-sarif';
+        background: #18225f;
+        padding: .3rem 1.5rem;
+        font-weight: 500;
+        color: #fff;
+    }
+
+    .earnedReward *{
+        color: #fff;
+    }
 </style>
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -179,6 +203,7 @@
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="redeemModal">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" action="{{ route('library.redeem') }}">
@@ -219,17 +244,19 @@
         </div>
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                @if($is_redeem)
-                <button class="btn btn-warning mt-3"
-                    data-bs-toggle="modal"
-                    data-bs-target="#redeemModal">
-                    Redeem Now ({{ $earnReward }} pts)
-                </button>
-                @else
-                <small class="text-muted d-block mt-2">
-                    Earned Reward Points : {{ $earnReward }}
-                </small>
-                @endif
+                <div class="rewardsCreadit">
+                    <div class="earnedReward">
+                        <span>Earned Reward Points</span>
+                        <h4 class="text-white">100</h4>
+                    </div>
+
+                    <button class="btn btn-warning mt-3"
+                        data-bs-toggle="modal"
+                        data-bs-target="#redeemModal">
+                        Redeem Now ({{ $earnReward }} pts)
+                    </button>
+
+                </div>
             </div>
         </div>
 
