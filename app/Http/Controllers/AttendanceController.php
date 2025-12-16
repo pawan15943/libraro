@@ -267,13 +267,13 @@ public function scan(Request $request)
         ->first();
 
     if (!$learner) {
-        \Log::warning('Learner not found', compact('learnerId'));
+        \Log::warning('Learner not found');
         return response()->json(['message' => 'Learner not found'], 404);
     }
 
     /* 4️⃣ Plan validation */
     if ($learner->plan_end_date < today()) {
-        \Log::warning('Plan expired', compact('learnerId'));
+      
         return response()->json(['message' => 'Plan expired'], 403);
     }
 

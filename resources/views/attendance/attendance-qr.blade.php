@@ -25,10 +25,10 @@
     <div class="tab-content">
 
         <!-- QR TAB -->
-        {{-- <div class="tab-pane fade show active text-center" id="qrTab">
+        <div class="tab-pane fade show active text-center" id="qrTab">
             <img id="qrImg" class="img-fluid mb-2" style="max-width:260px;">
             <p class="text-muted small">QR refreshes every 5 seconds</p>
-        </div> --}}
+        </div> 
 
         <!-- SCANNER TAB -->
         <div class="tab-pane fade text-center" id="scannerTab">
@@ -55,6 +55,7 @@ let scanner = null;
 let isScanning = false;
 let lastScanned = null;
 let scanCooldown = false;
+let scanDone = false;
 
 /* ===============================
    QR TAB – jQuery AJAX
@@ -89,7 +90,7 @@ qrInterval = setInterval(loadQR, 5000);
 
 
 /* ============================
-   START SCANNER (SAFE WAY)
+   START SCANNER
 ============================ */
 document.getElementById('startScanner').addEventListener('click', function () {
 
@@ -97,35 +98,28 @@ document.getElementById('startScanner').addEventListener('click', function () {
 
     if (scanner) return;
 
+    scanDone = false;
+    document.getElementById('scanMsg').innerText = '';
+
     scanner = new Html5Qrcode("reader");
 
     scanner.start(
         { facingMode: "environment" },
         {
             fps: 10,
-            qrbox: 250,
-            disableFlip: true
+            qrbox: 250
         },
         function (decodedText) {
 
-            // 🔴 DEBUG: CONFIRM SCAN
+            if (scanDone) return; // ✅ one scan only
+            scanDone = true;
+
             console.log('SCANNED:', decodedText);
-
-            // Prevent same QR spam
-            if (decodedText === lastScanned || scanCooldown) return;
-
-            lastScanned = decodedText;
-            scanCooldown = true;
 
             document.getElementById('scanMsg').innerText =
                 'QR detected. Processing...';
 
             submitScan(decodedText);
-
-            // Allow next scan after 2 sec
-            setTimeout(() => {
-                scanCooldown = false;
-            }, 2000);
         }
     ).catch(err => {
         alert('Camera error: ' + err);
@@ -133,8 +127,11 @@ document.getElementById('startScanner').addEventListener('click', function () {
     });
 });
 
+/* ============================
+   SUBMIT SCAN (SINGLE VERSION)
+============================ */
 function submitScan(qrText) {
-
+    alert('submit scanner');
     fetch("{{ route('library.attendance.scan') }}", {
         method: 'POST',
         headers: {
@@ -145,50 +142,31 @@ function submitScan(qrText) {
     })
     .then(res => res.json())
     .then(res => {
+
+        // ✅ Show message
         document.getElementById('scanMsg').innerText = res.message;
+
+        // ✅ Stop scanner properly
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+            });
+        }
     })
     .catch(() => {
+
         document.getElementById('scanMsg').innerText =
             'Network error. Try again.';
-    });
-}
 
-/* ============================
-   SUBMIT SCAN
-============================ */
-function submitScan(qrText) {
-    alert("submitscan start");
-    fetch("{{ route('library.attendance.scan') }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({ qr: qrText })
-    })
-    .then(res => res.json())
-    .then(res => {
-        window.location.href = '/attendance/success';
-    })
-    .catch(() => {
-        document.getElementById('scanMsg').innerText =
-            'Network error. Try again.';
-    });
-}
-
-/* ============================
-   STOP CAMERA ON TAB CHANGE
-============================ */
-document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
-    btn.addEventListener('shown.bs.tab', function (e) {
-        if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
+        if (scanner) {
             scanner.stop().then(() => {
                 scanner.clear();
                 scanner = null;
             });
         }
     });
-});
+}
 
 $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
     let target = $(e.target).data('bs-target');
