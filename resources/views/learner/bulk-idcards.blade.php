@@ -312,7 +312,7 @@
                         <p class="m-0">{{ $learner_detail->plan_end_date ?? ''}}</p>
                     </li>
                 </ul>
-                <div class="barcode">{!! QrCode::size(100)->generate($qrData) !!}</div>
+                <div class="barcode">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>
             </div>
             <div class="library-name">{{$branch->display_name ?? $branch->name}}</div>
         </div>

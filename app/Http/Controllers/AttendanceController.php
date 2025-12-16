@@ -238,25 +238,31 @@ public function scan(Request $request)
 {
     \Log::info('SCAN HIT', $request->all());
 
-    /* 1️⃣ Decode QR */
-    $decoded = base64_decode($request->qr, true);
-    if (!$decoded) {
-        \Log::warning('QR decode failed');
+    // /* 1️⃣ Decode QR */
+    // $decoded = base64_decode($request->qr, true);
+    // if (!$decoded) {
+    //     \Log::warning('QR decode failed');
+    //     return response()->json(['message' => 'Invalid QR'], 403);
+    // }
+
+    // [$learnerId, $signature] = explode('|', $decoded);
+
+    // /* 2️⃣ Verify QR signature */
+    // $expected = hash_hmac('sha256', $learnerId, config('app.key'));
+
+    // if (!hash_equals($expected, $signature)) {
+    //     \Log::warning('QR signature mismatch', compact('learnerId'));
+    //     return response()->json(['message' => 'QR tampered'], 403);
+    // }
+    $learnerNo = trim($request->qr);
+
+    if (!$learnerNo) {
+        \Log::warning('learnerNo failed');
         return response()->json(['message' => 'Invalid QR'], 403);
     }
 
-    [$learnerId, $signature] = explode('|', $decoded);
-
-    /* 2️⃣ Verify QR signature */
-    $expected = hash_hmac('sha256', $learnerId, config('app.key'));
-
-    if (!hash_equals($expected, $signature)) {
-        \Log::warning('QR signature mismatch', compact('learnerId'));
-        return response()->json(['message' => 'QR tampered'], 403);
-    }
-
     /* 3️⃣ Learner validation */
-    $learner = Learner::where('id', $learnerId)
+    $learner = Learner::where('learner_nolearner_no', $learnerNo)
         ->where('status', 1)
         ->first();
 
