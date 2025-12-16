@@ -52,10 +52,13 @@
 let backupQR = null;
 let qrInterval = null;
 let scanner = null;
-let isScanning = false;
-let lastScanned = null;
-let scanCooldown = false;
 let scanDone = false;
+const audioSuccess = new Audio('/audio/success.mp3');
+const audioExpired = new Audio('/audio/expired.mp3');
+const audioError   = new Audio('/audio/error.mp3');
+audioSuccess.preload = 'auto';
+audioExpired.preload = 'auto';
+audioError.preload   = 'auto';
 
 /* ===============================
    QR TAB – jQuery AJAX
@@ -145,6 +148,20 @@ function submitScan(qrText) {
 
         // ✅ Show message
         document.getElementById('scanMsg').innerText = res.message;
+         // 🔊 PLAY SOUND BASED ON MESSAGE
+        if (res.message.toLowerCase().includes('attendance') ||
+            res.message.toLowerCase().includes('punch')) {
+
+            audioSuccess.play();
+
+        } else if (res.message.toLowerCase().includes('expired')) {
+
+            audioExpired.play();
+
+        } else {
+
+            audioError.play();
+        }
 
         // ✅ Stop scanner properly
         if (scanner) {
@@ -158,6 +175,7 @@ function submitScan(qrText) {
 
         document.getElementById('scanMsg').innerText =
             'Network error. Try again.';
+            audioError.play();
 
         if (scanner) {
             scanner.stop().then(() => {
