@@ -242,7 +242,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('daily-dashboard',[ServiceController::class,'daily_dashboard'])->name('daily_dashboard');
     Route::get('/referral/dashboard', [LibraryReferralController::class, 'dashboard'])->name('referral.dashboard');
     Route::post('/library/redeem', [LibraryReferralController::class, 'redeem'])->name('library.redeem');
-    Route::get('/attendance/apply', [AttendanceController::class, 'index']);
+    Route::get('/attendance/apply', [AttendanceController::class, 'index'])->name('attendance.apply');
     Route::get('/attendance/qr', [AttendanceController::class, 'generate'])->name('attendance.qrcode');
     Route::post('/attendance/scan', [AttendanceController::class, 'scan'])->name('library.attendance.scan');
     

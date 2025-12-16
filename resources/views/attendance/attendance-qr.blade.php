@@ -25,10 +25,10 @@
     <div class="tab-content">
 
         <!-- QR TAB -->
-        <div class="tab-pane fade show active text-center" id="qrTab">
+        {{-- <div class="tab-pane fade show active text-center" id="qrTab">
             <img id="qrImg" class="img-fluid mb-2" style="max-width:260px;">
             <p class="text-muted small">QR refreshes every 5 seconds</p>
-        </div>
+        </div> --}}
 
         <!-- SCANNER TAB -->
         <div class="tab-pane fade text-center" id="scannerTab">
@@ -53,6 +53,9 @@ let backupQR = null;
 let qrInterval = null;
 let scanner = null;
 let isScanning = false;
+let lastScanned = null;
+let scanCooldown = false;
+
 /* ===============================
    QR TAB – jQuery AJAX
 =================================*/
@@ -90,38 +93,9 @@ qrInterval = setInterval(loadQR, 5000);
 ============================ */
 document.getElementById('startScanner').addEventListener('click', function () {
 
-    alert('Start Scanner clicked');
+    alert('Starting scanner');
 
-    // Ensure tab is visible
-    const tab = new bootstrap.Tab(
-        document.querySelector('button[data-bs-target="#scannerTab"]')
-    );
-    tab.show();
-
-    // Delay is REQUIRED
-    setTimeout(startScannerCamera, 300);
-});
-
-/* ============================
-   CAMERA START
-============================ */
-function startScannerCamera() {
-
-    alert('Starting camera');
-
-    // Safety reset
-    if (scanner) {
-        scanner.stop().then(() => {
-            scanner.clear();
-            scanner = null;
-            initScanner();
-        });
-    } else {
-        initScanner();
-    }
-}
-
-function initScanner() {
+    if (scanner) return;
 
     scanner = new Html5Qrcode("reader");
 
@@ -129,24 +103,53 @@ function initScanner() {
         { facingMode: "environment" },
         {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: 250,
             disableFlip: true
         },
-        function (qrText) {
+        function (decodedText) {
 
-            if (isScanning) return;
-            isScanning = true;
+            // 🔴 DEBUG: CONFIRM SCAN
+            console.log('SCANNED:', decodedText);
+
+            // Prevent same QR spam
+            if (decodedText === lastScanned || scanCooldown) return;
+
+            lastScanned = decodedText;
+            scanCooldown = true;
 
             document.getElementById('scanMsg').innerText =
                 'QR detected. Processing...';
 
-            submitScan(qrText);
+            submitScan(decodedText);
 
-            setTimeout(() => isScanning = false, 2000);
+            // Allow next scan after 2 sec
+            setTimeout(() => {
+                scanCooldown = false;
+            }, 2000);
         }
     ).catch(err => {
         alert('Camera error: ' + err);
         scanner = null;
+    });
+});
+
+function submitScan(qrText) {
+
+    fetch("{{ route('library.attendance.scan') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ qr: qrText })
+    })
+    .then(res => res.json())
+    .then(res => {
+        document.getElementById('scanMsg').innerText = res.message;
+    })
+    .catch(() => {
+        document.getElementById('scanMsg').innerText =
+            'Network error. Try again.';
     });
 }
 
@@ -176,26 +179,26 @@ function submitScan(qrText) {
 /* ============================
    STOP CAMERA ON TAB CHANGE
 ============================ */
-document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
-    btn.addEventListener('shown.bs.tab', function (e) {
-        if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-            });
-        }
-    });
-});
+// document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+//     btn.addEventListener('shown.bs.tab', function (e) {
+//         if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
+//             scanner.stop().then(() => {
+//                 scanner.clear();
+//                 scanner = null;
+//             });
+//         }
+//     });
+// });
 
-$('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
-    let target = $(e.target).data('bs-target');
+// $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
+//     let target = $(e.target).data('bs-target');
 
-    if (target === '#qrTab' && scanner) {
-        scanner.stop().then(() => {
-            scanner.clear();
-            scanner = null;
-        });
-    }
-});
+//     if (target === '#qrTab' && scanner) {
+//         scanner.stop().then(() => {
+//             scanner.clear();
+//             scanner = null;
+//         });
+//     }
+// });
 </script>
 @endsection
