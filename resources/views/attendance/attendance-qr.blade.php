@@ -168,7 +168,7 @@ function submitScan(qrText) {
     })
     .then(res => res.json())
     .then(res => {
-        document.getElementById('scanMsg').innerText = res.message;
+        window.location.href = '/attendance/success';
     })
     .catch(() => {
         document.getElementById('scanMsg').innerText =
@@ -179,26 +179,26 @@ function submitScan(qrText) {
 /* ============================
    STOP CAMERA ON TAB CHANGE
 ============================ */
-// document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
-//     btn.addEventListener('shown.bs.tab', function (e) {
-//         if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
-//             scanner.stop().then(() => {
-//                 scanner.clear();
-//                 scanner = null;
-//             });
-//         }
-//     });
-// });
+document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', function (e) {
+        if (e.target.dataset.bsTarget !== '#scannerTab' && scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+            });
+        }
+    });
+});
 
-// $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
-//     let target = $(e.target).data('bs-target');
+$('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
+    let target = $(e.target).data('bs-target');
 
-//     if (target === '#qrTab' && scanner) {
-//         scanner.stop().then(() => {
-//             scanner.clear();
-//             scanner = null;
-//         });
-//     }
-// });
+    if (target === '#qrTab' && scanner) {
+        scanner.stop().then(() => {
+            scanner.clear();
+            scanner = null;
+        });
+    }
+});
 </script>
 @endsection

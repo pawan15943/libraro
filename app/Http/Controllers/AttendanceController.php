@@ -262,7 +262,7 @@ public function scan(Request $request)
     }
 
     /* 3️⃣ Learner validation */
-    $learner = Learner::where('learner_nolearner_no', $learnerNo)
+    $learner = Learner::where('learner_no', $learnerNo)
         ->where('status', 1)
         ->first();
 
@@ -278,14 +278,15 @@ public function scan(Request $request)
     }
 
     /* 5️⃣ Attendance logic */
-    $attendance = Attendance::where('learner_id', $learnerId)
+    $attendance = Attendance::where('learner_id', $learner->id)
         ->where('date', today())
         ->first();
 
     if (!$attendance) {
         Attendance::create([
-            'learner_id' => $learnerId,
-            'library_id' => auth()->user()->library_id,
+            'learner_id' => $learner->id,
+            'library_id' => $learner->library_id,
+            'branch_id' => $learner->branch_id,
             'date'       => today(),
             'in_time'    => now(),
             'attendance' => 1
