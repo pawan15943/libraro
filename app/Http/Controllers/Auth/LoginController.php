@@ -63,6 +63,7 @@ class LoginController extends Controller
         switch ($request->input('user_type')) {
             case 'superadmin':
                 if (Auth::guard('web')->attempt($credentials, $remember)) {
+                    
                     return redirect()->intended(route('home'));
                 } else {
                     // re-direct to learner login 2
@@ -71,10 +72,10 @@ class LoginController extends Controller
                 break;
 
             case 'admin':
-                Auth::guard('library')->logout();
-                Auth::guard('library_user')->logout();
+                // Auth::guard('library')->logout();
+                // Auth::guard('library_user')->logout();
                 if (Auth::guard('library')->attempt($credentials, $remember)) {
-                    
+                    logoutOtherGuards('library'); // 🔥 CORE FIX
                     $user = Auth::guard('library')->user();
                    
                     if (is_null($user->email_verified_at)) {
@@ -98,7 +99,7 @@ class LoginController extends Controller
                 
                     return redirect()->intended(route('library.home'));
                 }elseif(Auth::guard('library_user')->attempt($credentials, $remember)){
-            
+                        logoutOtherGuards('library_user'); // 🔥 CORE FIX
                         $user = Auth::guard('library_user')->user();
                         if (!$user->roles()->exists()) {
                             $user->assignRole('admin_user');
@@ -131,6 +132,7 @@ class LoginController extends Controller
 
                 // ✅ Attempt login using learner guard
                 if (Auth::guard('learner')->attempt($credentials, $remember)) {
+                    logoutOtherGuards('learner'); // 🔥 CORE FIX
                     $user = Auth::guard('learner')->user();
 
                     // 🔐 Assign learner role if not already assigned

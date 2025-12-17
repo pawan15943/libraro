@@ -275,7 +275,12 @@
 <body>
      <div class="print-container">
         @foreach($learner_details as $key => $learner_detail)
-            
+           @php
+            $payload=$learner_detail->learner->id;
+            $signature = hash_hmac('sha256', $payload, config('app.key'));
+
+            $qrData = base64_encode($payload . '|' . $signature);
+           @endphp 
         
         <div class="card front">
             <div class="profiile">

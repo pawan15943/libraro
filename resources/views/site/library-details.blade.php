@@ -304,16 +304,16 @@
 
                 <!-- location on Map -->
                 @if (!empty($library->google_map) && Str::startsWith($library->google_map, 'https://www.google.com/maps/embed?'))
-                <h4>Location On Map</h4>
-                <div class="location">
-                    <iframe src="{{ $library->google_map }}" width="100%" class="rounded" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                </div>
-            @endif
-            @can('has-permission', 'Online Seat Booking')
+                    <h4>Location On Map</h4>
+                    <div class="location">
+                        <iframe src="{{ $library->google_map }}" width="100%" class="rounded" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                @endif
+            {{-- @can('has-permission', 'Online Seat Booking') --}}
                 @if($library->uuid && $library->upi_id)
                     <a href="{{ route('booking.form', $library->uuid) }}" target="_blank" class="bookSeat"> Book your Seat</a>
                 @endif
-            @endcan
+            {{-- @endcan --}}
             </div>
         </div>
     </div>
