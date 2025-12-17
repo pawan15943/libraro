@@ -223,7 +223,7 @@
                     @endif
                     
 
-                    {{-- @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 ) --}}
+                    @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                         <!-- Sent Mail -->
                        
                         @can('has-permission', 'WhatsApp Notification')
