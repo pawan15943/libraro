@@ -145,15 +145,15 @@
                 
                 // 🔊 PLAY SOUND BASED ON MESSAGE
                 if (res.status == 'success') {
-                    alert("1");
+                  
                     audioSuccess.play();
                 }
                 else if (res.status == 'expired') {
-                     alert("2");
+                     
                     audioExpired.play();
                 }
                 else {
-                     alert("3");
+                     
                     audioError.play();
                 }
 
@@ -170,7 +170,7 @@
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
-                // audioError.play();
+                audioError.play();
                 $('#qrMsg').text(msg).addClass('text-danger');
             }
         });
