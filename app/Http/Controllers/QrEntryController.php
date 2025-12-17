@@ -236,16 +236,16 @@ class QrEntryController extends Controller
             ];
             
 
-            if (!$request->has('renewal')) {
-                $rules['password'] = 'required|min:6';
-            }
+            // if (!$request->has('renewal')) {
+            //     $rules['password'] = 'required|min:6';
+            // }
 
-            $messages = [
-                'password.required' => 'Password is required.',
-                'password.min'      => 'Password must be at least 6 characters.',
-            ];
+            // $messages = [
+            //     'password.required' => 'Password is required.',
+            //     'password.min'      => 'Password must be at least 6 characters.',
+            // ];
 
-            $validated = $request->validate($rules, $messages);
+            $validated = $request->validate($rules);
             // Log::info('Validation passed', ['validated' => $validated]);
             if($request->seat_no){
                 
