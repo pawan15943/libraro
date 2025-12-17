@@ -164,7 +164,10 @@ class AttendanceController extends Controller
 
         if (!session('attendance_verified') ||
             $request->verify_token !== session('verify_token')) {
-            return response()->json(['message'=>'Unauthorized'], 403);
+            return response()->json([
+                'status'  => 'error',
+                'message'=>'Unauthorized'
+            ], 403);
         }
         
           \Log::info('SESSION CHECK', [

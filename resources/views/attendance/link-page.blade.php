@@ -137,7 +137,7 @@
                 verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
-                
+                alert(res.message);
                 
                 // window.location.href = '/attendance/success';
 
