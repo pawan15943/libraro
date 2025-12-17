@@ -137,17 +137,17 @@
                 verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
-                alert(res.message);
+                alert(res.status);
                 
                 // window.location.href = '/attendance/success';
 
                 // ✅ Show message
                 document.getElementById('qrMsg').innerText = res.message;
                 // 🔊 PLAY SOUND BASED ON MESSAGE
-                if (res.status === 'success') {
+                if (res.status == 'success') {
                     audioSuccess.play();
                 }
-                else if (res.status === 'expired') {
+                else if (res.status == 'expired') {
                     audioExpired.play();
                 }
                 else {
