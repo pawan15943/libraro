@@ -170,7 +170,7 @@
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
-                audioError.play();
+                // audioError.play();
                 $('#qrMsg').text(msg).addClass('text-danger');
             }
         });
