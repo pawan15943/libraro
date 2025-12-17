@@ -137,12 +137,12 @@
                 verify_token: localStorage.getItem('verify_token'),
             },
             success: function (res) {
-                alert(res.status);
+               
                 
                 // window.location.href = '/attendance/success';
 
                 // ✅ Show message
-                document.getElementById('qrMsg').innerText = res.message;
+                
                 // 🔊 PLAY SOUND BASED ON MESSAGE
                 if (res.status == 'success') {
                     alert("1");
@@ -163,6 +163,7 @@
                     scanner.clear();
                     scanner = null;
                 }
+                document.getElementById('qrMsg').innerText = res.message;
             },
             error: function (xhr) {
                 let msg = 'Scan failed';
