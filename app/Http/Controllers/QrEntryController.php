@@ -299,10 +299,7 @@ class QrEntryController extends Controller
             if ($transactions) {
                 $password     = Learner::where('id', $transactions->learner_id)->value('password');
                 $total_amount = $transactions->total_amount;
-            } elseif($validated['password']) {
-                $password     = Hash::make($validated['password']);
-                $total_amount = $validated['plan_price_id'];
-            }else{
+            } else{
                 $password     = Hash::make($validated['mobile']);
                  $total_amount = $validated['plan_price_id'];
             }
