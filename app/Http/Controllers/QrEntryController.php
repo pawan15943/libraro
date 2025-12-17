@@ -79,7 +79,7 @@ class QrEntryController extends Controller
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats'));
     }
@@ -153,7 +153,7 @@ class QrEntryController extends Controller
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
 
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
 
             // Step 3: Initialize an array to store the plan_type_ids to be removed
             $planTypesRemovals = [];
@@ -175,7 +175,7 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
@@ -199,7 +199,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -299,9 +299,12 @@ class QrEntryController extends Controller
             if ($transactions) {
                 $password     = Learner::where('id', $transactions->learner_id)->value('password');
                 $total_amount = $transactions->total_amount;
-            } else {
+            } elseif($validated['password']) {
                 $password     = Hash::make($validated['password']);
                 $total_amount = $validated['plan_price_id'];
+            }else{
+                $password     = Hash::make($validated['mobile']);
+                 $total_amount = $validated['plan_price_id'];
             }
             Log::info('Password & Total amount set', ['total_amount' => $total_amount]);
 
@@ -438,7 +441,7 @@ class QrEntryController extends Controller
             ->findOrFail($id);
         $plans = Plan::where('library_id', getLibraryId())->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->get();
         if($customer->transaction_id){
              $transaction=LearnerTransaction::withoutGlobalScopes()->where('id',$customer->transaction_id)->first();
              $learner=Learner::withoutGlobalScopes()->where('id',$transaction->learner_id)->first();
@@ -884,7 +887,7 @@ class QrEntryController extends Controller
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
           Log::info('Branch Library ID:', ['library_id' => $branchData->library_id]);
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
             Log::info('Plan types fetched', [
                 'count' => $planTypes->count(),
                 'plan_type_ids' => $planTypes->pluck('id')
@@ -911,7 +914,7 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
@@ -933,7 +936,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -948,11 +951,11 @@ class QrEntryController extends Controller
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->whereNotIn('day_type_id', [8, 9])
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
                     ->select('id', 'name')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->select('id', 'name')->get();
             }
 
         }

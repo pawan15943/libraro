@@ -339,7 +339,7 @@ $ids='approvwRequest';
         <div class="seatnumber">
             <img src="{{asset('public/img/booked.png')}}" alt="Seat" class="py-3 " style="width:60px; display:block; margin:0 auto;">
             <span class="d-block ">General</span>
-            <div class="seat--plan">{{ $customer->planType->name}}</div>
+            <div class="seat--plan">{{ optional($customer->planType)->name ?? 'N/A' }}</div>
         </div>
 
     </div>

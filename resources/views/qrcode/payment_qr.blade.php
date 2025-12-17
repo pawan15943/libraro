@@ -14,14 +14,15 @@
                         <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($upiLink)) }}">
                     </a>
                     <div class="mt-2">
-                        <a href="{{ $upiLink }}" target="_blank" class="btn btn-primary btn-sm">
+                        <a href="{{ $upiLink }}" target="_blank" class="btn btn-primary btn-sm button">
                             Scan / Click to Pay
                         </a>
                     </div>
                 </div>
+                <p class="text-center">If you want to pay at the library, please visit us to complete your registration.</p>
                 <form class="mt-4" action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <label>Upload Payment screenshot</label>
+                    <label>Upload Payment screenshot <span class="text-danger">*</span></label>
                     <input type="file" name="payment_screenshot" class="form-control @error('payment_screenshot') is-invalid @enderror">
                     @error('payment_screenshot')
                     <span class="invalid-feedback" role="alert">

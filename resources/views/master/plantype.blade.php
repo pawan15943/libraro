@@ -78,7 +78,7 @@
             <div class="col-lg-3" id="custom_plan_type_input" style="{{ (old('day_type_id', $planType->day_type_id ?? '') == 0) ? 'display:block;' : 'display:none;' }}">
                
                     <label for="custom_plan_type">Custom Plan Type Name  <span>*</span></label>
-                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control char-only" placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->name ?? '') }}">
+                    <input type="text" name="custom_plan_type" id="custom_plan_type" class="form-control " placeholder="Enter custom plan type name" value="{{ old('custom_plan_type', $planType->name ?? '') }}">
                 
             </div>
             <div class="col-lg-3">
