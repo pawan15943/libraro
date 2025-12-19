@@ -348,7 +348,8 @@
     audioError.preload   = 'auto';
     lucide.createIcons();
 
-    let scanner;
+    let scanner = null;
+    let scanLock = false;
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('active');
@@ -380,15 +381,25 @@ function startScanner() {
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         qr => {
-            if (scanLock) return;
-            scanLock = true;
+              alert('CALLBACK FIRED'); // 🔴 Step A
 
+           alert('RAW QR VALUE: ' + qr); // 🔴 Step B
+            if (scanLock) {
+                alert('SCAN LOCK ACTIVE');
+                return;
+            }
+            scanLock = true;
+            alert('PROCESSING QR'); // 🔴 Step C 
             document.getElementById('scanResult').innerText =
                 'QR detected. Processing...';
 
             submitScan(qr);
 
-            setTimeout(() => scanLock = false, 2000);
+            setTimeout(() => {
+            scanLock = false;
+            alert('SCAN LOCK RELEASED'); // 🔴 Step D
+        }, 2000);
+        
         }
     ).catch(err => {
         alert('Camera error: ' + err);
@@ -413,7 +424,7 @@ function stopScanner() {
    SUBMIT SCAN (BACKEND)
 ========================= */
 function submitScan(qrText) {
-
+  alert("submitscan");
     const verifyToken = localStorage.getItem('verify_token');
     if (!verifyToken) {
         audioError.play();
