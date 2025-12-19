@@ -399,7 +399,7 @@ function startScanner() {
             scanLock = false;
             alert('SCAN LOCK RELEASED'); // 🔴 Step D
         }, 2000);
-        
+
         }
     ).catch(err => {
         alert('Camera error: ' + err);
@@ -461,7 +461,7 @@ function submitScan(qrText) {
         stopScanner();
     })
     .catch(() => {
-        audioError.play();
+        // audioError.play();
         document.getElementById('scanResult').innerText =
             'Network error. Try again.';
         stopScanner();
