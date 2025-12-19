@@ -127,14 +127,18 @@
     }
 
     function submitScan(qrText) {
-       
+       const verifyToken = localStorage.getItem('verify_token');
+        if (!verifyToken) {
+            $('#qrMsg').text('Verification expired. Reload page.');
+            return;
+        }
         $.ajax({
             url: "{{ route('store.scan.attendance') }}",
             type: "POST",
             data: {
                 _token: "{{ csrf_token() }}",
                 qr: qrText,
-                verify_token: localStorage.getItem('verify_token'),
+                verify_token: verifyToken
             },
             success: function (res) {
                
@@ -156,22 +160,18 @@
                      
                     audioError.play();
                 }
-
+                $('#qrMsg').text(res.message);
                 // Stop camera after success
                 if (scanner) {
                     scanner.stop();
                     scanner.clear();
                     scanner = null;
                 }
-                document.getElementById('qrMsg').innerText = res.message;
+                
             },
             error: function (xhr) {
-                let msg = 'Scan failed';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                // audioError.play();
-                $('#qrMsg').text(msg).addClass('text-danger');
+                audioError.play();
+                $('#qrMsg').text(xhr.responseJSON?.message || 'Scan failed');
             }
         });
     }

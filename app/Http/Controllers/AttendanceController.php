@@ -238,7 +238,7 @@ class AttendanceController extends Controller
             }
            
 
-        session()->forget(['attendance_verified','verify_token']);
+        // session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Attendance marked'
