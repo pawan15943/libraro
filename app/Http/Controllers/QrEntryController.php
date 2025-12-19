@@ -55,11 +55,12 @@ class QrEntryController extends Controller
   
     public function bookSeat($branchUuid)
     {
-        $branch = Branch::where('uuid', $branchUuid)->firstOrFail();
+            $branch = Branch::where('uuid', $branchUuid)->select('id', 'library_id', 'uuid')->firstOrFail();
 
-            $totalSeats =  Hour::where('branch_id',$branch->id)->value('seats');
-            $totalHour=Hour::where('branch_id',$branch->id)->value('hour');
-            $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+            $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('seats');
+            $totalHour=Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('hour');
+         
+            $usedSeats = LearnerDetail::withoutGlobalScopes()->select('seat_no', DB::raw('SUM(hour) as used_hours'))
                         ->where('branch_id',$branch->id)
                         ->whereNotNull('seat_no')
                         ->groupBy('seat_no')->where('status',1)
@@ -79,7 +80,7 @@ class QrEntryController extends Controller
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats'));
     }
@@ -151,9 +152,9 @@ class QrEntryController extends Controller
                 ->where('learners.branch_id', $branch_id)
                 ->where('learner_detail.branch_id', $branch_id)
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-
+       
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
 
             // Step 3: Initialize an array to store the plan_type_ids to be removed
             $planTypesRemovals = [];
@@ -175,23 +176,23 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
                 $planTypesRemovals[] = $planTypeId;
             }
-            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->exists();
+            $nightseatBooked = LearnerDetail::withoutGlobalScopes()->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->exists();
 
             if ($nightseatBooked) {
-                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+                $planTypeid = LearnerDetail::withoutGlobalScopes()->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $library_id)->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date','>',Carbon::today())->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
                 $planTypesRemovals[] = $planTypeid;
             }
             // Remove duplicate entries in planTypesRemovals
             $planTypesRemovals = array_unique($planTypesRemovals);
 
             // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', $branch_id)->first();
+            $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($totalBookedHours >= $total_hour) {
@@ -199,7 +200,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -236,16 +237,16 @@ class QrEntryController extends Controller
             ];
             
 
-            if (!$request->has('renewal')) {
-                $rules['password'] = 'required|min:6';
-            }
+            // if (!$request->has('renewal')) {
+            //     $rules['password'] = 'required|min:6';
+            // }
 
-            $messages = [
-                'password.required' => 'Password is required.',
-                'password.min'      => 'Password must be at least 6 characters.',
-            ];
+            // $messages = [
+            //     'password.required' => 'Password is required.',
+            //     'password.min'      => 'Password must be at least 6 characters.',
+            // ];
 
-            $validated = $request->validate($rules, $messages);
+            $validated = $request->validate($rules);
             // Log::info('Validation passed', ['validated' => $validated]);
             if($request->seat_no){
                 
@@ -299,9 +300,9 @@ class QrEntryController extends Controller
             if ($transactions) {
                 $password     = Learner::where('id', $transactions->learner_id)->value('password');
                 $total_amount = $transactions->total_amount;
-            } else {
-                $password     = Hash::make($validated['password']);
-                $total_amount = $validated['plan_price_id'];
+            } else{
+                $password     = Hash::make($validated['mobile']);
+                 $total_amount = $validated['plan_price_id'];
             }
             Log::info('Password & Total amount set', ['total_amount' => $total_amount]);
 
@@ -438,7 +439,7 @@ class QrEntryController extends Controller
             ->findOrFail($id);
         $plans = Plan::where('library_id', getLibraryId())->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->get();
         if($customer->transaction_id){
              $transaction=LearnerTransaction::withoutGlobalScopes()->where('id',$customer->transaction_id)->first();
              $learner=Learner::withoutGlobalScopes()->where('id',$transaction->learner_id)->first();
@@ -465,10 +466,10 @@ class QrEntryController extends Controller
             'plan_price_id' => 'required',
             'plan_start_date' => 'required',
             'paid_amount' => 'nullable',
-            'previous_amount' => 'required',
+           
             'payment_mode' => 'required',
             'discount_type' => 'nullable',
-            'diffrence_amount' => 'nullable',
+           
             'discount_amount' => [
                 'nullable',
                 function ($attribute, $value, $fail) use ($request) {
@@ -489,10 +490,19 @@ class QrEntryController extends Controller
                 'nullable',
                 'required_if:locker,yes'
             ],
+            'name'              => 'nullable|string|max:255',
+            'mobile'            => 'nullable|digits:10',
+            'email'             => 'nullable|email',
+            'dob'               => 'nullable|date',
+            'alternate_mobile'  => 'nullable|digits:10',
+            'exam_id'           => 'nullable|integer',
+            'address'           => 'nullable|string',
+            'remark'            => 'nullable|string',
+            'id_proof_name'     => 'nullable',
 
         ];
        
-      
+        
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -502,7 +512,7 @@ class QrEntryController extends Controller
         // }
 
         }
-         
+     
         DB::beginTransaction();
 
         try {
@@ -512,7 +522,7 @@ class QrEntryController extends Controller
             $bookingurl=Booking::find($request->booking_id);
           
             
-            if ($request->seat_no && $request->seat_no!='gen') {
+            if ($request->seat_no ) {
                 $seat_no = $request->input('seat_no');
             } else {
                 $seat_no = $bookingurl->seat_no;
@@ -524,7 +534,7 @@ class QrEntryController extends Controller
                 $plan_type_id = $bookingurl->plan_type_id;
                 $locker_no=null;
                 $total_amt=$bookingurl->plan_price_id;
-                $new_paid=$bookingurl->plan_price_id;
+                $paid_amount=$bookingurl->plan_price_id;
                 $pending_amount=0;
                 $locker=0;
                 $discount=0;
@@ -545,37 +555,17 @@ class QrEntryController extends Controller
                 $total_amt=$planPrice+$locker-$discount;
             
                 $paid_amount = (float) $request->input('paid_amount', 0);
-                $pending_amount = $request->input('pending_amount');
-                $diff_amount    = $request->input('diffrence_amount');
-                $already_paid  =$bookingurl->total_amount;
-                
+                $pending_amount = ($total_amt-$paid_amount) ?? 0;
+               
+               
                 $refund = 0;
                 $pending_refund = 0;
 
-                // Handle difference amount (refund vs pending)
-                if ($diff_amount < 0) {
-                
-                    // refund case
-                    $new_paid=$already_paid-$paid_amount;
-                    $pending_refund = $new_paid-$total_amt;
-                    $refund = abs($paid_amount);
-                    
-                    $pending_amount = 0;
-                    $dr_cr='Dr';
-                    
-                } else {
-                    $new_paid=$already_paid+$paid_amount;
-                    // extra payment (pending dues)
-                    $pending_amount = $total_amt-$new_paid ;
-                    $refund = 0;
-                    $pending_refund = 0;
-                    $dr_cr='Cr';
-                
-                }
+                $dr_cr='Cr';
         
             
-                if($pending_amount > 0){
-                    return redirect()->back()->with('error', 'Due date is required');
+                if($pending_amount > 0 && !$request->due_date){
+                    return redirect()->back()->with('error', 'Due date is required')->withInput();
                 }
 
                 $start_date = Carbon::parse($request->input('plan_start_date'));
@@ -646,7 +636,7 @@ class QrEntryController extends Controller
             }
             
               if ($total_hour === 0) {
-                return redirect()->back()->with('error', 'Total available hours not set.');
+                return redirect()->back()->with('error', 'Total available hours not set.')->withInput();
             }
 
            
@@ -660,7 +650,7 @@ class QrEntryController extends Controller
                     $bookingPlanType = PlanType::find($booking->plan_type_id);
                     if ($bookingPlanType) {
                         if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
-                            return redirect()->back()->with('error', 'The selected plan type is not available for this seat. Please try a different seat.');
+                            return redirect()->back()->with('error', 'The selected plan type is not available for this seat. Please try a different seat.')->withInput();
                         }
                     }
                 }
@@ -678,50 +668,67 @@ class QrEntryController extends Controller
 
         
                 if($existingBookings){
-                    return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.');
+                    return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.')->withInput();
                 }
 
                 if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->count() > 0) {
-                    return redirect()->back()->with('error', 'This Plan Type Seat already booked');
+                    return redirect()->back()->with('error', 'This Plan Type Seat already booked')->withInput();
                 }
 
                 if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-                     return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.');
+                     return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.')->withInput();
                   
                 }
 
                 if(($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date','>',Carbon::today())->exists())){
                     if($learnerController->checkPlanTypeSeatWise($seat_no,$plan_type_id)==false){
-                         return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing future booking. ');
+                         return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing future booking. ')->withInput();
                        
                     }
                 }
+
+                  $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
+        
+
+                    if ($hours > ($total_hour - $total_cust_hour)) {
+                        
+                        return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.')->withInput();
+                    }
             }
 
 
-            $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
-        
-
-            if ($hours > ($total_hour - $total_cust_hour)) {
-                
-                return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
-            }
+          
 
         
 
-            if (($new_paid > $total_amt) || ($new_paid == 0)) {
-                return redirect()->back()->with('error', 'Paid amount is not valid');
+            if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
+                return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
             }
             if (($pending_amount > 0) && (!$request->due_date)) {
-                return redirect()->back()->with('error', 'Paid amount is not valid');
+                return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
               
             }
             
                 
-                //     $customerEmail = $booking->email 
-                // ? encryptData($booking->email) 
-                // : ($request->filled('email') ? encryptData($request->input('email')) : null);
+            if ($request->hasFile('id_proof_file')) {
+                $this->validate($request, ['id_proof_file' => 'mimes:webp,png,jpg,jpeg|max:200']);
+                $id_proof_file = $request->id_proof_file;
+                $id_proof_fileNewName = "id_proof_file" . time() . $id_proof_file->getClientOriginalName();
+                $id_proof_file->move('public/uploade/', $id_proof_fileNewName);
+                $id_proof_file = 'public/uploade/' . $id_proof_fileNewName;
+            } else {
+                $id_proof_file = null;
+            }
+            if ($request->hasFile('profile_picture')) {
+                $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+                $profile_picture = $request->profile_picture;
+                $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+                $profile_picture->move('public/uploade/', $profile_pictureNewName);
+                $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+            } else {
+                $profile_picture = null;
+            }
                
             if($request->learner_id){
                 $customer=Learner::find($request->learner_id);
@@ -729,19 +736,28 @@ class QrEntryController extends Controller
                 $customer->hours=$hours;
                 $customer->save();
             }else{
+               
                 $customer = Learner::create([
-                'seat_no' => $seat_no,
-                'name' => $bookingurl->name,
-                'mobile' =>encryptData($bookingurl->mobile),
-                // 'email' => $customerEmail,
-                // 'dob' => $booking->dob,
+                 'seat_no' => $seat_no,
+                'name' => $request->input('name') ?? $bookingurl->name,
+                'mobile' => encryptData($request->input('mobile')) ?? encryptData($bookingurl->mobile),
+                'email' => $request->input('email') ? encryptData($request->input('email')) : null,
+                'dob' => $request->input('dob'),
+                'id_proof_name' => $request->input('id_proof_name'),
+                'id_proof_file' => $id_proof_file,
                 'hours' => $hours,
                 'status' => $status,
                 'library_id' => getLibraryId(),
+                'password' =>$bookingurl->password,
                 'branch_id' => getCurrentBranch(),
-                'password' => $bookingurl->password,
-                'learner_no'=>$learnerController->generateLearnerCode(),
+                'learner_no'=>$this->generateLearnerCode(),
+                'father_name' => $request->input('father_name'),
+                'alternate_mobile' => $request->input('alternate_mobile'),
+                'remark' => $request->input('remark'),
+                'profile_picture'=>$profile_picture,
+                'address' => $request->input('address'),
                 'locker_no'=>$locker_no ?? null ,
+                'sended_message_type'=>$request->input('sended_message_type') ?? 'no'
                 ]);
             }
 
@@ -776,7 +792,7 @@ class QrEntryController extends Controller
                 'branch_id'         => getCurrentBranch(),
                 'learner_detail_id' => $learner_detail->id,
                 'total_amount'      => $total_amt,
-                'paid_amount'       => $new_paid,
+                'paid_amount'       => $paid_amount,
                 'pending_amount'    => $pending_amount,
                 'locker_amount'     => $locker ?? 0,
                 'discount_amount'   => $discount ?? 0,
@@ -784,6 +800,7 @@ class QrEntryController extends Controller
                 'is_paid'           => $is_paid ?? 0,
                 'due_date'        => $request->due_date ?? null,
                 'refund'        => $pending_refund,
+                 'transaction_id' => transaction_id(),
             ]);
            
             //learner Activity
@@ -792,7 +809,7 @@ class QrEntryController extends Controller
             $data['particular']='Paid By Trans';
             $data['payment_type']='SEAT ASSIGNMENT';
             $data['payment_mode']=1;
-            $data['amount']=$new_paid;
+            $data['amount']=$paid_amount;
             $data['dr_cr']='Cr';
           
             $learnerController->learnerTransactionActivity($data);
@@ -808,7 +825,7 @@ class QrEntryController extends Controller
             return redirect()->route('learners')->with('success', 'Learner updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
         }
     }
     
@@ -870,11 +887,8 @@ class QrEntryController extends Controller
        
         $branchData=Branch::where('id',$branch_id)->select('library_id')->first();
          Log::info('branchData', ['branchData' => $branchData]);
-        if ($seatNo) {
-
-          
-            // Step 1: Retrieve all bookings for the given seat
-            $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')   
+         // Step 1: Retrieve all bookings for the given seat
+            $bookings = Learner::withoutGlobalScopes()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')   
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learners.status', 1)
@@ -882,9 +896,10 @@ class QrEntryController extends Controller
                 ->where('learners.branch_id', $branch_id)
                 ->where('learner_detail.branch_id', $branch_id)
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-          Log::info('Branch Library ID:', ['library_id' => $branchData->library_id]);
+        if ($seatNo && $bookings) {
+
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
             Log::info('Plan types fetched', [
                 'count' => $planTypes->count(),
                 'plan_type_ids' => $planTypes->pluck('id')
@@ -896,7 +911,7 @@ class QrEntryController extends Controller
             // Step 4: Calculate total booked hours for the seat
             $totalBookedHours = $bookings->sum('slot_hours');
 
-            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
+            $nightseatBooked = LearnerDetail::withoutGlobalScopes()->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
 
             // Step 5: Determine conflicts based on plan_type_id and hours
             $planTypeId = null;
@@ -911,7 +926,7 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
@@ -925,7 +940,7 @@ class QrEntryController extends Controller
             $planTypesRemovals = array_unique($planTypesRemovals);
 
             // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', $branch_id)->first();
+            $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($totalBookedHours >= $total_hour) {
@@ -933,7 +948,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -944,15 +959,15 @@ class QrEntryController extends Controller
             })->values(); // Ensure the keys are reset to a continuous numerical index
         } else {
 
-            $first_record = Hour::where('branch_id', $branch_id)->first();
+            $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->whereNotIn('day_type_id', [8, 9])
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
                     ->select('id', 'name')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('library_id', $branchData->library_id)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->select('id', 'name')->get();
             }
 
         }

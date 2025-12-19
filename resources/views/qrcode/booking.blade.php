@@ -22,28 +22,8 @@
                         <div class="row g-4">
                             @csrf
                             <input type="hidden" id="branch_id" value="{{$branch->id}}">
-                            <div class="col-lg-12">
-                                <label>Name <span>*</span></label>
-                                <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
-                                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-
-
 
                             <div class="col-lg-6">
-                                <label>Mobile (WhatsApp No)<span>*</span></label>
-                                <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
-                                @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Password <span>*</span></label>
-                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" value="{{ old('password') }}">
-                                @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
 
@@ -62,6 +42,28 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-lg-12">
+                                <label>Name <span>*</span></label>
+                                <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
+                                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+
+
+
+                            <div class="col-lg-6">
+                                <label>Mobile (WhatsApp No)<span>*</span></label>
+                                <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
+                                @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+
+                            {{-- <div class="col-lg-6">
+                                <label>Password <span>*</span></label>
+                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" value="{{ old('password') }}">
+                                @error('password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div> --}}
+                             
 
 
                             <div class="col-lg-6">
