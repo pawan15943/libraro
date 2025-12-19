@@ -138,7 +138,7 @@
             },
             success: function (res) {
                
-                
+                alert(res.status);
                 // window.location.href = '/attendance/success';
 
                 // ✅ Show message

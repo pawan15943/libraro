@@ -189,6 +189,7 @@ class AttendanceController extends Controller
 
         /* 1️⃣ No active plan */
         if (!$learnerDetail) {
+             \Log::info('learner detail not found');
             return response()->json([
                 'status'  => 'error',
                 'message' => 'No active plan found'
@@ -215,7 +216,7 @@ class AttendanceController extends Controller
                 ->first();
 
             if ($existingAttendance) {
-
+                \Log::info('attendence update');
                  $existingAttendance->out_time = $currentTime;
                  if (!$existingAttendance->in_time){
                     $existingAttendance->in_time = $currentTime;
@@ -223,6 +224,7 @@ class AttendanceController extends Controller
 
                 $existingAttendance->save();
             } else {
+                \Log::info('attendence add');
                 // // 3. Mark attendance (safe)
                 Attendance::create([
                     'learner_id' => $learnerId,
