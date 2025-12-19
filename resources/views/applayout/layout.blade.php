@@ -383,9 +383,9 @@ function startScanner() {
         qr => {
               alert('CALLBACK FIRED'); // 🔴 Step A
 
-           alert('RAW QR VALUE: ' + qr); // 🔴 Step B
+          
             if (scanLock) {
-                alert('SCAN LOCK ACTIVE');
+                
                 return;
             }
             scanLock = true;
@@ -397,7 +397,7 @@ function startScanner() {
 
             setTimeout(() => {
             scanLock = false;
-            alert('SCAN LOCK RELEASED'); // 🔴 Step D
+            
         }, 2000);
 
         }
@@ -458,13 +458,13 @@ function submitScan(qrText) {
             audioError.play();
         }
 
-        stopScanner();
+        // stopScanner();
     })
     .catch(() => {
         // audioError.play();
         document.getElementById('scanResult').innerText =
             'Network error. Try again.';
-        stopScanner();
+        // stopScanner();
     });
 }
   </script>
