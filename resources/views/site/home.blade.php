@@ -1,5 +1,7 @@
 @extends('sitelayouts.layout')
 @section('content')
+
+
 <!-- Section 1 -->
  <section class="hero_Section">
     <div class="container">
@@ -8,11 +10,11 @@
                 <h4 class="head-text-1">Revolutionize Your Library with the Best Library Management Software</h4>
                 
                 <h2 id="typing-text" class="head-text-2 d-inline"></h2>
-                <h2 class="typing-cursor d-inline">|</h2>
+                <h1 class="typing-cursor d-inline">|</h1>
 
                 
                 <p class="head-text-3 mt-4">Optimize your library operations with our feature-rich, user-friendly software perfect for public and private libraries.</p>
-                <a href="{{route('register')}}" class="cta">Sign Up – Manage Effortlessly!</a>
+                <a href="{{route('register')}}" class="cta">Sign Up for Easy Management</a>
             </div>
             <div class="col-lg-6 order-1 order-md-2 mb-4 mb-md-0">
                 <img src="{{ asset('public/img/head.webp') }}" loading="lazy" alt="Library management software" class="img-fluid">
