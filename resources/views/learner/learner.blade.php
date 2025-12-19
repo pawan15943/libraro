@@ -206,6 +206,9 @@
                 </div>
                 <div class="seat-actions">
                     <ul>
+                        <li><a href="{{route('qr.attendance.link')}}" title="QR Attendance Link" class="w-auto px-2">
+                             <i class="fab fa-copy" data-bs-placement="bottom" data-bs-toggle="tooltip"  data-bs-title="QR Attendance Link"></i>
+                        </a></li>
                         <!-- Edit Seat Info -->
                         @if($planStatus['diff_extend_day']>0)
 
