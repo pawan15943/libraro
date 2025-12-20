@@ -3,236 +3,286 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Management Software Subscription Receipt</title>
+    <title>Payment Receipt</title>
+
     <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        /* FORCE SYSTEM FONT – FIXES TIMES NEW ROMAN */
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Helvetica, Arial, sans-serif !important;
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
+            padding: 0 16px 16px;
             font-size: 13px;
-            color: #333;
-            font-family: 'Roboto', sans-serif;
+            color: #1f2937;
         }
 
-        table,
-        th,
-        td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 10px 12px;
+        /* ================= TITLE ================= */
+        .receipt-title {
+            text-align: center;
+            padding: 14px 0;
         }
 
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            margin: 0px;
-            font-weight: 700;
+        .receipt-title h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.4px;
+            color: #0f172a;
         }
 
-        p {
-            line-height: 22px;
-            font-size: 13px;
+        /* ================= HEADER ================= */
+        .header {
+            background: #f1f5fb;
+            border: 1px solid #d6e0f0;
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
 
-        b {
-            color: #000;
-        }
-
-        .tab_title {
-            font-size: 21px;
-            font-family: 'Roboto', sans-serif;
+        .logo {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid #d6e0f0;
+            background: #fff;
         }
 
         .logo img {
-            margin-top: 15px;
+            width: 100%;
+            height: 100%;
         }
 
-        .text-center {
-            text-align: center;
+        .company-info h2 {
+            margin: 0;
+            font-size: 18px;
+            text-transform: uppercase;
         }
 
-        .text-right {
+        .company-info p {
+            margin: 2px 0;
+            font-size: 12.5px;
+        }
+
+        /* ================= TABLE ================= */
+        .table-wrap {
+            background: #f1f5fb;
+            border-radius: 10px;
+            padding: 6px;
+            margin-top: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
             text-align: left;
         }
 
-        .receipt_header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-bottom: 30px;
-        }
-
-        .address_header h4 {
-            color: #000;
-            font-size: 25px;
-            margin-bottom: 15px;
-            font-weight: 700;
-            font-family: 'Roboto', sans-serif;
-
-        }
-
-        .address_header .address {
-            max-width: 270px;
+        .section-title {
             font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ================= STATUS ================= */
+        .status-success {
+            color: #15803d;
+            font-weight: 600;
+        }
+
+        /* ================= TERMS ================= */
+        .terms {
+            margin-top: 18px;
+        }
+
+        .terms h4 {
+            margin: 12px 0 6px;
+            font-size: 14px;
+        }
+
+        .terms ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .terms li {
             line-height: 22px;
+            font-size: 12.5px;
         }
 
-        .address_header a {
-            color: #333;
-            text-decoration: none;
-        }
-
-        .pdf_descContent li,
-        .pdf_descContent p {
-            line-height: 26px;
+        /* ================= FOOTER ================= */
+        .footer {
+            margin-top: 22px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
-    
-    <div class="receipt_wrapper">
-        <!-- header -->
-        <div class="receipt_header">
-          
-            <div class="logo" style="display: flex; gap:1rem; align-items:center;">
-               @php
-                if($branch_logo && file_exists(public_path($branch_logo))){
-                    $logo = base64_encode(file_get_contents(public_path($branch_logo)));
-                } else {
-                    $logo = base64_encode(file_get_contents(public_path('img/logo-socials.png')));
-                }
-            @endphp
 
-            <img src="data:image/png;base64,{{ $logo }}" style="width:80px;height:80px;border-radius:100%;">
+    <div class="receipt-title">
+        <h1>Payment Receipt</h1>
+    </div>
 
-               
-            </div>
-            <div class="address_header text-right">
-                <h4 style="text-transform: uppercase; margin-top:1rem;"><?php echo isset($library_name) ? $library_name : ''; ?></h4>
-                <div class="address">
-                    <p>Address : <?php echo isset($library_address) ? $library_address : ''; ?></p>
-                </div>
-                <a href="mailto:<?php echo isset($library_email) ? $library_email : ''; ?>" title="Library Email Id">
-                    Email: <?php echo isset($library_email) ? $library_email : ''; ?>
-                </a><br>
-                <a href="tel:<?php echo isset($library_mobile) ? $library_mobile : ''; ?>" title="Library Contact info">
-                    Contact: <?php echo isset($library_mobile) ? $library_mobile : ''; ?>
-                </a><br>
-                @if($branch_slug)
-                    <a href="{{url('library-detail/'.$branch_slug)}}" title="Library System">Website: {{url('library-detail/'.$branch_slug)}}</a>
-                @else
-                    <a href="https://www.libraro.in/" title="Library System">Website: https://www.libraro.in/</a>
-                @endif
-                
-                
-                <br>
-            </div>
+    @php
+    if($branch_logo && file_exists(public_path($branch_logo))){
+    $logo = base64_encode(file_get_contents(public_path($branch_logo)));
+    } else {
+    $logo = base64_encode(file_get_contents(public_path('img/logo-socials.png')));
+    }
+    @endphp
+
+    <!-- ================= HEADER ================= -->
+    <div class="header">
+        <div class="logo mb-2">
+            <img src="data:image/png;base64,{{ $logo }}">
         </div>
+        <br>
 
-        <!-- Main content-->
+        <div class="company-info">
+            <h2>{{ $library_name ?? '' }}</h2>
+            <p><b>Address:</b> {{ $library_address ?? '' }}</p>
+            <p><b>Email:</b> {{ $library_email ?? '' }}</p>
+            <p><b>Mobile:</b> {{ $library_mobile ?? '' }}</p>
+            <p>
+                <b>Website:</b>
+                <a href="{{ $branch_slug ? url('library-detail/'.$branch_slug) : 'https://www.libraro.in/' }}">
+                    click here
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ================= SUBSCRIBER ================= -->
+    <div class="table-wrap">
         <table>
-            <thead class="text-center">
-                <tr>
-                    <th colspan="4" class="tab_title">Transaction Receipt</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="width:30%"><b> Plan:</b></td>
-                    <td style="width:15%">
-                        <?php echo isset($subscription) ? $subscription : ''; ?>
-                    </td>
-                    <td style="width:45%"><b>Plan Start Date:</b></td>
-                    <td style="width:15%">
-                        <?php echo isset($transactiondate) ? $transactiondate : ''; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>Invoice Number:</b></td>
-                    <td>
-                        <?php echo isset($invoice_ref_no) ? $invoice_ref_no : ''; ?>
-                    </td>
-                    <td><b>Plan End Date:</b></td>
-                    <td>
-                        <?php echo isset($end_date) ? $end_date : ''; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>Name</b></td>
-                    <td colspan="3">
-                        <?php echo isset($name) ? $name : ''; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>Email Address:</b></td>
-                    <td colspan="3">
-                        <?php echo isset($email) ? $email : 'Not Updated Yet'; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>Payment Type:</b></td>
-                    <td>
-                        <?php
-                        if (isset($payment_mode)) {
-                            if ($payment_mode == 1) {
-                                echo 'Online';
-                            } elseif ($payment_mode == 2) {
-                                echo 'Offline';
-                            } else {
-                                echo 'Pay Later';
-                            }
-                        } else {
-                            echo '';
-                        }
-                        ?>
-                    </td>
-                    <td><b>Amount Paid:</b></td>
-                    <td>
-                        <?php echo isset($paid_amount) ? $paid_amount : ''; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>Total Amount:</b></td>
-                    <td>
-                        <?php echo isset($monthly_amount) ? $monthly_amount : ''; ?>
-                    </td>
-                    <td><b>Plan Duration:</b></td>
-                    <td>
-                        <b><?php echo isset($month) ? $month : ''; ?> Month</b>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="4">
-                        <h4>Terms & Conditions</h4>
-                        <ul class="pdf_descContent">
-                            <li>This receipt is not a VAT Invoice.</li>
-                            <li>VAT Invoice will be provided upon request within 30 days.</li>
-                            <li>This is a computer-generated receipt; no signature is required.</li>
-                            <li>All subscription plans (Basic, Standard, and Premium) are non-refundable and non-transferable.</li>
-                            <li>Plan upgrades are available at any time with additional charges applied.</li>
-                        </ul>
-
-                        <h4>Refund Policy</h4>
-                        <ul class="pdf_descContent">
-                            <li>No refunds will be issued once the subscription is activated. Please review your plan carefully before making a purchase.</li>
-                        </ul>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table style="width: 100%;">
-          <tr>
-            <td>
-              <p style="text-align: Center;"><b>Website :</b> www.libraro.in | <b>Call Us :</b> <a href="+91-8114479678">+91-8114479678</a></p>
-              <p style="text-align: Center;"><b>HEAD OFFICE :</b> KOTA RAJASTHAN, 324005</p>
-            </td>
-          </tr>
+            <tr>
+                <th colspan="4" class="section-title">Subscriber Details</th>
+            </tr>
+            <tr>
+                <th style="width:25%">Name</th>
+                <td colspan="3">{{ $name ?? '' }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td colspan="3">{{ $email ?? 'Not Updated Yet' }}</td>
+            </tr>
         </table>
     </div>
-</body>
 
+    <!-- ================= SUBSCRIPTION ================= -->
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th colspan="4" class="section-title">Subscription Details</th>
+            </tr>
+            <tr>
+                <th style="width:25%">Plan</th>
+                <td style="width:25%">{{ $subscription ?? '' }}</td>
+                <th style="width:25%">Duration</th>
+                <td style="width:25%">{{ $month ?? '' }} Month(s)</td>
+            </tr>
+            <tr>
+                <th>Start Date</th>
+                <td>{{ $transactiondate ?? '' }}</td>
+                <th>End Date</th>
+                <td>{{ $end_date ?? '' }}</td>
+            </tr>
+            <tr>
+                <th>Shift Timing</th>
+                <td colspan="3">{{ $shift_timing ?? 'Not Available' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ================= PAYMENT ================= -->
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th colspan="6" class="section-title">Payment Summary</th>
+            </tr>
+            <tr>
+                <th>Invoice No</th>
+                <td>{{ $invoice_ref_no ?? '' }}</td>
+                <th>Payment Date</th>
+                <td>{{ $transactiondate ?? '' }}</td>
+                <th>Status</th>
+                <td style="color: #15803d; font-weight: 700;">SUCCESS</td>
+            </tr>
+            <tr>
+                <th>Payment Mode</th>
+                <td>
+                    @if($payment_mode == 1)
+                    Online
+                    @elseif($payment_mode == 2)
+                    Offline
+                    @else
+                    Pay Later
+                    @endif
+                </td>
+                <th>Total Amount</th>
+                <td>{{ $monthly_amount ?? '' }}</td>
+                <th>Amount Paid</th>
+                <td style="color: #15803d; font-weight: 700;">SUCCESS</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ================= TERMS ================= -->
+    <div class="terms">
+        <h4>Terms & Conditions</h4>
+        <ul class="pdf_descContent">
+            <li>This receipt is not a VAT Invoice.</li>
+            <li>VAT Invoice will be provided upon request within 30 days.</li>
+            <li>This is a computer-generated receipt; no signature is required.</li>
+            <li>All subscription plans (Basic, Standard, and Premium) are non-refundable and non-transferable.</li>
+            <li>Plan upgrades are available at any time with additional charges applied.</li>
+        </ul>
+        <h4>Refund Policy</h4>
+        <ul class="pdf_descContent">
+            <li>No refunds will be issued once the subscription is activated. Please review your plan carefully before making a purchase.</li>
+        </ul>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <div class="footer">
+        <p><b>Website:</b> www.libraro.in | <b>Call Us:</b> +91-8114479678</p>
+        <p><b>Head Office:</b> Kota, Rajasthan – 324005</p>
+    </div>
+
+</body>
 
 </html>

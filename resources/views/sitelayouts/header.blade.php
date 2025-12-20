@@ -27,7 +27,7 @@
                         <a class="nav-link " href="{{route('contact-us')}}">Contact Us</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link button" href="{{route('register')}}">Sign Up Your Library</a>
+                        <a class="nav-link button" href="{{route('login.library')}}">Sign In</a>
                     </li>
                 </ul>
 
