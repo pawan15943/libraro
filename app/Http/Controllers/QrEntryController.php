@@ -919,6 +919,7 @@ class QrEntryController extends Controller
 
                 foreach ($bookings as $booking) {
                     foreach ($planTypes as $planType) {
+                        
                         if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
                             $planTypesRemovals[] = $planType->id;
                         }
