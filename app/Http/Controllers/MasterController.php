@@ -288,7 +288,7 @@ class MasterController extends Controller
             $totalHours = $globalMin->diffInHours($end);
 
             // 1. Check within allowed time range
-            if ($totalHours > $branchRecord->hour) {
+            if (PlanType::count() > 0 && $totalHours > $branchRecord->hour) {
                  return response()->json([
                     'error' => true,
                     'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
