@@ -105,6 +105,7 @@ Route::get('/qr/attendance/link', [AttendanceController::class, 'showLink'])->na
 Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'])->name('store.scan.attendance');
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
 Route::get('/attendance/success', [AttendanceController::class, 'markSuccess'])->name('attendance.success');
+Route::get('/verify/learner/dashboard', [AttendanceController::class, 'dashboard'])->name('attendance.dashboard');
 Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify']);
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');

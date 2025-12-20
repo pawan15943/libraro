@@ -17,6 +17,56 @@ class AttendanceController extends Controller
     public function index(){
         return view('attendance.attendance-qr');
     }
+    public function dashboard(){
+        // 🔐 Must be verified via session (created in verify / autoVerify)
+        if (!session('attendance_verified') || !session('learner_id')) {
+            return redirect()->route('qr.attendance.link');
+            
+        }
+
+        $learnerId = session('learner_id');
+        $learner=Learner::withTrashed()->where('id',$learnerId)->first();
+       
+
+         $detail = LearnerDetail::query()
+            ->where('learner_detail.learner_id', $learnerId)
+            ->where('learner_detail.status', 1)
+
+            // Joins
+            ->leftJoin('branches', 'learner_detail.branch_id', '=', 'branches.id')
+            ->leftJoin('libraries', 'learner_detail.library_id', '=', 'libraries.id')
+
+            // Select only required columns
+            ->select([
+                'learner_detail.id',
+                'learner_detail.learner_id',
+                'learner_detail.seat_no',
+                'learner_detail.plan_id',
+                'learner_detail.plan_type_id',
+                'learner_detail.plan_start_date',
+                'learner_detail.plan_end_date',
+
+                'branches.name as branch_name',
+                'libraries.library_name as library_name',
+            ])
+
+            // Eloquent relations
+            ->with([
+                'plan:id,name',
+                'planType:id,name,start_time,end_time'
+            ])
+
+            ->latest('learner_detail.id')
+            ->first();
+
+       
+         return view('attendance.dashboard', [
+            'learner' => $learner,
+            'detail'  => $detail,
+            'today'   => Carbon::today(),
+        ]);
+        
+    }
     public function generate()
     {
         
@@ -189,6 +239,7 @@ class AttendanceController extends Controller
 
         /* 1️⃣ No active plan */
         if (!$learnerDetail) {
+             \Log::info('learner detail not found');
             return response()->json([
                 'status'  => 'error',
                 'message' => 'No active plan found'
@@ -215,7 +266,7 @@ class AttendanceController extends Controller
                 ->first();
 
             if ($existingAttendance) {
-
+                \Log::info('attendence update');
                  $existingAttendance->out_time = $currentTime;
                  if (!$existingAttendance->in_time){
                     $existingAttendance->in_time = $currentTime;
@@ -223,6 +274,7 @@ class AttendanceController extends Controller
 
                 $existingAttendance->save();
             } else {
+                \Log::info('attendence add');
                 // // 3. Mark attendance (safe)
                 Attendance::create([
                     'learner_id' => $learnerId,
@@ -236,7 +288,7 @@ class AttendanceController extends Controller
             }
            
 
-        session()->forget(['attendance_verified','verify_token']);
+        // session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Attendance marked'
