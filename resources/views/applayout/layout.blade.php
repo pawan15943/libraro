@@ -371,7 +371,7 @@ function startScanner() {
 
     const reader = document.getElementById('reader');
     if (!reader || reader.offsetHeight === 0) {
-        alert('Scanner container not visible');
+        // alert('Scanner container not visible');
         return;
     }
 
@@ -381,7 +381,7 @@ function startScanner() {
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         qr => {
-              alert('CALLBACK FIRED'); // 🔴 Step A
+              // alert('CALLBACK FIRED'); 
 
           
             if (scanLock) {
@@ -389,7 +389,7 @@ function startScanner() {
                 return;
             }
             scanLock = true;
-            alert('PROCESSING QR'); // 🔴 Step C 
+            // alert('PROCESSING QR'); 
             document.getElementById('scanResult').innerText =
                 'QR detected. Processing...';
 
@@ -402,7 +402,7 @@ function startScanner() {
 
         }
     ).catch(err => {
-        alert('Camera error: ' + err);
+        // alert('Camera error: ' + err);
         scanner = null;
     });
 }

@@ -219,9 +219,18 @@ class QrEntryController extends Controller
     {
         try {
             Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            Log::info('STEP 1: Booking store entry', [
+                'method' => $request->method(),
+                'url'    => $request->fullUrl(),
+                'uuid'   => $uuid,
+            ]);
+
 
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
-            // Log::info('Branch found', ['branch_id' => $branch->id]);
+           Log::info('STEP 2: Branch fetched', [
+                'branch_id' => $branch->id ?? null,
+            ]);
+
 
             // Build validation rules
             $rules = [
@@ -236,13 +245,19 @@ class QrEntryController extends Controller
                 'payment_mode'   => 'required|in:online,offline',
             ];
             
+            Log::info('STEP 3: Before validation', [
+                'request_data' => $request->except(['password', '_token']),
+            ]);
 
             $validated = $request->validate($rules);
-            // Log::info('Validation passed', ['validated' => $validated]);
+            Log::info('Validation passed', ['validated' => $validated]);
             if($request->seat_no){
-                
+                Log::info('STEP 5: Seat validation started');
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
                 if ($validated_custom['error']) {
+                    Log::warning('STEP 5 FAILED: Seat validation error', [
+                        'message' => $validated_custom['message']
+                    ]);
                   
                    return redirect()->back()->with('error',$validated_custom['message'])->withInput();
                 }
@@ -252,6 +267,7 @@ class QrEntryController extends Controller
            
             $start_date = Carbon::parse($validated['plan_start_date']);
             $endDate=getEndDate($validated['plan_id'], $start_date);
+            Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()
                 ->where('id', $request->learner_transaction_id)
@@ -265,7 +281,7 @@ class QrEntryController extends Controller
                 $password     = Hash::make($validated['mobile']);
                  $total_amount = $validated['plan_price_id'];
             }
-            Log::info('Password & Total amount set', ['total_amount' => $total_amount]);
+            Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
 
