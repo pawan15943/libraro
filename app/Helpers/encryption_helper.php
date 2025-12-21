@@ -245,6 +245,43 @@ if (!function_exists('getPlanPrice')) {
     }
 }
 
+if (!function_exists('getEndDate')) {
+    function getEndDate($plan_id, $planStartDate){
+            $first_record = Hour::first();
+            $total_hour = $first_record ? $first_record->hour : 0;
+             $planData = Plan::where('id', $plan_id)
+                ->select('plan_id', 'type', 'monthdays','type')
+                ->first();
+            $type = $planData->type; 
+            $monthdays = $planData->monthdays;
+             $duration  = $planData->plan_id ?? 0; 
+            switch (strtoupper($type)) {
+                case 'DAY':
+                    $endDate = $planStartDate->copy()->addDays($duration);
+                    break;
+                case 'WEEK':
+                    $endDate = $planStartDate->copy()->addWeeks($duration);
+                    break;
+                 case 'MONTH':
+                    if (!empty($monthdays)) {
+                        // Use exact number of days defined for this month plan
+                        $endDate = $planStartDate->copy()->addDays($monthdays - 1);
+                    } else {
+                        // Fallback to month-wise duration
+                        $endDate = $planStartDate->copy()->addMonths($duration);
+                    }
+                    break;
+                    
+                case 'YEAR':
+                    $endDate = $planStartDate->copy()->addYears($duration);
+                    break;
+                default:
+                    $endDate = $planStartDate; 
+                    break;
+            }
+            return   $endDate;
+    }
+}
 if (!function_exists('getLockerPrice')) {
     function getLockerPrice(?int $planId = null)
     {
@@ -616,74 +653,6 @@ if (!function_exists('is_locker')) {
     }
 }
 
-if (!function_exists('filterPlantypeFromseat')) {
-    function filterPlantypeFromseat($seat_no,$customerId)
-    {
-        
-       $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                ->where('learner_detail.seat_no', $seat_no)
-                ->where('learner_detail.learner_id', '!=', $customerId)
-                ->where('learners.status', 1)
-                ->where('learner_detail.status', 1)
-                ->where('learners.branch_id', getCurrentBranch())
-                ->where('learner_detail.branch_id', getCurrentBranch())
-                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-
-            // Step 2: Retrieve all plan types
-            $planTypes = PlanType::get();
-
-            // Step 3: Initialize an array to store the plan_type_ids to be removed
-            $planTypesRemovals = [];
-
-            // Step 4: Calculate total booked hours for the seat
-            $totalBookedHours = $bookings->sum('slot_hours');
-        
-            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.learner_id', '!=', $customerId)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
-
-            // Step 5: Determine conflicts based on plan_type_id and hours
-            $planTypeId = null;
-            if ($totalBookedHours <= 24) {
-
-                foreach ($bookings as $booking) {
-                    foreach ($planTypes as $planType) {
-                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
-                            $planTypesRemovals[] = $planType->id;
-                        }
-                    }
-                }
-            }
-            if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
-            }
-
-            if (!is_null($planTypeId)) {
-                $planTypesRemovals[] = $planTypeId;
-            }
-
-            if ($nightseatBooked) {
-                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
-                $planTypesRemovals[] = $planTypeid;
-            }
-            // Remove duplicate entries in planTypesRemovals
-            $planTypesRemovals = array_unique($planTypesRemovals);
-
-            // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', getCurrentBranch())->select('hour')->first();
-            $total_hour = $first_record ? $first_record->hour : null;
-
-            if ($totalBookedHours >= $total_hour) {
-                $planTypesRemovals = $planTypes->pluck('id')->toArray();
-            }
-
-            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
-          return  $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
-                return !in_array($planType->id, $planTypesRemovals);
-            })->map(function ($planType) {
-                return ['id' => $planType->id, 'name' => $planType->name];
-            })->values();
-    }
-}
 
 if (!function_exists('branchCountValidation')) {
     function branchCountValidation()
@@ -1046,4 +1015,215 @@ if (!function_exists('autotextNotificationActive')) {
     }
 }
 
+//get filter plan type from seat
 
+if (!function_exists('filterPlantypeFromseat')) {
+    function filterPlantypeFromseat($seat_no,$customerId)
+    {
+        
+       $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                ->where('learner_detail.seat_no', $seat_no)
+                ->where('learner_detail.learner_id', '!=', $customerId)
+                ->where('learners.status', 1)
+                ->where('learner_detail.status', 1)
+                ->where('learners.branch_id', getCurrentBranch())
+                ->where('learner_detail.branch_id', getCurrentBranch())
+                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+
+            // Step 2: Retrieve all plan types
+            $planTypes = PlanType::get();
+
+            // Step 3: Initialize an array to store the plan_type_ids to be removed
+            $planTypesRemovals = [];
+
+            // Step 4: Calculate total booked hours for the seat
+            $totalBookedHours = $bookings->sum('slot_hours');
+        
+            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.learner_id', '!=', $customerId)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
+
+            // Step 5: Determine conflicts based on plan_type_id and hours
+            $planTypeId = null;
+            if ($totalBookedHours <= 24) {
+
+                foreach ($bookings as $booking) {
+                    foreach ($planTypes as $planType) {
+                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                            $planTypesRemovals[] = $planType->id;
+                        }
+                    }
+                }
+            }
+            if ($totalBookedHours > 1) {
+                $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
+            }
+
+            if (!is_null($planTypeId)) {
+                $planTypesRemovals[] = $planTypeId;
+            }
+
+            if ($nightseatBooked) {
+                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seat_no)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+                $planTypesRemovals[] = $planTypeid;
+            }
+            // Remove duplicate entries in planTypesRemovals
+            $planTypesRemovals = array_unique($planTypesRemovals);
+
+            // If total booked hours >= 16, all plan types should be removed
+            $first_record = Hour::where('branch_id', getCurrentBranch())->select('hour')->first();
+            $total_hour = $first_record ? $first_record->hour : null;
+
+            if ($totalBookedHours >= $total_hour) {
+                $planTypesRemovals = $planTypes->pluck('id')->toArray();
+            }
+
+            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
+          return  $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
+                return !in_array($planType->id, $planTypesRemovals);
+            })->map(function ($planType) {
+                return ['id' => $planType->id, 'name' => $planType->name];
+            })->values();
+    }
+}
+
+//check seat availability without learner id
+
+if (!function_exists('checkPlanTypeSeatWise')) {
+
+    function checkPlanTypeSeatWise(
+        $seatNo,$requestPlanTypeId,$startDate,$endDate,$learnerId = null) {
+        $planType = PlanType::find($requestPlanTypeId);
+        if (!$planType) {
+            return false;
+        }
+
+        $startTime = $planType->start_time;
+        $endTime   = $planType->end_time;
+
+        // Fetch TODAY + FUTURE bookings (status ignored intentionally)
+        $futureBookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where('learner_detail.branch_id', getCurrentBranch())
+            ->where('learner_detail.seat_no', $seatNo)
+            ->whereDate('learner_detail.plan_start_date', '>=', Carbon::today())
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->where('learner_detail.plan_start_date', '<=', $endDate)
+                  ->where('learner_detail.plan_end_date', '>=', $startDate);
+            })
+            ->when($learnerId, function ($q) use ($learnerId) {
+                // Ignore current learner when editing
+                $q->where('learner_detail.learner_id', '!=', $learnerId);
+            })
+            ->get([
+                'plan_types.start_time',
+                'plan_types.end_time',
+                'plan_types.day_type_id'
+            ]);
+
+        // ALL-DAY or NIGHT future booking blocks everything
+        if ($futureBookings->whereIn('day_type_id', [8, 9])->count() > 0) {
+            return false;
+        }
+
+        // Time overlap check
+        foreach ($futureBookings as $booking) {
+            if (
+                $startTime < $booking->end_time &&
+                $endTime > $booking->start_time
+            ) {
+                return false;
+            }
+        }
+
+        return true; // ✅ Safe
+    }
+}
+
+
+//check seat availability with learner id and without learner id
+
+if (!function_exists('checkSeatAvailability')) {
+
+    function checkSeatAvailability($seat_no,$learnerId,$planTypeId,$startDate,$endDate) {
+        $planType = PlanType::find($planTypeId);
+        if (!$planType) {
+            return ['error' => true, 'message' => 'Invalid plan type'];
+        }
+
+        $startTime = $planType->start_time;
+        $endTime   = $planType->end_time;
+        $hours     = $planType->slot_hours;
+
+        // Total allowed hours (16 / 24)
+        $totalAllowedHours = Hour::where('branch_id', getCurrentBranch())->value('hour') ?? 0;
+        if ($totalAllowedHours <= 0) {
+            return ['error' => true, 'message' => 'Library hours not configured'];
+        }
+
+        // ACTIVE + FUTURE bookings (status ignored)
+        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where('learner_detail.branch_id', getCurrentBranch())
+            ->where('learner_detail.seat_no', $seat_no)
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->where('learner_detail.plan_start_date', '<=', $endDate)
+                  ->where('learner_detail.plan_end_date', '>=', $startDate);
+            })
+            ->when($learnerId, function ($q) use ($learnerId) {
+                // Ignore own booking in edit mode
+                $q->where('learner_detail.learner_id', '!=', $learnerId);
+            })
+            ->get([
+                'plan_types.start_time',
+                'plan_types.end_time',
+                'plan_types.slot_hours',
+                'plan_types.day_type_id'
+            ]);
+
+        // 1️⃣ All-day / Night block
+        if ($bookings->whereIn('day_type_id', [8, 9])->count() > 0) {
+            return [
+                'error' => true,
+                'message' => 'Seat already booked for full day or night'
+            ];
+        }
+
+        // 2️⃣ Hour capacity check
+        $alreadyBookedHours = $bookings->sum('slot_hours');
+        if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
+            return [
+                'error' => true,
+                'message' => 'Seat exceeds total available hours'
+            ];
+        }
+
+        // 3️⃣ Time overlap check
+        foreach ($bookings as $booking) {
+            if (
+                $startTime < $booking->end_time &&
+                $endTime > $booking->start_time
+            ) {
+                return [
+                    'error' => true,
+                    'message' => 'Time slot overlaps with existing booking'
+                ];
+            }
+        }
+
+        // 4️⃣ FINAL future check (mandatory as per your requirement)
+        if (
+            !checkPlanTypeSeatWise(
+                $seat_no,
+                $planTypeId,
+                $startDate,
+                $endDate,
+                $learnerId
+            )
+        ) {
+            return [
+                'error' => true,
+                'message' => 'This plan conflicts with a future booking'
+            ];
+        }
+
+        return ['error' => false];
+    }
+}

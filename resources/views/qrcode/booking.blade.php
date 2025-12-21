@@ -23,25 +23,33 @@
                             @csrf
                             <input type="hidden" id="branch_id" value="{{$branch->id}}">
 
-                            <div class="col-lg-6">
-                                <label for="general_seat">Assign Seat No ?</label>
+
+                           <div class="col-lg-6">
+                                <label for="general_seat">Assign Seat No?</label>
                                 <select name="general_seat" id="general_seat" class="form-select">
-
-                                    <option value="yes">No</option>
-
-                                    <option value="no">Yes, Allot a Seat No.</option>
+                                    <option value="yes" {{ old('general_seat') == 'yes' ? 'selected' : '' }}>
+                                        No
+                                    </option>
+                                    <option value="no" {{ old('general_seat') == 'no' ? 'selected' : '' }}>
+                                       Yes, Allot a Seat No.
+                                    </option>
+                                    
                                 </select>
                             </div>
 
-                             <div class="col-lg-6">
+                            <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select" id="seat_id" disabled>
+                                <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
-                                    @foreach($availableSeats as $key => $value)
-                                    <option value="{{$value}}">{{$value}}</option>
+                                    @foreach($availableSeats as $value)
+                                        <option value="{{ $value }}"
+                                            {{ old('seat_no') == $value ? 'selected' : '' }}>
+                                            {{ $value }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="col-lg-12">
                                 <label>Name <span>*</span></label>
                                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">

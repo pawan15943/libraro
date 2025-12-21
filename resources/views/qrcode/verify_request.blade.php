@@ -48,6 +48,7 @@ $ids='approvwRequest';
 
                         <div class="row g-3">
                             <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" id="user_id">
+                            <input type="hidden" name="learner_id" value="{{$learner ? $learner->id : ''}}" >
                             
                             <input type="hidden" name="branch_id" value="{{ $customer->branch_id ?? '' }}">
                         
