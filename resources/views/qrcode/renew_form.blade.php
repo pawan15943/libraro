@@ -1,5 +1,10 @@
 @extends('sitelayouts.layout')
 @section('content')
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
 
 <div class="sacnd-data" style="min-height: 500px; display:flex; align-items:center;">
     <div class="container">
