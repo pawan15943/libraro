@@ -218,7 +218,7 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
-            // Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
 
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
             // Log::info('Branch found', ['branch_id' => $branch->id]);
