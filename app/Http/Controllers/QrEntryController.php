@@ -307,12 +307,33 @@ class QrEntryController extends Controller
             ]);
 
             $validated = $request->validate($rules);
-            Log::info('Validation passed', ['validated' => $validated]);
-          
             
-           
-            $start_date = Carbon::parse($validated['plan_start_date']);
-            $endDate=getEndDate($validated['plan_id'], $start_date);
+            $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
+            $planData = Plan::where('id', $validated['plan_id'])
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
+
+            $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
+
+            switch (strtoupper($type)) {
+                case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
+                case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
+                case 'MONTH':
+                if (!empty($monthdays)) {
+                    // Use exact number of days defined for this month plan
+                    $endDate = $start_date->copy()->addDays($monthdays - 1);
+                } else {
+                    // Fallback to month-wise duration
+                    $endDate = $start_date->copy()->addMonths($duration);
+                }
+                break;
+                case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
+                default:      $endDate = $start_date; break;
+            }
             Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()
@@ -322,7 +343,7 @@ class QrEntryController extends Controller
 
               if($request->seat_no){
                 $learnerId=$transactions->learner_id;
-                Log::info('STEP 5: Seat validation started');
+                Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
                 if ($validated_custom['error']) {
                     Log::warning('STEP 5 FAILED: Seat validation error', [
