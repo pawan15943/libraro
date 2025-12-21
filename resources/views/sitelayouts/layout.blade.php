@@ -309,7 +309,7 @@
                                                     <h5 class="text-success">Verified</h5>
                                                 </li>
                                             </ul>
-                                            <a href="${baseUrl}/library-detail/${library.slug}" class="view-library " >View Details <i class="fa fa-long-arrow-right"></i></a>
+                                            <a href="${baseUrl}/${library.slug}" class="view-library " >View Details <i class="fa fa-long-arrow-right"></i></a>
     
                                         </div>
                                         

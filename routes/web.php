@@ -80,7 +80,7 @@ Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('su
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
 Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
-Route::get('library-detail/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
+
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
@@ -425,5 +425,5 @@ Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
   Route::post('learner/complaints/store', [LearnerController::class, 'complaintsStore'])->name('learner.complaint.store');
   Route::post('learner/feadback/store', [LearnerController::class, 'feadbackStore'])->name('learner.feedback.store');
 });
-
+Route::get('/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 // Route::get('updatetest', [LearnerController::class, 'dataTestStatus'])->name('updatetest');

@@ -452,7 +452,7 @@ class QrEntryController extends Controller
         return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner'));
     }
 
-      public function requestApproveEdit(Request $request)
+    public function requestApproveEdit(Request $request)
     {
        
         if(!$request->direct_validate && !isset($request->direct_validate)){
