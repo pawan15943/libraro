@@ -35,7 +35,7 @@
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
                                     @foreach($newAvailableSeats as $key => $value)
-                                    {{-- <option value="{{$value}}">{{$value}}</option> --}}
+                                    
                                     <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
