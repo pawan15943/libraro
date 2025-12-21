@@ -2819,21 +2819,28 @@ $(document).on('click', '.giftDaysBtn', function () {
             Swal.fire({
                 title: "Assign Gift Days",
                 input: 'number',
-                inputLabel: 'Enter number of gift days (+/- allowed)',
+                inputLabel: 'Enter number of gift days (+allowed)',
                 inputValue: existingDays,   // PREFILL VALUE HERE
                 inputPlaceholder: 'e.g. 5',
                 showCancelButton: true,
                 confirmButtonText: 'Save',
                 cancelButtonText: 'Cancel',
                 inputAttributes: {
+                    min: 1, 
                     step: 1
                 },
                 preConfirm: (value) => {
-                    if (value === "" || isNaN(value)) {
+                     if (value === "" || isNaN(value)) {
                         Swal.showValidationMessage('Please enter a valid number');
-                    } else {
-                        return value;
+                        return false;
                     }
+
+                    if (parseInt(value) <= 0) {
+                        Swal.showValidationMessage('Gift days must be greater than 0');
+                        return false;
+                    }
+
+                    return parseInt(value);
                 }
             }).then((result) => {
 

@@ -64,6 +64,7 @@
                     <input type="hidden" name="mobile" value="{{ $customer->mobile }}">
 
                     <input type="hidden" name="dob" value="{{ $customer->dob }}">
+                    <input type="hidden" name="seat_no" value="{{ $customer->seat_no}}">
 
                     <input type="hidden" name="plan_id" value="{{ $customer_detail->plan_id }}">
                     <input type="hidden" name="plan_type_id" value="{{ $customer_detail->plan_type_id }}">

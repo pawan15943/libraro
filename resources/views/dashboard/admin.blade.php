@@ -501,7 +501,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <table class="table table-boredred" id="onlineRequest">
                         <thead>
                             <tr>
-                                <th class="text-center">Seat No.</th>
+                                <th class="text-center">Booking Type</th>
                                 <th class="text-center">Name</th>
                                 <th class="text-center">Mobile</th>
                                 <th class="text-center">Plan Info</th>
@@ -517,8 +517,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             @foreach($qrbookings as $key => $value)
 
                             <tr>
-                                <td>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
-                                <td>{{$value->name}}</td>
+                                <td>
+                                    @if($value->type=='qr_seat_book')
+                                        SEAT BOOK
+                                    @elseif($value->type=='qr_renew')
+                                    RENEW SEAT
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
                                 <td>{{$value->mobile}}</td>
                                 <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
 

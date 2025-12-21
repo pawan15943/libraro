@@ -110,8 +110,8 @@ class QrEntryController extends Controller
 
      private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
     {
-      
-        $total_hour= Hour::where('branch_id',$branch_id)->first()?->hour ?? 0;
+            
+        $total_hour= Hour::withoutGlobalScopes()->where('branch_id',$branch_id)->first()?->hour ?? 0;
 
         if ($total_hour === 0) {
             return ['error' => true, 'message' => 'Total available hours not set.'];
@@ -237,15 +237,6 @@ class QrEntryController extends Controller
             ];
             
 
-            // if (!$request->has('renewal')) {
-            //     $rules['password'] = 'required|min:6';
-            // }
-
-            // $messages = [
-            //     'password.required' => 'Password is required.',
-            //     'password.min'      => 'Password must be at least 6 characters.',
-            // ];
-
             $validated = $request->validate($rules);
             // Log::info('Validation passed', ['validated' => $validated]);
             if($request->seat_no){
@@ -259,38 +250,8 @@ class QrEntryController extends Controller
             }
             
            
-            $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
-            $planData = Plan::where('id', $validated['plan_id'])
-                ->select('plan_id', 'type', 'monthdays')
-                ->first();
-
-            $duration  = $planData->plan_id ?? 0; 
-            $type      = $planData->type;
-            $monthdays = $planData->monthdays;
-
-            $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
-
-            switch (strtoupper($type)) {
-                case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
-                case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH':
-                if (!empty($monthdays)) {
-                    // Use exact number of days defined for this month plan
-                    $endDate = $start_date->copy()->addDays($monthdays - 1);
-                } else {
-                    // Fallback to month-wise duration
-                    $endDate = $start_date->copy()->addMonths($duration);
-                }
-                break;
-                case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
-                default:      $endDate = $start_date; break;
-            }
-            Log::info('Plan dates calculated', [
-                'start_date' => $start_date,
-                'end_date'   => $endDate,
-                'type'       => $type,
-                'duration'   => $duration
-            ]);
+            $start_date = Carbon::parse($validated['plan_start_date']);
+            $endDate=getEndDate($validated['plan_id'], $start_date);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()
                 ->where('id', $request->learner_transaction_id)
@@ -452,7 +413,7 @@ class QrEntryController extends Controller
         return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner'));
     }
 
-      public function requestApproveEdit(Request $request)
+    public function requestApproveEdit(Request $request)
     {
        
         if(!$request->direct_validate && !isset($request->direct_validate)){
@@ -560,7 +521,6 @@ class QrEntryController extends Controller
                
                 $refund = 0;
                 $pending_refund = 0;
-
                 $dr_cr='Cr';
         
             
@@ -575,51 +535,12 @@ class QrEntryController extends Controller
 
             }
            
-            
-            
-          $planData = Plan::where('id', $plan_id)
-                ->select('plan_id', 'type', 'monthdays')
-                ->first();
-
-            $duration  = $planData->plan_id ?? 0; 
-            $type      = $planData->type;
-            $monthdays = $planData->monthdays;
-            
-            
             $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
           
-            $startTime = $planType->start_time;
-            $endTime = $planType->end_time;
+           
             $hours = $planType->slot_hours;
         
-            $first_record = Hour::first();
-            $total_hour = $first_record ? $first_record->hour : 0;
-            $type = Plan::where('id', $plan_id)->value('type'); 
-            switch (strtoupper($type)) {
-                case 'DAY':
-                    $endDate = $start_date->copy()->addDays($duration);
-                    break;
-                case 'WEEK':
-                    $endDate = $start_date->copy()->addWeeks($duration);
-                    break;
-                 case 'MONTH':
-                    if (!empty($monthdays)) {
-                        // Use exact number of days defined for this month plan
-                        $endDate = $start_date->copy()->addDays($monthdays - 1);
-                    } else {
-                        // Fallback to month-wise duration
-                        $endDate = $start_date->copy()->addMonths($duration);
-                    }
-                    break;
-                    
-                case 'YEAR':
-                    $endDate = $start_date->copy()->addYears($duration);
-                    break;
-                default:
-                    $endDate = $start_date; 
-                    break;
-            }
-            
+            $endDate=getEndDate($plan_id, $start_date);
             $extendDay = getExtendDays();
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
@@ -635,71 +556,16 @@ class QrEntryController extends Controller
                 $payment_mode = 0;
             }
             
-              if ($total_hour === 0) {
-                return redirect()->back()->with('error', 'Total available hours not set.')->withInput();
-            }
-
-           
-            if ($seat_no && !$request->learner_id) {
-                  $existingBookingsWithoutPlan = $this->getLearnersByLibrary()
-                ->where('learner_detail.seat_no', '=', $seat_no)
-                ->where('learner_detail.status', 1)
-                ->get();
-
-                foreach ($existingBookingsWithoutPlan as $booking) {
-                    $bookingPlanType = PlanType::find($booking->plan_type_id);
-                    if ($bookingPlanType) {
-                        if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
-                            return redirect()->back()->with('error', 'The selected plan type is not available for this seat. Please try a different seat.')->withInput();
-                        }
-                    }
-                }
-                 $existingBookings = $this->getLearnersByLibrary()
-                ->where('learner_detail.seat_no', '=', $seat_no)
-                ->where('learner_detail.plan_type_id', '=', $plan_type_id)
-                ->where('learners.status', 1)
-                ->where('learner_detail.status', 1)
-                ->where(function ($q) use ($start_date, $endDate) {
-                    $q->where('learner_detail.plan_start_date', '<=', $endDate)
-                    ->where('learner_detail.plan_end_date', '>=', $start_date);
-                })
-            
-                ->exists();
-
-        
-                if($existingBookings){
-                    return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.')->withInput();
-                }
-
-                if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->count() > 0) {
-                    return redirect()->back()->with('error', 'This Plan Type Seat already booked')->withInput();
-                }
-
-                if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-                     return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.')->withInput();
-                  
-                }
-
-                if(($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date','>',Carbon::today())->exists())){
-                    if($learnerController->checkPlanTypeSeatWise($seat_no,$plan_type_id)==false){
-                         return redirect()->back()->with('error', 'You cannot select this plan because it conflicts with an existing future booking. ')->withInput();
-                       
-                    }
-                }
-
-                  $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
-        
-
-                    if ($hours > ($total_hour - $total_cust_hour)) {
-                        
-                        return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.')->withInput();
-                    }
-            }
-
-
           
 
-        
+            $learnerId=$request->learner_id;
+            
+            $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+
+            if ($result['error']) {
+                return redirect()->back()->with('error', $result['message'])->withInput();
+               
+            }
 
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
@@ -842,12 +708,13 @@ class QrEntryController extends Controller
     {
         $request->validate([
             'mobile' => 'required|digits:10',
+            'learner_no'=>'required'
         ]);
 
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
         
         $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-            ->where('mobile', encryptData($request->input('mobile')))
+            ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
             ->first();
 
         if (!$customer) {
@@ -919,6 +786,7 @@ class QrEntryController extends Controller
 
                 foreach ($bookings as $booking) {
                     foreach ($planTypes as $planType) {
+                        
                         if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
                             $planTypesRemovals[] = $planType->id;
                         }

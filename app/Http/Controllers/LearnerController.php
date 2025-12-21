@@ -520,7 +520,7 @@ class LearnerController extends Controller
        
         if ($seat_no) {
             // Fetch existing bookings for the same seat
-            $existingBookings = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $customer->seat_no)
+            $existingBookings = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $seat_no)
                 ->where('learners.id', '!=', $customer->id) // Exclude the current booking
                 ->where('learner_detail.status', 1)
                 ->get();
@@ -548,7 +548,7 @@ class LearnerController extends Controller
                 return redirect()->back()->with('error', 'Total available hours not set.');
             }
 
-            $total_cust_hour = Learner::where('seat_no', $customer->seat_no)->where('status', 1)->sum('hours');
+            $total_cust_hour = Learner::where('seat_no', $seat_no)->where('status', 1)->sum('hours');
             // Check if the selected plan type exceeds available hours
             if ($hours > ($total_hour - ($total_cust_hour - $customer->hours))) {
                 return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');

@@ -34,10 +34,10 @@ $ids='approvwRequest';
 
 
 
-    <div class="row ">
-        <div class="col-lg-9">
-            <div class="card">
-                <div class="row g-4">
+<div class="row ">
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="row g-4">
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="detailes">
@@ -48,9 +48,10 @@ $ids='approvwRequest';
 
                         <div class="row g-3">
                             <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" id="user_id">
-                          
+                            <input type="hidden" name="learner_id" value="{{$learner ? $learner->id : ''}}" >
+                            
                             <input type="hidden" name="branch_id" value="{{ $customer->branch_id ?? '' }}">
-                      
+                        
                             {{--Seat Concept======================================================================  --}}
                             <div class="col-lg-6">
                                 <label for="qr_general_seat">Assign Seat No ?</label>
@@ -66,7 +67,7 @@ $ids='approvwRequest';
                                 <label for="seat_id11">Choose Seat No. <span>*</span></label>
 
                                 <select name="seat_no" class="form-select" id="seat_id11">
-                                     <option value="">Choose Seat No</option>
+                                        <option value="">Choose Seat No</option>
                                     @foreach($availableseats as $value)
                                     <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
                                         {{ $value }}
@@ -88,7 +89,7 @@ $ids='approvwRequest';
                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
-                              <input type="date"
+                                <input type="date"
                                 class="form-control dob"
                                 name="dob"
                                 value="{{ old('dob') ?? ($customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('Y-m-d') : '') }}"
@@ -100,7 +101,7 @@ $ids='approvwRequest';
                             <div class="col-lg-6">
                                 <label for="">Email Id (Optional)</label>
                                 <input type="text" class="form-control" name="email" value="{{ old('email') ?? $customer->email ?? '' }}" >
-                               
+                                
                             </div>
                             @endif
 
@@ -148,7 +149,7 @@ $ids='approvwRequest';
 
                         <h4 class="my-3">Your Plan Addon's 
                             <i class="fa fa-plus qr_addonToggleIcon" style="cursor: pointer;"></i>
-                 
+                    
                         </h4>
                         <div class="qr_lockerFields idProofFields1" style="display: none;">
                             <div class="row g-3">
@@ -245,7 +246,7 @@ $ids='approvwRequest';
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
 
-                       <div class="qr_idProofFields" style="display: none;">
+                        <div class="qr_idProofFields" style="display: none;">
                         <div class="row g-3">
 
                             {{-- ================= ID PROOF ================= --}}
@@ -282,7 +283,7 @@ $ids='approvwRequest';
                                 @endif
                             </div>
                             @endif
-                             @if(!in_array('8', toggleHideField()))
+                                @if(!in_array('8', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="profile_picture">Upload Profile Photo</label>
                                 <input type="file" class="form-control" name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" value="{{old('profile_picture')}}">
@@ -352,23 +353,31 @@ $ids='approvwRequest';
                     </div>
 
                         @endif
-
+                        @if($customer->type=='qr_renew')
+                         <div class="row mt-4">
+                            <div class="col-lg-4">
+                                <input type="submit" class="btn btn-primary btn-block button" value="Renew Seat Now" autocomplete="off">
+                            </div>
+                        </div>
+                            
+                        @else
+                         
                         <div class="row mt-4">
                             <div class="col-lg-4">
                                 <input type="submit" class="btn btn-primary btn-block button" value="Book Library Seat Now" autocomplete="off">
                             </div>
                         </div>
-
+                         @endif
                     </div>
                 </form>
             </div>
-            </div>
         </div>
     </div>
-     <script>
+</div>
 
-        
-            
+
+<script>
+           
 $(document).ready(function () {
 
     // Plan Addons Toggle
@@ -386,34 +395,22 @@ $(document).ready(function () {
 });
 
 
-        
+</script>
 
-    //   $('.qr_addonToggleIcon').on('click', function () {
-    //     $('.qr_idProofFields').slideUp();
-    //     $('.qr_lockerFields').slideToggle();
+    <script>
+    $(document).ready(function() {
+        $('#toggleIcon').click(function() {
+            $('#idProofFields').slideToggle();
 
-    //     $('.qr_toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-    //     $('.qr_addonToggleIcon').removeClass('fa-minus').addClass('fa-plus');
-
-    //     $(this).toggleClass('fa-plus fa-minus');
-    // });
-
-    </script>
-
-        <script>
-        $(document).ready(function() {
-            $('#toggleIcon').click(function() {
-                $('#idProofFields').slideToggle();
-
-                if ($('#idProofFields').is(':visible')) {
-                    $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
-                } else {
-                    $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-                }
-            });
+            if ($('#idProofFields').is(':visible')) {
+                $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
+            } else {
+                $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
+            }
         });
+    });
 
-    </script>
+</script>
 
 
 

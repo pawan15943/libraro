@@ -273,6 +273,8 @@ class MasterController extends Controller
             }
             
            
+          
+
             $minTime = PlanType::min('start_time');
             $maxTime = PlanType::max('end_time');
 
@@ -288,7 +290,7 @@ class MasterController extends Controller
             $totalHours = $globalMin->diffInHours($end);
 
             // 1. Check within allowed time range
-            if ($totalHours > $branchRecord->hour) {
+            if (PlanType::count() > 0 && $totalHours > $branchRecord->hour) {
                  return response()->json([
                     'error' => true,
                     'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
@@ -377,6 +379,7 @@ class MasterController extends Controller
              
                 $this->conditionFunction($request,$plan_type_name);
             }
+            
            
                
             unset($data['databasemodel']); 
@@ -804,6 +807,10 @@ class MasterController extends Controller
                 'end_time' => 'required',
                 'slot_hours' => 'required', 
                 'branch_id' => ['required','not_in:0'],
+            ]);
+             $request->merge([
+                'start_time' => $request->start_time === '00:00' ? '24:00' : $request->start_time,
+                'end_time'   => $request->end_time   === '00:00' ? '24:00' : $request->end_time,
             ]);
         }
         if($request->databasemodel == 'PlanPrice'){
