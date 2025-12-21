@@ -259,7 +259,11 @@ class QrEntryController extends Controller
                         'message' => $validated_custom['message']
                     ]);
                   
-                   return redirect()->back()->with('error',$validated_custom['message'])->withInput();
+                  return redirect()
+                        ->route('renew.form', $uuid)
+                        ->with('error', $validated_custom['message'])
+                        ->withInput();
+
                 }
                 
             }
