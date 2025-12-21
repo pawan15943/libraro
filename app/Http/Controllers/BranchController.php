@@ -99,6 +99,19 @@ class BranchController extends Controller
             'seats'=>'required',
         ]);
         $validated['library_id']=getLibraryId();
+
+        $slug = Str::slug($request->name);
+
+        $exists = Branch::where('slug', $slug)
+            ->where('library_id', getLibraryId())
+            ->exists();
+
+        if ($exists) {
+            return back()
+                ->withInput()
+                ->withErrors(['name' => 'This branch name already exists in this library.']);
+        }
+
    
         $hour = $validated['hour'];
         $seats = $validated['seats'];
@@ -118,7 +131,7 @@ class BranchController extends Controller
        
         // Google map
         $branch->google_map = $request->google_map;
-       $branch->slug = Str::slug($request->name);
+       $branch->slug = $slug;
 
         $branch->save();
          // Save hour and seats in the hour table
