@@ -568,8 +568,12 @@ if($customer->locker_no){
                                 <select name="seat_no" id="new_seat_id2" class="form-select @error('seat_no') is-invalid @enderror">
                                     <option>Select Seat</option>
                                     <option value="">General</option>
-                                    @foreach($available_seat as $id => $seat_no)
+                                    {{-- @foreach($available_seat as $id => $seat_no)
                                     <option value="{{ $seat_no }}" {{ $customer->seat_no == $seat_no ? 'selected' : '' }}>{{ $seat_no }}</option>
+                                    @endforeach --}}
+                                     @foreach($newAvailableSeats as $key => $value)
+                                   
+                                    <option value="{{ $value['main'] }}" {{ $customer->seat_no == $value['main'] ? 'selected' : '' }}>{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
                                 @error('seat_no')
