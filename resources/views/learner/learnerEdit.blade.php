@@ -56,7 +56,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
-                <div class="col-lg-6 col-6">
+                <div class="col-lg-6 ">
                     <label for="" class="text-white">Email Id </label>
                     <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}">
                     @error('email')
@@ -554,7 +554,7 @@ if($customer->locker_no){
                             <div class="col-lg-4">
                                 <label for="">Select Seat<span>*</span></label>
                                 <select name="seat_no" id="new_seat_id2" class="form-select @error('seat_no') is-invalid @enderror">
-                                    <option>Select Seat</option>
+                                    
                                     <option value="">General</option>
                                     {{-- @foreach($available_seat as $id => $seat_no)
                                     <option value="{{ $seat_no }}" {{ $customer->seat_no == $seat_no ? 'selected' : '' }}>{{ $seat_no }}</option>
