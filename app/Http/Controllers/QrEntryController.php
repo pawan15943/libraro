@@ -218,7 +218,7 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
-            Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
             Log::info('STEP 1: Booking store entry', [
                 'method' => $request->method(),
                 'url'    => $request->fullUrl(),
@@ -317,15 +317,36 @@ class QrEntryController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Validation failed', ['errors' => $e->errors()]);
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        } catch (\Exception $e) {
-            Log::error('Booking store error: '.$e->getMessage(), [
-                'request' => $request->all(),
-                'trace'   => $e->getTraceAsString(),
+            // Log::warning('Validation failed', ['errors' => $e->errors()]);
+            // return redirect()->back()->withErrors($e->validator)->withInput();
+             Log::warning('VALIDATION EXCEPTION', [
+                'method' => request()->method(),
+                'url'    => request()->fullUrl(),
+                'errors' => $e->errors(),
             ]);
-            return redirect()->back()
-                ->with('error', 'Something went wrong while processing your booking. Please try again.')
+
+            return redirect()
+                ->route('booking.form', $uuid)
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            // Log::error('Booking store error: '.$e->getMessage(), [
+            //     'request' => $request->all(),
+            //     'trace'   => $e->getTraceAsString(),
+            // ]);
+            // return redirect()->back()
+            //     ->with('error', 'Something went wrong while processing your booking. Please try again.')
+            //     ->withInput();
+
+             Log::error('BOOKING STORE CRASH', [
+                'method'  => request()->method(),
+                'url'     => request()->fullUrl(),
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('booking.form', $uuid)
+                ->with('error', 'Something went wrong.')
                 ->withInput();
         }
     }
