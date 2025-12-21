@@ -133,18 +133,22 @@ if($customer->locker_no){
             <h4 class="inner-heading">Learner Other Info</h4>
             <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
             <div class="row g-4">
-                
-                @if(!in_array('29', toggleHideField()))
-                <div class="col-lg-6 ">
-                    <label for="father_name">Father Name</label>
-                    <input type="text" class="form-control @error('father_name') is-invalid @enderror char-only" name="father_name"  placeholder="Enter Father name" value="{{ old('father_name', $customer->father_name) }}">
-                    @error('father_name')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                </div>
+                @if(!in_array('8', toggleHideField()))
+                    <div class="col-lg-6">
+                        <label for="profile_picture">Upload Profile Photo</label>
+                        <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" name="profile_picture"  value="{{ old('profile_picture', $customer->profile_picture) }}"
+                            autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                        @error('profile_picture')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    @if($customer->profile_picture)
+                        <a href="{{ asset($customer->profile_picture) }}" target="_blank">View</a>
+                    @endif
+                    </div>
                 @endif
+
                 @if(!in_array('30', toggleHideField()))
                 <div class="col-lg-6 ">
                     <label for="alternate_mobile">Alternate Mobile No.</label>
@@ -156,6 +160,21 @@ if($customer->locker_no){
                     @enderror
                 </div>
                 @endif
+
+                @if(!in_array('29', toggleHideField()))
+                <div class="col-lg-6 ">
+                    <label for="father_name">Father Name</label>
+                    <input type="text" class="form-control @error('father_name') is-invalid @enderror char-only" name="father_name"  placeholder="Enter Father name" value="{{ old('father_name', $customer->father_name) }}">
+                    @error('father_name')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                @endif
+
+                
+
                 @if(!in_array('4', toggleHideField()))
                 <div class="col-lg-6 ">
                     <label for="prepareFor">Prepare For</label>
@@ -172,49 +191,13 @@ if($customer->locker_no){
                     @enderror
                 </div>
                 @endif
-                    @if(!in_array('32', toggleHideField()))
-                <div class="col-lg-12 ">
-                    <label for="address">Address</label>
-                    <textarea class="form-control h-auto @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
-                    @error('address')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                </div>
-                @endif
-                    @if(!in_array('31', toggleHideField()))
-                <div class="col-lg-12 ">
-                    <label for="remark">Remark</label>
-                    <textarea class="form-control h-auto @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
-                    @error('remark')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                </div>
-                @endif
-                    @if(!in_array('8', toggleHideField()))
-                    <div class="col-lg-6">
-                        <label for="profile_picture">Upload Profile Photo</label>
-                        <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" name="profile_picture"  value="{{ old('profile_picture', $customer->profile_picture) }}"
-                            autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
-                    @error('profile_picture')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                    @if($customer->profile_picture)
-                    <a href="{{ asset($customer->profile_picture) }}" target="_blank">View</a>
-                    @endif
-                </div>
-                @endif
-                @if(!in_array('5', toggleHideField()))
+
+                 @if(!in_array('5', toggleHideField()))
                 <div class="col-lg-6">
-                    <label for="">Id Proof Received (Optional)</label>
-                    <select  class="form-control @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
+                    <label for="">ID Proof Name(Optional)</label>
+                    <select  class="form-select @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
                         <option value="">Select Id Proof</option>
-                        <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>Aadhar</option>
+                        <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>Aadhar Card</option>
                         <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>Driving License</option>
                         <option value="3" {{ old('id_proof_name', $customer->id_proof_name) == 3 ? 'selected' : '' }}>Other</option>
                     </select>
@@ -224,6 +207,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
+
                 <div class="col-lg-6">
                     <label for="">Upload Scan Copy of Proof (Optional)</label>
                     <input type="file" class="form-control @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
@@ -235,8 +219,36 @@ if($customer->locker_no){
                     @if($customer->id_proof_file)
                     <a href="{{ asset('public/'.$customer->id_proof_file) }}" target="_blank">View</a>
                     @endif
+                    <span class="text-danger">*Upload front side of document.</span>
                 </div>
                 @endif
+
+                @if(!in_array('32', toggleHideField()))
+                <div class="col-lg-12 ">
+                    <label for="address">Address</label>
+                    <textarea class="form-control h-auto @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
+                    @error('address')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                @endif
+
+                @if(!in_array('31', toggleHideField()))
+                <div class="col-lg-12 ">
+                    <label for="remark">Remark</label>
+                    <textarea class="form-control h-auto @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
+                    @error('remark')
+                    <span class="invalid-feedback" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                    @enderror
+                </div>
+                @endif
+
+
+               
             </div>
             <div class="row mt-3">
                 <div class="col-lg-3">

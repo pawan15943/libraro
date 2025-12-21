@@ -4812,6 +4812,8 @@ h6.text-center.bg-white {
 }
 
 @media screen and (max-width:480px) {
+
+
     .dashboard.learner h5 {
         text-align: center;
     }
@@ -5002,6 +5004,11 @@ h6.text-center.bg-white {
     .seat-no {
         flex-direction: column;
         align-items: flex-start !important;
+        width: 100% ! important;
+    }
+
+    .seat-actions{
+        width: 100% ! important;
     }
 }
 
