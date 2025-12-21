@@ -108,39 +108,100 @@ class QrEntryController extends Controller
         ]);
     }
 
-     private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
-    {
+    //  private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
+    // {
             
-        $total_hour= Hour::withoutGlobalScopes()->where('branch_id',$branch_id)->first()?->hour ?? 0;
+    //     $total_hour= Hour::withoutGlobalScopes()->where('branch_id',$branch_id)->first()?->hour ?? 0;
 
-        if ($total_hour === 0) {
-            return ['error' => true, 'message' => 'Total available hours not set.'];
-        }
+    //     if ($total_hour === 0) {
+    //         return ['error' => true, 'message' => 'Total available hours not set.'];
+    //     }
 
-        $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
+    //     $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
      
-        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
-            return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
-        }
+    //     if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
+    //         return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
+    //     }
        
 
-        if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-            return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
-        }
+    //     if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+    //         return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
+    //     }
 
-        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
-            if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id,$branch_id,$library_id) == false) {
-                return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
-            }
-        }
+    //     if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
+    //         if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id,$branch_id,$library_id) == false) {
+    //             return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+    //         }
+    //     }
        
 
-        // ✅ Always return structured response
-        return ['error' => false];
+    //     // ✅ Always return structured response
+    //     return ['error' => false];
+    // }
+    private function validateLearnerCustom(
+    $branch_id,
+    $plan_type_id,
+    $seat_no,
+    $library_id,$learnerId = null) {
+    $total_hour = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch_id)
+        ->value('hour') ?? 0;
+
+    if ($total_hour === 0) {
+        return ['error' => true, 'message' => 'Total available hours not set.'];
     }
+
+    $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
+
+    // Same plan + seat conflict
+    if (
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->where('learner_detail.plan_type_id', $plan_type_id)
+            ->where('learners.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists()
+    ) {
+        return ['error' => true, 'message' => 'This plan type seat is already booked'];
+    }
+
+    // Hour overflow
+    $usedHours =
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->where('learner_detail.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->sum('hours');
+
+    if (($usedHours + $hours) > $total_hour) {
+        return [
+            'error' => true,
+            'message' => 'This seat is already reserved for the full library hours.'
+        ];
+    }
+
+    // Future booking conflict
+    if (
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists()
+    ) {
+        if (!$this->checkPlanTypeSeatWise($seat_no, $plan_type_id, $branch_id, $library_id)) {
+            return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+        }
+    }
+
+    return ['error' => false];
+    }
+
      public function checkPlanTypeSeatWise($seatNo,$requestPlanType,$branch_id,$library_id)
     {
 
@@ -247,9 +308,22 @@ class QrEntryController extends Controller
 
             $validated = $request->validate($rules);
             Log::info('Validation passed', ['validated' => $validated]);
-            if($request->seat_no){
+          
+            
+           
+            $start_date = Carbon::parse($validated['plan_start_date']);
+            $endDate=getEndDate($validated['plan_id'], $start_date);
+            Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
+
+            $transactions = LearnerTransaction::withoutGlobalScopes()
+                ->where('id', $request->learner_transaction_id)
+                ->first();
+            Log::info('Transaction check', ['transaction' => $transactions]);
+
+              if($request->seat_no){
+                $learnerId=$transactions->learner_id;
                 Log::info('STEP 5: Seat validation started');
-                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
+                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
                 if ($validated_custom['error']) {
                     Log::warning('STEP 5 FAILED: Seat validation error', [
                         'message' => $validated_custom['message']
@@ -263,17 +337,6 @@ class QrEntryController extends Controller
                 }
                 
             }
-            
-           
-            $start_date = Carbon::parse($validated['plan_start_date']);
-            $endDate=getEndDate($validated['plan_id'], $start_date);
-            Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
-
-            $transactions = LearnerTransaction::withoutGlobalScopes()
-                ->where('id', $request->learner_transaction_id)
-                ->first();
-            Log::info('Transaction check', ['transaction' => $transactions]);
-
             if ($transactions) {
                 $password     = Learner::where('id', $transactions->learner_id)->value('password');
                 $total_amount = $transactions->total_amount;
