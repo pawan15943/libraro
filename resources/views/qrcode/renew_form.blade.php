@@ -23,6 +23,14 @@
                                     </span> 
                                     @enderror
                                 </div>
+                                <div class="col-lg-12">
+                                    <input type="text" class="form-control @error('learner_no') is-invalid @enderror" placeholder="Enter your Learner Number" name="learner_no">
+                                    @error('learner_no')  
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span> 
+                                    @enderror
+                                </div>
                                 <div class="col-lg-12 text-center">
                                     <input type="submit" class="btn btn-primary" value="NEXT">
                                 </div>

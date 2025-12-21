@@ -842,12 +842,13 @@ class QrEntryController extends Controller
     {
         $request->validate([
             'mobile' => 'required|digits:10',
+            'learner_no'=>'required'
         ]);
 
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
         
         $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-            ->where('mobile', encryptData($request->input('mobile')))
+            ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
             ->first();
 
         if (!$customer) {
