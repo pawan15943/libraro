@@ -27,7 +27,7 @@
     <!-- ================= DASHBOARD ================= -->
     <section id="dashboard" class="section active">
 
-        <h6 class="mt-3 mb-3 text-center">Learner ID Card</h6>
+        <h6 class="mt-3 mb-3 text-center">Learner ID Card <br>{{ $learner->learner_no ?? '-' }} </h6>
 
         <div class="id-wrapper">
             <div class="id-card position-relative">
@@ -40,13 +40,15 @@
                             {{ $detail->library_name ?? 'Library' }}
                         </strong>
 
-                        @php
+                        {{-- @php
+                        
                             $isActive = $detail && $detail->plan_end_date >= $today;
                         @endphp
 
                         <span class="status {{ $isActive ? 'text-success' : 'text-danger' }}">
                             {{ $isActive ? 'Active' : 'Expired' }}
-                        </span>
+                        </span> --}}
+                        {{!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}}
                     </div>
 
                     <h6 class="mt-3">

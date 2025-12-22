@@ -30,7 +30,6 @@ class AttendanceController extends Controller
 
          $detail = LearnerDetail::query()
             ->where('learner_detail.learner_id', $learnerId)
-            ->where('learner_detail.status', 1)
 
             // Joins
             ->leftJoin('branches', 'learner_detail.branch_id', '=', 'branches.id')
@@ -45,7 +44,6 @@ class AttendanceController extends Controller
                 'learner_detail.plan_type_id',
                 'learner_detail.plan_start_date',
                 'learner_detail.plan_end_date',
-
                 'branches.name as branch_name',
                 'libraries.library_name as library_name',
             ])
@@ -240,7 +238,7 @@ class AttendanceController extends Controller
         /* 1️⃣ No active plan */
         if (!$learnerDetail) {
             
-            if(LearnerDetail::where('learner_id',$learnerId)->orderBy('DESC')->select('plan_end_date','<',date("Y-m-d"))->exists()){
+            if(LearnerDetail::where('learner_id',$learnerId)->orderBy('DESC')->where('plan_end_date','<',date("Y-m-d"))->exists()){
                   \Log::info('expired');
                 return response()->json([
                     'status'  => 'expired',
