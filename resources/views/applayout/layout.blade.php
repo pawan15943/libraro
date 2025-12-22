@@ -367,7 +367,14 @@
 ========================= */
 function startScanner() {
 
-    if (scanner) return;
+     if (scanner) {
+        scanner.stop().then(() => {
+            scanner.clear();
+            scanner = null;
+            startScanner();
+        });
+        return;
+    }
 
     const reader = document.getElementById('reader');
     if (!reader || reader.offsetHeight === 0) {
@@ -452,6 +459,10 @@ function submitScan(qrText) {
 
         if (res.status === 'success') {
             audioSuccess.play();
+            setTimeout(() => {
+                navigate('profile');
+            }, 800); // small delay for UX
+
         } else if (res.status === 'expired') {
             audioExpired.play();
         } else {
