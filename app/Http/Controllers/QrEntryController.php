@@ -670,6 +670,25 @@ class QrEntryController extends Controller
             } else {
                 $status = 0;
             }
+           $alreadyActive = false;
+
+            if (!empty($request->learner_id)) {
+                $alreadyActive = LearnerDetail::where('learner_id', $request->learner_id)->where('status', 1)->exists();
+            }
+
+            // Default status
+            $detailStatus = 0;
+
+            // Date-based activation
+            if ($inextendDate->greaterThan(Carbon::today()) && $start_date->lessThanOrEqualTo(Carbon::today())) {
+                $detailStatus = 1;
+            }
+
+            // If any active plan exists → force inactive
+            if ($alreadyActive) {
+                $detailStatus = 0;
+            }
+
             $is_paid = 1;
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
@@ -763,7 +782,7 @@ class QrEntryController extends Controller
                 'seat_no' => $seat_no,
                 'payment_mode' => $payment_mode,
                 'is_paid' =>1,
-                'status' => $status,
+                'status' => $detailStatus,
             ]);
 
             if ($bookingurl->created_at) {
