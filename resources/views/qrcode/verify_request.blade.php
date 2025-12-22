@@ -78,10 +78,10 @@ $ids='approvwRequest';
                                 <select name="seat_no" class="form-select" id="seat_id11">
                                        <option value="">General</option>
                                     @foreach($newAvailableSeats as $value)
-                                     <option value="{{ $value['main'] }}" {{ $customer->seat_no == $value['main'] && in_array($customer->seat_no, $availableSeatsArray)  ? 'selected' : '' }}>{{ $value['display'] }}</option>
-                                    {{-- <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                     {{-- <option value="{{ $value['main'] }}" {{ $customer->seat_no == $value['main'] && in_array($customer->seat_no, $availableSeatsArray)  ? 'selected' : '' }}>{{ $value['display'] }}</option> --}}
+                                    <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
                                         {{ $value }}
-                                    </option> --}}
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>
