@@ -241,7 +241,7 @@ class AttendanceController extends Controller
         if (!$learnerDetail) {
             
             if(LearnerDetail::where('learner_id',$learnerId)->orderBy('DESC')->select('plan_end_date','<',date("Y-m-d"))->exists()){
-                  \Log::info('learner detail not found');
+                  \Log::info('expired');
                 return response()->json([
                     'status'  => 'expired',
                     'message' => 'Plan expired'
@@ -256,15 +256,7 @@ class AttendanceController extends Controller
            
         }
 
-        /* 2️⃣ Plan expired check */
-        // if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
-        //     return response()->json([
-        //         'status'  => 'expired',
-        //         'message' => 'Plan expired'
-        //     ], 403);
-        // }
-
-        // Extract variables from the request
+        \Log::info('success part hit');
             
             $attendance = 1;
             $date = date('Y-m-d');

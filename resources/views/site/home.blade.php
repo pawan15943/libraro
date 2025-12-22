@@ -246,7 +246,7 @@
         </div>
 
 
-        <div class="row mt-4 g-4 justify-content-center mb-4">
+        {{-- <div class="row mt-4 g-4 justify-content-center mb-4">
 
             @foreach($subscriptions as $subscription)
             @php
@@ -288,9 +288,58 @@
                 </div>
             </div>
             @endforeach
+        </div> --}}
+
+         <div class="row mt-4 g-4 justify-content-center mb-4">
+
+            @foreach($subscriptions as $subscription)
+          
+                @php
+                // Features of current subscription
+                $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
+
+                // All unique features
+                $allFeatures = $features->pluck('name')->unique()->toArray();
+               
+                @endphp
+
+                <div class="col-lg-3">
+                    <div class="plan-box">
+                        <div class="plan-content">
+                            <h4>{{$subscription->name}}</h4>
+                            <span class="d-block mb-4" id="planDescription_{{$subscription->id}}"></span>
+                            <h4 id="before_discount_fees_{{$subscription->id}}"></h4>
+                            <h1 id="subscription_fees_{{$subscription->id}}"></h1>
+
+                            <button class="btn btn-primary buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">Buy Now</button>
+                            <span class="expiry">*Offer Valid Till 31-12-2025</span>
+                        </div>
+                        <ul class="plan-features contents">
+                        
+                            @foreach($allFeatures as $featureName)
+                        
+                                @if(in_array($featureName, $subscriptionFeatures))
+                                    <li>
+                                        <div class="d-flex">
+                                            <i class="fa-solid fa-check text-success me-2"></i>
+                                        {{ $featureName }}
+                                        </div>
+                                    </li>
+                                @else
+                                    <li>
+                                        <div class="d-flex">
+                                            <i class="fa-solid fa-xmark text-danger me-2"></i>
+                                            {{ $featureName }}
+                                        </div>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+
+                    </div>
+                </div>
+            @endforeach
         </div>
-
-
         <!-- Dynamic 3 -->
     </div>
 
