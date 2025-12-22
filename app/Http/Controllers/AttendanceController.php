@@ -232,27 +232,43 @@ class AttendanceController extends Controller
                 'message' => 'QR expired or invalid'
             ], 403);
         }
-       $learnerId =session('learner_id');
-        $learnerDetail=LearnerDetail::where('learner_id',$learnerId)->where('status',1)->select('plan_end_date')->first();
+            $learnerId = session('learner_id');
 
-        /* 1️⃣ No active plan */
-        if (!$learnerDetail) {
-            
-            if(LearnerDetail::where('learner_id',$learnerId)->orderBy('DESC')->where('plan_end_date','<',date("Y-m-d"))->exists()){
-                  \Log::info('expired');
+            /* 🔹 Get latest learner plan */
+            $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
+
+            /* 1️⃣ No plan exists at all */
+            if (!$learnerDetail) {
+                \Log::info('learner detail not found');
+
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No plan found'
+                ], 403);
+            }
+
+            /* 2️⃣ Plan expired */
+            if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+                \Log::info('expired');
+
                 return response()->json([
                     'status'  => 'expired',
                     'message' => 'Plan expired'
                 ], 403);
-            }else{
-                  \Log::info('learner detail not found');
+            }
+
+            /* 3️⃣ Active plan exists */
+            if ($learnerDetail->status != 1) {
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'No active plan found'
                 ], 403);
             }
-           
-        }
+
+            /* ✅ Plan is valid & active → continue */
+
 
         \Log::info('success part hit');
             
