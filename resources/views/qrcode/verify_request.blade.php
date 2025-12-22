@@ -57,24 +57,36 @@ $ids='approvwRequest';
                                 <label for="qr_general_seat">Assign Seat No ?</label>
                                 <select name="general_seat" id="qr_general_seat" class="form-select">
 
-                                    <option value="yes">No</option>
+                                    <option value="yes" {{ empty($customer->seat_no) ? 'selected' : '' }}>No</option>
 
-                                    <option value="no">Yes, Allot a Seat No.</option>
+                                    <option value="no" {{ !empty($customer->seat_no) ? 'selected' : '' }}>Yes, Allot a Seat No.</option>
                                 </select>
                             </div>
+                            {{-- <select name="general_seat" id="qr_general_seat" class="form-select">
+                                <option value="no" {{ empty($customer->seat_no) ? 'selected' : '' }}>
+                                    No
+                                </option>
+                                <option value="yes" {{ !empty($customer->seat_no) ? 'selected' : '' }}>
+                                    Yes, Allot a Seat No.
+                                </option>
+                            </select> --}}
+
 
                             <div class="col-lg-6">
                                 <label for="seat_id11">Choose Seat No. <span>*</span></label>
 
                                 <select name="seat_no" class="form-select" id="seat_id11">
-                                        <option value="">Choose Seat No</option>
-                                    @foreach($availableseats as $value)
-                                    <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                       <option value="">General</option>
+                                    @foreach($newAvailableSeats as $value)
+                                     <option value="{{ $value['main'] }}" {{ $customer->seat_no == $value['main'] && in_array($customer->seat_no, $availableSeatsArray)  ? 'selected' : '' }}>{{ $value['display'] }}</option>
+                                    {{-- <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
                                         {{ $value }}
-                                    </option>
+                                    </option> --}}
                                     @endforeach
                                 </select>
                             </div>
+                           
+
 
                             {{-- ================================================================== --}}
                             <div class="col-lg-6">
