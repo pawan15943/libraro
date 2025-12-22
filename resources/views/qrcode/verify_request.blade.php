@@ -41,9 +41,25 @@ $ids='approvwRequest';
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="detailes">
-                        @php
-                        $availableSeatsArray = $availableseats->toArray();
+                       @php
+                            // Normalize available seats
+                            $availableSeatsArray = collect($availableseats)->filter()->values()->toArray();
+
+                            // Renew case → ensure current seat is present
+                            if (
+                                isset($customer) &&
+                                ($customer->type ?? null) === 'qr_renew' &&
+                                !empty($customer->seat_no) &&
+                                !in_array($customer->seat_no, $availableSeatsArray)
+                            ) {
+                                $availableSeatsArray[] = $customer->seat_no;
+                            }
+
+                            // Always keep order clean
+                            sort($availableSeatsArray);
                         @endphp
+
+
 
 
                         <div class="row g-3">
