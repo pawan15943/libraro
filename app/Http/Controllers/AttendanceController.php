@@ -104,7 +104,7 @@ class AttendanceController extends Controller
             'mobile' => 'required'
         ]);
 
-        $learner = Learner::where('learner_no', $request->uid) ->where('mobile', encryptData($request->mobile))->first();
+        $learner = Learner::where('learner_no', $request->uid)->where('mobile', encryptData($request->mobile))->first();
         
         if (!$learner) {
             return response()->json([
@@ -239,20 +239,30 @@ class AttendanceController extends Controller
 
         /* 1️⃣ No active plan */
         if (!$learnerDetail) {
-             \Log::info('learner detail not found');
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
-            ], 403);
+            
+            if(LearnerDetail::where('learner_id',$learnerId)->orderBy('DESC')->select('plan_end_date','<',date("Y-m-d"))->exists()){
+                  \Log::info('learner detail not found');
+                return response()->json([
+                    'status'  => 'expired',
+                    'message' => 'Plan expired'
+                ], 403);
+            }else{
+                  \Log::info('learner detail not found');
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No active plan found'
+                ], 403);
+            }
+           
         }
 
         /* 2️⃣ Plan expired check */
-        if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
+        // if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
+        //     return response()->json([
+        //         'status'  => 'expired',
+        //         'message' => 'Plan expired'
+        //     ], 403);
+        // }
 
         // Extract variables from the request
             
