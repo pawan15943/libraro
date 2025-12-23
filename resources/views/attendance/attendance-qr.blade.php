@@ -32,7 +32,11 @@
         <!-- SCANNER TAB -->
         <div class="tab-pane fade text-center" id="scannerTab">
             <p class="text-center text-muted">Show your ID card to scanner to mark your Attendance</p>
-            <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
+            <div id="scanner-wrapper">
+                <div id="reader"></div>
+            </div>
+            <!-- <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
+            <button class="btn btn-primary" id="startScanner"> Close Scanner </button> -->
             <p id="scanMsg" class="mt-2"></p>
         </div>
 
