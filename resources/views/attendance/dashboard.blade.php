@@ -109,7 +109,8 @@
                 <div class="id-back d-flex flex-column justify-content-center align-items-center">
 
                     @if($learner)
-                        {!! QrCode::size(120)->generate($learner->learner_no) !!}
+                    
+                        {!! QrCode::size(150)->generate($learner->learner_no) !!}
                     @else
                         <span>No QR</span>
                     @endif
@@ -130,8 +131,9 @@
             <div>
                 <strong>{{ $learner->name ?? '-' }}</strong>
                 <small>
-                    Last Login :
-                    {{ optional($learner->last_login_at)->format('d M Y') ?? '-' }}
+                    
+
+                    {{$learner->learner_no}}
                 </small>
             </div>
         </div>
