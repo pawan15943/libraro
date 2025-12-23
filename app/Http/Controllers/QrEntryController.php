@@ -702,11 +702,7 @@ class QrEntryController extends Controller
             $extendDay = getExtendDays();
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-            if ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
-                $status = 1;
-            } else {
-                $status = 0;
-            }
+          
            $alreadyActive = false;
 
             if (!empty($request->learner_id)) {
@@ -724,6 +720,12 @@ class QrEntryController extends Controller
             // If any active plan exists → force inactive
             if ($alreadyActive) {
                 $detailStatus = 0;
+            }
+
+            if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
+                $status = 1;
+            } else {
+                $status = 0;
             }
 
             $is_paid = 1;
@@ -823,6 +825,7 @@ class QrEntryController extends Controller
                 $customer=Learner::find($request->learner_id);
                 $customer->seat_no=$seat_no;
                 $customer->hours=$hours;
+                $customer->status=$status;
                 $customer->save();
             }else{
                
