@@ -351,8 +351,8 @@ class QrEntryController extends Controller
                             ->first();
 
                         if (!$activePlan) {
-                            return redirect()->back()
-                                ->with('error', 'No active plan found for renewal.');
+                            return redirect()->route('renew.form', $uuid)
+                                ->with('error', 'No active plan found for renewal.')->withInput();
                         }
 
                         // 2️⃣ Future plan check (VERY IMPORTANT)
@@ -361,14 +361,14 @@ class QrEntryController extends Controller
                             ->exists();
 
                         if ($futurePlanExists) {
-                            return redirect()->back()
-                                ->with('error', 'Renewal already exists. Multiple renewals are not allowed.');
+                            return redirect()->route('renew.form', $uuid)
+                                ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')->withInput();
                         }
                         $planEndDate = Carbon::parse($activePlan->plan_end_date);
                         // 3️⃣ About to expire check
                         if ($planEndDate->gt($expiryLimit)) {
-                            return redirect()->back()
-                                ->with('error', 'Current plan is active and not eligible for renewal yet.');
+                            return redirect()->route('renew.form', $uuid)
+                                ->with('error', 'Current plan is active and not eligible for renewal yet.')->withInput();
                         }
 
                     }
