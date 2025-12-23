@@ -59,7 +59,8 @@ $ids='approvwRequest';
 
 
                         <div class="row g-3">
-                            <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" id="user_id">
+                            <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" >
+                            <input type="hidden" name="learner_id" value="{{ $learner->id ?? '' }}" id="renew_learner_id">
                           
                             <input type="hidden" name="branch_id" value="{{ $customer->branch_id ?? '' }}">
                       
@@ -446,10 +447,10 @@ $(document).ready(function () {
         const toggleHiddenFields = @json(toggleHideField());
         const plan_id11 = $('#plan_id11').val();
         const selectedPlanType = $('#plan_type_id11').val();
-        const learner_detail_id = $('#learner_detail_id').val();
+        const learner_id = $('#renew_learner_id').val();
 
         const seatNo = $('#seat_id11').val();
-        
+        console.log('selectedPlanType',selectedPlanType);
      
         var seatDisplayMap = @json(
             collect(generateSeatNumbers())->mapWithKeys(function($seat) {
@@ -505,21 +506,21 @@ $(document).ready(function () {
         
 
 
-        if (learner_detail_id) {
+        if (learner_id) {
 
-            // if (!seat || seat === 'gen') {
-            //     fetchPlanTypesRenewSeat('',learner_detail_id)
-            // } else {
-            //     fetchPlanTypesRenewSeat(seat, learner_detail_id); 
-            // }
+            if (!seatNo || seatNo === 'gen') {
+                getTypeSeatwise('',selectedPlanType)
+            } else {
+                getTypeSeatwise(seatNo, selectedPlanType); 
+            }
 
         } else {
 
 
             if (!seatNo || seatNo === 'gen') {
-                getTypeSeatwise('', selectedPlanType); // load all plan types
+                getTypeSeatwise('', ''); // load all plan types
             } else {
-                getTypeSeatwise(seatNo, selectedPlanType); // load plan types seatwise
+                getTypeSeatwise(seatNo, ''); // load plan types seatwise
             }
         }
         getPlanPrice(selectedPlanType, plan_id11);
@@ -677,11 +678,13 @@ $(document).ready(function () {
         $('#plan_type_id11').empty().append('<option value="">Choose Shift</option>');
 
         $.ajax({
-            url: "{{ route('gettypeSeatwise') }}"
+            url: "{{ route('getPlanTypeForRenew') }}"
             , type: 'GET'
             , data: {
                 "_token": "{{ csrf_token() }}"
                 , "seatNo": seatId
+                , "planType": selectedPlanType
+
             , }
             , dataType: 'json'
             , success: function(html) {
@@ -804,88 +807,89 @@ $(document).ready(function () {
 
 
     }
-    //  function fetchPlanTypesRenewSeat(seat_no,learner_detail_id) {
 
-    //             if (seat_no  && learner_detail_id) {
-    //                 $.ajax({
-    //                     url: '{{ route('gettypePlanwise') }}',
-    //                     headers: {
-    //                         'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-    //                     },
-    //                     type: 'GET',
-    //                     data: {
-    //                         "_token": "{{ csrf_token() }}",
-    //                         "seat_no": seat_no,
-    //                         "learner_detail_id": learner_detail_id,
-    //                     },
-    //                     dataType: 'json',
-    //                     success: function (html) {
-    //                         console.log("renew",html);
-    //                         $("#plan_type_id_renew").empty(); 
-    //                         $("#plan_id2").empty(); 
+    // function fetchPlanTypesRenewSeat(seat_no,learner_id) {
 
-    //                         if (html[0]) {
-    //                             $.each(html[0], function (key, value) {
-    //                                 $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
-    //                             });
-    //                         } else {
-    //                             $("#plan_type_id_renew").append('<option value="">Choose</option>');
-    //                         }
+    //     if (seat_no  && learner_id) {
+    //         $.ajax({
+    //             url: '{{ route('getPlanTypeForRenew') }}',
+    //             headers: {
+    //                 'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+    //             },
+    //             type: 'GET',
+    //             data: {
+    //                 "_token": "{{ csrf_token() }}",
+    //                 "seat_no": seat_no,
+    //                 "learner_id": learner_id,
+    //             },
+    //             dataType: 'json',
+    //             success: function (html) {
+    //                 console.log("renew",html);
+    //                 $("#plan_type_id_renew").empty(); 
+    //                 $("#plan_id2").empty(); 
+
+    //                 if (html[0]) {
+    //                     $.each(html[0], function (key, value) {
+    //                         $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
+    //                     });
+    //                 } else {
+    //                     $("#plan_type_id_renew").append('<option value="">Choose</option>');
+    //                 }
 
 
-    //                         if (html[1]) {
-    //                              $.each(html[1], function (key, value) {
-    //                                 $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
-    //                             });
-    //                         }
+    //                 if (html[1]) {
+    //                         $.each(html[1], function (key, value) {
+    //                         $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
+    //                     });
+    //                 }
 
-    //                         if (html[2]){
-    //                            $("#plan_price_id2").val(html[2].plan_price_id);      
-    //                         }
+    //                 if (html[2]){
+    //                     $("#plan_price_id2").val(html[2].plan_price_id);      
+    //                 }
 
-    //                         if(html[3]){
-    //                             $("#locker_amount2").val(html[3].locker_amount);  
-    //                             $("#discount_amount3").val(html[3].discount_amount);  
-    //                             $("#new_plan_price").val(html[3].discount_amount);  
+    //                 if(html[3]){
+    //                     $("#locker_amount2").val(html[3].locker_amount);  
+    //                     $("#discount_amount3").val(html[3].discount_amount);  
+    //                     $("#new_plan_price").val(html[3].discount_amount);  
 
-    //                             if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
-    //                                 $("#locker").val('yes');
-    //                                 $("#locker_amount2").val(html[3].locker_amount);
+    //                     if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
+    //                         $("#locker").val('yes');
+    //                         $("#locker_amount2").val(html[3].locker_amount);
 
-    //                             } else {
-    //                                 $("#locker").val('no');
-    //                                 $("#locker_amount2").val('');
+    //                     } else {
+    //                         $("#locker").val('no');
+    //                         $("#locker_amount2").val('');
 
-    //                             }
-
-    //                             if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
-    //                                 $("#discount_type").val('amount');
-    //                                 $("#discount_amount3").val(html[3].discount_amount);
-    //                             } else {
-    //                                 $("#discount_type").val('');
-    //                                 $("#discount_amount3").val('');
-    //                             }
-    //                         }
-    //                          if (html[4]){
-    //                            $("#locker_no2").val(html[4].locker_no);
-    //                            if(html[4].locker_no){
-    //                             $("#locker_no2").removeAttr('readonly');
-    //                            }      
-    //                         }
-
-    //                         popupautoCalculatePaidAmount(); 
-    //                     },
-    //                     error: function (xhr, status, error) {
-    //                         console.error("AJAX error:", status, error); // Log any errors
     //                     }
-    //                 });
-    //             } else {
-    //                 $("#plan_type_id_renew").empty();
-    //                 $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
-    //             }
-    //         }
 
-    //  end 
+    //                     if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
+    //                         $("#discount_type").val('amount');
+    //                         $("#discount_amount3").val(html[3].discount_amount);
+    //                     } else {
+    //                         $("#discount_type").val('');
+    //                         $("#discount_amount3").val('');
+    //                     }
+    //                 }
+    //                     if (html[4]){
+    //                     $("#locker_no2").val(html[4].locker_no);
+    //                     if(html[4].locker_no){
+    //                     $("#locker_no2").removeAttr('readonly');
+    //                     }      
+    //                 }
+
+    //                 popupautoCalculatePaidAmount(); 
+    //             },
+    //             error: function (xhr, status, error) {
+    //                 console.error("AJAX error:", status, error); // Log any errors
+    //             }
+    //         });
+    //     } else {
+    //         $("#plan_type_id_renew").empty();
+    //         $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
+    //     }
+    // }
+
+    
 
 </script>
 @endsection
