@@ -41,22 +41,19 @@ $ids='approvwRequest';
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="detailes">
-                       @php
+                        @php
                             // Normalize available seats
                             $availableSeatsArray = collect($availableseats)->filter()->values()->toArray();
 
                             // Renew case → ensure current seat is present
-                            if (
-                                isset($customer) &&
-                                ($customer->type ?? null) === 'qr_renew' &&
-                                !empty($customer->seat_no) &&
-                                !in_array($customer->seat_no, $availableSeatsArray)
-                            ) {
-                                $availableSeatsArray[] = $customer->seat_no;
+                            if (isset($customer) && ($customer->type ?? null) === 'qr_renew' && !empty($customer->seat_no) && !in_array($customer->seat_no, $availableSeatsArray)) {
+                                $seatList = array_merge([$customer->seat_no], $availableSeatsArray);
+                            }else{
+                                $seatList[]=$availableSeatsArray;
                             }
 
                             // Always keep order clean
-                            sort($availableSeatsArray);
+                            sort($seatList);
                         @endphp
 
 
@@ -83,8 +80,8 @@ $ids='approvwRequest';
 
                                 <select name="seat_no" class="form-select" id="seat_id11">
                                      <option value="">GEN</option>
-                                    @foreach($availableseats as $value)
-                                    <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value && in_array($customer->seat_no, $availableSeatsArray) ? 'selected' : '' }}>
+                                    @foreach($seatList as $value)
+                                    <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value  ? 'selected' : '' }}>
                                         {{ $value }}
                                     </option>
                                     @endforeach
