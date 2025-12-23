@@ -1189,6 +1189,7 @@ if (!function_exists('checkSeatAvailability')) {
 
         // 2️⃣ Hour capacity check
         $alreadyBookedHours = $bookings->sum('slot_hours');
+        Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
         if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
             return [
                 'error' => true,

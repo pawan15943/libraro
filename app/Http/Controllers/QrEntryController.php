@@ -756,7 +756,7 @@ class QrEntryController extends Controller
                     ->exists();
 
                 if ($futurePlanExists) {
-                    return redirect()->route('renew.form', $uuid)
+                    return redirect()->back()
                         ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
                         ->withInput();
                 }
@@ -768,7 +768,7 @@ class QrEntryController extends Controller
 
                     // ❌ Active & NOT in buffer days
                     if ($planEndDate->gt($expiryLimit)) {
-                        return redirect()->route('renew.form', $uuid)
+                        return redirect()->back()
                             ->with('error', 'Current plan is active and not eligible for renewal yet.')
                             ->withInput();
                     }
