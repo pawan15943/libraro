@@ -44,12 +44,11 @@ $ids='approvwRequest';
                         @php
                             // Normalize available seats
                             $availableSeatsArray = collect($availableseats)->filter()->values()->toArray();
-
+                                // Default (BOOK case)
+                            $seatList = $availableSeatsArray;
                             // Renew case → ensure current seat is present
                             if (isset($customer) && ($customer->type ?? null) === 'qr_renew' && !empty($customer->seat_no) && !in_array($customer->seat_no, $availableSeatsArray)) {
-                                $seatList = array_merge([$customer->seat_no], $availableSeatsArray);
-                            }else{
-                                $seatList[]=$availableSeatsArray;
+                                $seatList = array_merge([$customer->seat_no], $seatList);
                             }
 
                             // Always keep order clean
