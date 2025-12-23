@@ -338,6 +338,40 @@ class QrEntryController extends Controller
 
               if($request->seat_no){
                 $learnerId = $transactions?->learner_id ?? null;
+                    if ($learnerId) {
+
+                        $today = Carbon::today();
+                        $expiryLimit = Carbon::today()->addDays(7);
+
+                        // 1️⃣ Active plan
+                        $activePlan = LearnerDetail::where('learner_id', $learnerId)
+                            ->where('status', 1)
+                            ->whereDate('plan_start_date', '<=', $today)
+                            ->whereDate('plan_end_date', '>=', $today)
+                            ->first();
+
+                        if (!$activePlan) {
+                            return redirect()->back()
+                                ->with('error', 'No active plan found for renewal.');
+                        }
+
+                        // 2️⃣ Future plan check (VERY IMPORTANT)
+                        $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
+                            ->whereDate('plan_start_date', '>', $today)
+                            ->exists();
+
+                        if ($futurePlanExists) {
+                            return redirect()->back()
+                                ->with('error', 'Renewal already exists. Multiple renewals are not allowed.');
+                        }
+                        $planEndDate = Carbon::parse($activePlan->plan_end_date);
+                        // 3️⃣ About to expire check
+                        if ($planEndDate->gt($expiryLimit)) {
+                            return redirect()->back()
+                                ->with('error', 'Current plan is active and not eligible for renewal yet.');
+                        }
+
+                    }
                 Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
                 if ($validated_custom['error']) {
@@ -694,6 +728,41 @@ class QrEntryController extends Controller
           
 
             $learnerId=$request->learner_id;
+           
+           if ($learnerId) {
+
+                $today = Carbon::today();
+                $expiryLimit = Carbon::today()->addDays(7);
+
+                // 1️⃣ Active plan
+                $activePlan = LearnerDetail::where('learner_id', $learnerId)
+                    ->where('status', 1)
+                    ->whereDate('plan_start_date', '<=', $today)
+                    ->whereDate('plan_end_date', '>=', $today)
+                    ->first();
+
+                if (!$activePlan) {
+                    return redirect()->back()
+                        ->with('error', 'No active plan found for renewal.');
+                }
+
+                // 2️⃣ Future plan check (VERY IMPORTANT)
+                $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
+                    ->whereDate('plan_start_date', '>', $today)
+                    ->exists();
+
+                if ($futurePlanExists) {
+                    return redirect()->back()
+                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.');
+                }
+                $planEndDate = Carbon::parse($activePlan->plan_end_date);
+                // 3️⃣ About to expire check
+                if ($planEndDate->gt($expiryLimit)) {
+                    return redirect()->back()
+                        ->with('error', 'Current plan is active and not eligible for renewal yet.');
+                }
+
+            }
 
             if($seat_no){
                 $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);

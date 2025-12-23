@@ -1144,6 +1144,7 @@ if (!function_exists('checkPlanTypeSeatWise')) {
 if (!function_exists('checkSeatAvailability')) {
 
     function checkSeatAvailability($seat_no,$learnerId,$planTypeId,$startDate,$endDate) {
+       
         $planType = PlanType::find($planTypeId);
         if (!$planType) {
             return ['error' => true, 'message' => 'Invalid plan type'];
