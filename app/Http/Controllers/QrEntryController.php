@@ -699,8 +699,12 @@ class QrEntryController extends Controller
           
 
             $learnerId=$request->learner_id;
+
+            if($seat_no){
+                $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+            }
             
-            $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+            
 
             if ($result['error']) {
                 return redirect()->back()->with('error', $result['message'])->withInput();
