@@ -48,7 +48,7 @@
                         <span class="status {{ $isActive ? 'text-success' : 'text-danger' }}">
                             {{ $isActive ? 'Active' : 'Expired' }}
                         </span> --}}
-                        {{!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}}
+                        {!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}
                     </div>
 
                     <h6 class="mt-3">
