@@ -26,7 +26,7 @@
         <!-- QR TAB -->
         <div class="tab-pane fade show active text-center" id="qrTab">
             <p class="text-center text-muted">Scan this QR to Mark your Attendance</p>
-            <img id="qrImg" class="img-fluid mb-2" style="max-width:300px;">
+            <img id="qrImg" class="img-fluid mb-2" style="max-width:260px;">
             <p id="qrMsg" class="mt-2">
                 <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
             </p>

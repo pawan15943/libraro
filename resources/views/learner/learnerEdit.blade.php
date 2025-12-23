@@ -56,7 +56,11 @@ if($customer->locker_no){
                     </span>
                     @enderror
                 </div>
+<<<<<<< HEAD
+                <div class="col-lg-6">
+=======
                 <div class="col-lg-6 ">
+>>>>>>> ed017b06c216c23adf221abe6787e49abbc57777
                     <label for="" class="text-white">Email Id </label>
                     <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}">
                     @error('email')
