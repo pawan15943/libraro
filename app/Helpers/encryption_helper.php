@@ -1168,6 +1168,8 @@ if (!function_exists('checkSeatAvailability')) {
                 $q->where('learner_detail.plan_start_date', '<=', $endDate)
                   ->where('learner_detail.plan_end_date', '>=', $startDate);
             })
+             // ✅ IGNORE expired plans
+            ->whereDate('learner_detail.plan_end_date', '>=', Carbon::today())
             ->when($learnerId, function ($q) use ($learnerId) {
                 // Ignore own booking in edit mode
                 $q->where('learner_detail.learner_id', '!=', $learnerId);
@@ -1188,7 +1190,10 @@ if (!function_exists('checkSeatAvailability')) {
         }
 
         // 2️⃣ Hour capacity check
-        $alreadyBookedHours = $bookings->sum('slot_hours');
+        $alreadyBookedHours = $bookings
+        ->groupBy('learner_id')
+        ->map(fn ($rows) => $rows->sum('slot_hours'))
+        ->sum();
         Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
         if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
             return [
