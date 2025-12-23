@@ -1227,3 +1227,68 @@ if (!function_exists('checkSeatAvailability')) {
         return ['error' => false];
     }
 }
+
+if (!function_exists('getStatusFromBranch')) {
+    function getStatusFromBranch($plan_end_date,$learner_id,$branchId)
+    {
+       
+        $extendDay = 0;
+
+        if ($branchId) {
+            $branch = Branch::where('id', $branchId)->select('extend_days')->first();
+
+            if ($branch) {
+                $extendDay = $branch->extend_days;
+            }
+        }
+
+        
+        $today = Carbon::today();
+        $endDate = Carbon::parse($plan_end_date);
+
+        $diffInDays = $today->diffInDays($endDate, false);
+        $inextendDate = $endDate->copy()->addDays($extendDay);
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+         $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
+            ->exists();
+        $hasPastPlan = LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
+            ->exists();
+
+        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $start_date=LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_start_date',  '>', now())->where('status', 0)
+            ->exists();
+        $isfuture_booking=$start_date && !$hasPastPlan;
+        $startDetail =LearnerDetail::where('learner_id', $learner_id)
+            ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
+        if ($startDetail) {
+            $start_date=Carbon::parse($startDetail->plan_start_date);
+            
+            $startfrom=$today->diffInDays($start_date, false);
+        }else{
+            $startfrom=null;
+        }
+         
+        if(Learner::where('id',$learner_id)->where('frozen_status',1)->exists()){
+            return '<span class="text-success">Frozen</span>';
+        }
+        elseif ($diffInDays > 0 && !$isfuture_booking) {
+            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
+        }elseif($is_renew_update){
+             return '<span class="text-success"> 1 Plan in Queue</span>';
+        }elseif($isfuture_booking){
+            return '<span style="color: purple; ">Plan Starts in '.$startfrom.' Days</span>';
+        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+            return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
+        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
+            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
+        } elseif ($diffInDays == 0) {
+            return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
+        } else {
+            return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
+        }
+    }
+}

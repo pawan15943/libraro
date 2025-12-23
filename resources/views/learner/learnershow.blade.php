@@ -456,7 +456,7 @@
             </ul>
         </div>
         @endif
-        @if($learnerlog->count() >0)
+        {{-- @if($learnerlog->count() >0)
 
 
         <div class="seat-activity d-none">
@@ -483,7 +483,7 @@
 
             </ul>
         </div>
-        @endif
+        @endif --}}
     </div>
 </div>
 <script>

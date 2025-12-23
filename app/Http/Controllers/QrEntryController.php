@@ -108,39 +108,99 @@ class QrEntryController extends Controller
         ]);
     }
 
-     private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
-    {
+    //  private function validateLearnerCustom($branch_id, $plan_type_id, $seat_no,$library_id)
+    // {
             
-        $total_hour= Hour::withoutGlobalScopes()->where('branch_id',$branch_id)->first()?->hour ?? 0;
+    //     $total_hour= Hour::withoutGlobalScopes()->where('branch_id',$branch_id)->first()?->hour ?? 0;
 
-        if ($total_hour === 0) {
-            return ['error' => true, 'message' => 'Total available hours not set.'];
-        }
+    //     if ($total_hour === 0) {
+    //         return ['error' => true, 'message' => 'Total available hours not set.'];
+    //     }
 
-        $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
+    //     $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
      
-        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
-            return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
-        }
+    //     if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
+    //         return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
+    //     }
        
 
-        if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-            return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
-        }
+    //     if ((Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
+    //         return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
+    //     }
 
-        if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                      ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
-            if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id,$branch_id,$library_id) == false) {
-                return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
-            }
-        }
+    //     if (Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    //                   ->where('learners.branch_id', $branch_id)->where('learners.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
+    //         if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id,$branch_id,$library_id) == false) {
+    //             return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+    //         }
+    //     }
        
 
-        // ✅ Always return structured response
-        return ['error' => false];
+    //     // ✅ Always return structured response
+    //     return ['error' => false];
+    // }
+    private function validateLearnerCustom(
+    $branch_id,
+    $plan_type_id,
+    $seat_no,
+    $library_id,$learnerId = null) {
+    $total_hour = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch_id)
+        ->value('hour') ?? 0;
+
+    if ($total_hour === 0) {
+        return ['error' => true, 'message' => 'Total available hours not set.'];
     }
+
+    $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
+
+    // Same plan + seat conflict
+    if (
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->where('learner_detail.plan_type_id', $plan_type_id)
+            ->where('learners.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists()
+    ) {
+        return ['error' => true, 'message' => 'This plan type seat is already booked'];
+    }
+
+    // Hour overflow
+    $usedHours =Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->where('learner_detail.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->sum('hours');
+
+    if (($usedHours + $hours) > $total_hour) {
+        return [
+            'error' => true,
+            'message' => 'This seat is already reserved for the full library hours.'
+        ];
+    }
+
+    // Future booking conflict
+    if (
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branch_id)
+            ->where('learners.seat_no', $seat_no)
+            ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists()
+    ) {
+        if (!$this->checkPlanTypeSeatWise($seat_no, $plan_type_id, $branch_id, $library_id)) {
+            return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+        }
+    }
+
+    return ['error' => false];
+    }
+
      public function checkPlanTypeSeatWise($seatNo,$requestPlanType,$branch_id,$library_id)
     {
 
@@ -218,10 +278,15 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
-            // Log::info('Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+          
+
 
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
-            // Log::info('Branch found', ['branch_id' => $branch->id]);
+           Log::info('STEP 2: Branch fetched', [
+                'branch_id' => $branch->id ?? null,
+            ]);
+
 
             // Build validation rules
             $rules = [
@@ -236,36 +301,78 @@ class QrEntryController extends Controller
                 'payment_mode'   => 'required|in:online,offline',
             ];
             
+            Log::info('STEP 3: Before validation', [
+                'request_data' => $request->except(['password', '_token']),
+            ]);
 
             $validated = $request->validate($rules);
-            // Log::info('Validation passed', ['validated' => $validated]);
-            if($request->seat_no){
-                
-                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id);
-                if ($validated_custom['error']) {
-                  
-                   return redirect()->back()->with('error',$validated_custom['message'])->withInput();
-                }
-                
-            }
             
-           
-            $start_date = Carbon::parse($validated['plan_start_date']);
-            $endDate=getEndDate($validated['plan_id'], $start_date);
+            $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
+            $planData = Plan::where('id', $validated['plan_id'])
+                ->select('plan_id', 'type', 'monthdays')
+                ->first();
+
+            $duration  = $planData->plan_id ?? 0; 
+            $type      = $planData->type;
+            $monthdays = $planData->monthdays;
+
+            $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
+
+            switch (strtoupper($type)) {
+                case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
+                case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
+                case 'MONTH':
+                if (!empty($monthdays)) {
+                    // Use exact number of days defined for this month plan
+                    $endDate = $start_date->copy()->addDays($monthdays - 1);
+                } else {
+                    // Fallback to month-wise duration
+                    $endDate = $start_date->copy()->addMonths($duration);
+                }
+                break;
+                case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
+                default:      $endDate = $start_date; break;
+            }
+            Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()
                 ->where('id', $request->learner_transaction_id)
                 ->first();
             Log::info('Transaction check', ['transaction' => $transactions]);
 
-            if ($transactions) {
-                $password     = Learner::where('id', $transactions->learner_id)->value('password');
-                $total_amount = $transactions->total_amount;
-            } else{
-                $password     = Hash::make($validated['mobile']);
-                 $total_amount = $validated['plan_price_id'];
+              if($request->seat_no){
+                $learnerId = $transactions?->learner_id ?? null;
+                Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
+                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
+                if ($validated_custom['error']) {
+                    Log::warning('STEP 5 FAILED: Seat validation error', [
+                        'message' => $validated_custom['message']
+                    ]);
+                  
+                  return redirect()
+                        ->route('renew.form', $uuid)
+                        ->with('error', $validated_custom['message'])
+                        ->withInput();
+
+                }
+                
             }
-            Log::info('Password & Total amount set', ['total_amount' => $total_amount]);
+            if (!is_null($transactions)) {
+
+                $learnerId = $transactions->learner_id;
+
+                $password = Learner::where('id', $learnerId)->value('password')
+                            ?? Hash::make($validated['mobile']);
+
+                $total_amount = $transactions->total_amount ?? $validated['plan_price_id'];
+
+            } else {
+
+                $password     = Hash::make($validated['mobile']);
+                $total_amount = $validated['plan_price_id'];
+            }
+
+            Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
 
@@ -301,15 +408,36 @@ class QrEntryController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Validation failed', ['errors' => $e->errors()]);
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        } catch (\Exception $e) {
-            Log::error('Booking store error: '.$e->getMessage(), [
-                'request' => $request->all(),
-                'trace'   => $e->getTraceAsString(),
+            // Log::warning('Validation failed', ['errors' => $e->errors()]);
+            // return redirect()->back()->withErrors($e->validator)->withInput();
+             Log::warning('VALIDATION EXCEPTION', [
+                'method' => request()->method(),
+                'url'    => request()->fullUrl(),
+                'errors' => $e->errors(),
             ]);
-            return redirect()->back()
-                ->with('error', 'Something went wrong while processing your booking. Please try again.')
+
+            return redirect()
+                ->route('booking.form', $uuid)
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            // Log::error('Booking store error: '.$e->getMessage(), [
+            //     'request' => $request->all(),
+            //     'trace'   => $e->getTraceAsString(),
+            // ]);
+            // return redirect()->back()
+            //     ->with('error', 'Something went wrong while processing your booking. Please try again.')
+            //     ->withInput();
+
+             Log::error('BOOKING STORE CRASH', [
+                'method'  => request()->method(),
+                'url'     => request()->fullUrl(),
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('booking.form', $uuid)
+                ->with('error', 'Something went wrong.')
                 ->withInput();
         }
     }
@@ -549,6 +677,25 @@ class QrEntryController extends Controller
             } else {
                 $status = 0;
             }
+           $alreadyActive = false;
+
+            if (!empty($request->learner_id)) {
+                $alreadyActive = LearnerDetail::where('learner_id', $request->learner_id)->where('status', 1)->exists();
+            }
+
+            // Default status
+            $detailStatus = 0;
+
+            // Date-based activation
+            if ($inextendDate->greaterThan(Carbon::today()) && $start_date->lessThanOrEqualTo(Carbon::today())) {
+                $detailStatus = 1;
+            }
+
+            // If any active plan exists → force inactive
+            if ($alreadyActive) {
+                $detailStatus = 0;
+            }
+
             $is_paid = 1;
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
@@ -559,13 +706,18 @@ class QrEntryController extends Controller
           
 
             $learnerId=$request->learner_id;
-            
-            $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
 
-            if ($result['error']) {
-                return redirect()->back()->with('error', $result['message'])->withInput();
-               
+            if($seat_no){
+                $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+                 if ($result['error']) {
+                    return redirect()->back()->with('error', $result['message'])->withInput();
+                
+                }
             }
+            
+            
+
+           
 
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
@@ -642,7 +794,7 @@ class QrEntryController extends Controller
                 'seat_no' => $seat_no,
                 'payment_mode' => $payment_mode,
                 'is_paid' =>1,
-                'status' => $status,
+                'status' => $detailStatus,
             ]);
 
             if ($bookingurl->created_at) {

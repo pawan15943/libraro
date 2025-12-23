@@ -2,21 +2,19 @@
 @section('content')
 <div class="container mt-4">
 
-    <h4 class="text-center mb-2">QR Based Attendance</h4>
-    <p class="text-center text-muted">
-        Apni attendance mark karne ke liye QR scan karein aur “Thank You” message aane tak wait karein.
-    </p>
+    <h4 class="text-center mb-2">Student QR Attendance</h4>
+    
 
     <!-- Tabs -->
     <ul class="nav nav-pills justify-content-center mb-3">
         <li class="nav-item">
             <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#qrTab">
-                QR
+                Attendance Via QR
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#scannerTab">
-                Scanner
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#scannerTab" id="startScanner">
+                Attendeance Via ID Card
             </button>
         </li>
     </ul>
@@ -26,15 +24,14 @@
 
         <!-- QR TAB -->
         <div class="tab-pane fade show active text-center" id="qrTab">
+            <p class="text-center text-muted">Scan this QR to Mark your Attendance</p>
             <img id="qrImg" class="img-fluid mb-2" style="max-width:260px;">
             <p id="qrMsg" class="mt-2"></p>
         </div> 
 
         <!-- SCANNER TAB -->
         <div class="tab-pane fade text-center" id="scannerTab">
-            <button class="btn btn-primary" id="startScanner">
-                Start Scanner
-            </button>
+            <p class="text-center text-muted">Show your ID card to scanner to mark your Attendance</p>
             <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
             <p id="scanMsg" class="mt-2"></p>
         </div>

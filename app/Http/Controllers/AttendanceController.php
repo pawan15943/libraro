@@ -30,7 +30,6 @@ class AttendanceController extends Controller
 
          $detail = LearnerDetail::query()
             ->where('learner_detail.learner_id', $learnerId)
-            ->where('learner_detail.status', 1)
 
             // Joins
             ->leftJoin('branches', 'learner_detail.branch_id', '=', 'branches.id')
@@ -45,7 +44,6 @@ class AttendanceController extends Controller
                 'learner_detail.plan_type_id',
                 'learner_detail.plan_start_date',
                 'learner_detail.plan_end_date',
-
                 'branches.name as branch_name',
                 'libraries.library_name as library_name',
             ])
@@ -104,7 +102,7 @@ class AttendanceController extends Controller
             'mobile' => 'required'
         ]);
 
-        $learner = Learner::where('learner_no', $request->uid) ->where('mobile', encryptData($request->mobile))->first();
+        $learner = Learner::where('learner_no', $request->uid)->where('mobile', encryptData($request->mobile))->first();
         
         if (!$learner) {
             return response()->json([
@@ -234,27 +232,45 @@ class AttendanceController extends Controller
                 'message' => 'QR expired or invalid'
             ], 403);
         }
-       $learnerId =session('learner_id');
-        $learnerDetail=LearnerDetail::where('learner_id',$learnerId)->where('status',1)->select('plan_end_date')->first();
+            $learnerId = session('learner_id');
 
-        /* 1️⃣ No active plan */
-        if (!$learnerDetail) {
-             \Log::info('learner detail not found');
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
-            ], 403);
-        }
+            /* 🔹 Get latest learner plan */
+            $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
 
-        /* 2️⃣ Plan expired check */
-        if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
+            /* 1️⃣ No plan exists at all */
+            if (!$learnerDetail) {
+                \Log::info('learner detail not found');
 
-        // Extract variables from the request
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No plan found'
+                ], 403);
+            }
+
+            /* 2️⃣ Plan expired */
+            if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+                \Log::info('expired');
+
+                return response()->json([
+                    'status'  => 'expired',
+                    'message' => 'Plan expired'
+                ], 403);
+            }
+
+            /* 3️⃣ Active plan exists */
+            if ($learnerDetail->status != 1) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No active plan found'
+                ], 403);
+            }
+
+            /* ✅ Plan is valid & active → continue */
+
+
+        \Log::info('success part hit');
             
             $attendance = 1;
             $date = date('Y-m-d');

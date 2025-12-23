@@ -1,5 +1,10 @@
 @extends('sitelayouts.layout')
 @section('content')
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
 
 <div class="sacnd-data" style="min-height: 500px; display:flex; align-items:center;">
     <div class="container">
@@ -15,17 +20,18 @@
                             @csrf
                             <div class="row g-4 ">
                                 <input type="hidden" value="{{$branch->id}}" name="branch">
+                               
                                 <div class="col-lg-12">
-                                    <input type="text" class="form-control @error('mobile') is-invalid @enderror" placeholder="Enter your mobile Number" name="mobile">
-                                    @error('mobile')  
+                                    <input type="text" class="form-control @error('learner_no') is-invalid @enderror" placeholder="Enter your Learner Number" name="learner_no">
+                                    @error('learner_no')  
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span> 
                                     @enderror
                                 </div>
-                                <div class="col-lg-12">
-                                    <input type="text" class="form-control @error('learner_no') is-invalid @enderror" placeholder="Enter your Learner Number" name="learner_no">
-                                    @error('learner_no')  
+                                 <div class="col-lg-12">
+                                    <input type="text" class="form-control @error('mobile') is-invalid @enderror" placeholder="Enter your mobile Number" name="mobile">
+                                    @error('mobile')  
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span> 

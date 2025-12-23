@@ -5007,7 +5007,7 @@ h6.text-center.bg-white {
         width: 100% ! important;
     }
 
-    .seat-actions{
+    .seat-actions {
         width: 100% ! important;
     }
 }
@@ -6576,3 +6576,8 @@ a[disabled] {
     border-radius: 3rem !important;
 }
 
+img#qrImg {
+    padding: 10px;
+    box-shadow: 1px 0 5px #00000059;
+    border-radius: 1rem;
+}

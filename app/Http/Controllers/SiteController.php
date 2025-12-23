@@ -57,7 +57,8 @@ class SiteController extends Controller
         $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->get();
         $subscriptions = Subscription::with('permissions')->get();
         $premiumSub = Subscription::orderBy('id', 'DESC')->first();
-        return view('site.home', compact('subscriptions', 'premiumSub', 'happy_customers'));
+        $features=DB::table('subscription_plan_features')->where('feature_status',1)->get();
+        return view('site.home', compact('subscriptions', 'premiumSub', 'happy_customers','features'));
     }
     public function searchLibrary()
     {

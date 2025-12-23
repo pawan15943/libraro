@@ -83,7 +83,25 @@
 
     <script>
         $('#verifyLearner').on('click', function () {
-        
+            let uid = $('#learner_no_uid').val().trim();
+            let mobile = $('#learner_mobile').val().trim();
+
+            // ✅ Frontend required validation
+            if (!uid) {
+                $('#verifyMsg').text('Learner No is required');
+                return;
+            }
+
+            if (!mobile) {
+                $('#verifyMsg').text('Mobile number is required');
+                return;
+            }
+
+            // Optional: mobile format
+            if (!/^[6-9]\d{9}$/.test(mobile)) {
+                $('#verifyMsg').text('Enter valid 10 digit mobile number');
+                return;
+            }
             $.ajax({
                 url: "{{ route('attendance.verify.learner') }}",
                 type: "POST",
