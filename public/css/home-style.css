@@ -206,11 +206,11 @@ a.cta:hover {
 .plan-features .d-flex {
     display: flex !important;
     align-items: center;
-    gap: 1rem;
-    font-weight: 600;
-    font-family: 'Mulish';
+    gap: .5rem;
+    font-weight: 500;
+    font-family: 'outfit', 'sans-sarif';
     font-size: .8rem ! IMPORTANT;
-    color: #000;
+    color: #474747;
 }
 
 .product-benefits {

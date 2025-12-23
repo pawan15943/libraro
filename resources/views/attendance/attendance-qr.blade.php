@@ -8,13 +8,14 @@
     <!-- Tabs -->
     <ul class="nav nav-pills justify-content-center mb-3">
         <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#qrTab">
-                Attendance Via QR
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#qrTab" id="stopScanner">
+                QR Attendance
             </button>
         </li>
+
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#scannerTab" id="startScanner">
-                Attendeance Via ID Card
+                ID Card Attendance
             </button>
         </li>
     </ul>
@@ -99,6 +100,21 @@
     /* ============================
        START SCANNER
     ============================ */
+    document.getElementById('stopScanner').addEventListener('click', function() {
+        if (scanner) {
+            scanner.stop()
+                .then(() => {
+                    scanner.clear();
+                    scanner = null;
+                    console.log("Scanner stopped");
+                })
+                .catch(err => {
+                    console.error("Error stopping scanner:", err);
+                });
+        }
+    });
+
+
     document.getElementById('startScanner').addEventListener('click', function() {
 
         if (scanner) return;
