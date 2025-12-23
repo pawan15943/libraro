@@ -702,14 +702,15 @@ class QrEntryController extends Controller
 
             if($seat_no){
                 $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+                 if ($result['error']) {
+                    return redirect()->back()->with('error', $result['message'])->withInput();
+                
+                }
             }
             
             
 
-            if ($result['error']) {
-                return redirect()->back()->with('error', $result['message'])->withInput();
-               
-            }
+           
 
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
