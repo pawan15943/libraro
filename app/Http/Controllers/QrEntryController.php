@@ -170,8 +170,7 @@ class QrEntryController extends Controller
     }
 
     // Hour overflow
-    $usedHours =
-        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    $usedHours =Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.branch_id', $branch_id)
             ->where('learners.seat_no', $seat_no)
             ->where('learner_detail.status', 1)
@@ -279,7 +278,7 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
-            // Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+            Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
           
 
 
@@ -342,7 +341,7 @@ class QrEntryController extends Controller
             Log::info('Transaction check', ['transaction' => $transactions]);
 
               if($request->seat_no){
-                $learnerId=$transactions->learner_id;
+                $learnerId = $transactions?->learner_id ?? null;
                 Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
                 if ($validated_custom['error']) {
