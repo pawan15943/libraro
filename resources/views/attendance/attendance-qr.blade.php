@@ -70,8 +70,7 @@
 
     function loadQR() {
         $.ajax({
-            url: '{{ route('
-            attendance.qrcode ') }}',
+            url: "{{ route( 'attendance.qrcode' ) }}",
             type: 'GET',
             dataType: 'json',
             success: function(data) {
