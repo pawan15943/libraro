@@ -735,7 +735,7 @@ class QrEntryController extends Controller
                 $payment_mode = 0;
             }
             
-          
+           Log::info('FordetailStatus', ['status' => $status,'detailStatus'=>$detailStatus]);
 
             $learnerId=$request->learner_id;
            
