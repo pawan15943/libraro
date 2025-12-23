@@ -357,13 +357,21 @@ class QrEntryController extends Controller
                 }
                 
             }
-            if ($transactions) {
-                $password     = Learner::where('id', $transactions->learner_id)->value('password');
-                $total_amount = $transactions->total_amount;
-            } else{
+            if (!is_null($transactions)) {
+
+                $learnerId = $transactions->learner_id;
+
+                $password = Learner::where('id', $learnerId)->value('password')
+                            ?? Hash::make($validated['mobile']);
+
+                $total_amount = $transactions->total_amount ?? $validated['plan_price_id'];
+
+            } else {
+
                 $password     = Hash::make($validated['mobile']);
-                 $total_amount = $validated['plan_price_id'];
+                $total_amount = $validated['plan_price_id'];
             }
+
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
