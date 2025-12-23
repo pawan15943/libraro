@@ -357,38 +357,44 @@ class QrEntryController extends Controller
 
             if ($learnerId) {
 
-                $today = Carbon::today();
-                $expiryLimit = Carbon::today()->addDays(7);
+                $today        = Carbon::today();
+                $expiryLimit  = Carbon::today()->addDays(7);
 
-                // 1️⃣ Active plan
+                /* 1️⃣ Active plan (if any) */
                 $activePlan = LearnerDetail::where('learner_id', $learnerId)
                     ->where('status', 1)
                     ->whereDate('plan_start_date', '<=', $today)
                     ->whereDate('plan_end_date', '>=', $today)
+                    ->orderBy('plan_end_date', 'desc')
                     ->first();
 
-                if (!$activePlan) {
-                    return redirect()->route('renew.form', $uuid)
-                        ->with('error', 'No active plan found for renewal.')->withInput();
-                }
-
-                // 2️⃣ Future plan check (VERY IMPORTANT)
+                /* 2️⃣ Future plan check → HARD BLOCK */
                 $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
                     ->whereDate('plan_start_date', '>', $today)
                     ->exists();
 
                 if ($futurePlanExists) {
                     return redirect()->route('renew.form', $uuid)
-                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')->withInput();
+                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
+                        ->withInput();
                 }
-                $planEndDate = Carbon::parse($activePlan->plan_end_date);
-                // 3️⃣ About to expire check
-                if ($planEndDate->gt($expiryLimit)) {
-                    return redirect()->route('renew.form', $uuid)
-                        ->with('error', 'Current plan is active and not eligible for renewal yet.')->withInput();
+
+                /* 3️⃣ If ACTIVE plan exists → check buffer window */
+                if ($activePlan) {
+
+                    $planEndDate = Carbon::parse($activePlan->plan_end_date);
+
+                    // ❌ Active & NOT in buffer days
+                    if ($planEndDate->gt($expiryLimit)) {
+                        return redirect()->route('renew.form', $uuid)
+                            ->with('error', 'Current plan is active and not eligible for renewal yet.')
+                            ->withInput();
+                    }
+
                 }
 
             }
+
             if (!is_null($transactions)) {
 
                 $learnerId = $transactions->learner_id;
@@ -731,40 +737,46 @@ class QrEntryController extends Controller
 
             $learnerId=$request->learner_id;
            
-           if ($learnerId) {
+            if ($learnerId) {
 
-                $today = Carbon::today();
-                $expiryLimit = Carbon::today()->addDays(7);
+                $today        = Carbon::today();
+                $expiryLimit  = Carbon::today()->addDays(7);
 
-                // 1️⃣ Active plan
+                /* 1️⃣ Active plan (if any) */
                 $activePlan = LearnerDetail::where('learner_id', $learnerId)
                     ->where('status', 1)
                     ->whereDate('plan_start_date', '<=', $today)
                     ->whereDate('plan_end_date', '>=', $today)
+                    ->orderBy('plan_end_date', 'desc')
                     ->first();
 
-                if (!$activePlan) {
-                    return redirect()->back()
-                        ->with('error', 'No active plan found for renewal.');
-                }
-
-                // 2️⃣ Future plan check (VERY IMPORTANT)
+                /* 2️⃣ Future plan check → HARD BLOCK */
                 $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
                     ->whereDate('plan_start_date', '>', $today)
                     ->exists();
 
                 if ($futurePlanExists) {
-                    return redirect()->back()
-                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.');
+                    return redirect()->route('renew.form', $uuid)
+                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
+                        ->withInput();
                 }
-                $planEndDate = Carbon::parse($activePlan->plan_end_date);
-                // 3️⃣ About to expire check
-                if ($planEndDate->gt($expiryLimit)) {
-                    return redirect()->back()
-                        ->with('error', 'Current plan is active and not eligible for renewal yet.');
+
+                /* 3️⃣ If ACTIVE plan exists → check buffer window */
+                if ($activePlan) {
+
+                    $planEndDate = Carbon::parse($activePlan->plan_end_date);
+
+                    // ❌ Active & NOT in buffer days
+                    if ($planEndDate->gt($expiryLimit)) {
+                        return redirect()->route('renew.form', $uuid)
+                            ->with('error', 'Current plan is active and not eligible for renewal yet.')
+                            ->withInput();
+                    }
+
                 }
 
             }
+
 
             if($seat_no){
                 $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
