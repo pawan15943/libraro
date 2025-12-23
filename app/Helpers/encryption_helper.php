@@ -1195,13 +1195,13 @@ if (!function_exists('checkSeatAvailability')) {
         ->groupBy('learner_id')
         ->map(fn ($rows) => $rows->sum('slot_hours'))
         ->sum();
-        Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
-        if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
-            return [
-                'error' => true,
-                'message' => 'Seat exceeds total available hours'
-            ];
-        }
+        // Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
+        // if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
+        //     return [
+        //         'error' => true,
+        //         'message' => 'Seat exceeds total available hours'
+        //     ];
+        // }
 
         // 3️⃣ Time overlap check
         foreach ($bookings as $booking) {
