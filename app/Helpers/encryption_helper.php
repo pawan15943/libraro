@@ -1175,6 +1175,7 @@ if (!function_exists('checkSeatAvailability')) {
                 $q->where('learner_detail.learner_id', '!=', $learnerId);
             })
             ->get([
+                'learner_detail.learner_id',
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.slot_hours',
