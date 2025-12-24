@@ -339,7 +339,14 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script>
-  
+    const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
+    const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
+    const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
+
+    audioSuccess.preload = 'auto';
+    audioExpired.preload = 'auto';
+    audioError.preload   = 'auto';
+
     lucide.createIcons();
 
     let scanner = null;
@@ -356,147 +363,153 @@
       if (id === 'scan') startScanner(); else stopScanner();
     }
 
-</script>
+    function setScanMessage(message, type = 'success') {
+        const msgEl = document.getElementById('scanResult');
 
-<script>
-const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
-const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
-const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
+        msgEl.innerText = message;
 
-audioSuccess.preload = 'auto';
-audioExpired.preload = 'auto';
-audioError.preload   = 'auto';
+        // Remove old classes
+        msgEl.classList.remove('text-success', 'text-danger');
 
-let scanner = null;
-let scanLock = false;
+        // Add new class
+        if (type === 'success') {
+            msgEl.classList.add('text-success');
+        } else {
+            msgEl.classList.add('text-danger');
+        }
+    }
+    /* =========================
+      STOP SCANNER
+    ========================= */
+    function stopScanner() {
+        if (scanner) {
+            return scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+            }).catch(() => {
+                scanner = null;
+            });
+        }
+        return Promise.resolve();
+    }
+      /* =========================
+      START SCANNER
+    ========================= */
+    function startScanner() {
 
-/* =========================
-   MESSAGE HELPER
-========================= */
-function setScanMessage(message, type = 'success') {
-    const el = document.getElementById('scanResult');
-    el.innerText = message;
-    el.classList.remove('text-success', 'text-danger', 'text-muted');
-    el.classList.add(type === 'success' ? 'text-success' : 'text-danger');
-}
+          scanLock = false;
 
-/* =========================
-   STOP SCANNER (HARD STOP)
-========================= */
-function stopScanner() {
-    if (scanner) {
-        return scanner.stop().then(() => {
-            scanner.clear();
-            scanner = null;
-        }).catch(() => {
+        document.getElementById('scanResult').innerText = 'Waiting for scan...';
+        document.getElementById('scanResult').className = 'text-muted';
+
+        scanner = new Html5Qrcode("reader");
+
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            qr => {
+                  
+                if (scanLock) {
+                    
+                    return;
+                }
+                scanLock = true;
+                stopScanner(); 
+
+                submitScan(qr);
+
+            }
+        ).catch(err => {
+            // alert('Camera error: ' + err);
             scanner = null;
         });
     }
-    return Promise.resolve();
-}
 
-/* =========================
-   START SCANNER
-========================= */
-function startScanner() {
-    scanLock = false;
+    
 
-    document.getElementById('scanResult').innerText = 'Waiting for scan...';
-    document.getElementById('scanResult').className = 'text-muted';
+     
 
-    scanner = new Html5Qrcode("reader");
-
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        qrText => {
-            if (scanLock) return;
-
-            scanLock = true;          // 🔒 HARD LOCK
-            stopScanner();            // ❌ STOP CAMERA IMMEDIATELY
-            submitScan(qrText);
+    /* =========================
+      SUBMIT SCAN (BACKEND)
+    ========================= */
+    function submitScan(qrText) {
+      alert("submitscan");
+        const verifyToken = localStorage.getItem('verify_token');
+        if (!verifyToken) {
+            audioError.play();
+            document.getElementById('scanResult').innerText =
+                'Verification expired. Please login again.';
+            stopScanner();
+            return;
         }
-    ).catch(err => {
-        console.error(err);
-        scanner = null;
-    });
-}
 
-/* =========================
-   SUBMIT SCAN
-========================= */
-function submitScan(qrText) {
+        fetch("{{ route('store.scan.attendance') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                qr: qrText,
+                verify_token: verifyToken
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
 
-    const verifyToken = localStorage.getItem('verify_token');
-    if (!verifyToken) {
-        audioError.play();
-        setScanMessage('Verification expired. Please login again.', 'danger');
-        return;
+          
+            const scanMsg = document.getElementById('scanResult');
+              if (res.status === 'success') {
+                  setScanMessage(res.message, 'success');
+              } else {
+                  setScanMessage(res.message, 'danger');
+              }
+            // Hide all animations
+              successAnimation.style.display = 'none';
+              failedAnimation.style.display  = 'none';
+              errorAnimation.style.display   = 'none';
+
+              let animation;
+              let audio;
+
+              if (res.status === 'success') {
+                  animation = successAnimation;
+                  audio = audioSuccess;
+              } 
+              else if (res.status === 'expired') {
+                  animation = failedAnimation;
+                  audio = audioExpired;
+              } 
+              else {
+                  animation = errorAnimation;
+                  audio = audioError;
+              }
+
+              audio.play();
+
+              // Hide scanner UI
+              document.getElementById('scanner-wrapper').style.display = 'none';
+              animation.style.display = 'block';
+
+              // 🔁 Restart scanner AFTER animation
+              setTimeout(() => {
+                  animation.style.display = 'none';
+                  document.getElementById('scanner-wrapper').style.display = 'block';
+                  scanDone = false;
+                  startScanner();
+              }, 5000);
+
+        })
+        .catch(() => {
+            // audioError.play();
+            document.getElementById('scanResult').innerText =
+                'Network error. Try again.';
+            // stopScanner();
+        });
     }
 
-    fetch("{{ route('store.scan.attendance') }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            qr: qrText,
-            verify_token: verifyToken
-        })
-    })
-    .then(res => res.json())
-    .then(res => {
-
-        // Hide all animations
-        successAnimation.style.display = 'none';
-        failedAnimation.style.display  = 'none';
-        errorAnimation.style.display   = 'none';
-
-        let animation, audio;
-
-        if (res.status === 'success') {
-            setScanMessage(res.message, 'success');
-            animation = successAnimation;
-            audio = audioSuccess;
-        }
-        else if (res.status === 'expired') {
-            setScanMessage(res.message, 'danger');
-            animation = failedAnimation;
-            audio = audioExpired;
-        }
-        else {
-            setScanMessage(res.message, 'danger');
-            animation = errorAnimation;
-            audio = audioError;
-        }
-
-        audio.play();
-
-        document.getElementById('scanner-wrapper').style.display = 'none';
-        animation.style.display = 'block';
-
-        // ⏱ Restart AFTER animation
-        setTimeout(() => {
-            animation.style.display = 'none';
-            document.getElementById('scanner-wrapper').style.display = 'block';
-            startScanner();
-        }, 5000);
-    })
-    .catch(() => {
-        audioError.play();
-        setScanMessage('Network error. Try again.', 'danger');
-        startScanner();
-    });
-}
-
-/* =========================
-   AUTO START
-========================= */
-document.addEventListener('DOMContentLoaded', () => {
-    startScanner();
-});
 </script>
+
 
 
 </body>
