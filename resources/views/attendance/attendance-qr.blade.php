@@ -50,7 +50,7 @@
             </div>
             <!-- <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
             <button class="btn btn-primary" id="startScanner"> Close Scanner </button> -->
-            <p id="scanMsg" class="mt-2"> </p>
+            <p id="scanMsg" class="mt-2"></p>
             
 
         </div>
@@ -110,6 +110,49 @@
     /* ============================
        START SCANNER
     ============================ */
+    function startScanner() {
+
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+                startScanner();
+            });
+            return;
+        }
+
+        const reader = document.getElementById('reader');
+        if (!reader || reader.offsetHeight === 0) {
+            // alert('Scanner container not visible');
+            return;
+        }
+
+        if (scanner) return;
+        scanDone = false;
+        document.getElementById('scanMsg').innerText = '';
+
+        scanner = new Html5Qrcode("reader");
+
+
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            function(decodedText) {
+
+                if (scanDone) return; // ✅ one scan only
+                scanDone = true;
+                document.getElementById('scanMsg').innerText =
+                    'QR detected. Processing...';
+                submitScan(decodedText);
+            }
+
+            
+        ).catch(err => {
+            alert('Camera error: ' + err);
+            scanner = null;
+        });
+
+    }
     document.getElementById('stopScanner').addEventListener('click', function() {
         if (scanner) {
             scanner.stop()
@@ -126,31 +169,31 @@
 
 
     document.getElementById('startScanner').addEventListener('click', function() {
+        startScanner();
+        // if (scanner) return;
+        // scanDone = false;
+        // document.getElementById('scanMsg').innerText = '';
 
-        if (scanner) return;
-        scanDone = false;
-        document.getElementById('scanMsg').innerText = '';
+        // scanner = new Html5Qrcode("reader");
 
-        scanner = new Html5Qrcode("reader");
+        // scanner.start({
+        //         facingMode: "environment"
+        //     }, {
+        //         fps: 10,
+        //         qrbox: 250
+        //     },
+        //     function(decodedText) {
 
-        scanner.start({
-                facingMode: "environment"
-            }, {
-                fps: 10,
-                qrbox: 250
-            },
-            function(decodedText) {
-
-                if (scanDone) return; // ✅ one scan only
-                scanDone = true;
-                document.getElementById('scanMsg').innerText =
-                    'QR detected. Processing...';
-                submitScan(decodedText);
-            }
-        ).catch(err => {
-            alert('Camera error: ' + err);
-            scanner = null;
-        });
+        //         if (scanDone) return; // ✅ one scan only
+        //         scanDone = true;
+        //         document.getElementById('scanMsg').innerText =
+        //             'QR detected. Processing...';
+        //         submitScan(decodedText);
+        //     }
+        // ).catch(err => {
+        //     alert('Camera error: ' + err);
+        //     scanner = null;
+        // });
     });
 
     /* ============================
@@ -219,7 +262,7 @@
                     }, 5000);
                 } 
 
-               
+               startScanner();
                 // ✅ Stop scanner properly
                 // if (scanner) {
                 //     scanner.stop().then(() => {
