@@ -397,7 +397,6 @@
     ========================= */
     function startScanner() {
 
-          scanLock = false;
 
         document.getElementById('scanResult').innerText = 'Waiting for scan...';
         document.getElementById('scanResult').className = 'text-muted';
@@ -410,19 +409,14 @@
             qr => {
                   
                 if (scanLock) {
-                      return;
-                  }
-                  scanLock = true;
-                  // alert('PROCESSING QR'); 
-                  document.getElementById('scanResult').innerText =
-                      'QR detected. Processing...';
+                    
+                    return;
+                }
+                scanLock = true;
+                stopScanner(); 
 
-                  submitScan(qr);
+                submitScan(qr);
 
-                  setTimeout(() => {
-                  scanLock = false;
-                  
-              }, 2000);
             }
         ).catch(err => {
             // alert('Camera error: ' + err);
