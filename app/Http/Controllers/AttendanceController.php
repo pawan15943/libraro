@@ -46,6 +46,9 @@ class AttendanceController extends Controller
                 'learner_detail.plan_end_date',
                 'branches.name as branch_name',
                 'libraries.library_name as library_name',
+                'libraries.email as library_email',
+                'libraries.library_mobile as library_mobile',
+                'branches.library_address as library_address',
             ])
 
             // Eloquent relations
