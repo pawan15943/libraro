@@ -1764,4 +1764,50 @@ ul.actions-icons {
 }
 
 
+.online-booking span.steps {
+    background: #f0f0ff;
+    color: #000000;
+    padding: .3rem 1rem;
+    border-radius: 2rem;
+    display: block;
+    margin: 0 auto;
+    width: 87px;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-family: 'Outfit', 'sans-sarif';
+    letter-spacing: 1px;
+    font-size: .8rem;
+    border: 1px solid #3F51B5;
+    margin-bottom: .5rem;
+}
 
+.online-booking {
+    background: #fff;
+    padding: 1.5rem;
+    border: 1px solid #dedede;
+    border-radius: 1.5rem;
+}
+
+.online-booking button.btn.btn-primary {
+    background: linear-gradient(45deg, #1b2458, #232d6a);
+    border: none;
+    width: 100%;
+    margin-top: 1rem;
+    height: 45px;
+    font-family: 'Outfit', 'sans-sarif';
+    font-weight: 600;
+    transition: all .5s;
+    box-shadow: none;
+}
+
+.online-booking label {
+    font-weight: 600;
+    font-size: .8rem;
+    margin-bottom: .2rem;
+}
+
+.online-booking h4.mb-4.text-center {
+    font-weight: 500;
+    color: navy;
+}
