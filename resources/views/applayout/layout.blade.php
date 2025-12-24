@@ -331,9 +331,9 @@
 
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
-    <a onclick="navigate('profile')"><i data-lucide="user"></i></a>
-    <a class="fab" onclick="navigate('scan')"><i data-lucide="qr-code"></i></a>
-    <a onclick="navigate('support')"><i data-lucide="help-circle"></i></a>
+    <a onclick="navigate('profile')"><i class="m-0" data-lucide="user"></i></a>
+    <a class="fab" onclick="navigate('scan')"><i class="m-0" data-lucide="qr-code"></i></a>
+    <a onclick="navigate('support')"><i class="m-0" data-lucide="help-circle"></i></a>
   </div>
 
 
