@@ -37,14 +37,14 @@
             <p class="text-center text-muted">Show your ID card to scanner to mark your Attendance</p>
             <div id="scanner-wrapper">
                 <div id="reader"></div>
+                <p id="successAnimation" style="display:none; text-align:center;">
+                    <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
+                </p>
             </div>
             <!-- <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
             <button class="btn btn-primary" id="startScanner"> Close Scanner </button> -->
             <p id="scanMsg" class="mt-2"> </p>
-            <p id="successAnimation" style="display:none; text-align:center;">
-                <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
-
-            </p>
+            
 
         </div>
 
@@ -174,7 +174,9 @@
                      // 🎉 Show animation AFTER sound starts
                     setTimeout(() => {
                         document.getElementById('successAnimation').style.display = 'block';
-                    }, 300); // slight delay for better UX
+                       document.getElementById('reader').style.display = 'none';
+                    }, 300); 
+                   
                 } else if (res.status === 'expired') {
                     audioExpired.play();
                 } else {
