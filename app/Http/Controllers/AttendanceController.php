@@ -226,35 +226,39 @@ class AttendanceController extends Controller
      * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
         * Same QR + same session → ignore for 15 seconds
         */
-         $cacheKey = 'attendance_hit_' . $learnerId;
+            $now = now()->timestamp;
+                $lastScanAt = session('last_scan_at', 0);
 
-        if (\Cache::has($cacheKey)) {
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Attendance captured'
-            ]);
-        }
+                if (($now - $lastScanAt) < 6) {
+                    // 🚫 DO NOT validate QR
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => 'Attendance captured'
+                    ]);
+                }
 
+                // Update scan time immediately (important)
+                session(['last_scan_at' => $now]);
         
-        
-        // 2. Validate QR (your existing logic)
-        $branchId = $this->validateQrToken($request->qr);
+                // 2. Validate QR (your existing logic)
+                $branchId = $this->validateQrToken($request->qr);
 
 
-          \Log::info('SESSION CHECK', [
-            'verified' => session('attendance_verified'),
-            'session_token' => session('verify_token'),
-            'request_token' => $request->verify_token,
-            'branchId'=>$branchId,
-            'request-qr'=>$request->qr
-        ]);
+                \Log::info('SESSION CHECK', [
+                    'verified' => session('attendance_verified'),
+                    'session_token' => session('verify_token'),
+                    'request_token' => $request->verify_token,
+                    'branchId'=>$branchId,
+                    'request-qr'=>$request->qr
+                ]);
 
-        if (!$branchId) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'QR expired or invalid'
-            ], 403);
-        }
+                if (!$branchId) {
+                   
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'QR expired or invalid'
+                    ], 403);
+                }
            
 
             /* 🔹 Get latest learner plan */
@@ -264,6 +268,7 @@ class AttendanceController extends Controller
 
             /* 1️⃣ No plan exists at all */
             if (!$learnerDetail) {
+               
                 \Log::info('learner detail not found');
 
                 return response()->json([
@@ -275,7 +280,7 @@ class AttendanceController extends Controller
             /* 2️⃣ Plan expired */
             if ($learnerDetail->plan_end_date < date('Y-m-d')) {
                 \Log::info('expired');
-
+               
                 return response()->json([
                     'status'  => 'expired',
                     'message' => 'Plan expired'
@@ -326,7 +331,7 @@ class AttendanceController extends Controller
                 ]);
             }
            
-            \Cache::put($cacheKey, true, now()->addSeconds(8)); // debounce window
+        
         // session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'status'  => 'success',
