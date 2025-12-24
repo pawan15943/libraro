@@ -359,8 +359,22 @@ class AttendanceController extends Controller
                 'message' => 'Learner not found'
             ], 404);
         }
-        $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+        
 
+
+        $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+        $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
+        $extendDay = $branch->extend_days; // assume integer
+        $today = Carbon::today();
+        $endDate = Carbon::parse($learnerDetail->plan_end_date);
+
+        $diffInDays = $today->diffInDays($endDate, false);
+        if ($extendDay > 0) {
+            $inextendDate = $endDate->copy()->addDays($extendDay);
+        } else {
+            $inextendDate = $endDate; // fallback to original end date
+        }
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
         /* 1️⃣ No active plan */
         if (!$learnerDetail) {
             return response()->json([
@@ -370,7 +384,7 @@ class AttendanceController extends Controller
         }
 
         /* 2️⃣ Plan expired check */
-        if (Carbon::parse($learnerDetail->plan_end_date)->isBefore(Carbon::today())) {
+        if ($diffExtendDay < 0) {
             return response()->json([
                 'status'  => 'expired',
                 'message' => 'Plan expired'

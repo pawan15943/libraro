@@ -425,22 +425,6 @@ function stopScanner() {
     }
 }
 
- function setScanMessage(message, type = 'success') {
-        const msgEl = document.getElementById('scanResult');
-
-        msgEl.innerText = message;
-
-        // Remove old classes
-        msgEl.classList.remove('text-success', 'text-danger');
-
-        // Add new class
-        if (type === 'success') {
-            msgEl.classList.add('text-success');
-        } else {
-            msgEl.classList.add('text-danger');
-        }
-    }
-
 /* =========================
    SUBMIT SCAN (BACKEND)
 ========================= */
@@ -469,48 +453,21 @@ function submitScan(qrText) {
     .then(res => res.json())
     .then(res => {
 
-       
-        const scanMsg = document.getElementById('scanResult');
-          if (res.status === 'success') {
-              setScanMessage(res.message, 'success');
-          } else {
-              setScanMessage(res.message, 'danger');
-          }
-        // Hide all animations
-          successAnimation.style.display = 'none';
-          failedAnimation.style.display  = 'none';
-          errorAnimation.style.display   = 'none';
+        document.getElementById('scanResult').innerText = res.message;
 
-          let animation;
-          let audio;
+        if (res.status === 'success') {
+            audioSuccess.play();
+            setTimeout(() => {
+                navigate('profile');
+            }, 800); // small delay for UX
 
-          if (res.status === 'success') {
-              animation = successAnimation;
-              audio = audioSuccess;
-          } 
-          else if (res.status === 'expired') {
-              animation = failedAnimation;
-              audio = audioExpired;
-          } 
-          else {
-              animation = errorAnimation;
-              audio = audioError;
-          }
+        } else if (res.status === 'expired') {
+            audioExpired.play();
+        } else {
+            audioError.play();
+        }
 
-          audio.play();
-
-          // Hide scanner UI
-          document.getElementById('scanner-wrapper').style.display = 'none';
-          animation.style.display = 'block';
-
-          // 🔁 Restart scanner AFTER animation
-          setTimeout(() => {
-              animation.style.display = 'none';
-              document.getElementById('scanner-wrapper').style.display = 'block';
-              scanDone = false;
-              startScanner();
-          }, 5000);
-
+        // stopScanner();
     })
     .catch(() => {
         // audioError.play();

@@ -40,14 +40,7 @@
                             {{ $detail->library_name ?? 'Library' }}
                         </strong>
 
-                        {{-- @php
                         
-                            $isActive = $detail && $detail->plan_end_date >= $today;
-                        @endphp
-
-                        <span class="status {{ $isActive ? 'text-success' : 'text-danger' }}">
-                            {{ $isActive ? 'Active' : 'Expired' }}
-                        </span> --}}
                         {!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}
                     </div>
 
@@ -187,7 +180,18 @@
     <section id="scan" class="section">
         <div class="app-card">
             <h6>Scan QR Code</h6>
+            <div id="scanner-wrapper">
             <div id="reader"></div>
+            </div>
+             <div id="successAnimation" style="display:none; text-align:center;" class="mb-4">
+                <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px; margin: 0 auto;"  autoplay loop></dotlottie-wc>
+            </div>
+            <div id="failedAnimation" style="display:none; text-align:center;" class="mb-4">
+                <dotlottie-wc src="https://lottie.host/b8f1b3ee-de1b-4b39-ba80-4f3bc61b8f6b/GWE4EE0dMM.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
+            </div>
+            <div id="errorAnimation" style="display:none; text-align:center;" class="mb-4">
+                <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
+            </div>
             <small id="scanResult" class="text-muted">
                 Waiting for scan...
             </small>
