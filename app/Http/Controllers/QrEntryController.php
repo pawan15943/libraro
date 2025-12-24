@@ -279,9 +279,6 @@ class QrEntryController extends Controller
     {
         try {
             Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
-          
-
-
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
            Log::info('STEP 2: Branch fetched', [
                 'branch_id' => $branch->id ?? null,
@@ -291,7 +288,6 @@ class QrEntryController extends Controller
             // Build validation rules
             $rules = [
                 'name'           => 'required|string|max:191',
-                // 'email'          => 'nullable|email|max:191|unique:bookings,email',
                 'mobile'         => 'required|integer|digits_between:8,15',
                 'seat_no'        => 'nullable',
                 'plan_id'        => 'required|integer|exists:plans,id',
@@ -339,9 +335,10 @@ class QrEntryController extends Controller
                 ->where('id', $request->learner_transaction_id)
                 ->first();
             Log::info('Transaction check', ['transaction' => $transactions]);
-
+             $learnerId = $transactions?->learner_id ?? null;
               if($request->seat_no){
-                $learnerId = $transactions?->learner_id ?? null;
+               
+                    
                 Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
                 $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
                 if ($validated_custom['error']) {
@@ -357,6 +354,47 @@ class QrEntryController extends Controller
                 }
                 
             }
+
+            if ($learnerId) {
+
+                $today        = Carbon::today();
+                $expiryLimit  = Carbon::today()->addDays(7);
+
+                /* 1️⃣ Active plan (if any) */
+                $activePlan = LearnerDetail::where('learner_id', $learnerId)
+                    ->where('status', 1)
+                    ->whereDate('plan_start_date', '<=', $today)
+                    ->whereDate('plan_end_date', '>=', $today)
+                    ->orderBy('plan_end_date', 'desc')
+                    ->first();
+
+                /* 2️⃣ Future plan check → HARD BLOCK */
+                $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
+                    ->whereDate('plan_start_date', '>', $today)
+                    ->exists();
+
+                if ($futurePlanExists) {
+                    return redirect()->route('renew.form', $uuid)
+                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
+                        ->withInput();
+                }
+
+                /* 3️⃣ If ACTIVE plan exists → check buffer window */
+                if ($activePlan) {
+
+                    $planEndDate = Carbon::parse($activePlan->plan_end_date);
+
+                    // ❌ Active & NOT in buffer days
+                    if ($planEndDate->gt($expiryLimit)) {
+                        return redirect()->route('renew.form', $uuid)
+                            ->with('error', 'Current plan is active and not eligible for renewal yet.')
+                            ->withInput();
+                    }
+
+                }
+
+            }
+
             if (!is_null($transactions)) {
 
                 $learnerId = $transactions->learner_id;
@@ -408,8 +446,7 @@ class QrEntryController extends Controller
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Log::warning('Validation failed', ['errors' => $e->errors()]);
-            // return redirect()->back()->withErrors($e->validator)->withInput();
+          
              Log::warning('VALIDATION EXCEPTION', [
                 'method' => request()->method(),
                 'url'    => request()->fullUrl(),
@@ -421,14 +458,7 @@ class QrEntryController extends Controller
                 ->withErrors($e->validator)
                 ->withInput();
         } catch (\Exception $e) {
-            // Log::error('Booking store error: '.$e->getMessage(), [
-            //     'request' => $request->all(),
-            //     'trace'   => $e->getTraceAsString(),
-            // ]);
-            // return redirect()->back()
-            //     ->with('error', 'Something went wrong while processing your booking. Please try again.')
-            //     ->withInput();
-
+           
              Log::error('BOOKING STORE CRASH', [
                 'method'  => request()->method(),
                 'url'     => request()->fullUrl(),
@@ -672,11 +702,7 @@ class QrEntryController extends Controller
             $extendDay = getExtendDays();
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-            if ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
-                $status = 1;
-            } else {
-                $status = 0;
-            }
+          
            $alreadyActive = false;
 
             if (!empty($request->learner_id)) {
@@ -696,6 +722,12 @@ class QrEntryController extends Controller
                 $detailStatus = 0;
             }
 
+            if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
+                $status = 1;
+            } else {
+                $status = 0;
+            }
+
             $is_paid = 1;
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
@@ -703,9 +735,50 @@ class QrEntryController extends Controller
                 $payment_mode = 0;
             }
             
-          
+           Log::info('FordetailStatus', ['status' => $status,'detailStatus'=>$detailStatus]);
 
             $learnerId=$request->learner_id;
+           
+            if ($learnerId) {
+
+                $today        = Carbon::today();
+                $expiryLimit  = Carbon::today()->addDays(7);
+
+                /* 1️⃣ Active plan (if any) */
+                $activePlan = LearnerDetail::where('learner_id', $learnerId)
+                    ->where('status', 1)
+                    ->whereDate('plan_start_date', '<=', $today)
+                    ->whereDate('plan_end_date', '>=', $today)
+                    ->orderBy('plan_end_date', 'desc')
+                    ->first();
+
+                /* 2️⃣ Future plan check → HARD BLOCK */
+                $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
+                    ->whereDate('plan_start_date', '>', $today)
+                    ->exists();
+
+                if ($futurePlanExists) {
+                    return redirect()->back()
+                        ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
+                        ->withInput();
+                }
+
+                /* 3️⃣ If ACTIVE plan exists → check buffer window */
+                if ($activePlan) {
+
+                    $planEndDate = Carbon::parse($activePlan->plan_end_date);
+
+                    // ❌ Active & NOT in buffer days
+                    if ($planEndDate->gt($expiryLimit)) {
+                        return redirect()->back()
+                            ->with('error', 'Current plan is active and not eligible for renewal yet.')
+                            ->withInput();
+                    }
+
+                }
+
+            }
+
 
             if($seat_no){
                 $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
@@ -752,6 +825,7 @@ class QrEntryController extends Controller
                 $customer=Learner::find($request->learner_id);
                 $customer->seat_no=$seat_no;
                 $customer->hours=$hours;
+                $customer->status=$status;
                 $customer->save();
             }else{
                
@@ -856,7 +930,7 @@ class QrEntryController extends Controller
         return view('qrcode.renew_form', compact('branch'));
     }
 
-   public function findCustomer(Request $request, $uuid)
+    public function findCustomer(Request $request, $uuid)
     {
         $request->validate([
             'mobile' => 'required|digits:10',
@@ -894,35 +968,127 @@ class QrEntryController extends Controller
         return response()->json(['success' => true]);
     }
 
-     public function getPlanTypeSeatWise(Request $request)
-    {
-        Log::info('Branchrequest', ['request' => $request]);
-        $seatNo = $request->seatNo;
-        if($request->branchId){
-            $branch_id=$request->branchId;
-        }else{
-            $branch_id=getCurrentBranch();
-        }
+    //  public function getPlanTypeSeatWise(Request $request)
+    // {
+    //     Log::info('Branchrequest', ['request' => $request]);
+    //     $seatNo = $request->seatNo;
+    //     if($request->branchId){
+    //         $branch_id=$request->branchId;
+    //     }else{
+    //         $branch_id=getCurrentBranch();
+    //     }
        
-        $branchData=Branch::where('id',$branch_id)->select('library_id')->first();
-         Log::info('branchData', ['branchData' => $branchData]);
-         // Step 1: Retrieve all bookings for the given seat
-            $bookings = Learner::withoutGlobalScopes()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')   
+    //     $branchData=Branch::where('id',$branch_id)->select('library_id')->first();
+    //      Log::info('branchData', ['branchData' => $branchData]);
+    //      // Step 1: Retrieve all bookings for the given seat
+    //         $bookings = Learner::withoutGlobalScopes()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')   
+    //             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+    //             ->where('learner_detail.seat_no', $seatNo)
+    //             ->where('learners.status', 1)
+    //             ->where('learner_detail.status', 1)
+    //             ->where('learners.branch_id', $branch_id)
+    //             ->where('learner_detail.branch_id', $branch_id)
+    //             ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+    //     if ($seatNo && $bookings) {
+
+    //         // Step 2: Retrieve all plan types
+    //         $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
+    //         Log::info('Plan types fetched', [
+    //             'count' => $planTypes->count(),
+    //             'plan_type_ids' => $planTypes->pluck('id')
+    //         ]);
+
+    //         // Step 3: Initialize an array to store the plan_type_ids to be removed
+    //         $planTypesRemovals = [];
+
+    //         // Step 4: Calculate total booked hours for the seat
+    //         $totalBookedHours = $bookings->sum('slot_hours');
+
+    //         $nightseatBooked = LearnerDetail::withoutGlobalScopes()->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
+
+    //         // Step 5: Determine conflicts based on plan_type_id and hours
+    //         $planTypeId = null;
+    //         if ($totalBookedHours < 24) {
+
+    //             foreach ($bookings as $booking) {
+    //                 foreach ($planTypes as $planType) {
+                        
+    //                     if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+    //                         $planTypesRemovals[] = $planType->id;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         if ($totalBookedHours > 1) {
+    //             $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
+    //         }
+
+    //         if (!is_null($planTypeId)) {
+    //             $planTypesRemovals[] = $planTypeId;
+    //         }
+    //         if ($nightseatBooked) {
+    //             $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+    //             $planTypesRemovals[] = $planTypeid;
+    //         }
+    //         // Remove duplicate entries in planTypesRemovals
+    //         $planTypesRemovals = array_unique($planTypesRemovals);
+
+    //         // If total booked hours >= 16, all plan types should be removed
+    //         $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
+    //         $total_hour = $first_record ? $first_record->hour : null;
+
+    //         if ($totalBookedHours >= $total_hour) {
+    //             $planTypesRemovals = $planTypes->pluck('id')->toArray();
+    //         }
+    //         // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
+    //         if ($total_hour < 24) {
+    //             $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+    //             $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
+    //         }
+    //         // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
+    //         $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
+    //             return !in_array($planType->id, $planTypesRemovals);
+    //         })->map(function ($planType) {
+    //             return ['id' => $planType->id, 'name' => $planType->name];
+    //         })->values(); // Ensure the keys are reset to a continuous numerical index
+    //     } else {
+
+    //         $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
+    //         $total_hour = $first_record ? $first_record->hour : null;
+
+    //         if ($total_hour < 24) {
+    //             $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
+    //                 ->select('id', 'name')
+    //                 ->get();
+    //         } else {
+    //             $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->select('id', 'name')->get();
+    //         }
+
+    //     }
+
+    //     // Return the filtered plan types as JSON
+    //     return response()->json($filteredPlanTypes);
+    // }
+
+     public function getPlanTypeForRenew(Request $request)
+    {
+
+        $seatNo = $request->seatNo;
+        if ($seatNo) {
+
+
+            // Step 1: Retrieve all bookings for the given seat
+            $bookings = $this->getLearnersByLibrary()
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
-                ->where('learners.branch_id', $branch_id)
-                ->where('learner_detail.branch_id', $branch_id)
+                ->where('learners.branch_id', getCurrentBranch())
+                ->where('learner_detail.branch_id', getCurrentBranch())
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-        if ($seatNo && $bookings) {
 
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
-            Log::info('Plan types fetched', [
-                'count' => $planTypes->count(),
-                'plan_type_ids' => $planTypes->pluck('id')
-            ]);
+            $planTypes = PlanType::get();
 
             // Step 3: Initialize an array to store the plan_type_ids to be removed
             $planTypesRemovals = [];
@@ -930,7 +1096,7 @@ class QrEntryController extends Controller
             // Step 4: Calculate total booked hours for the seat
             $totalBookedHours = $bookings->sum('slot_hours');
 
-            $nightseatBooked = LearnerDetail::withoutGlobalScopes()->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
+            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
 
             // Step 5: Determine conflicts based on plan_type_id and hours
             $planTypeId = null;
@@ -938,7 +1104,6 @@ class QrEntryController extends Controller
 
                 foreach ($bookings as $booking) {
                     foreach ($planTypes as $planType) {
-                        
                         if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
                             $planTypesRemovals[] = $planType->id;
                         }
@@ -946,21 +1111,21 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
                 $planTypesRemovals[] = $planTypeId;
             }
             if ($nightseatBooked) {
-                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.branch_id', $branch_id)->where('plan_types.library_id', $branchData->library_id)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
                 $planTypesRemovals[] = $planTypeid;
             }
             // Remove duplicate entries in planTypesRemovals
             $planTypesRemovals = array_unique($planTypesRemovals);
 
             // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
+            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($totalBookedHours >= $total_hour) {
@@ -968,7 +1133,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -979,23 +1144,38 @@ class QrEntryController extends Controller
             })->values(); // Ensure the keys are reset to a continuous numerical index
         } else {
 
-            $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branch_id)->first();
+            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
+                $filteredPlanTypes = PlanType::whereNotIn('day_type_id', [8, 9])
                     ->select('id', 'name')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::select('id', 'name')->get();
             }
 
         }
+        if ($request->filled('planType')) {
 
+            $selectedPlan = PlanType::where('id', $request->planType)
+            ->select('id', 'name')
+            ->first();
+
+            if ($selectedPlan) {
+                $exists = collect($filteredPlanTypes)->contains('id', $selectedPlan->id);
+
+                if (!$exists) {
+                    $filteredPlanTypes = collect($filteredPlanTypes)
+                        ->push([
+                            'id'   => $selectedPlan->id,
+                            'name' => $selectedPlan->name
+                        ])
+                        ->values();
+                }
+            }
+        }
         // Return the filtered plan types as JSON
         return response()->json($filteredPlanTypes);
     }
-
-
-
 }
