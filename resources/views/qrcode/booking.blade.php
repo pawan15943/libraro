@@ -1,7 +1,7 @@
 @extends('sitelayouts.layout')
 @section('content')
 
-<section class="sacnd-data py-5">
+<section class="py-3">
 
     <div class="container">
         <!-- resources/views/booking/form.blade.php -->
