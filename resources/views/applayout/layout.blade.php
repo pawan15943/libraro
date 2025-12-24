@@ -348,28 +348,36 @@
     audioError.preload   = 'auto';
 
     lucide.createIcons();
-
     let scanner = null;
     let scanLock = false;
+    let isSubmitting = false;      // 🚫 prevents double submit
+    let lastQr = null;
+    let lastQrTime = 0;
+
+    const QR_COOLDOWN = 15000; // 15 seconds
+
+
+    
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('active');
     }
 
     function navigate(id) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.getElementById('sidebar').classList.remove('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('sidebar').classList.remove('active');
 
-      if (id === 'scan') {
-          // ✅ RESET STATE WHEN COMING BACK
-          scanLock = false;
-          document.getElementById('scanner-wrapper').style.display = 'block';
-          startScanner();
-      } else {
-          stopScanner();
-      }
-  }
+        if (id === 'scan') {
+            scanLock = false;
+            isSubmitting = false;
+            document.getElementById('scanner-wrapper').style.display = 'block';
+            startScanner();
+        } else {
+            stopScanner();
+        }
+    }
+
 
 
     function setScanMessage(message, type = 'success') {
@@ -408,7 +416,7 @@
        if (scanner) return;
 
         scanLock = false;
-
+        isSubmitting = false;
         document.getElementById('scanResult').innerText = 'Waiting for scan...';
         document.getElementById('scanResult').className = 'text-muted';
 
@@ -419,14 +427,21 @@
             { fps: 10, qrbox: 250 },
             qr => {
                   
-                if (scanLock) {
-                    
-                    return;
-                }
-                scanLock = true;
-                stopScanner(); 
+                 const now = Date.now();
 
-                submitScan(qr);
+                  // 🚫 SAME QR BLOCK
+                  if (qr === lastQr && (now - lastQrTime) < QR_COOLDOWN) {
+                      return;
+                  }
+
+                    // 🚫 HARD LOCKS
+                  if (scanLock || isSubmitting) return;
+                  scanLock = true;
+                  isSubmitting = true;
+                  lastQr = qr;
+                  lastQrTime = now;
+                  stopScanner(); 
+                  submitScan(qr);
 
             }
         ).catch(err => {
@@ -500,13 +515,16 @@
               document.getElementById('scanner-wrapper').style.display = 'none';
               animation.style.display = 'block';
 
-              // 🔁 Restart scanner AFTER animation
+               // 🕒 ONLY AFTER ANIMATION → NAVIGATE
               setTimeout(() => {
                   animation.style.display = 'none';
+                  isSubmitting = false;
                   scanLock = false;
                   stopScanner();
                   navigate('profile');
-              }, 5000);
+              }, 4000); // 👈 animation duration
+
+            
                 
 
         })

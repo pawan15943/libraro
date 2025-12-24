@@ -221,14 +221,17 @@ class AttendanceController extends Controller
             ], 403);
         }
         
+        // 2. Validate QR (your existing logic)
+        $branchId = $this->validateQrToken($request->qr);
+
           \Log::info('SESSION CHECK', [
             'verified' => session('attendance_verified'),
             'session_token' => session('verify_token'),
-            'request_token' => $request->verify_token
+            'request_token' => $request->verify_token,
+            'branchId'=>$branchId,
+            'request-qr'=>$request->qr
         ]);
 
-        // 2. Validate QR (your existing logic)
-        $branchId = $this->validateQrToken($request->qr);
         if (!$branchId) {
             return response()->json([
                 'status'  => 'error',
