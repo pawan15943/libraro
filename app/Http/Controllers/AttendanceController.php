@@ -178,10 +178,10 @@ class AttendanceController extends Controller
             return false;
         }
 
-        [$libraryId, $slot, $signature] = $parts;
+        [$branchId, $slot, $signature] = $parts;
 
         // STEP 3: Verify signature (ANTI-TAMPER)
-        $payload = $libraryId . '|' . $slot;
+        $payload = $branchId . '|' . $slot;
         $expectedSignature = hash_hmac(
             'sha256',
             $payload,
@@ -200,11 +200,11 @@ class AttendanceController extends Controller
         }
 
         // STEP 5: Final validation – library exists
-        if (!Branch::where('id', $libraryId)->exists()) {
+        if (!Branch::where('id', $branchId)->exists()) {
             return false;
         }
 
-        return (int)$libraryId;
+        return (int)$branchId;
     }
 
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
