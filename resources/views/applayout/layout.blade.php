@@ -360,8 +360,17 @@
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       document.getElementById('sidebar').classList.remove('active');
-      if (id === 'scan') startScanner(); else stopScanner();
-    }
+
+      if (id === 'scan') {
+          // ✅ RESET STATE WHEN COMING BACK
+          scanLock = false;
+          document.getElementById('scanner-wrapper').style.display = 'block';
+          startScanner();
+      } else {
+          stopScanner();
+      }
+  }
+
 
     function setScanMessage(message, type = 'success') {
         const msgEl = document.getElementById('scanResult');
@@ -396,7 +405,9 @@
       START SCANNER
     ========================= */
     function startScanner() {
+       if (scanner) return;
 
+        scanLock = false;
 
         document.getElementById('scanResult').innerText = 'Waiting for scan...';
         document.getElementById('scanResult').className = 'text-muted';
@@ -492,6 +503,8 @@
               // 🔁 Restart scanner AFTER animation
               setTimeout(() => {
                   animation.style.display = 'none';
+                  scanLock = false;
+                  stopScanner();
                   navigate('profile');
               }, 5000);
                 
