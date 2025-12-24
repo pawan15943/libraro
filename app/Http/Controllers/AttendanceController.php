@@ -226,7 +226,7 @@ class AttendanceController extends Controller
      * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
         * Same QR + same session → ignore for 15 seconds
         */
-       $cacheKey = 'attendance_hit_' . sha1($learnerId . session('verify_token'));
+         $cacheKey = 'attendance_hit_' . $learnerId;
 
         if (\Cache::has($cacheKey)) {
             return response()->json([
@@ -235,12 +235,10 @@ class AttendanceController extends Controller
             ]);
         }
 
-        \Cache::put($cacheKey, true, now()->addSeconds(8)); // debounce window
+        
         
         // 2. Validate QR (your existing logic)
         $branchId = $this->validateQrToken($request->qr);
-
-       
 
 
           \Log::info('SESSION CHECK', [
@@ -328,7 +326,7 @@ class AttendanceController extends Controller
                 ]);
             }
            
-
+            \Cache::put($cacheKey, true, now()->addSeconds(8)); // debounce window
         // session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'status'  => 'success',
