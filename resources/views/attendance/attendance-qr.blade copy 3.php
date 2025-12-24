@@ -109,42 +109,48 @@
     /* ============================
        START SCANNER
     ============================ */
-    function stopScanner() {
-        if (scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-                console.log('Scanner stopped');
-            }).catch(err => console.error(err));
-        }
-    }
-
+    
     function startScanner() {
 
+        // if (scanner) {
+        //     scanner.stop().then(() => {
+        //         scanner.clear();
+        //         scanner = null;
+        //         startScanner();
+        //     });
+        //     return;
+        // }
+
+        // const reader = document.getElementById('reader');
+        // if (!reader || reader.offsetHeight === 0) {
+        //     // alert('Scanner container not visible');
+        //     return;
+        // }
+
         if (scanner) return;
-            scanDone = false;
-            document.getElementById('scanMsg').innerText = '';
+        scanDone = false;
+        document.getElementById('scanMsg').innerText = '';
 
-            scanner = new Html5Qrcode("reader");
+        scanner = new Html5Qrcode("reader");
 
 
-            scanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                function(decodedText) {
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            function(decodedText) {
 
-                    if (scanDone) return; // ✅ one scan only
-                    scanDone = true;
-                    document.getElementById('scanMsg').innerText =
-                        'QR detected. Processing...';
-                    submitScan(decodedText);
-                }
+                if (scanDone) return; // ✅ one scan only
+                scanDone = true;
+                document.getElementById('scanMsg').innerText =
+                    'QR detected. Processing...';
+                submitScan(decodedText);
+            }
 
-                
-            ).catch(err => {
-                alert('Camera error: ' + err);
-                scanner = null;
-            });
+            
+        ).catch(err => {
+            alert('Camera error: ' + err);
+            scanner = null;
+        });
 
     }
     document.getElementById('stopScanner').addEventListener('click', function() {
@@ -164,7 +170,30 @@
 
     document.getElementById('startScanner').addEventListener('click', function() {
         startScanner();
-       
+        // if (scanner) return;
+        // scanDone = false;
+        // document.getElementById('scanMsg').innerText = '';
+
+        // scanner = new Html5Qrcode("reader");
+
+        // scanner.start({
+        //         facingMode: "environment"
+        //     }, {
+        //         fps: 10,
+        //         qrbox: 250
+        //     },
+        //     function(decodedText) {
+
+        //         if (scanDone) return; // ✅ one scan only
+        //         scanDone = true;
+        //         document.getElementById('scanMsg').innerText =
+        //             'QR detected. Processing...';
+        //         submitScan(decodedText);
+        //     }
+        // ).catch(err => {
+        //     alert('Camera error: ' + err);
+        //     scanner = null;
+        // });
     });
 
     /* ============================
@@ -203,7 +232,6 @@
                         document.getElementById('successAnimation').style.display = 'none';
                         document.getElementById('scanner-wrapper').style.display = 'block';
                     }, 5000);
-                    startScanner();
 
                 } else if (res.status === 'expired') {
                     audioExpired.play();
@@ -218,7 +246,7 @@
                         document.getElementById('failedAnimation').style.display = 'none';
                         document.getElementById('scanner-wrapper').style.display = 'block';
                     }, 5000);
-                    startScanner();
+
                 } else {
                     audioError.play();
                     // 🎉 Show success animation
@@ -232,11 +260,16 @@
                         document.getElementById('errorAnimation').style.display = 'none';
                         document.getElementById('scanner-wrapper').style.display = 'block';
                     }, 5000);
-                    startScanner();
                 } 
 
-               
-              
+               startScanner();
+                // ✅ Stop scanner properly
+                // if (scanner) {
+                //     scanner.stop().then(() => {
+                //         scanner.clear();
+                //         scanner = null;
+                //     });
+                // }
             })
             .catch(() => {
 
