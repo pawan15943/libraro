@@ -341,7 +341,7 @@
   <script>
     const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
     const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
-    const audioError   = new Audio("{{ asset('public/audio/error.mp3') }}");
+    const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
 
     audioSuccess.preload = 'auto';
     audioExpired.preload = 'auto';

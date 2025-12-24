@@ -42,6 +42,12 @@
             <div id="successAnimation" style="display:none; text-align:center;" class="mb-4">
                 <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px; margin: 0 auto;"  autoplay loop></dotlottie-wc>
             </div>
+            <div id="failedAnimation" style="display:none; text-align:center;" class="mb-4">
+                <dotlottie-wc src="https://lottie.host/b8f1b3ee-de1b-4b39-ba80-4f3bc61b8f6b/GWE4EE0dMM.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
+            </div>
+            <div id="errorAnimation" style="display:none; text-align:center;" class="mb-4">
+                <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
+            </div>
             <!-- <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
             <button class="btn btn-primary" id="startScanner"> Close Scanner </button> -->
             <p id="scanMsg" class="mt-2"> </p>
@@ -64,7 +70,7 @@
     let scanDone = false;
     const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
     const audioExpired = new Audio("{{asset('public/audio/expired.mp3')}}");
-    const audioError = new Audio("{{asset('public/audio/error.mp3')}}");
+    const audioError = new Audio("{{asset('public/audio/error.mpeg')}}");
     audioSuccess.preload = 'auto';
     audioExpired.preload = 'auto';
     audioError.preload = 'auto';
@@ -182,13 +188,35 @@
                     setTimeout(() => {
                         document.getElementById('successAnimation').style.display = 'none';
                         document.getElementById('scanner-wrapper').style.display = 'block';
-                    }, 3000);
+                    }, 5000);
 
                 } else if (res.status === 'expired') {
                     audioExpired.play();
+                    // 🎉 Show success animation
+                    document.getElementById('failedAnimation').style.display = 'block';
+
+                    // 📷 Hide scanner immediately
+                    document.getElementById('scanner-wrapper').style.display = 'none';
+
+                    // ⏱ Show scanner again AFTER 3 seconds
+                    setTimeout(() => {
+                        document.getElementById('failedAnimation').style.display = 'none';
+                        document.getElementById('scanner-wrapper').style.display = 'block';
+                    }, 5000);
 
                 } else {
                     audioError.play();
+                    // 🎉 Show success animation
+                    document.getElementById('errorAnimation').style.display = 'block';
+
+                    // 📷 Hide scanner immediately
+                    document.getElementById('scanner-wrapper').style.display = 'none';
+
+                    // ⏱ Show scanner again AFTER 3 seconds
+                    setTimeout(() => {
+                        document.getElementById('errorAnimation').style.display = 'none';
+                        document.getElementById('scanner-wrapper').style.display = 'block';
+                    }, 5000);
                 } 
 
                
