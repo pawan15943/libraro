@@ -410,14 +410,19 @@
             qr => {
                   
                 if (scanLock) {
-                    
-                    return;
-                }
-                scanLock = true;
-                stopScanner(); 
+                      return;
+                  }
+                  scanLock = true;
+                  // alert('PROCESSING QR'); 
+                  document.getElementById('scanResult').innerText =
+                      'QR detected. Processing...';
 
-                submitScan(qr);
+                  submitScan(qr);
 
+                  setTimeout(() => {
+                  scanLock = false;
+                  
+              }, 2000);
             }
         ).catch(err => {
             // alert('Camera error: ' + err);
