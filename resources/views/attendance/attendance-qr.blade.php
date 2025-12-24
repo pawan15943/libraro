@@ -177,21 +177,22 @@
                         document.getElementById('successAnimation').style.display = 'block';
                        document.getElementById('scanner-wrapper').style.display = 'none';
                     }, 300); 
-                   
+                    
+                    document.getElementById('scanner-wrapper').style.display = 'block';
                 } else if (res.status === 'expired') {
                     audioExpired.play();
                 } else {
                     audioError.play();
                 }
 
-
+               
                 // ✅ Stop scanner properly
-                if (scanner) {
-                    scanner.stop().then(() => {
-                        scanner.clear();
-                        scanner = null;
-                    });
-                }
+                // if (scanner) {
+                //     scanner.stop().then(() => {
+                //         scanner.clear();
+                //         scanner = null;
+                //     });
+                // }
             })
             .catch(() => {
 
