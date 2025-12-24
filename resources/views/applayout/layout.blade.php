@@ -495,7 +495,7 @@
               setTimeout(() => {
                   animation.style.display = 'none';
                   document.getElementById('scanner-wrapper').style.display = 'block';
-                  scanDone = false;
+                 
                   startScanner();
               }, 5000);
 
