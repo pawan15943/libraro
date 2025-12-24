@@ -109,7 +109,7 @@
     /* ============================
        START SCANNER
     ============================ */
-   function stopScanner() {
+    function stopScanner() {
         if (scanner) {
             return scanner.stop()
                 .then(() => {

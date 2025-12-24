@@ -18,7 +18,7 @@
 
   <!-- QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-
+  <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js" type="module"></script>
   <style>
     :root {
       --navy: #000050;
@@ -362,164 +362,165 @@
       if (id === 'scan') startScanner(); else stopScanner();
     }
 
-   /* =========================
-   START SCANNER
-========================= */
-function startScanner() {
+      /* =========================
+      START SCANNER
+    ========================= */
+    function startScanner() {
 
-     if (scanner) {
-        scanner.stop().then(() => {
-            scanner.clear();
-            scanner = null;
-            startScanner();
-        });
-        return;
-    }
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+                startScanner();
+            });
+            return;
+        }
 
-    const reader = document.getElementById('reader');
-    if (!reader || reader.offsetHeight === 0) {
-        // alert('Scanner container not visible');
-        return;
-    }
+        const reader = document.getElementById('reader');
+        if (!reader || reader.offsetHeight === 0) {
+            // alert('Scanner container not visible');
+            return;
+        }
 
-    scanner = new Html5Qrcode("reader");
+        scanner = new Html5Qrcode("reader");
 
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        qr => {
-              
-            if (scanLock) {
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            qr => {
+                  
+                if (scanLock) {
+                    
+                    return;
+                }
+                scanLock = true;
+                // alert('PROCESSING QR'); 
+                document.getElementById('scanResult').innerText =
+                    'QR detected. Processing...';
+
+                submitScan(qr);
+
+                setTimeout(() => {
+                scanLock = false;
                 
-                return;
+            }, 2000);
+
             }
-            scanLock = true;
-            // alert('PROCESSING QR'); 
-            document.getElementById('scanResult').innerText =
-                'QR detected. Processing...';
-
-            submitScan(qr);
-
-            setTimeout(() => {
-            scanLock = false;
-            
-        }, 2000);
-
-        }
-    ).catch(err => {
-        // alert('Camera error: ' + err);
-        scanner = null;
-    });
-}
-
-/* =========================
-   STOP SCANNER
-========================= */
-function stopScanner() {
-    if (scanner) {
-        scanner.stop().then(() => {
-            scanner.clear();
+        ).catch(err => {
+            // alert('Camera error: ' + err);
             scanner = null;
-            document.getElementById('reader').innerHTML = '';
         });
     }
-}
 
- function setScanMessage(message, type = 'success') {
-        const msgEl = document.getElementById('scanResult');
-
-        msgEl.innerText = message;
-
-        // Remove old classes
-        msgEl.classList.remove('text-success', 'text-danger');
-
-        // Add new class
-        if (type === 'success') {
-            msgEl.classList.add('text-success');
-        } else {
-            msgEl.classList.add('text-danger');
+    /* =========================
+      STOP SCANNER
+    ========================= */
+    function stopScanner() {
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+                document.getElementById('reader').innerHTML = '';
+            });
         }
     }
 
-/* =========================
-   SUBMIT SCAN (BACKEND)
-========================= */
-function submitScan(qrText) {
-  alert("submitscan");
-    const verifyToken = localStorage.getItem('verify_token');
-    if (!verifyToken) {
-        audioError.play();
-        document.getElementById('scanResult').innerText =
-            'Verification expired. Please login again.';
-        stopScanner();
-        return;
+    function setScanMessage(message, type = 'success') {
+            const msgEl = document.getElementById('scanResult');
+
+            msgEl.innerText = message;
+
+            // Remove old classes
+            msgEl.classList.remove('text-success', 'text-danger');
+
+            // Add new class
+            if (type === 'success') {
+                msgEl.classList.add('text-success');
+            } else {
+                msgEl.classList.add('text-danger');
+            }
+        }
+
+    /* =========================
+      SUBMIT SCAN (BACKEND)
+    ========================= */
+    function submitScan(qrText) {
+      alert("submitscan");
+        const verifyToken = localStorage.getItem('verify_token');
+        if (!verifyToken) {
+            audioError.play();
+            document.getElementById('scanResult').innerText =
+                'Verification expired. Please login again.';
+            stopScanner();
+            return;
+        }
+
+        fetch("{{ route('store.scan.attendance') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                qr: qrText,
+                verify_token: verifyToken
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+
+          
+            const scanMsg = document.getElementById('scanResult');
+              if (res.status === 'success') {
+                  setScanMessage(res.message, 'success');
+              } else {
+                  setScanMessage(res.message, 'danger');
+              }
+            // Hide all animations
+              successAnimation.style.display = 'none';
+              failedAnimation.style.display  = 'none';
+              errorAnimation.style.display   = 'none';
+
+              let animation;
+              let audio;
+
+              if (res.status === 'success') {
+                  animation = successAnimation;
+                  audio = audioSuccess;
+              } 
+              else if (res.status === 'expired') {
+                  animation = failedAnimation;
+                  audio = audioExpired;
+              } 
+              else {
+                  animation = errorAnimation;
+                  audio = audioError;
+              }
+
+              audio.play();
+
+              // Hide scanner UI
+              document.getElementById('scanner-wrapper').style.display = 'none';
+              animation.style.display = 'block';
+
+              // 🔁 Restart scanner AFTER animation
+              setTimeout(() => {
+                  animation.style.display = 'none';
+                  document.getElementById('scanner-wrapper').style.display = 'block';
+                  scanDone = false;
+                  startScanner();
+              }, 5000);
+
+        })
+        .catch(() => {
+            // audioError.play();
+            document.getElementById('scanResult').innerText =
+                'Network error. Try again.';
+            // stopScanner();
+        });
     }
 
-    fetch("{{ route('store.scan.attendance') }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            qr: qrText,
-            verify_token: verifyToken
-        })
-    })
-    .then(res => res.json())
-    .then(res => {
-
-       
-        const scanMsg = document.getElementById('scanResult');
-          if (res.status === 'success') {
-              setScanMessage(res.message, 'success');
-          } else {
-              setScanMessage(res.message, 'danger');
-          }
-        // Hide all animations
-          successAnimation.style.display = 'none';
-          failedAnimation.style.display  = 'none';
-          errorAnimation.style.display   = 'none';
-
-          let animation;
-          let audio;
-
-          if (res.status === 'success') {
-              animation = successAnimation;
-              audio = audioSuccess;
-          } 
-          else if (res.status === 'expired') {
-              animation = failedAnimation;
-              audio = audioExpired;
-          } 
-          else {
-              animation = errorAnimation;
-              audio = audioError;
-          }
-
-          audio.play();
-
-          // Hide scanner UI
-          document.getElementById('scanner-wrapper').style.display = 'none';
-          animation.style.display = 'block';
-
-          // 🔁 Restart scanner AFTER animation
-          setTimeout(() => {
-              animation.style.display = 'none';
-              document.getElementById('scanner-wrapper').style.display = 'block';
-              scanDone = false;
-              startScanner();
-          }, 5000);
-
-    })
-    .catch(() => {
-        // audioError.play();
-        document.getElementById('scanResult').innerText =
-            'Network error. Try again.';
-        // stopScanner();
-    });
-}
-  </script>
+</script>
 
 </body>
 
