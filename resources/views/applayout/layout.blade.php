@@ -339,13 +339,7 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script>
-    const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
-    const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
-    const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
-
-    audioSuccess.preload = 'auto';
-    audioExpired.preload = 'auto';
-    audioError.preload   = 'auto';
+  
     lucide.createIcons();
 
     let scanner = null;
@@ -362,165 +356,148 @@
       if (id === 'scan') startScanner(); else stopScanner();
     }
 
-      /* =========================
-      START SCANNER
-    ========================= */
-    function startScanner() {
+</script>
 
-        if (scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-                startScanner();
-            });
-            return;
-        }
+<script>
+const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
+const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
+const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
 
-        const reader = document.getElementById('reader');
-        if (!reader || reader.offsetHeight === 0) {
-            // alert('Scanner container not visible');
-            return;
-        }
+audioSuccess.preload = 'auto';
+audioExpired.preload = 'auto';
+audioError.preload   = 'auto';
 
-        scanner = new Html5Qrcode("reader");
+let scanner = null;
+let scanLock = false;
 
-        scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            qr => {
-                  
-                if (scanLock) {
-                    
-                    return;
-                }
-                scanLock = true;
-                // alert('PROCESSING QR'); 
-                document.getElementById('scanResult').innerText =
-                    'QR detected. Processing...';
+/* =========================
+   MESSAGE HELPER
+========================= */
+function setScanMessage(message, type = 'success') {
+    const el = document.getElementById('scanResult');
+    el.innerText = message;
+    el.classList.remove('text-success', 'text-danger', 'text-muted');
+    el.classList.add(type === 'success' ? 'text-success' : 'text-danger');
+}
 
-                submitScan(qr);
-
-                setTimeout(() => {
-                scanLock = false;
-                
-            }, 2000);
-
-            }
-        ).catch(err => {
-            // alert('Camera error: ' + err);
+/* =========================
+   STOP SCANNER (HARD STOP)
+========================= */
+function stopScanner() {
+    if (scanner) {
+        return scanner.stop().then(() => {
+            scanner.clear();
+            scanner = null;
+        }).catch(() => {
             scanner = null;
         });
     }
+    return Promise.resolve();
+}
 
-    /* =========================
-      STOP SCANNER
-    ========================= */
-    function stopScanner() {
-        if (scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-                document.getElementById('reader').innerHTML = '';
-            });
+/* =========================
+   START SCANNER
+========================= */
+function startScanner() {
+    scanLock = false;
+
+    document.getElementById('scanResult').innerText = 'Waiting for scan...';
+    document.getElementById('scanResult').className = 'text-muted';
+
+    scanner = new Html5Qrcode("reader");
+
+    scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        qrText => {
+            if (scanLock) return;
+
+            scanLock = true;          // 🔒 HARD LOCK
+            stopScanner();            // ❌ STOP CAMERA IMMEDIATELY
+            submitScan(qrText);
         }
+    ).catch(err => {
+        console.error(err);
+        scanner = null;
+    });
+}
+
+/* =========================
+   SUBMIT SCAN
+========================= */
+function submitScan(qrText) {
+
+    const verifyToken = localStorage.getItem('verify_token');
+    if (!verifyToken) {
+        audioError.play();
+        setScanMessage('Verification expired. Please login again.', 'danger');
+        return;
     }
 
-    function setScanMessage(message, type = 'success') {
-            const msgEl = document.getElementById('scanResult');
+    fetch("{{ route('store.scan.attendance') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            qr: qrText,
+            verify_token: verifyToken
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
 
-            msgEl.innerText = message;
+        // Hide all animations
+        successAnimation.style.display = 'none';
+        failedAnimation.style.display  = 'none';
+        errorAnimation.style.display   = 'none';
 
-            // Remove old classes
-            msgEl.classList.remove('text-success', 'text-danger');
+        let animation, audio;
 
-            // Add new class
-            if (type === 'success') {
-                msgEl.classList.add('text-success');
-            } else {
-                msgEl.classList.add('text-danger');
-            }
+        if (res.status === 'success') {
+            setScanMessage(res.message, 'success');
+            animation = successAnimation;
+            audio = audioSuccess;
+        }
+        else if (res.status === 'expired') {
+            setScanMessage(res.message, 'danger');
+            animation = failedAnimation;
+            audio = audioExpired;
+        }
+        else {
+            setScanMessage(res.message, 'danger');
+            animation = errorAnimation;
+            audio = audioError;
         }
 
-    /* =========================
-      SUBMIT SCAN (BACKEND)
-    ========================= */
-    function submitScan(qrText) {
-      alert("submitscan");
-        const verifyToken = localStorage.getItem('verify_token');
-        if (!verifyToken) {
-            audioError.play();
-            document.getElementById('scanResult').innerText =
-                'Verification expired. Please login again.';
-            stopScanner();
-            return;
-        }
+        audio.play();
 
-        fetch("{{ route('store.scan.attendance') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                qr: qrText,
-                verify_token: verifyToken
-            })
-        })
-        .then(res => res.json())
-        .then(res => {
+        document.getElementById('scanner-wrapper').style.display = 'none';
+        animation.style.display = 'block';
 
-          
-            const scanMsg = document.getElementById('scanResult');
-              if (res.status === 'success') {
-                  setScanMessage(res.message, 'success');
-              } else {
-                  setScanMessage(res.message, 'danger');
-              }
-            // Hide all animations
-              successAnimation.style.display = 'none';
-              failedAnimation.style.display  = 'none';
-              errorAnimation.style.display   = 'none';
+        // ⏱ Restart AFTER animation
+        setTimeout(() => {
+            animation.style.display = 'none';
+            document.getElementById('scanner-wrapper').style.display = 'block';
+            startScanner();
+        }, 5000);
+    })
+    .catch(() => {
+        audioError.play();
+        setScanMessage('Network error. Try again.', 'danger');
+        startScanner();
+    });
+}
 
-              let animation;
-              let audio;
-
-              if (res.status === 'success') {
-                  animation = successAnimation;
-                  audio = audioSuccess;
-              } 
-              else if (res.status === 'expired') {
-                  animation = failedAnimation;
-                  audio = audioExpired;
-              } 
-              else {
-                  animation = errorAnimation;
-                  audio = audioError;
-              }
-
-              audio.play();
-
-              // Hide scanner UI
-              document.getElementById('scanner-wrapper').style.display = 'none';
-              animation.style.display = 'block';
-
-              // 🔁 Restart scanner AFTER animation
-              setTimeout(() => {
-                  animation.style.display = 'none';
-                  document.getElementById('scanner-wrapper').style.display = 'block';
-                  scanDone = false;
-                  startScanner();
-              }, 5000);
-
-        })
-        .catch(() => {
-            // audioError.play();
-            document.getElementById('scanResult').innerText =
-                'Network error. Try again.';
-            // stopScanner();
-        });
-    }
-
+/* =========================
+   AUTO START
+========================= */
+document.addEventListener('DOMContentLoaded', () => {
+    startScanner();
+});
 </script>
+
 
 </body>
 
