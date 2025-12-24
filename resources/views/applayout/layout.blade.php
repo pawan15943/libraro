@@ -493,10 +493,9 @@
               // 🔁 Restart scanner AFTER animation
               setTimeout(() => {
                   animation.style.display = 'none';
-                  document.getElementById('scanner-wrapper').style.display = 'block';
-                 
-                  startScanner();
+                  navigate('profile');
               }, 5000);
+                
 
         })
         .catch(() => {
