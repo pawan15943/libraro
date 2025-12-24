@@ -169,21 +169,27 @@
                 document.getElementById('scanMsg').innerText = res.message;
                         // Hide animation by default
                 document.getElementById('successAnimation').style.display = 'none';
-                // 🔊 PLAY SOUND BASED ON MESSAGE
                 if (res.status === 'success') {
                     audioSuccess.play();
-                     // 🎉 Show animation AFTER sound starts
+
+                    // 🎉 Show success animation
+                    document.getElementById('successAnimation').style.display = 'block';
+
+                    // 📷 Hide scanner immediately
+                    document.getElementById('scanner-wrapper').style.display = 'none';
+
+                    // ⏱ Show scanner again AFTER 3 seconds
                     setTimeout(() => {
-                        document.getElementById('successAnimation').style.display = 'block';
-                       document.getElementById('scanner-wrapper').style.display = 'none';
-                    }, 300); 
-                    
-                    document.getElementById('scanner-wrapper').style.display = 'block';
+                        document.getElementById('successAnimation').style.display = 'none';
+                        document.getElementById('scanner-wrapper').style.display = 'block';
+                    }, 3000);
+
                 } else if (res.status === 'expired') {
                     audioExpired.play();
+
                 } else {
                     audioError.play();
-                }
+                } 
 
                
                 // ✅ Stop scanner properly
