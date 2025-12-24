@@ -407,30 +407,24 @@
         scanner.start(
             { facingMode: "environment" },
             { fps: 10, qrbox: 250 },
-          qr => {
+            qr => {
+                  
+                if (scanLock) {
+                    
+                    return;
+                }
+                scanLock = true;
+                stopScanner(); 
 
-              const now = Date.now();
+                submitScan(qr);
 
-              // 🚫 SAME QR BLOCK
-              if (qr === lastScannedQr && (now - lastScanTime) < QR_COOLDOWN_MS) {
-                  return;
-              }
-
-              if (scanLock) return;
-
-              scanLock = true;
-              lastScannedQr = qr;
-              lastScanTime = now;
-
-              stopScanner();
-              submitScan(qr);
-          }
+            }
         ).catch(err => {
             // alert('Camera error: ' + err);
             scanner = null;
         });
 
-
+        
     }
 
    
