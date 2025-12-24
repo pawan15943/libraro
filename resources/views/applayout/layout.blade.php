@@ -354,7 +354,7 @@
     let lastQr = null;
     let lastQrTime = 0;
 
-    const QR_COOLDOWN = 15000; // 15 seconds
+    const QR_COOLDOWN = 10000; // 15 seconds
 
 
     
