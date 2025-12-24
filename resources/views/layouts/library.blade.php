@@ -122,6 +122,10 @@
                     </a>
                 </li>
                 @endcan
+
+
+
+
                 @can('has-permission', 'Search Learner')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
                     class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
@@ -130,6 +134,12 @@
                     </a>
                 </li>
                 @endcan
+
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-placement="left" data-bs-title="Seat Booking QR">
+                    <a href="{{ route('library.video-training') }}">
+                        <i class="fa fa-qrcode fa-2x"></i>
+                    </a>
+                </li>
 
                 @can('has-permission', 'Add Daily Expense')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
@@ -488,7 +498,7 @@
             $('#countsContainer').hide(); // Initially hide the counts container
 
             $('#filter').on('click', function(e) {
-                
+
                 e.preventDefault(); // Prevent default action
                 $('#filterContainer').toggle(); // Toggle visibility
             });
