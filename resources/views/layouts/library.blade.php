@@ -124,11 +124,7 @@
                 @endcan
 
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-placement="left" data-bs-title="Seat Booking QR">
-                    <a href="{{ route('library.video-training') }}">
-                        <i class="fa fa-qrcode fa-2x"></i>
-                    </a>
-                </li>
+
 
                 @can('has-permission', 'Search Learner')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
@@ -138,6 +134,12 @@
                     </a>
                 </li>
                 @endcan
+
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-placement="left" data-bs-title="Seat Booking QR">
+                    <a href="{{ route('library.video-training') }}">
+                        <i class="fa fa-qrcode fa-2x"></i>
+                    </a>
+                </li>
 
                 @can('has-permission', 'Add Daily Expense')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"
