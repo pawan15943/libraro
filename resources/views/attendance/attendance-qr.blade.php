@@ -28,7 +28,7 @@
             <p class="text-center text-muted">Scan this QR to Mark your Attendance</p>
             <img id="qrImg" class="img-fluid mb-2" style="max-width:300px;">
             <p id="qrMsg" class="mt-2">
-                {{-- <dotlottie-wc src="https://lottie.host/79d3a6d1-4651-47a2-8204-6780dff68b52/BS5YmTvc3K.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc> --}}
+              
             </p>
         </div>
 
@@ -48,8 +48,7 @@
             <div id="errorAnimation" style="display:none; text-align:center;" class="mb-4">
                 <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
             </div>
-            <!-- <div id="reader" style="width:300px;height:300px;margin:auto;"></div>
-            <button class="btn btn-primary" id="startScanner"> Close Scanner </button> -->
+           
             <p id="scanMsg" class="mt-2"></p>
             
 
@@ -110,49 +109,36 @@
     /* ============================
        START SCANNER
     ============================ */
+    function stopScanner() {
+        if (scanner) {
+            scanner.stop().then(() => {
+                scanner.clear();
+                scanner = null;
+                console.log('Scanner stopped');
+            }).catch(err => console.error(err));
+        }
+    }
+
     function startScanner() {
-
-        // if (scanner) {
-        //     scanner.stop().then(() => {
-        //         scanner.clear();
-        //         scanner = null;
-        //         startScanner();
-        //     });
-        //     return;
-        // }
-
-        // const reader = document.getElementById('reader');
-        // if (!reader || reader.offsetHeight === 0) {
-        //     // alert('Scanner container not visible');
-        //     return;
-        // }
-
-        if (scanner) return;
         scanDone = false;
         document.getElementById('scanMsg').innerText = '';
 
         scanner = new Html5Qrcode("reader");
 
-
         scanner.start(
             { facingMode: "environment" },
             { fps: 10, qrbox: 250 },
-            function(decodedText) {
-
-                if (scanDone) return; // ✅ one scan only
+            decodedText => {
+                if (scanDone) return;
                 scanDone = true;
-                document.getElementById('scanMsg').innerText =
-                    'QR detected. Processing...';
                 submitScan(decodedText);
             }
-
-            
         ).catch(err => {
-            alert('Camera error: ' + err);
             scanner = null;
+            alert(err);
         });
-
     }
+
     document.getElementById('stopScanner').addEventListener('click', function() {
         if (scanner) {
             scanner.stop()
@@ -200,91 +186,62 @@
        SUBMIT SCAN (SINGLE VERSION)
     ============================ */
     function submitScan(qrText) {
-        alert('submit scanner');
+
+        stopScanner();            // ✅ MUST stop camera
+        scanDone = true;          // block duplicate scans
+
         fetch("{{ route('library.attendance.scan') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    qr: qrText
-                })
-            })
-            .then(res => res.json())
-            .then(res => {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ qr: qrText })
+        })
+        .then(res => res.json())
+        .then(res => {
 
-                // ✅ Show message
-                document.getElementById('scanMsg').innerText = res.message;
-                        // Hide animation by default
-                document.getElementById('successAnimation').style.display = 'none';
-                if (res.status === 'success') {
-                    audioSuccess.play();
+            document.getElementById('scanMsg').innerText = res.message;
 
-                    // 🎉 Show success animation
-                    document.getElementById('successAnimation').style.display = 'block';
+            // hide all animations
+            successAnimation.style.display = 'none';
+            failedAnimation.style.display = 'none';
+            errorAnimation.style.display = 'none';
 
-                    // 📷 Hide scanner immediately
-                    document.getElementById('scanner-wrapper').style.display = 'none';
+            let animation;
 
-                    // ⏱ Show scanner again AFTER 3 seconds
-                    setTimeout(() => {
-                        document.getElementById('successAnimation').style.display = 'none';
-                        document.getElementById('scanner-wrapper').style.display = 'block';
-                    }, 5000);
-
-                } else if (res.status === 'expired') {
-                    audioExpired.play();
-                    // 🎉 Show success animation
-                    document.getElementById('failedAnimation').style.display = 'block';
-
-                    // 📷 Hide scanner immediately
-                    document.getElementById('scanner-wrapper').style.display = 'none';
-
-                    // ⏱ Show scanner again AFTER 3 seconds
-                    setTimeout(() => {
-                        document.getElementById('failedAnimation').style.display = 'none';
-                        document.getElementById('scanner-wrapper').style.display = 'block';
-                    }, 5000);
-
-                } else {
-                    audioError.play();
-                    // 🎉 Show success animation
-                    document.getElementById('errorAnimation').style.display = 'block';
-
-                    // 📷 Hide scanner immediately
-                    document.getElementById('scanner-wrapper').style.display = 'none';
-
-                    // ⏱ Show scanner again AFTER 3 seconds
-                    setTimeout(() => {
-                        document.getElementById('errorAnimation').style.display = 'none';
-                        document.getElementById('scanner-wrapper').style.display = 'block';
-                    }, 5000);
-                } 
-
-               startScanner();
-                // ✅ Stop scanner properly
-                // if (scanner) {
-                //     scanner.stop().then(() => {
-                //         scanner.clear();
-                //         scanner = null;
-                //     });
-                // }
-            })
-            .catch(() => {
-
-                document.getElementById('scanMsg').innerText =
-                    'Network error. Try again.';
+            if (res.status === 'success') {
+                audioSuccess.play();
+                animation = successAnimation;
+            } 
+            else if (res.status === 'expired') {
+                audioExpired.play();
+                animation = failedAnimation;
+            } 
+            else {
                 audioError.play();
+                animation = errorAnimation;
+            }
 
-                if (scanner) {
-                    scanner.stop().then(() => {
-                        scanner.clear();
-                        scanner = null;
-                    });
-                }
-            });
+            animation.style.display = 'block';
+            scanner-wrapper.style.display = 'none';
+
+            // 🔁 Restart scanner after 5 sec
+            setTimeout(() => {
+                animation.style.display = 'none';
+                scanner-wrapper.style.display = 'block';
+                scanDone = false;        // ✅ RESET FLAG
+                startScanner();         // ✅ RESTART CAMERA
+            }, 5000);
+
+        })
+        .catch(() => {
+            scanDone = false;
+            audioError.play();
+            startScanner();
+        });
     }
+
 
     $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
         let target = $(e.target).data('bs-target');
