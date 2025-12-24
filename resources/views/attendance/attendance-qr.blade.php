@@ -112,20 +112,20 @@
     ============================ */
     function startScanner() {
 
-        if (scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-                startScanner();
-            });
-            return;
-        }
+        // if (scanner) {
+        //     scanner.stop().then(() => {
+        //         scanner.clear();
+        //         scanner = null;
+        //         startScanner();
+        //     });
+        //     return;
+        // }
 
-        const reader = document.getElementById('reader');
-        if (!reader || reader.offsetHeight === 0) {
-            // alert('Scanner container not visible');
-            return;
-        }
+        // const reader = document.getElementById('reader');
+        // if (!reader || reader.offsetHeight === 0) {
+        //     // alert('Scanner container not visible');
+        //     return;
+        // }
 
         if (scanner) return;
         scanDone = false;
