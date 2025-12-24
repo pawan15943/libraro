@@ -49,7 +49,7 @@
                 <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
             </div>
            
-            <p id="scanMsg" class="mt-2"></p>
+            <p id="scanMsg" class="mt-2" ></p>
             
 
         </div>
@@ -127,106 +127,127 @@
 
     function startScanner() {
 
-    scanDone = false;
-    document.getElementById('scanMsg').innerText = '';
+        scanDone = false;
+        document.getElementById('scanMsg').innerText = '';
 
-    scanner = new Html5Qrcode("reader");
+        scanner = new Html5Qrcode("reader");
 
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
 
-            if (scanDone) return;
+                if (scanDone) return;
 
-            scanDone = true;
-            document.getElementById('scanMsg').innerText = 'QR detected. Processing...';
+                scanDone = true;
+                document.getElementById('scanMsg').innerText = 'QR detected. Processing...';
 
-            submitScan(decodedText);
-        }
-    ).catch(err => {
-        console.error('Camera error:', err);
-        scanner = null;
-    });
-}
-
-/* ============================
-   SUBMIT SCAN (SAFE FLOW)
-============================ */
-function submitScan(qrText) {
-
-    // 🚨 MUST stop camera before API
-    stopScanner().then(() => {
-
-        fetch("{{ route('library.attendance.scan') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ qr: qrText })
-        })
-        .then(res => res.json())
-        .then(res => {
-
-            const scanMsg = document.getElementById('scanMsg');
-            scanMsg.innerText = res.message;
-
-            // Hide all animations
-            successAnimation.style.display = 'none';
-            failedAnimation.style.display  = 'none';
-            errorAnimation.style.display   = 'none';
-
-            let animation;
-            let audio;
-
-            if (res.status === 'success') {
-                animation = successAnimation;
-                audio = audioSuccess;
-            } 
-            else if (res.status === 'expired') {
-                animation = failedAnimation;
-                audio = audioExpired;
-            } 
-            else {
-                animation = errorAnimation;
-                audio = audioError;
+                submitScan(decodedText);
             }
-
-            audio.play();
-
-            // Hide scanner UI
-            document.getElementById('scanner-wrapper').style.display = 'none';
-            animation.style.display = 'block';
-
-            // 🔁 Restart scanner AFTER animation
-            setTimeout(() => {
-                animation.style.display = 'none';
-                document.getElementById('scanner-wrapper').style.display = 'block';
-                scanDone = false;
-                startScanner();
-            }, 5000);
-
-        })
-        .catch(() => {
-            scanDone = false;
-            audioError.play();
-            startScanner();
+        ).catch(err => {
+            console.error('Camera error:', err);
+            scanner = null;
         });
+    }
+    function setScanMessage(message, type = 'success') {
+        const msgEl = document.getElementById('scanMsg');
 
+        msgEl.innerText = message;
+
+        // Remove old classes
+        msgEl.classList.remove('text-success', 'text-danger');
+
+        // Add new class
+        if (type === 'success') {
+            msgEl.classList.add('text-success');
+        } else {
+            msgEl.classList.add('text-danger');
+        }
+    }
+
+
+    /* ============================
+    SUBMIT SCAN (SAFE FLOW)
+    ============================ */
+    function submitScan(qrText) {
+
+        // 🚨 MUST stop camera before API
+        stopScanner().then(() => {
+
+            fetch("{{ route('library.attendance.scan') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ qr: qrText })
+            })
+            .then(res => res.json())
+            .then(res => {
+
+                const scanMsg = document.getElementById('scanMsg');
+                if (res.status === 'success') {
+                    setScanMessage(res.message, 'success');
+                } else {
+                    setScanMessage(res.message, 'danger');
+                }
+
+
+                // Hide all animations
+                successAnimation.style.display = 'none';
+                failedAnimation.style.display  = 'none';
+                errorAnimation.style.display   = 'none';
+
+                let animation;
+                let audio;
+
+                if (res.status === 'success') {
+                    animation = successAnimation;
+                    audio = audioSuccess;
+                } 
+                else if (res.status === 'expired') {
+                    animation = failedAnimation;
+                    audio = audioExpired;
+                } 
+                else {
+                    animation = errorAnimation;
+                    audio = audioError;
+                }
+
+                audio.play();
+
+                // Hide scanner UI
+                document.getElementById('scanner-wrapper').style.display = 'none';
+                animation.style.display = 'block';
+
+                // 🔁 Restart scanner AFTER animation
+                setTimeout(() => {
+                    animation.style.display = 'none';
+                    document.getElementById('scanner-wrapper').style.display = 'block';
+                    scanDone = false;
+                    startScanner();
+                }, 5000);
+
+            })
+            .catch(() => {
+                scanDone = false;
+                audioError.play();
+                startScanner();
+            });
+
+        });
+    }
+
+    /* ============================
+    TAB BUTTON HANDLERS
+    ============================ */
+    document.getElementById('startScanner').addEventListener('click', () => {
+        stopScanner().then(startScanner);
     });
-}
 
-/* ============================
-   TAB BUTTON HANDLERS
-============================ */
-document.getElementById('startScanner').addEventListener('click', () => {
-    stopScanner().then(startScanner);
-});
-
-document.getElementById('stopScanner').addEventListener('click', () => {
-    stopScanner();
-});
+    document.getElementById('stopScanner').addEventListener('click', () => {
+        stopScanner();
+    });
 
     $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function(e) {
         let target = $(e.target).data('bs-target');
