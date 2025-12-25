@@ -178,10 +178,10 @@ class AttendanceController extends Controller
             return false;
         }
 
-        [$libraryId, $slot, $signature] = $parts;
+        [$branchId, $slot, $signature] = $parts;
 
         // STEP 3: Verify signature (ANTI-TAMPER)
-        $payload = $libraryId . '|' . $slot;
+        $payload = $branchId . '|' . $slot;
         $expectedSignature = hash_hmac(
             'sha256',
             $payload,
@@ -200,11 +200,11 @@ class AttendanceController extends Controller
         }
 
         // STEP 5: Final validation – library exists
-        if (!Branch::where('id', $libraryId)->exists()) {
+        if (!Branch::where('id', $branchId)->exists()) {
             return false;
         }
 
-        return (int)$libraryId;
+        return (int)$branchId;
     }
 
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
@@ -220,22 +220,46 @@ class AttendanceController extends Controller
                 'message'=>'Unauthorized'
             ], 403);
         }
-        
-          \Log::info('SESSION CHECK', [
-            'verified' => session('attendance_verified'),
-            'session_token' => session('verify_token'),
-            'request_token' => $request->verify_token
-        ]);
+         $learnerId = session('learner_id');
 
-        // 2. Validate QR (your existing logic)
-        $branchId = $this->validateQrToken($request->qr);
-        if (!$branchId) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'QR expired or invalid'
-            ], 403);
-        }
-            $learnerId = session('learner_id');
+         /**
+     * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
+        * Same QR + same session → ignore for 15 seconds
+        */
+            $now = now()->timestamp;
+                $lastScanAt = session('last_scan_at', 0);
+
+                if (($now - $lastScanAt) < 6) {
+                    // 🚫 DO NOT validate QR
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => 'Attendance captured'
+                    ]);
+                }
+
+                // Update scan time immediately (important)
+                session(['last_scan_at' => $now]);
+        
+                // 2. Validate QR (your existing logic)
+                $branchId = $this->validateQrToken($request->qr);
+
+
+                \Log::info('SESSION CHECK', [
+                    'verified' => session('attendance_verified'),
+                    'session_token' => session('verify_token'),
+                    'request_token' => $request->verify_token,
+                    'branchId'=>$branchId,
+                    'request-qr'=>$request->qr
+                ]);
+
+                if (!$branchId) {
+                   
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'QR expired or invalid'
+                    ], 403);
+                }
+           
 
             /* 🔹 Get latest learner plan */
             $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
@@ -244,6 +268,7 @@ class AttendanceController extends Controller
 
             /* 1️⃣ No plan exists at all */
             if (!$learnerDetail) {
+               
                 \Log::info('learner detail not found');
 
                 return response()->json([
@@ -255,7 +280,7 @@ class AttendanceController extends Controller
             /* 2️⃣ Plan expired */
             if ($learnerDetail->plan_end_date < date('Y-m-d')) {
                 \Log::info('expired');
-
+               
                 return response()->json([
                     'status'  => 'expired',
                     'message' => 'Plan expired'
@@ -306,7 +331,7 @@ class AttendanceController extends Controller
                 ]);
             }
            
-
+        
         // session()->forget(['attendance_verified','verify_token']);
         return response()->json([
             'status'  => 'success',
