@@ -1,39 +1,39 @@
 @extends('sitelayouts.layout')
 @section('content')
 
-
-<div class="sacnd-data py-5" style="min-height: 500px; display:flex; align-items:center;">
-
+<section class="py-3">
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-4">
-                <h3 class="text-center mb-4">Make Payment</h3>
-                <p class="text-center">Scan the QR code below to make the payment</p>
-                <div class="QR-code p-3 text-center">
-                    <a href="{{ $upiLink }}">
-                        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}">
-                    </a>
-                    <div class="mt-2">
-                        <a href="{{ $upiLink }}" target="_blank" class="btn btn-primary btn-sm button">
-                            Scan / Click to Pay
-                        </a>
+        <form action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="online-booking">
+                        <span class="steps">Step-2</span>
+                        <h4 class="mb-4 text-center">Scan QR Code to complete payment</h4>
+                        <div class="QR-code p-3 text-center">
+                            <a href="{{ $upiLink }}">
+                                <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}" class="d-none">
+                            </a>
+                            <div class="mt-2">
+                                <a href="{{ $upiLink }}" target="_blank" class="action_pay">
+                                    Scan or Click to Pay
+                                </a>
+                            </div>
+                        </div>
+                        <p class="text-center">If you want to pay at the library, please visit us to complete your registration.</p>
+
+                        @csrf
+                        <label>Upload Payment screenshot <span class="text-danger">*</span></label>
+                        <input type="file" name="payment_screenshot" class="form-control @error('payment_screenshot') is-invalid @enderror">
+                        @error('payment_screenshot')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
                     </div>
                 </div>
-                <p class="text-center">If you want to pay at the library, please visit us to complete your registration.</p>
-                <form class="mt-4" action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <label>Upload Payment screenshot <span class="text-danger">*</span></label>
-                    <input type="file" name="payment_screenshot" class="form-control @error('payment_screenshot') is-invalid @enderror">
-                    @error('payment_screenshot')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                    <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                </form>
             </div>
-        </div>
+        </form>
     </div>
-</div>
-
+</section>
 @endsection

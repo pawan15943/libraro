@@ -21,7 +21,7 @@
                 <div class="col-lg-6">
                     <div class="online-booking">
                         <span class="steps">Step-1</span>
-                        <h4 class="mb-4 text-center">Book your Seat</h4>
+                        <h4 class="mb-4 text-center">Enter Booking Details</h4>
                         <div class="row g-3">
                             @csrf
                             <input type="hidden" id="branch_id" value="{{$branch->id}}">

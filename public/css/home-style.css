@@ -1815,4 +1815,23 @@ ul.actions-icons {
 .online-booking h4.mb-4.text-center {
     font-weight: 500;
     color: navy;
+    font-size: 1.2rem;
+}
+
+.online-booking .form-control,
+.online-booking .form-select {
+    border-radius: .5rem !important;
+    font-size: .9rem !important;
+}
+
+a.action_pay {
+    text-transform: uppercase;
+    text-decoration: none;
+    font-family: 'Outfit', 'sans-sarif';
+    color: #027a8b;
+}
+
+.online-booking h4.mb-3 {
+    font-size: 1.2rem;
+    margin-bottom: .5rem ! IMPORTANT;
 }

@@ -419,7 +419,7 @@ class QrEntryController extends Controller
                 // 'email'           => $validated['email'] ?? null,
                 'mobile'          => $validated['mobile'],
                 'password'        => $password,
-                'seat_no'         => $validated['seat_no'] ?? null,
+                'seat_no'         => $request->seat_no ?? null,
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
                 'plan_type_id'    => $validated['plan_type_id'],
