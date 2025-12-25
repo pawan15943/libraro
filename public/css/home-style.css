@@ -1832,7 +1832,7 @@ a.action_pay {
 }
 
 .online-booking h4.mb-3 {
-    font-size: 1.2rem;
+    font-size: 1rem;
     margin-bottom: .5rem ! IMPORTANT;
 }
 
@@ -1840,4 +1840,22 @@ a.action_pay {
     box-shadow: 1px 0 5px #00000021;
     padding: .8rem;
     border-radius: 1rem;
+}
+
+.online-booking p.mb-3 {
+    margin-bottom: 1rem !important;
+    font-size: .8rem;
+    font-family: 'Outfit', 'sans-sarif';
+    font-weight: 400;
+    color: red;
+}
+
+.online-booking p.mb- {
+    font-family: 'Outfit', 'sans-sarif';
+    font-weight: 400;
+}
+
+.online-booking  .border.p-3.bg-white.rounded-4 {
+    background: #f4f4ff !important;
+    border: none ! IMPORTANT;
 }
