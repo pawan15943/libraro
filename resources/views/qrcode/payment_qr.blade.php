@@ -11,7 +11,7 @@
                         <h4 class="mb-4 text-center">Scan QR Code to complete payment</h4>
                         <div class="QR-code p-3 text-center">
                             <a href="{{ $upiLink }}">
-                                <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}" class="d-none">
+                                <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(300)->generate($upiLink)) }}">
                             </a>
                             <div class="mt-2">
                                 <a href="{{ $upiLink }}" target="_blank" class="action_pay">
