@@ -1835,3 +1835,9 @@ a.action_pay {
     font-size: 1.2rem;
     margin-bottom: .5rem ! IMPORTANT;
 }
+
+.QR-code.p-3.text-center img {
+    box-shadow: 1px 0 5px #00000021;
+    padding: .8rem;
+    border-radius: 1rem;
+}
