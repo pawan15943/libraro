@@ -210,21 +210,21 @@ class AttendanceController extends Controller
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
     public function scanAttendance(Request $request)
     {
-        \Log::info('SCAN REQUEST RECEIVED', $request->all());
+            \Log::info('SCAN REQUEST RECEIVED', $request->all());
 
 
-        if (!session('attendance_verified') ||
-            $request->verify_token !== session('verify_token')) {
-            return response()->json([
-                'status'  => 'error',
-                'message'=>'Unauthorized'
-            ], 403);
-        }
-         $learnerId = session('learner_id');
+            if (!session('attendance_verified') ||
+                $request->verify_token !== session('verify_token')) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message'=>'Unauthorized'
+                ], 403);
+            }
+            $learnerId = session('learner_id');
 
         
                 // 2. Validate QR (your existing logic)
-                $branchId = $this->validateQrToken($request->qr);
+            $branchId = $this->validateQrToken($request->qr);
 
 
                 \Log::info('SESSION CHECK', [
@@ -281,7 +281,7 @@ class AttendanceController extends Controller
             /* ✅ Plan is valid & active → continue */
 
 
-        \Log::info('success part hit');
+            \Log::info('success part hit');
             
             $attendance = 1;
             $date = date('Y-m-d');
@@ -315,11 +315,11 @@ class AttendanceController extends Controller
             }
            
         
-        // session()->forget(['attendance_verified','verify_token']);
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Thank You! Attendance marked'
-        ]);
+            // session()->forget(['attendance_verified','verify_token']);
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Thank You! Attendance marked'
+            ]);
     }
 
 
