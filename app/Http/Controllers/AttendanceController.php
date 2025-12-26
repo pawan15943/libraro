@@ -178,7 +178,7 @@ class AttendanceController extends Controller
         if (count($parts) !== 3) {
             return false;
         }
-
+         \Log::info('part 1');
         [$branchId, $slot, $signature] = $parts;
 
         // STEP 3: Verify signature (ANTI-TAMPER)
@@ -188,7 +188,7 @@ class AttendanceController extends Controller
             $payload,
             config('app.key')
         );
-
+ \Log::info('part 2');
         if (!hash_equals($expectedSignature, $signature)) {
             return false;
         }
@@ -199,9 +199,12 @@ class AttendanceController extends Controller
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
         }
+         \Log::info('part 3');
          if (!Branch::withoutGlobalScopes()->where('id', (int)$branchId)->exists()) {
             \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
             return false;
+        }else{
+             \Log::info('part 4');
         }
 
         \Log::info('QR fully validated', ['branch_id' => $branchId]);
