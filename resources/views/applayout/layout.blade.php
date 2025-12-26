@@ -521,7 +521,7 @@
                   isSubmitting = false;
                   scanLock = false;
                   stopScanner();
-                  navigate('profile');
+                  navigate('dashboard');
               }, 4000); // 👈 animation duration
 
             

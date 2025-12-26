@@ -205,7 +205,11 @@
                 <i data-lucide="mail"></i>
                 <div>
                     <small>Email ID</small>
-                    <strong>{{ $learner->email ?? 'Not Updated' }}
+                    <strong>
+                        {{ !empty($learner->email) 
+                            ? $learner->email 
+                            : 'Not Updated' 
+                        }}
                     </strong>
                 </div>
             </div>
