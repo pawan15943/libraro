@@ -427,12 +427,19 @@
             { fps: 10, qrbox: 250 },
             qr => {
                   
+                 const now = Date.now();
+
+                  // 🚫 SAME QR BLOCK
+                  if (qr === lastQr && (now - lastQrTime) < QR_COOLDOWN) {
+                      return;
+                  }
+
                     // 🚫 HARD LOCKS
                   if (scanLock || isSubmitting) return;
                   scanLock = true;
                   isSubmitting = true;
                   lastQr = qr;
-             
+                  lastQrTime = now;
                   stopScanner(); 
                   submitScan(qr);
 
