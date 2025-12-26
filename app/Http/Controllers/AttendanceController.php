@@ -179,7 +179,7 @@ class AttendanceController extends Controller
         if (count($parts) !== 3) {
             return false;
         }
-\Log::info('part 1');
+        \Log::info('part 1');
         [$branchId, $slot, $signature] = $parts;
 
         // STEP 3: Verify signature (ANTI-TAMPER)
@@ -196,11 +196,11 @@ class AttendanceController extends Controller
 
         // STEP 4: Time validation (5 sec window ±1 slot)
         $currentSlot = floor(now()->timestamp / 30);
-\Log::info('part 3');
+        \Log::info('part 3');
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
         }
-\Log::info('part 4');
+        \Log::info('part 4');
         // STEP 5: Final validation – library exists
         if (!Branch::where('id', $branchId)->exists()) {
             return false;
@@ -267,6 +267,12 @@ class AttendanceController extends Controller
             $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
                 ->orderBy('plan_end_date', 'DESC')
                 ->first();
+            if($learnerDetail->branch_id  != $branchId){
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Ohh it seems like you scan wrong Library QR code.'
+                    ], 403);
+            }
 
             /* 1️⃣ No plan exists at all */
             if (!$learnerDetail) {
