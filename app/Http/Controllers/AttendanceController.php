@@ -168,6 +168,7 @@ class AttendanceController extends Controller
     {
         // STEP 1: Decode QR
         $decoded = base64_decode($qrToken, true);
+        \Log::info('SCAN REQUEST RECEIVED decoded', $decoded);
         if (!$decoded) {
             return false;
         }
@@ -198,7 +199,7 @@ class AttendanceController extends Controller
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
         }
-
+         \Log::info('SCAN REQUEST RECEIVED branchId', $branchId);
         // STEP 5: Final validation – library exists
         if (!Branch::where('id', $branchId)->exists()) {
             return false;
