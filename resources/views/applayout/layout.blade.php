@@ -481,8 +481,8 @@
         .then(res => res.json())
         .then(res => {
 
-          
-            const scanMsg = document.getElementById('scanResult');
+            alert(res.status);
+              const scanMsg = document.getElementById('scanResult');
               if (res.status === 'success') {
                   setScanMessage(res.message, 'success');
               } else {

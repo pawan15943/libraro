@@ -378,55 +378,40 @@ $ids='approvwRequest';
             </div>
         </div>
     </div>
-     <script>
 
-        
-            
-$(document).ready(function () {
+<script>
+           
+    $(document).ready(function () {
 
-    // Plan Addons Toggle
-    $(document).on('click', '.qr_addonToggleIcon', function () {
-        $('.qr_lockerFields').slideToggle(200);
-        $(this).toggleClass('fa-plus fa-minus');
-    });
-
-    // Other Optional Fields Toggle
-    $(document).on('click', '.qr_toggleIcon', function () {
-        $('.qr_idProofFields').slideToggle(200);
-        $(this).toggleClass('fa-plus fa-minus');
-    });
-
-});
-
-
-        
-
-    //   $('.qr_addonToggleIcon').on('click', function () {
-    //     $('.qr_idProofFields').slideUp();
-    //     $('.qr_lockerFields').slideToggle();
-
-    //     $('.qr_toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-    //     $('.qr_addonToggleIcon').removeClass('fa-minus').addClass('fa-plus');
-
-    //     $(this).toggleClass('fa-plus fa-minus');
-    // });
-
-    </script>
-
-        <script>
-        $(document).ready(function() {
-            $('#toggleIcon').click(function() {
-                $('#idProofFields').slideToggle();
-
-                if ($('#idProofFields').is(':visible')) {
-                    $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
-                } else {
-                    $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-                }
-            });
+        // Plan Addons Toggle
+        $(document).on('click', '.qr_addonToggleIcon', function () {
+            $('.qr_lockerFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
         });
 
-    </script>
+        // Other Optional Fields Toggle
+        $(document).on('click', '.qr_toggleIcon', function () {
+            $('.qr_idProofFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#toggleIcon').click(function() {
+            $('#idProofFields').slideToggle();
+
+            if ($('#idProofFields').is(':visible')) {
+                $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
+            } else {
+                $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
+            }
+        });
+    });
+
+</script>
 
 
 
@@ -518,9 +503,9 @@ $(document).ready(function () {
 
 
             if (!seatNo || seatNo === 'gen') {
-                getTypeSeatwise('', ''); // load all plan types
+                getTypeSeatwise('', selectedPlanType); // load all plan types
             } else {
-                getTypeSeatwise(seatNo, ''); // load plan types seatwise
+                getTypeSeatwise(seatNo, selectedPlanType); // load plan types seatwise
             }
         }
         getPlanPrice(selectedPlanType, plan_id11);
