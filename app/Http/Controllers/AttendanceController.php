@@ -68,45 +68,23 @@ class AttendanceController extends Controller
         ]);
         
     }
-    // public function generate()
-    // {
-        
-    //     $branchId = getCurrentBranch(); // library logged in
-    //     $slot = floor(now()->timestamp / 5); // 5-second slot
-
-    //     $token = $this->makeToken($branchId, $slot);
-
-    //     // fallback token (30 sec window)
-    //     $fallbackSlot = floor(now()->timestamp / 30);
-    //     $fallback = $this->makeToken($branchId, $fallbackSlot);
-
-    //     return response()->json([
-    //         'primary'  => $token,
-    //         'fallback' => $fallback
-    //     ]);
-    // }
     public function generate()
-{
-    $branchId = (int) getCurrentBranch();
-    $issuedAt = now()->timestamp;
+    {
+        
+        $branchId = getCurrentBranch(); // library logged in
+        $slot = floor(now()->timestamp / 30); // 5-second slot
 
-    $payload = $branchId . '|' . $issuedAt;
+        $token = $this->makeToken($branchId, $slot);
 
-    $signature = hash_hmac(
-        'sha256',
-        $payload,
-        config('app.key')
-    );
+        // fallback token (30 sec window)
+        $fallbackSlot = floor(now()->timestamp / 30);
+        $fallback = $this->makeToken($branchId, $fallbackSlot);
 
-    $token = base64_encode($payload . '|' . $signature);
-
-    return response()->json([
-        'token'       => $token,
-        'expires_in'  => 30, // seconds
-        'issued_at'   => $issuedAt
-    ]);
-}
-
+        return response()->json([
+            'primary'  => $token,
+            'fallback' => $fallback
+        ]);
+    }
 
     private function makeToken($libraryId, $slot)
     {
@@ -186,133 +164,85 @@ class AttendanceController extends Controller
     }
 
     //Scanner opens ->Learner scans CURRENT QR
-    // private function validateQrToken(string $qrToken)
-    // {
-    //     // STEP 1: Decode QR
-    //     $decoded = base64_decode($qrToken, true);
-    //     \Log::info('QR decoded payload', ['payload' => $decoded]);
-    //     if (!$decoded) {
-    //         return false;
-    //     }
-
-    //     // STEP 2: Split payload
-    //     $parts = explode('|', $decoded);
-    //     if (count($parts) !== 3) {
-    //         return false;
-    //     }
-    //      \Log::info('part 1');
-    //     [$branchId, $slot, $signature] = $parts;
-
-    //     // STEP 3: Verify signature (ANTI-TAMPER)
-    //     $payload = $branchId . '|' . $slot;
-    //     $expectedSignature = hash_hmac(
-    //         'sha256',
-    //         $payload,
-    //         config('app.key')
-    //     );
-    //     \Log::info('part 2');
-    //     if (!hash_equals($expectedSignature, $signature)) {
-    //         return false;
-    //     }
-
-    //     // STEP 4: Time validation (5 sec window ±1 slot)
-    //     $currentSlot = floor(now()->timestamp / 30);
-
-    //     if (abs($currentSlot - (int)$slot) > 1) {
-    //         return false; // QR expired
-    //     }
-    //      \Log::info('part 3');
-    //      if (!Branch::withoutGlobalScopes()->where('id', (int)$branchId)->exists()) {
-    //         \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
-    //         return false;
-    //     }else{
-    //          \Log::info('part 4');
-    //     }
-
-    //     \Log::info('QR fully validated', ['branch_id' => $branchId]);
-
-    //     return (int)$branchId;
-    // }
-    private function validateQrToken(string $qrToken): int|false
+    private function validateQrToken(string $qrToken)
     {
-        /* STEP 1: Decode */
+        // STEP 1: Decode QR
         $decoded = base64_decode($qrToken, true);
         \Log::info('QR decoded payload', ['payload' => $decoded]);
-
-        if ($decoded === false) {
-            \Log::warning('QR base64 decode failed');
+        if (!$decoded) {
             return false;
         }
 
-        /* STEP 2: Split payload */
+        // STEP 2: Split payload
         $parts = explode('|', $decoded);
         if (count($parts) !== 3) {
-            \Log::warning('QR invalid format');
             return false;
         }
+\Log::info('part 1');
+        [$branchId, $slot, $signature] = $parts;
 
-        [$branchId, $issuedAt, $signature] = $parts;
-
-        /* STEP 3: Verify signature (ANTI-TAMPER) */
-        $payload = $branchId . '|' . $issuedAt;
-
+        // STEP 3: Verify signature (ANTI-TAMPER)
+        $payload = $branchId . '|' . $slot;
         $expectedSignature = hash_hmac(
             'sha256',
             $payload,
             config('app.key')
         );
-
+        \Log::info('part 2');
         if (!hash_equals($expectedSignature, $signature)) {
-            \Log::warning('QR signature mismatch');
             return false;
         }
 
-        /* STEP 4: Time validation (EXACT 30 seconds) */
-        $now = now()->timestamp;
-
-        if (($now - (int)$issuedAt) > 30) {
-            \Log::warning('QR expired', [
-                'issued_at' => $issuedAt,
-                'now' => $now
-            ]);
+        // STEP 4: Time validation (5 sec window ±1 slot)
+        $currentSlot = floor(now()->timestamp / 30);
+\Log::info('part 3');
+        if (abs($currentSlot - (int)$slot) > 1) {
+            return false; // QR expired
+        }
+\Log::info('part 4');
+        // STEP 5: Final validation – library exists
+        if (!Branch::where('id', $branchId)->exists()) {
             return false;
         }
-
-        \Log::info('QR time valid');
-
-        /* STEP 5: Branch existence (IGNORE GLOBAL SCOPES) */
-        if (!Branch::withoutGlobalScopes()
-            ->where('id', (int)$branchId)
-            ->exists()
-        ) {
-            \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
-            return false;
-        }
-
-        \Log::info('QR fully validated', ['branch_id' => $branchId]);
 
         return (int)$branchId;
     }
 
-    
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
     public function scanAttendance(Request $request)
     {
-            \Log::info('SCAN REQUEST RECEIVED', $request->all());
+        \Log::info('SCAN REQUEST RECEIVED', $request->all());
 
 
-            if (!session('attendance_verified') ||
-                $request->verify_token !== session('verify_token')) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message'=>'Unauthorized'
-                ], 403);
-            }
-            $learnerId = session('learner_id');
+        if (!session('attendance_verified') ||
+            $request->verify_token !== session('verify_token')) {
+            return response()->json([
+                'status'  => 'error',
+                'message'=>'Unauthorized'
+            ], 403);
+        }
+         $learnerId = session('learner_id');
 
+         /**
+     * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
+        * Same QR + same session → ignore for 15 seconds
+        */
+            $now = now()->timestamp;
+                $lastScanAt = session('last_scan_at', 0);
+
+                if (($now - $lastScanAt) < 31) {
+                    // 🚫 DO NOT validate QR
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => 'Attendance captured'
+                    ]);
+                }
+
+                // Update scan time immediately (important)
+                session(['last_scan_at' => $now]);
         
                 // 2. Validate QR (your existing logic)
-            $branchId = $this->validateQrToken($request->qr);
+                $branchId = $this->validateQrToken($request->qr);
 
 
                 \Log::info('SESSION CHECK', [
@@ -369,7 +299,7 @@ class AttendanceController extends Controller
             /* ✅ Plan is valid & active → continue */
 
 
-            \Log::info('success part hit');
+        \Log::info('success part hit');
             
             $attendance = 1;
             $date = date('Y-m-d');
@@ -403,11 +333,11 @@ class AttendanceController extends Controller
             }
            
         
-            // session()->forget(['attendance_verified','verify_token']);
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Thank You! Attendance marked'
-            ]);
+        // session()->forget(['attendance_verified','verify_token']);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Thank You! Attendance marked'
+        ]);
     }
 
 
