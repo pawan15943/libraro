@@ -199,11 +199,12 @@ class AttendanceController extends Controller
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
         }
-        \Log::info('QR validated successfully', ['branch_id' => $branchId]);
-        // STEP 5: Final validation – library exists
-        if (!Branch::where('id', $branchId)->exists()) {
+         if (!Branch::withoutGlobalScopes()->where('id', (int)$branchId)->exists()) {
+            \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
             return false;
         }
+
+        \Log::info('QR fully validated', ['branch_id' => $branchId]);
 
         return (int)$branchId;
     }
