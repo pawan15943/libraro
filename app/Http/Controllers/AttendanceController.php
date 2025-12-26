@@ -68,23 +68,45 @@ class AttendanceController extends Controller
         ]);
         
     }
-    public function generate()
-    {
+    // public function generate()
+    // {
         
-        $libraryId = getCurrentBranch(); // library logged in
-        $slot = floor(now()->timestamp / 5); // 5-second slot
+    //     $branchId = getCurrentBranch(); // library logged in
+    //     $slot = floor(now()->timestamp / 5); // 5-second slot
 
-        $token = $this->makeToken($libraryId, $slot);
+    //     $token = $this->makeToken($branchId, $slot);
 
-        // fallback token (30 sec window)
-        $fallbackSlot = floor(now()->timestamp / 30);
-        $fallback = $this->makeToken($libraryId, $fallbackSlot);
+    //     // fallback token (30 sec window)
+    //     $fallbackSlot = floor(now()->timestamp / 30);
+    //     $fallback = $this->makeToken($branchId, $fallbackSlot);
 
-        return response()->json([
-            'primary'  => $token,
-            'fallback' => $fallback
-        ]);
-    }
+    //     return response()->json([
+    //         'primary'  => $token,
+    //         'fallback' => $fallback
+    //     ]);
+    // }
+    public function generate()
+{
+    $branchId = (int) getCurrentBranch();
+    $issuedAt = now()->timestamp;
+
+    $payload = $branchId . '|' . $issuedAt;
+
+    $signature = hash_hmac(
+        'sha256',
+        $payload,
+        config('app.key')
+    );
+
+    $token = base64_encode($payload . '|' . $signature);
+
+    return response()->json([
+        'token'       => $token,
+        'expires_in'  => 30, // seconds
+        'issued_at'   => $issuedAt
+    ]);
+}
+
 
     private function makeToken($libraryId, $slot)
     {
@@ -164,47 +186,107 @@ class AttendanceController extends Controller
     }
 
     //Scanner opens ->Learner scans CURRENT QR
-    private function validateQrToken(string $qrToken)
+    // private function validateQrToken(string $qrToken)
+    // {
+    //     // STEP 1: Decode QR
+    //     $decoded = base64_decode($qrToken, true);
+    //     \Log::info('QR decoded payload', ['payload' => $decoded]);
+    //     if (!$decoded) {
+    //         return false;
+    //     }
+
+    //     // STEP 2: Split payload
+    //     $parts = explode('|', $decoded);
+    //     if (count($parts) !== 3) {
+    //         return false;
+    //     }
+    //      \Log::info('part 1');
+    //     [$branchId, $slot, $signature] = $parts;
+
+    //     // STEP 3: Verify signature (ANTI-TAMPER)
+    //     $payload = $branchId . '|' . $slot;
+    //     $expectedSignature = hash_hmac(
+    //         'sha256',
+    //         $payload,
+    //         config('app.key')
+    //     );
+    //     \Log::info('part 2');
+    //     if (!hash_equals($expectedSignature, $signature)) {
+    //         return false;
+    //     }
+
+    //     // STEP 4: Time validation (5 sec window ±1 slot)
+    //     $currentSlot = floor(now()->timestamp / 30);
+
+    //     if (abs($currentSlot - (int)$slot) > 1) {
+    //         return false; // QR expired
+    //     }
+    //      \Log::info('part 3');
+    //      if (!Branch::withoutGlobalScopes()->where('id', (int)$branchId)->exists()) {
+    //         \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
+    //         return false;
+    //     }else{
+    //          \Log::info('part 4');
+    //     }
+
+    //     \Log::info('QR fully validated', ['branch_id' => $branchId]);
+
+    //     return (int)$branchId;
+    // }
+    private function validateQrToken(string $qrToken): int|false
     {
-        // STEP 1: Decode QR
+        /* STEP 1: Decode */
         $decoded = base64_decode($qrToken, true);
         \Log::info('QR decoded payload', ['payload' => $decoded]);
-        if (!$decoded) {
+
+        if ($decoded === false) {
+            \Log::warning('QR base64 decode failed');
             return false;
         }
 
-        // STEP 2: Split payload
+        /* STEP 2: Split payload */
         $parts = explode('|', $decoded);
         if (count($parts) !== 3) {
+            \Log::warning('QR invalid format');
             return false;
         }
-         \Log::info('part 1');
-        [$branchId, $slot, $signature] = $parts;
 
-        // STEP 3: Verify signature (ANTI-TAMPER)
-        $payload = $branchId . '|' . $slot;
+        [$branchId, $issuedAt, $signature] = $parts;
+
+        /* STEP 3: Verify signature (ANTI-TAMPER) */
+        $payload = $branchId . '|' . $issuedAt;
+
         $expectedSignature = hash_hmac(
             'sha256',
             $payload,
             config('app.key')
         );
- \Log::info('part 2');
+
         if (!hash_equals($expectedSignature, $signature)) {
+            \Log::warning('QR signature mismatch');
             return false;
         }
 
-        // STEP 4: Time validation (5 sec window ±1 slot)
-        $currentSlot = floor(now()->timestamp / 30);
+        /* STEP 4: Time validation (EXACT 30 seconds) */
+        $now = now()->timestamp;
 
-        if (abs($currentSlot - (int)$slot) > 1) {
-            return false; // QR expired
+        if (($now - (int)$issuedAt) > 30) {
+            \Log::warning('QR expired', [
+                'issued_at' => $issuedAt,
+                'now' => $now
+            ]);
+            return false;
         }
-         \Log::info('part 3');
-         if (!Branch::withoutGlobalScopes()->where('id', (int)$branchId)->exists()) {
+
+        \Log::info('QR time valid');
+
+        /* STEP 5: Branch existence (IGNORE GLOBAL SCOPES) */
+        if (!Branch::withoutGlobalScopes()
+            ->where('id', (int)$branchId)
+            ->exists()
+        ) {
             \Log::warning('Branch validation failed', ['branch_id' => $branchId]);
             return false;
-        }else{
-             \Log::info('part 4');
         }
 
         \Log::info('QR fully validated', ['branch_id' => $branchId]);
@@ -212,6 +294,7 @@ class AttendanceController extends Controller
         return (int)$branchId;
     }
 
+    
     //Server validates:- QR token (5 sec / 10 min) and Learner verification token
     public function scanAttendance(Request $request)
     {
