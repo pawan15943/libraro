@@ -72,6 +72,7 @@ class AttendanceController extends Controller
     {
         
         $branchId = getCurrentBranch(); // library logged in
+         \Log::info('getCurrentBranch', ['getCurrentBranch' => $branchId]);
         $slot = floor(now()->timestamp / 30); // 5-second slot
 
         $token = $this->makeToken($branchId, $slot);
