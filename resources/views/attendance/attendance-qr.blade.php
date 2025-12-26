@@ -103,7 +103,7 @@
 
     // Start QR refresh
     loadQR();
-    qrInterval = setInterval(loadQR, 15000);
+    qrInterval = setInterval(loadQR, 30000);
 
 
     /* ============================

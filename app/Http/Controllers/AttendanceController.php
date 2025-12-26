@@ -168,7 +168,7 @@ class AttendanceController extends Controller
     {
         // STEP 1: Decode QR
         $decoded = base64_decode($qrToken, true);
-         \Log::info('QR decoded payload', ['payload' => $decoded]);
+        \Log::info('QR decoded payload', ['payload' => $decoded]);
         if (!$decoded) {
             return false;
         }
@@ -194,7 +194,7 @@ class AttendanceController extends Controller
         }
 
         // STEP 4: Time validation (5 sec window ±1 slot)
-        $currentSlot = floor(now()->timestamp / 5);
+        $currentSlot = floor(now()->timestamp / 30);
 
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
