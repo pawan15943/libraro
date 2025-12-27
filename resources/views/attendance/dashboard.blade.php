@@ -21,8 +21,7 @@
 <div class="app-header">
     <div class="flex">
         <div class="profile">
-
-            <img src="{{ asset('public/img/logo-whitw.png') }}" alt="logo" class="logo">
+           <img src="{{ asset(!empty($detail->library_image) ? 'public/uploads'.$detail->library_image : 'public/img/logo-white.png') }}" alt="Logo" class="logo">
 
         </div>
         <i data-lucide="menu" onclick="toggleSidebar()"></i>
@@ -255,9 +254,8 @@
             <div id="errorAnimation" style="display:none; text-align:center;" class="mb-4">
                 <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
             </div>
-            <small id="scanResult" class="text-muted">
-                Waiting for scan...
-            </small>
+            <p id="scanResult" class="mt-2" >Waiting for scan...</p>
+          
         </div>
     </section>
 

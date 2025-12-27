@@ -132,6 +132,7 @@ class AttendanceController extends Controller
        $learner = Learner::where(function ($query) use ($request,$dob) {
                     $query->where('learner_no', $request->uid);
                         if ($dob) {
+                            \Log::info('dob part hit',['dob'=>$dob]);
                             $query->orWhere('dob', $dob);
                         }
                        // Email (only if valid)
@@ -294,8 +295,6 @@ class AttendanceController extends Controller
             /* 1️⃣ No plan exists at all */
             if (!$learnerDetail) {
                
-                \Log::info('learner detail not found');
-
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'No plan found'
@@ -304,7 +303,7 @@ class AttendanceController extends Controller
 
             /* 2️⃣ Plan expired */
             if ($learnerDetail->plan_end_date < date('Y-m-d')) {
-                \Log::info('expired');
+                
                
                 return response()->json([
                     'status'  => 'expired',
@@ -462,6 +461,13 @@ class AttendanceController extends Controller
             return response()->json([
                 'status'  => 'expired',
                 'message' => 'Plan expired'
+            ], 403);
+        }
+        /* 3️⃣ Active plan exists */
+        if ($learnerDetail->status != 1) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'No active plan found'
             ], 403);
         }
         if($learner->branch_id != getCurrentBranch()){
