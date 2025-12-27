@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class AttendanceController extends Controller
 {
@@ -71,14 +72,15 @@ class AttendanceController extends Controller
     public function generate()
     {
         
-        $libraryId = getCurrentBranch(); // library logged in
-        $slot = floor(now()->timestamp / 5); // 5-second slot
+        $branchId = getCurrentBranch(); // library logged in
+         \Log::info('getCurrentBranch', ['getCurrentBranch' => $branchId]);
+        $slot = floor(now()->timestamp / 30); // 5-second slot
 
-        $token = $this->makeToken($libraryId, $slot);
+        $token = $this->makeToken($branchId, $slot);
 
         // fallback token (30 sec window)
         $fallbackSlot = floor(now()->timestamp / 30);
-        $fallback = $this->makeToken($libraryId, $fallbackSlot);
+        $fallback = $this->makeToken($branchId, $fallbackSlot);
 
         return response()->json([
             'primary'  => $token,
@@ -100,17 +102,36 @@ class AttendanceController extends Controller
     //Server validates UID + Mobile ->(only if valid) Save verified learner token (session / cookie)
     public function verifyLearner(Request $request)
     {
-        $request->validate([
-            'uid' => 'required',
-            'mobile' => 'required'
+       $validator = Validator::make($request->all(), [
+            'login_with' => 'required|in:dob,email,learner_no',
+            'uid'        => 'required',
+            'mobile'     => 'required|regex:/^[6-9]\d{9}$/'
+        ], [
+            'login_with.required' => 'Please choose login type',
+            'uid.required'        => 'This field is required',
+            'mobile.required'     => 'Mobile number is required',
+            'mobile.regex'        => 'Enter valid 10 digit mobile number'
         ]);
 
-        $learner = Learner::where('learner_no', $request->uid)->where('mobile', encryptData($request->mobile))->first();
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+       $learner = Learner::where(function ($query) use ($request) {
+                    $query->where('learner_no', $request->uid)
+                        ->orWhere('dob', $request->uid)
+                        ->orWhere('email', $request->uid);
+                })
+                ->where('mobile', encryptData($request->mobile))
+                ->first();
         
         if (!$learner) {
             return response()->json([
                 'status' => false,
-                'message' => 'Invalid UID or Mobile'
+                'message' => 'We found that the details you entered are invalid.'
             ], 401);
         }
 
@@ -133,6 +154,7 @@ class AttendanceController extends Controller
         );
 
         return response()->json([
+            'success'      => true,
             'verify_token' => $verifyToken
         ]);
     }
@@ -168,6 +190,7 @@ class AttendanceController extends Controller
     {
         // STEP 1: Decode QR
         $decoded = base64_decode($qrToken, true);
+        \Log::info('QR decoded payload', ['payload' => $decoded]);
         if (!$decoded) {
             return false;
         }
@@ -177,7 +200,7 @@ class AttendanceController extends Controller
         if (count($parts) !== 3) {
             return false;
         }
-
+        \Log::info('part 1');
         [$branchId, $slot, $signature] = $parts;
 
         // STEP 3: Verify signature (ANTI-TAMPER)
@@ -187,18 +210,18 @@ class AttendanceController extends Controller
             $payload,
             config('app.key')
         );
-
+        \Log::info('part 2');
         if (!hash_equals($expectedSignature, $signature)) {
             return false;
         }
 
         // STEP 4: Time validation (5 sec window ±1 slot)
-        $currentSlot = floor(now()->timestamp / 5);
-
+        $currentSlot = floor(now()->timestamp / 30);
+        \Log::info('part 3');
         if (abs($currentSlot - (int)$slot) > 1) {
             return false; // QR expired
         }
-
+        \Log::info('part 4');
         // STEP 5: Final validation – library exists
         if (!Branch::where('id', $branchId)->exists()) {
             return false;
@@ -229,7 +252,7 @@ class AttendanceController extends Controller
             $now = now()->timestamp;
                 $lastScanAt = session('last_scan_at', 0);
 
-                if (($now - $lastScanAt) < 6) {
+                if (($now - $lastScanAt) < 31) {
                     // 🚫 DO NOT validate QR
                     return response()->json([
                         'status'  => 'success',
@@ -265,6 +288,12 @@ class AttendanceController extends Controller
             $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
                 ->orderBy('plan_end_date', 'DESC')
                 ->first();
+            if($learnerDetail->branch_id  != $branchId){
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Ohh it seems like you scan wrong Library QR code.'
+                    ], 403);
+            }
 
             /* 1️⃣ No plan exists at all */
             if (!$learnerDetail) {

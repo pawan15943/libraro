@@ -27,7 +27,6 @@
 
         .form-control, .btn {
             height: 45px;
-            background: #fff;
             color: #000;
             border-color: #000;
             border-radius: .6rem;
@@ -46,6 +45,11 @@
             display: block;
             margin: 0 auto;
         }
+        div#verifyMsg {
+            color: red;
+            font-weight: 400 !important;
+        }
+
     </style>
 
 </head>
@@ -62,13 +66,27 @@
                     </div>
                     <div class="login-form">
                         <h4 class="text-center text-white mb-4">Attendance App</h4>
+                        
                         <div class="row g-4 px-2">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div id="verifyMsg"></div>
+                                </div>
+                            </div>
 
                             <div class="col-lg-12">
-                                <input type="text" id="learner_no_uid" placeholder="Enter Learner Unique ID" class="form-control">
+                                <select class="form-select form-control" id="login_with" name="login_with">
+                                    <option value="">Choose</option>
+                                    <option value="dob">Date of Birth</option>
+                                    <option value="email">Email</option>
+                                    <option value="learner_no">Learner No</option>
+                                </select>
                             </div>
                             <div class="col-lg-12">
-                                <input type="text" id="learner_mobile" placeholder="Mobile Number" class="form-control">
+                                <input type="text"  name="uid" id="learner_no_uid" placeholder="Enter Learner Unique ID" class="form-control">
+                            </div>
+                            <div class="col-lg-12">
+                                <input type="text" name="mobile" id="learner_mobile" placeholder="Mobile Number" class="form-control">
                             </div>
                             <div class="col-lg-12">
                                 <button type="submit" id="verifyLearner" class="btn btn-primary w-100" >Verify <i class=""></i></button>
@@ -80,45 +98,79 @@
             </div>
         </div>
     </div>
+    <script>
+    $('#login_with').on('change', function () {
+        let value = $(this).val();
+        let input = $('#learner_no_uid');
 
+        if (value === 'dob') {
+            input.attr('placeholder', 'DD/MM/YYYY');
+            input.attr('type', 'text');
+        } 
+        else if (value === 'email') {
+            input.attr('placeholder', 'Enter Email ID');
+            input.attr('type', 'email');
+        } 
+        else if (value === 'learner_no') {
+            input.attr('placeholder', 'Enter Learner No');
+            input.attr('type', 'text');
+        } 
+        else {
+            input.attr('placeholder', 'Enter Value');
+            input.attr('type', 'text');
+        }
+    });
+</script>
     <script>
         $('#verifyLearner').on('click', function () {
-            let uid = $('#learner_no_uid').val().trim();
-            let mobile = $('#learner_mobile').val().trim();
-
-            // ✅ Frontend required validation
-            if (!uid) {
-                $('#verifyMsg').text('Learner No is required');
-                return;
-            }
-
-            if (!mobile) {
-                $('#verifyMsg').text('Mobile number is required');
-                return;
-            }
-
-            // Optional: mobile format
-            if (!/^[6-9]\d{9}$/.test(mobile)) {
-                $('#verifyMsg').text('Enter valid 10 digit mobile number');
-                return;
-            }
+            $(".is-invalid").removeClass("is-invalid");
+            $(".invalid-feedback").remove();
+            $('#verifyMsg').text('');
             $.ajax({
                 url: "{{ route('attendance.verify.learner') }}",
                 type: "POST",
                 data: {
                     _token: "{{ csrf_token() }}",
+                    login_with: $('#login_with').val(),
                     uid: $('#learner_no_uid').val(),
                     mobile: $('#learner_mobile').val()
                 },
                 success: function (res) {
+                    if(res.success){
                     localStorage.setItem('verify_token', res.verify_token);
                     $('#learner_no_uid, #learner_mobile, #verifyLearner').hide();
                     window.location.href = "{{ route('attendance.dashboard') }}";
 
-                    
+                     }else if (res.errors) {
+                        $(".is-invalid").removeClass("is-invalid");
+                        $(".invalid-feedback").remove();
+
+                        $.each(res.errors, function(key, value) {
+                            var element = $("[name='" + key + "']"); 
+                          
+                            element.addClass("is-invalid");
+                            element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
+                        });
+                    } else {
+                       $('#verifyMsg').text(xhr.responseJSON.message ?? 'Something went wrong');
+                    }
                 },
                 error: function (xhr) {
-                    $('#verifyMsg').text(xhr.responseJSON.message);
+
+                    if (xhr.status === 422) {
+                        let errors = xhr.responseJSON.errors;
+
+                        $.each(errors, function (key, value) {
+                            let element = $("[name='" + key + "']");
+                            element.addClass("is-invalid");
+                            element.after(
+                                '<span class="invalid-feedback">' + value[0] + '</span>'
+                            );
+                        });
+
+                    } else {
+                        $('#verifyMsg').text(xhr.responseJSON.message ?? 'Something went wrong');
+                    }
                 }
             });
         }); 
@@ -135,6 +187,7 @@
             });
         });
     </script>
+
 
 </body>
 

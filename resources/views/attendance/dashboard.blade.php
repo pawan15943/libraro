@@ -205,7 +205,11 @@
                 <i data-lucide="mail"></i>
                 <div>
                     <small>Email ID</small>
-                    <strong>{{ $learner->email ?? 'Not Updated' }}
+                    <strong>
+                        {{ !empty($learner->email) 
+                            ? $learner->email 
+                            : 'Not Updated' 
+                        }}
                     </strong>
                 </div>
             </div>
@@ -240,7 +244,7 @@
 
     <!-- ================= SCAN ================= -->
     <section id="scan" class="section">
-        <div class="app-card">
+        <div class="app-card text-center">
             <h6>Scan QR Code</h6>
             <div id="scanner-wrapper">
                 <div id="reader"></div>
