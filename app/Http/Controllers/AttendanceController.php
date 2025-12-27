@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class AttendanceController extends Controller
 {
@@ -101,17 +102,36 @@ class AttendanceController extends Controller
     //Server validates UID + Mobile ->(only if valid) Save verified learner token (session / cookie)
     public function verifyLearner(Request $request)
     {
-        $request->validate([
-            'uid' => 'required',
-            'mobile' => 'required'
+       $validator = Validator::make($request->all(), [
+            'login_with' => 'required|in:dob,email,learner_no',
+            'uid'        => 'required',
+            'mobile'     => 'required|regex:/^[6-9]\d{9}$/'
+        ], [
+            'login_with.required' => 'Please choose login type',
+            'uid.required'        => 'This field is required',
+            'mobile.required'     => 'Mobile number is required',
+            'mobile.regex'        => 'Enter valid 10 digit mobile number'
         ]);
 
-        $learner = Learner::where('learner_no', $request->uid)->where('mobile', encryptData($request->mobile))->first();
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+       $learner = Learner::where(function ($query) use ($request) {
+                    $query->where('learner_no', $request->uid)
+                        ->orWhere('dob', $request->uid)
+                        ->orWhere('email', $request->uid);
+                })
+                ->where('mobile', encryptData($request->mobile))
+                ->first();
         
         if (!$learner) {
             return response()->json([
                 'status' => false,
-                'message' => 'Invalid UID or Mobile'
+                'message' => 'We found that the details you entered are invalid.'
             ], 401);
         }
 
@@ -134,6 +154,7 @@ class AttendanceController extends Controller
         );
 
         return response()->json([
+            'success'      => true,
             'verify_token' => $verifyToken
         ]);
     }

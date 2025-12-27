@@ -244,7 +244,7 @@
 
     <!-- ================= SCAN ================= -->
     <section id="scan" class="section">
-        <div class="app-card">
+        <div class="app-card text-center">
             <h6>Scan QR Code</h6>
             <div id="scanner-wrapper">
                 <div id="reader"></div>
