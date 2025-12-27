@@ -18,6 +18,8 @@
                         <p class="m-">Address : {{ $booking->branch->library_address }}</p>
                         <p class="m-"> Call At : 91-{{ $booking->branch->mobile }}</p>
                     </div>
+
+                    <a href="">Go Back to Website</a>
                 </div>
             </div>
         </div>
