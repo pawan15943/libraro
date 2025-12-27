@@ -358,6 +358,29 @@
       justify-content: center;
       color: #fff;
     }
+
+    #scanner-wrapper {
+      width: 300px;
+      height: 300px;
+      margin: auto;
+      border-radius: 12px;
+      overflow: hidden;
+      /* IMPORTANT */
+      background: #000;
+    }
+
+    #reader {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* If scanner uses video internally */
+    #reader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      /* keeps camera proportional */
+    }
   </style>
 </head>
 
