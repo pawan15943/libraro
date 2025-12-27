@@ -281,45 +281,61 @@ class AttendanceController extends Controller
             }
            
 
-            /* 🔹 Get latest learner plan */
-            $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+                /* 🔹 Get latest learner plan */
+        $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+            ->orderBy('plan_end_date', 'DESC')
+            ->first();
+
+        /* 1️⃣ No plan OR inactive plan */
+        if (!$learnerDetail || $learnerDetail->status != 1) {
+
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $learnerId)
                 ->orderBy('plan_end_date', 'DESC')
                 ->first();
-            if($learnerDetail->branch_id  != $branchId){
+
+            if ($detail) {
+
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+
+                if ($operation === 'deleteSeat') {
                     return response()->json([
                         'status'  => 'error',
-                        'message' => 'Ohh it seems like you scan wrong Library QR code.'
+                        'message' => 'Your plan has been deleted'
                     ], 403);
+                }
+
+                if ($operation === 'closeSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been closed'
+                    ], 403);
+                }
             }
 
-            /* 1️⃣ No plan exists at all */
-            if (!$learnerDetail) {
-               
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'No plan found'
-                ], 403);
-            }
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'No active plan found'
+            ], 403);
+        }
 
-            /* 2️⃣ Plan expired */
-            if ($learnerDetail->plan_end_date < date('Y-m-d')) {
-                
-               
-                return response()->json([
-                    'status'  => 'expired',
-                    'message' => 'Plan expired'
-                ], 403);
-            }
+        /* 2️⃣ Wrong branch QR */
+        if ($learnerDetail->branch_id != $branchId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
+            ], 403);
+        }
 
-            /* 3️⃣ Active plan exists */
-            if ($learnerDetail->status != 1) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'No active plan found'
-                ], 403);
-            }
-
-            /* ✅ Plan is valid & active → continue */
+        /* 3️⃣ Plan expired */
+        if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+            return response()->json([
+                'status'  => 'expired',
+                'message' => 'Plan expired'
+            ], 403);
+        }
 
 
             \Log::info('success part hit');
@@ -419,9 +435,7 @@ class AttendanceController extends Controller
         }
 
         /* 3️⃣ Learner validation */
-        $learner = Learner::where('learner_no', $learnerNo)
-            ->where('status', 1)
-            ->first();
+        $learner = Learner::where('learner_no', $learnerNo)->first();
 
         if (!$learner) {
             \Log::warning('Learner not found');
@@ -431,9 +445,60 @@ class AttendanceController extends Controller
             ], 404);
         }
         
-
+        if($learner->branch_id != getCurrentBranch()){
+                return response()->json([
+                'status'  => 'expired',
+                 'message' => 'Ohh it seems like you scan wrong Library QR code.'
+            ], 403);
+        }
 
         $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+        
+            
+        /* 1️⃣ No active plan */
+        if (!$learnerDetail || $learner->status != 1 || $learnerDetail->status != 1) {
+               /* 2️⃣ Plan expired check */
+      
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $learner->id)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
+
+            if ($detail) {
+
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+
+                if ($operation === 'deleteSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been deleted'
+                    ], 403);
+                }
+
+                if ($operation === 'closeSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been closed'
+                    ], 403);
+                }
+            }
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'No active plan found'
+            ], 403);
+        }
+
+        if ($learnerDetail->plan_end_date < date('Y-m-d')){
+        
+            return response()->json([
+                'status'  => 'expired',
+                'message' => 'Plan expired'
+            ], 403);
+        }
+        
         $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
         $extendDay = $branch->extend_days; // assume integer
         $today = Carbon::today();
@@ -446,38 +511,7 @@ class AttendanceController extends Controller
             $inextendDate = $endDate; // fallback to original end date
         }
         $diffExtendDay = $today->diffInDays($inextendDate, false);
-        
-        /* 1️⃣ No active plan */
-        if (!$learnerDetail) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
-            ], 403);
-        }
-
-        /* 2️⃣ Plan expired check */
-        if ($learnerDetail->plan_end_date < date('Y-m-d')){
-        // if ($diffExtendDay < 0) {
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
-        /* 3️⃣ Active plan exists */
-        if ($learnerDetail->status != 1) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
-            ], 403);
-        }
-        if($learner->branch_id != getCurrentBranch()){
-                return response()->json([
-                'status'  => 'expired',
-                 'message' => 'Ohh it seems like you scan wrong Library QR code.'
-            ], 403);
-        }
-
-
+    
         /* 5️⃣ Attendance logic */
         $attendance = Attendance::where('learner_id', $learner->id)
             ->where('date', today())
