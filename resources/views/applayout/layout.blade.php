@@ -112,6 +112,13 @@
       border-radius: 24px;
       padding: 18px;
       box-shadow: 0 8px 30px rgba(11, 28, 45, .08);
+      min-height: 400px;
+      width: 350px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
 
     /* SECTIONS */
