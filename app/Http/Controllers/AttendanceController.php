@@ -259,24 +259,6 @@ class AttendanceController extends Controller
             }
             $learnerId = session('learner_id');
 
-         /**
-     * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
-        * Same QR + same session → ignore for 15 seconds
-        */
-            $now = now()->timestamp;
-            $lastScanAt = session('last_scan_at', 0);
-
-            if (($now - $lastScanAt) < 31) {
-                // 🚫 DO NOT validate QR
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Attendance captured'
-                ]);
-            }
-
-            // Update scan time immediately (important)
-            session(['last_scan_at' => $now]);
-    
             // 2. Validate QR (your existing logic)
             $branchId = $this->validateQrToken($request->qr);
 
@@ -343,6 +325,25 @@ class AttendanceController extends Controller
 
             \Log::info('success part hit');
             
+         /**
+     * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
+        * Same QR + same session → ignore for 15 seconds
+        */
+            $now = now()->timestamp;
+            $lastScanAt = session('last_scan_at', 0);
+
+            if (($now - $lastScanAt) < 31) {
+                // 🚫 DO NOT validate QR
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Attendance captured'
+                ]);
+            }
+
+            // Update scan time immediately (important)
+            session(['last_scan_at' => $now]);
+    
+            
             $attendance = 1;
             $date = date('Y-m-d');
             $currentTime = now();
@@ -375,7 +376,7 @@ class AttendanceController extends Controller
             }
            
         
-        // session()->forget(['attendance_verified','verify_token']);
+        
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Attendance marked'
