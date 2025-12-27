@@ -129,13 +129,16 @@
     }
 
     .id-card {
-      height: 260px;
+      position: relative;
+      width: 350px;
+      height: 400px;
+      margin: 0 auto;
       border-radius: 26px;
       transform-style: preserve-3d;
-      transition: .8s;
+      transition: transform 0.9s ease-in-out;
     }
 
-    .id-wrapper:hover .id-card {
+    .id-card.flipped {
       transform: rotateY(180deg);
     }
 
@@ -144,20 +147,23 @@
       position: absolute;
       inset: 0;
       border-radius: 26px;
-      backface-visibility: hidden;
       padding: 20px;
-      color: #000;
-      height: 58vh;
+      min-height: 400px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       box-shadow: 1px 0 5px #00000029 !important;
     }
 
+
     .id-front {
       background: #fff;
+      z-index: 2;
     }
 
     .id-back {
       background: linear-gradient(135deg, #000050, #000050);
       transform: rotateY(180deg);
+      color: #fff;
     }
 
     .status {
@@ -166,6 +172,28 @@
       padding: 4px 12px;
       border-radius: 20px;
       font-size: 12px;
+    }
+
+    .flip-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 10;
+      background: #fff;
+      color: #000050;
+      border-radius: 50%;
+      padding: 8px;
+      transition: transform .3s ease;
+      width: 35px;
+      height: 35px;
+      background: #00BCD4;
+      color: #fff;
+    }
+
+    .flip-btn:hover {
+      transform: rotate(180deg) scale(1.1);
     }
 
     /* PROFILE */
@@ -224,6 +252,21 @@
       font-size: .7rem;
     }
 
+    small.mt-4 {
+      color: #00BCD4;
+    }
+
+    span.text-success {
+      font-size: .8rem;
+    }
+
+    .col-6.mb-3 div,
+    .col-12.mb-3 div {
+      font-weight: 700;
+      font-size: .9rem;
+      text-transform: uppercase;
+    }
+
     .profile {
       display: flex;
       gap: .5rem;
@@ -254,6 +297,12 @@
 
     .profile-item:last-child {
       border-bottom: none;
+    }
+
+    h4.uppercase {
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #2828a1;
     }
 
     .profile-item i {
@@ -341,203 +390,215 @@
   <script>
     const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
     const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
-    const audioError   = new Audio("{{ asset('public/audio/error.mpeg') }}");
+    const audioError = new Audio("{{ asset('public/audio/error.mpeg') }}");
 
     audioSuccess.preload = 'auto';
     audioExpired.preload = 'auto';
-    audioError.preload   = 'auto';
+    audioError.preload = 'auto';
 
     lucide.createIcons();
     let scanner = null;
     let scanLock = false;
-    let isSubmitting = false;      // 🚫 prevents double submit
+    let isSubmitting = false; // 🚫 prevents double submit
     let lastQr = null;
     let lastQrTime = 0;
 
     const QR_COOLDOWN = 10000; // 15 seconds
 
 
-    
+
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('active');
     }
 
     function navigate(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.getElementById('sidebar').classList.remove('active');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.getElementById('sidebar').classList.remove('active');
 
-        if (id === 'scan') {
-            scanLock = false;
-            isSubmitting = false;
-            document.getElementById('scanner-wrapper').style.display = 'block';
-            startScanner();
-        } else {
-            stopScanner();
-        }
+      if (id === 'scan') {
+        scanLock = false;
+        isSubmitting = false;
+        document.getElementById('scanner-wrapper').style.display = 'block';
+        startScanner();
+      } else {
+        stopScanner();
+      }
     }
 
 
 
     function setScanMessage(message, type = 'success') {
-        const msgEl = document.getElementById('scanResult');
+      const msgEl = document.getElementById('scanResult');
 
-        msgEl.innerText = message;
+      msgEl.innerText = message;
 
-        // Remove old classes
-        msgEl.classList.remove('text-success', 'text-danger');
+      // Remove old classes
+      msgEl.classList.remove('text-success', 'text-danger');
 
-        // Add new class
-        if (type === 'success') {
-            msgEl.classList.add('text-success');
-        } else {
-            msgEl.classList.add('text-danger');
-        }
+      // Add new class
+      if (type === 'success') {
+        msgEl.classList.add('text-success');
+      } else {
+        msgEl.classList.add('text-danger');
+      }
     }
     /* =========================
       STOP SCANNER
     ========================= */
     function stopScanner() {
-        if (scanner) {
-            return scanner.stop().then(() => {
-                scanner.clear();
-                scanner = null;
-            }).catch(() => {
-                scanner = null;
-            });
-        }
-        return Promise.resolve();
+      if (scanner) {
+        return scanner.stop().then(() => {
+          scanner.clear();
+          scanner = null;
+        }).catch(() => {
+          scanner = null;
+        });
+      }
+      return Promise.resolve();
     }
-      /* =========================
+    /* =========================
       START SCANNER
     ========================= */
     function startScanner() {
-       if (scanner) return;
+      if (scanner) return;
 
-        scanLock = false;
-        isSubmitting = false;
-        document.getElementById('scanResult').innerText = 'Waiting for scan...';
-        document.getElementById('scanResult').className = 'text-muted';
+      scanLock = false;
+      isSubmitting = false;
+      document.getElementById('scanResult').innerText = 'Waiting for scan...';
+      document.getElementById('scanResult').className = 'text-muted';
 
-        scanner = new Html5Qrcode("reader");
+      scanner = new Html5Qrcode("reader");
 
-        scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            qr => {
-                  
-                 const now = Date.now();
+      scanner.start({
+          facingMode: "environment"
+        }, {
+          fps: 10,
+          qrbox: 250
+        },
+        qr => {
 
-                  // 🚫 SAME QR BLOCK
-                  if (qr === lastQr && (now - lastQrTime) < QR_COOLDOWN) {
-                      return;
-                  }
+          const now = Date.now();
 
-                    // 🚫 HARD LOCKS
-                  if (scanLock || isSubmitting) return;
-                  scanLock = true;
-                  isSubmitting = true;
-                  lastQr = qr;
-                  lastQrTime = now;
-                  stopScanner(); 
-                  submitScan(qr);
+          // 🚫 SAME QR BLOCK
+          if (qr === lastQr && (now - lastQrTime) < QR_COOLDOWN) {
+            return;
+          }
 
-            }
-        ).catch(err => {
-            // alert('Camera error: ' + err);
-            scanner = null;
-        });
+          // 🚫 HARD LOCKS
+          if (scanLock || isSubmitting) return;
+          scanLock = true;
+          isSubmitting = true;
+          lastQr = qr;
+          lastQrTime = now;
+          stopScanner();
+          submitScan(qr);
 
-        
+        }
+      ).catch(err => {
+        // alert('Camera error: ' + err);
+        scanner = null;
+      });
+
+
     }
 
-   
+
     /* =========================
       SUBMIT SCAN (BACKEND)
     ========================= */
     function submitScan(qrText) {
       alert("submitscan");
-        const verifyToken = localStorage.getItem('verify_token');
-        if (!verifyToken) {
-            audioError.play();
-            document.getElementById('scanResult').innerText =
-                'Verification expired. Please login again.';
-            stopScanner();
-            return;
-        }
+      const verifyToken = localStorage.getItem('verify_token');
+      if (!verifyToken) {
+        audioError.play();
+        document.getElementById('scanResult').innerText =
+          'Verification expired. Please login again.';
+        stopScanner();
+        return;
+      }
 
-        fetch("{{ route('store.scan.attendance') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                qr: qrText,
-                verify_token: verifyToken
-            })
+      fetch("{{ route('store.scan.attendance') }}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            qr: qrText,
+            verify_token: verifyToken
+          })
         })
         .then(res => res.json())
         .then(res => {
 
-            alert(res.status);
-              const scanMsg = document.getElementById('scanResult');
-              if (res.status === 'success') {
-                  setScanMessage(res.message, 'success');
-              } else {
-                  setScanMessage(res.message, 'danger');
-              }
-            // Hide all animations
-              successAnimation.style.display = 'none';
-              failedAnimation.style.display  = 'none';
-              errorAnimation.style.display   = 'none';
+          alert(res.status);
+          const scanMsg = document.getElementById('scanResult');
+          if (res.status === 'success') {
+            setScanMessage(res.message, 'success');
+          } else {
+            setScanMessage(res.message, 'danger');
+          }
+          // Hide all animations
+          successAnimation.style.display = 'none';
+          failedAnimation.style.display = 'none';
+          errorAnimation.style.display = 'none';
 
-              let animation;
-              let audio;
+          let animation;
+          let audio;
 
-              if (res.status === 'success') {
-                  animation = successAnimation;
-                  audio = audioSuccess;
-              } 
-              else if (res.status === 'expired') {
-                  animation = failedAnimation;
-                  audio = audioExpired;
-              } 
-              else {
-                  animation = errorAnimation;
-                  audio = audioError;
-              }
+          if (res.status === 'success') {
+            animation = successAnimation;
+            audio = audioSuccess;
+          } else if (res.status === 'expired') {
+            animation = failedAnimation;
+            audio = audioExpired;
+          } else {
+            animation = errorAnimation;
+            audio = audioError;
+          }
 
-              audio.play();
+          audio.play();
 
-              // Hide scanner UI
-              document.getElementById('scanner-wrapper').style.display = 'none';
-              animation.style.display = 'block';
+          // Hide scanner UI
+          document.getElementById('scanner-wrapper').style.display = 'none';
+          animation.style.display = 'block';
 
-               // 🕒 ONLY AFTER ANIMATION → NAVIGATE
-              setTimeout(() => {
-                  animation.style.display = 'none';
-                  isSubmitting = false;
-                  scanLock = false;
-                  stopScanner();
-                  navigate('dashboard');
-              }, 4000); // 👈 animation duration
+          // 🕒 ONLY AFTER ANIMATION → NAVIGATE
+          setTimeout(() => {
+            animation.style.display = 'none';
+            isSubmitting = false;
+            scanLock = false;
+            stopScanner();
+            navigate('dashboard');
+          }, 4000); // 👈 animation duration
 
-            
-                
+
+
 
         })
         .catch(() => {
-            // audioError.play();
-            document.getElementById('scanResult').innerText =
-                'Network error. Try again.';
-            // stopScanner();
+          // audioError.play();
+          document.getElementById('scanResult').innerText =
+            'Network error. Try again.';
+          // stopScanner();
         });
     }
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const flipBtn = document.querySelector(".flip-btn");
+      const card = document.querySelector(".id-card");
 
-</script>
-
+      if (flipBtn && card) {
+        flipBtn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          card.classList.toggle("flipped");
+        });
+      }
+    });
+  </script>
 
 
 </body>
