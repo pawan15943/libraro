@@ -83,7 +83,7 @@
                                 </select>
                             </div>
                             <div class="col-lg-12">
-                                <input type="text"  name="uid" id="learner_no_uid" placeholder="Enter Learner Unique ID" class="form-control">
+                                <input type="text"  name="uid" id="learner_no_uid" placeholder="Enter Unique ID" class="form-control">
                             </div>
                             <div class="col-lg-12">
                                 <input type="text" name="mobile" id="learner_mobile" placeholder="Mobile Number" class="form-control">
