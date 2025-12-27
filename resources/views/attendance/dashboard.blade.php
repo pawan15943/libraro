@@ -12,10 +12,9 @@
         color: #8c8c8c;
     }
 
-    .id-back{
+    .id-back {
         background: #fff !important;
     }
-
 </style>
 
 <!-- HEADER -->
@@ -47,6 +46,7 @@
 
         <div class="id-wrapper">
             <div class="id-card position-relative">
+                    <i data-lucide="flip-horizontal-2" class="flip-btn"></i>
 
                 <!-- FRONT -->
                 <div class="id-front">
@@ -54,12 +54,10 @@
                         <h4 class="uppercase">
                             {{ $detail->library_name ?? 'Library' }}
                         </h4>
-                       
                     </div>
 
                     <h6 class="mt-3">
                         Seat No : {{ $detail->seat_no ?? 'GEN' }}
-
                     </h6>
 
                     <div class="mt-3 row">
@@ -86,16 +84,15 @@
                             <small>Plan Type / Shift</small>
                             <div>
                                 {{ $detail->planType->name ?? '-' }}
-
                             </div>
                         </div>
-                       <div class="col-12 mb-3">
+                        <div class="col-12 mb-3">
                             <small>Shift Timing</small>
                             <div>
                                 @if($detail && $detail->planType)
-                                    {{ \Carbon\Carbon::parse($detail->planType->start_time)->format('h:i A') }}
-                                    to
-                                    {{ \Carbon\Carbon::parse($detail->planType->end_time)->format('h:i A') }}
+                                {{ \Carbon\Carbon::parse($detail->planType->start_time)->format('h:i A') }}
+                                to
+                                {{ \Carbon\Carbon::parse($detail->planType->end_time)->format('h:i A') }}
                                 @endif
                             </div>
                         </div>
@@ -109,7 +106,7 @@
                             </div>
                         </div>
 
-                        <div class="col-6 mb-4">
+                        <div class="col-6 mb-3">
                             <small>Plan Ends</small>
                             <div>
                                 {{ $detail?->plan_end_date
@@ -118,7 +115,7 @@
                             </div>
                         </div>
                         <div class="col-12 m-0 text-center">
-                             {!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}
+                            {!! getStatusFromBranch($detail->plan_end_date,$learner->id,$detail->branch_id) !!}
                         </div>
 
                     </div>
@@ -128,13 +125,13 @@
                 <div class="id-back bg-white d-flex flex-column justify-content-center align-items-center">
 
                     @if($learner)
-
-                    {!! QrCode::size(250)->generate($learner->learner_no) !!}
+                    <div class="barcode">
+                        {!! QrCode::size(220)->generate($learner->learner_no) !!}
+                    </div>
                     @else
                     <span>No QR</span>
                     @endif
-
-                    <small class="mt-4">Scan for Attendance</small>
+                    <small class="mt-4">Show QR to Scanner</small>
                 </div>
 
             </div>
@@ -157,7 +154,7 @@
 
         <div class="profile-list">
 
-                {{-- Date of Birth --}}
+            {{-- Date of Birth --}}
             <div class="profile-item">
                 <i data-lucide="calendar-heart"></i>
                 <div>
@@ -199,7 +196,7 @@
                     </strong>
                 </div>
             </div>
-          
+
             {{-- Email --}}
             <div class="profile-item">
                 <i data-lucide="mail"></i>
@@ -280,8 +277,8 @@
                 <i data-lucide="phone"></i>
                 <div>
                     <small>Library Contact No</small>
-                        <strong>
-                         {{ !empty($detail->library_mobile)
+                    <strong>
+                        {{ !empty($detail->library_mobile)
                             ? '+91-' . $detail->library_mobile
                             : 'Not Updated'
                         }}
@@ -302,4 +299,6 @@
 
     </section>
 </div>
+
 @endsection
+
