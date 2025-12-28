@@ -708,7 +708,26 @@ class AttendanceController extends Controller
             'attendance' => 1
         ]);
 
+        try {
 
+            $data = [
+            'learner_id'     => $learner->id,
+            'branch_id'      => $learner->branch_id,
+            'punch_datetime' => now(),
+            'source'         => 'SCAN'
+            ];
+
+            $this->logInsert($data);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Attendance log insert failed', [
+                'error' => $e->getMessage(),
+                'data'  => $data,
+            ]);
+
+        
+        }
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Punch OUT successful'
