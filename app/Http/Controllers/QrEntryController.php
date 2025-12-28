@@ -936,15 +936,32 @@ class QrEntryController extends Controller
             'mobile' => 'required|digits:10',
             'learner_no'=>'required'
         ]);
+         try {
+            $dob = Carbon::parse($request->learner_no)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $dob = null;
+        }
 
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
-        
-        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-            ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
-            ->first();
+        // Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
+        //     ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
+        //     ->first();
+        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)->where(function ($query) use ($request,$dob) {
+                    $query->where('learner_no', $request->input('learner_no'));
+                        if ($dob) {
+                            \Log::info('dob part hit',['dob'=>$dob]);
+                            $query->orWhere('dob', $dob);
+                        }
+                       // Email (only if valid)
+                        if (filter_var($request->input('learner_no'), FILTER_VALIDATE_EMAIL)) {
+                            $query->orWhere('email', encryptData($request->input('learner_no')));
+                        }
+                })
+                ->where('mobile', encryptData($request->mobile))
+                ->first();
 
         if (!$customer) {
-            return back()->withErrors(['mobile' => 'No customer found with this mobile.']);
+            return redirect()->back()->with('error', 'No customer found with this mobile.');
         }
 
         $customer_detail = LearnerDetail::withoutGlobalScopes()->where('learner_id', $customer->id)
@@ -954,7 +971,8 @@ class QrEntryController extends Controller
        
         $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
         if (!$transaction) {
-            return back()->withErrors(['mobile' => 'No customer transaction found with this mobile.']);
+            return redirect()->back()->with('error', 'No customer transaction found with this mobile.');
+
         }
     
 
