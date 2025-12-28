@@ -112,7 +112,7 @@
             input.attr('type', 'email');
         } 
         else if (value === 'learner_no') {
-            input.attr('placeholder', 'Enter Learner No');
+            input.attr('placeholder', 'Enter Member UID');
             input.attr('type', 'text');
         } 
         else {
