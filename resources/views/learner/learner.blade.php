@@ -209,14 +209,21 @@
                         <li><a href="{{route('qr.attendance.link')}}" title="QR Attendance Link" class="w-auto px-2">
                              <i class="fa-solid fa-share" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="QR Attendance Link"></i>
                         </a></li>
+                        <li>
+                            <a href="{{ route('attendance.summary',$learner_id) }}" title="View Attendace Detials">
+                                <i class="fa-solid fa-clipboard-user"></i>
+                            </a>
+                        </li>
                         <!-- Edit Seat Info -->
                         @if($planStatus['diff_extend_day']>0)
 
                             {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
+                          
+
 
                             <!-- To Handle Paylater & Pending Amount Icon -->
                             @if(paylater($learner_detail_id) || pending_amt($learner_detail_id))
-                            <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2" >Pay Due Amount</a></li>
+                            <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due Amount</a></li>
                             @endif
 
                             @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )

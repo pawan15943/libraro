@@ -21,7 +21,8 @@
 <div class="app-header">
     <div class="flex">
         <div class="profile">
-           <img src="{{ asset(!empty($detail->library_image) ? 'public/uploads'.$detail->library_image : 'public/img/logo-white.png') }}" alt="Logo" class="logo">
+            <img src="{{asset('public/img/logo-white.png')}}" alt="Logo" class="logo">
+           {{-- <img src="{{ asset(!empty($detail->library_image) ? 'public/uploads'.$detail->library_image : 'public/img/logo-white.png') }}" alt="Logo" class="logo"> --}}
 
         </div>
         <i data-lucide="menu" onclick="toggleSidebar()"></i>

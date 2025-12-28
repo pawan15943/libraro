@@ -6,12 +6,17 @@ use App\Models\Attendance;
 use App\Models\Branch;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+
 
 class AttendanceController extends Controller
 {
@@ -388,6 +393,30 @@ class AttendanceController extends Controller
                     'library_id' => $libraryId->library_id,
                     'branch_id' => $branchId,
                 ]);
+            
+
+                try {
+
+                    $data = [
+                        'learner_id'     => $learnerId,
+                        'branch_id'      => $branchId,
+                        'punch_datetime' => $currentTime,
+                        'source'         => 'QR'
+                    ];
+
+                    $this->logInsert($data);
+
+                } catch (\Throwable $e) {
+
+                    \Log::error('Attendance log insert failed', [
+                        'error' => $e->getMessage(),
+                        'data'  => $data,
+                    ]);
+
+                
+                }
+
+
             }
            
         
@@ -527,7 +556,30 @@ class AttendanceController extends Controller
                 'attendance' => 1
             ]);
 
+        
+
+            try {
+
+                $data = [
+                'learner_id'     => $learner->id,
+                'branch_id'      => $learner->branch_id,
+                'punch_datetime' => now(),
+                'source'         => 'SCAN'
+                ];
+
+                $this->logInsert($data);
+
+            } catch (\Throwable $e) {
+
+                \Log::error('Attendance log insert failed', [
+                    'error' => $e->getMessage(),
+                    'data'  => $data,
+                ]);
+
             
+            }
+
+
 
             return response()->json([
                 'status'  => 'success',
@@ -547,6 +599,131 @@ class AttendanceController extends Controller
             'message' => 'Thank You! Punch OUT successful'
         ]);
     }
+
+    /* ===============================
+       2️⃣ Attendance Summary Page
+    =============================== */
+public function summary(Request $request, $learner)
+{
+    $learnerId = $learner;
+
+      // ✅ DEFAULT: current month
+    if ($request->filled('from_date') && $request->filled('to_date')) {
+
+        $fromDate = Carbon::parse($request->from_date)->toDateString();
+        $toDate   = Carbon::parse($request->to_date)->toDateString();
+
+    } else {
+
+        $fromDate = Carbon::now()->startOfMonth()->toDateString();
+        $toDate   = Carbon::today()->toDateString();
+    }
+
+  
+    /* ===============================
+    1️⃣ SUMMARY FROM attendances
+    =============================== */
+    $attendance = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
+        ->leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')
+        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        ->where('attendances.learner_id', $learnerId)
+        ->where('learners.status', 1)
+        ->whereBetween('attendances.date', [$fromDate, $toDate])
+        ->select(
+            'learners.id as learner_id',
+            'learners.name',
+            'learners.mobile',
+            'learners.seat_no',
+            'plan_types.name as plan_type_name',
+            'attendances.in_time',
+            'attendances.out_time',
+            'attendances.attendance',
+            'attendances.date'
+        )
+        ->get();
+
+    /* ===============================
+    2️⃣ COUNTS
+    =============================== */
+    $totalStudents   = $attendance->count();
+    $presentStudents = $attendance->where('attendance', 1)->count();
+    $absentStudents  = $attendance->where('attendance', 0)->count();
+
+    return view('attendance.summary', compact(
+        'attendance',
+        'fromDate',
+        'toDate',
+        'learnerId',
+        'totalStudents',
+        'presentStudents',
+        'absentStudents'
+    ));
+}
+
+
+public function logs(Request $request)
+{
+    try {
+
+        if (!$request->learner_id || !$request->date) {
+            return response()->json([]);
+        }
+
+        // ✅ Validate date safely
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', $request->date)->toDateString();
+        } catch (\Exception $e) {
+            return response()->json([]);
+        }
+
+        $logs = DB::table('learner_attendance_logs')
+            ->where('learner_id', $request->learner_id)
+            ->whereDate('punch_datetime', $date)
+            ->orderBy('punch_datetime')
+            ->get();
+
+        // ✅ Handle empty records safely
+        if ($logs->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // ✅ Format response
+        $response = $logs->map(function ($row) {
+            return [
+                'punch_time' => Carbon::parse($row->punch_datetime)->format('h:i A'),'source'=>$row->source
+            ];
+        });
+
+        return response()->json($response);
+
+    } catch (\Throwable $e) {
+
+        // 🔥 Log exact error
+        Log::error('Attendance log error', [
+            'message' => $e->getMessage(),
+            'line'    => $e->getLine(),
+            'file'    => $e->getFile(),
+        ]);
+
+        return response()->json([], 500);
+    }
+}
+
+public function logInsert(array $data)
+{
+    DB::table('learner_attendance_logs')->insert([
+        'learner_id'     => $data['learner_id'],
+        'branch_id'      => $data['branch_id'],
+        'punch_datetime' => $data['punch_datetime'],
+        'source'         => $data['source'],
+        'created_at'     => now(),
+        // 'updated_at'     => now(),
+    ]);
+}
+
+
+
+
 
 
 
