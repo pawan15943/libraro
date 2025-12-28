@@ -32,7 +32,7 @@
         margin-bottom: 1rem;
     }
 
-    .invalid-feedback{
+    .invalid-feedback {
         font-weight: 500;
     }
 
@@ -54,7 +54,7 @@
                         @endif
                         <div class="row g-4 ">
                             <input type="hidden" value="{{$branch->id}}" name="branch">
-                                <div class="col-lg-12">
+                            <div class="col-lg-12">
                                 <select class="form-select form-control" id="login_with" name="login_with">
                                     <option value="">Choose</option>
                                     <option value="dob">Proceed with DOB</option>
@@ -62,7 +62,7 @@
                                     <option value="learner_no">Proceed with Member UID</option>
                                 </select>
                             </div>
-                         
+
                             <div class="col-lg-12">
                                 <input type="text" class="form-control @error('learner_no') is-invalid @enderror" id="learner_no_uid" placeholder="Enter your Member UID" name="learner_no">
                                 @error('learner_no')
@@ -89,8 +89,9 @@
         </form>
     </div>
 </section>
-    <script>
-    $('#login_with').on('change', function () {
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $('#login_with').on('change', function() {
         let value = $(this).val();
         alert(value);
         let input = $('#learner_no_uid');
@@ -98,19 +99,17 @@
         if (value === 'dob') {
             input.attr('placeholder', 'DD/MM/YYYY');
             input.attr('type', 'text');
-        } 
-        else if (value === 'email') {
+        } else if (value === 'email') {
             input.attr('placeholder', 'Enter Email ID');
             input.attr('type', 'email');
-        } 
-        else if (value === 'learner_no') {
+        } else if (value === 'learner_no') {
             input.attr('placeholder', 'Enter Learner No');
             input.attr('type', 'text');
-        } 
-        else {
+        } else {
             input.attr('placeholder', 'Enter Value');
             input.attr('type', 'text');
         }
     });
+
 </script>
 @endsection
