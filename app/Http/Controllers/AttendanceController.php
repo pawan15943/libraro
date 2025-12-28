@@ -395,31 +395,31 @@ class AttendanceController extends Controller
                 ]);
             
 
-                try {
-
-                    $data = [
-                        'learner_id'     => $learnerId,
-                        'branch_id'      => $branchId,
-                        'punch_datetime' => $currentTime,
-                        'source'         => 'QR'
-                    ];
-
-                    $this->logInsert($data);
-
-                } catch (\Throwable $e) {
-
-                    \Log::error('Attendance log insert failed', [
-                        'error' => $e->getMessage(),
-                        'data'  => $data,
-                    ]);
-
-                
-                }
+              
 
 
             }
            
-        
+            try {
+
+                $data = [
+                    'learner_id'     => $learnerId,
+                    'branch_id'      => $branchId,
+                    'punch_datetime' => $currentTime,
+                    'source'         => 'QR'
+                ];
+
+                $this->logInsert($data);
+
+            } catch (\Throwable $e) {
+
+                \Log::error('Attendance log insert failed', [
+                    'error' => $e->getMessage(),
+                    'data'  => $data,
+                ]);
+
+            
+            }
         
         return response()->json([
             'status'  => 'success',
@@ -545,6 +545,27 @@ class AttendanceController extends Controller
         $attendance = Attendance::where('learner_id', $learner->id)
             ->where('date', today())
             ->first();
+        
+        try {
+
+            $data = [
+            'learner_id'     => $learner->id,
+            'branch_id'      => $learner->branch_id,
+            'punch_datetime' => now(),
+            'source'         => 'SCAN'
+            ];
+
+            $this->logInsert($data);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Attendance log insert failed', [
+                'error' => $e->getMessage(),
+                'data'  => $data,
+            ]);
+
+        
+        }
 
         if (!$attendance) {
             Attendance::create([
@@ -555,31 +576,6 @@ class AttendanceController extends Controller
                 'in_time'    => now(),
                 'attendance' => 1
             ]);
-
-        
-
-            try {
-
-                $data = [
-                'learner_id'     => $learner->id,
-                'branch_id'      => $learner->branch_id,
-                'punch_datetime' => now(),
-                'source'         => 'SCAN'
-                ];
-
-                $this->logInsert($data);
-
-            } catch (\Throwable $e) {
-
-                \Log::error('Attendance log insert failed', [
-                    'error' => $e->getMessage(),
-                    'data'  => $data,
-                ]);
-
-            
-            }
-
-
 
             return response()->json([
                 'status'  => 'success',
@@ -593,7 +589,7 @@ class AttendanceController extends Controller
             'attendance' => 1
         ]);
 
-
+        
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Punch OUT successful'
