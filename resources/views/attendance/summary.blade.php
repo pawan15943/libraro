@@ -8,11 +8,13 @@ $current_route = Route::currentRouteName();
     .revenue-info a {
         display: flex;
         background: navy;
-        color: #fff ! IMPORTANT;
+        color: #fff !important;
         justify-content: center;
         align-items: center;
         border-radius: 2rem;
-        width: 90px;
+        width: 78px;
+        font-size: .8rem;
+        height: 30px !important;
     }
 
     .revenue-info ul {
@@ -42,9 +44,9 @@ $current_route = Route::currentRouteName();
                     <thead>
                         <tr>
                             <th class="text-center">#</th>
+                            <th class="text-center">Source</th>
                             <th class="text-center">Type</th>
                             <th class="text-center">Time</th>
-                            <th class="text-center">Source</th>
                         </tr>
                     </thead>
                     <tbody id="logBody">
@@ -63,24 +65,35 @@ $current_route = Route::currentRouteName();
 
 <div class="row mb-4 ">
     <div class="col-lg-12">
-        <div class="filter-box">
+        <div class="filter-box p-3">
             <form action="" method="GET">
 
                 <!-- Filter By Plan -->
-                <div class="row g-4">
-                     <div class="col-lg-4">
-                       <input type="date" class="form-control" name="from_date" value="{{ request('from_date') ?: date('Y-m-d') }}">
-                    </div>
-                     <div class="col-lg-4">
-                       <input type="date" class="form-control" name="to_date" value="{{ request('to_date') ?: date('Y-m-d') }}">
+                <div class="row g-2">
+                    <div class="col-lg-4">
+                        <input type="date" class="form-control" name="from_date" value="{{ request('from_date') ?: '' }}">
                     </div>
 
+                    <div class="col-lg-4">
+                        <input type="date" class="form-control" name="to_date" value="{{ request('to_date') ?: '' }}">
+                    </div>
 
                     <div class="col-lg-2">
                         <button class="btn btn-primary button">
                             <i class="fa fa-search"></i> Search Records
                         </button>
                     </div>
+
+                       <div class="col-lg-1 align-self-end">
+                            <button type="button" 
+                                    id="clearFilter" 
+                                    class="btn btn-secondary button"
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="bottom" 
+                                    data-bs-title="Clear Filter">
+                                Clear
+                            </button>
+                        </div>
                 </div>
             </form>
         </div>
@@ -89,25 +102,16 @@ $current_route = Route::currentRouteName();
 
 <div class="row mb-4">
     <div class="col-lg-12">
-              
+        <h4 class="mb-4">Attendace Summery</h4>
         <div class="row g-2 mb-4">
 
             @forelse($attendance as $index => $value)
-            
+
             <div class="col-lg-12">
                 <div class="revenue-info">
                     <ul>
-                        <li style="width:5% !important;">
-                            <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
-                        </li>
-
-                        <li style="width:20% !important;">
-                            <span>Name</span>
-                            <p>{{ $value->name }}</p>
-                        </li>
-
                         <li>
-                            <span>Date</span>
+                            <span>Attendance Date</span>
                             <p>{{ $value->date }}</p>
                         </li>
 
@@ -121,7 +125,7 @@ $current_route = Route::currentRouteName();
                             <p>{{ $value->out_time ? Carbon::parse($value->out_time)->format('h:i A') : '-' }}</p>
                         </li>
 
-                        <li >
+                        <li>
                             <span>Status</span>
                             <p>
                                 @if($value->attendance == 1)
@@ -142,13 +146,13 @@ $current_route = Route::currentRouteName();
                     </ul>
                 </div>
             </div>
-           
+
             @empty
 
             <div class="col-lg-12 text-center">
                 <p>No records found.</p>
             </div>
-            
+
             @endforelse
         </div>
 
@@ -202,6 +206,29 @@ $current_route = Route::currentRouteName();
     });
 
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const clearBtn = document.getElementById('clearFilter');
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+
+            // Clear inputs
+            const fromDate = document.querySelector('input[name="from_date"]');
+            const toDate   = document.querySelector('input[name="to_date"]');
+
+            if (fromDate) fromDate.value = '';
+            if (toDate) toDate.value = '';
+
+            // Reload page WITHOUT query params
+            window.location.href = "{{ url()->current() }}";
+        });
+    }
+
+});
+</script>
+
 
 
 

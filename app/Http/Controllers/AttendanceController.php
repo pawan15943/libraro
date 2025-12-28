@@ -753,8 +753,8 @@ public function summary(Request $request, $learner)
         $fromDate = Carbon::now()->startOfMonth()->toDateString();
         $toDate   = Carbon::today()->toDateString();
     }
-
-  
+   
+ 
     /* ===============================
     1️⃣ SUMMARY FROM attendances
     =============================== */

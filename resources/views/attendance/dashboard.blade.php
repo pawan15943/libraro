@@ -175,7 +175,7 @@
                     <small>Mobile Number</small>
                     <strong>
                         {{ !empty($learner->mobile) 
-                            ? $learner->mobile 
+                            ? '+91-'.$learner->mobile 
                             : 'Not Updated' 
                         }}
                     </strong>
