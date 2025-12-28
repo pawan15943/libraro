@@ -42,12 +42,12 @@
                     <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
                     <div class="online-booking">
                         <span class="steps">Step-1</span>
-                        <h4 class="mb-4 text-success">Re-New your plan</h4>
+                        <h4 class="mb-4 text-center">Re-New your plan</h4>
                         <div class="row g-4 ">
                             <input type="hidden" value="{{$branch->id}}" name="branch">
 
                             <div class="col-lg-12">
-                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" placeholder="Enter your Learner Number" name="learner_no">
+                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" placeholder="Enter your Member UID" name="learner_no">
                                 @error('learner_no')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -63,7 +63,7 @@
                                 @enderror
                             </div>
                             <div class="col-lg-12 text-center">
-                                <input type="submit" class="btn btn-primary" value="NEXT">
+                                <button type="submit" class="btn btn-primary button">Next <i class="fa fa-long-arrow-right ms-2"></i></button>
                             </div>
                         </div>
                     </div>

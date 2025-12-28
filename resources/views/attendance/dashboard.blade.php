@@ -63,7 +63,7 @@
                     <div class="mt-3 row">
 
                         <div class="col-6 mb-3">
-                            <small>Learner No.</small>
+                            <small>Member UID</small>
                             <div>
                                 {{ $learner->learner_no ?? '-' }}
                             </div>

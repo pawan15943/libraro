@@ -79,11 +79,11 @@
                                     <option value="">Choose</option>
                                     <option value="dob">Date of Birth</option>
                                     <option value="email">Email</option>
-                                    <option value="learner_no">Learner No</option>
+                                    <option value="learner_no">Member UID</option>
                                 </select>
                             </div>
                             <div class="col-lg-12">
-                                <input type="text"  name="uid" id="learner_no_uid" placeholder="Enter Unique ID" class="form-control">
+                                <input type="text"  name="uid" id="learner_no_uid" placeholder="Enter Member UID" class="form-control">
                             </div>
                             <div class="col-lg-12">
                                 <input type="text" name="mobile" id="learner_mobile" placeholder="Mobile Number" class="form-control">
