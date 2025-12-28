@@ -57,14 +57,14 @@
                                 <div class="col-lg-12">
                                 <select class="form-select form-control" id="login_with" name="login_with">
                                     <option value="">Choose</option>
-                                    <option value="dob">Date of Birth</option>
-                                    <option value="email">Email</option>
-                                    <option value="learner_no">Member UID</option>
+                                    <option value="dob">Proceed with DOB</option>
+                                    <option value="email">Proceed with Email ID</option>
+                                    <option value="learner_no">Proceed with Member UID</option>
                                 </select>
                             </div>
                          
                             <div class="col-lg-12">
-                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" id="learner_no_uid"placeholder="Enter your Member UID" name="learner_no">
+                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" id="learner_no_uid" placeholder="Enter your Member UID" name="learner_no">
                                 @error('learner_no')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -92,6 +92,7 @@
     <script>
     $('#login_with').on('change', function () {
         let value = $(this).val();
+        alert(value);
         let input = $('#learner_no_uid');
 
         if (value === 'dob') {
