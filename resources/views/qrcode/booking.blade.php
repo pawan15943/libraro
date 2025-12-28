@@ -1,7 +1,35 @@
 @extends('sitelayouts.layout')
 @section('content')
+<style>
+    header,
+    footer {
+        display: none;
+    }
 
-<section class="py-3">
+    .online-qr-booking {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #efefff;
+        
+    }
+
+    .online-booking{
+        border: none !important;
+    }
+
+    .logo {
+        width: 180px;
+        padding: .5rem 0;
+        margin: 0 auto;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+</style>
+
+<section class="py-3 online-qr-booking">
 
     <div class="container">
         <!-- resources/views/booking/form.blade.php -->
@@ -19,6 +47,7 @@
 
             <div class="row justify-content-center">
                 <div class="col-lg-6">
+                    <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
                     <div class="online-booking">
                         <span class="steps">Step-1</span>
                         <h4 class="mb-4 text-center">Enter Booking Details</h4>
@@ -44,8 +73,7 @@
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
                                     @foreach($availableSeats as $value)
-                                    <option value="{{ $value }}"
-                                        {{ old('seat_no') == $value ? 'selected' : '' }}>
+                                    <option value="{{ $value }}" {{ old('seat_no') == $value ? 'selected' : '' }}>
                                         {{ $value }}
                                     </option>
                                     @endforeach
@@ -165,15 +193,15 @@
 
             if (plan_id && plan_type_id && branch_id) {
                 $.ajax({
-                    url: "{{ route('get.plan.price') }}",
-                    type: "POST",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        plan_id: plan_id,
-                        plan_type_id: plan_type_id,
-                        branch_id: branch_id
-                    },
-                    success: function(response) {
+                    url: "{{ route('get.plan.price') }}"
+                    , type: "POST"
+                    , data: {
+                        _token: "{{ csrf_token() }}"
+                        , plan_id: plan_id
+                        , plan_type_id: plan_type_id
+                        , branch_id: branch_id
+                    }
+                    , success: function(response) {
                         if (response.success) {
                             $('#plan_price').val(response.price);
                         } else {
@@ -188,15 +216,15 @@
 
             $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
             $.ajax({
-                url: '{{ route('getPlantypeSeatwise') }}',
-                type: 'GET',
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "seatNo": seatId,
-                    "branchId": branchId,
-                },
-                dataType: 'json',
-                success: function(html) {
+                url: '{{ route('getPlantypeSeatwise') }}'
+                , type: 'GET'
+                , data: {
+                    "_token": "{{ csrf_token() }}"
+                    , "seatNo": seatId
+                    , "branchId": branchId
+                , }
+                , dataType: 'json'
+                , success: function(html) {
                     console.log(html);
                     if (html) {
 
@@ -219,8 +247,8 @@
                         $("#plan_type_id").empty();
                         $("#plan_type_id").append('<option value="">Select Plan Type</option>');
                     }
-                },
-                error: function(xhr, status, error) {
+                }
+                , error: function(xhr, status, error) {
                     console.error("AJAX error:", status, error); // Log any errors
                 }
             });
@@ -241,6 +269,7 @@
         });
 
     });
+
 </script>
 
 @endsection
