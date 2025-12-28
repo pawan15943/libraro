@@ -21,7 +21,7 @@
 <div class="app-header">
     <div class="flex">
         <div class="profile">
-            <img src="{{asset('public/img/logo-white.png')}}" alt="Logo" class="logo">
+            <img src="{{ asset('public/img/logo-whitw.png') }}" alt="logo" class="logo">
            {{-- <img src="{{ asset(!empty($detail->library_image) ? 'public/uploads'.$detail->library_image : 'public/img/logo-white.png') }}" alt="Logo" class="logo"> --}}
 
         </div>
@@ -29,7 +29,7 @@
     </div>
     <div class="profile-list w-100">
         <div class="profile">
-            <img src="https://i.pravatar.cc/100?img=12" class="picture">
+            <img src="{{ asset('public/img/defualt-library-profile.png') }}" class="picture">
             <div class="libr_info">
                 <strong>{{ $detail->library_name ?? 'Library' }}</strong>
                 <small>QR Attendance</small>
