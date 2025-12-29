@@ -964,7 +964,7 @@ class LearnerController extends Controller
             $hours = $planType->slot_hours;
 
             $plan_id=$request->plan_id;
-           $planData = Plan::where('id', $plan_id)
+            $planData = Plan::where('id', $plan_id)
                 ->select('plan_id', 'type', 'monthdays')
                 ->first();
 
@@ -1153,6 +1153,7 @@ class LearnerController extends Controller
                 ->where('id', '!=', $learner_detail->id)
                 ->update(['status' => 0]);
             }
+            $customer->locker_no=$request->locker_no;
             $customer->save();
             try{
                 if($payment_type=="RENEW"){

@@ -826,6 +826,7 @@ class QrEntryController extends Controller
                 $customer->seat_no=$seat_no;
                 $customer->hours=$hours;
                 $customer->status=$status;
+                $customer->locker_no=$locker_no;
                 $customer->save();
             }else{
                
