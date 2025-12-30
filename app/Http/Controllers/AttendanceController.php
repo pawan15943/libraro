@@ -6,12 +6,17 @@ use App\Models\Attendance;
 use App\Models\Branch;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+
 
 class AttendanceController extends Controller
 {
@@ -132,6 +137,7 @@ class AttendanceController extends Controller
        $learner = Learner::where(function ($query) use ($request,$dob) {
                     $query->where('learner_no', $request->uid);
                         if ($dob) {
+                            \Log::info('dob part hit',['dob'=>$dob]);
                             $query->orWhere('dob', $dob);
                         }
                        // Email (only if valid)
@@ -280,47 +286,61 @@ class AttendanceController extends Controller
             }
            
 
-            /* 🔹 Get latest learner plan */
-            $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+                /* 🔹 Get latest learner plan */
+        $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+            ->orderBy('plan_end_date', 'DESC')
+            ->first();
+
+        /* 1️⃣ No plan OR inactive plan */
+        if (!$learnerDetail || $learnerDetail->status != 1) {
+
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $learnerId)
                 ->orderBy('plan_end_date', 'DESC')
                 ->first();
-            if($learnerDetail->branch_id  != $branchId){
+
+            if ($detail) {
+
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+
+                if ($operation === 'deleteSeat') {
                     return response()->json([
                         'status'  => 'error',
-                        'message' => 'Ohh it seems like you scan wrong Library QR code.'
+                        'message' => 'Your plan has been deleted'
                     ], 403);
+                }
+
+                if ($operation === 'closeSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been closed'
+                    ], 403);
+                }
             }
 
-            /* 1️⃣ No plan exists at all */
-            if (!$learnerDetail) {
-               
-                \Log::info('learner detail not found');
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'No active plan found'
+            ], 403);
+        }
 
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'No plan found'
-                ], 403);
-            }
+        /* 2️⃣ Wrong branch QR */
+        if ($learnerDetail->branch_id != $branchId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
+            ], 403);
+        }
 
-            /* 2️⃣ Plan expired */
-            if ($learnerDetail->plan_end_date < date('Y-m-d')) {
-                \Log::info('expired');
-               
-                return response()->json([
-                    'status'  => 'expired',
-                    'message' => 'Plan expired'
-                ], 403);
-            }
-
-            /* 3️⃣ Active plan exists */
-            if ($learnerDetail->status != 1) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'No active plan found'
-                ], 403);
-            }
-
-            /* ✅ Plan is valid & active → continue */
+        /* 3️⃣ Plan expired */
+        if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+            return response()->json([
+                'status'  => 'expired',
+                'message' => 'Plan expired'
+            ], 403);
+        }
 
 
             \Log::info('success part hit');
@@ -373,9 +393,33 @@ class AttendanceController extends Controller
                     'library_id' => $libraryId->library_id,
                     'branch_id' => $branchId,
                 ]);
+            
+
+              
+
+
             }
            
-        
+            try {
+
+                $data = [
+                    'learner_id'     => $learnerId,
+                    'branch_id'      => $branchId,
+                    'punch_datetime' => $currentTime,
+                    'source'         => 'QR'
+                ];
+
+                $this->logInsert($data);
+
+            } catch (\Throwable $e) {
+
+                \Log::error('Attendance log insert failed', [
+                    'error' => $e->getMessage(),
+                    'data'  => $data,
+                ]);
+
+            
+            }
         
         return response()->json([
             'status'  => 'success',
@@ -389,7 +433,170 @@ class AttendanceController extends Controller
         return view('attendance.success');
     }
 
-    public function scan(Request $request)
+    // public function scan(Request $request)
+    // {
+    //     \Log::info('SCAN HIT', $request->all());
+
+    //     // /* 1️⃣ Decode QR */
+    //     // $decoded = base64_decode($request->qr, true);
+    //     // if (!$decoded) {
+    //     //     \Log::warning('QR decode failed');
+    //     //     return response()->json(['message' => 'Invalid QR'], 403);
+    //     // }
+
+    //     // [$learnerId, $signature] = explode('|', $decoded);
+
+    //     // /* 2️⃣ Verify QR signature */
+    //     // $expected = hash_hmac('sha256', $learnerId, config('app.key'));
+
+    //     // if (!hash_equals($expected, $signature)) {
+    //     //     \Log::warning('QR signature mismatch', compact('learnerId'));
+    //     //     return response()->json(['message' => 'QR tampered'], 403);
+    //     // }
+    //     $learnerNo = trim($request->qr);
+
+    //     if (!$learnerNo) {
+    //         \Log::warning('learnerNo failed');
+    //         return response()->json([
+    //         'status'  => 'error',
+    //         'message' => 'Invalid QR'
+    //     ], 403);
+    //     }
+
+    //     /* 3️⃣ Learner validation */
+    //     $learner = Learner::where('learner_no', $learnerNo)->first();
+
+    //     if (!$learner) {
+    //         \Log::warning('Learner not found');
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'Learner not found'
+    //         ], 404);
+    //     }
+        
+    //     if($learner->branch_id != getCurrentBranch()){
+    //             return response()->json([
+    //             'status'  => 'expired',
+    //              'message' => 'Ohh it seems like you scan wrong Library QR code.'
+    //         ], 403);
+    //     }
+
+    //     $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+        
+            
+    //     /* 1️⃣ No active plan */
+    //     if (!$learnerDetail || $learner->status != 1 || $learnerDetail->status != 1) {
+    //            /* 2️⃣ Plan expired check */
+      
+    //         $detail = LearnerDetail::withTrashed()
+    //             ->where('learner_id', $learner->id)
+    //             ->orderBy('plan_end_date', 'DESC')
+    //             ->first();
+
+    //         if ($detail) {
+
+    //             $operation = DB::table('learner_operations_log')
+    //                 ->where('learner_detail_id', $detail->id)
+    //                 ->value('operation');
+
+    //             if ($operation === 'deleteSeat') {
+    //                 return response()->json([
+    //                     'status'  => 'error',
+    //                     'message' => 'Your plan has been deleted'
+    //                 ], 403);
+    //             }
+
+    //             if ($operation === 'closeSeat') {
+    //                 return response()->json([
+    //                     'status'  => 'error',
+    //                     'message' => 'Your plan has been closed'
+    //                 ], 403);
+    //             }
+    //         }
+
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'No active plan found'
+    //         ], 403);
+    //     }
+
+    //     if ($learnerDetail->plan_end_date < date('Y-m-d')){
+        
+    //         return response()->json([
+    //             'status'  => 'expired',
+    //             'message' => 'Plan expired'
+    //         ], 403);
+    //     }
+        
+    //     $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
+    //     $extendDay = $branch->extend_days; // assume integer
+    //     $today = Carbon::today();
+    //     $endDate = Carbon::parse($learnerDetail->plan_end_date);
+
+    //     $diffInDays = $today->diffInDays($endDate, false);
+    //     if ($extendDay > 0) {
+    //         $inextendDate = $endDate->copy()->addDays($extendDay);
+    //     } else {
+    //         $inextendDate = $endDate; // fallback to original end date
+    //     }
+    //     $diffExtendDay = $today->diffInDays($inextendDate, false);
+    
+    //     /* 5️⃣ Attendance logic */
+    //     $attendance = Attendance::where('learner_id', $learner->id)
+    //         ->where('date', today())
+    //         ->first();
+        
+    //     try {
+
+    //         $data = [
+    //         'learner_id'     => $learner->id,
+    //         'branch_id'      => $learner->branch_id,
+    //         'punch_datetime' => now(),
+    //         'source'         => 'SCAN'
+    //         ];
+
+    //         $this->logInsert($data);
+
+    //     } catch (\Throwable $e) {
+
+    //         \Log::error('Attendance log insert failed', [
+    //             'error' => $e->getMessage(),
+    //             'data'  => $data,
+    //         ]);
+
+        
+    //     }
+
+    //     if (!$attendance) {
+    //         Attendance::create([
+    //             'learner_id' => $learner->id,
+    //             'library_id' => $learner->library_id,
+    //             'branch_id' => $learner->branch_id,
+    //             'date'       => today(),
+    //             'in_time'    => now(),
+    //             'attendance' => 1
+    //         ]);
+
+    //         return response()->json([
+    //             'status'  => 'success',
+    //             'message' => 'Thank You! Punch IN successful'
+    //         ]);
+    //     }
+
+    //     // Punch OUT
+    //     $attendance->update([
+    //         'out_time' => now(),
+    //         'attendance' => 1
+    //     ]);
+
+        
+    //     return response()->json([
+    //         'status'  => 'success',
+    //         'message' => 'Thank You! Punch OUT successful'
+    //     ]);
+    // }
+
+        public function scan(Request $request)
     {
         \Log::info('SCAN HIT', $request->all());
 
@@ -501,12 +708,157 @@ class AttendanceController extends Controller
             'attendance' => 1
         ]);
 
+        try {
 
+            $data = [
+            'learner_id'     => $learner->id,
+            'branch_id'      => $learner->branch_id,
+            'punch_datetime' => now(),
+            'source'         => 'SCAN'
+            ];
+
+            $this->logInsert($data);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Attendance log insert failed', [
+                'error' => $e->getMessage(),
+                'data'  => $data,
+            ]);
+
+        
+        }
         return response()->json([
             'status'  => 'success',
             'message' => 'Thank You! Punch OUT successful'
         ]);
     }
+
+
+    /* ===============================
+       2️⃣ Attendance Summary Page
+    =============================== */
+public function summary(Request $request, $learner)
+{
+    $learnerId = $learner;
+
+      // ✅ DEFAULT: current month
+    if ($request->filled('from_date') && $request->filled('to_date')) {
+
+        $fromDate = Carbon::parse($request->from_date)->toDateString();
+        $toDate   = Carbon::parse($request->to_date)->toDateString();
+
+    } else {
+
+        $fromDate = Carbon::now()->startOfMonth()->toDateString();
+        $toDate   = Carbon::today()->toDateString();
+    }
+   
+ 
+    /* ===============================
+    1️⃣ SUMMARY FROM attendances
+    =============================== */
+    $attendance = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
+        ->leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')
+        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        ->where('attendances.learner_id', $learnerId)
+        ->where('learners.status', 1)
+        ->whereBetween('attendances.date', [$fromDate, $toDate])
+        ->select(
+            'learners.id as learner_id',
+            'learners.name',
+            'learners.mobile',
+            'learners.seat_no',
+            'plan_types.name as plan_type_name',
+            'attendances.in_time',
+            'attendances.out_time',
+            'attendances.attendance',
+            'attendances.date'
+        )
+        ->get();
+
+    /* ===============================
+    2️⃣ COUNTS
+    =============================== */
+    $totalStudents   = $attendance->count();
+    $presentStudents = $attendance->where('attendance', 1)->count();
+    $absentStudents  = $attendance->where('attendance', 0)->count();
+
+    return view('attendance.summary', compact(
+        'attendance',
+        'fromDate',
+        'toDate',
+        'learnerId',
+        'totalStudents',
+        'presentStudents',
+        'absentStudents'
+    ));
+}
+
+
+public function logs(Request $request)
+{
+    try {
+
+        if (!$request->learner_id || !$request->date) {
+            return response()->json([]);
+        }
+
+        // ✅ Validate date safely
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', $request->date)->toDateString();
+        } catch (\Exception $e) {
+            return response()->json([]);
+        }
+
+        $logs = DB::table('learner_attendance_logs')
+            ->where('learner_id', $request->learner_id)
+            ->whereDate('punch_datetime', $date)
+            ->orderBy('punch_datetime')
+            ->get();
+
+        // ✅ Handle empty records safely
+        if ($logs->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // ✅ Format response
+        $response = $logs->map(function ($row) {
+            return [
+                'punch_time' => Carbon::parse($row->punch_datetime)->format('h:i A'),'source'=>$row->source
+            ];
+        });
+
+        return response()->json($response);
+
+    } catch (\Throwable $e) {
+
+        // 🔥 Log exact error
+        Log::error('Attendance log error', [
+            'message' => $e->getMessage(),
+            'line'    => $e->getLine(),
+            'file'    => $e->getFile(),
+        ]);
+
+        return response()->json([], 500);
+    }
+}
+
+public function logInsert(array $data)
+{
+    DB::table('learner_attendance_logs')->insert([
+        'learner_id'     => $data['learner_id'],
+        'branch_id'      => $data['branch_id'],
+        'punch_datetime' => $data['punch_datetime'],
+        'source'         => $data['source'],
+        'created_at'     => now(),
+        // 'updated_at'     => now(),
+    ]);
+}
+
+
+
+
 
 
 

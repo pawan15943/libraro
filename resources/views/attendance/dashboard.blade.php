@@ -27,7 +27,7 @@
     </div>
     <div class="profile-list w-100">
         <div class="profile">
-            <img src="https://i.pravatar.cc/100?img=12" class="picture">
+            <img src="{{ asset('public/img/defualt-library-profile.png') }}" class="picture">
             <div class="libr_info">
                 <strong>{{ $detail->library_name ?? 'Library' }}</strong>
                 <small>QR Attendance</small>
@@ -61,7 +61,7 @@
                     <div class="mt-3 row">
 
                         <div class="col-6 mb-3">
-                            <small>Learner No.</small>
+                            <small>Member UID</small>
                             <div>
                                 {{ $learner->learner_no ?? '-' }}
                             </div>
@@ -173,7 +173,7 @@
                     <small>Mobile Number</small>
                     <strong>
                         {{ !empty($learner->mobile) 
-                            ? $learner->mobile 
+                            ? '+91-'.$learner->mobile 
                             : 'Not Updated' 
                         }}
                     </strong>
@@ -253,9 +253,8 @@
             <div id="errorAnimation" style="display:none; text-align:center;" class="mb-4">
                 <dotlottie-wc src="https://lottie.host/767cd45c-30a6-4317-b53b-e756f423efd8/7B9WsqgVFT.lottie" style="width: 300px; margin: 0 auto;" autoplay loop></dotlottie-wc>
             </div>
-            <small id="scanResult" class="text-muted">
-                Waiting for scan...
-            </small>
+            <p id="scanResult" class="mt-2" >Waiting for scan...</p>
+          
         </div>
     </section>
 

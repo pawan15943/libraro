@@ -42,7 +42,10 @@ Route::get('library/register', [RegisterController::class, 'showRegistrationForm
 // Auth routes
 Auth::routes(['register' => false, 'login' => false, 'verify' => false]);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout')->withoutMiddleware('auth');
-
+Route::get(
+        '/attendance/logs',
+        [AttendanceController::class, 'logs']
+    )->name('attendance.logs');
 
 Route::group(['prefix' => 'library'], function () {
   Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request.library');
@@ -111,6 +114,9 @@ Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify'
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
+Route::get('/receipt/{transactionId}', 
+    [LearnerController::class, 'viewReceipt']
+)->name('receipt.view');
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
@@ -300,6 +306,13 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/get-gift-days', [LearnerController::class, 'getGiftDays']) ->name('get.gift.days');
     Route::post('/freeze-unfreeze', [LearnerController::class, 'freezeUnfreeze'])->name('freeze.unfreeze');
 
+    Route::get(
+        '/attendance/{learner}',
+        [AttendanceController::class, 'summary']
+    )->name('attendance.summary');
+
+
+    
 
 
   });

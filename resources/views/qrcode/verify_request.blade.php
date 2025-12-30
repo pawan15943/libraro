@@ -104,15 +104,16 @@ $ids='approvwRequest';
                               <input type="date"
                                 class="form-control dob"
                                 name="dob"
-                                value="{{ old('dob') ?? ($customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('Y-m-d') : '') }}"
+                                value="{{ old('dob') ?? ($learner->dob ? \Carbon\Carbon::parse($learner->dob)->format('Y-m-d') : '') }}"
                                 max="{{ date('Y-m-d', strtotime('-10 years')) }}">
 
                             </div>
                             @endif
+
                             @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control" name="email" value="{{ old('email') ?? $customer->email ?? '' }}" >
+                                <input type="text" class="form-control" name="email" value="{{ old('email') ?? $learner->email ?? '' }}" >
                                
                             </div>
                             @endif
@@ -242,6 +243,7 @@ $ids='approvwRequest';
                                 </span>
                                 @enderror
                             </div>
+                            @if($customer->type=='qr_seat_book')
                             @if(notificationActive())
                             <div class="col-lg-12">
                                 <label for="">Send Reminders Via (Optional)</label>
@@ -254,7 +256,9 @@ $ids='approvwRequest';
                                 </select>
                             </div>
                             @endif
+                            @endif
                         </div>
+                        @if($customer->type=='qr_seat_book')
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
 
@@ -362,8 +366,9 @@ $ids='approvwRequest';
                             @endif
 
                         </div>
-                    </div>
+                       </div>
 
+                        @endif
                         @endif
 
                         <div class="row mt-4">
