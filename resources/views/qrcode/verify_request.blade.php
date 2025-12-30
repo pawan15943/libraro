@@ -110,7 +110,6 @@ $ids='approvwRequest';
                             </div>
                             @endif
 
-
                             @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">Email Id (Optional)</label>

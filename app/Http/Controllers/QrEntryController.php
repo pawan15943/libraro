@@ -827,6 +827,12 @@ class QrEntryController extends Controller
                 $customer->hours=$hours;
                 $customer->status=$status;
                 $customer->locker_no=$locker_no;
+                if ($request->filled('email')) {
+                    $customer->email = encryptData($request->email);
+                }
+                if ($request->filled('dob')) {
+                    $customer->dob = $request->dob;
+                }
                 $customer->save();
             }else{
                

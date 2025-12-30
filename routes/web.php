@@ -114,6 +114,9 @@ Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify'
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
+Route::get('/receipt/{transactionId}', 
+    [LearnerController::class, 'viewReceipt']
+)->name('receipt.view');
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {

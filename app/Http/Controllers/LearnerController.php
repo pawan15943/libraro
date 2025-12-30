@@ -4370,6 +4370,89 @@ class LearnerController extends Controller
         return response()->json(['status' => false, 'message' => 'Invalid operation']);
     }
 
+     public function viewReceipt($transactionId)
+    {
+        $transaction = LearnerTransaction::with([
+            'learner',
+            'learnerDetail'
+        ])->findOrFail($transactionId);
+
+        // 🔐 Optional safety check
+        if (!$transaction->learner || $transaction->learner->status != 1) {
+            abort(403, 'Unauthorized receipt access');
+        }
+
+        /**
+         * 🔥 REUSE YOUR EXISTING LOGIC
+         * If you already have PDF generation logic
+         * inside fee.generateReceipt → move it to a method
+         */
+
+        return $this->generateReceiptPdf($transaction);
+    }
+    private function generateReceiptPdf($transaction)
+    {
+        $data = LearnerTransaction::withoutGlobalScopes()->where('id', $transaction)->where('is_paid', 1)->first();
+
+          
+           $user = Learner::where('id', $data->learner_id)->first();
+            $learnerDeatail = LearnerDetail::withoutGlobalScopes()->where('id', $data->learner_detail_id)
+            ->with(['plan', 'planType'])
+            ->first();
+
+            $transactionDate = $data->paid_date;
+            $paymentMode = $learnerDeatail->payment_mode;
+            $total_amount = $data->total_amount;
+
+
+            if ($learnerDeatail) {
+                $month = $learnerDeatail->plan ? $learnerDeatail->plan->plan_id : null; // Check if 
+                $start_date = $learnerDeatail->plan_start_date;
+                $end_date = $learnerDeatail->plan_end_date;
+                $subscription = $learnerDeatail->plantype ? $learnerDeatail->plantype->name : null;
+            } else {
+
+                $month = null;
+                $start_date = null;
+                $end_date = null;
+                $subscription = null;
+            }
+            $name = $user->name ?? '';
+            $tran = LearnerTransactionActivity::where('learner_id', $data->learner_id)->select('transaction_id')->first();
+            $transaction_id = ($tran && $tran->transaction_id)  ? $tran->transaction_id : NULL;
+            $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
+           $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
+            $branch_slug=Branch::where('id', getCurrentBranch())->value('slug') ?? null;
+             $send_data = [
+            'logo' =>  $logo ?? '',
+            'subscription' => $subscription ?? 'NA',
+            'name' => $name ?? 'NA',
+            'email' => $user->email ?? 'NA',
+            'transactiondate' => $transactionDate ?? 'NA',
+            'paid_amount' => $data->paid_amount ?? 'NA',
+            'payment_mode' => $paymentMode ?? 'NA',
+            'invoice_ref_no' => $transaction_id ?? 'NA',
+            'total_amount' => $total_amount ?? 'NA',
+            'start_date' => $start_date ?? 'NA',
+            'end_date' => $end_date ?? 'NA',
+            'monthly_amount' => $total_amount ?? 'NA',
+            'month' => $month ?? 'NA',
+            'currency' => 'Rs.',
+            'library_name' => $library->library_name,
+            'library_email' => $library->email,
+            'library_mobile' => $library->library_mobile,
+            'library_address' => $library->library_address,
+            'branch_logo'=>$branch_logo,
+            'branch_slug'=>$branch_slug
+        ];
+
+
+        // Generate the PDF without saving it on the server
+        $pdf = PDF::loadView('recieptPdf', $send_data);
+
+        return $pdf->download(time() . '_receipt.pdf');
+    }
+
 
 
 
