@@ -1300,3 +1300,25 @@ if (!function_exists('getStatusFromBranch')) {
         }
     }
 }
+if (!function_exists('whatsappReceiptMessage')) {
+function whatsappReceiptMessage($learner)
+{
+    $transaction=learnerTransaction($learner->id, $learner->learner_detail_id);
+    return rawurlencode(
+        "Dear {$learner->name},\n\n" .
+        "Thank you for joining " . getCurrentBranchName() . ".\n\n" .
+        "Receipt Details:\n" .
+        "Name: {$learner->name}\n" .
+        "Member ID: {$learner->learner_no}\n" .
+        "Seat No: " . ($learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no) : 'GEN') . "\n" .
+        "Plan: {$learner->plan_name}\n" .
+        "Plan Type: {$learner->plan_type_name}\n" .
+        "Start Date: " . Carbon::parse($learner->plan_start_date)->format('d M Y') . "\n" .
+        "End Date: " . Carbon::parse($learner->plan_end_date)->format('d M Y') . "\n" .
+        "Fee Paid: ₹{$transaction->paid_amount}/-\n\n" .
+        "Fee Pending: ₹{$transaction->pending_amount}/-\n\n" .
+        "View Receipt:\n{$learner->receipt_url}\n\n" .
+        "— " . getCurrentBranchName()
+    );
+}
+}

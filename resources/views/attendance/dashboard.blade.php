@@ -21,9 +21,7 @@
 <div class="app-header">
     <div class="flex">
         <div class="profile">
-
             <img src="{{ asset('public/img/logo-whitw.png') }}" alt="logo" class="logo">
-
         </div>
         <i data-lucide="menu" onclick="toggleSidebar()"></i>
     </div>

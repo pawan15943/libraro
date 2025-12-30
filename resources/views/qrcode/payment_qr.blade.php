@@ -7,7 +7,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <div class="online-booking">
-                        <span class="steps">Step-2</span>
+                        <span class="steps">Verification</span>
                         <h4 class="mb-4 text-center">Scan QR Code to complete payment</h4>
                         <div class="QR-code p-3 text-center">
                             <a href="{{ $upiLink }}">

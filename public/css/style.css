@@ -684,7 +684,8 @@ nav ol {
 .content-area .content {
     flex: 1;
     padding: 0 .5rem;
-    background: linear-gradient(180deg, #eafdff, transparent);
+    background: #f5f5ff;
+    /* background: linear-gradient(180deg, #eafdff, transparent); */
     /* overflow-x: hidden; */
 }
 
@@ -6585,24 +6586,26 @@ img#qrImg {
 }
 
 #scanner-wrapper {
-  width: 300px;
-  height: 300px;
-  margin: auto;
-  border-radius: 12px;
-  overflow: hidden;           /* IMPORTANT */
-  background: #000;
+    width: 300px;
+    height: 300px;
+    margin: auto;
+    border-radius: 12px;
+    overflow: hidden;
+    /* IMPORTANT */
+    background: #000;
 }
 
 #reader {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 /* If scanner uses video internally */
 #reader video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;          /* keeps camera proportional */
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    /* keeps camera proportional */
 }
 
 
@@ -6612,6 +6615,8 @@ p#scanMsg {
     color: #6aa42c;
 }
 
-
-
-
+/* @media (min-resolution: 120dpi) and (max-resolution: 143dpi) {
+    .plan-info p {
+        font-size: .7rem !important;
+    }
+} */
