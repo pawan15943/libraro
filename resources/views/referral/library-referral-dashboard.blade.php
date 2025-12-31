@@ -288,7 +288,7 @@
 <div class="refer-and-earn-main my-4">
     <!-- Hero Banner -->
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <div class="refer-and-earn">
                 <div class="content bg-transparent">
                     <h2 class="mb-2">Refer & Earn</h2>
