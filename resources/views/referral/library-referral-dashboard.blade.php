@@ -283,7 +283,7 @@
             <div class="col-lg-10">
                 <div class="rewardsCreadit">
                     <div class="earnedReward">
-                        <span>Earned Reward Points</span>
+                        <span>My Earned Reward Points</span>
                         <h4 class="text-white">100</h4>
                     </div>
 
