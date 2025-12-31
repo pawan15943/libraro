@@ -47,7 +47,7 @@
 </div>
 
 
-<div class="row mt-4 justify-content-center mb-4">
+<div class="row mt-4 justify-content-center mb-4 g-4">
     @foreach($subscriptions as $subscription)
     <div class="col-lg-3">
         <div class="plan-box">

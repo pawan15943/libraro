@@ -33,7 +33,6 @@
                             @else
                             <h4>{{ $month->month}} Months</h4>
                             @endif
-
                         </div>
                         <div class="col-lg-6">
                             <span>Subscription Price</span>

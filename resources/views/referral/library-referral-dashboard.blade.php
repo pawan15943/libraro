@@ -7,10 +7,18 @@
         font-weight: 400;
     }
 
+    .library-dashbaord .border {
+        border: none ! IMPORTANT;
+    }
+
+    span.refral {
+        font-weight: 500;
+        font-family: 'Outfit', 'sans-sarif';
+    }
+
     .refer-and-earn-main .refer-and-earn {
         background: #fff;
         padding: 0 1.5rem;
-        border: 1px solid #dedede;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -21,6 +29,9 @@
         width: 300px;
     }
 
+    .d-flex.p-3.border.rounded-4.justify-content-between.align-items-center.mb-3 {
+        border: 2px dashed #ababab !important;
+    }
 
     .refer-and-earn-main div#refTabs button {
         display: block;
@@ -49,10 +60,7 @@
         background: #e9e9ff !important;
     }
 
-    .refer-and-earn-main button.nav-link.px-3.py-2.active {
-        background: #18225f !important;
-        color: #fff;
-    }
+
 
     .refer-and-earn-main a.refral {
         width: 100%;
@@ -112,7 +120,7 @@
     }
 
     .rewardsCreadit {
-        background: linear-gradient(45deg, goldenrod, #99710e);
+        background: linear-gradient(208deg, #07e1fd, #001276);
         padding: 1.5rem;
         border-radius: .8rem;
         margin-top: -2.5rem;
@@ -131,8 +139,37 @@
         color: #fff;
     }
 
-    .earnedReward *{
+    .earnedReward * {
         color: #fff;
+    }
+
+    button.nav-link.py-3.m-0.rounded-3 {
+        border: none;
+    }
+
+    .refer-and-earn-main button.nav-link.px-3.py-2.active {
+        background: #18225f !important;
+        color: #fff;
+    }
+
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        display: block;
+        width: calc(100% / 3 - 1rem);
+        font-family: 'Outfit', 'sans-sarif';
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        background: linear-gradient(45deg, #8BC34A, #4CAF50);
+        font-weight: 500;
+        color: #fff;
+    }
+
+    .nav-pills .nav-link,
+    .nav-pills .show>.nav-link {
+        border: none !important;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+
     }
 </style>
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -288,13 +325,13 @@
     <div class="row justify-content-center mt-4">
         <div class="col-lg-10">
             <div class="nav nav-pills justify-content-between" id="refTabs">
-                <button class="nav-link active py-2 m-0" data-bs-target="#tabRefer" data-bs-toggle="pill">
+                <button class="nav-link active py-3 m-0 rounded-3" data-bs-target="#tabRefer" data-bs-toggle="pill">
                     Refer Method
                 </button>
-                <button class="nav-link py-2" data-bs-target="#tabYourRef" data-bs-toggle="pill">
+                <button class="nav-link py-3 rounded-3" data-bs-target="#tabYourRef" data-bs-toggle="pill">
                     Your Referrals
                 </button>
-                <button class="nav-link py-2" data-bs-target="#tabCompleted" data-bs-toggle="pill">
+                <button class="nav-link py-3 rounded-3" data-bs-target="#tabCompleted" data-bs-toggle="pill">
                     Completed
                 </button>
             </div>
