@@ -123,9 +123,6 @@
                 </li>
                 @endcan
 
-
-
-
                 @can('has-permission', 'Search Learner')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat"
                     class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
@@ -135,11 +132,13 @@
                 </li>
                 @endcan
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-placement="left" data-bs-title="Seat Booking QR">
-                    <a href="{{ route('library.video-training') }}">
-                        <i class="fa fa-qrcode fa-2x"></i>
-                    </a>
-                </li>
+                @can('has-permission','QR Seat Booking')
+                    @if(getBranch()?->uuid && getBranch()?->upi_id)
+                    <li>
+                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" data-bs-title="Seat Booking QR"><i class="fa fa-qrcode fa-2x"></i></a>
+                    </li>
+                    @endif
+                @endcan
 
                 @can('has-permission', 'Add Daily Expense')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense"

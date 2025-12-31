@@ -71,6 +71,12 @@ if (!function_exists('decryptData')) {
         return $decrypted;
     }
 }
+if (!function_exists('getBranch')) {
+    function getBranch()
+    {
+        return Branch::where('id', getCurrentBranch())->first();
+    }
+}
 if (!function_exists('getLibrary')) {
     function getLibrary()
     {
