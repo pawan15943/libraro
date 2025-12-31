@@ -2593,7 +2593,10 @@ class LearnerController extends Controller
 
         for ($seatNo = 1; $seatNo <= $total_seats; $seatNo++) {
             // Fetch learners for this seat including trashed details
-            $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            $learners = Learner::join('learner_detail', function ($join) {
+                        $join->on('learner_detail.learner_id', '=', 'learners.id')
+                            ->where('learner_detail.status', 1);
+                    })
                 ->where('learners.branch_id', getCurrentBranch())
                 ->where('learner_detail.seat_no', $seatNo)
                 ->select(
@@ -2630,24 +2633,27 @@ class LearnerController extends Controller
         }
 
 
-        $generalLearners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-            ->where('learners.branch_id', getCurrentBranch())
-            ->whereNull('learner_detail.seat_no')
-            ->select(
-                'learners.*',
-                'learner_detail.seat_no',
-                'learner_detail.plan_start_date',
-                'learner_detail.plan_end_date',
-                'learner_detail.plan_type_id',
-                'learner_detail.plan_id',
-                'learner_detail.plan_price_id',
-                'learner_detail.status as learner_detail_status',
-                'learner_detail.is_paid',
-                'learner_detail.payment_mode',
-                'learner_detail.join_date',
-                'learner_detail.learner_id',
-                'learner_detail.id as learner_detail_id',
-            )
+        $generalLearners = Learner::join('learner_detail', function ($join) {
+                    $join->on('learner_detail.learner_id', '=', 'learners.id')
+                        ->where('learner_detail.status', 1);
+                })
+                ->where('learners.branch_id', getCurrentBranch())
+                ->whereNull('learner_detail.seat_no')
+             ->select(
+                    'learners.*',
+                    'learner_detail.seat_no',
+                    'learner_detail.plan_start_date',
+                    'learner_detail.plan_end_date',
+                    'learner_detail.plan_type_id',
+                    'learner_detail.plan_id',
+                    'learner_detail.plan_price_id',
+                    'learner_detail.status as learner_detail_status',
+                    'learner_detail.is_paid',
+                    'learner_detail.payment_mode',
+                      'learner_detail.join_date',
+                      'learner_detail.learner_id',
+                    'learner_detail.id as learner_detail_id',
+                )
             ->get();
 
         $activeGeneral = $generalLearners->where('status', 1);
