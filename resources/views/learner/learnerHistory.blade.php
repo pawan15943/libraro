@@ -11,6 +11,13 @@
         width: calc(55% - .5rem) !important;
         
     }
+
+    @media (max-width: 843px) {
+        .seat-no, .seat-actions {
+            width: 100% !important;
+            margin-bottom: .5rem;
+        }
+    }
 </style>
 <!-- Content Header (Page header) -->
 @php
