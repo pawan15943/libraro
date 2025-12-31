@@ -103,6 +103,16 @@
     }
 
     @media screen and (max-width: 768px) {
+        .earnedReward {
+            width: 100%;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .rewardsCreadit {
+            flex-direction: column;
+        }
+
         .refer-and-earn {
             padding: 1.5rem !important;
         }
@@ -117,6 +127,15 @@
             margin-top: 1rem;
         }
 
+        div#refTabs button {
+            width: 100% ! IMPORTANT;
+            margin: 0 !IMPORTANT;
+            margin-bottom: .8rem ! IMPORTANT;
+        }
+
+        .refer-and-earn-main a.refral {
+            padding: 1rem;
+        }
     }
 
     .rewardsCreadit {
@@ -269,7 +288,7 @@
 <div class="refer-and-earn-main my-4">
     <!-- Hero Banner -->
     <div class="row justify-content-center">
-        <div class="col-lg-10">
+        <div class="col-lg-8">
             <div class="refer-and-earn">
                 <div class="content bg-transparent">
                     <h2 class="mb-2">Refer & Earn</h2>
