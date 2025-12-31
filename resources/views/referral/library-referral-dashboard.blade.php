@@ -284,15 +284,16 @@
                 <div class="rewardsCreadit">
                     <div class="earnedReward">
                         <span>My Earned Reward Points</span>
-                        <h4 class="text-white">100</h4>
+                        <h4 class="text-white">{{ $earnReward }}</h4>
                     </div>
 
+                    @if($is_redeem)
                     <button class="btn btn-warning mt-3"
                         data-bs-toggle="modal"
                         data-bs-target="#redeemModal">
                         Redeem Now ({{ $earnReward }} pts)
                     </button>
-
+                    @endif
                 </div>
             </div>
         </div>
