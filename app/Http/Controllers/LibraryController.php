@@ -580,7 +580,7 @@ class LibraryController extends Controller
         
 
         if ($library_transaction_id) {
-            
+            Log::info('Referral 1');
             $duration = $library_transaction_id->month ?? 0;
 
             if (LibraryTransaction::where('library_id', $library_transaction_id->library_id)->where('status', 1)->exists()) {
@@ -592,11 +592,14 @@ class LibraryController extends Controller
                 $start_date = Carbon::parse($library_tra->end_date)->addDay(1);
                 $endDate = $start_date->copy()->addMonths($duration);
                 $status = 0;
+                Log::info('Referral 2');
             } else {
+                Log::info('Referral 3');
                 $start_date = now(); 
                 $endDate = $start_date->copy()->addMonths($duration);
                 $status = 1;
             }
+            Log::info('Referral 4');
             
            
             // Update the transaction details
