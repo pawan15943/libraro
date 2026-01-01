@@ -194,7 +194,7 @@ class LibraryController extends Controller
                             'referred_library_id' => $library->id,
                             'referral_code' => $request->referral_code,
                             'referral_type' => $request->has('qr') ? 'qr' : 'code',
-                            'status' => 'completed'
+                            'status' => 'pending'
                         ]);
                     }
                 }
@@ -619,6 +619,26 @@ class LibraryController extends Controller
                 session()->forget(['selected_plan_id', 'selected_plan_mode']);
 
             }
+
+            // Reffrel process with check one transaction 
+
+            if (
+                $status == 1 // first active plan
+                && (LibraryTransaction::where('library_id', $library_transaction_id->library_id)
+                    ->where('status', 1)->where('is_paid',1) // calculate only status 1 and is paid
+                    ->count()==1)
+                && LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
+                    ->where('status', 'pending')
+                    ->exists()
+            ) {
+                LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => 'completed'
+                    ]);
+            }
+
+            //end reffrel 
 
      
             $isProfile = Library::where('id', $library_transaction_id->library_id)->where('is_profile', 1)->exists();

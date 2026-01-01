@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\LibraryReferral;
+use App\Models\LibraryTransaction;
 use Illuminate\Http\Request;
 use DB;
+use Carbon\Carbon;
 
 class LibraryReferralController extends Controller
 {
@@ -50,7 +52,12 @@ class LibraryReferralController extends Controller
     $libraryId = auth()->id();
 
     DB::transaction(function () use ($libraryId) {
-
+          // Get active library transaction (LOCKED)
+        $transaction = LibraryTransaction::where('library_id', $libraryId)
+            ->where('status', 1)
+            ->lockForUpdate()
+            ->firstOrFail();
+       
         $referrals = DB::table('library_referrals')
             ->where('referrer_library_id', $libraryId)
             ->where('status', 'completed')
@@ -70,6 +77,20 @@ class LibraryReferralController extends Controller
                 'redeem_status' => 1,
                 'redeemed_at'   => now(),
             ]);
+
+        // Current end date
+        $currentEndDate = Carbon::parse($transaction->end_date);
+
+        // If expired → start from today
+        $newEndDate = $currentEndDate->isPast()
+            ? Carbon::today()->addDays(30)
+            : $currentEndDate->addDays(30);
+
+        // Update end date
+        $transaction->update([
+            'end_date' => $newEndDate,
+        ]);
+        
     });
 
     return back()->with('success','Reward redeemed successfully!');
