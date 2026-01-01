@@ -621,22 +621,41 @@ class LibraryController extends Controller
             }
 
             // Reffrel process with check one transaction 
+            $activePaidPlanCount = LibraryTransaction::where('library_id', $library_transaction_id->library_id)
+                ->where('status', 1)
+                ->where('is_paid', 1)
+                ->count();
 
-            if (
-                $status == 1 // first active plan
-                && (LibraryTransaction::where('library_id', $library_transaction_id->library_id)
-                    ->where('status', 1)->where('is_paid',1) // calculate only status 1 and is paid
-                    ->count()==1)
-                && LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
-                    ->where('status', 'pending')
-                    ->exists()
-            ) {
+            $pendingReferralExists = LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
+                ->where('status', 'pending')
+                ->exists();
+
+            /* 🔍 Log all condition values */
+            Log::info('Referral condition check', [
+                'library_id'             => $library_transaction_id->library_id,
+                'status_is_active'       => $status,
+                'active_paid_plan_count' => $activePaidPlanCount,
+                'pending_referral_exist' => $pendingReferralExists,
+            ]);
+
+            if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
+                Log::info('Referral marked as completed', [
+                    'library_id' => $library_transaction_id->library_id
+                ]);
                 LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
                     ->where('status', 'pending')
                     ->update([
                         'status' => 'completed'
                     ]);
             }
+             Log::warning('Referral condition failed', [
+                'library_id' => $library_transaction_id->library_id,
+                'reason' => [
+                    'status_check_failed'       => !$status,
+                    'plan_count_not_one'        => $activePaidPlanCount !== 1,
+                    'no_pending_referral'       => !$pendingReferralExists,
+                ]
+            ]);
 
             //end reffrel 
 
