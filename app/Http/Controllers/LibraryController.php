@@ -623,46 +623,7 @@ class LibraryController extends Controller
 
             }
 
-            // Reffrel process with check one transaction 
-            $activePaidPlanCount = LibraryTransaction::where('library_id', $library_transaction_id->library_id)
-                ->where('status', 1)
-                ->where('is_paid', 1)
-                ->count();
 
-            $pendingReferralExists = LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
-                ->where('status', 'pending')
-                ->exists();
-
-            /* 🔍 Log all condition values */
-            Log::info('Referral condition check', [
-                'library_id'             => $library_transaction_id->library_id,
-                'status_is_active'       => $status,
-                'active_paid_plan_count' => $activePaidPlanCount,
-                'pending_referral_exist' => $pendingReferralExists,
-            ]);
-
-            if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
-                Log::info('Referral marked as completed', [
-                    'library_id' => $library_transaction_id->library_id
-                ]);
-                LibraryReferral::where('referred_library_id', $library_transaction_id->library_id)
-                    ->where('status', 'pending')
-                    ->update([
-                        'status' => 'completed'
-                    ]);
-            }
-             Log::warning('Referral condition failed', [
-                'library_id' => $library_transaction_id->library_id,
-                'reason' => [
-                    'status_check_failed'       => !$status,
-                    'plan_count_not_one'        => $activePaidPlanCount !== 1,
-                    'no_pending_referral'       => !$pendingReferralExists,
-                ]
-            ]);
-
-            //end reffrel 
-
-     
             $isProfile = Library::where('id', $library_transaction_id->library_id)->where('is_profile', 1)->exists();
             if($isProfile){
                 
@@ -752,6 +713,45 @@ class LibraryController extends Controller
                     'status' => $status,
                     'transaction_id'=>$razorpayOrderId
                 ]);
+
+                // Reffrel process with check one transaction 
+                $activePaidPlanCount = LibraryTransaction::where('library_id', $transaction->library_id)
+                    ->where('status', 1)
+                    ->where('is_paid', 1)
+                    ->count();
+
+                $pendingReferralExists = LibraryReferral::where('referred_library_id', $transaction->library_id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                /* 🔍 Log all condition values */
+                Log::info('Referral condition check', [
+                    'library_id'             => $transaction->library_id,
+                    'status_is_active'       => $status,
+                    'active_paid_plan_count' => $activePaidPlanCount,
+                    'pending_referral_exist' => $pendingReferralExists,
+                ]);
+
+                if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
+                    Log::info('Referral marked as completed', [
+                        'library_id' => $transaction->library_id
+                    ]);
+                    LibraryReferral::where('referred_library_id', $transaction->library_id)
+                        ->where('status', 'pending')
+                        ->update([
+                            'status' => 'completed'
+                        ]);
+                }
+                Log::warning('Referral condition failed', [
+                    'library_id' => $transaction->library_id,
+                    'reason' => [
+                        'status_check_failed'       => !$status,
+                        'plan_count_not_one'        => $activePaidPlanCount !== 1,
+                        'no_pending_referral'       => !$pendingReferralExists,
+                    ]
+                ]);
+
+                //end reffrel 
 
                 // Update the corresponding library's `is_paid` status
                 Library::where('id', $transaction->library_id)->update([
