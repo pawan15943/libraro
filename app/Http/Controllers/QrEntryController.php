@@ -303,11 +303,11 @@ class QrEntryController extends Controller
 
             $validated = $request->validate($rules);
             
-            $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
-            $planData = Plan::where('id', $validated['plan_id'])
+            $months   = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])->value('plan_id');
+            $planData = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])
                 ->select('plan_id', 'type', 'monthdays')
                 ->first();
-
+            Log::info('STEP 5: plan',['planData'=>$planData,'months'=>$months]);
             $duration  = $planData->plan_id ?? 0; 
             $type      = $planData->type;
             $monthdays = $planData->monthdays;
