@@ -36,7 +36,7 @@ class AttendanceController extends Controller
         $learner=Learner::withTrashed()->where('id',$learnerId)->first();
        
 
-         $detail = LearnerDetail::query()
+         $detail = LearnerDetail::withoutGlobalScopes()->query()
             ->where('learner_detail.learner_id', $learnerId)
 
             // Joins

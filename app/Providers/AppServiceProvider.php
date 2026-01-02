@@ -27,15 +27,15 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        if (app()->environment(['production'])) {
-            DB::listen(function ($query) {
-                Log::info('SQL', [
-                    'sql'      => $query->sql,
-                    'bindings' => $query->bindings,
-                    'time'     => $query->time
-                ]);
-            });
-        }
+        // if (app()->environment(['production'])) {
+        //     DB::listen(function ($query) {
+        //         \Log::info('SQL', [
+        //             'sql'      => $query->sql,
+        //             'bindings' => $query->bindings,
+        //             'time'     => $query->time
+        //         ]);
+        //     });
+        // }
         foreach (array_keys(Config::get('auth.guards')) as $guard) {
             if (Auth::guard($guard)->check()) {
                 Config::set('auth.defaults.guard', $guard);
