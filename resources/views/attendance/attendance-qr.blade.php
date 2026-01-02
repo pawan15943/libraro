@@ -26,6 +26,7 @@
         <!-- QR TAB -->
         <div class="tab-pane fade show active text-center" id="qrTab">
             <p class="text-center text-muted">Scan this QR to Mark your Attendance</p>
+            {{-- <p class="text-center text-muted"><a href="{{ route('attendance.instructions.pdf') }}" class="download-btn">Dowload Attendance QR App </a></p> --}}
             <img id="qrImg" class="img-fluid mb-2" style="max-width:300px;">
             <p id="qrMsg" class="mt-2">
               

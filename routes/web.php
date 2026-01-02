@@ -111,6 +111,10 @@ Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyL
 Route::get('/attendance/success', [AttendanceController::class, 'markSuccess'])->name('attendance.success');
 Route::get('/verify/learner/dashboard', [AttendanceController::class, 'dashboard'])->name('attendance.dashboard');
 Route::post('/attendance/auto-verify', [AttendanceController::class,'autoVerify']);
+Route::get('/attendance/instructions', [AttendanceController::class, 'view'])->name('attendance.instructions');
+Route::get('/attendance/instructions/pdf', [AttendanceController::class, 'downloadPdf'])->name('attendance.instructions.pdf');
+
+
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
