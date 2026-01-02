@@ -190,6 +190,17 @@
         text-transform: uppercase;
 
     }
+
+    .earnedReward {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .earnedReward img {
+        width: 57px;
+        height: auto !IMPORTANT;
+    }
 </style>
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -302,8 +313,11 @@
             <div class="col-lg-10">
                 <div class="rewardsCreadit">
                     <div class="earnedReward">
-                        <span>My Earned Reward Points</span>
-                        <h4 class="text-white">{{ $earnReward }}</h4>
+                        <img src="{{ asset('public/img/medal.png') }}" alt="icon">
+                        <div class="reward-content">
+                            <span>My Earned Reward Points</span>
+                            <h4 class="text-white">{{ $earnReward }}</h4>
+                        </div>
                     </div>
 
                     @if($is_redeem)
