@@ -205,9 +205,16 @@ $learner_id=$value->id;
             </div>
             <div class="seat-actions">
                 <ul>
-                    <li><a href="{{route('qr.attendance.link')}}" class="w-auto px-2">
-                            <i class="fa-solid fa-share" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="QR Attendance Link"></i>
-                        </a></li>
+                    <li><a href="https://wa.me/?text={{ urlencode('Hello %0A%0APlease click the link below to access the Attendance App and mark your attendance securely.%0A%0A ' . route('qr.attendance.link')) }}"
+                    target="_blank"
+                    class="w-auto px-2">
+                    <i class="fa-solid fa-share" 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="bottom" 
+                        data-bs-title="Share Attendance Link on WhatsApp">
+                    </i>
+                    </a>
+                    </li>
                     <li>
                         <a href="{{ route('attendance.summary',$learner_id) }}" title="View Attendace Detials">
                             <i class="fa-solid fa-clipboard-user"></i>
