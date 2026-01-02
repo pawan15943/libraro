@@ -205,7 +205,7 @@ $learner_id=$value->id;
             </div>
             <div class="seat-actions">
                 <ul>
-                    <li><a href="https://wa.me/?text={{ urlencode('Hello %0A%0APlease click the link below to access the Attendance App and mark your attendance securely.%0A%0A ' . route('qr.attendance.link')) }}"
+                    <li><a href="https://wa.me/?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}"
                     target="_blank"
                     class="w-auto px-2">
                     <i class="fa-solid fa-share" 

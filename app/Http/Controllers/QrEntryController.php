@@ -413,7 +413,7 @@ class QrEntryController extends Controller
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
-
+Log::info('seat type', ['seat_type' => $seat_type]);
             $booking = Booking::create([
                 'name'            => $validated['name'],
                 // 'email'           => $validated['email'] ?? null,
