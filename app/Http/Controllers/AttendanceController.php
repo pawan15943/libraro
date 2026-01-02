@@ -15,7 +15,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 
 
 class AttendanceController extends Controller
@@ -596,143 +598,143 @@ class AttendanceController extends Controller
     //     ]);
     // }
 
-        public function scan(Request $request)
-    {
-        \Log::info('SCAN HIT', $request->all());
+public function scan(Request $request)
+{
+    \Log::info('SCAN HIT', $request->all());
 
-        // /* 1️⃣ Decode QR */
-        // $decoded = base64_decode($request->qr, true);
-        // if (!$decoded) {
-        //     \Log::warning('QR decode failed');
-        //     return response()->json(['message' => 'Invalid QR'], 403);
-        // }
+    // /* 1️⃣ Decode QR */
+    // $decoded = base64_decode($request->qr, true);
+    // if (!$decoded) {
+    //     \Log::warning('QR decode failed');
+    //     return response()->json(['message' => 'Invalid QR'], 403);
+    // }
 
-        // [$learnerId, $signature] = explode('|', $decoded);
+    // [$learnerId, $signature] = explode('|', $decoded);
 
-        // /* 2️⃣ Verify QR signature */
-        // $expected = hash_hmac('sha256', $learnerId, config('app.key'));
+    // /* 2️⃣ Verify QR signature */
+    // $expected = hash_hmac('sha256', $learnerId, config('app.key'));
 
-        // if (!hash_equals($expected, $signature)) {
-        //     \Log::warning('QR signature mismatch', compact('learnerId'));
-        //     return response()->json(['message' => 'QR tampered'], 403);
-        // }
-        $learnerNo = trim($request->qr);
+    // if (!hash_equals($expected, $signature)) {
+    //     \Log::warning('QR signature mismatch', compact('learnerId'));
+    //     return response()->json(['message' => 'QR tampered'], 403);
+    // }
+    $learnerNo = trim($request->qr);
 
-        if (!$learnerNo) {
-            \Log::warning('learnerNo failed');
-            return response()->json([
+    if (!$learnerNo) {
+        \Log::warning('learnerNo failed');
+        return response()->json([
+        'status'  => 'error',
+        'message' => 'Invalid QR'
+    ], 403);
+    }
+
+    /* 3️⃣ Learner validation */
+    $learner = Learner::where('learner_no', $learnerNo)
+        ->where('status', 1)
+        ->first();
+
+    if (!$learner) {
+        \Log::warning('Learner not found');
+        return response()->json([
             'status'  => 'error',
-            'message' => 'Invalid QR'
+            'message' => 'Learner not found'
+        ], 404);
+    }
+    
+
+
+    $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+    $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
+    $extendDay = $branch->extend_days; // assume integer
+    $today = Carbon::today();
+    $endDate = Carbon::parse($learnerDetail->plan_end_date);
+
+    $diffInDays = $today->diffInDays($endDate, false);
+    if ($extendDay > 0) {
+        $inextendDate = $endDate->copy()->addDays($extendDay);
+    } else {
+        $inextendDate = $endDate; // fallback to original end date
+    }
+    $diffExtendDay = $today->diffInDays($inextendDate, false);
+    
+    /* 1️⃣ No active plan */
+    if (!$learnerDetail) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'No active plan found'
         ], 403);
-        }
+    }
 
-        /* 3️⃣ Learner validation */
-        $learner = Learner::where('learner_no', $learnerNo)
-            ->where('status', 1)
-            ->first();
-
-        if (!$learner) {
-            \Log::warning('Learner not found');
+    /* 2️⃣ Plan expired check */
+    if ($learnerDetail->plan_end_date < date('Y-m-d')){
+    // if ($diffExtendDay < 0) {
+        return response()->json([
+            'status'  => 'expired',
+            'message' => 'Plan expired'
+        ], 403);
+    }
+    if($learner->branch_id != getCurrentBranch()){
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Learner not found'
-            ], 404);
-        }
-        
+            'status'  => 'expired',
+                'message' => 'Ohh it seems like you scan wrong Library QR code.'
+        ], 403);
+    }
 
 
-        $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
-        $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
-        $extendDay = $branch->extend_days; // assume integer
-        $today = Carbon::today();
-        $endDate = Carbon::parse($learnerDetail->plan_end_date);
+    /* 5️⃣ Attendance logic */
+    $attendance = Attendance::where('learner_id', $learner->id)
+        ->where('date', today())
+        ->first();
 
-        $diffInDays = $today->diffInDays($endDate, false);
-        if ($extendDay > 0) {
-            $inextendDate = $endDate->copy()->addDays($extendDay);
-        } else {
-            $inextendDate = $endDate; // fallback to original end date
-        }
-        $diffExtendDay = $today->diffInDays($inextendDate, false);
-        
-        /* 1️⃣ No active plan */
-        if (!$learnerDetail) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
-            ], 403);
-        }
-
-        /* 2️⃣ Plan expired check */
-        if ($learnerDetail->plan_end_date < date('Y-m-d')){
-        // if ($diffExtendDay < 0) {
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
-        if($learner->branch_id != getCurrentBranch()){
-                return response()->json([
-                'status'  => 'expired',
-                 'message' => 'Ohh it seems like you scan wrong Library QR code.'
-            ], 403);
-        }
-
-
-        /* 5️⃣ Attendance logic */
-        $attendance = Attendance::where('learner_id', $learner->id)
-            ->where('date', today())
-            ->first();
-
-        if (!$attendance) {
-            Attendance::create([
-                'learner_id' => $learner->id,
-                'library_id' => $learner->library_id,
-                'branch_id' => $learner->branch_id,
-                'date'       => today(),
-                'in_time'    => now(),
-                'attendance' => 1
-            ]);
-
-            
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Thank You! Punch IN successful'
-            ]);
-        }
-
-        // Punch OUT
-        $attendance->update([
-            'out_time' => now(),
+    if (!$attendance) {
+        Attendance::create([
+            'learner_id' => $learner->id,
+            'library_id' => $learner->library_id,
+            'branch_id' => $learner->branch_id,
+            'date'       => today(),
+            'in_time'    => now(),
             'attendance' => 1
         ]);
 
-        try {
-
-            $data = [
-            'learner_id'     => $learner->id,
-            'branch_id'      => $learner->branch_id,
-            'punch_datetime' => now(),
-            'source'         => 'SCAN'
-            ];
-
-            $this->logInsert($data);
-
-        } catch (\Throwable $e) {
-
-            \Log::error('Attendance log insert failed', [
-                'error' => $e->getMessage(),
-                'data'  => $data,
-            ]);
-
         
-        }
+
         return response()->json([
             'status'  => 'success',
-            'message' => 'Thank You! Punch OUT successful'
+            'message' => 'Thank You! Punch IN successful'
         ]);
     }
+
+    // Punch OUT
+    $attendance->update([
+        'out_time' => now(),
+        'attendance' => 1
+    ]);
+
+    try {
+
+        $data = [
+        'learner_id'     => $learner->id,
+        'branch_id'      => $learner->branch_id,
+        'punch_datetime' => now(),
+        'source'         => 'SCAN'
+        ];
+
+        $this->logInsert($data);
+
+    } catch (\Throwable $e) {
+
+        \Log::error('Attendance log insert failed', [
+            'error' => $e->getMessage(),
+            'data'  => $data,
+        ]);
+
+    
+    }
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Thank You! Punch OUT successful'
+    ]);
+}
 
 
     /* ===============================
@@ -856,6 +858,157 @@ public function logInsert(array $data)
     ]);
 }
 
+public function view()
+{
+    return view('attendance.attendance-instructions');
+}
+
+
+
+public function downloadPdf()
+{
+    // Fonts setup
+    $defaultConfig = (new ConfigVariables())->getDefaults();
+    $fontDirs = $defaultConfig['fontDir'];
+
+    $defaultFontConfig = (new FontVariables())->getDefaults();
+    $fontData = $defaultFontConfig['fontdata'];
+
+    $pdf = new Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A4',
+        'orientation' => 'L',
+        'margin_top' => 15,
+        'margin_bottom' => 15,
+        'margin_left' => 15,
+        'margin_right' => 15,
+        'fontDir' => array_merge($fontDirs, [
+            public_path('fonts')
+        ]),
+        'fontdata' => $fontData + [
+            'notodeva' => [
+                'R' => 'NotoSansDevanagari-Regular.ttf',
+                
+            ],
+        ],
+        'default_font' => 'notodeva'
+    ]);
+
+    // Metadata
+    $pdf->SetCreator('Libraro');
+    $pdf->SetAuthor('Libraro');
+    $pdf->SetTitle('Attendance Instructions');
+    $pdf->SetSubject('Attendance QR Instructions');
+
+    // 🔥 DO NOT manually add page height tricks
+    $pdf->SetAutoPageBreak(true, 15);
+
+    // ✅ PDF-SAFE HTML
+    $html = '
+    <style>
+        body {
+            font-family: notodeva, sans-serif;
+            font-size: 14px;
+        }
+
+        .page {
+            border: 3px solid #0b4aa2;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #0b4aa2;
+        }
+
+        .header p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            width: 33.33%;
+            vertical-align: top;
+            border: 2px solid #dce3f0;
+            padding: 12px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #0b4aa2;
+            border-bottom: 2px solid #0b4aa2;
+            padding-bottom: 5px;
+        }
+
+        ul {
+            padding-left: 18px;
+            line-height: 1.6;
+        }
+    </style>
+
+    <div class="page">
+        <div class="header">
+            <h1>Attendance QR App – User Instructions</h1>
+            <p>Please read the instructions carefully</p>
+        </div>
+
+        <table>
+            <tr>
+                <td>
+                    <h2>English Instructions</h2>
+                    <ul>
+                        <li>Download and install the Attendance QR App.</li>
+                        <li>Allow camera permission.</li>
+                        <li>Scan the QR code displayed in the library.</li>
+                        <li>Wait for confirmation after scanning.</li>
+                        <li>Do not scan the QR code repeatedly.</li>
+                    </ul>
+                </td>
+
+                <td>
+                    <h2>हिंदी निर्देश</h2>
+                    <ul>
+                        <li>Attendance QR App डाउनलोड करें।</li>
+                        <li>कैमरा की अनुमति दें।</li>
+                        <li>लाइब्रेरी में प्रदर्शित QR कोड स्कैन करें।</li>
+                        <li>सफल स्कैन के बाद पुष्टि संदेश की प्रतीक्षा करें।</li>
+                        <li>बार-बार QR कोड स्कैन न करें।</li>
+                    </ul>
+                </td>
+
+                <td style="text-align:center;">
+                    <h2>Download App</h2>
+                    <p style="margin-top:40px;font-size:13px;">
+                        Scan QR code from library screen<br>
+                        to mark your attendance
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+    ';
+
+    $pdf->WriteHTML($html);
+
+    $fileName = 'instruction.pdf';
+
+    return response($pdf->Output($fileName, 'S'))
+        ->header('Content-Type', 'application/pdf')
+        ->header('Content-Disposition', 'attachment; filename="'.$fileName.'"');
+}
 
 
 
