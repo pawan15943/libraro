@@ -544,7 +544,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <td>
                                     <ul class="actions-icons">
-                                        @if($value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday())
+                                        @if($value->type=='qr_seat_book' && $value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday())
                                         <li>
                                             <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
                                                 @csrf

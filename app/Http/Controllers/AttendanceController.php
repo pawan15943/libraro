@@ -110,6 +110,7 @@ class AttendanceController extends Controller
     //Server validates UID + Mobile ->(only if valid) Save verified learner token (session / cookie)
     public function verifyLearner(Request $request)
     {
+        \Log::info('Attendqance verify', ['request' => $request->all()]);
        $validator = Validator::make($request->all(), [
             'login_with' => 'required|in:dob,email,learner_no',
             'uid'        => 'required',
@@ -135,8 +136,8 @@ class AttendanceController extends Controller
         } catch (\Exception $e) {
             $dob = null;
         }
-
-       $learner = Learner::where(function ($query) use ($request,$dob) {
+\Log::info('Attendqance dob', ['dob' => $dob]);
+       $learner = Learner::withoutGlobalScopes()->where(function ($query) use ($request,$dob) {
                     $query->where('learner_no', $request->uid);
                         if ($dob) {
                             \Log::info('dob part hit',['dob'=>$dob]);
