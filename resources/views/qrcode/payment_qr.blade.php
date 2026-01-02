@@ -32,6 +32,10 @@
         margin-bottom: 1rem;
     }
 
+    .online-booking span.steps{
+        width: 130px !important;
+    }
+
 </style>
 <section class="py-3 online-qr-booking">
     <div class="container">
