@@ -1639,7 +1639,7 @@ class LearnerController extends Controller
 
         // Update exam_id in learner_detail table if provided
         $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
-            ->where('status', 1)
+            ->latest()
             ->first();
 
         if ($learnerDetail) {
