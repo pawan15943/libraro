@@ -185,6 +185,27 @@ if (!function_exists('getCurrentBranch')) {
         return $currentBranch;
     }
 }
+if (!function_exists('generateLearnerCode')) {
+ function generateLearnerCode()
+    {
+        $prefix = "LN";
+        $lastlearner = Learner::withoutGlobalScopes()
+            ->whereNotNull('learner_no')
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        if ($lastlearner) {
+
+            $lastNumber = intval(substr($lastlearner->learner_no, 2));
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        } else {
+            $randomNumber = '000001';
+        }
+
+        return $prefix . $randomNumber;
+    }
+}
 if (!function_exists('getPlanPrice')) {
     function getPlanPrice($plan_id, $plan_type_id, $branch_id = null)
     {

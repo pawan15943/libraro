@@ -849,7 +849,7 @@ class QrEntryController extends Controller
                 'library_id' => getLibraryId(),
                 'password' =>$bookingurl->password,
                 'branch_id' => getCurrentBranch(),
-                'learner_no'=>$this->generateLearnerCode(),
+                'learner_no'=>generateLearnerCode(),
                 'father_name' => $request->input('father_name'),
                 'alternate_mobile' => $request->input('alternate_mobile'),
                 'remark' => $request->input('remark'),

@@ -745,7 +745,7 @@ class Controller extends BaseController
                 'address' => !empty($data['address']) ? trim($data['address']) : null,
                 'status' => $status,
                 'locker_no' => trim($data['locker_no']) === '' ? null : (int)trim($data['locker_no']),
-                'learner_no' => $this->generateLearnerCode()
+                'learner_no' => generateLearnerCode()
             ]);
 
             // Create learner detail entry

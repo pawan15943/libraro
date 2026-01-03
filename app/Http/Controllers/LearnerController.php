@@ -326,7 +326,7 @@ class LearnerController extends Controller
                 'library_id' => getLibraryId(),
                 'password' => bcrypt($request->mobile),
                 'branch_id' => getCurrentBranch(),
-                'learner_no' => $this->generateLearnerCode(),
+                'learner_no' => generateLearnerCode(),
                 'father_name' => $request->input('father_name'),
                 'alternate_mobile' => $request->input('alternate_mobile'),
                 'remark' => $request->input('remark'),
@@ -2616,7 +2616,7 @@ class LearnerController extends Controller
                 )
                 ->get();
 
-            $activeLearners = $learners->where('learners.status', 1)->where('learner_detail.status', 1);
+            $activeLearners = $learners->where('status', 1)->where('learner_detail_status', 1);
             // $expiredLearners = $learners->where('status', 0);
 
             $seat = new \stdClass();
@@ -2634,30 +2634,30 @@ class LearnerController extends Controller
 
 
         $generalLearners = Learner::join('learner_detail', function ($join) {
-                    $join->on('learner_detail.learner_id', '=', 'learners.id')
-                        ->where('learner_detail.status', 1);
-                })
-                ->where('learners.branch_id', getCurrentBranch())
-                ->whereNull('learner_detail.seat_no')
-             ->select(
-                    'learners.*',
-                    'learner_detail.seat_no',
-                    'learner_detail.plan_start_date',
-                    'learner_detail.plan_end_date',
-                    'learner_detail.plan_type_id',
-                    'learner_detail.plan_id',
-                    'learner_detail.plan_price_id',
-                    'learner_detail.status as learner_detail_status',
-                    'learner_detail.is_paid',
-                    'learner_detail.payment_mode',
-                      'learner_detail.join_date',
-                      'learner_detail.learner_id',
-                    'learner_detail.id as learner_detail_id',
-                )
-            ->get();
+                            $join->on('learner_detail.learner_id', '=', 'learners.id')
+                                ->where('learner_detail.status', 1);
+                        })
+                        ->where('learners.branch_id', getCurrentBranch())
+                        ->whereNull('learner_detail.seat_no')
+                    ->select(
+                            'learners.*',
+                            'learner_detail.seat_no',
+                            'learner_detail.plan_start_date',
+                            'learner_detail.plan_end_date',
+                            'learner_detail.plan_type_id',
+                            'learner_detail.plan_id',
+                            'learner_detail.plan_price_id',
+                            'learner_detail.status as learner_detail_status',
+                            'learner_detail.is_paid',
+                            'learner_detail.payment_mode',
+                            'learner_detail.join_date',
+                            'learner_detail.learner_id',
+                            'learner_detail.id as learner_detail_id',
+                        )
+                    ->get();
 
         $activeGeneral = $generalLearners->where('status', 1);
-        // $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
+        
         $finalGeneralLearners = $activeGeneral;
 
 
@@ -3873,25 +3873,7 @@ class LearnerController extends Controller
             return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
         }
     }
-    function generateLearnerCode()
-    {
-        $prefix = "LN";
-        $lastlearner = Learner::withoutGlobalScopes()
-            ->whereNotNull('learner_no')
-            ->orderBy('id', 'DESC')
-            ->first();
-
-        if ($lastlearner) {
-
-            $lastNumber = intval(substr($lastlearner->learner_no, 2));
-            $newNumber = $lastNumber + 1;
-            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT);
-        } else {
-            $randomNumber = '000001';
-        }
-
-        return $prefix . $randomNumber;
-    }
+   
 
     public function makeOtherPayment(Request $request)
     {
