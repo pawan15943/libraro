@@ -250,6 +250,59 @@
     </div>
     @endif
 
+<div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="branchQRLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow-sm">
+            <div class="modal-header"> <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div>
+
+            <div class="modal-body">
+                @if(getBranch()?->uuid)
+                    <div class="card border-0 text-center p-4">
+                        <div class="card-body">
+                            <p>With the help of this QR code you can Book and Re-New Library Seats.</p>
+                            <p class="text-muted mb-3">
+                                <b>{{ getBranch()->name ?? 'Vikas Library' }}</b>
+                            </p>
+
+                            <div class="d-inline-block p-3 bg-light rounded">
+                                <div id="qrPreview">
+                                    {!! QrCode::size(250)->generate(route('qr.branch', getBranch()->uuid)) !!}
+                                </div>
+                            </div>
+
+                            <p class="mt-3 mb-0 text-muted small">
+                                Scan to join <b>{{ getBranch()->name ?? 'this Library' }}</b>
+                            </p>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                        @if(getBranch()?->uuid)
+                            <a href="{{ route('branch.qr.pdf', getBranch()->uuid) }}"
+                            target="_blank"
+                            class="btn btn-sm btn-success d-flex align-items-center button" style="    padding: .5rem 1.2rem;">
+                                <i class="bi bi-download me-1"></i>
+                                Download
+                            </a>
+                        @endif
+                        <a  href="https://wa.me/?text={{ urlencode('Join the library: ' . route('qr.branch', getBranch()->uuid)) }}"
+                            target="_blank"
+                            class="btn btn-sm btn-outline-secondary d-flex align-items-center" style="    padding: .5rem 1.2rem;">
+                            <i class="bi bi-whatsapp me-1"></i>
+                            Share
+                        </a>
+                    </div>
+                    </div>
+
+                    
+                @else
+                    <p class="text-muted text-center mb-0">
+                        QR code is not available for this branch.
+                    </p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> <!-- Keep jQuery first -->
 

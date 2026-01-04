@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
-
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Mpdf\HTMLParserMode;
 
 class AttendanceController extends Controller
 {
@@ -136,7 +137,7 @@ class AttendanceController extends Controller
         } catch (\Exception $e) {
             $dob = null;
         }
-\Log::info('Attendqance dob', ['dob' => $dob]);
+            \Log::info('Attendqance dob', ['dob' => $dob]);
        $learner = Learner::withoutGlobalScopes()->where(function ($query) use ($request,$dob) {
                     $query->where('learner_no', $request->uid);
                         if ($dob) {
@@ -866,153 +867,198 @@ public function view()
 
 
 
+
+
+
+
 public function downloadPdf()
 {
-    // Fonts setup
+    /* ---------------- BASIC CONFIG ---------------- */
+
     $defaultConfig = (new ConfigVariables())->getDefaults();
     $fontDirs = $defaultConfig['fontDir'];
 
     $defaultFontConfig = (new FontVariables())->getDefaults();
     $fontData = $defaultFontConfig['fontdata'];
 
-    $pdf = new Mpdf([
+    $mpdf = new Mpdf([
         'mode' => 'utf-8',
-        'format' => 'A4',
-        'orientation' => 'L',
+        'format' => 'A4-L',
+
         'margin_top' => 15,
         'margin_bottom' => 15,
         'margin_left' => 15,
         'margin_right' => 15,
+
+        /* REQUIRED FOR MULTI-LANGUAGE */
+        'autoScriptToLang' => true,
+        'autoLangToFont'   => true,
+        'useOTL'           => 0xFF,
+
         'fontDir' => array_merge($fontDirs, [
-            public_path('fonts')
+            public_path('fonts'),
         ]),
-        'fontdata' => $fontData + [
+
+        /* 🔥 IMPORTANT: array_merge (NOT +) */
+        'fontdata' => array_merge($fontData, [
+            'dejavu' => [
+                'R' => 'DejaVuSans.ttf',
+            ],
             'notodeva' => [
                 'R' => 'NotoSansDevanagari-Regular.ttf',
-                
             ],
-        ],
-        'default_font' => 'notodeva'
+        ]),
+
+        /* Default font MUST be Unicode-safe */
+        'default_font' => 'dejavu',
+
+        /* Prevent font cache issues */
+        'tempDir' => storage_path('app/mpdf'),
     ]);
 
-    // Metadata
-    $pdf->SetCreator('Libraro');
-    $pdf->SetAuthor('Libraro');
-    $pdf->SetTitle('Attendance Instructions');
-    $pdf->SetSubject('Attendance QR Instructions');
+    /* ---------------- QR CODE ---------------- */
 
-    // 🔥 DO NOT manually add page height tricks
-    $pdf->SetAutoPageBreak(true, 15);
+    $qrPath = '';
 
-    // ✅ PDF-SAFE HTML
+    // QrCode::format('png')
+    //     ->size(250)
+    //     ->margin(2)
+    //     ->generate('ATTENDANCE_QR_CODE', $qrPath);
+
+    /* ---------------- HTML ---------------- */
+
     $html = '
-    <style>
-        body {
-            font-family: notodeva, sans-serif;
-            font-size: 14px;
-        }
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    body {
+        font-family: dejavu;
+        font-size: 14px;
+    }
 
-        .page {
-            border: 3px solid #0b4aa2;
-            padding: 15px;
-        }
+    .page {
+        border: 3px solid #0b4aa2;
+        padding: 15px;
+    }
 
-        .header {
-            text-align: center;
-            margin-bottom: 12px;
-        }
+    .header {
+        text-align: center;
+        margin-bottom: 12px;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 22px;
-            color: #0b4aa2;
-        }
+    .header h1 {
+        margin: 0;
+        font-size: 22px;
+        color: #0b4aa2;
+    }
 
-        .header p {
-            margin: 4px 0 0;
-            font-size: 13px;
-            color: #555;
-        }
+    .header p {
+        margin-top: 4px;
+        font-size: 13px;
+        color: #555;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-        td {
-            width: 33.33%;
-            vertical-align: top;
-            border: 2px solid #dce3f0;
-            padding: 12px;
-        }
+    td {
+        width: 33.33%;
+        vertical-align: top;
+        border: 2px solid #dce3f0;
+        padding: 12px;
+    }
 
-        h2 {
-            margin-top: 0;
-            font-size: 16px;
-            color: #0b4aa2;
-            border-bottom: 2px solid #0b4aa2;
-            padding-bottom: 5px;
-        }
+    h2 {
+        margin-top: 0;
+        font-size: 16px;
+        color: #0b4aa2;
+        border-bottom: 2px solid #0b4aa2;
+        padding-bottom: 5px;
+    }
 
-        ul {
-            padding-left: 18px;
-            line-height: 1.6;
-        }
-    </style>
+    ul {
+        padding-left: 18px;
+        line-height: 1.6;
+    }
 
-    <div class="page">
-        <div class="header">
-            <h1>Attendance QR App – User Instructions</h1>
-            <p>Please read the instructions carefully</p>
-        </div>
+    .qr {
+        text-align: center;
+        margin-top: 25px;
+    }
 
-        <table>
-            <tr>
-                <td>
-                    <h2>English Instructions</h2>
-                    <ul>
-                        <li>Download and install the Attendance QR App.</li>
-                        <li>Allow camera permission.</li>
-                        <li>Scan the QR code displayed in the library.</li>
-                        <li>Wait for confirmation after scanning.</li>
-                        <li>Do not scan the QR code repeatedly.</li>
-                    </ul>
-                </td>
+    .qr img {
+        width: 160px;
+    }
 
-                <td>
-                    <h2>हिंदी निर्देश</h2>
-                    <ul>
-                        <li>Attendance QR App डाउनलोड करें।</li>
-                        <li>कैमरा की अनुमति दें।</li>
-                        <li>लाइब्रेरी में प्रदर्शित QR कोड स्कैन करें।</li>
-                        <li>सफल स्कैन के बाद पुष्टि संदेश की प्रतीक्षा करें।</li>
-                        <li>बार-बार QR कोड स्कैन न करें।</li>
-                    </ul>
-                </td>
+    .qr-text {
+        margin-top: 10px;
+        font-size: 13px;
+    }
+</style>
+</head>
 
-                <td style="text-align:center;">
-                    <h2>Download App</h2>
-                    <p style="margin-top:40px;font-size:13px;">
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>Attendance QR App – User Instructions</h1>
+        <p>Please read the instructions carefully</p>
+    </div>
+
+    <table>
+        <tr>
+            <td style="font-family:dejavu;">
+                <h2>English Instructions</h2>
+                <ul>
+                    <li>Download and install the Attendance QR App.</li>
+                    <li>Allow camera permission.</li>
+                    <li>Scan the QR code displayed in the library.</li>
+                    <li>Wait for confirmation after scanning.</li>
+                    <li>Do not scan the QR code repeatedly.</li>
+                </ul>
+            </td>
+
+            <td style="font-family:notodeva;">
+                <h2>हिंदी निर्देश</h2>
+                <ul>
+                    <li>Attendance QR App डाउनलोड करें।</li>
+                    <li>कैमरा की अनुमति दें।</li>
+                    <li>लाइब्रेरी में प्रदर्शित QR कोड स्कैन करें।</li>
+                    <li>सफल स्कैन के बाद पुष्टि संदेश की प्रतीक्षा करें।</li>
+                    <li>बार-बार QR कोड स्कैन न करें।</li>
+                </ul>
+            </td>
+
+            <td>
+                <h2>Download App</h2>
+                <div class="qr">
+                    <img src="' . $qrPath . '">
+                    <div class="qr-text">
                         Scan QR code from library screen<br>
                         to mark your attendance
-                    </p>
-                </td>
-            </tr>
-        </table>
-    </div>
-    ';
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    $pdf->WriteHTML($html);
+</div>
 
-    $fileName = 'instruction.pdf';
+</body>
+</html>
+';
 
-    return response($pdf->Output($fileName, 'S'))
+    $mpdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+
+    return response($mpdf->Output('attendance_instructions.pdf', 'S'))
         ->header('Content-Type', 'application/pdf')
-        ->header('Content-Disposition', 'attachment; filename="'.$fileName.'"');
+        ->header('Content-Disposition', 'attachment; filename="attendance_instructions.pdf"');
 }
-
-
-
 
 
 
