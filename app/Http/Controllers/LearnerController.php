@@ -3968,7 +3968,7 @@ class LearnerController extends Controller
 
     public function learnerChecklist()
     {
-        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id')->get();
+        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.learner_no','learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id')->get();
         return view('learner.checklist', compact('learners'));
     }
 
