@@ -303,11 +303,11 @@ class QrEntryController extends Controller
 
             $validated = $request->validate($rules);
             
-            $months   = Plan::where('id', $validated['plan_id'])->value('plan_id');
-            $planData = Plan::where('id', $validated['plan_id'])
+            $months   = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])->value('plan_id');
+            $planData = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])
                 ->select('plan_id', 'type', 'monthdays')
                 ->first();
-
+            Log::info('STEP 5: plan',['planData'=>$planData,'months'=>$months]);
             $duration  = $planData->plan_id ?? 0; 
             $type      = $planData->type;
             $monthdays = $planData->monthdays;
@@ -413,7 +413,7 @@ class QrEntryController extends Controller
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
-
+        Log::info('seat type', ['seat_type' => $seat_type]);
             $booking = Booking::create([
                 'name'            => $validated['name'],
                 // 'email'           => $validated['email'] ?? null,
@@ -556,7 +556,7 @@ class QrEntryController extends Controller
         
         $customer = Booking::with(['branch', 'plan', 'planType']) // eager load relations
             ->findOrFail($id);
-        $plans = Plan::where('library_id', getLibraryId())->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->get();
         if($customer->transaction_id){
@@ -849,7 +849,7 @@ class QrEntryController extends Controller
                 'library_id' => getLibraryId(),
                 'password' =>$bookingurl->password,
                 'branch_id' => getCurrentBranch(),
-                'learner_no'=>$this->generateLearnerCode(),
+                'learner_no'=>generateLearnerCode(),
                 'father_name' => $request->input('father_name'),
                 'alternate_mobile' => $request->input('alternate_mobile'),
                 'remark' => $request->input('remark'),

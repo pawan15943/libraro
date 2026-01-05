@@ -101,11 +101,12 @@ $ids='approvwRequest';
                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
-                              <input type="date"
+                             <input type="date"
                                 class="form-control dob"
                                 name="dob"
-                                value="{{ old('dob') ?? ($learner->dob ? \Carbon\Carbon::parse($learner->dob)->format('Y-m-d') : '') }}"
+                                value="{{ old('dob') ?? (optional($learner)->dob ? \Carbon\Carbon::parse($learner->dob)->format('Y-m-d') : '') }}"
                                 max="{{ date('Y-m-d', strtotime('-10 years')) }}">
+
 
                             </div>
                             @endif

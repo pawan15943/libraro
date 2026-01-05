@@ -44,7 +44,7 @@
                             {{-- ================================================================== --}}
                             <div class="col-lg-6">
                                 <label for="">Full Name <span>*</span></label>
-                                <input type="text" class="form-control char-only" name="name" id="name">
+                                <input type="text" class="form-control " name="name" id="name">
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Mobile Number <span>*</span></label>

@@ -1468,11 +1468,11 @@
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input refundType isRefund" type="checkbox">
-                            <label class="form-check-label">Do you want to Refund</label>
+                            <label class="form-check-label">Do you want to proceed with the Refund</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
-                            <label class="form-check-label">Do you want to Without Refund</label>
+                            <label class="form-check-label">Do you want to proceed without the Refund</label>
                         </div>
                     </div>
                 
@@ -1703,11 +1703,11 @@
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input refundType isRefund" type="checkbox">
-                            <label class="form-check-label">Do you want to Refund</label>
+                            <label class="form-check-label">Do you want to proceed with the Refund</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
-                            <label class="form-check-label">Do you want to Without Refund</label>
+                            <label class="form-check-label">Do you want to proceed without the Refund</label>
                         </div>
                     </div>
                 

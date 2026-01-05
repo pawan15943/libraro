@@ -539,7 +539,7 @@
       SUBMIT SCAN (BACKEND)
     ========================= */
     function submitScan(qrText) {
-      alert("submitscan");
+      // alert("submitscan");
       const verifyToken = localStorage.getItem('verify_token');
       if (!verifyToken) {
         audioError.play();
@@ -563,7 +563,7 @@
         .then(res => res.json())
         .then(res => {
 
-          alert(res.status);
+          // alert(res.status);
           const scanMsg = document.getElementById('scanResult');
           if (res.status === 'success') {
             setScanMessage(res.message, 'success');

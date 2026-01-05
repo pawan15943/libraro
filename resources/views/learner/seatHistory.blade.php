@@ -37,7 +37,9 @@
 </p>
 
 @foreach($seats as $seat)
+ 
     @if($seat->learners->count() > 0)
+ 
         @foreach($seat->learners as $user)
             @php
                 $learner = optional($user); // Already joined, can access fields directly

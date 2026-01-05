@@ -173,6 +173,7 @@
             gap: 1rem;
             justify-content: space-between;
             flex: 1;
+            flex-wrap: wrap;
         }
 
 
@@ -185,6 +186,7 @@
             gap: 1rem;
             justify-content: space-between;
             flex: 1;
+            flex-wrap: wrap;
         }
 
         .plaanInfo ul li span {
@@ -205,6 +207,7 @@
             border: 1px solid #dedede;
             border-radius: .5rem;
             margin-top: .4rem;
+            margin-right: .5rem;
         }
 
         .library-name {
@@ -264,10 +267,13 @@
         }
 
         .truncate_fname {
-            width: 140px;
+            width: 125px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+         .w-100{
+            width: 100%;
         }
     </style>
 </head>
@@ -280,36 +286,59 @@
             $signature = hash_hmac('sha256', $payload, config('app.key'));
 
             $qrData = base64_encode($payload . '|' . $signature);
+            $start = $learner_detail->planType->start_time ?? null;
+            $end   = $learner_detail->planType->end_time ?? null;
+
+            $startTime = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
+            $endTime   = $end ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
            @endphp 
         
         <div class="card front">
             <div class="profiile">
                 <div class="seattt">
                     <img src="{{ $learner_detail->learner->profile_picture ? asset($learner_detail->learner->profile_picture) : 'https://placehold.co/600x400'}}" alt="profile">
-                    <span>Seat {{ $learner_detail->seat_no ?? 'GEN'}}</span>
+                    <span>Seat {{ getSeatDisplayShortFloor($learner_detail->seat_no) ?? 'GEN'}}</span>
                 </div>
                 <div class="iiinfo">
-                    <h4 class="truncate_name">{{ $learner_detail->learner->name}}</h4>
+                    <h4 class="truncate_name">Member UID : {{ $learner_detail->learner->learner_no}}</h4>
                     <ul>
                         <li>
-                            <span>Father name</span>
-                            <p class="m-0 truncate_fname">{{ $learner_detail->learner->father_name ?? ''}}</p>
+                            <span>Full name</span>
+                            <p class="m-0 truncate_fname">{{ $learner_detail->learner->name}}</p>
                         </li>
                         <li>
-                            <span>Mobile</span>
-                            <p class="m-0">91-{{ $learner_detail->learner->mobile ?? ''}}</p>
+                            <span>Mobile No</span>
+                            <p class="m-0">+91-{{ $learner_detail->learner->mobile ?? ''}}</p>
                         </li>
                     </ul>
                 </div>
 
             </div>
             <div class="plaanInfo">
-                <ul>
-                    <li><span>Plan Start On</span>
-                        <p class="m-0">{{ $learner_detail->plan_start_date ?? ''}}</p>
+               <ul>
+                   <li>
+                        <span>Plan Start On</span>
+                        <p class="m-0">
+                            {{ $learner_detail->plan_start_date 
+                                ? \Carbon\Carbon::parse($learner_detail->plan_start_date)->format('d-m-Y') 
+                                : '' 
+                            }}
+                        </p>
                     </li>
-                    <li><span>Ends On</span>
-                        <p class="m-0">{{ $learner_detail->plan_end_date ?? ''}}</p>
+
+                    <li>
+                        <span>Ends On</span>
+                        <p class="m-0">
+                            {{ $learner_detail->plan_end_date 
+                                ? \Carbon\Carbon::parse($learner_detail->plan_end_date)->format('d-m-Y') 
+                                : '' 
+                            }}
+                        </p>
+                    </li>
+
+                   <li class="w-100">
+                        <span>Shift</span>
+                        <p class="m-0">{{ $startTime }} to {{ $endTime }}</p>
                     </li>
                 </ul>
                 <div class="barcode">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>

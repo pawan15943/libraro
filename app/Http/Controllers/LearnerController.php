@@ -326,7 +326,7 @@ class LearnerController extends Controller
                 'library_id' => getLibraryId(),
                 'password' => bcrypt($request->mobile),
                 'branch_id' => getCurrentBranch(),
-                'learner_no' => $this->generateLearnerCode(),
+                'learner_no' => generateLearnerCode(),
                 'father_name' => $request->input('father_name'),
                 'alternate_mobile' => $request->input('alternate_mobile'),
                 'remark' => $request->input('remark'),
@@ -1622,8 +1622,6 @@ class LearnerController extends Controller
         }
         // Update customer details
 
-
-
         $customer->name = $request->input('name', $customer->name);
         $customer->email = encryptData($request->input('email', $customer->email));
         $customer->mobile = encryptData($request->input('mobile', $customer->mobile));
@@ -1634,73 +1632,77 @@ class LearnerController extends Controller
         $customer->remark = $request->input('remark', $customer->remark);
         $customer->id_proof_name = $request->input('id_proof_name', $customer->id_proof_name);
 
-        // Save the customer details
-        $customer->save();
-
+       
         // Update exam_id in learner_detail table if provided
         $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
-            ->where('status', 1)
+            ->latest()
             ->first();
+        $branchId = getCurrentBranch();
+        $startDateBlocked = false;
 
         if ($learnerDetail) {
-
             $updated = false;
 
-            // Update exam_id if provided
+            // Update exam_id
             if ($request->has('exam_id')) {
                 $learnerDetail->exam_id = $request->input('exam_id');
                 $updated = true;
             }
 
-            // Update plan_start_date and calculate plan_end_date if provided
-            if ($request->has('plan_start_date') && $request->has('plan_id')) {
+            // Start date update attempt
+            if ($request->filled('plan_start_date') && $request->filled('plan_id')) {
 
                 $startDate = Carbon::parse($request->input('plan_start_date'));
+                $endDate   = getEndDate($learnerDetail->plan_id, $startDate);
 
-                // Fetch both duration and type in one query
-                $plan = Plan::select('plan_id as duration', 'type', 'monthdays')->find($request->input('plan_id'));
+                $check = checkAvailability(
+                    $branchId,
+                    $learnerDetail->seat_no,      // nullable allowed
+                    $customer->id,
+                    $learnerDetail->plan_type_id,
+                    $learnerDetail->plan_id,
+                    $startDate
+                );
 
-                if ($plan) {
-                    $duration = $plan->duration;
-                    $type = strtoupper($plan->type);
-                    $monthdays = $plan->monthdays;
-                    // Calculate end date based on type
-                    switch (strtoupper($type)) {
-                        case 'DAY':
-                            $endDate = $startDate->copy()->addDays($duration);
-                            break;
-                        case 'WEEK':
-                            $endDate = $startDate->copy()->addWeeks($duration);
-                            break;
-                        case 'MONTH':
-                            if (!empty($monthdays)) {
-                                // Use exact number of days defined for this month plan
-                                $endDate = $startDate->copy()->addDays($monthdays - 1);
-                            } else {
-                                // Fallback to month-wise duration
-                                $endDate = $startDate->copy()->addMonths($duration);
-                            }
-                            break;
-                        case 'YEAR':
-                            $endDate = $startDate->copy()->addYears($duration);
-                            break;
-                        default:
-                            $endDate = $startDate;
-                            break;
-                    }
+                $extendDay   = getExtendDays();
+                $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+                $currentDate  = date('Y-m-d');
 
+                if ($learnerDetail && $learnerDetail->plan_end_date < $currentDate && $endDate->gt($currentDate)) {
+                    $status = 1;
+                } elseif ($inextendDate > Carbon::today() && $startDate <= Carbon::today()) {
+                    $status = 1;
+                } else {
+                    $status = 0;
+                }
+
+                if ($check['error'] === false) {
+                    // ✅ Allowed
                     $learnerDetail->plan_start_date = $startDate;
-                    $learnerDetail->plan_end_date = $endDate;
+                    $learnerDetail->plan_end_date   = $endDate;
+                    $learnerDetail->status=$status;
+                    $customer->status=$status;
+
                     $updated = true;
+                } else {
+                    // ❌ Blocked
+                    $startDateBlocked = true;
                 }
             }
 
-            // Save only if something was updated
             if ($updated) {
                 $learnerDetail->save();
             }
         }
 
+        // Save the customer details
+        $customer->save();
+
+        if ($startDateBlocked) {
+            return redirect()
+                ->route('learners')
+                ->with('success', 'Learner updated successfully. Start date could not be updated due to seat availability.');
+        }
         return redirect()->route('learners')->with('success', 'Learner updated successfully.');
     }
     // custome validation
@@ -1753,40 +1755,22 @@ class LearnerController extends Controller
                 break;
         }
 
+        $branchId=getCurrentBranch();
         // 🔹 Seat overlap checks
-        if ($seat_no) {
-            // $existingBookings = $this->getLearnersByLibrary()
-            //     ->where('learner_detail.seat_no', $learner_detail->seat_no ?? $seat_no)
-            //     ->where('learners.id', '!=', $learner_detail->learner_id ?? 0)
-            //     ->where('learner_detail.status', 1)
-            //     ->get();
+        if (!empty($seat_no)) {
+            $learnerId = !empty($learner_detail->learner_id)
+                ? (int) $learner_detail->learner_id
+                : null;
+            $check = checkAvailability($branchId,$seat_no,$learnerId,
+                $plan_type_id,$plan_id,$start_date
+            );
 
-            // foreach ($existingBookings as $booking) {
-            //     $bookingPlanType = PlanType::find($booking->plan_type_id);
-            //     if ($bookingPlanType) {
-            //         if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
-            //             return ['error' => true, 'message' => 'The selected plan type overlaps with an existing booking.'];
-            //         }
-            //     }
-            // }
-
-            // $total_cust_hour = Learner::where('seat_no', $seat_no)->where('id','!=',$learner_detail->learner_id)->where('status', 1)->sum('hours');
-            // if ($hours > ($total_hour - ($total_cust_hour - ($learner_detail->hours ?? 0)))) {
-            //     return ['error' => true, 'message' => 'You cannot select this plan type as it exceeds the available hours.'];
-            // }
-
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
-                return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
-            }
-
-            if (($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-                return ['error' => true, 'message' => 'This seat is already reserved for the full library hours on the selected day.'];
-            }
-
-            if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('learner_detail.plan_start_date', '>', Carbon::today())->exists()) {
-                if ($this->checkPlanTypeSeatWise($seat_no, $plan_type_id) == false) {
-                    return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
-                }
+            // 🔴 STOP immediately if seat is not available
+            if ($check['error'] === true) {
+                return [
+                    'error'   => true,
+                    'message' => $check['message'] ?? 'Seat is not available'
+                ];
             }
         }
 
@@ -2616,7 +2600,7 @@ class LearnerController extends Controller
                 )
                 ->get();
 
-            $activeLearners = $learners->where('learners.status', 1)->where('learner_detail.status', 1);
+            $activeLearners = $learners->where('status', 1)->where('learner_detail_status', 1);
             // $expiredLearners = $learners->where('status', 0);
 
             $seat = new \stdClass();
@@ -2634,30 +2618,30 @@ class LearnerController extends Controller
 
 
         $generalLearners = Learner::join('learner_detail', function ($join) {
-                    $join->on('learner_detail.learner_id', '=', 'learners.id')
-                        ->where('learner_detail.status', 1);
-                })
-                ->where('learners.branch_id', getCurrentBranch())
-                ->whereNull('learner_detail.seat_no')
-             ->select(
-                    'learners.*',
-                    'learner_detail.seat_no',
-                    'learner_detail.plan_start_date',
-                    'learner_detail.plan_end_date',
-                    'learner_detail.plan_type_id',
-                    'learner_detail.plan_id',
-                    'learner_detail.plan_price_id',
-                    'learner_detail.status as learner_detail_status',
-                    'learner_detail.is_paid',
-                    'learner_detail.payment_mode',
-                      'learner_detail.join_date',
-                      'learner_detail.learner_id',
-                    'learner_detail.id as learner_detail_id',
-                )
-            ->get();
+                            $join->on('learner_detail.learner_id', '=', 'learners.id')
+                                ->where('learner_detail.status', 1);
+                        })
+                        ->where('learners.branch_id', getCurrentBranch())
+                        ->whereNull('learner_detail.seat_no')
+                    ->select(
+                            'learners.*',
+                            'learner_detail.seat_no',
+                            'learner_detail.plan_start_date',
+                            'learner_detail.plan_end_date',
+                            'learner_detail.plan_type_id',
+                            'learner_detail.plan_id',
+                            'learner_detail.plan_price_id',
+                            'learner_detail.status as learner_detail_status',
+                            'learner_detail.is_paid',
+                            'learner_detail.payment_mode',
+                            'learner_detail.join_date',
+                            'learner_detail.learner_id',
+                            'learner_detail.id as learner_detail_id',
+                        )
+                    ->get();
 
         $activeGeneral = $generalLearners->where('status', 1);
-        // $expiredGeneral = $generalLearners->where('status', 0)->take(1); 
+        
         $finalGeneralLearners = $activeGeneral;
 
 
@@ -3873,25 +3857,7 @@ class LearnerController extends Controller
             return redirect()->route('learners')->withErrors(['error' => 'An error occurred while processing the payment.']);
         }
     }
-    function generateLearnerCode()
-    {
-        $prefix = "LN";
-        $lastlearner = Learner::withoutGlobalScopes()
-            ->whereNotNull('learner_no')
-            ->orderBy('id', 'DESC')
-            ->first();
-
-        if ($lastlearner) {
-
-            $lastNumber = intval(substr($lastlearner->learner_no, 2));
-            $newNumber = $lastNumber + 1;
-            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT);
-        } else {
-            $randomNumber = '000001';
-        }
-
-        return $prefix . $randomNumber;
-    }
+   
 
     public function makeOtherPayment(Request $request)
     {
@@ -3980,7 +3946,7 @@ class LearnerController extends Controller
 
     public function learnerIdCard($id)
     {
-        $learner_detail = LearnerDetail::where('id', $id)->with(['learner'])->first();
+        $learner_detail = LearnerDetail::where('id', $id)->with(['learner','planType'])->first();
         $branch = Branch::where('id', $learner_detail->branch_id)->with('city', 'state')->first();
         // $filename = 'qr_' . $learner_detail->learner_id . '.png';
         // Storage::put("public/qr/$filename", QrCode::format('png')->size(300)->generate($learner_detail->learner->learner_no));
@@ -4002,7 +3968,7 @@ class LearnerController extends Controller
 
     public function learnerChecklist()
     {
-        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id')->get();
+        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.learner_no','learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id')->get();
         return view('learner.checklist', compact('learners'));
     }
 
