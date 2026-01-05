@@ -439,4 +439,36 @@ class LibraryAuthController extends Controller
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out']);
     }
+
+    public function paymentApi(Request $request)
+    {
+        $request->validate([
+            'library_id'      => 'required',
+            'subscription_id' => 'required',
+            'plan_mode'       => 'required',
+        ]);
+
+        try {
+            $data = $this->razorpayPaymentCore(
+                $request->subscription_id,
+                $request->plan_mode,
+                $request->library_id
+            );
+
+            return response()->json([
+                'status'  => true,
+                'order'   => $data['order'],
+                'amount'  => $data['amount'],
+                'currency'=> 'INR',
+                'transaction_id' => $data['transaction']->id,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
 }

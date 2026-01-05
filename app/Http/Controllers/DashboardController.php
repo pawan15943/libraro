@@ -89,6 +89,8 @@ class DashboardController extends Controller
             //load menus status function call for status update
             $middleware = app(LoadMenus::class);
             $middleware->statusInactive();
+
+            
             $value = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())
             ->where('status', 1)
             ->first();

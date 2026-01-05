@@ -155,67 +155,7 @@ class LibraryController extends Controller
         return Validator::make($request->all(), $rules);
     }
 
-    public function store(Request $request)
-    {
-      
-        // Validate the request
-        $validatedData = $this->libraryValidation($request);
-        
-        if ($validatedData->fails()) {
-            return redirect()->back()->withErrors($validatedData)->withInput();
-        }
-
-        $validated = $validatedData->validated();
-        unset($validated['terms']);
-        $validated['original_password'] = $validated['password'];
-
-        $validated['password'] = bcrypt($validated['password']);
-        $validated['slug']=Str::slug($validated['library_name']);
-        try {
-            $library = Library::create($validated);
-
-            if ($library) {
-               
-                $otp = Str::random(6); 
-                $library->email_otp = $otp;
-                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
-                $library->save();
-                
-                if ($request->referral_code) {
-                    $referrer = Library::where('referral_code', $request->referral_code)->first();
-
-                    if ($referrer && $referrer->id !== $library->id) {
-
-                        $library->referred_by = $referrer->id;
-                        $library->save();
-
-                        LibraryReferral::create([
-                            'referrer_library_id' => $referrer->id,
-                            'referred_library_id' => $library->id,
-                            'referral_code' => $request->referral_code,
-                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
-                            'status' => 'pending'
-                        ]);
-                    }
-                }
-                
-                
-               
-                 \Log::info('sendVerificationEmail');
-                $this->sendVerificationEmail($library);
-                
-                
-                session(['library_email' => $library->email]);
-
-                return redirect()->route('verification.notice')
-                    ->with('message', 'Please verify your email to continue.');
-            } else {
-                return response()->json(['error' => 'Library creation failed.'], 500);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
-        }
-    }
+   
 
     public function libraryStore(Request $request)
     {
@@ -580,7 +520,7 @@ class LibraryController extends Controller
         
 
         if ($library_transaction_id) {
-            Log::info('Referral 1');
+           
             $duration = $library_transaction_id->month ?? 0;
 
             if (LibraryTransaction::where('library_id', $library_transaction_id->library_id)->where('status', 1)->exists()) {
@@ -592,14 +532,14 @@ class LibraryController extends Controller
                 $start_date = Carbon::parse($library_tra->end_date)->addDay(1);
                 $endDate = $start_date->copy()->addMonths($duration);
                 $status = 0;
-                Log::info('Referral 2');
+                
             } else {
-                Log::info('Referral 3');
+                
                 $start_date = now(); 
                 $endDate = $start_date->copy()->addMonths($duration);
                 $status = 1;
             }
-            Log::info('Referral 4');
+            
             
            
             // Update the transaction details
@@ -636,6 +576,141 @@ class LibraryController extends Controller
         }
         return redirect()->back()->with('error', 'Transaction not found.');
     }
+
+    public function payment(Request $request)
+    {
+        if(session('selected_plan_id') && session('selected_plan_mode')){
+                $subscriptionId = session('selected_plan_id');
+                $planMode = session('selected_plan_mode');
+        }elseif($request){
+              $request->validate([
+                'library_id'      => 'required',
+                'subscription_id'=> 'required',
+                'plan_mode'       => 'required',
+            ]);
+
+            
+            $subscriptionId = $request->subscription_id;
+            $planMode       = $request->plan_mode;
+        }
+
+        if ($request->library_id) {
+            $libraryId = $request->library_id;
+        } elseif (Auth::check()) { 
+            $libraryId = getAuthenticatedUser()->id;
+        } else {
+            return redirect()->back()->with('error', 'Library ID not provided.');
+        }
+
+         // ✅ ONLY redirect when plan is MISSING
+        if (!$subscriptionId || !$planMode) {
+            return redirect('subscriptions.choosePlan')
+                ->with('error', 'Plan not selected');
+        }
+      
+        $subscription = Subscription::findOrFail($subscriptionId);
+        if (!$subscription) {
+            return redirect('subscriptions.choosePlan')->with('error', 'No valid subscription selected');
+
+        }
+
+        try {
+             $data = $this->razorpayPaymentCore((int) $subscriptionId,(int) $planMode,(int) $libraryId);
+
+            return view('library.razorpay-checkout', [
+                'key'        => config('services.razorpay.key'),
+                'order_id'   => $data['order']['id'],
+                'amount'     => $data['order']['amount'],
+                'currency'   => $data['order']['currency'],
+                'library_transaction_id' => $data['transaction']->id,
+                'name'       => 'Library Payment',
+                'description'=> 'Library Payment',
+            ]);
+
+        } catch (\Exception $e) {
+                    // 🔥 ANY CRASH → HOME PAGE
+                \Log::error('Payment crash', [
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect()->route('library.home')
+                    ->with('error', 'Something went wrong. Please try again.');
+            
+        }
+
+    }
+
+   
+    private function razorpayPaymentCore(int $subscriptionId, int $planMode, int $libraryId): array
+    {
+        /* ---------------- PLAN & AMOUNT ---------------- */
+
+        $subscription = Subscription::findOrFail($subscriptionId);
+
+        match ($planMode) {
+            1 => [$month, $amount] = [1,  $subscription->monthly_fees],
+            2 => [$month, $amount] = [12, $subscription->yearly_fees],
+            3 => [$month, $amount] = [3,  $subscription->three_monthly_fees],
+            4 => [$month, $amount] = [6,  $subscription->six_monthly_fees],
+            5 => [$month, $amount] = [24, $subscription->two_yearly_fees],
+            default => throw new \Exception('Invalid plan mode'),
+        };
+
+        /* ---------------- GST & DISCOUNT ---------------- */
+
+        $gstRow   = DB::table('gst_discount')->first();
+        $gst      = $gstRow->gst ?? 0;
+        $discount = $gstRow->discount ?? 0;
+
+        $discountAmount = $amount * ($discount / 100);
+        $finalAmount    = ($amount - $discountAmount) * (1 + ($gst / 100));
+
+        /* ---------------- TRANSACTION ---------------- */
+
+        $transaction = LibraryTransaction::updateOrCreate(
+            [
+                'library_id' => $libraryId,
+                'is_paid'    => 0,
+            ],
+            [
+                'subscription' => $subscriptionId,
+                'amount'       => $amount,
+                'paid_amount'  => $finalAmount,
+                'month'        => $month,
+                'gst'          => $gst,
+                'discount'     => $discount,
+            ]
+        );
+
+        /* ---------------- RAZORPAY ORDER ---------------- */
+
+        $response = Http::withBasicAuth(
+            config('services.razorpay.key'),
+            config('services.razorpay.secret')
+        )
+        
+        ->timeout(20)
+        ->retry(2, 200)
+        ->post('https://api.razorpay.com/v1/orders', [
+            'amount'   => (int) ($finalAmount * 100),
+            'currency' => 'INR',
+            'receipt'  => 'TXN_'.$transaction->id,
+            'payment_capture' => 1,
+        ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Razorpay order creation failed');
+        }
+
+        return [
+            'transaction' => $transaction,
+            'order'       => $response->json(),
+            'amount'      => $finalAmount,
+            'currency'    => 'INR',
+        ];
+    }
+
+
 
     public function handleSuccess(Request $request)
     {
@@ -832,6 +907,68 @@ class LibraryController extends Controller
         
 
         return redirect()->route('library.master')->with('success', 'Profile updated successfully!');
+    }
+
+     public function store(Request $request)
+    {
+      
+        // Validate the request
+        $validatedData = $this->libraryValidation($request);
+        
+        if ($validatedData->fails()) {
+            return redirect()->back()->withErrors($validatedData)->withInput();
+        }
+
+        $validated = $validatedData->validated();
+        unset($validated['terms']);
+        $validated['original_password'] = $validated['password'];
+
+        $validated['password'] = bcrypt($validated['password']);
+        $validated['slug']=Str::slug($validated['library_name']);
+        try {
+            $library = Library::create($validated);
+
+            if ($library) {
+               
+                $otp = Str::random(6); 
+                $library->email_otp = $otp;
+                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
+                $library->save();
+                
+                if ($request->referral_code) {
+                    $referrer = Library::where('referral_code', $request->referral_code)->first();
+
+                    if ($referrer && $referrer->id !== $library->id) {
+
+                        $library->referred_by = $referrer->id;
+                        $library->save();
+
+                        LibraryReferral::create([
+                            'referrer_library_id' => $referrer->id,
+                            'referred_library_id' => $library->id,
+                            'referral_code' => $request->referral_code,
+                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
+                            'status' => 'pending'
+                        ]);
+                    }
+                }
+                
+                
+               
+                 \Log::info('sendVerificationEmail');
+                $this->sendVerificationEmail($library);
+                
+                
+                session(['library_email' => $library->email]);
+
+                return redirect()->route('verification.notice')
+                    ->with('message', 'Please verify your email to continue.');
+            } else {
+                return response()->json(['error' => 'Library creation failed.'], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     public function transaction(){

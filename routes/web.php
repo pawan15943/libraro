@@ -30,7 +30,7 @@ use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
-Route::get('/get-libraries', [MasterController::class, 'getLibraries'])->name('get-libraries');
+
 
 
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
@@ -42,10 +42,6 @@ Route::get('library/register', [RegisterController::class, 'showRegistrationForm
 // Auth routes
 Auth::routes(['register' => false, 'login' => false, 'verify' => false]);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout')->withoutMiddleware('auth');
-Route::get(
-        '/attendance/logs',
-        [AttendanceController::class, 'logs']
-    )->name('attendance.logs');
 
 Route::group(['prefix' => 'library'], function () {
   Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request.library');
@@ -56,10 +52,8 @@ Route::group(['prefix' => 'library'], function () {
   Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update.library');
 });
 
-
-// Route::get('/email/verify', function () {
-//   return view('auth.verify');
-// })->name('verification.notice');
+Route::get('/attendance/logs',[AttendanceController::class, 'logs'])->name('attendance.logs');
+Route::get('/get-libraries', [MasterController::class, 'getLibraries'])->name('get-libraries');
 Route::get('/email/verify', [LibraryController::class, 'emailVerification'])->name('verification.notice');
 Route::post('/verify-otp', [LibraryController::class, 'verifyOtp'])->name('verify.otp');
 Route::get('library/choose-plan-price', [LibraryController::class, 'getSubscriptionPrice'])->name('subscriptions.getSubscriptionPrice');
@@ -83,7 +77,6 @@ Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('su
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
 Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
-
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
 Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
@@ -97,9 +90,7 @@ Route::post('/get-plan-price', [QrEntryController::class, 'getPlanPrice'])->name
 Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->name('booking.store');
 Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
 Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
-
 Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
-
 Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
@@ -118,14 +109,11 @@ Route::get('/attendance/instructions/pdf', [AttendanceController::class, 'downlo
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
-Route::get('/receipt/{transactionId}', 
-    [LearnerController::class, 'viewReceipt']
-)->name('receipt.view');
+Route::get('/receipt/{transactionId}', [LearnerController::class, 'viewReceipt'])->name('receipt.view');
 
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
-  // Route::middleware(['auth:library','log.requests'])->group(function () {
-  // 
+ 
   Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
   Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
@@ -165,7 +153,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::post('library/learners/log', [LearnerController::class, 'learnerLog'])->name('learner.log');
 
   Route::prefix('library')->group(function () {
-    
+    Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
+    Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
+    Route::post('/payment/store', [LibraryController::class, 'payment'])->name('payment.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan');
@@ -187,12 +177,11 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/token/amount/create/{id?}', [MasterController::class, 'tokenAmountCreate'])->name('tokenAmount.create');
     Route::get('/planPrice/create/{id?}', [MasterController::class, 'planPriceCreate'])->name('planPrice.create');
     Route::get('/planPrice/list', [MasterController::class, 'planPriceView'])->name('planPrice.index');
-    Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
     Route::get('/master/account', [LibraryController::class, 'sidebarRedirect'])->name('library.master.account');
     Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
 
     Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
-    Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
+  
     Route::get('/profile', [LibraryController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update');
     Route::post('/payment/success', [LibraryController::class, 'handleSuccess'])->name('library.payment.success');
