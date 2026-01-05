@@ -1,7 +1,4 @@
 @extends('layouts.library')
-<!-- CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-
 @section('content')
 
 <!-- Add Library User Form -->
@@ -117,7 +114,6 @@
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 
 <!-- JS -->

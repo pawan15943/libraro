@@ -4079,7 +4079,7 @@ class LearnerController extends Controller
             ->value('payment_mode');
 
         $type  = $pay_mode == 3 ? 'SEAT ASSIGNMENT' : 'PENDING';
-        $parti = $pay_mode == 3 ? 'PAY LATER PAYMENT' : 'ADDITIONAL PAYMENT';
+        $parti = $pay_mode == 3 ? 'PAY LATER PAYMENT' : 'REMAINING PAYMENT';
 
         $transaction->update([
             'pending_amount' => $newPending,

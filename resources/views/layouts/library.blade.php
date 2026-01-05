@@ -31,6 +31,8 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
 </head>
 
 <body>
@@ -133,11 +135,11 @@
                 @endcan
 
                 @can('has-permission','QR Seat Booking')
-                    @if(getBranch()?->uuid && getBranch()?->upi_id)
-                    <li>
-                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" data-bs-title="Seat Booking QR"><i class="fa fa-qrcode fa-2x"></i></a>
-                    </li>
-                    @endif
+                @if(getBranch()?->uuid && getBranch()?->upi_id)
+                <li>
+                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" data-bs-title="Seat Booking QR"><i class="fa fa-qrcode fa-2x"></i></a>
+                </li>
+                @endif
                 @endcan
 
                 @can('has-permission', 'Add Daily Expense')
@@ -272,6 +274,7 @@
     <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
     <script src="{{ url('public/js/main-validation.js') }}" defer></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
@@ -513,6 +516,55 @@
             let form = this.closest('form');
             form.reset(); // reset form fields
             window.location.href = form.action; // reload without filters
+        });
+    </script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const generalSeat = document.getElementById('general_seat');
+            const seatSelect = document.getElementById('seat_id');
+
+            const seatChoices = new Choices(seatSelect, {
+                removeItemButton: true,
+                shouldSort: false,
+            });
+
+            function toggleSeat() {
+                if (generalSeat.value === 'yes') {
+                    seatChoices.disable(); // ✅ disable Choices UI
+                    seatChoices.removeActiveItems(); // removes selected value
+                    seatSelect.value = '';
+                } else {
+                    seatChoices.enable(); // ✅ enable Choices UI
+                }
+            }
+
+            // 🔹 Run on page load
+            toggleSeat();
+
+            // 🔹 Run on change
+            generalSeat.addEventListener('change', toggleSeat);
+
+        });
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // For select
+            const selectElement = document.getElementById('stateid');
+            const choicesSelect = new Choices(selectElement, {
+                removeItemButton: true,
+            });
+
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // For select
+            const selectElement = document.getElementById('cityid');
+            const choicesSelect = new Choices(selectElement, {
+                removeItemButton: true,
+            });
+
         });
     </script>
 </body>
