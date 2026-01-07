@@ -4881,9 +4881,9 @@ h6.text-center.bg-white {
         display: none;
     }
 
-    .col-lg-12.text-end {
+    /* .col-lg-12.text-end {
         display: none;
-    }
+    } */
 
     ul#pills-tab {
         justify-content: center !important;
