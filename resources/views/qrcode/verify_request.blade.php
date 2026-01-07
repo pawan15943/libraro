@@ -79,7 +79,7 @@ $ids='approvwRequest';
                                 <label for="seat_id11">Choose Seat No. <span>*</span></label>
 
                                 <select name="seat_no" class="form-select" id="seat_id11">
-                                     <option value="">GEN</option>
+                                    <option value="">GEN</option>
                                     @foreach($seatList as $value)
                                     <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value  ? 'selected' : '' }}>
                                         {{ $value }}
@@ -381,6 +381,18 @@ $ids='approvwRequest';
                     </div>
                 </form>
             </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="seatnumber">
+                <img src="{{ asset('public/img/available.png') }}" alt="Seat" class="py-3 {{$planDetails['class']}}" style="width:60px; display:block; margin:0 auto;">
+               @if($customer->seat_no)
+                <span class="d-block ">Seat No : {{ getSeatDisplayByMainNo($customer->seat_no)}}</span>
+                @else
+                <span class="d-block ">General</span>
+                @endif
+                <div class="seat--plan">{{ $customer->planType->name ?? 'No Plan Type' }}</div>
+                
             </div>
         </div>
     </div>

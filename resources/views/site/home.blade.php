@@ -314,7 +314,7 @@
                             <button class="btn btn-primary buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">Buy Now</button>
                             {{-- <span class="expiry">*Offer Valid Till 31-12-2025</span> --}}
                         </div>
-                        <ul class="plan-features contents">
+                        <ul class="plan-features contents mt-4">
                         
                             @foreach($allFeatures as $featureName)
                         

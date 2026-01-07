@@ -1458,21 +1458,21 @@
         var oldValue = seat;
 
         Swal.fire({
-            title: 'Are you sure?',
+            title: 'Are you sure you want to delete this Record?',
            
             html: `
             <p style="margin-bottom:10px;">
-                When you delete your seat using this option, it will still be available in the learner’s history.
+                Deleting this seat will not remove it permanently. It will remain visible in the learner’s history.
             </p>
                 <div class="row g-4 delete">
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType isRefund" type="checkbox">
-                            <label class="form-check-label">Do you want to proceed with the Refund</label>
+                            <input class="form-check-input refundType isRefund" type="checkbox" id="removeRefund" value="with_refund">
+                            <label class="form-check-label" for="removeRefund">Proceed with Refund</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
-                            <label class="form-check-label">Do you want to proceed without the Refund</label>
+                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund" id="refundNo">
+                            <label class="form-check-label" for="refundNo">Proceed without Refund</label>
                         </div>
                     </div>
                 
@@ -1591,9 +1591,9 @@
         var newValue = seat;
         var oldValue = seat;
         Swal.fire({
-            title: 'Are you sure?',
+            title: 'Are you sure you want to permanently delete this Record?',
              html: `
-            <p style="margin-bottom:10px;">This action will permanently delete the learner record.</p>
+            <p style="margin-bottom:10px;">Proceeding will permanently remove the learner record from the system.</p>
             
             <div style="text-align:left;">
                 <div class="form-check">
@@ -1697,17 +1697,17 @@
         var newValue = `${year}-${month}-${day}`;
        
         Swal.fire({
-            title: 'Are you sure?',
+            title: 'Are you sure you want to close this Seat?',
             html: `
                 <div class="row g-4 delete">
                     <div class="col-lg-12">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType isRefund" type="checkbox">
-                            <label class="form-check-label">Do you want to proceed with the Refund</label>
+                            <input class="form-check-input refundType isRefund" type="checkbox" id="refundYes">
+                            <label class="form-check-label" for="refundYes">Proceed with Refund</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund">
-                            <label class="form-check-label">Do you want to proceed without the Refund</label>
+                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund" id="refundNo">
+                            <label class="form-check-label" for="refundNo">Proceed without Refund</label>
                         </div>
                     </div>
                 
@@ -1729,7 +1729,7 @@
                     </div>
                 </div>
             `,
-            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
+            iconHtml: '<i class="fas fa-times fa-3x" style="color:red;font-size:40px;"></i>',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
@@ -2829,6 +2829,7 @@ $(document).on('click', '.giftDaysBtn', function () {
                     min: 1, 
                     step: 1
                 },
+                iconHtml: '<i class="fas fa-gift fa-3x" style="color:red;font-size:40px;"></i>',
                 preConfirm: (value) => {
                      if (value === "" || isNaN(value)) {
                         Swal.showValidationMessage('Please enter a valid number');
@@ -2898,7 +2899,7 @@ $(document).on('click', '.freezDaysBtn', function () {
     Swal.fire({
         title: title,
         text: text,
-        icon: "warning",
+        iconHtml: '<i class="fa-solid fa-snowflake fa-3x" style="color:red;font-size:40px;"></i>',
         showCancelButton: true,
         confirmButtonText: status == 0 ? "Yes, Freeze" : "Yes, Unfreeze",
         cancelButtonText: "Cancel"

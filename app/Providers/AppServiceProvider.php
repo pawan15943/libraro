@@ -391,6 +391,14 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'How to Use Libraro' => route('library.how-to-use'),
             ],
+            'booking.details.approve' => [
+                'Dashboard' => route('library.home'),
+                'QR / Online Bookings' => route('booking.details.approve'),
+            ],
+            'attendance.apply' => [
+                'Dashboard' => route('library.home'),
+                'QR Attendance' => route('attendance.apply'),
+            ],
 
 
             // Learner Bread crumb
@@ -539,6 +547,8 @@ class AppServiceProvider extends ServiceProvider
             'learner.change.plan' => 'Learner Change Plan',
             'general.seat.history' => 'General Seat History',
             'library.how-to-use' => 'How to Use Library',
+            'booking.details.approve' => 'QR / Online Bookings',
+            'attendance.apply' => 'QR Attendance',
 
         ];
 
