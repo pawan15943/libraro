@@ -1350,14 +1350,6 @@ ul.libraryFeatures li span {
     width: 100%;
     overflow: hidden;
 }
-a.bookSeat {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    left: 0;
-    border-radius: 0;
-    z-index: 1080;
-}
 
 .library-images .main-image img {
     border-radius: 1.2rem;
@@ -1602,6 +1594,15 @@ img.img-fluid {
 ======================================================================================*/
 
 @media screen and (max-width:480px) {
+    a.bookSeat {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    border-radius: 0;
+    z-index: 1080;
+}
+
     .customer-info {
         flex-direction: column;
         text-align: center;
