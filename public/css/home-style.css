@@ -1599,7 +1599,7 @@ img.img-fluid {
     bottom: 0;
     width: 100%;
     left: 0;
-    border-radius: 0;
+    border-radius: 0 !important;
     z-index: 1080;
 }
 
