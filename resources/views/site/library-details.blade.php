@@ -3,7 +3,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <div class="modal fade" id="libraryEnquiry" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-md">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
 
         <div class="modal-content">
@@ -22,17 +22,17 @@
                       
 
                         <div class="row g-4">
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="">Full Name <span>*</span></label>
                                 <input type="text" class="form-control char-only" name="name" id="name">
                             </div>
                          
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="">Mobile Number <span>*</span></label>
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
                      
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="">Shift time</label>
                                 <select id="shift_time" class="form-select" name="shift_time">
                                     <option value="">Select Plan Type</option>
@@ -42,7 +42,7 @@
 
                                 </select>
                             </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="enquiry">Enquiry <span>*</span></label>
                                 <textarea id="enquiry" name="enquiry" class="form-control" rows="4" placeholder="Write your enquiry here..."></textarea>
                             </div>
@@ -194,7 +194,7 @@
                                         <span>Validity</span>
                                         <p>{{$value->plan_name}}</p>
                                     </li>
-                                    <li>
+                                    <li class="d-none">
                                         <span>Plan Price</span>
                                         <p>{{$value->price}} INR</p>
                                     </li>
