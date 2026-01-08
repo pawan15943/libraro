@@ -10,7 +10,7 @@
             <div id="error-message" class="alert alert-danger" style="display:none;"></div>
             <div id="validation-error-message" class="alert alert-danger" style="display:none;"></div>
             <div class="modal-header">
-                <h1 class="modal-title px-2 fs-5" id="seat_no_head"></h1>
+                <h1 class="modal-title px-2 fs-5" id="seat_no_head">Inquiry Form</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -19,8 +19,6 @@
                     @csrf
                     <div class="detailes">
                         <input type="hidden" name="branch_id" value="{{$library->id}}" >
-                      
-
                         <div class="row g-4">
                             <div class="col-lg-12">
                                 <label for="">Full Name <span>*</span></label>
@@ -46,14 +44,10 @@
                                 <label for="enquiry">Enquiry <span>*</span></label>
                                 <textarea id="enquiry" name="enquiry" class="form-control" rows="4" placeholder="Write your enquiry here..."></textarea>
                             </div>
-                            
-                        
-                     
                         </div>
-                 
-
+.
                         <div class="row mt-2">
-                            <div class="col-lg-4">
+                            <div class="col-lg-12">
                                 <input type="submit" class="btn btn-primary btn-block button" id="submit"
                                     value="Enquiry Now" autocomplete="off">
                             </div>

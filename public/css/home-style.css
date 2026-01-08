@@ -1595,13 +1595,14 @@ img.img-fluid {
 
 @media screen and (max-width:480px) {
     a.bookSeat {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    left: 0;
-    border-radius: 0 !important;
-    z-index: 1080;
-}
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        left: 0;
+        border-radius: 0 !important;
+        z-index: 1080;
+        box-shadow: 2px -6px 7px #0000002e;
+    }
 
     .customer-info {
         flex-direction: column;
@@ -1870,7 +1871,7 @@ a.action_pay {
     font-weight: 400;
 }
 
-.online-booking  .border.p-3.bg-white.rounded-4 {
+.online-booking .border.p-3.bg-white.rounded-4 {
     background: #f4f4ff !important;
     border: none ! IMPORTANT;
 }
