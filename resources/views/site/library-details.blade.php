@@ -19,7 +19,7 @@
                     @csrf
                     <div class="detailes">
                         <input type="hidden" name="branch_id" value="{{$library->id}}" >
-                        <div class="row g-4">
+                        <div class="row g-3">
                             <div class="col-lg-12">
                                 <label for="">Full Name <span>*</span></label>
                                 <input type="text" class="form-control char-only" name="name" id="name">
@@ -44,9 +44,7 @@
                                 <label for="enquiry">Enquiry <span>*</span></label>
                                 <textarea id="enquiry" name="enquiry" class="form-control" rows="4" placeholder="Write your enquiry here..."></textarea>
                             </div>
-                        </div>
-.
-                        <div class="row mt-2">
+                       
                             <div class="col-lg-12">
                                 <input type="submit" class="btn btn-primary btn-block button" id="submit"
                                     value="Enquiry Now" autocomplete="off">
