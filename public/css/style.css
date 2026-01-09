@@ -6517,7 +6517,7 @@ ul.reacentActivity li {
         bottom: 0;
         background: #fff;
         width: 100%;
-        z-index: 1050;
+        z-index: 1000;
         padding: .5rem .3rem !important;
         box-shadow: 1px -3px 5px #0000001f;
     }
