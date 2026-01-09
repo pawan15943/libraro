@@ -10,11 +10,9 @@
                 <li class="active">
                     <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
                 </li>
-                {{-- <li >
-                    <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
-                </li> --}}
+               
                 <li>
-                    <a href="{{ ($ispaid ) ? route('branch.create') : '#' }}">Branch</a>
+                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
                 </li>
                 <li >
                     <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
@@ -52,7 +50,11 @@
     <div class="col-lg-3">
         <div class="plan-box">
                 @php
-                $subscribedPermissions = $subscription->permissions->pluck('name')->toArray();
+                 // Features of current subscription
+                $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
+
+                // All unique features
+                $allFeatures = $features->pluck('name')->unique()->toArray();
                 @endphp
                 @if ($subscription->id == Auth::user()->library_type)
                     @php
@@ -74,19 +76,22 @@
             <h4>{{$subscription->name}}</h4>
             <p class="m-0 text-white py-2 px-3 text-center plan-description" >{{$subscription->plan_description}}</p>
             <ul class="plan-features contents">
-                @foreach($premiumSub->permissions as $permission)
-                    @if(in_array($permission->name, $subscribedPermissions))
-                    <li>
-                        <div class="d-flex">
-                            <i class="fa-solid fa-check text-success me-2"></i> {{ $permission->name }}
-                        </div>
-                    </li>
+                 @foreach($allFeatures as $featureName)
+                        
+                    @if(in_array($featureName, $subscriptionFeatures))
+                        <li>
+                            <div class="d-flex">
+                                <i class="fa-solid fa-check text-success me-2"></i>
+                            {{ $featureName }}
+                            </div>
+                        </li>
                     @else
-                    <li>
-                        <div class="d-flex">
-                            <i class="fa-solid fa-xmark text-danger me-2"></i> {{ $permission->name }}
-                        </div>
-                    </li>
+                        <li>
+                            <div class="d-flex">
+                                <i class="fa-solid fa-xmark text-danger me-2"></i>
+                                {{ $featureName }}
+                            </div>
+                        </li>
                     @endif
                 @endforeach
             </ul>
@@ -152,10 +157,15 @@
                     },
                     dataType: 'json',
                     success: function(response) {
-                        console.log('response',response);
-                        // Loop through each subscription price and dynamically update the HTML
-                        response.subscription_prices.forEach(function(subscription) {
-                            $('#subscription_fees_' + subscription.id).text(subscription.fees); 
+                            
+                            // Loop through each subscription price and dynamically update the HTML
+                            response.subscription_prices.forEach(function(subscription) {
+                            if(subscription.fees==0){
+                                $('#subscription_fees_' + subscription.id).text("FREE"); 
+                            }else{
+                                $('#subscription_fees_' + subscription.id).text(subscription.fees); 
+                            }
+                            
                             $('#plan_mode_' + subscription.id).val(plan_mode)
                             $('#price_' + subscription.id).val(subscription.fees)
                         });

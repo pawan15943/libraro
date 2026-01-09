@@ -23,18 +23,28 @@ class LibraryService
      
 
             if (($checkSub && $ispaid && $isBranch)) {
-                return route('library.master');
+                
+                return route('library.configration');
             }
 
             if ($checkSub && $ispaid) {
-                return route('branch.create');
+                
+                return route('branch.configure.create');
             }
 
             if ($isEmailVeri) {
+                
                 $planId = session('selected_plan_id');
                 $planMode = session('selected_plan_mode');
+                if($planId && $planMode){
+                    
+                    return route('payment.store');
+                }else{
+                    
+                     return route('subscriptions.choosePlan');
+                }
                
-                return route('subscriptions.choosePlan');
+               
             }
 
             return route('verification.notice');

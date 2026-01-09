@@ -16,7 +16,7 @@
                     <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
                 </li> --}}
                 <li>
-                    <a href="{{ ($ispaid ) ? route('branch.create') : '#' }}">Branch</a>
+                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
                 </li>
                 <li>
                     <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>

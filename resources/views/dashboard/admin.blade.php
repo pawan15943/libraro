@@ -3,63 +3,41 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="branchQRLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content border-0 shadow-sm">
-            <div class="modal-header"> <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div>
-
-            <div class="modal-body">
-                @if($branch?->uuid)
-                    <div class="card border-0 text-center p-4">
-                        <div class="card-body">
-                            <p>With the help of this QR code you can Book and Re-New Library Seats.</p>
-                            <p class="text-muted mb-3">
-                                <b>{{ $branch->name ?? 'Vikas Library' }}</b>
-                            </p>
-
-                            <div class="d-inline-block p-3 bg-light rounded">
-                                <div id="qrPreview">
-                                    {!! QrCode::size(250)->generate(route('qr.branch', $branch->uuid)) !!}
-                                </div>
-                            </div>
-
-                            <p class="mt-3 mb-0 text-muted small">
-                                Scan to join <b>{{ $branch->name ?? 'this Library' }}</b>
-                            </p>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-center gap-3">
-                        @if($branch?->uuid)
-                            <a href="{{ route('branch.qr.pdf', $branch->uuid) }}"
-                            target="_blank"
-                            class="btn btn-sm btn-success d-flex align-items-center button" style="    padding: .5rem 1.2rem;">
-                                <i class="bi bi-download me-1"></i>
-                                Download
-                            </a>
-                        @endif
-                        <a  href="https://wa.me/?text={{ urlencode('Join the library: ' . route('qr.branch', $branch->uuid)) }}"
-                            target="_blank"
-                            class="btn btn-sm btn-outline-secondary d-flex align-items-center" style="    padding: .5rem 1.2rem;">
-                            <i class="bi bi-whatsapp me-1"></i>
-                            Share
-                        </a>
-                    </div>
-                    </div>
-
-                    
-                @else
-                    <p class="text-muted text-center mb-0">
-                        QR code is not available for this branch.
-                    </p>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
 
 @php
 use App\Helpers\HelperService;
 @endphp
+
+<!-- SUCCESS MODAL -->
+<div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size:64px;"></i>
+                </div>
+
+                <h4 class="fw-bold text-success">
+                    Congratulations!
+                </h4>
+
+                <p class="mt-2 text-muted">
+                    Your library setup has been completed successfully.
+                    <br>
+                    You are now ready to manage your library shifts seamlessly.
+                </p>
+
+                <button type="button" class="btn btn-success mt-3" data-bs-dismiss="modal">
+                    Get Started
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 
 @php
@@ -1880,6 +1858,31 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
     </script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('setup') === 'completed') {
+
+            // Show modal
+            const modal = new bootstrap.Modal(
+                document.getElementById('setupSuccessModal')
+            );
+            modal.show();
+
+            // 🎉 Confetti animation
+            confetti({
+                particleCount: 250,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            // Clean URL (remove ?setup=completed)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+    </script>
 
 
     @endsection

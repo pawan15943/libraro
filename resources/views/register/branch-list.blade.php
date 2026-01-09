@@ -30,7 +30,7 @@
 
 @can('has-permission','Add Branch Master')
 <div class="heading-list justify-content-end mb-4">
-    <a href="{{ route('branch.create') }}" class="btn btn-primary export m-0">
+    <a href="{{ route('branch.configure.create') }}" class="btn btn-primary export m-0">
         <i class="fa-solid fa-plus "></i> Add Branch
     </a>
 </div>

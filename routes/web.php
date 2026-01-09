@@ -155,10 +155,17 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::prefix('library')->group(function () {
     Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
+    Route::get('/payment/store', [LibraryController::class, 'payment'])->name('payment.show');
+
     Route::post('/payment/store', [LibraryController::class, 'payment'])->name('payment.store');
+    Route::get('/branch/configure/create', [BranchController::class, 'branchConfigurForm'])->name('branch.configure.create');
+    Route::post('/branch/configure', [BranchController::class, 'branchConfigure'])->name('branch.configure');
+    Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
+    Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan');
+  
     Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
     Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
     Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');
@@ -339,7 +346,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
  
 // Routes for superadmin and admin users
 Route::middleware(['auth:web'])->group(function () {
-  Route::post('library/storedata', [LibraryController::class, 'libraryStore'])->name('library.storedata');
+  Route::post('library/storedata', [AdminController::class, 'libraryStore'])->name('library.storedata');
 
   Route::post('library/verify/otp', [AdminController::class, 'libraryVerify'])->name('library.verify.otp');
   Route::get('/home', [DashboardController::class, 'index'])->name('home'); // Admin or superadmin home
@@ -354,7 +361,7 @@ Route::middleware(['auth:web'])->group(function () {
     Route::get('/export-invalid-records/web', [Controller::class, 'exportCsv'])->name('web.export.invalid.records');
     Route::post('/clear-invalid-records/web', [Controller::class, 'clearSession'])->name('web.clear.session');
 
-    Route::get('library', [LibraryController::class, 'index'])->name('library');
+    Route::get('library', [AdminController::class, 'index'])->name('library');
 
     Route::post('subscriptions/store', [MasterController::class, 'storeSubscription'])->name('subscriptions.store');
     Route::post('subscriptions/assign-permissions', [MasterController::class, 'assignPermissionsToSubscription'])->name('subscriptions.assignPermissions');

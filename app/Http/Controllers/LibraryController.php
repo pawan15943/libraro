@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use App\Helpers\ReferralHelper;
+use App\Models\Branch;
 use App\Models\LibraryReferral;
 
 class LibraryController extends Controller
@@ -50,68 +51,7 @@ class LibraryController extends Controller
         $this->libraryService = $libraryService;
     }
     
-    public function index(Request $request)
-    {
-        $query = Library::leftJoin('library_transactions', 'libraries.id', '=', 'library_transactions.library_id')
-           
-            ->select(
-                'libraries.id', 
-                'libraries.library_type', 
-                'libraries.status', 
-                'libraries.library_name', 
-                'libraries.library_mobile', 
-                'libraries.email',
-                DB::raw('MAX(library_transactions.id) as latest_transaction_id')
-            )
-            ->groupBy(
-                'libraries.id', 
-                'libraries.library_type', 
-                'libraries.status', 
-                'libraries.library_name', 
-                'libraries.library_mobile', 
-                'libraries.email'
-            );
-    
-          
-
-
-        // Filter by Plan
-        if ($request->filled('plan_id')) {
-            $query->where('libraries.library_type', $request->plan_id);
-        }
-    
-        // Filter by Payment Status
-        if ($request->filled('is_paid')) {
-            $query->where('library_transactions.is_paid', $request->is_paid);
-        }
-    
-        // Filter by Active/Expired
-        if ($request->filled('status')) {
-            if ($request->status == 'active') {
-                $query->where('libraries.status', 1);
-            } elseif ($request->status == 'expired') {
-                $query->where('libraries.status', 0);
-            }
-        }
-    
-        // Search by Name, Mobile, or Email
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('libraries.library_name', 'LIKE', "%{$search}%")
-                  ->orWhere('libraries.library_mobile', 'LIKE', "%{$search}%")
-                  ->orWhere('libraries.email', 'LIKE', "%{$search}%");
-            });
-        }
-        
-        $libraries = $query->get();
-        $planslibrary = Subscription::get();
-       
-        return view('administrator.index', compact('libraries', 'planslibrary'));
-    }
-    
-  
-
+ 
     public function create(){
         $states=State::where('is_active',1)->get();
         return view('library.create',compact('states'));
@@ -155,51 +95,6 @@ class LibraryController extends Controller
         return Validator::make($request->all(), $rules);
     }
 
-   
-
-    public function libraryStore(Request $request)
-    {
-        // Define validation rules
-        $rules = [
-            'library_name'       => 'required|string|max:255',
-            'email'              => 'required|email|max:255|unique:libraries,email',
-            'library_mobile'     => 'required|digits:10',
-            'state_id'           => 'nullable|exists:states,id',
-            'city_id'            => 'nullable|exists:cities,id',
-            'library_address'    => 'nullable|string|max:500',
-            'library_zip'        => 'nullable|digits:6',
-            'library_type'       => 'nullable|string|max:255',
-            'library_owner'      => 'nullable|string|max:255',
-            'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:width=250,height=250',
-            'password'           => 'required|string|min:8',
-            'library_owner_email'=> 'nullable|email|max:255',
-            'library_owner_contact' => 'nullable|digits:10',
-        ];
-
-        // Perform validation
-        $validatedData = Validator::make($request->all(), $rules);
-
-        // Check if validation fails
-        if ($validatedData->fails()) {
-            // Redirect back with validation errors
-            return redirect()->back()->withErrors($validatedData)->withInput();
-        }
-
-        // Access validated data
-        $validated = $validatedData->validated();
-
-        // Hash the password
-        $validated['password'] = Hash::make($validated['password']);
-        $validated['original_password'] = $validated['password'];
-        
-        // Store the validated data in the Library model
-        $library = Library::create($validated);
-
-        // Redirect with success message
-        return redirect()->route('library')->with('success', 'Library Created successfully processed.');
-    }
-
-
     public function sendVerificationEmail($library)
     {
         \Log::info('sendVerificationEmail');
@@ -234,7 +129,7 @@ class LibraryController extends Controller
         
         // Check if the OTP matches
         if ($library->email_otp == $request->email_otp) {
-            // Mark email as verified
+           
             $library->email_verified_at = now();
             $library->save();
 
@@ -249,7 +144,7 @@ class LibraryController extends Controller
                 $user->assignRole('admin');
             }
 
-            // Redirect to dashboard or wherever you want
+            
             return redirect()->route('library.home')->with('success', 'Email verified and logged in successfully.');
         } else {
             return redirect()->back()->withErrors(['email_otp' => 'Invalid OTP. Please try again.']);
@@ -268,12 +163,809 @@ class LibraryController extends Controller
         
         $subscriptions = Subscription::with('permissions')->get();
         $premiumSub=Subscription::orderBy('id','DESC')->first();
-        
-        return view('library.plan', compact('subscriptions','premiumSub'));
+        $features=DB::table('subscription_plan_features')->where('feature_status',1)->get();
+        return view('register.plan', compact('subscriptions','premiumSub','features'));
     }
 
+    public function store(Request $request)
+    {
+      
+        // Validate the request
+        $validatedData = $this->libraryValidation($request);
+        
+        if ($validatedData->fails()) {
+            return redirect()->back()->withErrors($validatedData)->withInput();
+        }
+
+        $validated = $validatedData->validated();
+        unset($validated['terms']);
+        $validated['original_password'] = $validated['password'];
+
+        $validated['password'] = bcrypt($validated['password']);
+        $validated['slug']=Str::slug($validated['library_name']);
+        try {
+            $library = Library::create($validated);
+
+            if ($library) {
+               
+                $otp = Str::random(6); 
+                $library->email_otp = $otp;
+                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
+                $library->save();
+                
+                if ($request->referral_code) {
+                    $referrer = Library::where('referral_code', $request->referral_code)->first();
+
+                    if ($referrer && $referrer->id !== $library->id) {
+
+                        $library->referred_by = $referrer->id;
+                        $library->save();
+
+                        LibraryReferral::create([
+                            'referrer_library_id' => $referrer->id,
+                            'referred_library_id' => $library->id,
+                            'referral_code' => $request->referral_code,
+                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
+                            'status' => 'pending'
+                        ]);
+                    }
+                }
+                
+                
+                try {
+                 
+                    $this->sendVerificationEmail($library);
+                    \Log::info('sendVerificationEmail success', [
+                        'library_id' => $library->id ?? null,
+                    ]);
+
+                } catch (\Throwable $e) {
+
+                \Log::error('sendVerificationEmail failed', [
+                        'library_id' => $library->id ?? null,
+                        'email'      => $library->email ?? null,
+                        'message'    => $e->getMessage(),
+                        'file'       => $e->getFile(),
+                        'line'       => $e->getLine(),
+                    ]);
+
+                    // ✔ Continue execution (do nothing else)
+                }
+                                
+                session(['library_email' => $library->email]);
+
+                return redirect()->route('verification.notice')
+                    ->with('message', 'Please verify your email to continue.');
+            } else {
+                return response()->json(['error' => 'Library creation failed.'], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function payment(Request $request)
+    {
+        
+        if(session('selected_plan_id') && session('selected_plan_mode')){
+           
+                $subscriptionId = session('selected_plan_id');
+                $planMode = session('selected_plan_mode');
+        }else{
+     
+              $request->validate([
+                'library_id'      => 'required',
+                'subscription_id'=> 'required',
+                'plan_mode'       => 'required',
+            ]);
+
+            
+            $subscriptionId = $request->subscription_id;
+            $planMode       = $request->plan_mode;
+        }
+        
+      
+        if ($request->library_id) {
+            $libraryId = $request->library_id;
+        } elseif (Auth::check()) { 
+            $libraryId = getAuthenticatedUser()->id;
+        } else {
+            return redirect()->back()->with('error', 'Library ID not provided.');
+        }
+
+         // ✅ ONLY redirect when plan is MISSING
+        if (!$subscriptionId || !$planMode) {
+            return redirect('subscriptions.choosePlan')
+                ->with('error', 'Plan not selected');
+        }
+      
+        $subscription = Subscription::findOrFail($subscriptionId);
+        if (!$subscription) {
+            return redirect('subscriptions.choosePlan')->with('error', 'No valid subscription selected');
+
+        }
+      
+        
+       
+        try {
+            
+             $data = $this->razorpayPaymentCore((int) $subscriptionId,(int) $planMode,(int) $libraryId);
+            
+        
+             if ($data['type'] === 'free') {
+              
+                $this->finalizeTransaction($data['transaction'], 'free');
+
+                return redirect()
+                    ->route('library.home')
+                    ->with('success', 'Free plan activated successfully');
+            }
+           
+            return view('library.razorpay-checkout', [
+                'key'        => config('services.razorpay.key'),
+                'order_id'   => $data['order']['id'],
+                'amount'     => $data['order']['amount'],
+                'currency'   => $data['order']['currency'],
+                'library_transaction_id' => $data['transaction']->id,
+                'name'       => 'Library Payment',
+                'description'=> 'Library Payment',
+            ]);
+
+        } catch (\Exception $e) {
+                    // 🔥 ANY CRASH → HOME PAGE
+                \Log::error('Payment crash', [
+                    'message' => $e->getMessage(),
+                ]);
+
+                return redirect()->route('library.home')
+                    ->with('error', 'Something went wrong. Please try again.');
+            
+        }
+
+    }
+
+   
+    private function razorpayPaymentCore(int $subscriptionId, int $planMode, int $libraryId): array
+    {
+        /* ---------------- PLAN & AMOUNT ---------------- */
+
+        $subscription = Subscription::findOrFail($subscriptionId);
+
+        match ($planMode) {
+            1 => [$month, $amount] = [1,  $subscription->monthly_fees],
+            2 => [$month, $amount] = [12, $subscription->yearly_fees],
+            3 => [$month, $amount] = [3,  $subscription->three_monthly_fees],
+            4 => [$month, $amount] = [6,  $subscription->six_monthly_fees],
+            5 => [$month, $amount] = [24, $subscription->two_yearly_fees],
+            default => throw new \Exception('Invalid plan mode'),
+        };
+
+        /* ---------------- GST & DISCOUNT ---------------- */
+
+        $gstRow   = DB::table('gst_discount')->first();
+        $gst      = $gstRow->gst ?? 0;
+        $discount = $gstRow->discount ?? 0;
+
+        $discountAmount = $amount * ($discount / 100);
+        $finalAmount    = ($amount - $discountAmount) * (1 + ($gst / 100));
+
+        /* ---------------- TRANSACTION ---------------- */
+
+        $transaction = LibraryTransaction::updateOrCreate(
+            [
+                'library_id' => $libraryId,
+                'is_paid'    => 0,
+            ],
+            [
+                'subscription' => $subscriptionId,
+                'amount'       => $amount,
+                'paid_amount'  => $finalAmount,
+                'month'        => $month,
+                'gst'          => $gst,
+                'discount'     => $discount,
+            ]
+        );
+        /* ---------------- For Free Plan ---------------- */
+        if ($finalAmount <= 0) {
+            return [
+                'type'        => 'free',
+                'transaction' => $transaction,
+            ];
+        }
+        
+       
+
+        /* ---------------- RAZORPAY ORDER ---------------- */
+
+        $response = Http::withBasicAuth(
+            config('services.razorpay.key'),
+            config('services.razorpay.secret')
+        )
+        
+        ->timeout(20)
+        ->retry(2, 200)
+        ->post('https://api.razorpay.com/v1/orders', [
+            'amount'   => (int) ($finalAmount * 100),
+            'currency' => 'INR',
+            'receipt'  => 'TXN_'.$transaction->id,
+            'payment_capture' => 1,
+        ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Razorpay order creation failed');
+        }
+
+        return [
+            "type" => "paid",
+            'transaction' => $transaction,
+            'order'       => $response->json(),
+            'amount'      => $finalAmount,
+            'currency'    => 'INR',
+        ];
+    }
+
+    private function finalizeTransaction($transaction, $paymentId)
+    {
+      
+       
+        $duration = $transaction->month ?? 0;
+
+        if (LibraryTransaction::where('library_id', $transaction->library_id)
+            ->where('status', 1)->exists()) {
+
+            $last = LibraryTransaction::where('library_id', $transaction->library_id)
+                ->where('status', 1)
+                ->latest()
+                ->first();
+
+            $start = Carbon::parse($last->end_date)->addDay();
+            $status = 0;
+        } else {
+            $start = now();
+            $status = 1;
+        }
+
+        $end = $start->copy()->addMonths($duration);
+
+        $transaction->update([
+            'start_date'       => $start,
+            'end_date'         => $end,
+            'transaction_date' => now(),
+            'payment_mode'     => 1,
+            'is_paid'          => 1,
+            'status'           => $status,
+            'transaction_id'   => $paymentId,
+        ]);
+
+        $this->handleReffrel($transaction, $status);
+
+        Library::where('id', $transaction->library_id)
+            ->update(['is_paid' => 1]);
+
+            if($status==1){
+                Library::where('id', $transaction->library_id)->update([
+                    'library_type' => $transaction->subscription,
+                ]);
+            }
+       
+    }
+
+    
+    public function handleSuccess(Request $request)
+    {
+        $razorpayPaymentId = $request->input('razorpay_payment_id');
+        $razorpayOrderId = $request->input('razorpay_order_id');
+        $razorpaySignature = $request->input('razorpay_signature');
+        $libraryTransactionId = $request->input('library_transaction_id');
+
+       
+        $tempOrder = TempOrder::create([
+            'razorpay_order_id' => $razorpayOrderId,
+            'library_transaction_id' => $libraryTransactionId,
+            'payment_status' => 'pending',                                                                                          
+        ]);
+        // Check if necessary data is available
+        if (!$razorpayPaymentId || !$razorpayOrderId || !$razorpaySignature || !$libraryTransactionId) {
+            $tempOrder->update([
+                'payment_status' => 'fail',
+                'error_message' => 'Invalid payment data.',
+                
+            ]);
+            // throw new \Exception('Invalid payment data.');
+            return response()->json(['success' => false, 'error_url' => route('library.payment.error'),'message' => 'Invalid payment data.']);
+        }
+    
+        // Verify the payment signature
+        $keySecret =  config('services.razorpay.secret');
+        $generatedSignature = hash_hmac('sha256', $razorpayOrderId . "|" . $razorpayPaymentId, $keySecret);
+    
+        if ($generatedSignature !== $razorpaySignature) {
+            $tempOrder->update([
+                'payment_status' => 'fail',
+                'error_message' => 'Payment verification failed.',
+            ]);
+            // throw new \Exception('Payment verification failed.');
+            return response()->json(['success' => false, 'error_url' => route('library.payment.error'), 'message' => 'Payment verification failed.']);
+        }
+    
+        // Update the transactions table
+        $transaction = LibraryTransaction::where('id', $libraryTransactionId)->first();
+     
+        if (!$transaction) {
+            $tempOrder->update([
+                'payment_status' => 'fail',
+                'error_message' => 'Transaction not found.',
+            ]);
+            // throw new \Exception('Transaction not found.');
+            return response()->json(['success' => false, 'error_url' => route('library.payment.error'),'message' => 'Transaction not found.']);
+        }
+        try {
+            if ($transaction) {
+                
+                $this->finalizeTransaction($transaction, $razorpayOrderId);
+
+                // Update temp_order status
+                $tempOrder->update([
+                    'payment_status' => 'success',
+                ]);
+               
+                
+                return response()->json(['success' => true, 'redirect_url' => route('library.home')]);
+            
+            }
+        } catch (\Exception $e) {
+            // Log the exception for debugging
+            \Log::error('Transaction Processing Error: ' . $e->getMessage());
+        
+            // Update temp_order status to failed
+            if (isset($tempOrder)) {
+                $tempOrder->update([
+                    'payment_status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                ]);
+            }
+        
+            return response()->json(['success' => false, 'message' => 'An error occurred during payment processing. Please try again.']);
+        }
+    
+        
+        
+    }
+
+    private function handleReffrel($transaction,$status){
+         $activePaidPlanCount = LibraryTransaction::where('library_id', $transaction->library_id)
+                    ->where('status', 1)
+                    ->where('is_paid', 1)
+                    ->count();
+
+                $pendingReferralExists = LibraryReferral::where('referred_library_id', $transaction->library_id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                /* 🔍 Log all condition values */
+                Log::info('Referral condition check', [
+                    'library_id'             => $transaction->library_id,
+                    'status_is_active'       => $status,
+                    'active_paid_plan_count' => $activePaidPlanCount,
+                    'pending_referral_exist' => $pendingReferralExists,
+                ]);
+
+                if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
+                    Log::info('Referral marked as completed', [
+                        'library_id' => $transaction->library_id
+                    ]);
+                    LibraryReferral::where('referred_library_id', $transaction->library_id)
+                        ->where('status', 'pending')
+                        ->update([
+                            'status' => 'completed'
+                        ]);
+                }
+                Log::warning('Referral condition failed', [
+                    'library_id' => $transaction->library_id,
+                    'reason' => [
+                        'status_check_failed'       => !$status,
+                        'plan_count_not_one'        => $activePaidPlanCount !== 1,
+                        'no_pending_referral'       => !$pendingReferralExists,
+                    ]
+                ]);
+    }
+
+    public function handleError(){
+        return view('library.payment-error');
+    }
+
+    public function masterConfigration(Request $request){
+        $operatingHour=Hour::select('hour')->first();
+        return view('register.library-confrigration',compact('operatingHour'));
+    }
+    public function configrationStore(Request $request)
+    {
+    
+        $validator = Validator::make($request->all(), [
+            'plan_types'                   => 'required|array|min:1',
+            'plan_types.*.day_type_id'     => 'required',
+            'plan_types.*.start_time'      => 'required',
+            'plan_types.*.end_time'        => 'required',
+            'plan_types.*.slot_hours'      => 'required|numeric|min:1',
+            'plan_types.*.price'           => 'required|numeric|min:0',
+            'plan_types.*.custom_plan_type'=> 'nullable|string',
+        ]);
+
+        $validator->after(function ($validator) use ($request) {
+
+            foreach ($request->plan_types as $index => $row) {
+
+                if (
+                    isset($row['day_type_id']) &&
+                    (int)$row['day_type_id'] === 0 &&
+                    empty($row['custom_plan_type'])
+                ) {
+                    $validator->errors()->add(
+                        "plan_types.$index.custom_plan_type",
+                        'Custom Plan Type Name is required'
+                    );
+                }
+            }
+        });
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        /* =========================
+        BRANCH CHECK
+        ========================= */
+        $branchCount = Branch::where('library_id', getLibraryId())->count();
+        if ($branchCount != 1) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No configuration required in your branch'
+            ], 400);
+        }
+
+        $branch = Branch::where('library_id', getLibraryId())->first();
+        $plan   = Plan::where('library_id', getLibraryId())
+            ->where('plan_id', 1)
+            ->where('type', 'MONTH')
+            ->first();
+
+        if (!$plan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ops, System not found any plan to proceed for shifts.'
+            ], 400);
+        }
+
+        $branchRecord = Hour::where('branch_id', $branch->id)->first();
+
+        DB::beginTransaction();
+
+        try {
+
+            foreach ($request->plan_types as $row) {
+
+                /* Slot hour check */
+                if ($row['slot_hours'] > $branchRecord->hour) {
+                    throw new \Exception('Selected hours exceed the library’s available hours.');
+                }
+
+                /* Duplicate plan type */
+                if ($row['day_type_id'] != 0) {
+                    $exists = PlanType::where('branch_id', $branch->id)
+                        ->where('day_type_id', $row['day_type_id'])
+                        ->lockForUpdate()
+                        ->exists();
+
+                    if ($exists) {
+                    
+                        throw new \Exception('You can not add Plan type / Shift with same name.');
+                    }
+                }
+
+                /* Time range check */
+                $minTime = PlanType::where('branch_id', $branch->id)->min('start_time');
+                $maxTime = PlanType::where('branch_id', $branch->id)->max('end_time');
+            
+                $minTime = PlanType::where('branch_id', $branch->id)->min('start_time');
+                $maxTime = PlanType::where('branch_id', $branch->id)->max('end_time');
+
+                if ($minTime && $maxTime) {
+
+                    $globalStart = Carbon::parse($minTime);
+                    $globalEnd   = Carbon::parse($maxTime);
+
+                    // Handle existing night window
+                    if ($globalEnd->lessThanOrEqualTo($globalStart)) {
+                        $globalEnd->addDay();
+                    }
+
+                    $newStart = Carbon::parse($row['start_time']);
+                    $newEnd   = Carbon::parse($row['end_time']);
+
+                    // Handle new night shift
+                    if ($newEnd->lessThanOrEqualTo($newStart)) {
+                        $newEnd->addDay();
+                    }
+
+                    // Calculate combined window
+                    $finalStart = $newStart->lessThan($globalStart) ? $newStart : $globalStart;
+                    $finalEnd   = $newEnd->greaterThan($globalEnd) ? $newEnd : $globalEnd;
+
+                    $totalHours = $finalStart->diffInHours($finalEnd);
+
+                    if ($totalHours > $branchRecord->hour) {
+                        throw new \Exception('Shift timing exceeds library hours.');
+                    }
+                }
 
 
+                /* Plan type name */
+            $dayTypeId = (int) $row['day_type_id'];
+
+                $planTypeName = match ($dayTypeId) {
+                    1 => 'Full Day',
+                    2 => 'First Half',
+                    3 => 'Second Half',
+                    8 => 'All Day',
+                    9 => 'Full Night',
+                    0 => $row['custom_plan_type'],
+                    default => 'Custom',
+                };
+
+
+                $planType = PlanType::create([
+                    'library_id'  => getLibraryId(),
+                    'branch_id'   => $branch->id,
+                    'name'        => $planTypeName,
+                    'day_type_id' => $row['day_type_id'],
+                    'start_time'  => $row['start_time'],
+                    'end_time'    => $row['end_time'],
+                    'slot_hours'  => $row['slot_hours'],
+                ]);
+
+                PlanPrice::create([
+                    'library_id'   => getLibraryId(),
+                    'branch_id'    => $branch->id,
+                    'plan_id'      => $plan->id,
+                    'plan_type_id' => $planType->id,
+                    'price'        => $row['price'],
+                ]);
+            }
+
+            // library subscription update
+            $library = Library::where('id', getAuthenticatedUser()->id)->first();
+        
+            if (empty($library->library_no)) {
+                $libraryCode = generateLibraryCode();
+                $library->library_no = $libraryCode;
+                $library->save();
+                DB::commit();
+
+                    try {
+                        \Log::info('sendSuccessfulEmail');
+                        $this->sendSuccessfulEmail($library);
+                    } catch (\Throwable $e) {
+                        Log::error('Success email sending FAILED', [
+                            'library_id' => $library->id ?? null,
+                            'email'      => $library->email ?? null,
+                            'error'      => $e->getMessage(),
+                        ]);
+                    }
+
+            }
+            DB::commit();
+
+        return response()->json([
+                'status'   => true,
+                'redirect' => route('library.home', ['setup' => 'completed']),
+                'message'  => 'Library shifts are created successfully.'
+            ]);
+
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+    public function profile()
+    {
+        if( session('selected_plan_id') && session('selected_plan_mode')){
+            session()->forget(['selected_plan_id', 'selected_plan_mode']);
+
+        }
+        $library = Library::where('id', getAuthenticatedUser()->id)->first();  
+        
+        $states=State::where('is_active',1)->get();
+        $citis=City::where('is_active',1)->get();
+        $features=DB::table('features')->whereNull('deleted_at')->get();
+        
+        return view('library.profile', compact('library', 'states','citis','features'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+       
+        $validated = $request->validate([
+            'library_owner' => 'required|string|max:255',
+           
+        ]);
+        
+      
+        $library = Library::where('id', getAuthenticatedUser()->id)->first();
+        $libraryCode = $this->generateLibraryCode();
+       
+        $update=$library->update($validated);
+      
+        if ($update) {
+            $library->update(['is_profile' => 1]);
+            if (empty($library->library_no)) {
+                $libraryCode = $this->generateLibraryCode();
+                $library->library_no = $libraryCode;
+                $library->save();
+                 \Log::info('sendSuccessfulEmail');
+                 $this->sendSuccessfulEmail($library);
+            }
+        }
+        
+
+        return redirect()->route('library.master')->with('success', 'Profile updated successfully!');
+    }
+
+   
+
+    public function transaction(){
+        $data = Library::where('id', getAuthenticatedUser()->id)
+        ->with('subscription.permissions')  // Fetch associated subscription and permissions
+        ->first();
+        $plan=Subscription::where('id',$data->library_type)->first();
+        $transaction=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1)->get();
+        return view('library.transaction',compact('transaction','plan','data'));
+    }
+    public function myplan(){
+        $data = Library::where('id', getAuthenticatedUser()->id)
+        ->with('subscription.permissions')  // Fetch associated subscription and permissions
+        ->first();
+        $month=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1) ->orderBy('id', 'desc')
+        ->first();
+        
+        $plan=Subscription::where('id',$data->library_type)->first();
+       
+        return view('library.my-plan',compact('data','month','plan'));
+    }
+
+    // from superadmin side
+    public function showLibrary($id){
+      
+        $library=Library::findOrFail($id);
+        $plan=Subscription::where('id',$library->library_type)->with('permissions')->first();
+        
+        $library_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->where('is_paid',1)->first();
+        $library_all_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->get();
+       
+        return view('administrator.library-view',compact('library','plan','library_transaction','library_all_transaction'));
+    }
+
+    public function destroyLearners($id)
+    {
+        $libraryId = $id;
+    
+        try {
+            DB::transaction(function () use ($libraryId) {
+                // Step 1: Delete learner transactions manually (still needed if not cascaded)
+                LearnerTransaction::withoutGlobalScopes()
+                    ->where('library_id', $libraryId)
+                    ->delete();
+    
+                // Step 2: Force delete the learners — now their learner_detail will auto-delete
+                Learner::where('library_id', $libraryId)
+                    ->withTrashed()
+                    ->forceDelete();
+    
+            });
+    
+            return response()->json(['message' => 'All learners and related data have been successfully deleted.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+    
+
+
+    public function destroyAllMasters($id)
+    {
+        $libraryId = $id;
+
+        // Check if there are any learners associated with this library
+        $learnerCount = Learner::where('library_id', $libraryId)->count();
+        $learnerDetailCount = LearnerDetail::withoutGlobalScopes()->where('library_id', $libraryId)->count();
+        $learnerTransCount = LearnerTransaction::withoutGlobalScopes()->where('library_id', $libraryId)->count();
+
+        if ($learnerCount == 0 && $learnerDetailCount == 0 && $learnerTransCount == 0) {
+            DB::beginTransaction();
+            try {
+                // Step 1: Delete records from PlanPrice
+                $deletedPricesCount = PlanPrice::withoutGlobalScopes()
+                    ->where('library_id', $libraryId)
+                    ->withTrashed()
+                    ->forceDelete();
+
+                // Log the count of deleted prices
+                if ($deletedPricesCount > 0) {
+                    Log::info("$deletedPricesCount plan prices deleted.");
+                } else {
+                    Log::info("No plan prices to delete.");
+                }
+
+                // Step 2: Delete records from PlanType
+                $deletedTypesCount = PlanType::withoutGlobalScopes()
+                    ->where('library_id', $libraryId)
+                    ->withTrashed()
+                    ->forceDelete();
+
+                // Log the count of deleted types
+                if ($deletedTypesCount > 0) {
+                    Log::info("$deletedTypesCount plan types deleted.");
+                } else {
+                    Log::info("No plan types deleted.");
+                }
+
+                // Step 3: Delete records from Plan
+                $deletedPlansCount = Plan::withoutGlobalScopes()
+                    ->where('library_id', $libraryId)
+                    ->withTrashed()
+                    ->forceDelete();
+
+                // Log the count of deleted plans
+                if ($deletedPlansCount > 0) {
+                    Log::info("$deletedPlansCount plans deleted.");
+                } else {
+                    Log::info("No plans deleted.");
+                }
+
+             
+                // Step 5: Delete records from Hour
+                Hour::withoutGlobalScopes()
+                    ->where('library_id', $libraryId)
+                    ->withTrashed()
+                    ->forceDelete();
+
+                DB::commit();
+
+                return response()->json(['message' => 'All master records have been successfully deleted.']);
+            } catch (\Exception $e) {
+                // Rollback the transaction in case of any error
+                DB::rollBack();
+                return response()->json(['message' => 'Error occurred: ' . $e->getMessage()], 500);
+            }
+        } else {
+            return response()->json(['message' => 'Cannot delete masters because learners are associated with this library.'], 400);
+        }
+    }
+
+    function generateLibraryCode() {
+        $prefix = "LB";
+        $lastLibrary = Library::orderBy('id', 'DESC')
+                              ->whereNotNull('library_no')
+                              ->first();
+                              
+        if ($lastLibrary) {
+            
+            $lastNumber = intval(substr($lastLibrary->library_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
+    }
+    
     public function getSubscriptionPrice(Request $request)
     {
         
@@ -460,7 +1152,7 @@ class LibraryController extends Controller
         ]);
     }
 
-
+    
     public function paymentStore(Request $request)
     {
        
@@ -576,549 +1268,6 @@ class LibraryController extends Controller
         }
         return redirect()->back()->with('error', 'Transaction not found.');
     }
-
-    public function payment(Request $request)
-    {
-        if(session('selected_plan_id') && session('selected_plan_mode')){
-                $subscriptionId = session('selected_plan_id');
-                $planMode = session('selected_plan_mode');
-        }elseif($request){
-              $request->validate([
-                'library_id'      => 'required',
-                'subscription_id'=> 'required',
-                'plan_mode'       => 'required',
-            ]);
-
-            
-            $subscriptionId = $request->subscription_id;
-            $planMode       = $request->plan_mode;
-        }
-
-        if ($request->library_id) {
-            $libraryId = $request->library_id;
-        } elseif (Auth::check()) { 
-            $libraryId = getAuthenticatedUser()->id;
-        } else {
-            return redirect()->back()->with('error', 'Library ID not provided.');
-        }
-
-         // ✅ ONLY redirect when plan is MISSING
-        if (!$subscriptionId || !$planMode) {
-            return redirect('subscriptions.choosePlan')
-                ->with('error', 'Plan not selected');
-        }
-      
-        $subscription = Subscription::findOrFail($subscriptionId);
-        if (!$subscription) {
-            return redirect('subscriptions.choosePlan')->with('error', 'No valid subscription selected');
-
-        }
-
-        try {
-             $data = $this->razorpayPaymentCore((int) $subscriptionId,(int) $planMode,(int) $libraryId);
-
-            return view('library.razorpay-checkout', [
-                'key'        => config('services.razorpay.key'),
-                'order_id'   => $data['order']['id'],
-                'amount'     => $data['order']['amount'],
-                'currency'   => $data['order']['currency'],
-                'library_transaction_id' => $data['transaction']->id,
-                'name'       => 'Library Payment',
-                'description'=> 'Library Payment',
-            ]);
-
-        } catch (\Exception $e) {
-                    // 🔥 ANY CRASH → HOME PAGE
-                \Log::error('Payment crash', [
-                    'message' => $e->getMessage(),
-                ]);
-
-                return redirect()->route('library.home')
-                    ->with('error', 'Something went wrong. Please try again.');
-            
-        }
-
-    }
-
-   
-    private function razorpayPaymentCore(int $subscriptionId, int $planMode, int $libraryId): array
-    {
-        /* ---------------- PLAN & AMOUNT ---------------- */
-
-        $subscription = Subscription::findOrFail($subscriptionId);
-
-        match ($planMode) {
-            1 => [$month, $amount] = [1,  $subscription->monthly_fees],
-            2 => [$month, $amount] = [12, $subscription->yearly_fees],
-            3 => [$month, $amount] = [3,  $subscription->three_monthly_fees],
-            4 => [$month, $amount] = [6,  $subscription->six_monthly_fees],
-            5 => [$month, $amount] = [24, $subscription->two_yearly_fees],
-            default => throw new \Exception('Invalid plan mode'),
-        };
-
-        /* ---------------- GST & DISCOUNT ---------------- */
-
-        $gstRow   = DB::table('gst_discount')->first();
-        $gst      = $gstRow->gst ?? 0;
-        $discount = $gstRow->discount ?? 0;
-
-        $discountAmount = $amount * ($discount / 100);
-        $finalAmount    = ($amount - $discountAmount) * (1 + ($gst / 100));
-
-        /* ---------------- TRANSACTION ---------------- */
-
-        $transaction = LibraryTransaction::updateOrCreate(
-            [
-                'library_id' => $libraryId,
-                'is_paid'    => 0,
-            ],
-            [
-                'subscription' => $subscriptionId,
-                'amount'       => $amount,
-                'paid_amount'  => $finalAmount,
-                'month'        => $month,
-                'gst'          => $gst,
-                'discount'     => $discount,
-            ]
-        );
-
-        /* ---------------- RAZORPAY ORDER ---------------- */
-
-        $response = Http::withBasicAuth(
-            config('services.razorpay.key'),
-            config('services.razorpay.secret')
-        )
-        
-        ->timeout(20)
-        ->retry(2, 200)
-        ->post('https://api.razorpay.com/v1/orders', [
-            'amount'   => (int) ($finalAmount * 100),
-            'currency' => 'INR',
-            'receipt'  => 'TXN_'.$transaction->id,
-            'payment_capture' => 1,
-        ]);
-
-        if (!$response->successful()) {
-            throw new \Exception('Razorpay order creation failed');
-        }
-
-        return [
-            'transaction' => $transaction,
-            'order'       => $response->json(),
-            'amount'      => $finalAmount,
-            'currency'    => 'INR',
-        ];
-    }
-
-
-
-    public function handleSuccess(Request $request)
-    {
-        $razorpayPaymentId = $request->input('razorpay_payment_id');
-        $razorpayOrderId = $request->input('razorpay_order_id');
-        $razorpaySignature = $request->input('razorpay_signature');
-        $libraryTransactionId = $request->input('library_transaction_id');
-
-
-        $tempOrder = TempOrder::create([
-            'razorpay_order_id' => $razorpayOrderId,
-            'library_transaction_id' => $libraryTransactionId,
-            'payment_status' => 'pending',
-        ]);
-        // Check if necessary data is available
-        if (!$razorpayPaymentId || !$razorpayOrderId || !$razorpaySignature || !$libraryTransactionId) {
-            $tempOrder->update([
-                'payment_status' => 'fail',
-                'error_message' => 'Invalid payment data.',
-                
-            ]);
-            return response()->json(['success' => false, 'error_url' => route('library.payment.error'),'message' => 'Invalid payment data.']);
-        }
-    
-        // Verify the payment signature
-        $keySecret =  config('services.razorpay.secret');
-        $generatedSignature = hash_hmac('sha256', $razorpayOrderId . "|" . $razorpayPaymentId, $keySecret);
-    
-        if ($generatedSignature !== $razorpaySignature) {
-            $tempOrder->update([
-                'payment_status' => 'fail',
-                'error_message' => 'Payment verification failed.',
-            ]);
-            return response()->json(['success' => false, 'error_url' => route('library.payment.error'), 'message' => 'Payment verification failed.']);
-        }
-    
-        // Update the transactions table
-        $transaction = LibraryTransaction::where('id', $libraryTransactionId)->first();
-     
-        if (!$transaction) {
-            $tempOrder->update([
-                'payment_status' => 'fail',
-                'error_message' => 'Transaction not found.',
-            ]);
-            return response()->json(['success' => false, 'error_url' => route('library.payment.error'),'message' => 'Transaction not found.']);
-        }
-        try {
-            if ($transaction) {
-                
-                $duration = $transaction->month ?? 0;
-
-                if (LibraryTransaction::where('library_id', $transaction->library_id)->where('status', 1)->exists()) {
-                    $library_tra = LibraryTransaction::where('library_id', $transaction->library_id)
-                                                    ->where('status', 1)
-                                                    ->orderBy('id', 'desc')
-                                                    ->first();
-                
-                    $start_date = Carbon::parse($library_tra->end_date)->addDay(1);
-                    $endDate = $start_date->copy()->addMonths($duration);
-                    $status = 0;
-                } else {
-                    $start_date = now(); 
-                    $endDate = $start_date->copy()->addMonths($duration);
-                    $status = 1;
-                }
-                
-            
-                // Update the transaction details
-                LibraryTransaction::where('id', $libraryTransactionId)->update([
-                    'start_date' => $start_date->format('Y-m-d'),
-                    'end_date' => $endDate->format('Y-m-d'),
-                    'transaction_date' => now()->format('Y-m-d'),
-                    'payment_mode'=>1,
-                    'is_paid' => 1,
-                    'status' => $status,
-                    'transaction_id'=>$razorpayOrderId
-                ]);
-
-                // Reffrel process with check one transaction 
-                $activePaidPlanCount = LibraryTransaction::where('library_id', $transaction->library_id)
-                    ->where('status', 1)
-                    ->where('is_paid', 1)
-                    ->count();
-
-                $pendingReferralExists = LibraryReferral::where('referred_library_id', $transaction->library_id)
-                    ->where('status', 'pending')
-                    ->exists();
-
-                /* 🔍 Log all condition values */
-                Log::info('Referral condition check', [
-                    'library_id'             => $transaction->library_id,
-                    'status_is_active'       => $status,
-                    'active_paid_plan_count' => $activePaidPlanCount,
-                    'pending_referral_exist' => $pendingReferralExists,
-                ]);
-
-                if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
-                    Log::info('Referral marked as completed', [
-                        'library_id' => $transaction->library_id
-                    ]);
-                    LibraryReferral::where('referred_library_id', $transaction->library_id)
-                        ->where('status', 'pending')
-                        ->update([
-                            'status' => 'completed'
-                        ]);
-                }
-                Log::warning('Referral condition failed', [
-                    'library_id' => $transaction->library_id,
-                    'reason' => [
-                        'status_check_failed'       => !$status,
-                        'plan_count_not_one'        => $activePaidPlanCount !== 1,
-                        'no_pending_referral'       => !$pendingReferralExists,
-                    ]
-                ]);
-
-                //end reffrel 
-
-                // Update the corresponding library's `is_paid` status
-                Library::where('id', $transaction->library_id)->update([
-                    'is_paid' => 1,
-                
-                ]);
-
-                // Update temp_order status
-                $tempOrder->update([
-                    'payment_status' => 'success',
-                ]);
-                $isProfile = Library::where('id', $transaction->library_id)->where('is_profile', 1)->exists();
-                
-                return response()->json(['success' => true, 'redirect_url' => $isProfile ? route('library.home') : route('profile')]);
-            
-            }
-        } catch (\Exception $e) {
-            // Log the exception for debugging
-            \Log::error('Transaction Processing Error: ' . $e->getMessage());
-        
-            // Update temp_order status to failed
-            if (isset($tempOrder)) {
-                $tempOrder->update([
-                    'payment_status' => 'failed',
-                    'error_message' => $e->getMessage(),
-                ]);
-            }
-        
-            return response()->json(['success' => false, 'message' => 'An error occurred during payment processing. Please try again.']);
-        }
-    
-       
-        
-    }
-
-    public function handleError(){
-        return view('library.payment-error.blade.php');
-    }
-    public function profile()
-    {
-        if( session('selected_plan_id') && session('selected_plan_mode')){
-            session()->forget(['selected_plan_id', 'selected_plan_mode']);
-
-        }
-        $library = Library::where('id', getAuthenticatedUser()->id)->first();  
-        
-        $states=State::where('is_active',1)->get();
-        $citis=City::where('is_active',1)->get();
-        $features=DB::table('features')->whereNull('deleted_at')->get();
-        
-        return view('library.profile', compact('library', 'states','citis','features'));
-    }
-
-    public function updateProfile(Request $request)
-    {
-       
-        $validated = $request->validate([
-            'library_owner' => 'required|string|max:255',
-           
-        ]);
-        
-      
-        $library = Library::where('id', getAuthenticatedUser()->id)->first();
-        $libraryCode = $this->generateLibraryCode();
-       
-        $update=$library->update($validated);
-      
-        if ($update) {
-            $library->update(['is_profile' => 1]);
-            if (empty($library->library_no)) {
-                $libraryCode = $this->generateLibraryCode();
-                $library->library_no = $libraryCode;
-                $library->save();
-                 \Log::info('sendSuccessfulEmail');
-                 $this->sendSuccessfulEmail($library);
-            }
-        }
-        
-
-        return redirect()->route('library.master')->with('success', 'Profile updated successfully!');
-    }
-
-     public function store(Request $request)
-    {
-      
-        // Validate the request
-        $validatedData = $this->libraryValidation($request);
-        
-        if ($validatedData->fails()) {
-            return redirect()->back()->withErrors($validatedData)->withInput();
-        }
-
-        $validated = $validatedData->validated();
-        unset($validated['terms']);
-        $validated['original_password'] = $validated['password'];
-
-        $validated['password'] = bcrypt($validated['password']);
-        $validated['slug']=Str::slug($validated['library_name']);
-        try {
-            $library = Library::create($validated);
-
-            if ($library) {
-               
-                $otp = Str::random(6); 
-                $library->email_otp = $otp;
-                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
-                $library->save();
-                
-                if ($request->referral_code) {
-                    $referrer = Library::where('referral_code', $request->referral_code)->first();
-
-                    if ($referrer && $referrer->id !== $library->id) {
-
-                        $library->referred_by = $referrer->id;
-                        $library->save();
-
-                        LibraryReferral::create([
-                            'referrer_library_id' => $referrer->id,
-                            'referred_library_id' => $library->id,
-                            'referral_code' => $request->referral_code,
-                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
-                            'status' => 'pending'
-                        ]);
-                    }
-                }
-                
-                
-               
-                 \Log::info('sendVerificationEmail');
-                $this->sendVerificationEmail($library);
-                
-                
-                session(['library_email' => $library->email]);
-
-                return redirect()->route('verification.notice')
-                    ->with('message', 'Please verify your email to continue.');
-            } else {
-                return response()->json(['error' => 'Library creation failed.'], 500);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function transaction(){
-        $data = Library::where('id', getAuthenticatedUser()->id)
-        ->with('subscription.permissions')  // Fetch associated subscription and permissions
-        ->first();
-        $plan=Subscription::where('id',$data->library_type)->first();
-        $transaction=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1)->get();
-        return view('library.transaction',compact('transaction','plan','data'));
-    }
-    public function myplan(){
-        $data = Library::where('id', getAuthenticatedUser()->id)
-        ->with('subscription.permissions')  // Fetch associated subscription and permissions
-        ->first();
-        $month=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1) ->orderBy('id', 'desc')
-        ->first();
-        
-        $plan=Subscription::where('id',$data->library_type)->first();
-       
-        return view('library.my-plan',compact('data','month','plan'));
-    }
-
-    // from superadmin side
-    public function showLibrary($id){
-      
-        $library=Library::findOrFail($id);
-        $plan=Subscription::where('id',$library->library_type)->with('permissions')->first();
-        
-        $library_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->where('is_paid',1)->first();
-        $library_all_transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id',$id)->get();
-       
-        return view('administrator.library-view',compact('library','plan','library_transaction','library_all_transaction'));
-    }
-
-    public function destroyLearners($id)
-    {
-        $libraryId = $id;
-    
-        try {
-            DB::transaction(function () use ($libraryId) {
-                // Step 1: Delete learner transactions manually (still needed if not cascaded)
-                LearnerTransaction::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->delete();
-    
-                // Step 2: Force delete the learners — now their learner_detail will auto-delete
-                Learner::where('library_id', $libraryId)
-                    ->withTrashed()
-                    ->forceDelete();
-    
-            });
-    
-            return response()->json(['message' => 'All learners and related data have been successfully deleted.']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Error occurred: ' . $e->getMessage()], 500);
-        }
-    }
-    
-
-
-    public function destroyAllMasters($id)
-    {
-        $libraryId = $id;
-
-        // Check if there are any learners associated with this library
-        $learnerCount = Learner::where('library_id', $libraryId)->count();
-        $learnerDetailCount = LearnerDetail::withoutGlobalScopes()->where('library_id', $libraryId)->count();
-        $learnerTransCount = LearnerTransaction::withoutGlobalScopes()->where('library_id', $libraryId)->count();
-
-        if ($learnerCount == 0 && $learnerDetailCount == 0 && $learnerTransCount == 0) {
-            DB::beginTransaction();
-            try {
-                // Step 1: Delete records from PlanPrice
-                $deletedPricesCount = PlanPrice::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->withTrashed()
-                    ->forceDelete();
-
-                // Log the count of deleted prices
-                if ($deletedPricesCount > 0) {
-                    Log::info("$deletedPricesCount plan prices deleted.");
-                } else {
-                    Log::info("No plan prices to delete.");
-                }
-
-                // Step 2: Delete records from PlanType
-                $deletedTypesCount = PlanType::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->withTrashed()
-                    ->forceDelete();
-
-                // Log the count of deleted types
-                if ($deletedTypesCount > 0) {
-                    Log::info("$deletedTypesCount plan types deleted.");
-                } else {
-                    Log::info("No plan types deleted.");
-                }
-
-                // Step 3: Delete records from Plan
-                $deletedPlansCount = Plan::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->withTrashed()
-                    ->forceDelete();
-
-                // Log the count of deleted plans
-                if ($deletedPlansCount > 0) {
-                    Log::info("$deletedPlansCount plans deleted.");
-                } else {
-                    Log::info("No plans deleted.");
-                }
-
-             
-                // Step 5: Delete records from Hour
-                Hour::withoutGlobalScopes()
-                    ->where('library_id', $libraryId)
-                    ->withTrashed()
-                    ->forceDelete();
-
-                DB::commit();
-
-                return response()->json(['message' => 'All master records have been successfully deleted.']);
-            } catch (\Exception $e) {
-                // Rollback the transaction in case of any error
-                DB::rollBack();
-                return response()->json(['message' => 'Error occurred: ' . $e->getMessage()], 500);
-            }
-        } else {
-            return response()->json(['message' => 'Cannot delete masters because learners are associated with this library.'], 400);
-        }
-    }
-
-    function generateLibraryCode() {
-        $prefix = "LB";
-        $lastLibrary = Library::orderBy('id', 'DESC')
-                              ->whereNotNull('library_no')
-                              ->first();
-                              
-        if ($lastLibrary) {
-            
-            $lastNumber = intval(substr($lastLibrary->library_no, 2)); 
-            $newNumber = $lastNumber + 1;
-            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
-        } else {
-            $randomNumber = '000001';
-        }
-    
-        return $prefix . $randomNumber;
-    }
-    
-
     // Library Setting
     public function librarySetting()
     {

@@ -5,13 +5,6 @@
 @section('content')
 
 
-@if(session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
-
-
 <form action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" method="POST" enctype="multipart/form-data" id="branchUpdate">
     @csrf
 
@@ -36,6 +29,7 @@
                         @enderror
                         <small class="text-information">Note : For internal use only. You can’t change this later.</small>
                     </div>
+                    @if(isset($branch))
                     <div class="col-lg-6">
                         <label for="name"> Branch Display Name <span>*</span></label>
                         <input type="text" class="form-control @error('display_name') is-invalid @enderror" name="display_name" value="{{ old('display_name', $branch->display_name ?? '') }}" placeholder="Enter Branch name">
@@ -46,6 +40,18 @@
                         @enderror
                         <small class="text-information">Note : This will be visible in your online listing.</small>
                     </div>
+                    @endif
+
+                     <div class="col-lg-6">
+                        <label for="name"> Founder Day<span>*</span></label>
+                        <input type="date" class="form-control @error('founder_day') is-invalid @enderror" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" placeholder="Enter Library Founder Date">
+                        @error('founder_day')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                        
+                     </div>
 
                     <!-- Branch Email -->
                     <div class="col-lg-6">
@@ -130,14 +136,17 @@
                     </div>
                 </div>
             </div>
-            @endif
+            @endif 
+
             <!-- Library Address & Location -->
-            <div class="card mt-5">
+            @if(isset($branch))
+            <div class="card mt-5" style="overflow: visible !important;">   
                 <h4 class="mb-4">Library Address & Location</h4>
                 <div class="row g-4">
                     <div class="col-lg-12">
                         <label for="library_address">Library Address (Library Full Address with Landmark)<span>*</span></label>
-                        <textarea id="library_address" rows="5" class="form-control @error('library_address') is-invalid @enderror" name="library_address" style="height:auto !important;">{{ old('library_address', $branch->library_address ?? '') }}</textarea>
+                        <textarea id="library_address" rows="5" class="form-control @error('library_address') is-invalid @enderror" name="library_address"
+                            style="height:auto !important;">{{ old('library_address', $branch->library_address ?? '') }}</textarea>
                         @error('library_address')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -148,7 +157,7 @@
 
                     <div class="col-lg-4">
                         <label for="stateid">State <span>*</span></label>
-                        <select name="state_id" id="stateid" class="form-select @error('state_id') is-invalid @enderror">
+                        <select name="state_id" id="state_id" class="form-select @error('state_id') is-invalid @enderror">
                             <option value="">Select State</option>
                             @foreach($states as $value)
                             <option value="{{ $value->id }}" {{ old('state_id', $branch->state_id ?? '') == $value->id ? 'selected' : '' }}>
@@ -165,13 +174,9 @@
 
                     <div class="col-lg-4">
                         <label for="cityid">City <span>*</span></label>
-                        <select name="city_id" id="cityid" class="form-select @error('city_id') is-invalid @enderror">
+                        <select name="city_id" id="city_id" class="form-select @error('city_id') is-invalid @enderror">
                             <option value="">Select City</option>
-                            @foreach($cities as $value)
-                            <option value="{{ $value->id }}" {{ old('city_id', $branch->city_id ?? '') == $value->id ? 'selected' : '' }}>
-                                {{ $value->city_name }}
-                            </option>
-                            @endforeach
+                           
                         </select>
                         @error('city_id')
                         <span class="invalid-feedback" role="alert">
@@ -191,6 +196,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             @if(!isset($branch))
             <div class="card mt-5">
@@ -271,15 +277,21 @@
                 </div>
             </div>
             @endif
-            <div class="card mt-5">
-                <h4 class="mb-4">Plan Duration and Floor info</h4>
 
+            @if(!isset($branch))
+            <div class="card mt-5" style="overflow: visible !important;">
+                <h4 class="mb-4">Plan Duration and Floor info</h4>
+                @php
+                    $oldPlans = old('plans', []);
+                @endphp
                 <div class="row g-4">
 
                     <!-- Plans -->
-                    <div class="col-lg-12">
-                        <label>Choose your plans <span class="text-danger">*</span></label>
-                        <select class="form-select my-select" name="plans[]">
+                    <div class="col-lg-6">
+                        <label>Choose your Plans <span class="text-danger">*</span></label>
+                    
+                        <select class="form-select h-auto @error('plans') is-invalid @enderror" id="duration" name="plans[]" multiple>
+                            <option value="" >Choose your plans</option>
                             <optgroup label="Months">
                                 @for($i = 1; $i <= 12; $i++)
                                     <option value="{{ $i }} MONTH">{{ $i }} MONTH</option>
@@ -298,52 +310,69 @@
                                 @endfor
                             </optgroup>
                         </select>
+                        @error('plans')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label>Choose only for 1 Month <span class="text-danger">*</span></label>
+                        <select class="form-select @error('monthdays') is-invalid @enderror" name="monthdays">
+                            <option value="">Choose your Month Duration</option>
+                            <option value="30" {{ old('monthdays') == 30 ? 'selected' : '' }}>30 Days</option>
+                            <option value="28" {{ old('monthdays') == 28 ? 'selected' : '' }}>28 Days</option>
+                            <option value="">Acoording to Months</option>
+                        </select>
+                        @error('monthdays')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
                     </div>
 
                     <!-- Add Floor Button -->
                     <div class="col-lg-12">
-                        <h4>
-                            Fill only when you have multiple floors in your library
-                            <a href="javascript:void(0);" class="btn btn-sm btn-primary ms-2" id="addFloor">
-                                + Add Floor
-                            </a>
-                        </h4>
+                        <p> <b>Note :</b>   Fill only when you have multiple floors in your library </p>
                     </div>
 
                     <!-- Floors Container -->
                     <div class="col-lg-12" id="floorWrapper">
 
-                        <!-- Floor 1 -->
                         <div class="floor-block border rounded p-3 mb-3">
-                            <h6 class="floor-title">Floor 1</h6>
+                            <div class="row g-4 align-items-end">
 
-                            <div class="row">
                                 <div class="col-lg-4">
-                                    <label>Floor Name <span class="text-danger">*</span></label>
+                                    <label>Floor Name </label>
                                     <input class="form-control" type="text" name="floors[0][name]" placeholder="Floor Name">
                                 </div>
 
-                                <div class="col-lg-4">
-                                    <label>Seat No From <span class="text-danger">*</span></label>
+                                <div class="col-lg-3">
+                                    <label>Seat No From </label>
                                     <input class="form-control" type="number" name="floors[0][from]" placeholder="1">
                                 </div>
 
-                                <div class="col-lg-4">
-                                    <label>Seat No To <span class="text-danger">*</span></label>
+                                <div class="col-lg-3">
+                                    <label>Seat No To </label>
                                     <input class="form-control" type="number" name="floors[0][to]" placeholder="50">
                                 </div>
-                            </div>
 
-                            <button type="button" class="btn btn-danger btn-sm mt-3 remove-floor d-none">
-                                Remove Floor
-                            </button>
+                                <div class="col-lg-2">
+                                    <button type="button" class="btn btn-primary btn-sm mt-2" id="addFloor">
+                                        Add Floor
+                                    </button>
+                                </div>
+
+                            </div>
                         </div>
 
                     </div>
+
+                    
                 </div>
             </div>
-
-
+            @endif
 
             @if(isset($branch))
             <div class="card mt-5">
@@ -477,6 +506,54 @@
 
     </div>
 </form>
+
+<script>
+$(document).ready(function () {
+
+    function loadCities(stateId, selectedCity = null) {
+
+        if (!stateId || !cityChoices) return;
+
+        $.ajax({
+            url: "{{ route('cityGetStateWise') }}",
+            type: "GET",
+            data: { state_id: stateId },
+            dataType: "json",
+            success: function (cities) {
+
+                // Convert response to Choices format
+                let choicesData = [];
+
+                $.each(cities, function (id, name) {
+                    choicesData.push({
+                        value: id,
+                        label: name,
+                        selected: selectedCity == id
+                    });
+                });
+
+                // 🔥 THIS IS REQUIRED
+                cityChoices.clearChoices();
+                cityChoices.setChoices(choicesData, 'value', 'label', true);
+            }
+        });
+    }
+
+    // State change
+    $('#state_id').on('change', function () {
+        loadCities($(this).val());
+    });
+
+    // Edit page support
+    let initialState = $('#state_id').val();
+    let selectedCity = "{{ old('city_id', $branch->city_id ?? '') }}";
+
+    if (initialState) {
+        loadCities(initialState, selectedCity);
+    }
+
+});
+</script>
 
 
 <script>
@@ -686,75 +763,78 @@ $(document).ready(function () {
     // ADD FLOOR
     $('#addFloor').on('click', function () {
 
-        let floorCount = $('#floorWrapper .floor-block').length;
+        let floorCount = $('.floor-block').length;
 
         let floorHtml = `
             <div class="floor-block border rounded p-3 mb-3">
-                <h6 class="floor-title">Floor ${floorCount + 1}</h6>
-
-                <div class="row">
-                    <div class="col-lg-4">
-                        <label>Floor Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="floors[${floorCount}][name]" placeholder="Floor Name">
-                    </div>
+                <div class="row g-4 align-items-end">
 
                     <div class="col-lg-4">
-                        <label>Seat No From <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="floors[${floorCount}][from]" placeholder="1">
+                        <label>Floor Name </label>
+                        <input class="form-control" type="text" name="floors[${floorCount}][name]" placeholder="Floor Name">
                     </div>
 
-                    <div class="col-lg-4">
-                        <label>Seat No To <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="floors[${floorCount}][to]" placeholder="50">
+                    <div class="col-lg-3">
+                        <label>Seat No From </label>
+                        <input class="form-control" type="number" name="floors[${floorCount}][from]" placeholder="1">
                     </div>
+
+                    <div class="col-lg-3">
+                        <label>Seat No To </label>
+                        <input class="form-control" type="number" name="floors[${floorCount}][to]" placeholder="50">
+                    </div>
+
+                    <div class="col-lg-2">
+                        <button type="button" class="btn btn-danger btn-sm remove-floor">
+                            Remove
+                        </button>
+                    </div>
+
                 </div>
-
-                <button type="button" class="btn btn-danger btn-sm mt-3 remove-floor">
-                    Remove Floor
-                </button>
             </div>
         `;
 
         $('#floorWrapper').append(floorHtml);
-        updateFloors();
+        updateFloorIndexes();
     });
 
-    // REMOVE FLOOR (delegated event)
+    // REMOVE FLOOR (delegated)
     $(document).on('click', '.remove-floor', function () {
         $(this).closest('.floor-block').remove();
-        updateFloors();
+        updateFloorIndexes();
     });
 
-    // UPDATE FLOOR NUMBERS + INPUT NAMES
-    function updateFloors() {
+    // UPDATE INPUT INDEXES
+    function updateFloorIndexes() {
 
-        let floors = $('#floorWrapper .floor-block');
+        let floors = $('.floor-block');
 
         floors.each(function (index) {
 
-            // Update title
-            $(this).find('.floor-title').text('Floor ' + (index + 1));
-
-            // Update input names
             $(this).find('input').each(function () {
                 let name = $(this).attr('name');
                 name = name.replace(/\[\d+\]/, '[' + index + ']');
                 $(this).attr('name', name);
             });
-
-            // Show/Hide remove button
-            if (floors.length === 1) {
-                $(this).find('.remove-floor').hide();
-            } else {
-                $(this).find('.remove-floor').show();
-            }
         });
+
+        // Hide remove button if only one floor
+        if (floors.length === 1) {
+            $('.remove-floor').addClass('d-none');
+        } else {
+            $('.remove-floor').removeClass('d-none');
+        }
     }
 
-    // INITIAL CALL
-    updateFloors();
+    // INITIAL
+    updateFloorIndexes();
+
 });
+
 </script>
+
+
+
 
 
 {{-- @include('library.script') --}}

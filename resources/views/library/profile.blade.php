@@ -83,13 +83,9 @@
                         @enderror
                     </div>
                    
-
-
                 </div>
 
             </div>
-
-           
 
             <div class="card mt-5">
                 <h4 class="mb-4">Library Owner Details</h4>
@@ -109,9 +105,6 @@
                     <button type="submit" value="Login" placeholder="Email Id" class="btn btn-primary button">Update and Next</button>
                 </div>
             </div>
-
-
-          
 
         </div>
        

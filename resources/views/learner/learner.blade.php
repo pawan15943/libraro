@@ -35,7 +35,8 @@
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
 
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
-
+ <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
+        
         @can('has-permission', 'Export Library Seats')
         @if(!in_array('22', toggleHideField()))
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Export Learners Data to CSV"><i class="fa-solid fa-file-export"></i></a>
@@ -180,7 +181,8 @@ $learner_id=$value->id;
 @endphp
 
 <!-- Modal -->
-
+ 
+       
 
 <div class="row">
     <div class="col-lg-12">
@@ -360,7 +362,15 @@ $learner_id=$value->id;
 
                                 @can('has-permission', 'Freez Days')
                                 @if(!in_array('34', toggleHideField()))
-                                <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze / Unfreeze"> <i class="fa-solid fa-snowflake"></i></a></li>
+                                <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" > 
+                                @if($value->frozen_status == 1)
+                                    <i class="fa-solid fa-pause" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Unfreeze Plan"></i>
+                                    @else
+                                    
+                                    <i class="fa-solid fa-snowflake" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze Plan"></i>
+                                @endif 
+                                </a>   
+                                </li>
                                 @endif
                                 @endcan
                                 <!-- View Seat Info -->
@@ -377,7 +387,7 @@ $learner_id=$value->id;
                                 @endcan
 
                                 @can('has-permission', 'Delete Seat')
-                                <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
+                                <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Learners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                                 @endcan
 
 
@@ -431,7 +441,11 @@ $learner_id=$value->id;
                     </li>
                     <li>
                         <span>Plan End Date</span>
-                        <p>{{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</p>
+                        <p>
+                        @if($value->frozen_status != 1)
+                            {{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}
+                        @endif
+                        </p>
                     </li>
                     <li>
                         <span>Payment Status</span>

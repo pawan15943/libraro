@@ -22,7 +22,25 @@ use App\Models\PlanType;
 use App\Models\Setting;
 use Carbon\Carbon;
 
-
+if (!function_exists('generateLibraryCode')) {
+    function generateLibraryCode() {
+        $prefix = "LB";
+        $lastLibrary = Library::orderBy('id', 'DESC')
+                              ->whereNotNull('library_no')
+                              ->first();
+                              
+        if ($lastLibrary) {
+            
+            $lastNumber = intval(substr($lastLibrary->library_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
+    }
+}
 if (!function_exists('logoutOtherGuards')) {
     function logoutOtherGuards(string $currentGuard): void
     {
@@ -688,7 +706,7 @@ if (!function_exists('branchCountValidation')) {
         $maxAllowed = $limits[$library->library_type] ?? 0;
 
         return [
-            'success' => $branch_count >= $maxAllowed,
+            'success' => $branch_count > 0 && $branch_count >= $maxAllowed,
             'branch_count' => $branch_count,
             'max_allowed' => $maxAllowed,
             'message' => $message
@@ -1273,6 +1291,99 @@ if (!function_exists('checkSeatAvailability')) {
     }
 }
 
+if (!function_exists('normalizeTimeRange')) {
+    function normalizeTimeRange($startTime, $endTime)
+    {
+        if ($startTime < $endTime) {
+            // Normal same-day range
+            return [[
+                'start' => $startTime,
+                'end'   => $endTime
+            ]];
+        }
+
+        // Cross-midnight (Night / Custom)
+        return [
+            ['start' => $startTime, 'end' => '23:59:59'],
+            ['start' => '00:00:00', 'end' => $endTime]
+        ];
+    }
+}
+
+if (!function_exists('checkAvailability')) {
+    function checkAvailability(int $branchId,?int $seatNo,?int $learnerId,int $planTypeId,string $planId,string $startDate): array {
+
+
+        // ✅ Seat not selected → always allowed
+        if (empty($seatNo)) {
+            return ['error' => false];
+        }
+
+        $planType = PlanType::find($planTypeId);
+        if (!$planType) {
+            return ['error' => true, 'message' => 'Invalid plan type'];
+        }
+        $startDate = Carbon::parse($startDate);
+
+        $endDate = getEndDate($planId, $startDate);
+
+        $requestedRanges = normalizeTimeRange(
+            $planType->start_time,
+            $planType->end_time
+        );
+
+        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where('learner_detail.branch_id', $branchId)
+            ->where('learner_detail.seat_no', $seatNo)
+            ->where('learner_detail.plan_end_date', '>=', now())
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->where('plan_start_date', '<=', $endDate)
+                  ->where('plan_end_date', '>=', $startDate);
+            })
+            ->when($learnerId, fn ($q) =>
+                $q->where('learner_detail.learner_id', '!=', $learnerId)
+            )
+            ->get([
+                'plan_types.start_time',
+                'plan_types.end_time',
+                'plan_types.day_type_id'
+            ]);
+
+        // 🔴 All Day / Night blocks
+        if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
+            return [
+                'error' => true,
+                'message' => 'Seat already booked for all day or night'
+            ];
+        }
+
+        // ⏰ Time overlap
+        foreach ($bookings as $booking) {
+
+            $existingRanges = normalizeTimeRange(
+                $booking->start_time,
+                $booking->end_time
+            );
+
+            foreach ($requestedRanges as $req) {
+                foreach ($existingRanges as $exist) {
+                    if (
+                        $req['start'] < $exist['end'] &&
+                        $req['end'] > $exist['start']
+                    ) {
+                        return [
+                            'error' => true,
+                            'message' => 'Time slot overlaps with existing booking'
+                        ];
+                    }
+                }
+            }
+        }
+
+        return ['error' => false];
+    }
+}
+
 if (!function_exists('getStatusFromBranch')) {
     function getStatusFromBranch($plan_end_date, $learner_id, $branchId)
     {
@@ -1398,5 +1509,33 @@ function makeTinyUrl($longUrl)
         return $longUrl; // fallback
     }
 }
+}
+
+if (!function_exists('calculatePlanDays')) {
+
+    function calculatePlanDays(
+        int $number,
+        string $type,
+        ?int $baseMonthDays = null
+    ): ?int {
+
+        $type = strtoupper($type);
+
+        if ($type === 'MONTH') {
+            return $baseMonthDays
+                ? $baseMonthDays * $number
+                : null; // safety fallback
+        }
+
+        if ($type === 'WEEK') {
+            return $number * 7;
+        }
+
+        if ($type === 'DAY') {
+            return $number;
+        }
+
+        return null;
+    }
 }
 
