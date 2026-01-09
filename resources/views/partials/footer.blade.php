@@ -28,7 +28,7 @@
             class="{{ request()->routeIs('seat.book') ? 'active' : '' }}">
             <a href="javascript:;" class="noseat_popup">
                 <i class="fa fa-chair"></i>
-                <span>Book Seat</span>
+                <span>Book</span>
             </a>
         </li>
         @endcan
@@ -43,7 +43,7 @@
         <li class="{{ request()->routeIs('seats') ? 'active' : '' }}">
             <a href="{{ route('seats') }}">
                 <i class="fa fa-network-wired"></i>
-                <span>Seat Map</span>
+                <span>Seatmap</span>
             </a>
         </li>
     </ul>
