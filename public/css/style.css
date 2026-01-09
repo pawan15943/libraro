@@ -4820,7 +4820,7 @@ h6.text-center.bg-white {
     }
 
     /* Mobile Seat Icon */
-    ul.mobile-actions {
+    /* ul.mobile-actions {
         display: flex;
         background: linear-gradient(345deg, #3F51B5, #253279);
         width: 220px;
@@ -4851,7 +4851,7 @@ h6.text-center.bg-white {
 
     ul.mobile-actions li+li {
         border-left: 1px solid #ffffff63;
-    }
+    } */
 
     ul.learner-info li {
         width: 100% !important;
@@ -6536,7 +6536,7 @@ ul.reacentActivity li {
         padding: .5rem;
     }
 
-    li.active {
+    .mobile-app li.active {
         background: #eeeeee;
         border-radius: .8rem;
     }
