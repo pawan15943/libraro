@@ -6511,6 +6511,71 @@ ul.reacentActivity li {
 
 
 @media screen and (max-width:480px) {
+
+    .mobile-app {
+        position: fixed;
+        bottom: 0;
+        background: #fff;
+        width: 100%;
+        z-index: 1050;
+        padding: .5rem .3rem !important;
+        box-shadow: 1px -3px 5px #0000001f;
+    }
+
+    h2.made-inindia {
+        margin-bottom: 6rem;
+    }
+
+    .content {
+        margin-bottom: 4.5rem;
+        padding-bottom: 1rem ! IMPORTANT;
+    }
+
+    .mobile-app ul li {
+        width: calc(100% / 5 - 1rem);
+        padding: .5rem;
+    }
+
+    li.active {
+        background: #eeeeee;
+        border-radius: .8rem;
+    }
+
+    .mobile-app ul li a {
+        color: #4f4f4f;
+        font-family: 'Outfit', 'sans-sarif';
+        font-weight: 400 !important;
+    }
+
+    li.active a {
+        color: navy !important;
+    }
+
+    .mobile-app ul {
+        list-style: none;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mobile-app ul li a .fa {
+        font-size: 1.2rem;
+    }
+
+    .mobile-app ul li {
+        width: calc(100% / 5 - 1rem);
+    }
+
+    .mobile-app ul li span {
+        margin: 0;
+        display: block;
+        font-size: .7rem;
+    }
+
+
     .revenue-info {
         padding: 1rem !important;
         border-radius: 1rem !important;

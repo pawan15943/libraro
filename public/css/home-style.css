@@ -1594,6 +1594,7 @@ img.img-fluid {
 ======================================================================================*/
 
 @media screen and (max-width:480px) {
+    
     a.bookSeat {
         position: fixed;
         bottom: 0;
