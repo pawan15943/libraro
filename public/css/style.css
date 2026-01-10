@@ -5960,8 +5960,8 @@ p.text-danger.font-weight-bold,
 .control-right-sidebar {
     position: absolute;
     left: -32px;
-    bottom: 85px;
-    background: #d8d8d8;
+    top: 80px;
+    background: linear-gradient(45deg, #0d6efd, #092575);
     width: 20px;
     padding: .5rem 1rem;
     display: flex;
@@ -5969,6 +5969,7 @@ p.text-danger.font-weight-bold,
     justify-content: center;
     border-radius: 1rem .0rem 0 1rem;
     z-index: 2;
+    color: #fff;
 }
 
 .choices__inner {
@@ -6511,6 +6512,14 @@ ul.reacentActivity li {
 
 
 @media screen and (max-width:480px) {
+    .right-sidebar {
+        position: absolute;
+        right: 0;
+        background: #fff;
+        top: 0;
+        z-index: 1050;
+        height: 100vh;
+    }
 
     .mobile-app {
         position: fixed;
@@ -6533,6 +6542,10 @@ ul.reacentActivity li {
     .mobile-app ul li {
         width: calc(100% / 5 - 1rem);
         padding: .5rem;
+    }
+
+    .support-icon {
+        display: none;
     }
 
     .mobile-app li.active {
