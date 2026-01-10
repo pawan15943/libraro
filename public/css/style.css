@@ -5960,7 +5960,7 @@ p.text-danger.font-weight-bold,
 .control-right-sidebar {
     position: absolute;
     left: -32px;
-    top: 80px;
+    bottom: 100px;
     background: linear-gradient(45deg, #0d6efd, #092575);
     width: 20px;
     padding: .5rem 1rem;
@@ -6512,6 +6512,11 @@ ul.reacentActivity li {
 
 
 @media screen and (max-width:480px) {
+    .control-right-sidebar {
+        top: 112px;
+        bottom: auto;
+    }
+
     .right-sidebar {
         position: absolute;
         right: 0;
