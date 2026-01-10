@@ -1,4 +1,4 @@
-<div class="footer d-none d-md-block">@ {{date('Y')}} All Rights Reserved by Libraro.</div>
+<div class="footer text-center d-none d-md-block">@ {{date('Y')}} All Rights Reserved by Libraro.</div>
 @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
 <div class="mobile-app d-block d-md-none">
     <ul class="mobile-menu">

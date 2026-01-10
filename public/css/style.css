@@ -6527,8 +6527,7 @@ ul.reacentActivity li {
     }
 
     .content {
-        margin-bottom: 4.5rem;
-        padding-bottom: 1rem ! IMPORTANT;
+        padding-bottom: 2rem ! IMPORTANT;
     }
 
     .mobile-app ul li {
