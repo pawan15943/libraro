@@ -19,6 +19,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Branch;
 use App\Models\Floor;
+use App\Models\LearnerDetail;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Exception;
@@ -28,6 +29,7 @@ use Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 class MasterController extends Controller
 {
@@ -222,6 +224,8 @@ class MasterController extends Controller
         return redirect()->back()->with('success', 'Permissions assigned/updated successfully.');
     }
 
+    
+
     public function masterPlan(Request $request){
          $plans=Plan::where('library_id',getLibraryId())->withTrashed()->get();
             
@@ -262,6 +266,7 @@ class MasterController extends Controller
         $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
         if ($request->databasemodel == 'Plan'){
             $data['name']=$request->plan_id .' '.$request->type;
+            
         }
         if ($request->databasemodel == 'PlanType'){
            
@@ -272,31 +277,51 @@ class MasterController extends Controller
                 ]);
             }
             
-           
-          
+        
+            $minTime = PlanType::where('branch_id', getCurrentBranch())
+                ->where('id', '!=', $data['id'])
+                ->min('start_time');
 
-            $minTime = PlanType::min('start_time');
-            $maxTime = PlanType::max('end_time');
+            $maxTime = PlanType::where('branch_id', getCurrentBranch())
+                ->where('id', '!=', $data['id'])
+                ->max('end_time');
 
-            $start = Carbon::parse($request->start_time);
-            $end   = Carbon::parse($request->end_time);
+            if ($minTime && $maxTime) {
 
-            $globalMin = Carbon::parse($minTime);
-            $globalMax = Carbon::parse($maxTime);
+                $globalStart = Carbon::parse($minTime);
+                $globalEnd   = Carbon::parse($maxTime);
 
-            if ($end->lessThanOrEqualTo($globalMin)) {
-                $end->addDay();
+                if ($globalEnd->lessThanOrEqualTo($globalStart)) {
+                    $globalEnd->addDay();
+                }
+
+                $newStart = Carbon::parse($request->start_time);
+                $newEnd   = Carbon::parse($request->end_time);
+
+                if ($newEnd->lessThanOrEqualTo($newStart)) {
+                    $newEnd->addDay();
+                }
+
+                $finalStart = $newStart->lessThan($globalStart) ? $newStart : $globalStart;
+                $finalEnd   = $newEnd->greaterThan($globalEnd) ? $newEnd : $globalEnd;
+
+                $totalHours = $finalStart->diffInHours($finalEnd);
+
+                if ($totalHours > $branchRecord->hour) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'You can’t add shift timings outside the library’s hours. Please adjust the timing.'
+                    ]);
+                }
             }
-            $totalHours = $globalMin->diffInHours($end);
 
-            // 1. Check within allowed time range
-            if (PlanType::count() > 0 && $totalHours > $branchRecord->hour) {
+            $exists = LearnerDetail::where('plan_type_id', $data['id'])->where('status', 1)->exists();
+            if($data['id'] && $exists){
                  return response()->json([
                     'error' => true,
-                    'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
+                    'message' => 'You can not update, contact to support'
                 ]);
             }
-
             $data = $request->except(['timming']);
 
             if ($request->image == 'orange') {
@@ -498,6 +523,7 @@ class MasterController extends Controller
             if (!$planType) {
                 return redirect()->route('planType.create')->with('error', 'Plan type not found.');
             }
+           
         }
         $operatingHour=Hour::select('hour')->first();
         // Pass $planType to view, it will be null for add and model instance for edit
@@ -714,6 +740,26 @@ class MasterController extends Controller
                 $data->restore();
                 $status = 'activated';
             } else {
+                if($modelClass=='PlanType'){
+                     $exists = LearnerDetail::where('plan_type_id', $id)
+                    ->where('status', 1)
+                    ->exists();
+                }
+                if($modelClass=='Plan'){
+                     $exists = LearnerDetail::where('plan_id', $id)
+                    ->where('status', 1)
+                    ->exists();
+                }
+               
+
+                if (!empty($id) && $exists) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'You cannot update, contact support'
+                    ], 422);
+                }
+
+
                 $data->delete();
                 $status = 'deactivated';
             }
@@ -821,7 +867,7 @@ class MasterController extends Controller
                 'branch_id' => ['required','not_in:0'],
             ]);
         }
-         if($request->databasemodel == 'Branch'){
+        if($request->databasemodel == 'Branch'){
             $request->validate([
                 'extend_days' => 'nullable|integer|max:30',
                 'locker_amount' => 'nullable|integer',
@@ -1073,4 +1119,10 @@ class MasterController extends Controller
         return response()->json(['status' => false, 'message' => 'Branch not found'], 404);
     }
     
+
+
+
+
+
+
 }

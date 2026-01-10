@@ -13,11 +13,11 @@
                     <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
                 </li>
 
-                <li>
+                {{-- <li>
                     <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
-                </li>
+                </li> --}}
                 <li class="active">
-                    <a href="{{ ($ispaid ) ? route('profile') : '#' }}">Update Profile</a>
+                    <a href="{{ ($ispaid ) ? route('branch.create') : '#' }}">Branch</a>
                 </li>
                 <li>
                     <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
@@ -83,13 +83,9 @@
                         @enderror
                     </div>
                    
-
-
                 </div>
 
             </div>
-
-           
 
             <div class="card mt-5">
                 <h4 class="mb-4">Library Owner Details</h4>
@@ -109,9 +105,6 @@
                     <button type="submit" value="Login" placeholder="Email Id" class="btn btn-primary button">Update and Next</button>
                 </div>
             </div>
-
-
-          
 
         </div>
        

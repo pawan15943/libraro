@@ -12,11 +12,11 @@
                 <li>
                     <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
                 </li>
-                <li class="active">
+                {{-- <li class="active">
                     <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
-                </li>
+                </li> --}}
                 <li>
-                    <a href="{{ ($ispaid ) ? route('profile') : '#' }}">Update Profile</a>
+                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
                 </li>
                 <li>
                     <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>

@@ -11,9 +11,114 @@ use Illuminate\Http\Request;
 use DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
+     public function index(Request $request)
+    {
+        $query = Library::leftJoin('library_transactions', 'libraries.id', '=', 'library_transactions.library_id')
+           
+            ->select(
+                'libraries.id', 
+                'libraries.library_type', 
+                'libraries.status', 
+                'libraries.library_name', 
+                'libraries.library_mobile', 
+                'libraries.email',
+                DB::raw('MAX(library_transactions.id) as latest_transaction_id')
+            )
+            ->groupBy(
+                'libraries.id', 
+                'libraries.library_type', 
+                'libraries.status', 
+                'libraries.library_name', 
+                'libraries.library_mobile', 
+                'libraries.email'
+            );
+    
+          
+
+
+        // Filter by Plan
+        if ($request->filled('plan_id')) {
+            $query->where('libraries.library_type', $request->plan_id);
+        }
+    
+        // Filter by Payment Status
+        if ($request->filled('is_paid')) {
+            $query->where('library_transactions.is_paid', $request->is_paid);
+        }
+    
+        // Filter by Active/Expired
+        if ($request->filled('status')) {
+            if ($request->status == 'active') {
+                $query->where('libraries.status', 1);
+            } elseif ($request->status == 'expired') {
+                $query->where('libraries.status', 0);
+            }
+        }
+    
+        // Search by Name, Mobile, or Email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('libraries.library_name', 'LIKE', "%{$search}%")
+                  ->orWhere('libraries.library_mobile', 'LIKE', "%{$search}%")
+                  ->orWhere('libraries.email', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        $libraries = $query->get();
+        $planslibrary = Subscription::get();
+       
+        return view('administrator.index', compact('libraries', 'planslibrary'));
+    }
+
+     // library register from admin side
+    public function libraryStore(Request $request)
+    {
+        // Define validation rules
+        $rules = [
+            'library_name'       => 'required|string|max:255',
+            'email'              => 'required|email|max:255|unique:libraries,email',
+            'library_mobile'     => 'required|digits:10',
+            'state_id'           => 'nullable|exists:states,id',
+            'city_id'            => 'nullable|exists:cities,id',
+            'library_address'    => 'nullable|string|max:500',
+            'library_zip'        => 'nullable|digits:6',
+            'library_type'       => 'nullable|string|max:255',
+            'library_owner'      => 'nullable|string|max:255',
+            'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:width=250,height=250',
+            'password'           => 'required|string|min:8',
+            'library_owner_email'=> 'nullable|email|max:255',
+            'library_owner_contact' => 'nullable|digits:10',
+        ];
+
+        // Perform validation
+        $validatedData = Validator::make($request->all(), $rules);
+
+        // Check if validation fails
+        if ($validatedData->fails()) {
+            // Redirect back with validation errors
+            return redirect()->back()->withErrors($validatedData)->withInput();
+        }
+
+        // Access validated data
+        $validated = $validatedData->validated();
+
+        // Hash the password
+        $validated['password'] = Hash::make($validated['password']);
+        $validated['original_password'] = $validated['password'];
+        
+        // Store the validated data in the Library model
+        $library = Library::create($validated);
+
+        // Redirect with success message
+        return redirect()->route('library')->with('success', 'Library Created successfully processed.');
+    }
+
+
     public function selectLibrary($id, Request $request)
     {
         \Log::info("library_id " . $id);

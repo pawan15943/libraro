@@ -89,6 +89,8 @@ class DashboardController extends Controller
             //load menus status function call for status update
             $middleware = app(LoadMenus::class);
             $middleware->statusInactive();
+
+            
             $value = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())
             ->where('status', 1)
             ->first();
@@ -96,6 +98,7 @@ class DashboardController extends Controller
          
             // redirect check library  
             $iscomp = Library::where('id', getLibraryId())->where('status', 1)->exists();
+          
             $redirectUrl = $this->libraryService->checkLibraryStatus();
             $check = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())->where('is_paid',1)->orderBy('id','desc')->first();
            

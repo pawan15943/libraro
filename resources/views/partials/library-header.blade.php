@@ -77,7 +77,7 @@ $user = getAuthenticatedUser();
     <div class="d-flex" style="gap:1rem">
         <div class="conatent flex" style="flex: 1;">
             <i class="fa fa-bars mr-2" id="sidebar"></i>
-            @if(isset($upcomingdiffInDays) && $user && $is_renew && $isProfile)
+            @if(isset($upcomingdiffInDays) && $user && $is_renew )
                 <small class="text-danger ml-2"> <i class="fa fa-clock"></i>
                     @if($upcomingdiffInDays > 0)
                     Upcoming Plan after {{$upcomingdiffInDays}} days
@@ -85,7 +85,7 @@ $user = getAuthenticatedUser();
                 </small>
             @endif
 
-            @if(isset($librarydiffInDays) && $user && !$is_renew && $isProfile)
+            @if(isset($librarydiffInDays) && $user && !$is_renew )
                @if ($librarydiffInDays > 0)
                     <small class="text-success ml-2">
                         <i class="fa fa-clock"></i> Enjoy your plan for the next {{ $librarydiffInDays }} day{{ $librarydiffInDays > 1 ? 's' : '' }}!
@@ -109,7 +109,7 @@ $user = getAuthenticatedUser();
                 @endif
 
 
-                @if(($librarydiffInDays <= 5 && !$is_renew && $isProfile))
+                @if(($librarydiffInDays <= 5 && !$is_renew ))
                     <script>
                         window.onload = function() {
                         if (!sessionStorage.getItem("planExpiryModalShown")) {
@@ -140,9 +140,7 @@ $user = getAuthenticatedUser();
 
                 </select>
             </form>
-            
-
-
+         
         @endif
       
 

@@ -10,11 +10,9 @@
                 <li class="active">
                     <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
                 </li>
-                <li >
-                    <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
-                </li>
-                <li >
-                    <a href="{{ ($ispaid ) ? route('profile') : '#' }}">Update Profile</a>
+               
+                <li>
+                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
                 </li>
                 <li >
                     <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
@@ -51,21 +49,24 @@
     @foreach($subscriptions as $subscription)
     <div class="col-lg-3">
         <div class="plan-box">
-            @php
-
-            $subscribedPermissions = $subscription->permissions->pluck('name')->toArray();
-            @endphp
-                @if ($subscription->id == Auth::user()->library_type)
                 @php
-                    if(Auth::user()->status == 0){
-                        $text='Expired';
-                        $class='text-danger';
-                    }else{
-                        $text='Active';
-                        $class='text-success';
-                    }
-                    
+                 // Features of current subscription
+                $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
+
+                // All unique features
+                $allFeatures = $features->pluck('name')->unique()->toArray();
                 @endphp
+                @if ($subscription->id == Auth::user()->library_type)
+                    @php
+                        if(Auth::user()->status == 0){
+                            $text='Expired';
+                            $class='text-danger';
+                        }else{
+                            $text='Active';
+                            $class='text-success';
+                        }
+                        
+                    @endphp
                 <h6 class="text-center bg-white">Current Plan <span class="{{$class}}">{{$text}} </span></h6>
                 @else
                 <h6></h6>
@@ -75,24 +76,26 @@
             <h4>{{$subscription->name}}</h4>
             <p class="m-0 text-white py-2 px-3 text-center plan-description" >{{$subscription->plan_description}}</p>
             <ul class="plan-features contents">
-                @foreach($premiumSub->permissions as $permission)
-                @if(in_array($permission->name, $subscribedPermissions))
-                <li>
-                    <div class="d-flex">
-                        <i class="fa-solid fa-check text-success me-2"></i> {{ $permission->name }}
-                    </div>
-                </li>
-                @else
-                <li>
-                    <div class="d-flex">
-                        <i class="fa-solid fa-xmark text-danger me-2"></i> {{ $permission->name }}
-                    </div>
-                </li>
-                @endif
+                 @foreach($allFeatures as $featureName)
+                        
+                    @if(in_array($featureName, $subscriptionFeatures))
+                        <li>
+                            <div class="d-flex">
+                                <i class="fa-solid fa-check text-success me-2"></i>
+                            {{ $featureName }}
+                            </div>
+                        </li>
+                    @else
+                        <li>
+                            <div class="d-flex">
+                                <i class="fa-solid fa-xmark text-danger me-2"></i>
+                                {{ $featureName }}
+                            </div>
+                        </li>
+                    @endif
                 @endforeach
             </ul>
-            <!-- <span class="showmore">Show More </span> -->
-            <form id="payment-form" action="{{route('subscriptions.payment')}}" method="POST" >
+             <form id="payment-form" action="{{route('payment.store')}}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
                 <input type="hidden" name="subscription_id" id="subscription_id" value="{{$subscription->id}}">
@@ -154,10 +157,15 @@
                     },
                     dataType: 'json',
                     success: function(response) {
-                        console.log('response',response);
-                        // Loop through each subscription price and dynamically update the HTML
-                        response.subscription_prices.forEach(function(subscription) {
-                            $('#subscription_fees_' + subscription.id).text(subscription.fees); 
+                            
+                            // Loop through each subscription price and dynamically update the HTML
+                            response.subscription_prices.forEach(function(subscription) {
+                            if(subscription.fees==0){
+                                $('#subscription_fees_' + subscription.id).text("FREE"); 
+                            }else{
+                                $('#subscription_fees_' + subscription.id).text(subscription.fees); 
+                            }
+                            
                             $('#plan_mode_' + subscription.id).val(plan_mode)
                             $('#price_' + subscription.id).val(subscription.fees)
                         });

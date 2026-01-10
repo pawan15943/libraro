@@ -393,22 +393,18 @@ class LoadMenus
         $extendexist = Branch::where('library_id',getLibraryId())->whereNotNull('extend_days')->count();
        
         $plan = Plan::count();
-        $plantype = PlanType::where('library_id', getLibraryId())
-            ->where(function ($query) {
-                $query->where('day_type_id', 1)
-                    ->orWhere('day_type_id', 2)
-                    ->orWhere('day_type_id', 3);
-            })
-            ->count();
+        $plantype = PlanType::where('library_id', getLibraryId())->count();
         $planPrice = PlanPrice::withoutGlobalScopes()->where('library_id', getLibraryId())->count();
+        
         $is_active = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->where('end_date', '>', $today->format('Y-m-d'))->exists();
         if ($hourexist > 0 && $extendexist > 0 && $plan > 0 && $plantype >= 1 && $planPrice >= 1 && $is_active) {
             $id = getLibraryId();
             $library = Library::findOrFail($id);
-           
+            $transaction=LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->where('end_date', '>', $today->format('Y-m-d'))->latest()->first();
           
             if ($library->status != 1) {
                 $library->status = 1;
+                $library->library_type=$transaction->subscription;
                 $library->save();
             }
         }
@@ -421,7 +417,7 @@ class LoadMenus
         $today = Carbon::now('Asia/Kolkata')->startOfDay();
        
         $extenday=Library::where('id', $userId)->value('extend_days') ?? 0;
-        $enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', $userId)->where('is_paid', 1)->value('end_date')??0;
+        $enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', $userId)->where('is_paid', 1)->latest()->value('end_date')??0;
         $planEndDateWithExtension = Carbon::parse($enddate)->addDays($extenday);
         
      

@@ -22,7 +22,25 @@ use App\Models\PlanType;
 use App\Models\Setting;
 use Carbon\Carbon;
 
-
+if (!function_exists('generateLibraryCode')) {
+    function generateLibraryCode() {
+        $prefix = "LB";
+        $lastLibrary = Library::orderBy('id', 'DESC')
+                              ->whereNotNull('library_no')
+                              ->first();
+                              
+        if ($lastLibrary) {
+            
+            $lastNumber = intval(substr($lastLibrary->library_no, 2)); 
+            $newNumber = $lastNumber + 1;
+            $randomNumber = str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+        } else {
+            $randomNumber = '000001';
+        }
+    
+        return $prefix . $randomNumber;
+    }
+}
 if (!function_exists('logoutOtherGuards')) {
     function logoutOtherGuards(string $currentGuard): void
     {
@@ -688,7 +706,7 @@ if (!function_exists('branchCountValidation')) {
         $maxAllowed = $limits[$library->library_type] ?? 0;
 
         return [
-            'success' => $branch_count >= $maxAllowed,
+            'success' => $branch_count > 0 && $branch_count >= $maxAllowed,
             'branch_count' => $branch_count,
             'max_allowed' => $maxAllowed,
             'message' => $message
@@ -1491,5 +1509,33 @@ function makeTinyUrl($longUrl)
         return $longUrl; // fallback
     }
 }
+}
+
+if (!function_exists('calculatePlanDays')) {
+
+    function calculatePlanDays(
+        int $number,
+        string $type,
+        ?int $baseMonthDays = null
+    ): ?int {
+
+        $type = strtoupper($type);
+
+        if ($type === 'MONTH') {
+            return $baseMonthDays
+                ? $baseMonthDays * $number
+                : null; // safety fallback
+        }
+
+        if ($type === 'WEEK') {
+            return $number * 7;
+        }
+
+        if ($type === 'DAY') {
+            return $number;
+        }
+
+        return null;
+    }
 }
 

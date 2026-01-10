@@ -117,7 +117,7 @@ a {
 
 
 :root {
-    --c1: #151F38;
+    --c1: #480f7d;
     --c2: #1D7BAD;
     --c3: #D14343;
     --c0: #BD0909;
@@ -462,10 +462,12 @@ input[type="submit"] {
     font-size: .85rem;
     border-radius: .4rem !important;
 }
+
 .choices__inner {
-    background-color: #ffffff !important; 
+    background-color: #ffffff !important;
     border-radius: 6px !important;
 }
+
 select {
     font-size: .85rem;
     font-weight: 600;
@@ -1496,7 +1498,7 @@ ul.dropdown-menu.show li+li a .fas {
 }
 
 .steps ul li {
-    width: calc(100% / 4 - 1rem);
+    width: calc(100% / 3 - 1rem);
     background: var(--c5);
     margin: .5rem;
     border-radius: 2rem;
@@ -2298,11 +2300,12 @@ input::placeholder {
 label.upload-lable {
     font-weight: 700;
     font-size: .8rem;
-    margin-bottom: .2rem;
-    border: 2px dashed #00BCD4;
+    margin-top: 2rem ! IMPORTANT;
+    border: 2px dashed #99007c;
     display: block;
     text-align: center;
-    padding: 1rem;
+    padding: .8rem;
+    border-radius: .6rem;
 }
 
 label.libraryImage {
@@ -2470,8 +2473,8 @@ div#datatable_length {
     background: var(--c5);
     padding: 1.5rem;
     border-radius: 1rem;
-    /* box-shadow: 1px 0 36px #0000001c;*/
-    border: 1px solid #dedede !important;
+    /* box-shadow: 1px 0 36px #0000001c; */
+    /* border: 1px solid #dedede !important; */
     border: none;
     overflow: hidden;
 }
@@ -3458,8 +3461,12 @@ ul.libraryFeatures li:hover {
 }
 
 .card h4.mb-4 {
-    color: #00aec4 !important;
+    color: #008ca9 !important;
     overflow: hidden;
+    font-size: 1rem;
+    text-transform: uppercase;
+    border-left: 4px solid;
+    padding-left: 1rem;
 }
 
 /* Library Steps */
@@ -3481,14 +3488,7 @@ ul.libraryFeatures li:hover {
     justify-content: space-between;
 }
 
-.steps ul li {
-    width: calc(100% / 4 - 1rem);
-    background: var(--c5);
-    margin: .5rem;
-    border-radius: 2rem;
-    padding: 1rem 1.5rem;
-    text-align: center;
-}
+
 
 .steps ul li a {
     font-weight: 700 !important;
@@ -5747,11 +5747,12 @@ div#preview .preview {
     width: 100px !important;
     overflow: hidden;
     height: 100px !important;
-    background: red;
     border-radius: 100px !important;
-    border: 1px solid;
     display: block;
+    overflow: hidden;
     margin: 1rem auto;
+    border: 1px solid #dedede;
+    padding: .5rem;
 }
 
 .QuickAction {
@@ -5970,6 +5971,10 @@ p.text-danger.font-weight-bold,
     height: 45px;
     border-radius: .4rem;
     background: #fff;
+}
+
+.choices__input {
+    background-color: #ffffff !important;
 }
 
 .hide-right-sidebar {
@@ -6432,12 +6437,13 @@ ul.userPermissionList li {
 }
 
 .text-information {
-    color: red !important;
+    color: #979797 !important;
     font-size: .8rem !important;
     line-height: 17px;
     display: block;
     margin-bottom: .3rem;
     margin-top: .3rem;
+    font-style: italic;
 }
 
 
@@ -6828,4 +6834,71 @@ p#scanMsg {
 
 .swal2-cancel:hover {
     background: #bb2d3b !important;
+}
+
+
+#branchUpdate label {
+    font-weight: 500;
+    font-size: .8rem;
+    margin-bottom: .2rem;
+    font-family: 'Outfit', 'sans-sarif';
+    color: #000000;
+}
+
+.add-delete {
+    width: 45px;
+}
+
+.add-delete.add {
+    background: var(--c1) !important;
+}
+
+p#statusMessage {
+    text-align: center;
+    color: #73b100;
+    margin-bottom: -1rem;
+}
+
+/* Shift Page */
+
+.plan-row {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    position: relative;
+}
+
+
+h4.shift-title {
+    color: #008ca9 !important;
+    overflow: hidden;
+    font-size: 1rem;
+    text-transform: uppercase;
+    border-left: 4px solid;
+    padding-left: 1rem;
+}
+
+.plan-row button.btn.btn-danger.btn-sm.remove-plan-row.add-delete,
+.plan-row button.btn.btn-primary.btn-sm.add-plan-row.add-delete {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border-radius: 35px;
+    width: 35px;
+    height: 35px !important;
+
+}
+
+.plan-row button.btn.btn-danger.btn-sm.remove-plan-row.add-delete {
+    right: 60px;
+}
+
+.plan-row button.btn.btn-primary.btn-sm.add-plan-row.add-delete {
+    background: var(--c1) !important;
+
+}
+
+p.m-0.text-danger.pt-1 {
+    font-family: 'outfit', 'sans-sarif';
+    font-weight: 400;
 }

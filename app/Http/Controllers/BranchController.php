@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\City;
+use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\Library;
 use App\Models\LibraryUser;
+use App\Models\Plan;
 use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
+
 class BranchController extends Controller
 {
     public function switch(Request $req)
@@ -57,7 +61,7 @@ class BranchController extends Controller
                     $branches = Branch::whereIn('id', $branchIds)->get();
                 }
             }
-        return view('library.branch-list',compact('branches'));
+        return view('register.branch-list',compact('branches'));
     }
     public function branchForm($id = null)
     {
@@ -66,21 +70,21 @@ class BranchController extends Controller
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();
 
-        return view('library.branch-update', compact('branch', 'states', 'cities', 'features'));
+        return view('register.branch-update', compact('branch', 'states', 'cities', 'features'));
     }
 
     public function store(Request $request)
     {
-         $validation = branchCountValidation();
-
+        
+        $validation = branchCountValidation();
+       
        if ($validation['success']) {
             return back()->withInput()->with('error', $validation['message']);
         }
 
-       
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'display_name' => 'required|string|max:255',
+            'display_name' => 'nullable|string|max:255',
             'email' => 'required|email',
             'mobile' => 'required|digits:10',
             'working_days' => 'nullable',
@@ -97,7 +101,48 @@ class BranchController extends Controller
             'extend_days'=>'required',
             'hour'=>'required',
             'seats'=>'required',
+            'founder_day'=>'required',
+            'plans' => 'required|array|min:1',
+            'plans.*' => 'string',
+
+            'monthdays' => 'nullable|integer|in:28,30',
+           
+            // 'floors' => 'nullable|array',
+            // 'floors.*.name' => 'required_with:floors.*.from,floors.*.to',
+            // 'floors.*.from' => 'required_with:floors.*.name,floors.*.to|integer',
+            // 'floors.*.to'   => 'required_with:floors.*.name,floors.*.from|integer|gte:floors.*.from',
+           
         ]);
+   
+       
+      
+        
+
+        $alreadyHave=Plan::where('library_id', getLibraryId())
+        ->where('plan_id', 1)
+        ->where('type', 'MONTH')->exists();
+        $hasMonthPlan = false;
+
+        foreach ($validated['plans'] as $plan) {
+            [$number, $type] = explode(' ', $plan);
+            if (strtoupper($type) === 'MONTH') {
+                $hasMonthPlan = true;
+                break;
+            }
+        }
+
+        if (!$hasMonthPlan && !$alreadyHave) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'plans' => 'At least one MONTH plan is required.'
+                ]);
+        }
+
+          DB::beginTransaction();
+
+        try {
+
         $validated['library_id']=getLibraryId();
 
         $slug = Str::slug($request->name);
@@ -117,7 +162,62 @@ class BranchController extends Controller
         $seats = $validated['seats'];
         unset($validated['hour'], $validated['seats']); // remove from $validated
         
-        $branch = new Branch($validated);
+         // ---------- FLOOR SEAT VALIDATION ----------
+         $floors = collect($request->floors)
+        ->filter(fn ($floor) =>
+            filled($floor['name']) ||
+            filled($floor['from']) ||
+            filled($floor['to'])
+        )
+        ->values()
+        ->toArray();
+
+        $validated['display_name']=$validated['display_name'] ?? $validated['name'];
+
+       $totalFloorSeats = 0;
+
+        if (!empty($floors)) {
+
+            foreach ($floors as $index => $floor) {
+
+                if (empty($floor['from']) || empty($floor['to'])) {
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Seat range is required for each floor');
+                }
+
+                if ($floor['to'] < $floor['from']) {
+                    return back()
+                        ->withInput()
+                        ->with(
+                            'error',
+                            'Seat To must be greater than or equal to Seat From'
+                        );
+                }
+
+                $floorSeatCount = ($floor['to'] - $floor['from']) + 1;
+                $totalFloorSeats += $floorSeatCount;
+            }
+
+            if ($totalFloorSeats > $seats) {
+                return back()
+                    ->withInput()
+                    ->with(
+                        'error',
+                        "Total floor seats ({$totalFloorSeats}) cannot exceed branch seats ({$seats})"
+                    );
+            }
+        }
+
+        $branchData = collect($validated)->except([
+            'plans',
+            'monthdays',
+            'floors',
+        ])->toArray();
+
+        // ---------- FLOOR SEAT End VALIDATION ----------
+
+        $branch = new Branch($branchData);
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
@@ -131,7 +231,7 @@ class BranchController extends Controller
        
         // Google map
         $branch->google_map = $request->google_map;
-       $branch->slug = $slug;
+        $branch->slug = $slug;
 
         $branch->save();
          // Save hour and seats in the hour table
@@ -141,18 +241,89 @@ class BranchController extends Controller
             'hour' => $request->hour,
             'seats' => $request->seats,
         ]);
+        // Plan add
+        if ($request->has('plans')) {
+
+            // 1️⃣ Find base month days (from 1 MONTH)
+            $baseMonthDays = null;
+
+            foreach ($request->plans as $plan) {
+                [$number, $type] = explode(' ', $plan);
+
+                if ((int)$number === 1 && strtoupper($type) === 'MONTH') {
+                    $baseMonthDays = $request->monthdays ?: null;
+                    break;
+                }
+            }
+
+            // 2️⃣ Save plans using helper
+            foreach ($request->plans as $plan) {
+
+                [$number, $type] = explode(' ', $plan);
+
+                $number = (int) $number;
+                $type   = strtoupper($type);
+
+                $totalDays = calculatePlanDays(
+                    $number,
+                    $type,
+                    $baseMonthDays
+                );
+
+                $monthdays = ($type === 'MONTH') ? $baseMonthDays : null;
+
+                Plan::create([
+                    'library_id' => getLibraryId(),
+                    'plan_id'    => $number,
+                    'type'       => $type,
+                    'name'       => $plan,
+                    'monthdays'  => $monthdays,   // base (28/30)
+                   
+                ]);
+            }
+        }
+
+
+       // Add Floor
+        if (!empty($floors)) {
+
+            foreach ($floors as $index => $floor) {
+
+                $from = (int) $floor['from'];
+                $to   = (int) $floor['to'];
+
+                Floor::create([
+                    'branch_id'   => $branch->id,
+                    'name'        => $floor['name'],
+                    'floor_no'    => $index + 1,
+                    'from_seat'   => $from,
+                    'to_seat'     => $to,
+                    'total_seats' => ($to - $from) + 1,
+                ]);
+            }
+        }
+
         // Handle multiple image uploads
         if ($request->hasFile('library_images')) {
             foreach ($request->file('library_images') as $image) {
                 $image->store('uploads/library_images', 'public');
-                // Save image path to related table if needed
+                
             }
         }
-
+        DB::commit();
         return redirect()->route('branch.list')->with('success', 'Branch added successfully.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
+        }
     }
 
-   public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         
         $validated = $request->validate([
@@ -236,26 +407,297 @@ class BranchController extends Controller
         return redirect()->route('branch.list')->with('success', 'Profile updated successfully!');
     }
 
-public function destroy($id)
-{
-    $branch = Branch::findOrFail($id);
+    public function destroy($id)
+    {
+        $branch = Branch::findOrFail($id);
 
-    // Ensure there is more than one branch in the same library
-    $multipleBranches = Branch::where('library_id', $branch->library_id)->count() > 1;
+        // Ensure there is more than one branch in the same library
+        $multipleBranches = Branch::where('library_id', $branch->library_id)->count() > 1;
 
-    // Ensure the current branch is NOT set as the library's current branch
-    $notCurrentBranch = !Library::where('id', $branch->library_id)
-                                ->where('current_branch', $id)
-                                ->exists();
+        // Ensure the current branch is NOT set as the library's current branch
+        $notCurrentBranch = !Library::where('id', $branch->library_id)
+                                    ->where('current_branch', $id)
+                                    ->exists();
 
-    if ($multipleBranches && $notCurrentBranch) {
-        $branch->delete();
-        return redirect()->route('branch.list')->with('success', 'Branch deleted successfully.');
+        if ($multipleBranches && $notCurrentBranch) {
+            $branch->delete();
+            return redirect()->route('branch.list')->with('success', 'Branch deleted successfully.');
+        }
+
+        return redirect()->route('branch.list')->with('error', 'Cannot delete this branch. It is either the only branch or the current active branch of the library.');
     }
 
-    return redirect()->route('branch.list')->with('error', 'Cannot delete this branch. It is either the only branch or the current active branch of the library.');
-}
+    public function branchConfigurForm($id = null)
+    {
+        $branch = $id ? Branch::findOrFail($id) : null;
+        $states = State::where('is_active', 1)->get();
+        $cities = City::where('is_active', 1)->get();
+        $features = DB::table('features')->whereNull('deleted_at')->get();
+        $branchCount = getCurrentBranch() ? Branch::where('id', getCurrentBranch())->count() : 0;
 
+        return view('register.branch-configure', compact('branch', 'states', 'cities', 'features','branchCount'));
+    }
+
+    
+    public function branchConfigure(Request $request)
+    {
+        /* =========================
+        BRANCH COUNT VALIDATION
+        ========================= */
+        $validation = branchCountValidation();
+
+        if ($validation['success']) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validation['message']
+            ], 400);
+        }
+
+        $planCount =Plan::where('library_id', getLibraryId())->count();
+
+        /* =========================
+        BASE VALIDATION
+        ========================= */
+        $rules = [
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email',
+            'mobile'          => 'required|digits:10',
+            'logo'            => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'library_images.*'=> 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'locker_amount'   => 'required',
+            'token_money'     => 'nullable',
+            'upi_id'          => 'nullable',
+            'extend_days'     => 'required',
+            'hour'            => 'required',
+            'seats'           => 'required',
+            'founder_day'     => 'required',
+            'monthdays'       => 'nullable|integer|in:28,30',
+        ];
+
+        // 🔹 Only require plans if no plan exists
+        if ($planCount === 0) {
+            $rules['plans']   = 'required|array|min:1';
+            $rules['plans.*'] = 'string';
+        } else {
+            $rules['plans'] = 'nullable|array';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        $plans  = $request->input('plans', []);
+        $floorses = $request->input('floors', []);
+
+        /* =========================
+        MONTH PLAN REQUIRED
+        ========================= */
+        if ($planCount == 0){
+          
+        $validator->after(function ($validator) use ($plans) {
+
+            $alreadyHave = Plan::where('library_id', getLibraryId())
+                ->where('plan_id', 1)
+                ->where('type', 'MONTH')
+                ->exists();
+
+            $hasMonthPlan = false;
+         
+
+            foreach ($plans ?? [] as $plan) {
+              
+                if (strtoupper($plan) === '1 MONTH') {
+                    $hasMonthPlan = true;
+                    break;
+                }
+            }
+           
+           if ($hasMonthPlan == false && !$alreadyHave) {
+           
+                $validator->errors()->add(
+                    'plans',
+                    '1 MONTH plan is required.'
+                );
+            }
+            
+        });
+    }
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $validated = $validator->validated();
+            
+            $validated['library_id']  = getLibraryId();
+            $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
+
+            /* =========================
+            UNIQUE BRANCH NAME
+            ========================= */
+            $slug = Str::slug($validated['name'].'-'.getLibraryId());
+         
+            if ( Branch::where('slug', $slug)->exists()) {
+                throw new \Exception('This branch name already exists in this library.');
+            }
+
+            $hour  = $validated['hour'];
+            $seats = $validated['seats'];
+            unset($validated['hour'], $validated['seats']);
+
+            /* =========================
+            FLOOR VALIDATION
+            ========================= */
+            $floors = collect($floorses)
+                ->filter(fn ($floor) =>
+                    filled($floor['name']) ||
+                    filled($floor['from']) ||
+                    filled($floor['to'])
+                )
+                ->values()
+                ->toArray();
+
+            $totalFloorSeats = 0;
+
+            foreach ($floors as $index => $floor) {
+                 // 🔴 If from/to is filled, name is required
+                if ((filled($floor['from']) || filled($floor['to'])) && empty($floor['name'])) {
+                    throw new \Exception(
+                        "Floor name is required when seat range is provided (Row ".($index + 1).")"
+                    );
+                }
+
+                if (empty($floor['from']) || empty($floor['to'])) {
+                    throw new \Exception(
+                        'Seat range is required for each floor.'
+                    );
+                }
+
+                if ($floor['to'] < $floor['from']) {
+                    throw new \Exception(
+                        'Seat To must be greater than or equal to Seat From.'
+                    );
+                }
+
+                $totalFloorSeats += ($floor['to'] - $floor['from']) + 1;
+            }
+
+            if ($totalFloorSeats > $seats) {
+                throw new \Exception(
+                    "Total floor seats ({$totalFloorSeats}) cannot exceed branch seats ({$seats})"
+                );
+            }
+
+            /* =========================
+            CREATE BRANCH
+            ========================= */
+            $branchData = collect($validated)->except([
+                'plans',
+                'monthdays',
+                'floors',
+            ])->toArray();
+
+            $branch = new Branch($branchData);
+
+            if ($request->hasFile('logo')) {
+                $branch->logo = $request->file('logo')
+                    ->store('uploads/logo', 'public');
+            }
+
+            if ($request->has('features')) {
+                $branch->features = json_encode($request->features);
+            }
+
+            $branch->google_map = $request->google_map;
+            $branch->slug = $slug;
+            $branch->save();
+
+            /* =========================
+            HOURS
+            ========================= */
+            Hour::create([
+                'branch_id'  => $branch->id,
+                'library_id' => getLibraryId(),
+                'hour'       => $hour,
+                'seats'      => $seats,
+            ]);
+
+            /* =========================
+            PLANS
+            ========================= */
+            $baseMonthDays = null;
+
+            foreach ($plans as $plan) {
+                [$number, $type] = explode(' ', $plan);
+                if ((int)$number === 1 && strtoupper($type) === 'MONTH') {
+                    $baseMonthDays = $request->monthdays ?: null;
+                    break;
+                }
+            }
+
+            foreach ($plans as $plan) {
+                [$number, $type] = explode(' ', $plan);
+
+                Plan::create([
+                    'library_id' => getLibraryId(),
+                    'plan_id'    => (int)$number,
+                    'type'       => strtoupper($type),
+                    'name'       => $plan,
+                    'monthdays'  => strtoupper($type) === 'MONTH'
+                        ? $baseMonthDays
+                        : null,
+                ]);
+            }
+
+            /* =========================
+            FLOORS
+            ========================= */
+            foreach ($floors as $index => $floor) {
+                Floor::create([
+                    'branch_id'   => $branch->id,
+                    'name'        => $floor['name'],
+                    'floor_no'    => $index + 1,
+                    'from_seat'   => (int)$floor['from'],
+                    'to_seat'     => (int)$floor['to'],
+                    
+                ]);
+            }
+
+            /* =========================
+            LIBRARY IMAGES
+            ========================= */
+            if ($request->hasFile('library_images')) {
+                foreach ($request->file('library_images') as $image) {
+                    $image->store('uploads/library_images', 'public');
+                }
+            }
+            Library::where('id',getLibraryId())->update([
+                'current_branch'=> $branch->id
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+            'status'   => true,
+            'redirect' => route('library.home', ['setup' => 'completed']),
+                'message'  => 'Branch added successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     
 }

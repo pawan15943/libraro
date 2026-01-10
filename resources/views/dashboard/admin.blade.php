@@ -3,11 +3,41 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 
 @php
 use App\Helpers\HelperService;
 @endphp
+
+<!-- SUCCESS MODAL -->
+<div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size:64px;"></i>
+                </div>
+
+                <h4 class="fw-bold text-success">
+                    Congratulations!
+                </h4>
+
+                <p class="mt-2 text-muted">
+                    Your library setup has been completed successfully.
+                    <br>
+                    You are now ready to manage your library shifts seamlessly.
+                </p>
+
+                <button type="button" class="btn btn-success mt-3" data-bs-dismiss="modal">
+                    Get Started
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 
 @php
@@ -1828,6 +1858,31 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         });
     </script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('setup') === 'completed') {
+
+            // Show modal
+            const modal = new bootstrap.Modal(
+                document.getElementById('setupSuccessModal')
+            );
+            modal.show();
+
+            // 🎉 Confetti animation
+            confetti({
+                particleCount: 250,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            // Clean URL (remove ?setup=completed)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+    </script>
 
 
     @endsection

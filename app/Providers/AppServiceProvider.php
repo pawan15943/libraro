@@ -399,6 +399,14 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'QR Attendance' => route('attendance.apply'),
             ],
+            'branch.configure.create' => [
+                'Dashboard' => route('library.home'),
+                'Setup Branch & Floors' => route('branch.configure.create'),
+            ],
+            'library.configration' => [
+                'Dashboard' => route('library.home'),
+                'Add Shifts' => route('library.configration'),
+            ],
 
 
             // Learner Bread crumb
@@ -549,6 +557,8 @@ class AppServiceProvider extends ServiceProvider
             'library.how-to-use' => 'How to Use Library',
             'booking.details.approve' => 'QR / Online Bookings',
             'attendance.apply' => 'QR Attendance',
+            'branch.configure.create' => 'Setup Branch & Floors',
+            'library.configration' => 'Add Shifts',
 
         ];
 
