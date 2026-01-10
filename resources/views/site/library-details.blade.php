@@ -3,14 +3,14 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <div class="modal fade" id="libraryEnquiry" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-md">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
 
         <div class="modal-content">
             <div id="error-message" class="alert alert-danger" style="display:none;"></div>
             <div id="validation-error-message" class="alert alert-danger" style="display:none;"></div>
             <div class="modal-header">
-                <h1 class="modal-title px-2 fs-5" id="seat_no_head"></h1>
+                <h1 class="modal-title px-2 fs-5" id="seat_no_head">Inquiry Form</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -19,20 +19,18 @@
                     @csrf
                     <div class="detailes">
                         <input type="hidden" name="branch_id" value="{{$library->id}}" >
-                      
-
-                        <div class="row g-4">
-                            <div class="col-lg-6">
+                        <div class="row g-3">
+                            <div class="col-lg-12">
                                 <label for="">Full Name <span>*</span></label>
                                 <input type="text" class="form-control char-only" name="name" id="name">
                             </div>
                          
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="">Mobile Number <span>*</span></label>
                                 <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
                             </div>
                      
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="">Shift time</label>
                                 <select id="shift_time" class="form-select" name="shift_time">
                                     <option value="">Select Plan Type</option>
@@ -42,18 +40,12 @@
 
                                 </select>
                             </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="enquiry">Enquiry <span>*</span></label>
                                 <textarea id="enquiry" name="enquiry" class="form-control" rows="4" placeholder="Write your enquiry here..."></textarea>
                             </div>
-                            
-                        
-                     
-                        </div>
-                 
-
-                        <div class="row mt-2">
-                            <div class="col-lg-4">
+                       
+                            <div class="col-lg-12">
                                 <input type="submit" class="btn btn-primary btn-block button" id="submit"
                                     value="Enquiry Now" autocomplete="off">
                             </div>
@@ -194,7 +186,7 @@
                                         <span>Validity</span>
                                         <p>{{$value->plan_name}}</p>
                                     </li>
-                                    <li>
+                                    <li class="d-none">
                                         <span>Plan Price</span>
                                         <p>{{$value->price}} INR</p>
                                     </li>
