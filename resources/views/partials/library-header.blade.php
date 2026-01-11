@@ -85,7 +85,7 @@ $user = getAuthenticatedUser();
                 </small>
             @endif
 
-            @if(isset($librarydiffInDays) && $user && !$is_renew )
+            @if(isset($librarydiffInDays) && $user && !$is_renew && $anyTranLib)
                @if ($librarydiffInDays > 0)
                     <small class="text-success ml-2">
                         <i class="fa fa-clock"></i> Enjoy your plan for the next {{ $librarydiffInDays }} day{{ $librarydiffInDays > 1 ? 's' : '' }}!
@@ -109,7 +109,8 @@ $user = getAuthenticatedUser();
                 @endif
 
 
-                @if(($librarydiffInDays <= 5 && !$is_renew ))
+                @if(($librarydiffInDays <= 5 && !$is_renew && $is_expire))
+               
                     <script>
                         window.onload = function() {
                         if (!sessionStorage.getItem("planExpiryModalShown")) {

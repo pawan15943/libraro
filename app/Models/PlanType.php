@@ -22,7 +22,12 @@ class PlanType extends Model
                 $builder->where('branch_id', $branchId);
             }
         });
-    }
 
+        
+    }
+    public function price()
+    {
+        return $this->hasOne(PlanPrice::class, 'plan_type_id');
+    }
    
 }

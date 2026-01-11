@@ -81,7 +81,7 @@
 
                     <div class="col-lg-6">
                         <label for="">Add Seats to Library Branch <span>*</span></label>
-                        <input type="text" name="seats" class="form-control digit-only @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats') }}">
+                        <input type="text" name="seats" class="form-control digit-only @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats') }}" maxlength="4" >
                         @error('seats')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -90,7 +90,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label for="">Operating Hours <span>*</span></label>
-                        <select class="form-select @error('hour') is-invalid @enderror" name="hour" id="hour">
+                        <select class="form-select @error('hour') is-invalid @enderror" name="hour" id="hour" >
                             <option value="">Select Hour</option>
 
                             <!-- Hours 10 to 23 -->
@@ -123,7 +123,7 @@
                     <div class="col-lg-6">
                         <div class="input-control">
                             <label for="">Locker Amount <span>*</span></label>
-                            <input type="text" name="locker_amount" class="form-control digit-only @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}">
+                            <input type="text" name="locker_amount" class="form-control digit-only @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}" maxlength="4" >
                             @error('locker_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -135,7 +135,7 @@
                     <div class="col-lg-6">
                         <div class="input-control">
                             <label for="">Extend Days <span>*</span></label>
-                            <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" placeholder="Enter Days" value="{{old('extend_days')}}">
+                            <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" placeholder="Enter Days" value="{{old('extend_days')}}" maxlength="4" >
                             @error('extend_days')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -147,7 +147,7 @@
 
                     <div class="col-lg-6">
                         <label for="">Token Money(optional) </label>
-                        <input type="text" class="form-control digit-only @error('token_money') is-invalid @enderror no-validate" name="token_money" placeholder="Enter Days" value="{{old('token_money')}}">
+                        <input type="text" class="form-control digit-only @error('token_money') is-invalid @enderror no-validate" name="token_money" placeholder="Enter Days" value="{{old('token_money')}}" maxlength="4" >
                         @error('token_money')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>

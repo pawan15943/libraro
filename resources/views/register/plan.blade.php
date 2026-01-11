@@ -2,7 +2,7 @@
 
 @section('content')
 
-@if($iscomp==false && !$is_expire)
+{{-- @if($iscomp==false && !$is_expire)
 <div class="row">
     <div class="col-lg-12">
         <div class="steps">
@@ -26,7 +26,7 @@
         <h2 class="text-center typing-text">Pick the plan that fits you best!</h2>
     </div>
 </div>
-@endif
+@endif --}}
 
 
 

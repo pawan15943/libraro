@@ -492,34 +492,34 @@ class BranchController extends Controller
         ========================= */
         if ($planCount == 0){
           
-        $validator->after(function ($validator) use ($plans) {
+            $validator->after(function ($validator) use ($plans) {
 
-            $alreadyHave = Plan::where('library_id', getLibraryId())
-                ->where('plan_id', 1)
-                ->where('type', 'MONTH')
-                ->exists();
+                $alreadyHave = Plan::where('library_id', getLibraryId())
+                    ->where('plan_id', 1)
+                    ->where('type', 'MONTH')
+                    ->exists();
 
-            $hasMonthPlan = false;
-         
-
-            foreach ($plans ?? [] as $plan) {
-              
-                if (strtoupper($plan) === '1 MONTH') {
-                    $hasMonthPlan = true;
-                    break;
-                }
-            }
-           
-           if ($hasMonthPlan == false && !$alreadyHave) {
-           
-                $validator->errors()->add(
-                    'plans',
-                    '1 MONTH plan is required.'
-                );
-            }
+                $hasMonthPlan = false;
             
-        });
-    }
+
+                foreach ($plans ?? [] as $plan) {
+                
+                    if (strtoupper($plan) === '1 MONTH') {
+                        $hasMonthPlan = true;
+                        break;
+                    }
+                }
+            
+            if ($hasMonthPlan == false && !$alreadyHave) {
+            
+                    $validator->errors()->add(
+                        'plans',
+                        '1 MONTH plan is required.'
+                    );
+                }
+                
+            });
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -684,7 +684,7 @@ class BranchController extends Controller
 
             return response()->json([
             'status'   => true,
-            'redirect' => route('library.home', ['setup' => 'completed']),
+            'redirect' => route('library.home'),
                 'message'  => 'Branch added successfully.'
             ]);
 

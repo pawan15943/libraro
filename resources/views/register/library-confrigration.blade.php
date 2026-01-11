@@ -20,36 +20,69 @@
     </div>
 
 
-
     <form method="POST" action="{{ route('master.configuration.store') }}" id="configure" class="mb-4">
         @csrf
         <div id="planTypeWrapper">
             <div class="row g-4" id="planRowContainer">
+               @php
+                    $rows = $planTypes->isNotEmpty()
+                        ? $planTypes
+                        : collect([ (object)[
+                            'id' => null,
+                            'day_type_id' => null,
+                            'name' => null,
+                            'start_time' => null,
+                            'end_time' => null,
+                            'slot_hours' => null,
+                            'price' => null,
+                        ] ]);
+                       
+                @endphp
 
+                @foreach($rows as $index => $row)
+               
+                   
                 <!-- SHIFT 1 -->
                 <div class="col-lg-6 plan-row-wrapper">
                     <div class="plan-row">
-                        <h4 class="shift-title">Shift 1</h4>
+                        <h4 class="shift-title">Shift {{$index+1}}</h4>
 
                         @if(session('error'))
                         <div class="alert alert-danger">
                             {{ session('error') }}
                         </div>
                         @endif
-
+                          {{-- hidden ids for edit --}}
+                        <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
+                        <input type="hidden" name="plan_types[{{ $index }}][plan_price_id]" value="{{ $row->price->id ?? '' }}">
                         <div class="row g-3 align-items-end mt-2">
-
+                            
                             <div class="col-lg-6">
                                 <label>Plan Type Name *</label>
-                                <select class="form-select plan-type @error('plan_types.0.day_type_id') is-invalid @enderror" name="plan_types[0][day_type_id]">
+                                <select class="form-select plan-type @error('plan_types.0.day_type_id') is-invalid @enderror" name="plan_types[{{$index}}][day_type_id]">
                                     <option value="">Select</option>
-                                    <option value="1">Full Day</option>
-                                    <option value="2">First Half</option>
-                                    <option value="3">Second Half</option>
-                                    <option value="8">All Day</option>
-                                    <option value="9">Full Night</option>
-                                    <option value="0">Custom</option>
+                                    @can('has-permission', 'Full Day')
+                                    <option value="1"  @selected($row?->day_type_id==1)>Full Day</option>
+                                    @endcan
+                                    @can('has-permission', 'First Half')
+                                    <option value="2"  @selected($row?->day_type_id==2)>First Half</option>
+                                    @endcan
+                                    @can('has-permission', 'Second Half')
+                                    <option value="3"  @selected($row?->day_type_id==3)>Second Half</option>
+                                    @endcan
+                                    @if($total_hour =='24' || $total_hour ==24)
+                                    @can('has-permission', 'All Day')
+                                    <option value="8"  @selected($row?->day_type_id==8)>All Day</option>
+                                    @endcan
+                                    @can('has-permission', 'Full Night')
+                                    <option value="9"  @selected($row?->day_type_id==9)>Full Night</option>
+                                    @endcan
+                                    @endif
+                                    @can('has-permission', 'Custom Plan')
+                                    <option value="0"  @selected((string)$row?->day_type_id == '0')>Custom</option>
+                                    @endcan
                                 </select>
+                                    
                                 @error('plan_types.0.day_type_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -57,7 +90,7 @@
 
                             <div class="col-lg-6">
                                 <label>Custom Plan Type Name *</label>
-                                <input type="text" name="plan_types[0][custom_plan_type]" class="form-control custom-plan @error('plan_types.0.custom_plan_type') is-invalid @enderror">
+                                <input type="text" name="plan_types[{{$index}}][custom_plan_type]" value="{{ $row?->day_type_id==0 ? $row->name : '' }}" class="form-control custom-plan @error('plan_types.0.custom_plan_type') is-invalid @enderror">
                                 @error('plan_types.0.custom_plan_type')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -65,7 +98,7 @@
 
                             <div class="col-lg-6">
                                 <label>Start Time *</label>
-                                <input type="text" name="plan_types[0][start_time]" class="form-control start_time @error('plan_types.0.start_time') is-invalid @enderror">
+                                <input type="text" name="plan_types[{{$index}}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time @error('plan_types.0.start_time') is-invalid @enderror" maxlength="4">
                                 @error('plan_types.0.start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -73,7 +106,7 @@
 
                             <div class="col-lg-6">
                                 <label>End Time *</label>
-                                <input type="text" name="plan_types[0][end_time]" class="form-control end_time @error('plan_types.0.end_time') is-invalid @enderror">
+                                <input type="text" name="plan_types[{{$index}}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time @error('plan_types.0.end_time') is-invalid @enderror" maxlength="4">
                                 @error('plan_types.0.end_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -81,7 +114,7 @@
 
                             <div class="col-lg-6">
                                 <label>Slot Duration *</label>
-                                <input type="text" name="plan_types[0][slot_hours]" class="form-control slot_hours @error('plan_types.0.slot_hours') is-invalid @enderror" readonly>
+                                <input type="text" name="plan_types[{{$index}}][slot_hours]" value="{{ $row->slot_hours ?? '' }}" class="form-control slot_hours @error('plan_types.0.slot_hours') is-invalid @enderror" readonly>
                                 @error('plan_types.0.slot_hours')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -89,7 +122,9 @@
 
                             <div class="col-lg-6">
                                 <label>Price *</label>
-                                <input type="number" name="plan_types[0][price]" class="form-control @error('plan_types.0.price') is-invalid @enderror">
+                                <input type="text" inputmode="numeric"
+                                        pattern="[0-9]*"
+                                        maxlength="5" name="plan_types[{{$index}}][price]" value="{{ $row->price->price ?? '' }}" class="form-control @error('plan_types.0.price') is-invalid @enderror" max="4" min="1">
                                 @error('plan_types.0.price')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -97,15 +132,22 @@
 
                             <div class="col-lg-12 d-flex gap-2">
                                 <button type="button" class="btn btn-primary btn-sm add-plan-row add-delete"><i class="fa fa-plus"></i></button>
-                                <button type="button" class="btn btn-danger btn-sm remove-plan-row d-none add-delete">
+                                {{-- <button type="button" class="btn btn-danger btn-sm remove-plan-row d-none add-delete {{ $index === 0 ? 'd-none' : '' }}">
+                                    <i class="fa fa-minus"></i>
+                                </button> --}}
+                                <button type="button"
+                                        class="btn btn-danger btn-sm remove-plan-row add-delete
+                                        {{ $index > 0 ? '' : 'd-none' }}"
+                                        data-id="{{ $row->id ?? '' }}">
                                     <i class="fa fa-minus"></i>
                                 </button>
+
                             </div>
 
                         </div>
                     </div>
                 </div>
-
+                @endforeach
             </div>
         </div>
 
@@ -180,19 +222,29 @@
         /* =======================
            CUSTOM PLAN TOGGLE
         ======================= */
+    
+
         function initCustomPlan(wrapper) {
+
             let select = wrapper.find('.plan-type');
-            let input = wrapper.find('.custom-plan');
+            let input  = wrapper.find('.custom-plan');
 
-            input.prop('disabled', true).val('');
+            // Disable by default
+            input.prop('disabled', true);
 
-            select.off('change').on('change', function() {
+            // Enable only when Custom selected
+            select.off('change').on('change', function () {
                 if ($(this).val() === '0') {
                     input.prop('disabled', false).focus();
                 } else {
                     input.prop('disabled', true).val('');
                 }
             });
+
+            // EDIT MODE (if already Custom)
+            if (select.val() === '0') {
+                input.prop('disabled', false);
+            }
         }
 
         /* =======================
@@ -206,20 +258,22 @@
         ======================= */
 
 
+        
+
         function reindexPlanRows() {
-            $('.plan-row-wrapper').each(function(index) {
+            $('.plan-row-wrapper').each(function (index) {
 
-                // Update shift title
-                $(this).find('.shift-title').text('Shift ' + (index + 1));
+                $(this).find('.shift-title')
+                    .text('Shift ' + (index + 1));
 
-                // Update all name attributes
-                $(this).find('input, select').each(function() {
+                $(this).find('input, select').each(function () {
                     let name = $(this).attr('name');
                     if (!name) return;
 
-                    // plan_types[0][start_time] → plan_types[index][start_time]
-                    let newName = name.replace(/plan_types\[\d+\]/, 'plan_types[' + index + ']');
-                    $(this).attr('name', newName);
+                    $(this).attr(
+                        'name',
+                        name.replace(/plan_types\[\d+]/, 'plan_types[' + index + ']')
+                    );
                 });
             });
         }
@@ -230,7 +284,8 @@
 
             // Reset values
             clone.find('input').val('');
-            clone.find('select').val('');
+            clone.find('select.plan-type').val('');
+
 
             // Remove validation UI
             clone.find('.is-invalid').removeClass('is-invalid');
@@ -246,11 +301,96 @@
             initCustomPlan(clone);
         });
 
-        $(document).on('click', '.remove-plan-row', function() {
-            $(this).closest('.plan-row-wrapper').remove();
-            reindexPlanRows();
+        $('.plan-row-wrapper').each(function () {
+            initCustomPlan($(this));
+            initFlatpickr($(this));
         });
 
+
+      $(document).on('click', '.remove-plan-row', function () {
+
+            let rowWrapper = $(this).closest('.plan-row-wrapper');
+            let planTypeId = $(this).data('id'); // DB id if exists
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This shift will be removed permanently.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                // EXISTING SHIFT → DELETE FROM DB
+                if (planTypeId) {
+
+                    $.ajax({
+                        url: "{{ route('plan-type.delete') }}",
+                        type: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            id: planTypeId,
+                        },
+                        success: function (res) {
+
+                            if (res.status) {
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: 'Shift has been deleted successfully.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+
+                                rowWrapper.remove();
+                                reindexPlanRows();
+                                hideFirstDeleteButton();
+
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed',
+                                    text: res.message || 'Unable to delete shift'
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Server Error',
+                                text: 'Something went wrong while deleting the shift.'
+                            });
+                        }
+                    });
+
+                } 
+                // NEWLY ADDED (NOT SAVED YET)
+                else {
+
+                    rowWrapper.remove();
+                    reindexPlanRows();
+
+                    $('.plan-row-wrapper').first()
+                        .find('.remove-plan-row')
+                        .addClass('d-none');
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: 'Shift removed successfully.',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        });
 
         function updateShiftTitles() {
             $('.shift-title').each(function(i) {
@@ -304,6 +444,7 @@
 
 <script>
     $('#configure').on('submit', function(e) {
+        console.log($(this).serializeArray());
         e.preventDefault();
 
         // Clear old errors
@@ -402,8 +543,6 @@
         });
     });
 </script>
-
-
 
 
 @endsection

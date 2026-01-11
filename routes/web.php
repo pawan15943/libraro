@@ -165,7 +165,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan');
-  
+    Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
+
     Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
     Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
     Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');

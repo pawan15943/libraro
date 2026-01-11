@@ -77,7 +77,8 @@ class LoadMenus
             $ispaid = Library::where('id', getLibraryId())->where('is_paid', 1)->exists();
             $iscomp = Library::where('id', getLibraryId())->where('status', 1)->exists();
             $isProfile = Library::where('id', getLibraryId())->where('is_profile', 1)->exists();
-            
+           
+            $anyTranLib=LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid',1)->exists();
             $value = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())->where('is_paid', 1)->orderBy('id', 'desc')->first();
 
             // 24-09-2025 we made changes in this (we change start_date into end_date)
@@ -91,6 +92,7 @@ class LoadMenus
                 ->where('status', 0)
                 ->where('end_date', '>=', date('Y-m-d'))
                 ->exists();
+               
             // End changes
 
             $librarydiffInDays = 0;
@@ -106,6 +108,7 @@ class LoadMenus
                     $is_expire = true;
                 }
             }
+           
 
             if ($is_renew) {
                 $is_renew_val = LibraryTransaction::withoutGlobalScopes()->where('library_id',getLibraryId())
@@ -334,7 +337,7 @@ class LoadMenus
 
             View::share('primary_color', $primary_color);
             View::share('checkSub', $checkSub);
-            View::share('checkSub', $checkSub);
+            View::share('anyTranLib', $anyTranLib);
             View::share('ispaid', $ispaid);
             View::share('isProfile', $isProfile);
             View::share('isEmailVeri', $isEmailVeri);

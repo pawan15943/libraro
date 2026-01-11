@@ -277,7 +277,27 @@ class MasterController extends Controller
                 ]);
             }
             
-        
+            // $minTime = PlanType::min('start_time');
+            // $maxTime = PlanType::max('end_time');
+
+            // $start = Carbon::parse($request->start_time);
+            // $end   = Carbon::parse($request->end_time);
+
+            // $globalMin = Carbon::parse($minTime);
+            // $globalMax = Carbon::parse($maxTime);
+
+            // if ($end->lessThanOrEqualTo($globalMin)) {
+            //     $end->addDay();
+            // }
+            // $totalHours = $globalMin->diffInHours($end);
+
+            // // 1. Check within allowed time range
+            // if (PlanType::count() > 0 && $totalHours > $branchRecord->hour) {
+            //      return response()->json([
+            //         'error' => true,
+            //         'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
+            //     ]);
+            // }
             $minTime = PlanType::where('branch_id', getCurrentBranch())
                 ->where('id', '!=', $data['id'])
                 ->min('start_time');
@@ -718,16 +738,18 @@ class MasterController extends Controller
         }
     }
     public function deleteMaster(Request $request, $id){
-    $table = $request->input('table');
-    $modelClass = 'App\\Models\\' . $table;
-    
-    if (!class_exists($modelClass)) {
-        return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
-    }
-    $data = $modelClass::withTrashed()->find($id);
-        if (!$data) {
-        return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
-    }
+       
+        $table = $request->input('table');
+        
+        $modelClass = 'App\\Models\\' . $table;
+        
+        if (!class_exists($modelClass)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
+        }
+        $data = $modelClass::withTrashed()->find($id);
+            if (!$data) {
+            return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+        }
 
         if ($modelClass === 'App\\Models\\Floor') {
             
@@ -740,18 +762,12 @@ class MasterController extends Controller
                 $data->restore();
                 $status = 'activated';
             } else {
-                if($modelClass=='PlanType'){
+                if($table=='PlanType'){
                      $exists = LearnerDetail::where('plan_type_id', $id)
                     ->where('status', 1)
                     ->exists();
                 }
-                if($modelClass=='Plan'){
-                     $exists = LearnerDetail::where('plan_id', $id)
-                    ->where('status', 1)
-                    ->exists();
-                }
                
-
                 if (!empty($id) && $exists) {
                     return response()->json([
                         'error' => true,
@@ -1118,6 +1134,40 @@ class MasterController extends Controller
 
         return response()->json(['status' => false, 'message' => 'Branch not found'], 404);
     }
+
+    public function deletePlanType(Request $request)
+    {
+        $planType = PlanType::where('id', $request->id)
+            ->where('branch_id', getCurrentBranch())
+            ->first();
+
+        if (!$planType) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Shift not found'
+            ]);
+        }
+
+        $exists = LearnerDetail::where('plan_type_id', $request->id)->where('status', 1)->exists();
+               
+               
+        if (!empty($id) && $exists) {
+            return response()->json([
+                'error' => true,
+                'message' => 'You cannot update, contact support'
+            ], 422);
+        }
+
+
+        PlanPrice::where('plan_type_id', $planType->id)->delete();
+        $planType->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Shift deleted successfully'
+        ]);
+    }
+
     
 
 
