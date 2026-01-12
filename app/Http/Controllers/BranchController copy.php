@@ -488,28 +488,16 @@ class BranchController extends Controller
         $floorses = $request->input('floors', []);
 
         /* =========================
-        UNIQUE BRANCH NAME
-        ========================= */
-        $slug = Str::slug($request->name.'-'.getLibraryId());
-        
-        $existingBranch = Branch::where('slug', $slug)
-            ->where('library_id', getLibraryId())
-            ->first();
-
-       $branchCount= Branch::where('library_id', getLibraryId())->count();
-
-        /* =========================
         MONTH PLAN REQUIRED
         ========================= */
-       
-        if ($existingBranch || $branchCount == 0){
+        if ($planCount == 0){
           
             $validator->after(function ($validator) use ($plans) {
 
-                // $alreadyHave = Plan::where('library_id', getLibraryId())
-                //     ->where('plan_id', 1)
-                //     ->where('type', 'MONTH')
-                //     ->exists();
+                $alreadyHave = Plan::where('library_id', getLibraryId())
+                    ->where('plan_id', 1)
+                    ->where('type', 'MONTH')
+                    ->exists();
 
                 $hasMonthPlan = false;
             
@@ -522,7 +510,7 @@ class BranchController extends Controller
                     }
                 }
             
-                if ($hasMonthPlan == false ) {
+            if ($hasMonthPlan == false && !$alreadyHave) {
             
                     $validator->errors()->add(
                         'plans',
@@ -549,7 +537,14 @@ class BranchController extends Controller
             $validated['library_id']  = getLibraryId();
             $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
 
-           
+            /* =========================
+            UNIQUE BRANCH NAME
+            ========================= */
+            $slug = Str::slug($validated['name'].'-'.getLibraryId());
+         
+            if ( Branch::where('slug', $slug)->exists()) {
+                throw new \Exception('This branch name already exists in this library.');
+            }
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
@@ -570,7 +565,7 @@ class BranchController extends Controller
             $totalFloorSeats = 0;
 
             foreach ($floors as $index => $floor) {
-                 //  If from/to is filled, name is required
+                 // 🔴 If from/to is filled, name is required
                 if ((filled($floor['from']) || filled($floor['to'])) && empty($floor['name'])) {
                     throw new \Exception(
                         "Floor name is required when seat range is provided (Row ".($index + 1).")"
@@ -607,10 +602,8 @@ class BranchController extends Controller
                 'floors',
             ])->toArray();
 
-            $branch = $existingBranch ?? new Branch();
-             $branch->fill($branchData);
-            $branch->library_id = getLibraryId();
-            
+            $branch = new Branch($branchData);
+
             if ($request->hasFile('logo')) {
                 $branch->logo = $request->file('logo')
                     ->store('uploads/logo', 'public');
@@ -627,60 +620,43 @@ class BranchController extends Controller
             /* =========================
             HOURS
             ========================= */
-             Hour::updateOrCreate(
-                [
-                    'branch_id'  => $branch->id,
-                    'library_id' => getLibraryId(),
-                ],
-                [
-                    'hour'  => $hour,
-                    'seats' => $seats,
-                ]
-            );
+            Hour::create([
+                'branch_id'  => $branch->id,
+                'library_id' => getLibraryId(),
+                'hour'       => $hour,
+                'seats'      => $seats,
+            ]);
 
             /* =========================
             PLANS
             ========================= */
-           if ($existingBranch || $branchCount == 0){
-            
-                    // DELETE REMOVED PLANS
-                Plan::where('library_id', getLibraryId())
-                    ->whereNotIn('name', $plans)
-                    ->delete();
+            $baseMonthDays = null;
 
-                $baseMonthDays = null;
-                foreach ($plans as $plan) {
-                    [$num, $type] = explode(' ', $plan);
-                    if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
-                        $baseMonthDays = $request->monthdays ?: null;
-                        break;
-                    }
+            foreach ($plans as $plan) {
+                [$number, $type] = explode(' ', $plan);
+                if ((int)$number === 1 && strtoupper($type) === 'MONTH') {
+                    $baseMonthDays = $request->monthdays ?: null;
+                    break;
                 }
+            }
 
-                foreach ($plans as $plan) {
-                    [$num, $type] = explode(' ', $plan);
+            foreach ($plans as $plan) {
+                [$number, $type] = explode(' ', $plan);
 
-                    Plan::updateOrCreate(
-                        [
-                            'library_id' => getLibraryId(),
-                            'name'       => $plan,
-                        ],
-                        [
-                            'plan_id'   => (int)$num,
-                            'type'      => strtoupper($type),
-                            'monthdays' => strtoupper($type) === 'MONTH'
-                                ? $baseMonthDays
-                                : null,
-                        ]
-                    );
-                }
+                Plan::create([
+                    'library_id' => getLibraryId(),
+                    'plan_id'    => (int)$number,
+                    'type'       => strtoupper($type),
+                    'name'       => $plan,
+                    'monthdays'  => strtoupper($type) === 'MONTH'
+                        ? $baseMonthDays
+                        : null,
+                ]);
             }
 
             /* =========================
             FLOORS
             ========================= */
-            Floor::where('branch_id', $branch->id)->delete();
-
             foreach ($floors as $index => $floor) {
                 Floor::create([
                     'branch_id'   => $branch->id,
