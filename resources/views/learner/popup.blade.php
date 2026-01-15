@@ -87,6 +87,7 @@
                             <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
                                 <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                <span id="chargeable_days" class="text-info"></span>
                             </div>
 
                             <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
