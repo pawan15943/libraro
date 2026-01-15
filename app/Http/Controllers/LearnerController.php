@@ -265,6 +265,7 @@ class LearnerController extends Controller
             $seat_no = null;
         }
         $due_date = $request->due_date ?? null;
+        // price calculation
         $planPrice = (float) $request->input('plan_price_id', 0);
         $paid_amount = (float) $request->input('paid_amount', 0);
         $locker = (float) $request->input('locker_amount', 0);
@@ -374,6 +375,7 @@ class LearnerController extends Controller
             $data['payment_type'] = 'SEAT ASSIGNMENT';
             $data['payment_mode'] = $payment_mode;
             $data['due_date'] = $due_date;
+            $data['particular'] = "Website book form";
 
             $this->learnerTransactionAddUpdate($data);
 
@@ -963,39 +965,9 @@ class LearnerController extends Controller
                 ->select('plan_id', 'type', 'monthdays')
                 ->first();
 
-            $duration  = $planData->plan_id ?? 0;
-            $type      = $planData->type;
-            $monthdays = $planData->monthdays;
-
-
             $start_date = Carbon::parse($learner_detail->plan_end_date)->addDay();
-
-            // Calculate end date
-            switch (strtoupper($type)) {
-                case 'DAY':
-                    $endDate = $start_date->copy()->addDays($duration);
-                    break;
-                case 'WEEK':
-                    $endDate = $start_date->copy()->addWeeks($duration);
-                    break;
-                case 'MONTH':
-                    if (!empty($monthdays)) {
-                        // Use exact number of days defined for this month plan
-                        $endDate = $start_date->copy()->addDays($monthdays - 1);
-                    } else {
-                        // Fallback to month-wise duration
-                        $endDate = $start_date->copy()->addMonths($duration);
-                    }
-                    break;
-                case 'YEAR':
-                    $endDate = $start_date->copy()->addYears($duration);
-                    break;
-                default:
-                    $endDate = $start_date;
-                    break;
-            }
-
-
+            $endDate = getEndDate($plan_id, $start_date);
+           
             $planPrice = (float) $request->input('plan_price_id', 0);
             $locker = (float) $request->input('locker_amount', 0);
             if ($request->discountType == 'amount') {
@@ -1295,78 +1267,6 @@ class LearnerController extends Controller
             $planType = PlanType::find($request->plan_type_id);
             $hours = $planType->slot_hours;
 
-            //  $duration  = $planData->plan_id ?? 0; 
-            // $type      = $planData->type;
-            // $monthdays = $planData->monthdays;
-
-
-
-            // $startTime = $planType->start_time;
-            // $endTime = $planType->end_time;
-
-
-            // $first_record = Hour::first();
-            // $total_hour = $first_record ? $first_record->hour : 0;
-
-
-
-            // switch (strtoupper($type)) {
-            //     case 'DAY':
-            //         $endDate = $start_date->copy()->addDays($duration);
-            //         break;
-            //     case 'WEEK':
-            //         $endDate = $start_date->copy()->addWeeks($duration);
-            //         break;
-            //     case 'MONTH':
-            //         if (!empty($monthdays)) {
-            //             // Use exact number of days defined for this month plan
-            //             $endDate = $start_date->copy()->addDays($monthdays -1);
-            //         } else {
-            //             // Fallback to month-wise duration
-            //             $endDate = $start_date->copy()->addMonths($duration);
-            //         }
-            //         break;
-            //     case 'YEAR':
-            //         $endDate = $start_date->copy()->addYears($duration);
-            //         break;
-            //     default:
-            //         $endDate = $start_date; 
-            //         break;
-            // }
-
-
-            //     $existingBookings = $this->getLearnersByLibrary()
-            //     ->where('learner_detail.seat_no', '=', $request->seat_no)
-            //     ->where('learner_detail.plan_type_id', '=', $request->plan_type_id)
-            //     ->where('learners.status', 1)
-            //     ->where('learner_detail.status', 1)
-            //     ->where(function ($q) use ($start_date, $endDate) {
-            //         $q->where('learner_detail.plan_start_date', '<=', $endDate)
-            //         ->where('learner_detail.plan_end_date', '>=', $start_date);
-            //     })
-
-            //     ->exists();
-
-
-            //    if($existingBookings){
-            //     return redirect()->back()->with('error', 'You can not select this plan type it is already booked for this Seat.');
-            //    }
-
-
-            //     if ($total_hour === 0) {
-            //         return redirect()->back()->with('error', 'Total available hours not set.');
-            //     }
-
-            //     $total_cust_hour = Learner::where('seat_no', $request->seat_no)->where('status', 1)->sum('hours');
-
-
-            //     if ($hours > ($total_hour - $total_cust_hour)) {
-
-            //         return redirect()->back()->with('error', 'You cannot select this plan type as it exceeds the available hours.');
-            //     }
-
-
-
             $extendDay = getExtendDays();
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
@@ -1403,33 +1303,7 @@ class LearnerController extends Controller
                     return redirect()->back()->with('error', $result['message'])->withInput();
                 }
 
-                // if ($this->getLearnersByLibrary()->where('learners.seat_no', $request->seat_no)->where('plan_type_id', $request->plan_type_id)->where('learners.status', 1)->count() > 0) {
-
-                //     return response()->json([
-                //         'error' => true,
-                //         'message' => 'This Plan Type Seat already booked'
-                //     ], 422);
-                //     die;
-                // }
-
-                // if (($this->getLearnersByLibrary()->where('learners.seat_no', $request->seat_no)->where('learner_detail.status', 1)->sum('hours') + $hours) > $total_hour) {
-
-                //     return response()->json([
-                //         'error' => true,
-                //         'message' => 'You cannot select this plan because it conflicts with an existing booking. The seat is already reserved for the full library hours on the selected day, so we are unable to process this booking.'
-                //     ], 422);
-                //     die;
-                // }
-
-                // if(($this->getLearnersByLibrary()->where('learners.seat_no', $request->seat_no)->where('learner_detail.plan_start_date','>',Carbon::today())->exists())){
-                //     if($this->checkPlanTypeSeatWise($request->seat_no,$request->plan_type_id)==false){
-                //         return response()->json([
-                //         'error' => true,
-                //         'message' => 'You cannot select this plan because it conflicts with an existing future booking. '
-                //     ], 422);
-                //     die;
-                //     }
-                // }
+               
             }
 
 
@@ -1566,20 +1440,8 @@ class LearnerController extends Controller
 
         $learner = Learner::find($id);
 
-        // Call validateCustomer method to apply default validation
+
         $validator = $this->validateCustomer($request);
-
-        // $validator = Validator::make($request->all(), array_merge($validator->getRules(), [
-        //     'email' => [
-        //         'required',
-        //         'email',
-        //         Rule::unique('learners')->where(function ($query) use ($request) {
-        //             return $query->where('library_id', getLibraryId());
-        //         })->ignore($learner->id), // Ignore current learner's email
-        //     ],
-        // ]));
-
-
         if ($validator->fails()) {
 
             if ($request->expectsJson()) {
@@ -1656,43 +1518,11 @@ class LearnerController extends Controller
             if ($request->has('plan_start_date') && $request->has('plan_id')) {
 
                 $startDate = Carbon::parse($request->input('plan_start_date'));
+                $endDate =getEndDate($request->input('plan_id'), $startDate);
 
-                // Fetch both duration and type in one query
-                $plan = Plan::select('plan_id as duration', 'type', 'monthdays')->find($request->input('plan_id'));
-
-                if ($plan) {
-                    $duration = $plan->duration;
-                    $type = strtoupper($plan->type);
-                    $monthdays = $plan->monthdays;
-                    // Calculate end date based on type
-                    switch (strtoupper($type)) {
-                        case 'DAY':
-                            $endDate = $startDate->copy()->addDays($duration);
-                            break;
-                        case 'WEEK':
-                            $endDate = $startDate->copy()->addWeeks($duration);
-                            break;
-                        case 'MONTH':
-                            if (!empty($monthdays)) {
-                                // Use exact number of days defined for this month plan
-                                $endDate = $startDate->copy()->addDays($monthdays - 1);
-                            } else {
-                                // Fallback to month-wise duration
-                                $endDate = $startDate->copy()->addMonths($duration);
-                            }
-                            break;
-                        case 'YEAR':
-                            $endDate = $startDate->copy()->addYears($duration);
-                            break;
-                        default:
-                            $endDate = $startDate;
-                            break;
-                    }
-
-                    $learnerDetail->plan_start_date = $startDate;
-                    $learnerDetail->plan_end_date = $endDate;
-                    $updated = true;
-                }
+                $learnerDetail->plan_start_date = $startDate;
+                $learnerDetail->plan_end_date = $endDate;
+                $updated = true;
             }
 
             // Save only if something was updated
@@ -1727,54 +1557,35 @@ class LearnerController extends Controller
         $learner_detail = $learner_detail_id
             ? LearnerDetail::find($learner_detail_id)
             : null;
-
+        $endDate =getEndDate($plan_id, $start_date);
         // Calculate end date
-        switch (strtoupper($type)) {
-            case 'DAY':
-                $endDate = $start_date->copy()->addDays($duration);
-                break;
-            case 'WEEK':
-                $endDate = $start_date->copy()->addWeeks($duration);
-                break;
-            case 'MONTH':
-                if (!empty($monthdays)) {
+        // switch (strtoupper($type)) {
+        //     case 'DAY':
+        //         $endDate = $start_date->copy()->addDays($duration);
+        //         break;
+        //     case 'WEEK':
+        //         $endDate = $start_date->copy()->addWeeks($duration);
+        //         break;
+        //     case 'MONTH':
+        //         if (!empty($monthdays)) {
 
-                    $endDate = $start_date->copy()->addDays($monthdays - 1);
-                } else {
+        //             $endDate = $start_date->copy()->addDays($monthdays - 1);
+        //         } else {
 
-                    $endDate = $start_date->copy()->addMonths($duration);
-                }
-                break;
-            case 'YEAR':
-                $endDate = $start_date->copy()->addYears($duration);
-                break;
-            default:
-                $endDate = $start_date;
-                break;
-        }
+        //             $endDate = $start_date->copy()->addMonths($duration);
+        //         }
+        //         break;
+        //     case 'YEAR':
+        //         $endDate = $start_date->copy()->addYears($duration);
+        //         break;
+        //     default:
+        //         $endDate = $start_date;
+        //         break;
+        // }
 
         // 🔹 Seat overlap checks
         if ($seat_no) {
-            // $existingBookings = $this->getLearnersByLibrary()
-            //     ->where('learner_detail.seat_no', $learner_detail->seat_no ?? $seat_no)
-            //     ->where('learners.id', '!=', $learner_detail->learner_id ?? 0)
-            //     ->where('learner_detail.status', 1)
-            //     ->get();
-
-            // foreach ($existingBookings as $booking) {
-            //     $bookingPlanType = PlanType::find($booking->plan_type_id);
-            //     if ($bookingPlanType) {
-            //         if (($startTime < $bookingPlanType->end_time && $endTime > $bookingPlanType->start_time)) {
-            //             return ['error' => true, 'message' => 'The selected plan type overlaps with an existing booking.'];
-            //         }
-            //     }
-            // }
-
-            // $total_cust_hour = Learner::where('seat_no', $seat_no)->where('id','!=',$learner_detail->learner_id)->where('status', 1)->sum('hours');
-            // if ($hours > ($total_hour - ($total_cust_hour - ($learner_detail->hours ?? 0)))) {
-            //     return ['error' => true, 'message' => 'You cannot select this plan type as it exceeds the available hours.'];
-            // }
-
+           
             if ($this->getLearnersByLibrary()->where('learners.seat_no', $seat_no)->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')->where('plan_type_id', $plan_type_id)->where('learners.status', 1)->exists()) {
                 return ['error' => true, 'message' => 'This Plan Type Seat already booked'];
             }
@@ -1904,6 +1715,20 @@ class LearnerController extends Controller
         return $exists; // true if available, false if not
 
     }
+    public function getChargeableDaysAjax(Request $request)
+    {
+        if (!$request->plan_id || !$request->plan_start_date) {
+            return response()->json(null);
+        }
+
+        $daysInfo = getChargeableDays(
+            $request->plan_id,
+            $request->plan_start_date
+        );
+
+        return response()->json($daysInfo);
+    }
+
 
     public function getPlanType(Request $request)
     {
@@ -1955,17 +1780,49 @@ class LearnerController extends Controller
     }
     public function getPrice(Request $request)
     {
-
         $plan_type_id = $request->plan_type_id;
-        $plan_id = $request->plan_id;
-        $branch = getCurrentBranch();
-        if ($request->plan_type_id && $request->plan_id) {
+        $plan_id      = $request->plan_id;
+        $branchId     = getCurrentBranch();
 
-            $PlanpPrice = getPlanPrice($plan_id, $plan_type_id);
-
-            return response()->json($PlanpPrice);
+        if (!$plan_type_id || !$plan_id) {
+            return response()->json(0);
         }
+
+        $start_date = Carbon::parse($request->plan_start_date);
+        $end_date=getEndDate($plan_id, $start_date);
+        // ✅ Check fixed billing
+        $hasFixedBilling = Branch::where('id', $branchId)
+            ->whereNotNull('fixed_billing_date')
+            ->exists();
+        $branch = Branch::select('fixed_billing_date')
+        ->where('id', $branchId)
+        ->first();
+
+        $fixedBillingDate = $branch?->fixed_billing_date;
+        
+        // ✅ CASE 1: Fixed billing → prorated price
+        if ($request->plan_start_date != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
+
+            $PlanpPrice = getBillingCyclePrice(
+                $plan_id,
+                $plan_type_id,
+                $start_date     
+            );
+
+        }
+        // ✅ CASE 2: Normal billing → existing logic
+        else {
+
+            $PlanpPrice = getPlanPrice(
+                $plan_id,
+                $plan_type_id
+            );
+
+        }
+
+        return response()->json($PlanpPrice);
     }
+
 
     public function getPlanTypeSeatWise(Request $request)
     {
@@ -4038,7 +3895,7 @@ class LearnerController extends Controller
         // 2. Add to LearnerTransactionActivity
         $activityData = [
             'learner_id'   => $data['learner_id'],
-            'particular'   => 'Paid By Trans',
+            'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
             'payment_type' => $data['payment_type'],
             'payment_mode' => $data['payment_mode'],
             'amount'       => $data['paid_amount'],

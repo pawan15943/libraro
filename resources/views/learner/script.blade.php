@@ -229,17 +229,33 @@
         }
 
          // Get Plan Price at All Forms wherever is needed
-        function getPlanPrice(plan_type_id,plan_id){
-          
+        function getPlanPrice(plan_type_id, plan_id, start_date = null) {
+            if (!plan_type_id || !plan_id) return;
+
+            // ✅ Auto-detect start date if not passed
+            if (!start_date) {
+                if ($('#plan_start_date').length && $('#plan_start_date').val()) {
+                    start_date = $('#plan_start_date').val();
+                }
+            }
+
+            let data = {
+                "_token": "{{ csrf_token() }}",
+                "plan_type_id": plan_type_id,
+                "plan_id": plan_id
+            };
+
+            // ✅ Send only when available
+            if (start_date) {
+                data.plan_start_date = start_date;
+            }
+
+          console.log("start_date",start_date);
             if (plan_type_id && plan_id) {
                     $.ajax({
                         url: '{{ route('getPricePlanwise') }}',
                         type: 'GET',
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            "plan_type_id": plan_type_id,
-                            "plan_id": plan_id,
-                        },
+                        data: data,
                         dataType: 'json',
                         success: function(html) {
                             console.log("sfpriev",html);
@@ -554,7 +570,25 @@
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
             return date.toLocaleDateString('en-GB', options);
         }
-
+        function addChargeableDays(plan_id,plan_start_date) {
+            $.ajax({
+                url: "{{ route('getChargeableDays') }}",
+                type: "GET",
+                data: {
+                    plan_id: plan_id,
+                    plan_start_date: plan_start_date
+                },
+                success: function (res) {
+                     console.log(res);
+                    if (res) {
+                        $('#chargeable_days').text(res.chargeable_days + 'Days');
+                        $('#chargeable_days10').text(res.chargeable_days + 'Days');
+                        
+                    }
+                }
+            });
+        }
+       
         // Used in View Details Popup on Seat Assignment Page
         $('.second_popup').on('click', function() {
             $('#upgrade').hide();
@@ -803,6 +837,16 @@
             }
            
         });
+        $('#plan_start_date').on('change', function(event) {
+          var plan_start_date = $(this).val();
+          var plan_id = $('#plan_id3').val();
+          var plan_type_id = $('#plan_type_id').val();
+          getPlanPrice(plan_type_id,plan_id,plan_start_date);
+          addChargeableDays(plan_id,plan_start_date);
+            
+        });
+        
+       
         
         $('#plan_type_id2').on('change', function(event) {
             
@@ -845,14 +889,23 @@
             var plan_id = $(this).val();
             var plan_type_id = $('#plan_type_id').val();
             var plan_type_id2 = $('#plan_type_id2').val();
+            var plan_start_date = $('#plan_start_date').val();
           
             if(plan_type_id && plan_id){
                 getPlanPrice(plan_type_id,plan_id);
-            } if(plan_type_id2 && plan_id){
+                
+            }
+            if(plan_type_id2 && plan_id){
                 getPlanPrice(plan_type_id2,plan_id);
             }else{
                 $("#plan_price_id").val('');
             }
+
+            if(plan_start_date && plan_id){
+                addChargeableDays(plan_id,plan_start_date);
+            }
+
+            
         });
 
 
@@ -2241,7 +2294,7 @@
     });
 </script>
 <script>
-    // start new according
+// start new according
 // on plan change-total change,price change, locker amount change
 // on plan type change-total change,price change
 // on locker yes -total change, locker amount ,locker no
@@ -2252,12 +2305,12 @@
 // diffrence amount on change-change plan
 $(document).ready(function() {
     
-     const plan_id10 = $('#plan_id10').val();
+    const plan_id10 = $('#plan_id10').val();
     const plan_type_id10 = $('#plan_type_id10').val();
-    
-    getPlanPriceAmount(plan_type_id10,plan_id10);
+    var plan_start_date10=$('#start_date10').val();
+    getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
     calculatePaidAmount();
-   
+    // addChargeableDays(plan_id10,plan_start_date10);
     var lockerCheck= $('#toggleFieldCheckbox10').val();
     
    
@@ -2281,8 +2334,9 @@ $(document).ready(function() {
     const plan_id10 = $(this).val();
     const plan_type_id10 = $('#plan_type_id10').val();
     var lockerCheck= $('#toggleFieldCheckbox10').val();
+    var plan_start_date10=$('#start_date10').val();
     if(plan_type_id10 && plan_id10){
-        getPlanPriceAmount(plan_type_id10,plan_id10);
+        getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
         calculatePaidAmount();
         if(lockerCheck== 'yes'){
             lockerAmountGet(plan_id10);
@@ -2291,6 +2345,7 @@ $(document).ready(function() {
     }else{
         $("#plan_price10").val('');
     }
+    addChargeableDays(plan_id10,plan_start_date10);
 });
  $('#plan_type_id10').on('change', function(event) {
       
@@ -2299,8 +2354,9 @@ $(document).ready(function() {
     const plan_type_id10 = $(this).val();
     const plan_id10 = $('#plan_id10').val();
     var lockerCheck= $('#toggleFieldCheckbox10').val();
+    var plan_start_date10=$('#start_date10').val();
     if(plan_type_id10 && plan_id10){
-        getPlanPriceAmount(plan_type_id10,plan_id10);
+        getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
         calculatePaidAmount();
        if(lockerCheck== 'yes'){
             lockerAmountGet(plan_id10);
@@ -2308,6 +2364,7 @@ $(document).ready(function() {
     }else{
         $("#plan_price10").val('');
     }
+    addChargeableDays(plan_id10,plan_start_date10);
 });
   $('#toggleFieldCheckbox10').on('change', function () {
     
@@ -2356,7 +2413,7 @@ $('#diffrence_amount10').on('input', function () {
 });
 
 
- function getPlanPriceAmount(plan_type_id10,plan_id10){
+ function getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10){
           
     if (plan_type_id10 && plan_id10) {
             $.ajax({
@@ -2366,6 +2423,7 @@ $('#diffrence_amount10').on('input', function () {
                     "_token": "{{ csrf_token() }}",
                     "plan_type_id": plan_type_id10,
                     "plan_id": plan_id10,
+                    "plan_start_date": plan_start_date10,
                 },
                 dataType: 'json',
                 success: function(html) {
