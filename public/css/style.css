@@ -6731,30 +6731,11 @@ p#scanMsg {
 /* Cropper area */
 
 
-/* .cropper-area {
+.cropper-area {
     width: 100%;
     max-height: 300px;
     overflow: hidden;
     margin: 15px 0;
-} */
-
-.cropper-area {
-    width: 100%;
-    height: 300px;
-    /* ✅ REQUIRED */
-    overflow: hidden;
-    position: relative;
-    /* ✅ IMPORTANT */
-}
-
-#cropperImage {
-    max-width: 100%;
-    display: block;
-}
-
-.cropper-container {
-    width: 100% !important;
-    height: 100% !important;
 }
 
 /* Buttons */
@@ -6784,7 +6765,7 @@ p#scanMsg {
 
 .cropper-modal {
     background-color: #000000a3 !important;
-    opacity: 1;
+    opacity: .5;
 }
 
 /* Final image preview */
