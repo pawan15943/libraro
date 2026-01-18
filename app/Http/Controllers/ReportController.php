@@ -482,7 +482,8 @@ class ReportController extends Controller
         $year = $request->get('year');
         $month = $request->get('month');
 
-        $query = LearnerTransaction::withoutGlobalScopes()->leftJoin('learners', 'learner_transactions.learner_id', '=', 'learners.id')
+        $query = LearnerTransaction::withoutGlobalScopes()
+            ->leftJoin('learners', 'learner_transactions.learner_id', '=', 'learners.id')
            ->where('learner_transactions.branch_id', getCurrentBranch())
            ->whereNotNull('learner_transactions.due_date')
             ->select(
