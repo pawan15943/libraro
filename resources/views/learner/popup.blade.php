@@ -251,7 +251,7 @@
 
                                 <div class="col-lg-6">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof_file" id="id_proof_file" autocomplete="off">
+                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof_file" autocomplete="off">
                                     <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
 
                                     <!-- <a href="javascript:;" id="viewButton" style="display: none;">

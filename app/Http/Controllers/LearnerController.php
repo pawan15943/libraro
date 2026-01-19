@@ -309,6 +309,7 @@ class LearnerController extends Controller
         if ($validated['error']) {
             return response()->json(['error' => true, 'message' => $validated['message']], 422);
         }
+       
         // Creation
         try {
 
@@ -1615,7 +1616,7 @@ class LearnerController extends Controller
 
             // Store the file in the 'public/uploads' directory
             $id_proof_file->move(public_path('uploads'), $id_proof_fileNewName);
-            $id_proof_filePath = 'uploads/' . $id_proof_fileNewName;
+            $id_proof_filePath = 'public/uploads/' . $id_proof_fileNewName;
 
             // Set the path in the customer model
             $customer->id_proof_file = $id_proof_filePath;

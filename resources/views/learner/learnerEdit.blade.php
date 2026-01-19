@@ -230,7 +230,7 @@ if($customer->locker_no){
                     </span>
                     @enderror
                     @if($customer->id_proof_file)
-                    <a href="{{ asset('public/'.$customer->id_proof_file) }}" class="view-image">View</a>
+                    <a href="{{ asset($customer->id_proof_file) }}" class="view-image">View</a>
 
                     @endif
                     <span class="text-danger">*Upload front side of document.</span>
