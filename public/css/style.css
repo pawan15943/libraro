@@ -4849,6 +4849,12 @@ h6.text-center.bg-white {
         height: 100vh;
     }
 
+    .control-right-sidebar {
+        padding: .8rem 1rem ! IMPORTANT;
+        top: 18%;
+        height: 30px;
+    }
+
 }
 
 @media screen and (max-width:480px) {
