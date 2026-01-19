@@ -346,7 +346,7 @@ $learner_id=$value->id;
                             @endcan
                             <!-- upgrade Seat-->
                             <!-- (&& $planStatus['diff_extend_day'] <= 5) we remove this block -->
-                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
+                            @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0 )
                                 @can('has-permission', 'Upgrade Seat Plan' )
                                 @if(!in_array('13', toggleHideField()))
                                 <li><a href="{{route('learners.upgrade.renew',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
