@@ -13,7 +13,7 @@
 
 
     <div class="row mb-4 g-4">
-        <div class="col-lg-8 order-last order-lg-first">
+        <div class="col-lg-8">
             <div class="card">
                 <h4 class="mb-4">Branch Details</h4>
                 <div class="row g-4">
@@ -258,7 +258,7 @@
 
         <!-- Sidebar for Library Logo and Submit -->
 
-        <div class="col-lg-4 order-first order-lg-last">
+        <div class="col-lg-4">
 
             <div class="card stick">
                 <h4 class="mb-4">Library Logo</h4>

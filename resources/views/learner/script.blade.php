@@ -565,6 +565,7 @@
                 getTypeSeatwise(seatId); 
             }         
         });
+
         function formatDate(dateString) {
             const date = new Date(dateString);
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
@@ -579,11 +580,15 @@
                     plan_start_date: plan_start_date
                 },
                 success: function (res) {
-                     console.log(res);
+                    console.log(res);
                     if (res) {
-                        $('#chargeable_days').text(res.chargeable_days + 'Days');
-                        $('#chargeable_days10').text(res.chargeable_days + 'Days');
-                        
+                        if(res.chargeable_days < 31){
+                            $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
+                            $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
+
+                        }else{
+                            $('#chargeable_days').text('Billed Monthly');
+                        }
                     }
                 }
             });

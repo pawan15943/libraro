@@ -243,8 +243,7 @@
                                 </div>
                                 @endif
 
-                               
-
+                            
                                 @if(!in_array('5', toggleHideField()))
                                 <div class="col-lg-6">
                                     <label for="">ID Proof Name(Optional)</label>
