@@ -6705,200 +6705,76 @@ p#scanMsg {
 
 
 
-/* Popup container */
-.swal2-popup {
-    border-radius: 18px !important;
-    padding: 26px 26px 30px !important;
-    width: 460px !important;
-    font-family: "Outfit", sans-serif;
+/* Modal background */
+.cropper-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.24);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1 !important;
 }
 
-/* Icon circle */
-.swal2-icon {
-    border: none !important;
-    background: rgba(220, 53, 69, 0.12);
-    width: 70px !important;
-    height: 70px !important;
-    margin: 8px auto 14px !important;
-}
-
-/* Title */
-.swal2-title {
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    color: #212529;
-    margin-bottom: 6px !important;
-}
-
-/* Content wrapper */
-.swal2-html-container {
-    margin-top: 10px !important;
-}
-
-/* Refund section */
-.delete {
-    margin-top: 14px;
-}
-
-/* Checkbox group */
-.delete .form-check {
-    background: #f8f9fa;
+/* Modal box */
+.cropper-box {
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
     border-radius: 10px;
-    padding: 12px 14px;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Cropper area */
+
+
+.cropper-area {
     width: 100%;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-/* Hover effect */
-.delete .form-check:hover {
-    background: #eef2ff;
-}
-
-/* Checkbox input */
-.delete .form-check-input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #0d6efd;
-}
-
-/* Checkbox label */
-.delete .form-check-label {
-    font-size: 14px;
-    font-weight: 400;
-    color: #343a40;
-    cursor: pointer;
-}
-
-/* Refund fields */
-.refundAmountDiv {
-    margin-top: 14px;
-}
-
-/* Labels */
-.refundAmountDiv label {
-    font-size: 13px;
-    font-weight: 400;
-    color: #495057;
-    margin-bottom: 6px;
-}
-
-/* Inputs */
-.refundAmountDiv .form-control {
-    border-radius: 10px;
-    font-size: 14px;
-    padding: 9px 12px;
-    border: 1px solid #dee2e6;
-}
-
-/* Readonly input */
-.refundAmountDiv .form-control[readonly] {
-    background-color: #f1f3f5;
-}
-
-/* Textarea */
-.refundRemark {
-    resize: none;
+    max-height: 300px;
+    overflow: hidden;
+    margin: 15px 0;
 }
 
 /* Buttons */
-.swal2-actions {
-    margin-top: 24px !important;
-    gap: 0px;
+.cropper-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
 }
 
-/* Confirm button */
-.swal2-confirm {
-    background: navy !important;
-    border-radius: 30px !important;
-    padding: 10px 26px !important;
-    font-size: 14px !important;
-    font-weight: 400;
-}
-
-/* Cancel button */
-.swal2-cancel {
-    background: #dc3545 !important;
-    border-radius: 30px !important;
-    padding: 10px 26px !important;
-    font-size: 14px !important;
-    font-weight: 400;
-}
-
-/* Button hover */
-.swal2-confirm:hover {
-    background: navy !important;
-}
-
-.swal2-cancel:hover {
-    background: #bb2d3b !important;
-}
-
-
-#branchUpdate label {
+.cropper-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
     font-weight: 500;
-    font-size: .8rem;
-    margin-bottom: .2rem;
-    font-family: 'Outfit', 'sans-sarif';
-    color: #000000;
 }
 
-.add-delete {
-    width: 45px;
+#cancelCrop {
+    background: #e5e7eb;
+    color: #111;
 }
 
-.add-delete.add {
-    background: var(--c1) !important;
+.cropbtn {
+    background: var(--c1);
+    color: #fff;
 }
 
-p#statusMessage {
-    text-align: center;
-    color: #73b100;
-    margin-bottom: -1rem;
+.cropper-modal {
+    background-color: #000000a3 !important;
+    opacity: .5;
 }
 
-/* Shift Page */
-
-.plan-row {
-    background: #fff;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    position: relative;
-}
-
-
-h4.shift-title {
-    color: #008ca9 !important;
-    overflow: hidden;
-    font-size: 1rem;
-    text-transform: uppercase;
-    border-left: 4px solid;
-    padding-left: 1rem;
-}
-
-.plan-row button.btn.btn-danger.btn-sm.remove-plan-row.add-delete,
-.plan-row button.btn.btn-primary.btn-sm.add-plan-row.add-delete {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    border-radius: 35px;
-    width: 35px;
-    height: 35px !important;
-
-}
-
-.plan-row button.btn.btn-danger.btn-sm.remove-plan-row.add-delete {
-    right: 60px;
-}
-
-.plan-row button.btn.btn-primary.btn-sm.add-plan-row.add-delete {
-    background: var(--c1) !important;
-
-}
-
-p.m-0.text-danger.pt-1 {
-    font-family: 'outfit', 'sans-sarif';
-    font-weight: 400;
+/* Final image preview */
+.profile-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    display: none;
+    margin-top: 10px;
 }

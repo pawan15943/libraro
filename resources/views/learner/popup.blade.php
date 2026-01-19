@@ -1,4 +1,7 @@
 @can('has-permission', 'Book Seat')
+
+
+
 <div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
@@ -201,8 +204,17 @@
                             <div class="row g-3">
                                @if(!in_array('8', toggleHideField()))
                                 <div class="col-lg-6">
-                                    <label for="profile_picture">Upload Profile Photo</label>
-                                    <input type="file" class="form-control" name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp">
+                                    <label class="form-label">Upload Profile Photo</label>
+                                    <input
+                                        type="file"
+                                        class="form-control image-cropper"
+                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp"
+                                    />
+
+                                    <!-- Final Image Preview -->
+                                    <div class="mt-3">
+                                        <img id="finalImage" class="profile-preview">
+                                    </div>
                                 </div>
                                 @endif
                                 @if(!in_array('30', toggleHideField()))
