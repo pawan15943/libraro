@@ -4812,9 +4812,43 @@ h6.text-center.bg-white {
 } */
 
 @media screen and (max-width:840px) {
+    .sidebar.scroll {
+        width: 270px ! important;
+        margin-left: 0px ! important;
+    }
+
+    .sidebar.scroll.w-120 {
+        width: 270px !important;
+        margin-left: -270px !important;
+        box-shadow: none !important;
+    }
+
     .dashboard-Header h1 * {
         font-size: 1.5rem !important;
     }
+
+    i#sidebar_mob {
+        position: absolute;
+        right: 15px;
+    }
+
+    .right-sidebar {
+        position: absolute !important;
+        right: 0;
+        background: #fff;
+        top: 0;
+        z-index: 1050;
+        height: 100vh;
+    }
+
+    .sidebar.scroll {
+        position: absolute;
+        z-index: 1080;
+        left: 0;
+        top: 0;
+        height: 100vh;
+    }
+
 }
 
 @media screen and (max-width:480px) {
@@ -6784,52 +6818,53 @@ p#scanMsg {
     margin-top: 10px;
 }
 
-    .preview-img {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 100px;
-        border: 1px solid #ddd;
-    }
-
-    .preview-img.one {
-        width: 200px;
-        height: 150px;
-        border-radius: 1rem;
-    }
-
-    .image-modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.7);
-    z-index:9999;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+.preview-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 100px;
+    border: 1px solid #ddd;
 }
 
-.image-modal-content{
-    position:relative;
-    background:#fff;
-    padding:10px;
-    border-radius:8px;
-    max-width:90%;
-    max-height:90%;
+.preview-img.one {
+    width: 200px;
+    height: 150px;
+    border-radius: 1rem;
 }
 
-.image-modal-content img{
-    max-width:100%;
-    max-height:80vh;
-    display:block;
+.image-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.close-modal{
-    position:absolute;
-    top:5px;
-    right:10px;
-    font-size:24px;
-    cursor:pointer;
+.image-modal-content {
+    position: relative;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 90%;
+    max-height: 90%;
 }
+
+.image-modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    display: block;
+}
+
+.close-modal {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
 span.close-modal {
     background: #fff;
     width: 25px;
