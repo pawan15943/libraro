@@ -232,6 +232,26 @@ $learner_id=$value->id;
                     <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due</a></li>
                     @endif
 
+                    @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount) )
+                    <li>
+                        <a class=""
+                                    target="_blank"
+                                    data-bs-placement="bottom"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-title="Send Pending Payment Reminder"
+                                    href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                        'Dear ' . $value->name . "\n\n" .
+                                        'This is a gentle reminder that your library seat payment is still pending.' . "\n\n" .
+                                        'Your due date was ' . \Carbon\Carbon::parse($due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
+                                        'If you have already made the payment, kindly ignore this message.' . "\n\n" .
+                                        'For any assistance, feel free to contact our support team.' . "\n\n" .
+                                        '– Team ' . getCurrentBranchName()
+                                    ) }}">
+                                        <i class="fa-solid fa-business-time"></i>
+                                    </a>
+                    </li>
+                    @endif
+
                     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                         @can('has-permission','Renew Seat')
                         <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a></li>
@@ -476,11 +496,11 @@ $learner_id=$value->id;
 
                             @elseif( pending_amt($learner_detail_id))
                             <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
-                                @if(is_object($due_date) && !empty($due_date->due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Overdue {{ rtrim(rtrim(number_format(optional(learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}({{date('j M Y', strtotime($due_date->due_date))}})</span>
+                                 @if( !empty($due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Due {{ rtrim(rtrim(number_format(optional(learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }} ({{date('j M', strtotime($due_date))}})</span>
                                 @else
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    Pending {{ rtrim(rtrim(number_format(   (learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }}
+                                    Due {{ rtrim(rtrim(number_format((learnerTransaction($learner_id, $learner_detail_id))->pending_amount, 2, '.', ''), '0'), '.') }} ({{ !empty($due_date) ? date('j M', strtotime($due_date)) : ''}})
 
                                 </span>
 

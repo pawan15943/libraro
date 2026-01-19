@@ -24,6 +24,9 @@
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
+        rel="stylesheet" />
     <!-- Bootstrap Toggle CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
@@ -39,6 +42,21 @@
     <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
     <div id="loaderone">
         <dotlottie-player src="https://lottie.host/db22cec8-bed8-4ce9-8993-e2c88bff2231/qJmiiH5Orw.lottie" background="transparent" speed="1" style="width: 150px; height: 150px" loop autoplay></dotlottie-player>
+    </div>
+    <!-- Cropper Modal -->
+    <div class="cropper-modal" id="cropperModal">
+        <div class="cropper-box">
+            <h5>Crop Profile Photo</h5>
+
+            <div class="cropper-area">
+                <img id="cropperImage" style="max-width:100%; display:block;">
+            </div>
+
+            <div class="cropper-actions">
+                <button class="cancelcrop">Cancel</button>
+                <button class="cropbtn">Crop & Save</button>
+            </div>
+        </div>
     </div>
     <!-- New Design Dahsbard Library -->
     <div class="support-container">
@@ -317,6 +335,7 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
     <script src="{{ url('public/js/main-validation.js') }}" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -659,6 +678,90 @@
         });
 
     </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    let cropper;
+    let activeInput = null;
+
+    const inputs = document.querySelectorAll(".image-cropper");
+    const modal = document.getElementById("cropperModal");
+    const cropperImage = document.getElementById("cropperImage");
+    const cropBtn = document.querySelector(".cropbtn");
+    const cancelCrop = document.querySelector(".cancelcrop");
+    const finalImage = document.querySelector(".profile-preview");
+
+    inputs.forEach(input => {
+        input.addEventListener("change", function (e) {
+
+            activeInput = this; // 🔥 store which input was used
+
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function () {
+
+                cropperImage.src = reader.result;
+                modal.style.display = "flex";
+
+                cropperImage.onload = () => {
+                    if (cropper) cropper.destroy();
+
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        responsive: true,
+                    });
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    cropBtn.addEventListener("click", function () {
+        if (!cropper || !activeInput) return;
+
+        const canvas = cropper.getCroppedCanvas({
+            width: 200,
+            height: 200,
+            imageSmoothingQuality: "high",
+        });
+
+        canvas.toBlob(blob => {
+
+            // 🔥 replace original file input with cropped image
+            const file = new File([blob], "profile.jpg", {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+            });
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            activeInput.files = dataTransfer.files;
+
+            finalImage.src = URL.createObjectURL(blob);
+            finalImage.style.display = "block";
+
+            modal.style.display = "none";
+            cropper.destroy();
+            cropper = null;
+        }, "image/jpeg", 0.8);
+    });
+
+    cancelCrop.addEventListener("click", function () {
+        modal.style.display = "none";
+        if (cropper) cropper.destroy();
+        cropper = null;
+        activeInput = null;
+    });
+
+});
+</script>
+
+
 
 </body>
 

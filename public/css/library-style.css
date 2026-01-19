@@ -226,6 +226,7 @@ a.w-auto.px-2:hover .fa {
     border-radius: 80px;
     border: 1px solid #8a8787;
     padding: 5px;
+    object-fit: cover;
 }
 
 
@@ -242,7 +243,7 @@ a.w-auto.px-2:hover .fa {
 }
 
 .seat-no {
-    width: calc(40% - .5rem);
+    width: calc(35% - .5rem);
     padding: 1rem;
     display: flex;
     gap: .3rem;
@@ -250,7 +251,7 @@ a.w-auto.px-2:hover .fa {
 }
 
 .seat-actions {
-    width: calc(60% - .5rem) !important;
+    width: calc(65% - .5rem) !important;
     padding: 1rem;
 }
 

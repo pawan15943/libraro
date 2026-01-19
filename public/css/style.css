@@ -6902,3 +6902,76 @@ p.m-0.text-danger.pt-1 {
     font-family: 'outfit', 'sans-sarif';
     font-weight: 400;
 }
+/* Modal background */
+.cropper-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.24);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1 !important;
+}
+
+/* Modal box */
+.cropper-box {
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Cropper area */
+
+
+.cropper-area {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+/* Buttons */
+.cropper-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.cropper-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#cancelCrop {
+    background: #e5e7eb;
+    color: #111;
+}
+
+.cropbtn {
+    background: var(--c1);
+    color: #fff;
+}
+
+.cropper-modal {
+    background-color: #000000a3 !important;
+    opacity: .5;
+}
+
+/* Final image preview */
+.profile-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    display: none;
+    margin-top: 10px;
+}

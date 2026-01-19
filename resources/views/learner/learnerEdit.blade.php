@@ -136,8 +136,13 @@ if($customer->locker_no){
                 @if(!in_array('8', toggleHideField()))
                     <div class="col-lg-6">
                         <label for="profile_picture">Upload Profile Photo</label>
-                        <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" name="profile_picture"  value="{{ old('profile_picture', $customer->profile_picture) }}"
+                        <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
                             autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                        <!-- Final Image Preview -->
+                        <div class="mt-3">
+                            <img id="finalImage" class="profile-preview">
+                        </div>
+
                         @error('profile_picture')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>

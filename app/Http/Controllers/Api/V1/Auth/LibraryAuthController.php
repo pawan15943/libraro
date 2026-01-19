@@ -76,6 +76,9 @@ class LibraryAuthController extends Controller
                 'password' => Hash::make($validated['password']),
                 'email_otp' => $otp,
             ]);
+            // 2️⃣ Generate slug using name + id
+            $library->slug = Str::slug($library->library_name . '-' . $library->id);
+            $library->save();
 
              $library->devices()->updateOrCreate(
                 ['device_id' => $validated['device_id']],
@@ -85,17 +88,28 @@ class LibraryAuthController extends Controller
                 ]
             );
 
-            $data = [
-                'name' => $library->library_name,
-                'email' => $library->email,
-                'otp' => $otp,
-            ];
+           
              \Log::info('Verify Your Email Address');
 
-            // Mail::send('email.verify-email', $data, function ($message) use ($data) {
-            //     $message->to($data['email'], $data['name'])
-            //             ->subject('Verify Your Email Address');
-            // });
+            try {
+                
+                $this->sendVerificationEmail($library);
+                \Log::info('sendVerificationEmail success', [
+                    'library_id' => $library->id ?? null,
+                ]);
+
+            } catch (\Throwable $e) {
+
+            \Log::error('sendVerificationEmail failed', [
+                    'library_id' => $library->id ?? null,
+                    'email'      => $library->email ?? null,
+                    'message'    => $e->getMessage(),
+                    'file'       => $e->getFile(),
+                    'line'       => $e->getLine(),
+                ]);
+
+               
+            }
 
             return response()->json([
                 'status' => true,
@@ -114,6 +128,21 @@ class LibraryAuthController extends Controller
                 
             ], 500);
         }
+    }
+
+     public function sendVerificationEmail($library)
+    {
+        \Log::info('sendVerificationEmail');
+        // Prepare the data to send to the email view
+        $data = [
+            'name' => $library->library_name,
+            'email' => $library->email,
+            'otp' => $library->email_otp,
+        ];
+
+        Mail::send('email.verify-email', $data, function($message) use ($data) {
+            $message->to($data['email'], $data['name'])->subject('Verify Your Email Address');
+        });
     }
 
 
@@ -178,80 +207,11 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
-    public function login(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required',
-            'device_type' => 'required',
-            'device_id' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'code' => 200,
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-                'data' => (object)[]
-            ], 200);
-        }
-
-        $user = Library::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'status' => false,
-                'code' => 200,
-                'message' => 'User Not Register',
-               'registration' => 0
-            ], 200);
-        }
-
-        if (is_null($user->email_verified_at)) {
-            return response()->json([
-                'status' => true,
-                'code' => 200,
-                'message' => 'Please verify your email before logging in.',
-                'is_email_verified' => 0
-            ], 200);
-        }
-
-        if (!$user->hasAnyRole(['admin', 'library'])) {
-            $user->assignRole('library'); 
-        }
-
-        $token = $user->createToken('library_token')->plainTextToken;
-
-        $user->devices()->updateOrCreate(
-            ['device_id' => $request->device_id],
-            [
-                'device_type' => $request->device_type,
-                'token' => $token,
-                'guard_name' => 'library_api',
-            ]
-        );
-
-        // registration=> 0=>user not register,1=> email not verify,2=>
-        //suceess is_email_verified
-        return response()->json([
-            'status' => true,
-            'code' => 200,
-            'message' => 'Login successful.',
-            'is_email_verified' => 0,
-            'token' => $token,
-            // 'data' => [
-            //     'token' => $token,
-            //     // id, name, email,contact, role 
-            //     'library' => cleanNull($user->toArray())
-            // ],
-           
-        ], 200);
-    }
+   
 
     public function libraryPlan()
     {
-        $plans = Subscription::all();
+        $plans = Subscription::get();
       
         return response()->json([
             'status' => true,
@@ -422,7 +382,76 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
+     public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+            'device_type' => 'required',
+            'device_id' => 'required',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'code' => 200,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+                'data' => (object)[]
+            ], 200);
+        }
+
+        $user = Library::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status' => false,
+                'code' => 200,
+                'message' => 'User Not Register',
+               'registration' => 0
+            ], 200);
+        }
+
+        if (is_null($user->email_verified_at)) {
+            return response()->json([
+                'status' => true,
+                'code' => 200,
+                'message' => 'Please verify your email before logging in.',
+                'is_email_verified' => 0
+            ], 200);
+        }
+
+        if (!$user->hasAnyRole(['admin', 'library'])) {
+            $user->assignRole('library'); 
+        }
+
+        $token = $user->createToken('library_token')->plainTextToken;
+
+        $user->devices()->updateOrCreate(
+            ['device_id' => $request->device_id],
+            [
+                'device_type' => $request->device_type,
+                'token' => $token,
+                'guard_name' => 'library_api',
+            ]
+        );
+
+        // registration=> 0=>user not register,1=> email not verify,2=>
+        //suceess is_email_verified
+        return response()->json([
+            'status' => true,
+            'code' => 200,
+            'message' => 'Login successful.',
+            'is_email_verified' => 0,
+            'token' => $token,
+            // 'data' => [
+            //     'token' => $token,
+            //     // id, name, email,contact, role 
+            //     'library' => cleanNull($user->toArray())
+            // ],
+           
+        ], 200);
+    }
 
 
 
