@@ -235,12 +235,6 @@
 
 
 
-    @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
-    <ul class="mobile-actions d-md-none">
-        <li><a href="javascript:;" class="noseat_popup"><i class="fa fa-chair"></i></a></li>
-        <li><a href="{{route('learner.search')}}"><i class="fa fa-search"></i></a></li>
-    </ul>
-    @endif
     @php
     $video = videoGet();
     @endphp
@@ -454,7 +448,7 @@
     <!-- Right Sidebar -->
     <script>
         $(document).ready(function() {
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = window.innerWidth <= 840;
             if (isMobile) {
                 $('.right-sidebar').addClass('hide-right-sidebar');
             } else {
