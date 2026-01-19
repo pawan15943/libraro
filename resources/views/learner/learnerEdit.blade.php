@@ -13,6 +13,15 @@ if($customer->locker_no){
 @endphp
 
 @if($current_route=='learners.edit')
+<div id="imageViewModal" class="image-modal" style="display:none;">
+    <div class="image-modal-content">
+        <span class="close-modal">&times;</span>
+        <img src="" id="modalImage">
+    </div>
+</div>
+
+
+
 <div class="row g-4">
  <div class="col-lg-9 order-2 order-md-1">
 <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
@@ -138,10 +147,8 @@ if($customer->locker_no){
                         <label for="profile_picture">Upload Profile Photo</label>
                         <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
                             autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
-                        <!-- Final Image Preview -->
-                        <div class="mt-3">
-                            <img id="finalImage" class="profile-preview">
-                        </div>
+                        <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+
 
                         @error('profile_picture')
                         <span class="invalid-feedback" role="alert">
@@ -149,7 +156,7 @@ if($customer->locker_no){
                         </span>
                         @enderror
                     @if($customer->profile_picture)
-                        <a href="{{ asset($customer->profile_picture) }}" target="_blank">View</a>
+                        <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
                     @endif
                     </div>
                 @endif
@@ -215,14 +222,16 @@ if($customer->locker_no){
 
                 <div class="col-lg-6">
                     <label for="">Upload Scan Copy of Proof (Optional)</label>
-                    <input type="file" class="form-control @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                    <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                    <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
                     @error('id_proof_file')
                     <span class="invalid-feedback" role="alert">
                         <strong>{{ $message }}</strong>
                     </span>
                     @enderror
                     @if($customer->id_proof_file)
-                    <a href="{{ asset('public/'.$customer->id_proof_file) }}" target="_blank">View</a>
+                    <a href="{{ asset('public/'.$customer->id_proof_file) }}" class="view-image">View</a>
+
                     @endif
                     <span class="text-danger">*Upload front side of document.</span>
                 </div>
@@ -848,5 +857,43 @@ $(document).ready(function () {
 
 
 </script>
+
+<script>
+$(document).ready(function () {
+
+    // Intercept all "View" image links
+    $(document).on("click", 'a.view-image, a[target="_blank"]', function (e) {
+
+        const imageUrl = $(this).attr("href");
+
+        // Only handle image links
+        if (!imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            return;
+        }
+
+        e.preventDefault();
+
+        $("#modalImage").attr("src", imageUrl);
+        $("#imageViewModal").fadeIn(200);
+    });
+
+    // Close modal
+    $(".close-modal").on("click", function () {
+        $("#imageViewModal").fadeOut(200);
+        $("#modalImage").attr("src", "");
+    });
+
+    // Close on background click
+    $("#imageViewModal").on("click", function (e) {
+        if ($(e.target).is(this)) {
+            $(this).fadeOut(200);
+            $("#modalImage").attr("src", "");
+        }
+    });
+
+});
+</script>
+
+
 
 @endsection

@@ -2151,7 +2151,7 @@ class LearnerController extends Controller
             }
 
             if (!empty($filters['future_booking'])) {
-                $query->whereDate('learner_detail.plan_start_date', '>', today());
+                $query->whereDate('learner_detail.plan_start_date', '>', today())->whereNull('learners.deleted_at');
             }
         } else {
 

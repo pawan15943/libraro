@@ -540,23 +540,42 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    let cropper;
+    let cropper = null;
     let activeInput = null;
+    let activePreview = null;
 
-    const inputs = document.querySelectorAll(".image-cropper");
     const modal = document.getElementById("cropperModal");
     const cropperImage = document.getElementById("cropperImage");
     const cropBtn = document.querySelector(".cropbtn");
     const cancelCrop = document.querySelector(".cancelcrop");
-    const finalImage = document.querySelector(".profile-preview");
 
-    inputs.forEach(input => {
-        input.addEventListener("change", function (e) {
+    // 🔥 Find preview after input (robust)
+    function findPreview(input) {
+        let el = input.nextElementSibling;
+        while (el) {
+            if (el.classList.contains("preview-img")) return el;
+            el = el.nextElementSibling;
+        }
+        return null;
+    }
 
-            activeInput = this; // 🔥 store which input was used
+    // 🔥 Dynamic crop size
+    function getCropConfig(input) {
+        if (input.classList.contains("id_proof_file")) {
+            return { width: 350, height: 200, ratio: 350 / 200 };
+        }
+        return { width: 200, height: 200, ratio: 1 };
+    }
 
-            const file = e.target.files[0];
+    document.querySelectorAll(".image-cropper").forEach(input => {
+
+        input.addEventListener("change", function () {
+
+            const file = this.files[0];
             if (!file) return;
+
+            activeInput = this;
+            activePreview = findPreview(this);
 
             const reader = new FileReader();
             reader.onload = function () {
@@ -567,8 +586,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 cropperImage.onload = () => {
                     if (cropper) cropper.destroy();
 
+                    const cfg = getCropConfig(activeInput);
+
                     cropper = new Cropper(cropperImage, {
-                        aspectRatio: 1,
+                        aspectRatio: cfg.ratio,
                         viewMode: 1,
                         autoCropArea: 1,
                         responsive: true,
@@ -582,30 +603,34 @@ document.addEventListener("DOMContentLoaded", function () {
     cropBtn.addEventListener("click", function () {
         if (!cropper || !activeInput) return;
 
+        const cfg = getCropConfig(activeInput);
+
         const canvas = cropper.getCroppedCanvas({
-            width: 200,
-            height: 200,
+            width: cfg.width,
+            height: cfg.height,
             imageSmoothingQuality: "high",
         });
 
         canvas.toBlob(blob => {
 
-            // 🔥 replace original file input with cropped image
-            const file = new File([blob], "profile.jpg", {
+            const file = new File([blob], "cropped.jpg", {
                 type: "image/jpeg",
                 lastModified: Date.now(),
             });
 
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            activeInput.files = dataTransfer.files;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            activeInput.files = dt.files;
 
-            finalImage.src = URL.createObjectURL(blob);
-            finalImage.style.display = "block";
+            if (activePreview) {
+                activePreview.src = URL.createObjectURL(blob);
+                activePreview.style.display = "block";
+            }
 
             modal.style.display = "none";
             cropper.destroy();
             cropper = null;
+
         }, "image/jpeg", 0.8);
     });
 
@@ -614,10 +639,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (cropper) cropper.destroy();
         cropper = null;
         activeInput = null;
+        activePreview = null;
     });
 
 });
 </script>
+
 
 
 
