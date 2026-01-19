@@ -4854,6 +4854,9 @@ h6.text-center.bg-white {
         top: 18%;
         height: 30px;
     }
+    .seat-booking {
+        grid-template-columns: repeat(4, 1fr);
+    }
 
 }
 
