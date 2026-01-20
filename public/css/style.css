@@ -6832,7 +6832,7 @@ span.close-modal {
 }
 
 
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 991px) {
     .support-container {
         position: fixed;
         bottom: 90px;
