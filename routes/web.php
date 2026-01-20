@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
@@ -32,6 +33,14 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 
 
+Route::prefix('leads')->group(function () {
+    Route::get('/', [LeadContactController::class, 'index'])->name('leads.index');
+    Route::post('/whatsapp/{lead}', [LeadContactController::class, 'sendWhatsapp'])->name('leads.whatsapp');
+    Route::post('/call/{lead}', [LeadContactController::class, 'updateCallStatus'])->name('leads.call');
+    Route::post('/comment/{lead}', [LeadContactController::class, 'addComment'])->name('leads.comment');
+    Route::get('/history/{lead}', [LeadContactController::class, 'history'])->name('leads.history');
+    Route::get('/leads/save-contact/{lead}', [LeadContactController::class, 'downloadContact'])->name('leads.saveContact');
+});
 
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
 Route::get('library/login', [LoginController::class, 'showAdminLoginForm'])->name('login.library');
