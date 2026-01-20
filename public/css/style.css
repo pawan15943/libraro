@@ -6842,7 +6842,7 @@ span.close-modal {
 
     .content {
         padding-bottom: 5rem !important;
-        overflow: hidden;
+        overflow: auto;
     }
 
     .sidebar.scroll {
