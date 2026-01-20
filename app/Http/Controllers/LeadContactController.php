@@ -7,11 +7,75 @@ use Illuminate\Http\Request;
 
 class LeadContactController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $leads = LeadContact::latest()->get();
-        return view('administrator.leads', compact('leads'));
+       
+        $query = LeadContact::query();
+
+        // Search by name or city
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by call status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by lead status
+        if ($request->filled('lead_status')) {
+            $query->where('lead_status', $request->lead_status);
+        }
+
+        // Filter by city
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
+        }
+
+        $leads = $query->latest()->paginate(15);
+
+        // City dropdown data
+        $cities = LeadContact::whereNotNull('city')
+            ->distinct()
+            ->pluck('city');
+        $message = "Explore Libraro with our demo account and see how easy managing your library can be.
+
+        Website: https://www.libraro.in
+
+        Demo Access:
+        Login: https://www.libraro.in/library/login
+
+        Username: demoaccount@gmail.com
+        Password: 123456789
+
+        Plans start at just ₹49/-.
+        The demo credentials are provided for evaluation purposes — please do not share them publicly.
+
+        Instagram:
+        https://www.instagram.com/libraro.in";
+
+        return view('administrator.leads', compact('leads', 'cities','message'));
+        
     }
+
+    public function downloadContact(LeadContact $lead)
+    {
+        $vcard = "BEGIN:VCARD
+        VERSION:3.0
+        N:{$lead->name}
+        FN:{$lead->name}
+        TEL;TYPE=CELL:{$lead->mobile}
+        END:VCARD";
+
+        return response($vcard)
+            ->header('Content-Type', 'text/vcard')
+            ->header('Content-Disposition', 'attachment; filename="contact.vcf"');
+    }
+
 
     /* WhatsApp Action */
     public function sendWhatsapp(Request $request, LeadContact $lead)
@@ -52,19 +116,21 @@ class LeadContactController extends Controller
     /* Add Follow-up Comment */
     public function addComment(Request $request, LeadContact $lead)
     {
-        $request->validate(['comment' => 'required|string']);
+        $request->validate([
+            'comment' => 'required|string'
+        ]);
 
         $comments = $lead->comments ?? [];
 
         $comments[] = [
-            'comment' => $request->comment,
-            'time' => now()->toDateTimeString()
+            'comment' => $request->comment
         ];
 
         $lead->update(['comments' => $comments]);
 
         return response()->json(['success' => true]);
     }
+
 
     /* View History */
     public function history(LeadContact $lead)

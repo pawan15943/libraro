@@ -39,6 +39,7 @@ Route::prefix('leads')->group(function () {
     Route::post('/call/{lead}', [LeadContactController::class, 'updateCallStatus'])->name('leads.call');
     Route::post('/comment/{lead}', [LeadContactController::class, 'addComment'])->name('leads.comment');
     Route::get('/history/{lead}', [LeadContactController::class, 'history'])->name('leads.history');
+    Route::get('/leads/save-contact/{lead}', [LeadContactController::class, 'downloadContact'])->name('leads.saveContact');
 });
 
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
