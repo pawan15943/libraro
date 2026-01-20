@@ -35,7 +35,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 Route::prefix('leads')->group(function () {
     Route::get('/', [LeadContactController::class, 'index'])->name('leads.index');
-    Route::post('/whatsapp/{lead}', [LeadContactController::class, 'sendWhatsapp'])->name('leads.whatsapp');
+    Route::get('/leads/save-contact/{lead}', [LeadContactController::class, 'saveContact'])->name('leads.saveContact');
     Route::post('/call/{lead}', [LeadContactController::class, 'updateCallStatus'])->name('leads.call');
     Route::post('/comment/{lead}', [LeadContactController::class, 'addComment'])->name('leads.comment');
     Route::get('/history/{lead}', [LeadContactController::class, 'history'])->name('leads.history');

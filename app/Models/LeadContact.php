@@ -9,13 +9,19 @@ class LeadContact extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    protected $casts = [
+        'comments' => 'array',
+    ];
 
-     /* Latest comment accessor */
+    /* Latest comment accessor */
     public function getLatestCommentAttribute()
     {
-        if (empty($this->comments)) {
+        $comments = $this->comments; // copy first
+
+        if (!is_array($comments) || empty($comments)) {
             return null;
         }
-        return end($this->comments);
+
+        return end($comments);
     }
 }

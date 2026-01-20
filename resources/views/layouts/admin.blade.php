@@ -23,6 +23,8 @@
     <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
     <link href="https://www.richtexteditor.com/rte/themes/default/rte.css" rel="stylesheet" />
     <meta name="format-detection" content="telephone=no">
+   <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

@@ -55,10 +55,11 @@ class LeadContactController extends Controller
         Plans start at just ₹49/-.
         The demo credentials are provided for evaluation purposes — please do not share them publicly.
 
-        Instagram:
-        https://www.instagram.com/libraro.in";
+        Instagram:https://www.instagram.com/libraro.in";
 
-        return view('administrator.leads', compact('leads', 'cities','message'));
+        $lead_status=['Interested','Not interested','Middium interested','Discontinued','Language barrier','Future Lead','JUNK','Registerd','Other software','Excel sufficient','Manuel Sufficient','Call disconnect','called','No response','busy','follow_up','Call later','Switch off','Not Reachable','Will think and decide','DNP','Fee issue'];
+
+        return view('administrator.leads', compact('leads', 'cities','message','lead_status'));
         
     }
 
@@ -78,23 +79,25 @@ class LeadContactController extends Controller
 
 
     /* WhatsApp Action */
-    public function sendWhatsapp(Request $request, LeadContact $lead)
+   public function saveContact(LeadContact $lead)
     {
-        $lead->update([
-            'is_contact_saved' => true,
-            'status' => 'follow_up'
-        ]);
+        // mark saved in DB
+        if (!$lead->is_contact_saved) {
+            $lead->update(['is_contact_saved' => true]);
+        }
 
-        // Static message
-        $message = urlencode(
-            "Hello {$lead->name}, this is regarding your library listing. Please let us know your interest."
-        );
+        $vcard = "BEGIN:VCARD
+            VERSION:3.0
+            N:{$lead->name}
+            FN:{$lead->name}
+            TEL;TYPE=CELL:{$lead->mobile}
+            END:VCARD";
 
-        return response()->json([
-            'success' => true,
-            'redirect' => "https://wa.me/{$lead->mobile}?text={$message}"
-        ]);
+        return response($vcard)
+            ->header('Content-Type', 'text/vcard')
+            ->header('Content-Disposition', 'attachment; filename="{$lead->name}.vcf"');
     }
+
 
     /* Call Status Update */
     public function updateCallStatus(Request $request, LeadContact $lead)
@@ -114,21 +117,49 @@ class LeadContactController extends Controller
     }
 
     /* Add Follow-up Comment */
-    public function addComment(Request $request, LeadContact $lead)
+  public function addComment(Request $request, LeadContact $lead)
     {
-        $request->validate([
-            'comment' => 'required|string'
+        $data = [];
+
+        // ✅ COMMENT (optional)
+        if ($request->filled('comment')) {
+
+            // Always copy to local variable
+            $comments = $lead->comments;
+
+            // Ensure array
+            if (!is_array($comments)) {
+                $comments = [];
+            }
+
+            // Append new comment
+            $comments[] = [
+                'comment' => $request->comment,
+                'time'    => now()->toDateTimeString(),
+            ];
+
+            // Assign back
+            $data['comments'] = $comments;
+        }
+
+        // ✅ LEAD STATUS (optional)
+        if ($request->filled('lead_status')) {
+            $data['lead_status'] = $request->lead_status;
+        }
+
+        // ✅ CALL STATUS (optional)
+        if ($request->filled('status')) {
+            $data['status'] = $request->status;
+        }
+
+        // ✅ Update only if something changed
+        if (!empty($data)) {
+            $lead->update($data);
+        }
+
+        return response()->json([
+            'success' => true
         ]);
-
-        $comments = $lead->comments ?? [];
-
-        $comments[] = [
-            'comment' => $request->comment
-        ];
-
-        $lead->update(['comments' => $comments]);
-
-        return response()->json(['success' => true]);
     }
 
 

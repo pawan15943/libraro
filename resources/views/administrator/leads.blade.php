@@ -5,27 +5,55 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Add Follow-up Comment</h5>
+                <h5 class="modal-title">Update Lead</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
                 <input type="hidden" id="lead_id">
 
-                <textarea id="comment_text"
-                          class="form-control"
-                          rows="4"
-                          placeholder="Enter follow-up comment..."></textarea>
+                <!-- Lead Status -->
+                <div class="mb-3">
+                    <label class="form-label">Lead Status</label>
+                    <select id="lead_status" class="form-select select2">
+                        <option value="">Select</option>
+                        <option value="hot">Hot</option>
+                        <option value="warm">Warm</option>
+                        <option value="cold">Cold</option>
+                    </select>
+                </div>
+
+                <!-- Call Status -->
+                <div class="mb-3">
+                    <label class="form-label">Call Status</label>
+                    <select id="status" class="form-select select2">
+                        <option value="">Select</option>
+                        @foreach($lead_status as $key => $value)
+                            <option value="{{$value}}">{{$value}}</option>
+                        @endforeach
+                    
+                    </select>
+                </div>
+
+                <!-- Comment -->
+                <div class="mb-3">
+                    <label class="form-label">Follow-up Comment</label>
+                    <textarea id="comment_text"
+                              class="form-control"
+                              rows="3"
+                              placeholder="Enter comment (optional)"></textarea>
+                </div>
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" onclick="saveComment()">Save Comment</button>
+                <button class="btn btn-primary" onclick="saveComment()">Save</button>
             </div>
 
         </div>
     </div>
 </div>
+
 
 
 <div class="container-fluid">
@@ -140,8 +168,13 @@
 
                         <td class="text-nowrap">
                            
-                            <a href="https://wa.me/91{{ $lead->mobile }}?text={{ urlencode($message) }}"
+                            {{-- <a href="https://wa.me/91{{ $lead->mobile }}?text={{ urlencode($message) }}"
                             target="_blank"
+                            class="btn btn-success btn-sm">
+                            <i class="fab fa-whatsapp"></i>
+                            </a> --}}
+                            <a href="{{ route('leads.saveContact', $lead->id) }}"
+                            onclick="openWhatsapp('{{ $lead->mobile }}','{{ urlencode($message) }}')"
                             class="btn btn-success btn-sm">
                             <i class="fab fa-whatsapp"></i>
                             </a>
@@ -169,38 +202,16 @@
 </div>
 
 <script>
-function sendWhatsapp(id) {
-    fetch(`/leads/whatsapp/${id}`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.redirect) {
-            window.open(data.redirect, '_blank');
-            location.reload();
-        }
-    });
+function openWhatsapp(mobile, message) {
+    setTimeout(() => {
+        window.open(
+            `https://wa.me/91${mobile}?text=${message}`,
+            '_blank'
+        );
+    }, 1500); // gives time to tap "Save"
 }
 
-function openCallModal(id) {
-    let status = prompt("Enter call status: called, not_answered, busy, follow_up");
-    let lead = prompt("Lead status: hot, warm, cold");
 
-    fetch(`/leads/call/${id}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            status: status,
-            lead_status: lead
-        })
-    }).then(() => location.reload());
-}
 
 function startCall(mobile) {
     setTimeout(() => {
@@ -208,42 +219,68 @@ function startCall(mobile) {
     }, 1500); // gives time to save contact
 }
 
-function openCommentModal(leadId) {
+function openCommentModal(leadId, leadStatus = '', callStatus = '') {
     document.getElementById('lead_id').value = leadId;
     document.getElementById('comment_text').value = '';
+
+    $('#lead_status').val(leadStatus).trigger('change');
+    $('#status').val(callStatus).trigger('change');
 
     let modal = new bootstrap.Modal(document.getElementById('commentModal'));
     modal.show();
 }
 
 function saveComment() {
-    let leadId = document.getElementById('lead_id').value;
-    let comment = document.getElementById('comment_text').value.trim();
+    let leadId = $('#lead_id').val();
 
-    if (!comment) {
-        alert('Please enter a comment');
-        return;
-    }
+    let data = {
+        comment: $('#comment_text').val().trim(),
+        lead_status: $('#lead_status').val(),
+        status: $('#status').val()
+    };
 
-    fetch(`/leads/comment/${leadId}`, {
-        method: 'POST',
+    let url = "{{ route('leads.comment', ':id') }}";
+    url = url.replace(':id', leadId);
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: data, // jQuery handles form encoding
+        dataType: 'json',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        body: JSON.stringify({ comment: comment })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            bootstrap.Modal.getInstance(
-                document.getElementById('commentModal')
-            ).hide();
+        success: function (response) {
+            if (response.success) {
+                $('#commentModal').modal('hide');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Saved!',
+                    text: 'Comment updated successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
-            location.reload(); // OR update row dynamically
+                setTimeout(() => {
+                    location.reload();
+                }, 1600);
+            }
+        },
+        error: function (xhr) {
+            console.error(xhr.responseText);
+            alert('Error saving comment');
         }
     });
 }
+
+// init select2 when modal opens
+$('#commentModal').on('shown.bs.modal', function () {
+    $('.select2').select2({
+        dropdownParent: $('#commentModal'),
+        width: '100%'
+    });
+});
 </script>
 
 
