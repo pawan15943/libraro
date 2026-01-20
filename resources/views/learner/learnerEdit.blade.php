@@ -474,7 +474,7 @@ if($customer->locker_no){
 
                         <div class="col-lg-4">
                             <label for="">Plan Price <span>*</span></label>
-                            <input id="plan_price10" class="form-control @error('plan_price_id') is-invalid @enderror" name="plan_price_id" value="{{ old('plan_price_id',$customer->plan_price_id) }}" readonly placeholder="Plan Price">
+                            <input id="plan_price10" class="form-control @error('plan_price_id') is-invalid @enderror" name="plan_price_id" value="{{ old('plan_price_id') }}" readonly placeholder="Plan Price">
                             @error('plan_price_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -535,7 +535,7 @@ if($customer->locker_no){
                         <div class="g-4 row">         
                             <div class="col-lg-4">
                                 <label>Total Amount <span>*</span></label>
-                                <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
+                                <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" placeholder="0.00"  value="{{ old('paid_amount') }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
                                 @error('paid_amount')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -555,7 +555,7 @@ if($customer->locker_no){
                             </div>
                             <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date" value="{{ old('plan_start_date') }}">
+                                <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="start_date10" value="{{ old('plan_start_date') }}">
                                 @error('plan_start_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

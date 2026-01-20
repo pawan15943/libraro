@@ -250,7 +250,7 @@
                 data.plan_start_date = start_date;
             }
 
-          console.log("start_date",start_date);
+            console.log("start_date",start_date);
             if (plan_type_id && plan_id) {
                     $.ajax({
                         url: '{{ route('getPricePlanwise') }}',
@@ -400,8 +400,8 @@
         $('#discount_amount2').on('input', function () {
             autoCalculatePaidAmount2(); // Recalculate if amount changes
         });
-         $('#discountType2').on('change', function (){
-         const type = $(this).val();
+        $('#discountType2').on('change', function (){
+           const type = $(this).val();
             if (type === 'percentage') {
                 $('#typeVal3').text('%');
             } else if (type === 'amount') {
@@ -2308,8 +2308,8 @@ $(document).ready(function() {
     const plan_id10 = $('#plan_id10').val();
     const plan_type_id10 = $('#plan_type_id10').val();
     var plan_start_date10=$('#start_date10').val();
-    getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
-    calculatePaidAmount();
+    // getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
+    // calculatePaidAmount();
     // addChargeableDays(plan_id10,plan_start_date10);
     var lockerCheck= $('#toggleFieldCheckbox10').val();
     
@@ -2463,7 +2463,7 @@ function lockerAmountGet(plan_id10){
     });
 }
 
- function calculatePaidAmount() {
+function calculatePaidAmount() {
     const planPrice = parseFloat($('#plan_price10').val()) || 0;
     const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
     const discountRaw = parseFloat($('#discount_amount10').val()) || 0;
