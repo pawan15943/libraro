@@ -420,7 +420,7 @@
 
         $(document).ready(function() {
             function addClassOnResize() {
-                if ($(window).width() <= 840) {
+                if ($(window).width() <= 1024) {
                     $('.sidebar').addClass('w-120');
                 } else {
                     $('.sidebar').removeClass('w-120');
@@ -448,7 +448,7 @@
     <!-- Right Sidebar -->
     <script>
         $(document).ready(function() {
-            const isMobile = window.innerWidth <= 840;
+            const isMobile = window.innerWidth <= 1024;
             if (isMobile) {
                 $('.right-sidebar').addClass('hide-right-sidebar');
             } else {
