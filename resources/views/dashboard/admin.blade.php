@@ -527,7 +527,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </td>
                                 <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
-                                <td>{{$value->mobile}}</td>
+                                <td>{{decryptData($value->mobile)}}</td>
                                 <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
 
                                 @if($value->payment_screenshot)

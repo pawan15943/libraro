@@ -289,6 +289,9 @@ class QrEntryController extends Controller
             $rules = [
                 'name'           => 'required|string|max:191',
                 'mobile'         => 'required|integer|digits_between:8,15',
+                'email'        => 'nullable',
+                'dob'        => 'nullable',
+                'profile_picture' => 'nullable',
                 'seat_no'        => 'nullable',
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
@@ -296,6 +299,7 @@ class QrEntryController extends Controller
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
             ];
+            
             
             Log::info('STEP 3: Before validation', [
                 'request_data' => $request->except(['password', '_token']),
@@ -413,11 +417,27 @@ class QrEntryController extends Controller
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
-        Log::info('seat type', ['seat_type' => $seat_type]);
+            Log::info('seat type', ['seat_type' => $seat_type]);
+          
+            if ($request->hasFile('profile_picture')) {
+               
+                $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+                $profile_picture = $request->profile_picture;
+                $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+                $profile_picture->move('public/uploade/', $profile_pictureNewName);
+                $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+            } else {
+                 
+                $profile_picture = null;
+            }
+
+          
             $booking = Booking::create([
                 'name'            => $validated['name'],
-                // 'email'           => $validated['email'] ?? null,
-                'mobile'          => $validated['mobile'],
+                'mobile' => encryptData($validated['mobile']),
+                'email' => $validated['email'] ? encryptData($validated['email']) : null,
+              
+                 'dob' => $validated['dob'],
                 'password'        => $password,
                 'seat_no'         => $request->seat_no ?? null,
                 'branch_id'       => $branch->id,
@@ -431,6 +451,7 @@ class QrEntryController extends Controller
                 'total_amount'    => $total_amount,
                 'transaction_id'  => $transactions ? $transactions->id : null,
                 'type'            => $seat_type,
+                'profile_picture' => $profile_picture,
             ]);
 
             Log::info('Booking created successfully', ['booking_id' => $booking->id]);
@@ -573,7 +594,7 @@ class QrEntryController extends Controller
 
     public function requestApproveEdit(Request $request)
     {
-       
+      
         if(!$request->direct_validate && !isset($request->direct_validate)){
 
         $rules = [
@@ -618,12 +639,14 @@ class QrEntryController extends Controller
             'address'           => 'nullable|string',
             'remark'            => 'nullable|string',
             'id_proof_name'     => 'nullable',
+            'profile_picture'     => 'nullable',
 
         ];
        
         
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
+            
             return redirect()->back()->withErrors($validator)->withInput();
         }
         // if (!Auth::user()->can('has-permission', 'Renew Seat')) {
@@ -631,7 +654,7 @@ class QrEntryController extends Controller
         // }
 
         }
-     
+    
         DB::beginTransaction();
 
         try {
@@ -812,12 +835,14 @@ class QrEntryController extends Controller
                 $id_proof_file = null;
             }
             if ($request->hasFile('profile_picture')) {
+               
                 $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
                 $profile_picture = $request->profile_picture;
                 $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
                 $profile_picture->move('public/uploade/', $profile_pictureNewName);
                 $profile_picture = 'public/uploade/' . $profile_pictureNewName;
             } else {
+                
                 $profile_picture = null;
             }
                

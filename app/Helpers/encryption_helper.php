@@ -900,9 +900,7 @@ if (!function_exists('getSeatDisplayByMainNo')) {
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-            // Try to extract floor number (like F1, F2)
-            // preg_match('/(\d+)/', $seat['floor_name'], $matches);
-            // $floorShort = isset($matches[1]) ? 'F' . $matches[1] : $seat['floor_name'];
+           
 
             return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
         }
