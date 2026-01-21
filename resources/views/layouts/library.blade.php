@@ -235,12 +235,6 @@
 
 
 
-    @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
-    <ul class="mobile-actions d-md-none">
-        <li><a href="javascript:;" class="noseat_popup"><i class="fa fa-chair"></i></a></li>
-        <li><a href="{{route('learner.search')}}"><i class="fa fa-search"></i></a></li>
-    </ul>
-    @endif
     @php
     $video = videoGet();
     @endphp
@@ -370,8 +364,6 @@
             $('#sidebar').on('click', function() {
                 $('.sidebar').toggleClass('w-120');
             });
-
-
         });
         $(document).ready(function() {
             $('#sidebar_mob').on('click', function() {
@@ -428,7 +420,7 @@
 
         $(document).ready(function() {
             function addClassOnResize() {
-                if ($(window).width() <= 480) {
+                if ($(window).width() <= 991) {
                     $('.sidebar').addClass('w-120');
                 } else {
                     $('.sidebar').removeClass('w-120');
@@ -443,6 +435,8 @@
             // Initial check when the page loads
             addClassOnResize();
         });
+
+       
     </script>
 
     <script>
@@ -454,7 +448,7 @@
     <!-- Right Sidebar -->
     <script>
         $(document).ready(function() {
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = window.innerWidth <= 991;
             if (isMobile) {
                 $('.right-sidebar').addClass('hide-right-sidebar');
             } else {
@@ -537,113 +531,121 @@
 
 
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
-    let cropper = null;
-    let activeInput = null;
-    let activePreview = null;
+            let cropper = null;
+            let activeInput = null;
+            let activePreview = null;
 
-    const modal = document.getElementById("cropperModal");
-    const cropperImage = document.getElementById("cropperImage");
-    const cropBtn = document.querySelector(".cropbtn");
-    const cancelCrop = document.querySelector(".cancelcrop");
+            const modal = document.getElementById("cropperModal");
+            const cropperImage = document.getElementById("cropperImage");
+            const cropBtn = document.querySelector(".cropbtn");
+            const cancelCrop = document.querySelector(".cancelcrop");
 
-    // 🔥 Find preview after input (robust)
-    function findPreview(input) {
-        let el = input.nextElementSibling;
-        while (el) {
-            if (el.classList.contains("preview-img")) return el;
-            el = el.nextElementSibling;
-        }
-        return null;
-    }
-
-    // 🔥 Dynamic crop size
-    function getCropConfig(input) {
-        if (input.classList.contains("id_proof_file")) {
-            return { width: 350, height: 200, ratio: 350 / 200 };
-        }
-        return { width: 200, height: 200, ratio: 1 };
-    }
-
-    document.querySelectorAll(".image-cropper").forEach(input => {
-
-        input.addEventListener("change", function () {
-
-            const file = this.files[0];
-            if (!file) return;
-
-            activeInput = this;
-            activePreview = findPreview(this);
-
-            const reader = new FileReader();
-            reader.onload = function () {
-
-                cropperImage.src = reader.result;
-                modal.style.display = "flex";
-
-                cropperImage.onload = () => {
-                    if (cropper) cropper.destroy();
-
-                    const cfg = getCropConfig(activeInput);
-
-                    cropper = new Cropper(cropperImage, {
-                        aspectRatio: cfg.ratio,
-                        viewMode: 1,
-                        autoCropArea: 1,
-                        responsive: true,
-                    });
-                };
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-
-    cropBtn.addEventListener("click", function () {
-        if (!cropper || !activeInput) return;
-
-        const cfg = getCropConfig(activeInput);
-
-        const canvas = cropper.getCroppedCanvas({
-            width: cfg.width,
-            height: cfg.height,
-            imageSmoothingQuality: "high",
-        });
-
-        canvas.toBlob(blob => {
-
-            const file = new File([blob], "cropped.jpg", {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-            });
-
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            activeInput.files = dt.files;
-
-            if (activePreview) {
-                activePreview.src = URL.createObjectURL(blob);
-                activePreview.style.display = "block";
+            // 🔥 Find preview after input (robust)
+            function findPreview(input) {
+                let el = input.nextElementSibling;
+                while (el) {
+                    if (el.classList.contains("preview-img")) return el;
+                    el = el.nextElementSibling;
+                }
+                return null;
             }
 
-            modal.style.display = "none";
-            cropper.destroy();
-            cropper = null;
+            // 🔥 Dynamic crop size
+            function getCropConfig(input) {
+                if (input.classList.contains("id_proof_file")) {
+                    return {
+                        width: 350,
+                        height: 200,
+                        ratio: 350 / 200
+                    };
+                }
+                return {
+                    width: 200,
+                    height: 200,
+                    ratio: 1
+                };
+            }
 
-        }, "image/jpeg", 0.8);
-    });
+            document.querySelectorAll(".image-cropper").forEach(input => {
 
-    cancelCrop.addEventListener("click", function () {
-        modal.style.display = "none";
-        if (cropper) cropper.destroy();
-        cropper = null;
-        activeInput = null;
-        activePreview = null;
-    });
+                input.addEventListener("change", function() {
 
-});
-</script>
+                    const file = this.files[0];
+                    if (!file) return;
+
+                    activeInput = this;
+                    activePreview = findPreview(this);
+
+                    const reader = new FileReader();
+                    reader.onload = function() {
+
+                        cropperImage.src = reader.result;
+                        modal.style.display = "flex";
+
+                        cropperImage.onload = () => {
+                            if (cropper) cropper.destroy();
+
+                            const cfg = getCropConfig(activeInput);
+
+                            cropper = new Cropper(cropperImage, {
+                                aspectRatio: cfg.ratio,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                                responsive: true,
+                            });
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            cropBtn.addEventListener("click", function() {
+                if (!cropper || !activeInput) return;
+
+                const cfg = getCropConfig(activeInput);
+
+                const canvas = cropper.getCroppedCanvas({
+                    width: cfg.width,
+                    height: cfg.height,
+                    imageSmoothingQuality: "high",
+                });
+
+                canvas.toBlob(blob => {
+
+                    const file = new File([blob], "cropped.jpg", {
+                        type: "image/jpeg",
+                        lastModified: Date.now(),
+                    });
+
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    activeInput.files = dt.files;
+
+                    if (activePreview) {
+                        activePreview.src = URL.createObjectURL(blob);
+                        activePreview.style.display = "block";
+                    }
+
+                    modal.style.display = "none";
+                    cropper.destroy();
+                    cropper = null;
+
+                }, "image/jpeg", 0.8);
+            });
+
+            cancelCrop.addEventListener("click", function() {
+                modal.style.display = "none";
+                if (cropper) cropper.destroy();
+                cropper = null;
+                activeInput = null;
+                activePreview = null;
+            });
+
+        });
+    </script>
 
 
 
