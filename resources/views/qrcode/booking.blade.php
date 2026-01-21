@@ -155,6 +155,11 @@
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
+                                     {{-- @foreach($availableSeats as $value)
+                                    <option value="{{ $value }}" {{ old('seat_no') == $value ? 'selected' : '' }}>
+                                        {{ $value }}
+                                    </option>
+                                    @endforeach --}}
                                     @foreach($newAvailableSeats as $key => $value)
 
                                     <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>

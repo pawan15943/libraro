@@ -67,7 +67,7 @@ class QrEntryController extends Controller
                         ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
             $availableSeats = collect();
-
+            
             // Step 2: Loop through all seat numbers and apply logic
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
                 $usedHours = $usedSeats[$seatNo] ?? 0;
@@ -77,12 +77,31 @@ class QrEntryController extends Controller
                 }
             }
 
+            $allSeats = collect(generateSeatNumbers());
+             $newAvailableSeats = collect();
+
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
+
+                if ($usedHours < $totalHour) {
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo);
+
+                    if ($seatInfo) {
+                        $newAvailableSeats->push($seatInfo);
+                    } else {
+                        $newAvailableSeats->push([
+                            'main' => $seatNo,
+                            'display' => $seatNo,
+                        ]);
+                    }
+                }
+            }
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
 
-        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats'));
+        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeats'));
     }
    public function getPlanPrice(Request $request)
     {
