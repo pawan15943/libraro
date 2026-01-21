@@ -179,10 +179,10 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Change Plan' => route('learner.change.plan', $parameters)
             ],
-            'learners.upgrade.renew' => [
+            'learners.upgrade' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
-                'Upgrade Seat' => route('learners.upgrade.renew', $parameters)
+                'Upgrade Seat' => route('learners.upgrade', $parameters)
             ],
             'seats.history' => [
                 'Dashboard' => route('library.home'),
@@ -495,7 +495,7 @@ class AppServiceProvider extends ServiceProvider
             'learners.show' => 'Booking Info',
             'learners.edit' => 'Edit Seat Booking Info',
             'learners.swap' => 'Swap Seat',
-            'learners.upgrade.renew' => 'Upgrade Seat',
+            'learners.upgrade' => 'Upgrade Seat',
             'seats.history' => 'Seat Booking History',
             'seats.history.show' => 'Detailed Seat History',
             'library.myplan' => 'My Plan',

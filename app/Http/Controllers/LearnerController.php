@@ -2457,7 +2457,7 @@ class LearnerController extends Controller
 
 
 
-        return view('learner.renewUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew'));
+        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew'));
     }
 
     public function getSwapUser($id)

@@ -295,7 +295,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
 
     Route::get('/seats/view', [DashboardController::class, 'viewSeats'])->name('learners.list.view');
-    Route::get('/upgrade/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade.renew');
+    Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade');
     Route::get('/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learner.renew.plan');
     Route::post('/upgrade/renew/store', [LearnerController::class, 'learnerUpgradeRenew'])->name('learner.upgrade.renew.store');
     Route::get('/attendance', [LearnerController::class, 'learnerAttendence'])->name('attendance');

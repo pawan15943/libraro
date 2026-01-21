@@ -28,14 +28,17 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
     $paymentType='RENEW';
     $route=route('learner.upgrade.renew.store');
     $ids='renewSeat';
+    $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 }elseif(Route::currentRouteName() == 'learner.change.plan'){
     $paymentType='CHANGE PLAN';
     $route=route('learners.update.changePlan', $customer->id);
     $ids='changePlan';
+    $start_date = \Carbon\Carbon::parse($customer->plan_start_date)->format('Y-m-d');
 }else{
     $paymentType='UPGRADE';
     $route=route('learner.upgrade.renew.store');
     $ids='learnerUpgrade';
+    $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 }
 
 @endphp
@@ -51,7 +54,8 @@ if($hasLocker){
 }else{
     $locker_amt=0;
 }
-$new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
+
+
 @endphp
 
 <div class="row g-4">
@@ -119,7 +123,7 @@ $new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->for
                     <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="library_id" value="{{ $customer->library_id}}">  
                     <input type="hidden" name="payment_type" value="{{ $paymentType}}">
-                    <input type="hidden" id="start_date10" value="{{$new_start_date}}">
+                    <input type="hidden" id="start_date10" value="{{$start_date}}">
                     
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
                     
