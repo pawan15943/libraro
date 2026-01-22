@@ -4,44 +4,108 @@ namespace App\Http\Controllers;
 
 use App\Models\LeadContact;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class LeadContactController extends Controller
 {
     public function index(Request $request)
     {
        
-        $query = LeadContact::query();
+       if ($request->ajax()) {
 
-        // Search by name or city
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                ->orWhere('city', 'like', "%{$search}%");
-            });
+            $query = LeadContact::select(
+                'id',
+                'library_name',
+                'mobile',
+                'city',
+                'lead_status',
+                'status',
+                'comments',
+                'created_at'
+            )->orderByDesc('created_at');
+
+            // Global search
+            if (!empty($request->search['value'])) {
+                $search = $request->search['value'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('library_name', 'like', "%$search%")
+                      ->orWhere('mobile', 'like', "%$search%")
+                      ->orWhere('city', 'like', "%$search%");
+                });
+            }
+
+            // Filters
+            if ($request->filled('filter_status')) {
+                $query->where('status', $request->filter_status);
+            }
+
+            if ($request->filled('filter_lead_status')) {
+                $query->where('lead_status', $request->filter_lead_status);
+            }
+
+            if ($request->filled('filter_city')) {
+                $query->where('city', $request->filter_city);
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+
+                ->addColumn('latest_comment', function ($row) {
+                    if (empty($row->comments)) return '-';
+                    $last = end($row->comments);
+                    return $last['comment'] ?? '-';
+                })
+
+                ->addColumn('status_display', function ($row) {
+                    return '<span class="badge bg-info">'
+                        . ucfirst($row->lead_status)
+                        . '</span><br><small>'
+                        . ($row->status ?? '')
+                        . '</small>';
+                })
+
+                ->addColumn('action', function ($row) {
+
+                $btn = '
+                
+                    
+
+                        <a href="javascript:void(0)"
+                        onclick="startCall('.$row->id.', \''.$row->mobile.'\')"
+                        class="dropdown-item"
+                        title="Call">
+                            <i class="fas fa-phone"></i> 
+                        </a>
+
+                        <a href="javascript:void(0)"
+                        onclick="sendWhatsapp('.$row->id.', \''.$row->mobile.'\')"
+                        class="dropdown-item"
+                        title="WhatsApp">
+                            <i class="fab fa-whatsapp"></i> 
+                        </a>
+
+                        <a href="javascript:void(0)"
+                        onclick="openCommentModal(
+                                '.$row->id.',
+                                \''.$row->lead_status.'\',
+                                \''.$row->status.'\'
+                            )"
+                        class="dropdown-item"
+                        title="Update Lead">
+                            <i class="fas fa-edit"></i> 
+                        </a>
+
+                    
+                ';
+
+                return $btn;
+            })
+
+                ->rawColumns(['status_display','action'])
+                ->make(true);
         }
 
-        // Filter by call status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by lead status
-        if ($request->filled('lead_status')) {
-            $query->where('lead_status', $request->lead_status);
-        }
-
-        // Filter by city
-        if ($request->filled('city')) {
-            $query->where('city', $request->city);
-        }
-
-        $leads = $query->latest()->paginate(15);
-
-        // City dropdown data
-        $cities = LeadContact::whereNotNull('city')
-            ->distinct()
-            ->pluck('city');
+        $cities = LeadContact::whereNotNull('city')->distinct()->pluck('city');
         $message = "Explore Libraro with our demo account and see how easy managing your library can be.
 
         Website: https://www.libraro.in
@@ -59,27 +123,28 @@ class LeadContactController extends Controller
 
         $lead_status=['Interested','Not interested','Middium interested','Discontinued','Language barrier','Future Lead','JUNK','Registerd','Other software','Excel sufficient','Manuel Sufficient','Call disconnect','called','No response','busy','follow_up','Call later','Switch off','Not Reachable','Will think and decide','DNP','Fee issue'];
 
-        return view('administrator.leads', compact('leads', 'cities','message','lead_status'));
+        return view('administrator.leads', compact( 'cities','message','lead_status'));
         
     }
+    
 
-    public function downloadContact(LeadContact $lead)
+   /* ADD LEAD (AJAX) */
+    public function store(Request $request)
     {
-        $vcard = "BEGIN:VCARD
-        VERSION:3.0
-        N:{$lead->name}
-        FN:{$lead->name}
-        TEL;TYPE=CELL:{$lead->mobile}
-        END:VCARD";
+        $request->validate([
+            'library_name' => 'required',
+            'mobile' => 'required|digits:10|unique:lead_contacts,mobile',
+            'city' => 'required',
+            'lead_status' => 'required'
+        ]);
 
-        return response($vcard)
-            ->header('Content-Type', 'text/vcard')
-            ->header('Content-Disposition', 'attachment; filename="contact.vcf"');
+        LeadContact::create($request->all());
+
+        return response()->json(['success' => true]);
     }
 
-
     /* WhatsApp Action */
-   public function saveContact(LeadContact $lead)
+    public function saveContact(LeadContact $lead)
     {
         // mark saved in DB
         if (!$lead->is_contact_saved) {
@@ -117,7 +182,7 @@ class LeadContactController extends Controller
     }
 
     /* Add Follow-up Comment */
-  public function addComment(Request $request, LeadContact $lead)
+    public function addComment(Request $request, LeadContact $lead)
     {
         $data = [];
 

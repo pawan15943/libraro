@@ -54,31 +54,43 @@
     </div>
 </div>
 
+<div class="modal fade" id="addLeadModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5>Add Lead</h5></div>
+      <div class="modal-body">
+        <input id="add_name" class="form-control mb-2" placeholder="Library Name">
+        <input id="add_mobile" class="form-control mb-2" placeholder="Mobile">
+        <input id="add_city" class="form-control mb-2" placeholder="City">
+        <select id="add_lead_status" class="form-select">
+          <option value="hot">Hot</option>
+          <option value="warm">Warm</option>
+          <option value="cold">Cold</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="saveLead()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <div class="container-fluid">
     <div class="card shadow-sm">
         <div class="card-header">
             <h5>Library Leads</h5>
-            <form method="GET" action="{{ route('leads.index') }}" class="mb-3">
+           
                 <div class="row g-2 align-items-end">
 
-                    <!-- Search -->
-                    <div class="col-md-4 col-12">
-                        <label class="form-label">Search</label>
-                        <input type="text"
-                            name="search"
-                            class="form-control"
-                            placeholder="Library name or city"
-                            value="{{ request('search') }}">
-                    </div>
+                    
 
                     <!-- Call Status -->
                     <div class="col-md-2 col-6">
                         <label class="form-label">Call Status</label>
-                        <select name="status" class="form-select">
+                        <select name="status" class="form-select" id="filter_status">
                             <option value="">All</option>
-                            @foreach(['called','not_answered','busy','follow_up'] as $status)
+                            @foreach($lead_status as $status)
                                 <option value="{{ $status }}"
                                     {{ request('status') == $status ? 'selected' : '' }}>
                                     {{ ucfirst(str_replace('_',' ',$status)) }}
@@ -90,7 +102,7 @@
                     <!-- Lead Status -->
                     <div class="col-md-2 col-6">
                         <label class="form-label">Lead Status</label>
-                        <select name="lead_status" class="form-select">
+                        <select name="lead_status" class="form-select" id="filter_lead_status">
                             <option value="">All</option>
                             @foreach(['hot','warm','cold'] as $lead)
                                 <option value="{{ $lead }}"
@@ -104,7 +116,7 @@
                     <!-- City -->
                     <div class="col-md-2 col-6">
                         <label class="form-label">City</label>
-                        <select name="city" class="form-select">
+                        <select name="city" class="form-select" id="filter_city">
                             <option value="">All</option>
                             @foreach($cities as $city)
                                 <option value="{{ $city }}"
@@ -115,22 +127,12 @@
                         </select>
                     </div>
 
-                    <!-- Buttons -->
-                    <div class="col-md-2 col-6 d-flex gap-2">
-                        <button class="btn btn-primary w-100">Filter</button>
-                        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary w-100">
-                            Reset
-                        </a>
-                    </div>
-
                 </div>
-            </form>
-
-
+         
         </div>
-
+        <button class="btn btn-success mb-3" onclick="openAddLeadModal()">➕ Add Lead</button>
         <div class="table-responsive">
-            <table class="table table-bordered align-middle">
+            <table class="table table-bordered align-middle" id="leadsTable">
                 <thead class="table-light">
                 <tr>
                     <th>Name</th>
@@ -142,64 +144,63 @@
                 </tr>
                 </thead>
 
-                <tbody>
-                @foreach($leads as $lead)
-                    <tr>
-                        <td>{{ $lead->library_name ?? '' }}</td>
-
-                        <td>
-                            <a href="tel:{{ $lead->mobile }}">
-                                {{ $lead->mobile }}
-                            </a>
-                        </td>
-
-                        <td>{{ $lead->city ?? '' }}</td>
-
-                        <td>
-                            <span class="badge bg-info">
-                                {{ ucfirst($lead->lead_status) }}
-                            </span><br>
-                            <small>{{ $lead->status }}</small>
-                        </td>
-
-                        <td>
-                            {{ $lead->latest_comment['comment'] ?? '-' }}
-                        </td>
-
-                        <td class="text-nowrap">
-                           
-                            {{-- <a href="https://wa.me/91{{ $lead->mobile }}?text={{ urlencode($message) }}"
-                            target="_blank"
-                            class="btn btn-success btn-sm">
-                            <i class="fab fa-whatsapp"></i>
-                            </a> --}}
-                            <a href="{{ route('leads.saveContact', $lead->id) }}"
-                            onclick="openWhatsapp('{{ $lead->mobile }}','{{ urlencode($message) }}')"
-                            class="btn btn-success btn-sm">
-                            <i class="fab fa-whatsapp"></i>
-                            </a>
-                        
-                            <a href="{{ route('leads.saveContact', $lead->id) }}"
-                                class="btn btn-primary btn-sm"
-                                onclick="startCall('{{ $lead->mobile }}')">
-                                <i class="fa-solid fa-phone"></i>
-                            </a>
-
-                        
-                            <button class="btn btn-secondary btn-sm"
-                                    onclick="openCommentModal({{ $lead->id }})">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
-                            </button>
-                           
-                        </td>
-                    </tr>
-                @endforeach
-                </tbody>
+                
 
             </table>
         </div>
     </div>
 </div>
+<script>
+$(document).ready(function () {
+
+    let table = $('#leadsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('leads.index') }}", // SAME ROUTE
+             headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: function (d) {
+                d.filter_status = $('#filter_status').val();
+                d.filter_lead_status = $('#filter_lead_status').val();
+                d.filter_city = $('#filter_city').val();
+            }
+        },
+        columns: [
+        
+            { data: 'library_name' },
+            { data: 'mobile' },
+            { data: 'city' },
+            { data: 'status_display', orderable:false },
+            { data: 'latest_comment', orderable:false },
+            { data: 'action', orderable:false, searchable:false }
+        ]
+    });
+
+    $('#filter_status, #filter_lead_status, #filter_city').change(function () {
+        table.ajax.reload();
+    });
+
+});
+
+function openAddLeadModal() {
+    $('#addLeadModal').modal('show');
+}
+
+function saveLead() {
+    $.post("{{ route('leads.store') }}", {
+        _token: "{{ csrf_token() }}",
+        library_name: $('#add_name').val(),
+        mobile: $('#add_mobile').val(),
+        city: $('#add_city').val(),
+        lead_status: $('#add_lead_status').val()
+    }, function () {
+        $('#addLeadModal').modal('hide');
+        table.ajax.reload(null,false);
+    });
+}
+</script>
 
 <script>
 function openWhatsapp(mobile, message) {

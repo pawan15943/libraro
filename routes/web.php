@@ -33,14 +33,17 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 
 
-Route::prefix('leads')->group(function () {
-    Route::get('/', [LeadContactController::class, 'index'])->name('leads.index');
-    Route::get('/leads/save-contact/{lead}', [LeadContactController::class, 'saveContact'])->name('leads.saveContact');
-    Route::post('/call/{lead}', [LeadContactController::class, 'updateCallStatus'])->name('leads.call');
-    Route::post('/comment/{lead}', [LeadContactController::class, 'addComment'])->name('leads.comment');
-    Route::get('/history/{lead}', [LeadContactController::class, 'history'])->name('leads.history');
-    Route::get('/leads/save-contact/{lead}', [LeadContactController::class, 'downloadContact'])->name('leads.saveContact');
+
+Route::prefix('leads')->name('leads.')->group(function () {
+    Route::get('/', [LeadContactController::class, 'index'])->name('index');
+    
+
+    Route::post('/store', [LeadContactController::class, 'store'])->name('store');
+    Route::post('/{lead}/comment', [LeadContactController::class, 'addComment'])->name('comment');
+    Route::post('/{lead}/call-status', [LeadContactController::class, 'updateCallStatus'])->name('call');
+    Route::get('/{lead}/save-contact', [LeadContactController::class, 'saveContact'])->name('saveContact');
 });
+
 
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
 Route::get('library/login', [LoginController::class, 'showAdminLoginForm'])->name('login.library');
