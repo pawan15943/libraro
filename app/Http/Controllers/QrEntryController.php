@@ -821,7 +821,7 @@ class QrEntryController extends Controller
                 $payment_mode = 0;
             }
             
-           Log::info('FordetailStatus', ['status' => $status,'detailStatus'=>$detailStatus]);
+         
 
             $learnerId=$request->learner_id;
            
@@ -875,9 +875,6 @@ class QrEntryController extends Controller
             }
             
             
-
-           
-
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
@@ -904,6 +901,8 @@ class QrEntryController extends Controller
                 $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
                 $profile_picture->move('public/uploade/', $profile_pictureNewName);
                 $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+            }elseif($bookingurl->profile_picture){
+                $profile_picture=$bookingurl->profile_picture;
             } else {
                 
                 $profile_picture = null;

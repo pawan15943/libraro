@@ -117,8 +117,8 @@ span.close-modal {
         <img src="" id="modalImage">
     </div>
 </div>
-    <div class="row ">
-        <div class="col-lg-9">
+    <div class="row mb-4">
+        <div class="col-lg-8">
             <div class="card">
                 <div class="row g-4">
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
