@@ -60,7 +60,7 @@
                         <div class="card-body small">
                             <div class="row g-2">
                                 <div class="col-6"><strong>Seat No:</strong></div>
-                                <div class="col-6 text-end">{{ $customer->seat_no ? getSeatDisplayByMainNo($customer->seat_no) : 'GEN' }}</div>
+                                <div class="col-6 text-end">{{ $learnerSeat ?? 'GEN' }}</div>
 
                                 <div class="col-6"><strong>Name:</strong></div>
                                 <div class="col-6 text-end">{{ $customer->name }}</div>

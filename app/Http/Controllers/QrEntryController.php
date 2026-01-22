@@ -1068,9 +1068,9 @@ class QrEntryController extends Controller
             return redirect()->back()->with('error', 'No customer transaction found with this mobile.');
 
         }
-    
+        $learnerSeat=$this->getSeatDisplayByMainNo($customer->seat_no,$customer->branch_id);
 
-        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction'));
+        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction','learnerSeat'));
     }
     public function destroy($id)
     {
@@ -1289,5 +1289,29 @@ class QrEntryController extends Controller
         }
         // Return the filtered plan types as JSON
         return response()->json($filteredPlanTypes);
+    }
+
+    public function getSeatDisplayByMainNo($mainSeatNo,$branchId)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect($this->generateSeatNumbers($branchId));
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+           
+
+            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
     }
 }
