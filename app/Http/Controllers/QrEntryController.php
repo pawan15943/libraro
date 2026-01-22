@@ -55,121 +55,98 @@ class QrEntryController extends Controller
 
   
     public function bookSeat($branchUuid)
-{
-    $branch = Branch::where('uuid', $branchUuid)
-        ->select('id', 'library_id', 'uuid')
-        ->firstOrFail();
+    {
+            $branch = Branch::where('uuid', $branchUuid)->select('id', 'library_id', 'uuid')->firstOrFail();
 
-    $totalSeats = Hour::withoutGlobalScopes()
-        ->where('branch_id', $branch->id)
-        ->value('seats');
+            $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('seats');
+            $totalHour=Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('hour');
+         
+            $usedSeats = LearnerDetail::withoutGlobalScopes()->select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                        ->where('branch_id',$branch->id)
+                        ->whereNotNull('seat_no')
+                        ->groupBy('seat_no')->where('status',1)
+                        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
-    $totalHour = Hour::withoutGlobalScopes()
-        ->where('branch_id', $branch->id)
-        ->value('hour');
+            $availableSeats = collect();
 
-    $usedSeats = LearnerDetail::withoutGlobalScopes()
-        ->select('seat_no', DB::raw('SUM(hour) as used_hours'))
-        ->where('branch_id', $branch->id)
-        ->whereNotNull('seat_no')
-        ->groupBy('seat_no')
-        ->where('status', 1)
-        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
+            $allSeats = collect($this->generateSeatNumbers($branch->id));
+            $newAvailableSeat = collect();
 
-    $availableSeats = collect(); // ❌ kept as-is (not removed)
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
 
-    $result = [];
-    $mainSeatNo = 1; // ❌ kept as-is (but not used incorrectly anymore)
+                if ($usedHours < $totalHour) {
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo);
 
-    // Step 2: Loop through all seat numbers and apply logic
-    for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-        $usedHours = $usedSeats[$seatNo] ?? 0;
+                    if ($seatInfo) {
+                        $newAvailableSeat->push($seatInfo);
+                    } else {
+                        $newAvailableSeat->push([
+                            'main' => $seatNo,
+                            'display' => $seatNo,
+                        ]);
+                    }
+                }
+            }
+      
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
-        if ($usedHours < $totalHour) {
-            $availableSeats->push($seatNo);
-        }
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
+
+        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeat'));
     }
 
-    $floors = Floor::withoutGlobalScopes()
-        ->where('branch_id', $branch->id)
-        ->orderBy('floor_no')
-        ->get();
+    public function generateSeatNumbers($branchId)
+    {
+        $result = [];
+        $mainSeatNo = 1;
 
-    // Loop through all floors
-    if (!empty($floors)) {
-        foreach ($floors as $floor) {
-            $startSeat = $floor->from_seat ?? 1;
-            $endSeat   = $floor->to_seat ?? 0;
+        // Get total seats dynamically
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
+        $totalSeats = $first_record ? $first_record->seats : 0;
 
-            for ($seatNo = $startSeat; $seatNo <= $endSeat && $seatNo <= $totalSeats; $seatNo++) {
+        if ($totalSeats <= 0) {
+            return $result;
+        }
 
-                // ✅ FIX #1: main MUST be actual seat number
-                $result[] = [
-                    'main'       => $seatNo, // 🔴 FIXED (was $mainSeatNo)
-                    'floor'      => $seatNo,
-                    'floor_name' => $floor->name,
-                    'floor_no'   => $floor->floor_no,
-                    'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
-                ];
+        // Get floors ordered by floor number
+        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
 
-                $mainSeatNo++; // ❌ kept (harmless now)
+        // Loop through all floors
+        if (!empty($floors)) {
+            foreach ($floors as $floor) {
+                $startSeat = $floor->from_seat ?? 1;
+                $endSeat   = $floor->to_seat ?? 0;
+
+
+
+                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+                    $result[] = [
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor_name' => $floor->name,
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                    ];
+
+                    $mainSeatNo++;
+                }
             }
         }
-    }
 
-    // Add remaining seats (unassigned to any floor)
-    while ($mainSeatNo <= $totalSeats) {
-
-        // ✅ FIX #2: use actual seat number
-        $seatNo = $mainSeatNo;
-
-        $result[] = [
-            'main'       => $seatNo, // 🔴 FIXED
-            'floor'      => null,
-            'floor_name' => null,
-            'display'    => 'Seat No - ' . $seatNo
-        ];
-
-        $mainSeatNo++;
-    }
-
-    $allSeats = collect($result);
-    $newAvailableSeat = collect();
-
-    // Step 3: map availability to seat master
-    for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-        $usedHours = $usedSeats[$seatNo] ?? 0;
-
-        if ($usedHours < $totalHour) {
-
-            // ✅ FIX #3: now matching works correctly
-            $seatInfo = $allSeats->firstWhere('main', $seatNo);
-
-            if ($seatInfo) {
-                $newAvailableSeat->push($seatInfo);
-            } else {
-                $newAvailableSeat->push([
-                    'main' => $seatNo,
-                    'display' => 'Seat No - ' . $seatNo
-                ]);
-            }
+        // Add remaining seats (unassigned to any floor)
+        while ($mainSeatNo <= $totalSeats) {
+            $result[] = [
+                'main' => $mainSeatNo,
+                'floor' => null,
+                'floor_name' => null,
+                'display' => 'Seat No - ' . $mainSeatNo
+            ];
+            $mainSeatNo++;
         }
+
+        return $result;
     }
-
-    $plans = Plan::withoutGlobalScopes()
-        ->where('library_id', $branch->library_id)
-        ->get();
-
-    $planType = PlanType::withoutGlobalScopes()
-        ->where('branch_id', $branch->id)
-        ->get();
-
-    return view(
-        'qrcode.booking',
-        compact('branch', 'plans', 'planType', 'availableSeats', 'newAvailableSeat')
-    );
-}
-
    public function getPlanPrice(Request $request)
     {
         // Validation
