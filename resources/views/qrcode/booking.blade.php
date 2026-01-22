@@ -160,7 +160,7 @@
                                         {{ $value }}
                                     </option>
                                     @endforeach --}}
-                                    @foreach($newAvailableSeats as $key => $value)
+                                    @foreach($newAvailableSeat  as $key => $value)
 
                                     <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
                                     @endforeach

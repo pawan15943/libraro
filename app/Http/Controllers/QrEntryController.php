@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use App\Http\Controllers\LearnerController;
+use App\Models\Floor;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class QrEntryController extends Controller
@@ -54,55 +55,121 @@ class QrEntryController extends Controller
 
   
     public function bookSeat($branchUuid)
-    {
-            $branch = Branch::where('uuid', $branchUuid)->select('id', 'library_id', 'uuid')->firstOrFail();
+{
+    $branch = Branch::where('uuid', $branchUuid)
+        ->select('id', 'library_id', 'uuid')
+        ->firstOrFail();
 
-            $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('seats');
-            $totalHour=Hour::withoutGlobalScopes()->where('branch_id',$branch->id)->value('hour');
-         
-            $usedSeats = LearnerDetail::withoutGlobalScopes()->select('seat_no', DB::raw('SUM(hour) as used_hours'))
-                        ->where('branch_id',$branch->id)
-                        ->whereNotNull('seat_no')
-                        ->groupBy('seat_no')->where('status',1)
-                        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
+    $totalSeats = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch->id)
+        ->value('seats');
 
-            $availableSeats = collect();
-            
-            // Step 2: Loop through all seat numbers and apply logic
-            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-                $usedHours = $usedSeats[$seatNo] ?? 0;
+    $totalHour = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch->id)
+        ->value('hour');
 
-                if ($usedHours < $totalHour) {
-                    $availableSeats->push($seatNo);
-                }
-            }
+    $usedSeats = LearnerDetail::withoutGlobalScopes()
+        ->select('seat_no', DB::raw('SUM(hour) as used_hours'))
+        ->where('branch_id', $branch->id)
+        ->whereNotNull('seat_no')
+        ->groupBy('seat_no')
+        ->where('status', 1)
+        ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
-            $allSeats = collect(generateSeatNumbers());
-             $newAvailableSeats = collect();
+    $availableSeats = collect(); // ❌ kept as-is (not removed)
 
-            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-                $usedHours = $usedSeats[$seatNo] ?? 0;
+    $result = [];
+    $mainSeatNo = 1; // ❌ kept as-is (but not used incorrectly anymore)
 
-                if ($usedHours < $totalHour) {
-                    $seatInfo = $allSeats->firstWhere('main', $seatNo);
+    // Step 2: Loop through all seat numbers and apply logic
+    for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+        $usedHours = $usedSeats[$seatNo] ?? 0;
 
-                    if ($seatInfo) {
-                        $newAvailableSeats->push($seatInfo);
-                    } else {
-                        $newAvailableSeats->push([
-                            'main' => $seatNo,
-                            'display' => $seatNo,
-                        ]);
-                    }
-                }
-            }
-      
-        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
-
-        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
-
-        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeats'));
+        if ($usedHours < $totalHour) {
+            $availableSeats->push($seatNo);
+        }
     }
+
+    $floors = Floor::withoutGlobalScopes()
+        ->where('branch_id', $branch->id)
+        ->orderBy('floor_no')
+        ->get();
+
+    // Loop through all floors
+    if (!empty($floors)) {
+        foreach ($floors as $floor) {
+            $startSeat = $floor->from_seat ?? 1;
+            $endSeat   = $floor->to_seat ?? 0;
+
+            for ($seatNo = $startSeat; $seatNo <= $endSeat && $seatNo <= $totalSeats; $seatNo++) {
+
+                // ✅ FIX #1: main MUST be actual seat number
+                $result[] = [
+                    'main'       => $seatNo, // 🔴 FIXED (was $mainSeatNo)
+                    'floor'      => $seatNo,
+                    'floor_name' => $floor->name,
+                    'floor_no'   => $floor->floor_no,
+                    'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                ];
+
+                $mainSeatNo++; // ❌ kept (harmless now)
+            }
+        }
+    }
+
+    // Add remaining seats (unassigned to any floor)
+    while ($mainSeatNo <= $totalSeats) {
+
+        // ✅ FIX #2: use actual seat number
+        $seatNo = $mainSeatNo;
+
+        $result[] = [
+            'main'       => $seatNo, // 🔴 FIXED
+            'floor'      => null,
+            'floor_name' => null,
+            'display'    => 'Seat No - ' . $seatNo
+        ];
+
+        $mainSeatNo++;
+    }
+
+    $allSeats = collect($result);
+    $newAvailableSeat = collect();
+
+    // Step 3: map availability to seat master
+    for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+        $usedHours = $usedSeats[$seatNo] ?? 0;
+
+        if ($usedHours < $totalHour) {
+
+            // ✅ FIX #3: now matching works correctly
+            $seatInfo = $allSeats->firstWhere('main', $seatNo);
+
+            if ($seatInfo) {
+                $newAvailableSeat->push($seatInfo);
+            } else {
+                $newAvailableSeat->push([
+                    'main' => $seatNo,
+                    'display' => 'Seat No - ' . $seatNo
+                ]);
+            }
+        }
+    }
+
+    $plans = Plan::withoutGlobalScopes()
+        ->where('library_id', $branch->library_id)
+        ->get();
+
+    $planType = PlanType::withoutGlobalScopes()
+        ->where('branch_id', $branch->id)
+        ->get();
+
+    return view(
+        'qrcode.booking',
+        compact('branch', 'plans', 'planType', 'availableSeats', 'newAvailableSeat')
+    );
+}
+
    public function getPlanPrice(Request $request)
     {
         // Validation
