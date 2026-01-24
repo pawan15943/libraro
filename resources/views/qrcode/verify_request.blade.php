@@ -31,17 +31,100 @@ $ids='approvwRequest';
 }
 
 @endphp
+@if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
+<style>
+    /* Final image preview */
+.profile-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    display: none;
+    margin-top: 10px;
+}
 
+    .preview-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 100px;
+        border: 1px solid #ddd;
+    }
 
-    <div class="row ">
-        <div class="col-lg-9">
+    .preview-img.one {
+        width: 200px;
+        height: 150px;
+        border-radius: 1rem;
+    }
+    .image-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.image-modal-content{
+    position:relative;
+    background:#fff;
+    padding:10px;
+    border-radius:8px;
+    max-width:90%;
+    max-height:90%;
+}
+
+.image-modal-content img{
+    max-width:100%;
+    max-height:80vh;
+    display:block;
+}
+
+.close-modal{
+    position:absolute;
+    top:5px;
+    right:10px;
+    font-size:24px;
+    cursor:pointer;
+}
+span.close-modal {
+    background: #fff;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 25px;
+    margin-top: 10px;
+    margin-right: 4px ! IMPORTANT;
+}
+
+</style>
+ <div id="imageViewModal" class="image-modal" style="display:none;">
+    <div class="image-modal-content">
+        <span class="close-modal">&times;</span>
+        <img src="" id="modalImage">
+    </div>
+</div>
+    <div class="row mb-4">
+        <div class="col-lg-8">
             <div class="card">
                 <div class="row g-4">
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="detailes">
-                        @php
+                        {{-- @php
                             // Normalize available seats
                             $availableSeatsArray = collect($availableseats)->filter()->values()->toArray();
                                 // Default (BOOK case)
@@ -53,10 +136,66 @@ $ids='approvwRequest';
 
                             // Always keep order clean
                             sort($seatList);
+                       
+                        @endphp --}}
+
+                        @php
+                            /*
+                            |--------------------------------------------------------------------------
+                            | 1. Normalize available seat numbers (plain main seat numbers)
+                            |--------------------------------------------------------------------------
+                            */
+                            $availableSeatNumbers = collect($availableseats)
+                                ->filter()
+                                ->values()
+                                ->toArray();
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | 2. Get ALL seats with full structure
+                            |    [
+                            |      main, floor, floor_name, floor_no, display
+                            |    ]
+                            |--------------------------------------------------------------------------
+                            */
+                            $allSeats = collect(generateSeatNumbers());
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | 3. Filter only AVAILABLE seats (keep structure)
+                            |--------------------------------------------------------------------------
+                            */
+                            $seatList = $allSeats->filter(function ($seat) use ($availableSeatNumbers) {
+                                return in_array($seat['main'], $availableSeatNumbers);
+                            })->values();
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | 4. Renew case → ensure current seat is present
+                            |--------------------------------------------------------------------------
+                            */
+                            if (
+                                isset($customer) &&
+                                ($customer->type ?? null) === 'qr_renew' &&
+                                !empty($customer->seat_no) &&
+                                !$seatList->contains('main', $customer->seat_no)
+                            ) {
+                                $currentSeat = $allSeats->firstWhere('main', $customer->seat_no);
+
+                                if ($currentSeat) {
+                                    $seatList->prepend($currentSeat);
+                                }
+                            }
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | 5. Always keep order clean (by main seat number)
+                            |--------------------------------------------------------------------------
+                            */
+                            $seatList = $seatList->sortBy('main')->values();
                         @endphp
 
-
-
+                       
 
                         <div class="row g-3">
                             <input type="hidden" name="booking_id" value="{{ $customer->id ?? '' }}" >
@@ -78,44 +217,60 @@ $ids='approvwRequest';
                             <div class="col-lg-6">
                                 <label for="seat_id11">Choose Seat No. <span>*</span></label>
 
-                                <select name="seat_no" class="form-select" id="seat_id11">
+                                <select name="seat_no" class="form-select  @error('seat_no') is-invalid @enderror" id="seat_id11">
                                      <option value="">GEN</option>
-                                    @foreach($seatList as $value)
-                                    <option value="{{ $value }}" {{ ($customer->seat_no ?? '') == $value  ? 'selected' : '' }}>
-                                        {{ $value }}
-                                    </option>
-                                    @endforeach
+                                      @foreach ($seatList as $seat)
+                                            <option value="{{ $seat['main'] }}"
+                                                {{ ($customer->seat_no ?? '') == $seat['main'] ? 'selected' : '' }}>
+                                                {{ $seat['display'] }}
+                                            </option>
+                                        @endforeach
                                 </select>
+                                 @error('seat_no')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
                             </div>
 
                             {{-- ================================================================== --}}
                             <div class="col-lg-6">
                                 <label for="">Full Name <span>*</span></label>
-                                <input type="text" class="form-control char-only" name="name" value="{{ old('name') ?? $customer->name ?? '' }}">
+                                <input type="text" class="form-control char-only @error('name') is-invalid @enderror" name="name" value="{{ old('name') ?? $customer->name ?? '' }}">
+                                @error('name')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Mobile Number <span>*</span></label>
-                                <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile"  value="{{ old('mobile') ?? $customer->mobile ?? '' }}">
+                                <input type="text" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="10" name="mobile"  value="{{ old('mobile') ?? decryptData($customer->mobile) ?? '' }}">
+                                 @error('mobile')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
 
                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
-                             <input type="date"
-                                class="form-control dob"
+                                <input type="date"
+                                class="form-control dob @error('dob') is-invalid @enderror"
                                 name="dob"
-                                value="{{ old('dob') ?? (optional($learner)->dob ? \Carbon\Carbon::parse($learner->dob)->format('Y-m-d') : '') }}"
+                                value="{{ old('dob') ?? (optional($customer)->dob ? \Carbon\Carbon::parse($customer->dob)->format('Y-m-d') : '') }}"
                                 max="{{ date('Y-m-d', strtotime('-10 years')) }}">
 
-
+                                 @error('dob')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
                             @endif
 
                             @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control" name="email" value="{{ old('email') ?? $learner->email ?? '' }}" >
-                               
+                                <input type="text" class="form-control  @error('email') is-invalid @enderror" name="email" value="{{ old('email') ?? decryptData($customer->email) ?? '' }}" >
+                                 @error('email')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
                             @endif
 
@@ -154,6 +309,9 @@ $ids='approvwRequest';
                             <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
                                 <input type="date" name="plan_start_date" class="form-control @error('plan_start_date') is-invalid @enderror" value="{{ old('plan_start_date', $customer->plan_start_date) }}">
+                                 @error('plan_start_date')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
 
                             <input type="hidden" id="plan_price11" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" value="{{ old('plan_price_id', $customer->plan_price_id) }}" readonly>
@@ -221,8 +379,11 @@ $ids='approvwRequest';
                         <div class="row g-3 mt-0">
                             <div class="col-lg-4">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="paid_amount11" class="form-control digit-only" value="{{ old('paid_amount') }}" name="paid_amount" placeholder="Example : 00 Rs">
+                                <input id="paid_amount11" class="form-control digit-only @error('paid_amount') is-invalid @enderror" value="{{ old('paid_amount') }}" name="paid_amount" placeholder="Example : 00 Rs">
                                 <span id="pending_amt11" class="text-danger"></span>
+                                @error('paid_amount')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
 
                             <div class="col-lg-4">
@@ -290,21 +451,39 @@ $ids='approvwRequest';
 
                             <div class="col-lg-6">
                                 <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                <input type="file" class="form-control" name="id_proof_file" id="id_proof_file2" autocomplete="off">
+                                
 
-                                {{-- File input cannot keep old value --}}
-                                @if(!empty($customer->id_proof_file))
-                                    <a href="{{ asset('storage/'.$customer->id_proof_file) }}" target="_blank">
-                                        <i class="fa fa-eye"></i> View Uploaded File
-                                    </a>
+                                <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                                <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
+                                @error('id_proof_file')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                                @if($customer->id_proof_file)
+                                <a href="{{ asset($customer->id_proof_file) }}" class="view-image">View</a>
+
                                 @endif
                             </div>
                             @endif
                              @if(!in_array('8', toggleHideField()))
-                            <div class="col-lg-6">
+                           
+                             <div class="col-lg-6">
                                 <label for="profile_picture">Upload Profile Photo</label>
-                                <input type="file" class="form-control" name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" value="{{old('profile_picture')}}">
+                                <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
+                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
 
+
+                                @error('profile_picture')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            @if($customer->profile_picture)
+                                <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
+                                
+                            @endif
                             </div>
                             @endif
                             @if(!in_array('29', toggleHideField()))
@@ -380,6 +559,8 @@ $ids='approvwRequest';
 
                     </div>
                 </form>
+ 
+
             </div>
             </div>
         </div>
@@ -883,4 +1064,41 @@ $ids='approvwRequest';
     
 
 </script>
+
+<script>
+$(document).ready(function () {
+
+    // Intercept all "View" image links
+    $(document).on("click", 'a.view-image, a[target="_blank"]', function (e) {
+
+        const imageUrl = $(this).attr("href");
+
+        // Only handle image links
+        if (!imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            return;
+        }
+
+        e.preventDefault();
+
+        $("#modalImage").attr("src", imageUrl);
+        $("#imageViewModal").fadeIn(200);
+    });
+
+    // Close modal
+    $(".close-modal").on("click", function () {
+        $("#imageViewModal").fadeOut(200);
+        $("#modalImage").attr("src", "");
+    });
+
+    // Close on background click
+    $("#imageViewModal").on("click", function (e) {
+        if ($(e.target).is(this)) {
+            $(this).fadeOut(200);
+            $("#modalImage").attr("src", "");
+        }
+    });
+
+});
+</script>
+
 @endsection
