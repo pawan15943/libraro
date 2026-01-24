@@ -4963,7 +4963,7 @@ h6.text-center.bg-white {
 
     .seat-booking {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px;
     }
 
