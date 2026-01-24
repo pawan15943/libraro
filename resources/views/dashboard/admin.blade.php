@@ -67,13 +67,25 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
     <div class="dashboard learner">
         <div class="row">
-            <div class="col-lg-6">
-                <div class="greeting-container">
-                    <i id="greeting-icon" class="fas fa-sun greeting-icon"></i>
-                    <h2 id="greeting-message" class="typing-text">Good Morning! Library Owner</h2>
-                </div>
+            <div class="col-lg-8">
+
+                @if($festival)
+                    <div class="greeting-container">
+                        <i class="fas fa-gift greeting-icon text-success"></i>
+
+                        <h2 class="typing-text">
+                            Happy {{ $festival->festival_name }}!
+                        </h2>
+
+                    </div>
+                @else
+                    <div class="greeting-container"> 
+                        <i id="greeting-icon" class="fas fa-sun greeting-icon"></i> <h2 id="greeting-message" class="typing-text">Good Morning! Library Owner</h2> 
+                    </div>
+                @endif
+
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-4">
 
                 <ul class="QuickAction">
 

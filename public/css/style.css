@@ -6778,3 +6778,8 @@ p#scanMsg {
     display: none;
     margin-top: 10px;
 }
+
+h2.typing-text {
+    font-size: 1.5rem;
+    color: #c48400 ! IMPORTANT;
+}

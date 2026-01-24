@@ -265,15 +265,19 @@ class DashboardController extends Controller
                         ]);
                     }
                 }
-                
+
+                $festival = DB::table('india_festivals')
+                ->whereDate('festival_date', Carbon::today())
+                ->first();   // object or null
+
+
                
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch'));
+                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch','festival'));
             }else{
              
                 return redirect($redirectUrl);
             }
            
-          
       
       
        
