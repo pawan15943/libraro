@@ -24,12 +24,7 @@ if($customer->locker_no){
 }
 
 
-if(Route::currentRouteName() == 'learner.renew.plan'){
-    $paymentType='RENEW';
-    $route=route('learner.upgrade.renew.store');
-    $ids='renewSeat';
-    $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
-}elseif(Route::currentRouteName() == 'learner.change.plan'){
+if(Route::currentRouteName() == 'learner.change.plan'){
     $paymentType='CHANGE PLAN';
     $route=route('learners.update.changePlan', $customer->id);
     $ids='changePlan';
@@ -42,21 +37,7 @@ if(Route::currentRouteName() == 'learner.renew.plan'){
 }
 
 @endphp
-@php
-                    
-$hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-$discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
-$selectedDiscountType = $discountAmount ? 'amount' : '';
-$oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
-$today = \Carbon\Carbon::now();
-if($hasLocker){
-    $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
-}else{
-    $locker_amt=0;
-}
 
-
-@endphp
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
@@ -95,9 +76,7 @@ if($hasLocker){
 
             <div class="form-input mb-4">
                 <h4 class="inner-heading">
-                    @if(Route::currentRouteName() == 'learner.renew.plan')
-                    Renew Plan
-                    @elseif(Route::currentRouteName() == 'learner.change.plan')
+                    @if(Route::currentRouteName() == 'learner.change.plan')
                     Change Plan
                     @else
                     Upgrade Plan
@@ -122,7 +101,7 @@ if($hasLocker){
                     <input type="hidden" name="learner_id" value="{{ $customer->id}}" >
                     <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="library_id" value="{{ $customer->library_id}}">  
-                    <input type="hidden" name="payment_type" value="{{ $paymentType}}">
+                    <input type="hidden" name="payment_type" value="{{ $paymentType}}" id="payment_type_operation">
                     <input type="hidden" id="start_date10" value="{{$start_date}}">
                     
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
@@ -246,7 +225,7 @@ if($hasLocker){
                             @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
-                            <span id="chargeable_days10"></span>
+                            <span id="chargeable_days10" class="text-info"></span>
                         </div>
                         @if($paymentType=='CHANGE PLAN')
                         <div class="col-lg-4">

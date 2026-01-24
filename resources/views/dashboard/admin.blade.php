@@ -497,15 +497,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <tr>
                                 <td>
                                     @if($value->type=='qr_seat_book')
-                                        SEAT BOOK
+                                    SEAT BOOK
                                     @elseif($value->type=='qr_renew')
                                     RENEW SEAT
                                     @else
                                         -
                                     @endif
                                 </td>
-                                <td>{{$value->name}}<br>{{$value->seat_no ? 'Seat No '.$value->seat_no : 'GEN'}}</td>
-                                <td>{{$value->mobile}}</td>
+                                <td>{{$value->name}}<br>{{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</td>
+                                <td>{{$value->mobile ? '+91'.decryptData($value->mobile) : ''}}</td>
                                 <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }}</td>
 
                                 @if($value->payment_screenshot)

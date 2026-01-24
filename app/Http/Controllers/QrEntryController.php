@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use App\Http\Controllers\LearnerController;
+use App\Models\Floor;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class QrEntryController extends Controller
@@ -69,21 +70,83 @@ class QrEntryController extends Controller
 
             $availableSeats = collect();
 
-            // Step 2: Loop through all seat numbers and apply logic
+            $allSeats = collect($this->generateSeatNumbers($branch->id));
+            $newAvailableSeat = collect();
+
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
                 $usedHours = $usedSeats[$seatNo] ?? 0;
 
                 if ($usedHours < $totalHour) {
-                    $availableSeats->push($seatNo);
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo);
+
+                    if ($seatInfo) {
+                        $newAvailableSeat->push($seatInfo);
+                    } else {
+                        $newAvailableSeat->push([
+                            'main' => $seatNo,
+                            'display' => $seatNo,
+                        ]);
+                    }
                 }
             }
-
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
 
-        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats'));
+        return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeat'));
+    }
+
+    public function generateSeatNumbers($branchId)
+    {
+        $result = [];
+        $mainSeatNo = 1;
+
+        // Get total seats dynamically
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
+        $totalSeats = $first_record ? $first_record->seats : 0;
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
+
+        // Get floors ordered by floor number
+        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
+
+        // Loop through all floors
+        if (!empty($floors)) {
+            foreach ($floors as $floor) {
+                $startSeat = $floor->from_seat ?? 1;
+                $endSeat   = $floor->to_seat ?? 0;
+
+
+
+                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+                    $result[] = [
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor_name' => $floor->name,
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                    ];
+
+                    $mainSeatNo++;
+                }
+            }
+        }
+
+        // Add remaining seats (unassigned to any floor)
+        while ($mainSeatNo <= $totalSeats) {
+            $result[] = [
+                'main' => $mainSeatNo,
+                'floor' => null,
+                'floor_name' => null,
+                'display' => 'Seat No - ' . $mainSeatNo
+            ];
+            $mainSeatNo++;
+        }
+
+        return $result;
     }
    public function getPlanPrice(Request $request)
     {
@@ -290,6 +353,9 @@ class QrEntryController extends Controller
             $rules = [
                 'name'           => 'required|string|max:191',
                 'mobile'         => 'required|integer|digits_between:8,15',
+                'email'        => 'nullable',
+                'dob'        => 'nullable',
+                'profile_picture' => 'nullable',
                 'seat_no'        => 'nullable',
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
@@ -297,6 +363,7 @@ class QrEntryController extends Controller
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
             ];
+            
             
             Log::info('STEP 3: Before validation', [
                 'request_data' => $request->except(['password', '_token']),
@@ -414,11 +481,27 @@ class QrEntryController extends Controller
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
-        Log::info('seat type', ['seat_type' => $seat_type]);
+            Log::info('seat type', ['seat_type' => $seat_type]);
+          
+            if ($request->hasFile('profile_picture')) {
+               
+                $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+                $profile_picture = $request->profile_picture;
+                $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+                $profile_picture->move('public/uploade/', $profile_pictureNewName);
+                $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+            } else {
+                 
+                $profile_picture = null;
+            }
+
+          
             $booking = Booking::create([
                 'name'            => $validated['name'],
-                // 'email'           => $validated['email'] ?? null,
-                'mobile'          => $validated['mobile'],
+                'mobile' => encryptData($validated['mobile']),
+                'email' => $validated['email'] ? encryptData($validated['email']) : null,
+              
+                 'dob' => $validated['dob'],
                 'password'        => $password,
                 'seat_no'         => $request->seat_no ?? null,
                 'branch_id'       => $branch->id,
@@ -432,6 +515,7 @@ class QrEntryController extends Controller
                 'total_amount'    => $total_amount,
                 'transaction_id'  => $transactions ? $transactions->id : null,
                 'type'            => $seat_type,
+                'profile_picture' => $profile_picture,
             ]);
 
             Log::info('Booking created successfully', ['booking_id' => $booking->id]);
@@ -574,7 +658,7 @@ class QrEntryController extends Controller
 
     public function requestApproveEdit(Request $request)
     {
-       
+      
         if(!$request->direct_validate && !isset($request->direct_validate)){
 
         $rules = [
@@ -619,12 +703,14 @@ class QrEntryController extends Controller
             'address'           => 'nullable|string',
             'remark'            => 'nullable|string',
             'id_proof_name'     => 'nullable',
+            'profile_picture'     => 'nullable',
 
         ];
        
         
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
+            
             return redirect()->back()->withErrors($validator)->withInput();
         }
         // if (!Auth::user()->can('has-permission', 'Renew Seat')) {
@@ -632,7 +718,7 @@ class QrEntryController extends Controller
         // }
 
         }
-     
+    
         DB::beginTransaction();
 
         try {
@@ -736,7 +822,7 @@ class QrEntryController extends Controller
                 $payment_mode = 0;
             }
             
-           Log::info('FordetailStatus', ['status' => $status,'detailStatus'=>$detailStatus]);
+         
 
             $learnerId=$request->learner_id;
            
@@ -790,9 +876,6 @@ class QrEntryController extends Controller
             }
             
             
-
-           
-
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
@@ -813,12 +896,16 @@ class QrEntryController extends Controller
                 $id_proof_file = null;
             }
             if ($request->hasFile('profile_picture')) {
+               
                 $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
                 $profile_picture = $request->profile_picture;
                 $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
                 $profile_picture->move('public/uploade/', $profile_pictureNewName);
                 $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+            }elseif($bookingurl->profile_picture){
+                $profile_picture=$bookingurl->profile_picture;
             } else {
+                
                 $profile_picture = null;
             }
                
@@ -982,9 +1069,9 @@ class QrEntryController extends Controller
             return redirect()->back()->with('error', 'No customer transaction found with this mobile.');
 
         }
-    
+        $learnerSeat=$this->getSeatDisplayByMainNo($customer->seat_no,$customer->branch_id);
 
-        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction'));
+        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction','learnerSeat'));
     }
     public function destroy($id)
     {
@@ -1203,5 +1290,29 @@ class QrEntryController extends Controller
         }
         // Return the filtered plan types as JSON
         return response()->json($filteredPlanTypes);
+    }
+
+    public function getSeatDisplayByMainNo($mainSeatNo,$branchId)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect($this->generateSeatNumbers($branchId));
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+           
+
+            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
     }
 }

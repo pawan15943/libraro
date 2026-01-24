@@ -13,7 +13,7 @@ $user = getAuthenticatedUser();
 </style>
 
 <div class="sidebar scroll">
-    <h4><b>Libraro</b> <i class="fa fa-close d-block d-md-none" id="sidebar_mob"></i></h4>
+    <h4><b>Libraro</b> <i class="fa fa-close d-block d-lg-none" id="sidebar_mob"></i></h4>
 
     <ul class="list-unstyled ps-0 mt-4">
 

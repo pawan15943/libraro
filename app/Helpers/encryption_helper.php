@@ -1179,9 +1179,7 @@ if (!function_exists('getSeatDisplayByMainNo')) {
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-            // Try to extract floor number (like F1, F2)
-            // preg_match('/(\d+)/', $seat['floor_name'], $matches);
-            // $floorShort = isset($matches[1]) ? 'F' . $matches[1] : $seat['floor_name'];
+           
 
             return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
         }
@@ -1511,13 +1509,7 @@ if (!function_exists('checkSeatAvailability')) {
             ->groupBy('learner_id')
             ->map(fn($rows) => $rows->sum('slot_hours'))
             ->sum();
-        // Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
-        // if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
-        //     return [
-        //         'error' => true,
-        //         'message' => 'Seat exceeds total available hours'
-        //     ];
-        // }
+       
 
         // 3️⃣ Time overlap check
         foreach ($bookings as $booking) {

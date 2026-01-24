@@ -637,12 +637,15 @@
                     console.log(res);
                 if (res) {
 
-                    if(res.chargeable_days < 31){
-                        $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
-                        $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
-                    }else{
-                        $('#chargeable_days').text('Billed Monthly');
-                    }
+                     $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
+                    $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
+
+                    // if(res.chargeable_days < 31){
+                    //     $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
+                    //     $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
+                    // }else{
+                    //     $('#chargeable_days').text('Billed Monthly');
+                    // }
 
                     
                     
@@ -731,7 +734,7 @@
         // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
         const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
 
-        if (paymentType === 'CHANGE PLAN') {
+        if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
             const previous_amount = parseFloat($('#previous_amount10').val()) || 0;
             const difference = autoPaid - previous_amount;
             $('#diffrence_amount10').val(difference);
@@ -1226,16 +1229,24 @@
     });
 
 
-    // change plan and plan type(upgrade)
+    // change plan and plan type(upgrade) and reactive and Edit
 
     $(document).ready(function() {
     
         const plan_id10 = $('#plan_id10').val();
         const plan_type_id10 = $('#plan_type_id10').val();
         var plan_start_date10=$('#start_date10').val();
-        // getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
-        // calculatePaidAmount();
-        // addChargeableDays(plan_id10,plan_start_date10);
+        var payment_type_operation=$('#payment_type_operation').val();
+        if(payment_type_operation =='REACTIVE'){
+            getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
+            // calculatePaidAmount();
+        }
+        
+        
+        if(payment_type_operation =='CHANGE PLAN' || payment_type_operation =='REACTIVE' || payment_type_operation =='EDIT'){
+            addChargeableDays(plan_id10,plan_start_date10);
+        }
+        
         var lockerCheck= $('#toggleFieldCheckbox10').val();
         
     
@@ -1255,7 +1266,7 @@
    
     });
 
-    // start new according change plan and plan type(upgrade)
+    // start new according change plan and plan type(upgrade) and reactive and edit
     // on plan change-total change,price change, locker amount change
     // on plan type change-total change,price change
     // on locker yes -total change, locker amount ,locker no
@@ -1352,7 +1363,25 @@
         calculatePending($(this).val());  
     });
 
+    $('#start_date10').on('change', function(event) {
+        var plan_start_date10 = $(this).val();
+        var plan_id10 = $('#plan_id10').val();
+        var plan_type_id10 = $('#plan_type_id10').val();
+         var lockerCheck= $('#toggleFieldCheckbox10').val();
 
+         if(plan_type_id10 && plan_id10){
+            getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
+            calculatePaidAmount();
+            if(lockerCheck== 'yes'){
+                lockerAmountGet(plan_id10);
+            }
+            
+        }else{
+            $("#plan_price10").val('');
+        }
+        addChargeableDays(plan_id10,plan_start_date10);
+        
+    });
 
 
 
