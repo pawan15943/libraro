@@ -58,6 +58,7 @@ class AttendanceController extends Controller
                 'libraries.library_mobile as library_mobile',
                 'branches.library_address as library_address',
                 'branches.library_images as library_images',
+                'branches.id as branch_id'
             ])
 
             // Eloquent relations
