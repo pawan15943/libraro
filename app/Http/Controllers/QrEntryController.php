@@ -155,6 +155,7 @@ class QrEntryController extends Controller
             'plan_id' => 'required|exists:plans,id',
             'plan_type_id' => 'required|exists:plan_types,id',
             'branch_id' => 'required|exists:branches,id',
+            'plan_start_date'=>'required'
         ]);
 
         // Assign variables from request
@@ -162,8 +163,32 @@ class QrEntryController extends Controller
         $plan_type_id = $validated['plan_type_id'];
         $branch_id = $validated['branch_id'];
 
+        $start_date = Carbon::parse($request->plan_start_date);
+
+         // ✅ Check fixed billing
+        $hasFixedBilling = Branch::where('id', $branch_id)
+            ->whereNotNull('fixed_billing_date')
+            ->exists();
+        $branch = Branch::select('fixed_billing_date')
+        ->where('id', $branch_id)
+        ->first();
+        $fixedBillingDate = $branch?->fixed_billing_date;
         // Call your helper function
-        $price = getPlanPrice($plan_id, $plan_type_id, $branch_id);
+         if ($hasFixedBilling ) {
+
+            $price = getBillingCyclePrice(
+                $plan_id,
+                $plan_type_id,
+                $start_date,$branch_id    
+            );
+
+        }else {
+
+            $price = getPlanPrice($plan_id, $plan_type_id, $branch_id);
+
+        }
+
+       
 
         // Return JSON response
         return response()->json([
@@ -342,13 +367,9 @@ class QrEntryController extends Controller
     public function store(Request $request, $uuid)
     {
         try {
-            Log::info('Heena Booking store started', ['uuid' => $uuid, 'request' => $request->all()]);
+          
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
-           Log::info('STEP 2: Branch fetched', [
-                'branch_id' => $branch->id ?? null,
-            ]);
-
-
+           
             // Build validation rules
             $rules = [
                 'name'           => 'required|string|max:191',
@@ -365,38 +386,12 @@ class QrEntryController extends Controller
             ];
             
             
-            Log::info('STEP 3: Before validation', [
-                'request_data' => $request->except(['password', '_token']),
-            ]);
 
             $validated = $request->validate($rules);
-            
-            $months   = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])->value('plan_id');
-            $planData = Plan::withoutGlobalScopes()->where('id', $validated['plan_id'])
-                ->select('plan_id', 'type', 'monthdays')
-                ->first();
-            Log::info('STEP 5: plan',['planData'=>$planData,'months'=>$months]);
-            $duration  = $planData->plan_id ?? 0; 
-            $type      = $planData->type;
-            $monthdays = $planData->monthdays;
-
+            $plan_id=$validated['plan_id'];
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
-            switch (strtoupper($type)) {
-                case 'DAY':   $endDate = $start_date->copy()->addDays($duration); break;
-                case 'WEEK':  $endDate = $start_date->copy()->addWeeks($duration); break;
-                case 'MONTH':
-                if (!empty($monthdays)) {
-                    // Use exact number of days defined for this month plan
-                    $endDate = $start_date->copy()->addDays($monthdays - 1);
-                } else {
-                    // Fallback to month-wise duration
-                    $endDate = $start_date->copy()->addMonths($duration);
-                }
-                break;
-                case 'YEAR':  $endDate = $start_date->copy()->addYears($duration); break;
-                default:      $endDate = $start_date; break;
-            }
+            $endDate = getEndDate($plan_id, $start_date,$branch->id);
             Log::info('STEP 6: endDate booking',['endDate'=>$endDate]);
 
             $transactions = LearnerTransaction::withoutGlobalScopes()

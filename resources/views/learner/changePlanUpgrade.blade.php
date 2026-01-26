@@ -210,7 +210,7 @@ if(Route::currentRouteName() == 'learner.change.plan'){
                             <label for="">Last paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
                                 name="previous_amount" id="previous_amount10"
-                                value="{{ currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
+                                value="{{ (float) currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
                             @error('previous_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>

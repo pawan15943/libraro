@@ -67,7 +67,24 @@
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
         </select>
+        
+            
+            <select id="status" class="form-select select2 mt-3">
+                <option value="">Select Call Status</option>
+                @foreach($lead_status as $key => $value)
+                    <option value="{{$value}}">{{$value}}</option>
+                @endforeach
+            
+            </select>
+       
+                    
+            <textarea id="add_comment_text"
+                        class="form-control mt-3"
+                        rows="3"
+                        placeholder="Enter comment (optional)"></textarea>
+        
       </div>
+
       <div class="modal-footer">
         <button class="btn btn-primary" onclick="saveLead()">Save</button>
       </div>
@@ -189,17 +206,63 @@ function openAddLeadModal() {
 }
 
 function saveLead() {
-    $.post("{{ route('leads.store') }}", {
-        _token: "{{ csrf_token() }}",
-        library_name: $('#add_name').val(),
-        mobile: $('#add_mobile').val(),
-        city: $('#add_city').val(),
-        lead_status: $('#add_lead_status').val()
-    }, function () {
-        $('#addLeadModal').modal('hide');
-        table.ajax.reload(null,false);
+
+    let btn = $('#addLeadModal button.btn-primary');
+    btn.prop('disabled', true);
+
+    $.ajax({
+        url: "{{ route('leads.store') }}",
+        type: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            library_name: $('#add_name').val(),
+            mobile: $('#add_mobile').val(),
+            city: $('#add_city').val(),
+            lead_status: $('#add_lead_status').val(),
+            status: $('#status').val(),
+            comments: $('#add_comment_text').val(),
+
+        },
+        success: function () {
+            $('#addLeadModal').modal('hide');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Saved!',
+                text: 'Lead added successfully',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // ✅ Reload datatable without losing page
+            $('#leadsTable').DataTable().ajax.reload(null, false);
+
+            // Reset form
+            $('#add_name, #add_mobile, #add_city,#status,#comment_text').val('');
+            $('#add_lead_status').val('hot');
+
+        },
+        error: function (xhr) {
+
+            let msg = 'Something went wrong';
+
+            if (xhr.status === 422) {
+                let errors = xhr.responseJSON.errors;
+                msg = Object.values(errors)[0][0];
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: msg
+            });
+        },
+        complete: function () {
+            btn.prop('disabled', false);
+        }
     });
 }
+
 </script>
 
 <script>

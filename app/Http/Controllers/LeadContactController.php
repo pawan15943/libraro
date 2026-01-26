@@ -51,9 +51,7 @@ class LeadContactController extends Controller
                 ->addIndexColumn()
 
                 ->addColumn('latest_comment', function ($row) {
-                    if (empty($row->comments)) return '-';
-                    $last = end($row->comments);
-                    return $last['comment'] ?? '-';
+                    return $row->latest_comment['comment'] ?? '-';
                 })
 
                 ->addColumn('status_display', function ($row) {
@@ -135,10 +133,30 @@ class LeadContactController extends Controller
             'library_name' => 'required',
             'mobile' => 'required|digits:10|unique:lead_contacts,mobile',
             'city' => 'required',
-            'lead_status' => 'required'
+            'lead_status' => 'required',
+            'status' => 'nullable',
+            'comments' => 'nullable',
+        ]);
+        \Log::info($request->all());
+
+
+       $data = $request->only([
+        'library_name',
+        'mobile',
+        'city',
+        'lead_status',
+        'status',
         ]);
 
-        LeadContact::create($request->all());
+        // ✅ HANDLE COMMENT LIKE addComment()
+        if ($request->filled('comments')) {
+            $data['comments'] = [[
+                'comment' => $request->comments,
+                'time' => now()->toDateTimeString(),
+            ]];
+        }
+       
+        LeadContact::create($data);
 
         return response()->json(['success' => true]);
     }

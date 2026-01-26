@@ -1008,7 +1008,7 @@ class LearnerController extends Controller
             ->where('status', 0)
             ->exists();
 
-        $is_renew = $hasFuturePlan && $hasPastPlan;
+        $is_renew = $hasFuturePlan && $hasPastPlan; // 3rd learner detail condition fail
 
 
         $available_seat = $this->learnerService->getAvailableSeats();
@@ -1047,6 +1047,7 @@ class LearnerController extends Controller
     public function learnerUpgradeRenew(Request $request)
     {
 
+        
         $rules = [
 
             'plan_id' => 'required',
@@ -1077,14 +1078,20 @@ class LearnerController extends Controller
 
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
-        if ($request->ajax() && $validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+
+        
         if ($request->payment_type == 'RENEW') {
             if (!Gate::allows('has-permission', 'Renew Seat')) {
                 //  if (!Auth::user()->can('has-permission', 'Renew Seat')) {
@@ -1092,17 +1099,25 @@ class LearnerController extends Controller
             }
         }
 
-
         $currentDate = date('Y-m-d');
         DB::beginTransaction();
 
         try {
             $customer = Learner::findOrFail($request->user_id);
+            
             if (!$customer) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Learner not found.'
                 ], 404);
+            }
+            
+
+            if(alreadyRenewed($request->user_id)){
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'Already Have plan in que'
+                ], 409);
             }
 
 
@@ -1121,6 +1136,12 @@ class LearnerController extends Controller
                 $result = checkSeatAvailability($seat_no, $customer->id, $plan_type_id, $start_date, $endDate);
 
                 if ($result['error']) {
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $result['message']
+                        ], 422);
+                    }
                     return redirect()->back()->with('error', $result['message'])->withInput();
                 } 
             }
@@ -1839,30 +1860,7 @@ class LearnerController extends Controller
             ? LearnerDetail::find($learner_detail_id)
             : null;
         $endDate =getEndDate($plan_id, $start_date);
-        // Calculate end date
-        // switch (strtoupper($type)) {
-        //     case 'DAY':
-        //         $endDate = $start_date->copy()->addDays($duration);
-        //         break;
-        //     case 'WEEK':
-        //         $endDate = $start_date->copy()->addWeeks($duration);
-        //         break;
-        //     case 'MONTH':
-        //         if (!empty($monthdays)) {
-
-        //             $endDate = $start_date->copy()->addDays($monthdays - 1);
-        //         } else {
-
-        //             $endDate = $start_date->copy()->addMonths($duration);
-        //         }
-        //         break;
-        //     case 'YEAR':
-        //         $endDate = $start_date->copy()->addYears($duration);
-        //         break;
-        //     default:
-        //         $endDate = $start_date;
-        //         break;
-        // }
+       
 
         $branchId=getCurrentBranch();
         // 🔹 Seat overlap checks
@@ -2055,10 +2053,32 @@ class LearnerController extends Controller
         $selectedPlanName = Plan::where('id', $selectedPlan)->pluck('name', 'id');
 
         // Return the filtered plan types as JSON
-        $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('learner_id', 'plan_id', 'plan_type_id', 'plan_price_id')->first();
+        $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('learner_id', 'plan_id', 'plan_type_id', 'plan_price_id','plan_end_date')->first();
         $transaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->select('total_amount', 'locker_amount', 'discount_amount', 'paid_amount')->first();
         $learner = Learner::where('id', $selectedbothId->learner_id)->select('locker_no')->first();
-        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner]);
+
+        $branch = Branch::select('fixed_billing_date')
+        ->where('id', getCurrentBranch())
+        ->first();
+
+        $hasFixedBilling = Branch::where('id', getCurrentBranch())
+            ->whereNotNull('fixed_billing_date')
+            ->exists();
+
+        $fixedBillingDate = $branch?->fixed_billing_date;
+        $start_date = \Carbon\Carbon::parse($selectedbothId->plan_end_date)->addDay()->format('Y-m-d');
+       
+        if ($hasFixedBilling ) {
+
+            $PlanpPrice = getBillingCyclePrice($selectedbothId->plan_id,$selectedbothId->plan_type_id,$start_date);
+
+        }else {
+
+            $PlanpPrice = getPlanPrice($selectedbothId->plan_id,$selectedbothId->plan_type_id);
+
+        }
+        $days=getChargeableDays($selectedbothId->plan_id, $start_date, getCurrentBranch());
+        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days]);
     }
     public function getPrice(Request $request)
     {
@@ -2083,7 +2103,8 @@ class LearnerController extends Controller
         $fixedBillingDate = $branch?->fixed_billing_date;
         
         // ✅ CASE 1: Fixed billing → prorated price
-        if ($start_date->day != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
+        // if ($start_date->day != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
+        if ($hasFixedBilling ) {
 
             $PlanpPrice = getBillingCyclePrice(
                 $plan_id,

@@ -635,7 +635,7 @@
             },
             success: function (res) {
                     console.log(res);
-                if (res) {
+                if (res.fixedBillingDate == 'true') {
 
                      $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
                     $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
@@ -799,6 +799,17 @@
         }
 
 
+    }
+    // Show Form Errors
+    function showFormErrors(errors) {
+        $(".is-invalid").removeClass("is-invalid");
+        $(".invalid-feedback").remove();
+
+        $.each(errors, function(key, value) {
+            const field = $("[name='" + key + "']");
+            field.addClass("is-invalid");
+            field.after('<div class="invalid-feedback">' + value[0] + '</div>');
+        });
     }
    
     $(document).ready(function() {
@@ -1237,13 +1248,12 @@
         const plan_type_id10 = $('#plan_type_id10').val();
         var plan_start_date10=$('#start_date10').val();
         var payment_type_operation=$('#payment_type_operation').val();
-        if(payment_type_operation =='REACTIVE'){
+        if(payment_type_operation =='REACTIVE' || payment_type_operation =='UPGRADE'){
             getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
             // calculatePaidAmount();
         }
         
-        
-        if(payment_type_operation =='CHANGE PLAN' || payment_type_operation =='REACTIVE' || payment_type_operation =='EDIT'){
+        if(payment_type_operation =='CHANGE PLAN' || payment_type_operation =='REACTIVE' || payment_type_operation =='EDIT' || payment_type_operation =='UPGRADE'){
             addChargeableDays(plan_id10,plan_start_date10);
         }
         
@@ -1383,11 +1393,416 @@
         
     });
 
+    // end
+
+    // Get Plan Type at All Forms wherever is needed { renew dashboard}
+    function fetchPlanTypesRenew(seat_no, user_id,learner_detail_id) {
+        
+        if ((seat_no && user_id) || learner_detail_id) {
+            $.ajax({
+                url: '{{ route('gettypePlanwise') }}',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                },
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "seat_no": seat_no,
+                    "user_id": user_id,
+                    "learner_detail_id": learner_detail_id,
+                },
+                dataType: 'json',
+                success: function (html) {
+                    console.log("renew",html);
+                    $("#plan_type_id_renew").empty(); 
+                    $("#plan_id2").empty(); 
+
+                    if (html[0]) {
+                        $.each(html[0], function (key, value) {
+                            $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
+                        });
+                    } else {
+                        $("#plan_type_id_renew").append('<option value="">Choose</option>');
+                    }
+                    
+
+                    if (html[1]) {
+                            $.each(html[1], function (key, value) {
+                            $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
+                        });
+                    }
+
+                    if (html[5]){
+                        $("#plan_price_id2").val(html[5]);      
+                    }
+
+                    if(html[3]){
+                        $("#locker_amount2").val(html[3].locker_amount);  
+                        $("#discount_amount3").val(html[3].discount_amount);  
+                        $("#new_plan_price").val(html[3].discount_amount);  
+
+                        if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
+                            $("#locker").val('yes');
+                            $("#locker_amount2").val(html[3].locker_amount);
+                            
+                        } else {
+                            $("#locker").val('no');
+                            $("#locker_amount2").val('');
+                            
+                        }
+
+                        if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
+                            $("#discount_type").val('amount');
+                            $("#discount_amount3").val(html[3].discount_amount);
+                        } else {
+                            $("#discount_type").val('');
+                            $("#discount_amount3").val('');
+                        }
+                    }
+                        if (html[4]){
+                        $("#locker_no2").val(html[4].locker_no);
+                        if(html[4].locker_no){
+                        $("#locker_no2").removeAttr('readonly');
+                        }      
+                    }
+                    
+                    popupautoCalculatePaidAmount(); 
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX error:", status, error); // Log any errors
+                }
+            });
+        } else {
+            $("#plan_type_id_renew").empty();
+            $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
+        }
+    }
+    // Used in View Details Popup on Seat Assignment Page
+    $('.second_popup').on('click', function() {
+        $('#upgrade').hide();
+        var userId = $(this).data('userid');
+        var seatId = $(this).data('id');
+        var seatNo=$(this).data('seat_no');
+        $('#user_id').val(userId);
+        $('#seatAllotmentModal2').modal('show');
+        
+        if (userId) {
+            $.ajax({
+                url: '{{ route('learners.show')}}',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                },
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": userId,
+                },
+                dataType: 'json',
+                success: function(html) {
+                    $('#learner_detail_id').val(html.learner_detail_id);
+                    $('#owner').text(html.name);
+                    $('#learner_dob').text(html.dob);
+
+                    if(html.email){
+                        $('#learner_email').text(html.email);
+                    }
+                    
+                    $('#learner_mobile').text(html.mobile);
+
+                    if (html.id_proof_name == 1) {
+                        var proof = 'Aadhar';
+                    } else if (html.id_proof_name == 2) {
+                        var proof = 'Driving License';
+                    } else {
+                        var proof = 'Other';
+                    }
+
+                    if (html.payment_mode == 1) {
+                        var paymentmode = 'Online';
+                    } else if (html.payment_mode == 2) {
+                        var paymentmode = 'Offline';
+                    } else {
+                        var paymentmode = 'Pay Later';
+                    }
+                    
+                    $('#paymentmode').text(paymentmode);
+                    $('#proof').text(proof);
+                    $('#planName').text(html.plan_name);
+                    $('#planTypeName').text(html.plan_type_name);
+                    $('#joinOn').text(formatDate(html.join_date));
+                    $('#startOn').text(formatDate(html.plan_start_date));
+                    $('#endOn').text(formatDate(html.plan_end_date));
+
+                    $('#price').text(html.plan_price_id);
+                    $('#seat_name').text(html.seat_no);
+                    $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
+
+                    if(html.seat_no){
+                        $('#seat_details_info').html(
+                            'Booking Details of Seat No. : ' +
+                            html.floor_seat_no + 
+                            ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
+                            '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
+                        );
+                    }else{
+                        $('#seat_details_info').text('Booking Details of Seat No. : General');
+                    }
+                    
+                    var planEndDateStr = html.plan_end_date;
+                    var isRenew=html.is_renew;
+                    var is_renew_update=html.renew_update;
+                    var today = new Date();
+                    var planEndDate = new Date(planEndDateStr);
+                    var timeDiff = planEndDate - today;
+                    var daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    
+                    if(daysRemaining <= 5 && isRenew==0) {
+                        $('#upgrade').show();
+                    }else{
+                        $('#upgrade').hide();
+                    }
+                    
+                    $('#extendday').html(html.seat_status);
+                }
+            });
+        }
+
+    });
+
+    // For those Seats that are in extend period to re-new that  
+    $('#upgrade').on('click', function() {
+        $("#update_plan_id").trigger('change');
+        var user_id = $('#user_id').val();
+        var learner_detail_id = $('#learner_detail_id').val();
+        var seat_no = $('#seat_name').text().trim();
+        var endOnDate = $('#endOn').text().trim();
+        var plan_id=$('#update_plan_id').val();
+        
+        // Hide the first modal
+        $('#seatAllotmentModal2').modal('hide');
+
+        // Update the fields in the second modal
+        $('#update_plan_end_date').val(endOnDate);
+        $('#update_seat_no').val(seat_no);
+        $('#update_user_id').val(user_id);
+        var seatDisplayMap = @json(
+            collect(generateSeatNumbers())->mapWithKeys(function($seat) {
+                // If floor info exists, show "floor-seat (floor name)"
+                if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
+                    return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
+                } else {
+                    // Fallback: show main seat number
+                    return [$seat['main'] => $seat['main']];
+                }
+            })
+        );
+        if(seat_no){
+            const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
+                $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
+        }else{
+                $('#seat_number_upgrades').text('Renew Seat No.: GEN');
+        }
+        
+        $.ajax({
+            url: '{{ route('learners.show')}}',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+            },
+            type: 'GET',
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "id": user_id,
+            },
+            dataType: 'json',
+            success: function(html) {
+                console.log(html);
+                $('#learner_uid').text(html.learner_no);
+                $('#learner_name').text(html.name);
+                $('#learner_mobilepop').text(html.mobile);
+                // $('#learner_email').text(html.email);
+            
+            }
+        });
+        // Show the second modal
+        $('#seatAllotmentModal3').modal('show');
+        fetchPlanTypesRenew(seat_no,user_id,learner_detail_id);
+    });
 
 
+    // For those Seats that are in extend period to re-new that  
+    $('.renew_extend').on('click', function(){
+        var user_id = $(this).data('user');
+        var seat_no = $(this).data('seat_no');
+        var end_date = $(this).data('end_date');
+        var learner_detail_id = $(this).data('learner_detail');
+        console.log("uuser",user_id);
+        console.log("seat_no",seat_no);
+        console.log("end_date",end_date);
+        console.log("learner_detail_id",learner_detail_id);
+        // learner detail fetch
+            $.ajax({
+                url: '{{ route('learners.show')}}',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                },
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": user_id,
+                },
+                dataType: 'json',
+                success: function(html) {
+                    console.log(html);
+                    $('#learner_uid').text(html.learner_no);
+                    $('#learner_name').text(html.name);
+                    $('#learner_mobilepop').text(html.mobile);
+                    // $('#learner_email').text(html.email);
+                
+                }
+            });
+        //learner detail fetch end
+        $('#seatAllotmentModal3').modal('show');
+        $('#update_seat_no').val(seat_no);
+        $('#update_user_id').val(user_id);
+        $('#update_plan_end_date').val(end_date);
+            var seatDisplayMap = @json(
+            collect(generateSeatNumbers())->mapWithKeys(function($seat) {
+                // If floor info exists, show "floor-seat (floor name)"
+                if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
+                    return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
+                } else {
+                    // Fallback: show main seat number
+                    return [$seat['main'] => $seat['main']];
+                }
+            })
+        );
+        if(seat_no){
+                const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
+                $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
+        }else{
+                $('#seat_number_upgrades').text('Renew Seat No.: GEN');
+        }
+        
+        fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);
+    });
+
+     // RENEW FORM SUBMIT
+    $(document).on('submit', '#upgradeForm', function(event) {
+        
+        event.preventDefault();
+        var formData = new FormData(this);
+        var user_id = $('#update_user_id').val();
+        var plan_id = $('#plan_id2').val();
+        var plan_type_id = $('#plan_type_id_renew').val();
+        var plan_price_id = $('#plan_price_id2').val();
+        var errors = {};
+
+        if (!plan_id) {
+            errors.plan_id = 'Plan is required.';
+        }
+
+        if (!plan_type_id) {
+            errors.plan_type_id = 'Plan Type is required.';
+        }
+
+        if (!plan_price_id) {
+            errors.plan_price_id = 'Price is required.';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            $(".is-invalid").removeClass("is-invalid");
+            $(".invalid-feedback").remove();
+
+            $.each(errors, function(key, value) {
+                var inputField = $("#" + key);
+                inputField.addClass("is-invalid");
+                inputField.after('<div class="invalid-feedback">' + value + '</div>');
+            });
+            return; 
+        }
+
+        formData.append('_token', '{{ csrf_token() }}');
+        var formId='renewSeat';
+        var fieldName='plan';
+        var newValue=plan_id ;
+        var oldValue=$('#hidden_plan').val();
 
 
+        $.ajax({
+            url: '{{ route('learner.upgrade.renew.store') }}', 
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+               
+                if (response.success) {
+                    logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Renew successful',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                        
+                        $('#seatAllotmentModal3').modal('hide');
+                        $('#seatAllotmentModal3').one('hidden.bs.modal', function () {
+                            if (result.isConfirmed) {
+                                window.location.href = '{{ route('seats') }}';
+                                location.reload(true);
+                            }
 
+                            window.location.reload();
+                        });
+                    });
+
+                   
+                } else if (response.errors) {
+                    showFormErrors(response.errors);
+                }  else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.message || 'Something went wrong. Please try again.'
+                        }).then((result) => {
+                        
+                        $('#seatAllotmentModal3').modal('hide');
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                            
+                if (xhr.status === 422) {
+                    const errors = xhr.responseJSON.errors;
+                    showFormErrors(errors);                       
+                } else {
+                   if (xhr.status === 409) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Renewal Blocked',
+                            text: xhr.responseJSON.message
+                            }).then((result) => {
+                        
+                                $('#seatAllotmentModal3').modal('hide');
+                      
+                            });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Something went wrong. Please try again.'
+                            }).then((result) => {
+                        
+                                $('#seatAllotmentModal3').modal('hide');
+                            });
+                    }
+                }
+        }
+
+        });
+    });
 
 
 
@@ -1483,88 +1898,7 @@
             }
         }
 
-           // Get Plan Type at All Forms wherever is needed
-        function fetchPlanTypesRenew(seat_no, user_id,learner_detail_id) {
-           
-            if ((seat_no && user_id) || learner_detail_id) {
-                $.ajax({
-                    url: '{{ route('gettypePlanwise') }}',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                    },
-                    type: 'GET',
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        "seat_no": seat_no,
-                        "user_id": user_id,
-                        "learner_detail_id": learner_detail_id,
-                    },
-                    dataType: 'json',
-                    success: function (html) {
-                        console.log("renew",html);
-                        $("#plan_type_id_renew").empty(); 
-                        $("#plan_id2").empty(); 
-
-                        if (html[0]) {
-                            $.each(html[0], function (key, value) {
-                                $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
-                            });
-                        } else {
-                            $("#plan_type_id_renew").append('<option value="">Choose</option>');
-                        }
-                       
-
-                        if (html[1]) {
-                             $.each(html[1], function (key, value) {
-                                $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
-                            });
-                        }
-
-                        if (html[2]){
-                           $("#plan_price_id2").val(html[2].plan_price_id);      
-                        }
-
-                        if(html[3]){
-                            $("#locker_amount2").val(html[3].locker_amount);  
-                            $("#discount_amount3").val(html[3].discount_amount);  
-                            $("#new_plan_price").val(html[3].discount_amount);  
-
-                            if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
-                                $("#locker").val('yes');
-                                $("#locker_amount2").val(html[3].locker_amount);
-                                
-                            } else {
-                                $("#locker").val('no');
-                                $("#locker_amount2").val('');
-                               
-                            }
-
-                            if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
-                                $("#discount_type").val('amount');
-                                $("#discount_amount3").val(html[3].discount_amount);
-                            } else {
-                                $("#discount_type").val('');
-                                $("#discount_amount3").val('');
-                            }
-                        }
-                         if (html[4]){
-                           $("#locker_no2").val(html[4].locker_no);
-                           if(html[4].locker_no){
-                            $("#locker_no2").removeAttr('readonly');
-                           }      
-                        }
-                        
-                        popupautoCalculatePaidAmount(); 
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("AJAX error:", status, error); // Log any errors
-                    }
-                });
-            } else {
-                $("#plan_type_id_renew").empty();
-                $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
-            }
-        }
+       
 
        
 
@@ -1735,229 +2069,7 @@
       
 
        
-        // Used in View Details Popup on Seat Assignment Page
-        $('.second_popup').on('click', function() {
-            $('#upgrade').hide();
-            var userId = $(this).data('userid');
-            var seatId = $(this).data('id');
-            var seatNo=$(this).data('seat_no');
-            $('#user_id').val(userId);
-            $('#seatAllotmentModal2').modal('show');
-          
-            if (userId) {
-                $.ajax({
-                    url: '{{ route('learners.show')}}',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                    },
-                    type: 'GET',
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        "id": userId,
-                    },
-                    dataType: 'json',
-                    success: function(html) {
-                        $('#learner_detail_id').val(html.learner_detail_id);
-                        $('#owner').text(html.name);
-                        $('#learner_dob').text(html.dob);
-
-                        if(html.email){
-                            $('#learner_email').text(html.email);
-                        }
-                        
-                        $('#learner_mobile').text(html.mobile);
-
-                        if (html.id_proof_name == 1) {
-                            var proof = 'Aadhar';
-                        } else if (html.id_proof_name == 2) {
-                            var proof = 'Driving License';
-                        } else {
-                            var proof = 'Other';
-                        }
-
-                        if (html.payment_mode == 1) {
-                            var paymentmode = 'Online';
-                        } else if (html.payment_mode == 2) {
-                            var paymentmode = 'Offline';
-                        } else {
-                            var paymentmode = 'Pay Later';
-                        }
-                        
-                        $('#paymentmode').text(paymentmode);
-                        $('#proof').text(proof);
-                        $('#planName').text(html.plan_name);
-                        $('#planTypeName').text(html.plan_type_name);
-                        $('#joinOn').text(formatDate(html.join_date));
-                        $('#startOn').text(formatDate(html.plan_start_date));
-                        $('#endOn').text(formatDate(html.plan_end_date));
-
-                        $('#price').text(html.plan_price_id);
-                        $('#seat_name').text(html.seat_no);
-                        $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
-
-                        if(html.seat_no){
-                           $('#seat_details_info').html(
-                                'Booking Details of Seat No. : ' +
-                                html.floor_seat_no + 
-                                ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
-                                '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
-                            );
-                        }else{
-                            $('#seat_details_info').text('Booking Details of Seat No. : General');
-                        }
-                        
-                        var planEndDateStr = html.plan_end_date;
-                        var isRenew=html.is_renew;
-                        var is_renew_update=html.renew_update;
-                        var today = new Date();
-                        var planEndDate = new Date(planEndDateStr);
-                        var timeDiff = planEndDate - today;
-                        var daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                       
-                        if(daysRemaining <= 5 && isRenew==0) {
-                            $('#upgrade').show();
-                        }else{
-                            $('#upgrade').hide();
-                        }
-                       
-                        // var extendDay=html.diffExtendDay;
-                        // var message = '';
-                       
-                        // Applying the conditions as per your Laravel blade logic
-                        // if(is_renew_update == 1){
-                        //     message = `<h5 class="text-success">Plan will Expires in ${daysRemaining} days.</h5><p class="text-info">Notice : You have a new plan in the queue. Once your current plan expires, your new plan will automatically activate.</p>`;
-                        // }else if (daysRemaining > 0) {
-                        //     message = `<h5 class="text-success">Plan Expires in ${daysRemaining} days</h5>`;
-                        // } else if (daysRemaining < 0 && extendDay > 0) {
-                        //     message = `<h5 class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are ${Math.abs(extendDay)} days.</h5>`;
-                        // } else if (daysRemaining < 0 && extendDay == 0) {
-                        //     message = `<h5 class="text-danger extedned fs-10 d-block">Seat Expire Today</h5>`;
-                        // } else if (daysRemaining == 0 && extendDay > 0) {
-                        //     message = `<h5 class="text-danger extedned fs-10 d-block">Plan Expires Today. Extend Days Starts Today</h5>`;
-                        // }else {
-                        //     message = `<h5 class="text-warning fs-10 d-block">Plan Expired ${Math.abs(daysRemaining)} days ago</h5>`;
-                        // }
-
-                        $('#extendday').html(html.seat_status);
-                    }
-                });
-            }
-
-        });
-
-        // For those Seats that are in extend period to re-new that  
-        $('#upgrade').on('click', function() {
-            $("#update_plan_id").trigger('change');
-            var user_id = $('#user_id').val();
-            var learner_detail_id = $('#learner_detail_id').val();
-            var seat_no = $('#seat_name').text().trim();
-            var endOnDate = $('#endOn').text().trim();
-            var plan_id=$('#update_plan_id').val();
-          
-            // Hide the first modal
-            $('#seatAllotmentModal2').modal('hide');
-
-            // Update the fields in the second modal
-            $('#update_plan_end_date').val(endOnDate);
-            $('#update_seat_no').val(seat_no);
-            $('#update_user_id').val(user_id);
-            var seatDisplayMap = @json(
-                collect(generateSeatNumbers())->mapWithKeys(function($seat) {
-                    // If floor info exists, show "floor-seat (floor name)"
-                    if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
-                        return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
-                    } else {
-                        // Fallback: show main seat number
-                        return [$seat['main'] => $seat['main']];
-                    }
-                })
-            );
-            if(seat_no){
-                const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
-                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
-            }else{
-                 $('#seat_number_upgrades').text('Renew Seat No.: GEN');
-            }
-           
-            $.ajax({
-                url: '{{ route('learners.show')}}',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                },
-                type: 'GET',
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": user_id,
-                },
-                dataType: 'json',
-                success: function(html) {
-                    console.log(html);
-                    $('#learner_uid').text(html.learner_no);
-                    $('#learner_name').text(html.name);
-                    $('#learner_mobilepop').text(html.mobile);
-                    // $('#learner_email').text(html.email);
-                
-                }
-            });
-            // Show the second modal
-            $('#seatAllotmentModal3').modal('show');
-            fetchPlanTypesRenew(seat_no,user_id,learner_detail_id);
-        });
-
-
-        // For those Seats that are in extend period to re-new that  
-        $('.renew_extend').on('click', function(){
-            var user_id = $(this).data('user');
-            var seat_no = $(this).data('seat_no');
-            var end_date = $(this).data('end_date');
-            var learner_detail_id = $(this).data('learner_detail');
-
-            // learner detail fetch
-             $.ajax({
-                    url: '{{ route('learners.show')}}',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                    },
-                    type: 'GET',
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        "id": user_id,
-                    },
-                    dataType: 'json',
-                    success: function(html) {
-                       console.log(html);
-                        $('#learner_uid').text(html.learner_no);
-                        $('#learner_name').text(html.name);
-                        $('#learner_mobilepop').text(html.mobile);
-                        // $('#learner_email').text(html.email);
-                 
-                    }
-                });
-            //learner detail fetch end
-            $('#seatAllotmentModal3').modal('show');
-            $('#update_seat_no').val(seat_no);
-            $('#update_user_id').val(user_id);
-            $('#update_plan_end_date').val(end_date);
-             var seatDisplayMap = @json(
-                collect(generateSeatNumbers())->mapWithKeys(function($seat) {
-                    // If floor info exists, show "floor-seat (floor name)"
-                    if (!empty($seat['floor']) && !empty($seat['floor_name'])) {
-                        return [$seat['main'] => $seat['floor'] . ' (' . $seat['floor_name'] . ')'];
-                    } else {
-                        // Fallback: show main seat number
-                        return [$seat['main'] => $seat['main']];
-                    }
-                })
-            );
-            if(seat_no){
-                  const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
-                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
-            }else{
-                 $('#seat_number_upgrades').text('Renew Seat No.: GEN');
-            }
-           
-            fetchPlanTypesRenew(seat_no, user_id,learner_detail_id);
-        });
+    
      
 
        
@@ -2061,114 +2173,9 @@
        
 
       
-        // RENEW FORM SUBMIT
-        $(document).on('submit', '#upgradeForm', function(event) {
-           
-            event.preventDefault();
-            var formData = new FormData(this);
-            var user_id = $('#update_user_id').val();
-            var plan_id = $('#plan_id2').val();
-            var plan_type_id = $('#plan_type_id_renew').val();
-            var plan_price_id = $('#plan_price_id2').val();
-            var errors = {};
+       
 
-            if (!plan_id) {
-                errors.plan_id = 'Plan is required.';
-            }
-
-            if (!plan_type_id) {
-                errors.plan_type_id = 'Plan Type is required.';
-            }
-
-            if (!plan_price_id) {
-                errors.plan_price_id = 'Price is required.';
-            }
-   
-            if (Object.keys(errors).length > 0) {
-                $(".is-invalid").removeClass("is-invalid");
-                $(".invalid-feedback").remove();
-
-                $.each(errors, function(key, value) {
-                    var inputField = $("#" + key);
-                    inputField.addClass("is-invalid");
-                    inputField.after('<div class="invalid-feedback">' + value + '</div>');
-                });
-                return; 
-            }
-
-            formData.append('_token', '{{ csrf_token() }}');
-            var formId='renewSeat';
-            var fieldName='plan';
-            var newValue=plan_id ;
-            var oldValue=$('#hidden_plan').val();
-
-
-            $.ajax({
-                url: '{{ route('learner.upgrade.renew.store') }}', 
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                dataType: 'json',
-                success: function(response) {
-                    
-                    if (response.success) {
-                        logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
-                     
-                       Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: 'Renew successful',
-                            confirmButtonText: 'OK'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = '{{ route('seats') }}';
-                                location.reload(true);
-                            }
-                        });
-
-                        setTimeout(function() {
-                            window.location.href = '{{ route('seats') }}';
-                            location.reload(true); 
-                        }, 2000); 
-                    } else if (response.errors) {
-                        showFormErrors(response.errors);
-                    }  else {
-                       Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: response.message || 'Something went wrong. Please try again.'
-                        });
-                    }
-                },
-               error: function(xhr, status, error) {
-                             
-                if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
-                    showFormErrors(errors);                       
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Something went wrong. Please try again.'
-                    });
-                }
-            }
-
-            });
-        });
-
-        // Show Form Errors
-        function showFormErrors(errors) {
-            $(".is-invalid").removeClass("is-invalid");
-            $(".invalid-feedback").remove();
-
-            $.each(errors, function(key, value) {
-                const field = $("[name='" + key + "']");
-                field.addClass("is-invalid");
-                field.after('<div class="invalid-feedback">' + value[0] + '</div>');
-            });
-        }
+      
 
 
         

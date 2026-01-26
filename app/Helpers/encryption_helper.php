@@ -22,6 +22,17 @@ use App\Models\PlanType;
 use App\Models\Setting;
 use Carbon\Carbon;
 
+if (!function_exists('alreadyRenewed')) {
+    function alreadyRenewed($learnerId)
+    {
+        return LearnerDetail::where('learner_id', $learnerId)
+            ->where('status', 0) // future booking
+            ->whereDate('plan_start_date', '>', now())
+            ->exists();
+    }
+}
+
+
 if (!function_exists('generateLibraryCode')) {
     function generateLibraryCode() {
         $prefix = "LB";
@@ -390,9 +401,96 @@ if (!function_exists('getPlanPrice')) {
 //     }
 // }
 
+// if (!function_exists('getEndDate')) {
+
+//     function getEndDate($plan_id, $planStartDate)
+//     {
+//         $planStartDate = \Carbon\Carbon::parse($planStartDate);
+
+//         $planData = Plan::where('id', $plan_id)
+//             ->select('plan_id', 'type', 'monthdays')
+//             ->first();
+
+//         if (!$planData) {
+//             return $planStartDate;
+//         }
+
+//         $type      = strtoupper($planData->type);
+//         $duration  = (int) ($planData->plan_id ?? 1);
+//         $monthdays = $planData->monthdays;
+
+//         $branch = Branch::find(getCurrentBranch());
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | 🔹 CASE 1: FIXED BILLING DATE ENABLED
+//         |--------------------------------------------------------------------------
+//         */
+//         $fixedBillingDay=$branch->fixed_billing_date;
+//         if ($branch && !empty($branch->fixed_billing_date)) {
+            
+//             $fixedDay = (int) $branch->fixed_billing_date;
+
+//             switch ($type) {
+
+//                 case 'DAY':
+//                     $endDate = $planStartDate->copy()->addDays($duration);
+//                     break;
+
+//                 case 'WEEK':
+//                     $endDate = $planStartDate->copy()->addWeeks($duration);
+//                     break;
+
+//                 case 'MONTH':
+                    
+//                     $endDate = $planStartDate->copy()->addMonths($duration);
+//                     break;
+
+//                 case 'YEAR':
+//                     $endDate = $planStartDate->copy()->addYears($duration);
+//                     break;
+
+//                 default:
+//                     return $planStartDate;
+//             }
+
+            
+//             $billingDay = min($fixedDay, $endDate->daysInMonth);
+
+//             return $endDate->day($billingDay);
+//         }
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | 🔹 CASE 2: NORMAL PLAN LOGIC (UNCHANGED)
+//         |--------------------------------------------------------------------------
+//         */
+//         switch ($type) {
+
+//             case 'DAY':
+//                 return $planStartDate->copy()->addDays($duration);
+
+//             case 'WEEK':
+//                 return $planStartDate->copy()->addWeeks($duration);
+
+//             case 'MONTH':
+//                 if (!empty($monthdays)) {
+//                     return $planStartDate->copy()->addDays($monthdays - 1);
+//                 }
+//                 return $planStartDate->copy()->addMonths($duration);
+
+//             case 'YEAR':
+//                 return $planStartDate->copy()->addYears($duration);
+
+//             default:
+//                 return $planStartDate;
+//         }
+//     }
+// }
+
 if (!function_exists('getEndDate')) {
 
-    function getEndDate($plan_id, $planStartDate)
+    function getEndDate($plan_id, $planStartDate,$branch_id = null)
     {
         $planStartDate = \Carbon\Carbon::parse($planStartDate);
 
@@ -408,45 +506,52 @@ if (!function_exists('getEndDate')) {
         $duration  = (int) ($planData->plan_id ?? 1);
         $monthdays = $planData->monthdays;
 
-        $branch = Branch::find(getCurrentBranch());
+        $branchId  = $branch_id ?? getCurrentBranch();
+
+        $branch = Branch::find($branchId);
+       
 
         /*
         |--------------------------------------------------------------------------
-        | 🔹 CASE 1: FIXED BILLING DATE ENABLED
+        | 🔹 CASE 1: FIXED BILLING DATE ENABLED (FINAL FIX)
         |--------------------------------------------------------------------------
         */
-        if ($branch && !empty($branch->fixed_billing_date)) {
+       if ($branch && !empty($branch->fixed_billing_date)) {
 
             $fixedDay = (int) $branch->fixed_billing_date;
 
             switch ($type) {
 
                 case 'DAY':
-                    $endDate = $planStartDate->copy()->addDays($duration);
-                    break;
+                    return $planStartDate->copy()->addDays($duration);
 
                 case 'WEEK':
-                    $endDate = $planStartDate->copy()->addWeeks($duration);
-                    break;
+                    return $planStartDate->copy()->addWeeks($duration);
 
                 case 'MONTH':
-                    // 🔥 THIS IS THE FIX
-                    $endDate = $planStartDate->copy()->addMonths($duration);
-                    break;
-
                 case 'YEAR':
-                    $endDate = $planStartDate->copy()->addYears($duration);
-                    break;
+
+                    $cycles = ($type === 'YEAR') ? $duration * 12 : $duration;
+
+                    $billingMonth = $planStartDate->copy()->startOfMonth()->addMonth();
+
+                    if ($cycles > 1) {
+                        $billingMonth->addMonths($cycles - 1);
+                    }
+
+                    if ($fixedDay === 1) {
+                        return $billingMonth->copy()->subMonth()->endOfMonth();
+                    }
+
+                    return $billingMonth->day(
+                        min($fixedDay - 1, $billingMonth->daysInMonth)
+                    );
 
                 default:
                     return $planStartDate;
             }
-
-            // Align to fixed billing day safely
-            $billingDay = min($fixedDay, $endDate->daysInMonth);
-
-            return $endDate->day($billingDay);
         }
+
 
         /*
         |--------------------------------------------------------------------------
@@ -475,8 +580,6 @@ if (!function_exists('getEndDate')) {
         }
     }
 }
-
-
 
 
 if (!function_exists('getBillingCyclePrice')) {
@@ -547,20 +650,26 @@ if (!function_exists('getBillingCyclePrice')) {
             default:
                 return round($planPrice, 0);
         }
+        
 
         /* -------------------------------
          | 6. Safety checks
          --------------------------------*/
         if ($usedDays <= 0 || $totalDays <= 0) {
+           
             return round($planPrice, 0);
         }
+       
 
         /* -------------------------------
          | 7. Calculate FINAL PRICE
          --------------------------------*/
+         
         $perDayPrice = $planPrice / $totalDays;
+        
+       
         $finalPrice = $perDayPrice * $usedDays;
-
+         
         return round($finalPrice, 0);
     }
 }
@@ -584,10 +693,17 @@ if (!function_exists('getChargeableDays')) {
         // Chargeable days (inclusive)
         $chargeableDays = $startDate->diffInDays($endDate) + 1;
 
+        $branch = Branch::select('fixed_billing_date')
+        ->where('id', $branchId)
+        ->first();
+
+        $fixedBillingDate = $branch?->fixed_billing_date;
+
         return [
             'chargeable_days' => $chargeableDays,
             'start_date'      => $startDate->toDateString(),
             'end_date'        => $endDate->toDateString(),
+            'fixedBillingDate' => $fixedBillingDate ? 'true' : 'false',
         ];
     }
 }
@@ -639,7 +755,6 @@ if (!function_exists('getExtendDays')) {
         return $extend_days;
     }
 }
-
 
 if (!function_exists('getSeatType')) {
     function getSeatType()

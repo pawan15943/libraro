@@ -14,14 +14,14 @@ class LeadContact extends Model
     ];
 
     /* Latest comment accessor */
-    public function getLatestCommentAttribute()
+   public function getLatestCommentAttribute()
     {
-        $comments = $this->comments; // copy first
+        $comments = $this->comments; // ✅ copy first
 
         if (!is_array($comments) || empty($comments)) {
             return null;
         }
 
-        return end($comments);
+        return $comments[array_key_last($comments)]; // ✅ SAFE
     }
 }

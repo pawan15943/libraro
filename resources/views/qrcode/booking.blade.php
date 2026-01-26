@@ -216,6 +216,7 @@
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="plan_price" type="text" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <span id="chargeable_day_book" class="text-info"></span>
                             </div>
 
                             <div class="col-lg-6">
@@ -307,8 +308,9 @@
             let plan_id = $('#plan_id3').val();
             let plan_type_id = $('#plan_type_id').val();
             let branch_id = $('#branch_id').val();
+            let plan_start_date = $('#plan_start_date').val();
 
-            if (plan_id && plan_type_id && branch_id) {
+            if (plan_id && plan_type_id && branch_id && plan_start_date) {
                 $.ajax({
                     url: "{{ route('get.plan.price') }}"
                     , type: "POST"
@@ -317,6 +319,7 @@
                         , plan_id: plan_id
                         , plan_type_id: plan_type_id
                         , branch_id: branch_id
+                        , plan_start_date: plan_start_date
                     }
                     , success: function(response) {
                         if (response.success) {
@@ -326,6 +329,22 @@
                         }
                     }
                 });
+            }
+            if(plan_id && plan_start_date){
+            $.ajax({
+            url: "{{ route('getChargeableDays') }}",
+            type: "GET",
+            data: {
+                plan_id: plan_id,
+                plan_start_date: plan_start_date
+            },
+            success: function (res) {
+                    console.log(res);
+                if (res.fixedBillingDate == 'true') {
+                     $('#chargeable_day_book').text('Billed for ' + res.chargeable_days + ' Days');
+                }
+            }
+        });
             }
         });
 

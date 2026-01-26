@@ -251,11 +251,14 @@ $learner_id=$value->id;
                         </li>
                         @endif
 
-                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
+                        {{-- @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0  && !alreadyRenewed($learner_id)) --}}
                             @can('has-permission','Renew Seat')
-                            <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a></li>
+                            <li>
+                                <a class="renew_extend" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>
+                                {{-- <a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a> --}}
+                            </li>
                             @endcan
-                        @endif
+                        {{-- @endif --}}
 
 
                         @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
@@ -382,13 +385,13 @@ $learner_id=$value->id;
                     @can('has-permission', 'Freez Days')
                     @if(!in_array('34', toggleHideField()))
                     <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" > 
-                    @if($value->frozen_status == 1)
+                         @if($value->frozen_status == 1)
                         <i class="fa-solid fa-pause" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Unfreeze Plan"></i>
                         @else
                         
                         <i class="fa-solid fa-snowflake" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Freeze Plan"></i>
-                    @endif 
-                    </a>   
+                        @endif 
+                        </a>   
                     </li>
                     @endif
                     @endcan
