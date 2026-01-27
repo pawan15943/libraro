@@ -155,14 +155,10 @@
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
-                                     {{-- @foreach($availableSeats as $value)
-                                    <option value="{{ $value }}" {{ old('seat_no') == $value ? 'selected' : '' }}>
-                                        {{ $value }}
-                                    </option>
-                                    @endforeach --}}
+                                 
                                     @foreach($newAvailableSeat  as $key => $value)
 
-                                    <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
+                                    <option value="{{ $value['main'] }}" {{ old('seat_no') == $value['main'] ? 'selected' : '' }}>{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -270,7 +266,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
     $(document).ready(function() {
-
+         let oldPlanTypeId = "{{ old('plan_type_id') }}";
         function loadPlanTypes() {
             const generalSeat = $('#general_seat').val();
             const seatId = $('#seat_id').val();
@@ -364,23 +360,48 @@
                 , success: function(html) {
                     console.log(html);
                     if (html) {
+                     if (html.length === 0) {
+                        $("#plan_type_id").empty().append(
+                            '<option value="">No added plan type</option>'
+                        );
+                        return;
+                    }
+                    let selectedValue = oldPlanTypeId 
+                        ? oldPlanTypeId 
+                        : $("#plan_type_id").find("option:selected").val();
 
-                        let selectedOption = $("#plan_type_id").find("option:selected");
+                    $("#plan_type_id").empty();
+                    $("#plan_type_id").append('<option value="">Choose Shift</option>');
 
-                        $("#plan_type_id").empty();
-                        $("#plan_type_id").append('<option value="">Choose Shift</option>');
-
-                        if (selectedOption.val() !== "") {
-                            $("#plan_type_id").append('<option value="' + selectedOption.val() + '" selected>' + selectedOption.text() + '</option>');
-                        }
-
+                    if (selectedValue) {
+                        // find text from html response
+                        let selectedText = '';
                         $.each(html, function(index, planType) {
-                            // Avoid adding the option that is already selected
-                            if (planType.id != selectedOption.val()) {
-                                $("#plan_type_id").append('<option value="' + planType.id + '">' + planType.name + '</option>');
+                            if (planType.id == selectedValue) {
+                                selectedText = planType.name;
                             }
                         });
-                    } else {
+
+                        $("#plan_type_id").append(
+                            '<option value="' + selectedValue + '" selected>' +
+                            selectedText +
+                            '</option>'
+                        );
+                    }
+
+                    $.each(html, function(index, planType) {
+                        if (planType.id != selectedValue) {
+                            $("#plan_type_id").append(
+                                '<option value="' + planType.id + '">' +
+                                planType.name +
+                                '</option>'
+                            );
+                        }
+                    });
+
+                    // clear old value after first use
+                    oldPlanTypeId = null;
+                }else {
                         $("#plan_type_id").empty();
                         $("#plan_type_id").append('<option value="">Select Plan Type</option>');
                     }

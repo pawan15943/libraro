@@ -1169,7 +1169,22 @@ class MasterController extends Controller
     }
 
     
+  public function getPriceMaster(Request $request)
+    {
+        $plan_type_id = $request->plan_type_id;
+        $plan_id      = $request->plan_id;
+        $branchId     = getCurrentBranch();
 
+        if (!$plan_type_id || !$plan_id) {
+            return response()->json(0);
+        }
+
+        $PlanpPrice = getPlanPrice(
+                $plan_id,
+                $plan_type_id
+            );
+        return response()->json($PlanpPrice);
+    }
 
 
 

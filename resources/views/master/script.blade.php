@@ -346,7 +346,7 @@
     if (plan_id !== "" && plan_type_id !== "") {
 
         $.ajax({
-            url: "{{ route('getPricePlanwise') }}",
+            url: "{{ route('getPricePlanwiseMaster') }}",
             method: "GET",
             data: {
                 plan_id: plan_id,

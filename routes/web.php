@@ -341,6 +341,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('getPlanType', [LearnerController::class, 'getPlanType'])->name('gettypePlanwise');
   Route::get('getPlanTypeSeatWise', [LearnerController::class, 'getPlanTypeSeatWise'])->name('gettypeSeatwise');
   Route::get('getPrice', [LearnerController::class, 'getPrice'])->name('getPricePlanwise');
+  Route::get('getPrice/master', [MasterController::class, 'getPriceMaster'])->name('getPricePlanwiseMaster');
  
 
   Route::get('getPricePlanwiseUpgrade', [LearnerController::class, 'getPricePlanwiseUpgrade'])->name('getPricePlanwiseUpgrade');

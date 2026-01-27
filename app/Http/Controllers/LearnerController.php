@@ -2113,7 +2113,7 @@ class LearnerController extends Controller
         // ✅ CASE 1: Fixed billing → prorated price
         // if ($start_date->day != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
         if ($hasFixedBilling ) {
-           
+         
             $PlanpPrice = getBillingCyclePrice(
                 $plan_id,
                 $plan_type_id,
@@ -4233,6 +4233,7 @@ class LearnerController extends Controller
     }
     public function printBulkIdCard(Request $request)
     {
+       
         $learnerIds = $request->input('learner_ids', []);
 
         if (empty($learnerIds)) {
@@ -4242,12 +4243,14 @@ class LearnerController extends Controller
         $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)->with(['learner'])->get();
 
         $branch = Branch::where('id', getCurrentBranch())->with('city', 'state')->first();
-        return view('learner.bulk-idcards', compact('learner_details', 'branch'));
+        $print_type=$request->print_type;
+        return view('learner.bulk-idcards', compact('learner_details', 'branch','print_type'));
     }
 
     public function learnerChecklist()
     {
-        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.learner_no','learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id')->get();
+        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.learner_no','learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id','learners.profile_picture')->get();
+       
         return view('learner.checklist', compact('learners'));
     }
 

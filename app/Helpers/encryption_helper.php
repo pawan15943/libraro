@@ -277,7 +277,7 @@ if (!function_exists('getPlanPrice')) {
                 ->select('plan_prices.price')
                 ->first();
 
-
+   
             $plan = Plan::where('id', $plan_id)->first();
 
 
