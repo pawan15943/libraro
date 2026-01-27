@@ -807,7 +807,7 @@ if (!function_exists('getUserStatusWithSpan')) {
             ->where('plan_end_date', '<=', $today->copy()->addDays(5))
             ->exists();
 
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $is_renew_update = alreadyRenewed($learner_id); 
         $start_date = LearnerDetail::where('learner_id', $learner_id)
             ->where('plan_start_date',  '>', now())->where('status', 0)
             ->exists();
@@ -1788,7 +1788,7 @@ if (!function_exists('getStatusFromBranch')) {
             ->where('plan_end_date', '<=', $today->copy()->addDays(5))
             ->exists();
 
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $is_renew_update = alreadyRenewed($learner_id);
         $start_date = LearnerDetail::where('learner_id', $learner_id)
             ->where('plan_start_date',  '>', now())->where('status', 0)
             ->exists();
