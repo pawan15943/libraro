@@ -256,8 +256,10 @@ if (!function_exists('getPlanPrice')) {
             ->select('price')->first();
 
         if ($alreadyPrice) {
+           
             return round($alreadyPrice->price, 2);
         } else {
+          
 
             $plan_price_all = PlanPrice::withoutGlobalScopes()
                 ->leftJoin('plans', function ($join) use ($libraryId) {
@@ -587,14 +589,17 @@ if (!function_exists('getBillingCyclePrice')) {
     {
         $branchId = $branchId ?? getCurrentBranch();
         $startDate = Carbon::parse($planStartDate);
-
+               
         /* -------------------------------
          | 1. Get base plan price
          --------------------------------*/
         $planPrice = getPlanPrice($plan_id, $plan_type_id);
+        
         if ($planPrice <= 0) {
+           
             return 0;
         }
+       
 
         /* -------------------------------
          | 2. Get plan details
@@ -615,6 +620,7 @@ if (!function_exists('getBillingCyclePrice')) {
          | 3. Calculate END DATE
          --------------------------------*/
         $endDate = getEndDate($plan_id, $startDate);
+        
 
         /* -------------------------------
          | 4. Calculate USED DAYS (inclusive)
@@ -636,10 +642,12 @@ if (!function_exists('getBillingCyclePrice')) {
 
             case 'MONTH':
                 if (!empty($monthdays)) {
+                  
                     $totalDays = $monthdays;
                 } else {
+                     
                     // Days in joining month
-                    $totalDays = $startDate->daysInMonth;
+                    $totalDays = 30 * $duration;
                 }
                 break;
 
@@ -650,7 +658,6 @@ if (!function_exists('getBillingCyclePrice')) {
             default:
                 return round($planPrice, 0);
         }
-        
 
         /* -------------------------------
          | 6. Safety checks
@@ -664,12 +671,12 @@ if (!function_exists('getBillingCyclePrice')) {
         /* -------------------------------
          | 7. Calculate FINAL PRICE
          --------------------------------*/
-         
+       
         $perDayPrice = $planPrice / $totalDays;
         
        
         $finalPrice = $perDayPrice * $usedDays;
-         
+
         return round($finalPrice, 0);
     }
 }

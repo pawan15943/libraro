@@ -2105,7 +2105,7 @@ class LearnerController extends Controller
         // ✅ CASE 1: Fixed billing → prorated price
         // if ($start_date->day != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
         if ($hasFixedBilling ) {
-
+           
             $PlanpPrice = getBillingCyclePrice(
                 $plan_id,
                 $plan_type_id,

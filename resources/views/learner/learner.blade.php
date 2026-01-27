@@ -251,14 +251,14 @@ $learner_id=$value->id;
                         </li>
                         @endif
 
-                        {{-- @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0  && !alreadyRenewed($learner_id)) --}}
+                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0  && !alreadyRenewed($learner_id))
                             @can('has-permission','Renew Seat')
                             <li>
                                 <a class="renew_extend" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>
                                 {{-- <a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a> --}}
                             </li>
                             @endcan
-                        {{-- @endif --}}
+                        @endif
 
 
                         @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
