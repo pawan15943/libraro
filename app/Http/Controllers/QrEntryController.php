@@ -175,7 +175,7 @@ class QrEntryController extends Controller
         $fixedBillingDate = $branch?->fixed_billing_date;
         // Call your helper function
          if ($hasFixedBilling ) {
-
+            
             $price = getBillingCyclePrice(
                 $plan_id,
                 $plan_type_id,
@@ -183,7 +183,7 @@ class QrEntryController extends Controller
             );
 
         }else {
-
+    
             $price = getPlanPrice($plan_id, $plan_type_id, $branch_id);
 
         }

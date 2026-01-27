@@ -331,20 +331,21 @@
                 });
             }
             if(plan_id && plan_start_date){
-            $.ajax({
-            url: "{{ route('getChargeableDays') }}",
-            type: "GET",
-            data: {
-                plan_id: plan_id,
-                plan_start_date: plan_start_date
-            },
-            success: function (res) {
-                    console.log(res);
-                if (res.fixedBillingDate == 'true') {
-                     $('#chargeable_day_book').text('Billed for ' + res.chargeable_days + ' Days');
-                }
-            }
-        });
+                    $.ajax({
+                    url: "{{ route('getChargeableDays') }}",
+                    type: "GET",
+                    data: {
+                        plan_id: plan_id,
+                        plan_start_date: plan_start_date,
+                        branch_id:branch_id
+                    },
+                    success: function (res) {
+                            console.log(res);
+                        if (res.fixedBillingDate == 'true') {
+                            $('#chargeable_day_book').text('Billed for ' + res.chargeable_days + ' Days');
+                        }
+                    }
+                });
             }
         });
 

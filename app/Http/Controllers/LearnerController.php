@@ -1997,13 +1997,21 @@ class LearnerController extends Controller
     }
     public function getChargeableDaysAjax(Request $request)
     {
+        
         if (!$request->plan_id || !$request->plan_start_date) {
             return response()->json(null);
         }
 
+        if($request->branch_id){
+            $branch=$request->branch_id;
+        }else{
+            $branch=getCurrentBranch();
+        }
+
         $daysInfo = getChargeableDays(
             $request->plan_id,
-            $request->plan_start_date
+            $request->plan_start_date,
+            $branch
         );
 
         return response()->json($daysInfo);

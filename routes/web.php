@@ -122,7 +122,7 @@ Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
 Route::get('/receipt/{transactionId}', [LearnerController::class, 'viewReceipt'])->name('receipt.view');
-
+Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
  
@@ -341,7 +341,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('getPlanType', [LearnerController::class, 'getPlanType'])->name('gettypePlanwise');
   Route::get('getPlanTypeSeatWise', [LearnerController::class, 'getPlanTypeSeatWise'])->name('gettypeSeatwise');
   Route::get('getPrice', [LearnerController::class, 'getPrice'])->name('getPricePlanwise');
-  Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
+ 
 
   Route::get('getPricePlanwiseUpgrade', [LearnerController::class, 'getPricePlanwiseUpgrade'])->name('getPricePlanwiseUpgrade');
   Route::post('generateIdCard', [LearnerController::class, 'generateIdCard'])->name('generateIdCard');

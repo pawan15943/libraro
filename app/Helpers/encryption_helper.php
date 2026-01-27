@@ -241,9 +241,11 @@ if (!function_exists('getPlanPrice')) {
 
 
         if ($branch_id) {
+          
             $branchId  = $branch_id;
             $libraryId = Branch::where('id', $branchId)->value('library_id');
         } else {
+              
             $branchId  = getCurrentBranch();
             $libraryId = getLibraryId();
         }
@@ -587,14 +589,15 @@ if (!function_exists('getEndDate')) {
 if (!function_exists('getBillingCyclePrice')) {
     function getBillingCyclePrice($plan_id, $plan_type_id,$planStartDate,$branch_id = null)
     {
-        $branchId = $branchId ?? getCurrentBranch();
+       
+        $branchId = $branch_id ?? getCurrentBranch();
         $startDate = Carbon::parse($planStartDate);
-               
+              
         /* -------------------------------
          | 1. Get base plan price
          --------------------------------*/
-        $planPrice = getPlanPrice($plan_id, $plan_type_id);
-        
+        $planPrice = getPlanPrice($plan_id, $plan_type_id ,$branchId);
+    
         if ($planPrice <= 0) {
            
             return 0;
@@ -619,7 +622,7 @@ if (!function_exists('getBillingCyclePrice')) {
         /* -------------------------------
          | 3. Calculate END DATE
          --------------------------------*/
-        $endDate = getEndDate($plan_id, $startDate);
+        $endDate = getEndDate($plan_id, $startDate,$branchId);
         
 
         /* -------------------------------
@@ -676,7 +679,7 @@ if (!function_exists('getBillingCyclePrice')) {
         
        
         $finalPrice = $perDayPrice * $usedDays;
-
+            
         return round($finalPrice, 0);
     }
 }
@@ -691,7 +694,7 @@ if (!function_exists('getChargeableDays')) {
         $startDate = Carbon::parse($planStartDate);
 
         // Calculate end date (handles fixed billing internally)
-        $endDate = getEndDate($plan_id, $startDate);
+        $endDate = getEndDate($plan_id, $startDate ,$branchId);
 
         if (!$endDate) {
             return null;
