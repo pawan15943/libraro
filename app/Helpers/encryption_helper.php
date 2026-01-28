@@ -574,6 +574,26 @@ if (!function_exists('getAvailableSeatCount')) {
     }
 }
 
+if (!function_exists('getAvailableHoursSum')) {
+
+    function getAvailableHoursSum()
+    {
+        $totalHour = Hour::where('branch_id', getCurrentBranch())->value('hour');
+        $totalSeats = Hour::where('branch_id', getCurrentBranch())->value('seats') ?? 0;
+
+        return Learner::select('seat_no', DB::raw('SUM(hours) as used_hours'))
+            ->whereNotNull('seat_no')
+            ->where('status', 1)
+            ->where('branch_id', getCurrentBranch())
+            ->groupBy('seat_no')
+            ->get()
+            ->sum(function ($row) use ($totalHour) {
+                return max(0, $totalHour - $row->used_hours);
+            });
+    }
+}
+
+
 if (!function_exists('seatRemainingHour')) {
     function seatRemainingHour($seat)
     {
