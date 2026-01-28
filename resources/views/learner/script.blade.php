@@ -1435,6 +1435,10 @@
                     if (html[5]){
                         $("#plan_price_id2").val(html[5]);      
                     }
+                    if (html[6]) {
+                        
+                        $("#chargeable_days_renew").text('Billed for ' + html[6].chargeable_days + ' Days');  
+                    }
 
                     if(html[3]){
                         $("#locker_amount2").val(html[3].locker_amount);  
@@ -1459,7 +1463,7 @@
                             $("#discount_amount3").val('');
                         }
                     }
-                        if (html[4]){
+                    if (html[4]){
                         $("#locker_no2").val(html[4].locker_no);
                         if(html[4].locker_no){
                         $("#locker_no2").removeAttr('readonly');

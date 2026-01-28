@@ -404,6 +404,7 @@
                                 <label for="">Total Amt (Plan Price + Locker Amt. - Discount)<span>*</span></label>
                                 <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="">
                                 <span id="pending_amt2" class="text-danger"></span>
+                                <span id="chargeable_days_renew" class="text-info"></span>
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Choose Due Date<span>*</span></label>

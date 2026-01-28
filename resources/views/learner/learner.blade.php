@@ -251,7 +251,7 @@ $learner_id=$value->id;
                         </li>
                         @endif
 
-                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0  && !alreadyRenewed($learner_id))
+                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0  && !alreadyRenewed($learner_id) && $value->frozen_status != 1)
                             @can('has-permission','Renew Seat')
                             <li>
                                 <a class="renew_extend" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>
@@ -320,12 +320,15 @@ $learner_id=$value->id;
                             <!-- Swap Seat-->
 
                         @can('has-permission', 'Swap Seat')
+                        @if($value->frozen_status != 1)
+                        
                         <li><a href="{{route('learners.swap',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Swap Seat"><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
+                        @endif
                         @endcan
 
 
                         @can('has-permission', 'Change Plan')
-                            @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater))
+                            @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater) && $value->frozen_status != 1)
                             <li><a href="{{route('learner.change.plan',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
                             @endif
 
@@ -352,7 +355,7 @@ $learner_id=$value->id;
                         <!-- (&& $planStatus['diff_extend_day'] <= 5) we remove this block -->
                         @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0 )
                             @can('has-permission', 'Upgrade Seat Plan' )
-                                @if(!in_array('13', toggleHideField()))
+                                @if(!in_array('13', toggleHideField()) && $value->frozen_status != 1)
                                 <li><a href="{{route('learners.upgrade',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
                                 @endif
                             @endcan
@@ -361,14 +364,14 @@ $learner_id=$value->id;
                         <!-- Close Seat -->
 
                         @can('has-permission', 'Close Seat')
-                            @if(!in_array('16', toggleHideField()))
+                            @if(!in_array('16', toggleHideField()) && $value->frozen_status != 1) 
                             <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{$value->id}}" data-learnerDetail="{{ $learner_detail_id }}" data-learner_detail_id="{{$learner_detail_id}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Close Plan" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
                             @endif
                         @endcan
                     @endif
 
                     @can('has-permission', 'Reactive Seat')
-                    @if($value->status==0)
+                    @if($value->status==0 && $value->frozen_status != 1)
                     <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
                     @endif
                     @endcan
@@ -377,7 +380,7 @@ $learner_id=$value->id;
                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                     @endcan
                     @can('has-permission', 'Gift Days')
-                    @if(!in_array('33', toggleHideField()))
+                    @if(!in_array('33', toggleHideField()) && $value->frozen_status != 1)
                     <li><a href="javascript:;" class="giftDaysBtn" data-learner_id="{{$learner_id}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Gift Days"><i class="fa-solid fa-gift"></i></a></li>
                     @endif
                     @endcan
@@ -403,7 +406,8 @@ $learner_id=$value->id;
                     <!-- Deletr Seat -->
 
                     @can('has-permission', 'Edit Seat')
-                    @if(!in_array('17', toggleHideField()))
+                    @if(!in_array('17', toggleHideField()) && $value->frozen_status != 1)
+                    
                     <li><a href="{{route('learners.edit',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
                     @endif
                     @endcan

@@ -20,7 +20,7 @@
     </div>
 
 
-    <form method="POST" action="{{ route('master.configuration.store') }}" id="configure" class="mb-4">
+    <form method="POST" action="{{ route('master.configuration.store') }}" id="configure" class="mb-4" autocomplete="off">
         @csrf
         <div id="planTypeWrapper">
             <div class="row g-4" id="planRowContainer">
@@ -90,7 +90,7 @@
 
                             <div class="col-lg-6">
                                 <label>Custom Plan Type Name *</label>
-                                <input type="text" name="plan_types[{{$index}}][custom_plan_type]" value="{{ $row?->day_type_id==0 ? $row->name : '' }}" class="form-control custom-plan @error('plan_types.0.custom_plan_type') is-invalid @enderror">
+                                <input type="text" name="plan_types[{{$index}}][custom_plan_type]" value="{{ $row?->day_type_id==0 ? $row->name : '' }}" class="form-control custom-plan @error('plan_types.0.custom_plan_type') is-invalid @enderror" autocomplete="off">
                                 @error('plan_types.0.custom_plan_type')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -98,7 +98,7 @@
 
                             <div class="col-lg-6">
                                 <label>Start Time *</label>
-                                <input type="text" name="plan_types[{{$index}}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time @error('plan_types.0.start_time') is-invalid @enderror" maxlength="4">
+                                <input type="text" name="plan_types[{{$index}}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time @error('plan_types.0.start_time') is-invalid @enderror" maxlength="4" autocomplete="off">
                                 @error('plan_types.0.start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -106,7 +106,7 @@
 
                             <div class="col-lg-6">
                                 <label>End Time *</label>
-                                <input type="text" name="plan_types[{{$index}}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time @error('plan_types.0.end_time') is-invalid @enderror" maxlength="4">
+                                <input type="text" name="plan_types[{{$index}}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time @error('plan_types.0.end_time') is-invalid @enderror" maxlength="4" autocomplete="off">
                                 @error('plan_types.0.end_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
