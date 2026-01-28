@@ -1829,12 +1829,12 @@ if (!function_exists('checkAvailability')) {
             ]);
 
         // 🔴 All Day / Night blocks
-        if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
-            return [
-                'error' => true,
-                'message' => 'Seat already booked for all day or night'
-            ];
-        }
+        // if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
+        //     return [
+        //         'error' => true,
+        //         'message' => 'Seat already booked for all day or night'
+        //     ];
+        // }
 
         // ⏰ Time overlap
         foreach ($bookings as $booking) {
