@@ -147,6 +147,11 @@ $due_date = null;
 $learner_id=$value->id;
 $operation = optional(getLearnerOperation($learner_detail_id))->operation;
 $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
+\Log::info('Learner operation debug', [
+        'learner_detail_id' => $learner_detail_id,
+        'operation' => $operation,
+        'operation_date' => $operationDate,
+    ]);
  @endphp
 
 
