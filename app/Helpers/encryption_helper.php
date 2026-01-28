@@ -978,6 +978,26 @@ if (!function_exists('getAvailableSeatCount')) {
     }
 }
 
+if (!function_exists('getAvailableHoursSum')) {
+
+    function getAvailableHoursSum()
+    {
+        $totalHour = Hour::where('branch_id', getCurrentBranch())->value('hour');
+        $totalSeats = Hour::where('branch_id', getCurrentBranch())->value('seats') ?? 0;
+
+        return Learner::select('seat_no', DB::raw('SUM(hours) as used_hours'))
+            ->whereNotNull('seat_no')
+            ->where('status', 1)
+            ->where('branch_id', getCurrentBranch())
+            ->groupBy('seat_no')
+            ->get()
+            ->sum(function ($row) use ($totalHour) {
+                return max(0, $totalHour - $row->used_hours);
+            });
+    }
+}
+
+
 if (!function_exists('seatRemainingHour')) {
     function seatRemainingHour($seat)
     {
@@ -1337,6 +1357,87 @@ if (!function_exists('getSeatDisplayShortFloor')) {
 
         // Fallback if no floor info exists
         return  $seat['main'];
+    }
+}
+
+if (!function_exists('getSeatDisplayByMainNo2')) {
+
+    function getSeatDisplayByMainNo2($mainSeatNo, $branchId)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect(generateSeatNumbers2($branchId));
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+           
+
+            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
+    }
+}
+if (!function_exists('generateSeatNumbers2')) {
+
+    function generateSeatNumbers2($branchId)
+    {
+            $result = [];
+        $mainSeatNo = 1;
+
+        // Get total seats dynamically
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
+        $totalSeats = $first_record ? $first_record->seats : 0;
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
+
+        // Get floors ordered by floor number
+        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
+
+        // Loop through all floors
+        if (!empty($floors)) {
+            foreach ($floors as $floor) {
+                $startSeat = $floor->from_seat ?? 1;
+                $endSeat   = $floor->to_seat ?? 0;
+
+
+
+                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+                    $result[] = [
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor_name' => $floor->name,
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                    ];
+
+                    $mainSeatNo++;
+                }
+            }
+        }
+
+        // Add remaining seats (unassigned to any floor)
+        while ($mainSeatNo <= $totalSeats) {
+            $result[] = [
+                'main' => $mainSeatNo,
+                'floor' => null,
+                'floor_name' => null,
+                'display' => 'Seat No - ' . $mainSeatNo
+            ];
+            $mainSeatNo++;
+        }
+
+        return $result;
     }
 }
 

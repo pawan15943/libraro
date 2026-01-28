@@ -950,7 +950,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <h4 class="mb-3 text-center">Available Seats</h4>
                     <ul class="contents">
 
-                        @if(getAvailableSeatCount() >0)
+                        @if(getAvailableHoursSum() >0)
 
                         @foreach($available_seats as $seat)
                         @if(count($seat['available_plan_types']) > 0)
