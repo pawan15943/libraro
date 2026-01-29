@@ -349,7 +349,7 @@ class DashboardController extends Controller
                     ->whereRaw(
                         "DATE_ADD(plan_end_date, INTERVAL {$extend_day} DAY) >= ?",
                         [$startOfGivenMonth]
-                    );
+                    )->whereNull('deleted_at');
         $booked_seats=(clone $query)->distinct('seat_no')->where('status', 1)->whereNotNull('seat_no')->count('seat_no');
       
         // available slot
