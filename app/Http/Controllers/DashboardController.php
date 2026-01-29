@@ -405,46 +405,53 @@ class DashboardController extends Controller
        $total_booking = LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
         ->where('learners.library_id', getLibraryId())
         ->whereDate('learner_detail.plan_start_date', '<=', $endOfGivenMonth)
-        ->whereRaw(
-            "DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?",
-            [$extend_day, $startOfGivenMonth]
-        )
-        ->count();
+        ->whereNull('learners.deleted_at')
+        ->distinct('learners.id')
+        ->count('learners.id');
+         $expired_seats =  LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+        ->where('learners.library_id', getLibraryId())
+        ->whereDate('learner_detail.plan_start_date', '<=', $endOfGivenMonth)
+        ->where('learners.status',0)
+        ->whereNull('learners.deleted_at')
+        ->distinct('learners.id')
+        ->count('learners.id');
+         
+        $active_booking=LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+        ->where('learners.library_id', getLibraryId())
+        ->whereDate('learner_detail.plan_start_date', '<=', $endOfGivenMonth)
+        ->where('learners.status',1)
+        ->whereNull('learners.deleted_at')
+        ->distinct('learners.id')
+        ->count('learners.id');
+       
 
                                                     
          // till today expired slots
          
-         $expired_query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-         ->where('learners.library_id', getLibraryId())
-         ->where('learner_detail.plan_end_date', '>=', $startDateOfGivenMonth)
-         ->where('learners.status', 0);
+        //  $expired_query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        //  ->where('learners.library_id', getLibraryId())
+        //  ->where('learner_detail.plan_end_date', '>=', $startDateOfGivenMonth)
+        //  ->where('learners.status', 0);
          
-         if ($request->filled('year') && !$request->filled('month')) {
-             // Filter by year only
-             $expired_query->whereRaw(
-                 "YEAR(DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY)) <= ?", 
-                 [$extend_day, $request->year]
-             );
-         } elseif ($request->filled('year') && $request->filled('month')) {
-             // Filter by year and month
-             $lastDateOfGivenMonth = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+        //  if ($request->filled('year') && !$request->filled('month')) {
+        //      // Filter by year only
+        //      $expired_query->whereRaw(
+        //          "YEAR(DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY)) <= ?", 
+        //          [$extend_day, $request->year]
+        //      );
+        //  } elseif ($request->filled('year') && $request->filled('month')) {
+        //      // Filter by year and month
+        //      $lastDateOfGivenMonth = Carbon::create($request->year, $request->month, 1)->endOfMonth();
             
            
-             $expired_query->whereRaw(
-                 "DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) <= ?", 
-                 [$extend_day, $lastDateOfGivenMonth->toDateString()]
-             );
-         }
+        //      $expired_query->whereRaw(
+        //          "DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) <= ?", 
+        //          [$extend_day, $lastDateOfGivenMonth->toDateString()]
+        //      );
+        //  }
         
-         $expired_seats = $expired_query->count();
+        
          
-        
-         // till today Active slots
-         if($total_booking!=0){
-            $active_booking=$total_booking-$expired_seats;
-         }else{
-            $active_booking=0;
-         }
         
 
        
