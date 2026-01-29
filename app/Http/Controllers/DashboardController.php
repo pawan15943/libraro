@@ -321,8 +321,11 @@ class DashboardController extends Controller
         
         $today = Carbon::now()->format('Y-m-d');
         $extend_day = getExtendDays();
-       $startDateOfGivenMonth = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+        $startDateOfGivenMonth = Carbon::create($request->year, $request->month, 1)->startOfMonth();
         $fiveDaysLater = Carbon::now()->addDays(5)->format('Y-m-d');
+        $fiveDaysbetween = Carbon::today()->addDays(5);
+
+
         $expired_in_five  = $this->getAllLearnersByLibrary()
             ->whereHas('learnerDetails', function($query) use ($today, $fiveDaysLater) {
                 $query->whereBetween('plan_end_date', [$today, $fiveDaysLater]);
@@ -342,28 +345,12 @@ class DashboardController extends Controller
         $total_seats = totalSeat();
       
         //booked total seat
-        $query =LearnerDetail::where('is_paid',1);
-       
-        if ($request->filled('year') && !$request->filled('month')) {
-            // Check for year only
-            $givenYear = $request->year;
-        
-            $query->whereYear('plan_start_date', '<=', $givenYear)
-                ->whereYear('plan_end_date', '>=', $givenYear);
-        } elseif ($request->filled('year') && $request->filled('month')) {
-            // Check for year and month
-            $givenYear = $request->year;
-            $givenMonth = $request->month;
-        
-            $startOfGivenMonth = Carbon::create($givenYear, $givenMonth, 1)->startOfMonth();
-            $endOfGivenMonth = Carbon::create($givenYear, $givenMonth, 1)->endOfMonth();
-        
-            $query->where(function ($subQuery) use ($startOfGivenMonth, $endOfGivenMonth) {
-                $subQuery->where('plan_start_date', '<=', $endOfGivenMonth)
-                    ->where('plan_end_date', '>=', $startOfGivenMonth);
-            });
-        }
-        $booked_seats=$query->distinct('seat_no')->count('seat_no');
+        $query =LearnerDetail::whereDate('plan_start_date', '<=', $endOfGivenMonth)
+                    ->whereRaw(
+                        "DATE_ADD(plan_end_date, INTERVAL {$extend_day} DAY) >= ?",
+                        [$startOfGivenMonth]
+                    );
+        $booked_seats=(clone $query)->distinct('seat_no')->where('status', 1)->whereNotNull('seat_no')->count('seat_no');
       
         // available slot
         if($total_seats!=0){
@@ -373,33 +360,9 @@ class DashboardController extends Controller
         }
         //Gen seat
 
-          $genquery= LearnerDetail::where('is_paid',1);
-         if ($request->filled('year') && !$request->filled('month')) {
-            // Check for year only
-            $givenYear = $request->year;
-        
-            $query->whereYear('plan_start_date', '<=', $givenYear)
-                ->whereYear('plan_end_date', '>=', $givenYear);
-        } elseif ($request->filled('year') && $request->filled('month')) {
-            // Check for year and month
-            $givenYear = $request->year;
-            $givenMonth = $request->month;
-        
-            $startOfGivenMonth = Carbon::create($givenYear, $givenMonth, 1)->startOfMonth();
-            $endOfGivenMonth = Carbon::create($givenYear, $givenMonth, 1)->endOfMonth();
-        
-            $query->where(function ($subQuery) use ($startOfGivenMonth, $endOfGivenMonth) {
-                $subQuery->where('plan_start_date', '<=', $endOfGivenMonth)
-                    ->where('plan_end_date', '>=', $startOfGivenMonth);
-            });
-        }
-       $generalBookings=$genquery ->whereNull('seat_no')
-        ->count();
-        $genactiveSeat=$genquery
-        ->whereNull('seat_no')->where('status',1)
-        ->count();
-         $fiveDaysbetween = Carbon::today()->addDays(5);
-           
+       $generalBookings=(clone $query)->whereNull('seat_no')->count();
+       $genactiveSeat=(clone $query)->where('status', 1)->whereNull('seat_no')->count();
+  
         $gengenAboutToExpire = $this->getLearnersByLibrary()
         ->whereBetween('learner_detail.plan_end_date', [ Carbon::today()->format('Y-m-d'), $fiveDaysbetween->format('Y-m-d')])
         ->where('learner_detail.status', 1)
@@ -414,7 +377,6 @@ class DashboardController extends Controller
        
         $gen_expired_query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
          ->where('learners.library_id', getLibraryId())
-         ->where('learner_detail.is_paid', 1)
          ->where('learner_detail.plan_end_date', '>=', $startDateOfGivenMonth)
          ->where('learners.status', 0)->whereNull('learner_detail.seat_no');
          
@@ -436,26 +398,24 @@ class DashboardController extends Controller
          }
         
          $genexpired_seats = $gen_expired_query->count();
+
         // till today total slots
-        
-       
-        $query_total = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+      
+
+       $total_booking = LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
         ->where('learners.library_id', getLibraryId())
-        ->where(function ($subQuery) use ($startOfGivenMonth, $endOfGivenMonth) {
-            $subQuery->where('plan_start_date', '<=', $endOfGivenMonth)
-                ->Where('plan_end_date', '>=', $startOfGivenMonth);
-        }) ->groupBy('learner_detail.learner_id')
-        ->selectRaw('COUNT(*) as total_count')
-        ->get();
-       
-        $total_booking=$query_total->count(); 
-       
+        ->whereDate('learner_detail.plan_start_date', '<=', $endOfGivenMonth)
+        ->whereRaw(
+            "DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?",
+            [$extend_day, $startOfGivenMonth]
+        )
+        ->count();
+
                                                     
          // till today expired slots
          
          $expired_query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
          ->where('learners.library_id', getLibraryId())
-         ->where('learner_detail.is_paid', 1)
          ->where('learner_detail.plan_end_date', '>=', $startDateOfGivenMonth)
          ->where('learners.status', 0);
          
@@ -478,7 +438,7 @@ class DashboardController extends Controller
         
          $expired_seats = $expired_query->count();
          
-
+        
          // till today Active slots
          if($total_booking!=0){
             $active_booking=$total_booking-$expired_seats;
