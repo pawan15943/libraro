@@ -563,29 +563,25 @@ class DashboardController extends Controller
         $other_paid =(clone $paidQuery)->where('learner_detail.payment_mode', 3)->count();
        
       
-       $plan_wise_booking = LearnerDetail::whereNull('deleted_at')
+
+        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        ->where('learners.library_id', getLibraryId())
+        ->whereNull('learners.deleted_at')
+        ->whereBetween(
+            DB::raw('DATE(learner_detail.plan_start_date)'),
+            [$startOfGivenMonth, $endOfGivenMonth]
+        )->where('learners.status',1)->count();
+
+
+
+       $plan_wise_booking = LearnerDetail::whereNull('deleted_at')->where('status',1)
         ->where('learner_detail.library_id', getLibraryId())
         ->when(getCurrentBranch() != 0, function($q) {
             $q->where('learner_detail.branch_id', getCurrentBranch());
         })
-        ->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
-            $year = $request->year;
-            return $query->where(function ($q) use ($year) {
-                $q->whereYear('plan_start_date', '<=', $year)
-                ->whereYear('plan_end_date', '>=', $year);
-            });
-        })
-        ->when($request->filled('year') && $request->filled('month'), function ($query) use ($request) {
-            $year = $request->year;
-            $month = $request->month;
-            $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-            $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-
-            return $query->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                $q->where('plan_start_date', '<=', $endOfMonth)
-                ->where('plan_end_date', '>=', $startOfMonth);
-            });
-        })
+        ->whereBetween(
+            DB::raw('DATE(learner_detail.plan_start_date)'),
+            [$startOfGivenMonth, $endOfGivenMonth])
         ->groupBy('learner_detail.plan_type_id')
         ->selectRaw('COUNT(*) as booking, learner_detail.plan_type_id')
         ->with('planType')
