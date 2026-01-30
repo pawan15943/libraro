@@ -357,7 +357,7 @@ class AttendanceController extends Controller
             $now = now()->timestamp;
             $lastScanAt = session('last_scan_at', 0);
 
-            if (($now - $lastScanAt) < 31) {
+            if (($now - $lastScanAt) < 5) {
                 // 🚫 DO NOT validate QR
                 return response()->json([
                     'status'  => 'success',
@@ -380,7 +380,15 @@ class AttendanceController extends Controller
 
           try {
             DB::beginTransaction();
+               // 🔐 Log insert MUST succeed
+            $data = [
+                'learner_id'     => $learnerId,
+                'branch_id'      => $branchId,
+                'punch_datetime' => $currentTime,
+                'source'         => 'QR'
+            ];
 
+            $this->logInsert($data); // throws exception if failed
             if ($existingAttendance) {
 
                 \Log::info('attendance update');
@@ -408,15 +416,7 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // 🔐 Log insert MUST succeed
-            $data = [
-                'learner_id'     => $learnerId,
-                'branch_id'      => $branchId,
-                'punch_datetime' => $currentTime,
-                'source'         => 'QR'
-            ];
-
-            $this->logInsert($data); // throws exception if failed
+         
 
             DB::commit();
 
@@ -697,7 +697,7 @@ public function scan(Request $request)
 
     try {
         DB::beginTransaction();
-
+        $this->logInsert($data);
         /* -------------------------
          | Punch IN
          |--------------------------*/
@@ -730,7 +730,7 @@ public function scan(Request $request)
             'attendance' => 1
         ]);
 
-        $this->logInsert($data);
+        
 
         DB::commit();
 
