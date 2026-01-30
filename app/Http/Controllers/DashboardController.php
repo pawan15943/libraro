@@ -563,8 +563,7 @@ class DashboardController extends Controller
         $other_paid =(clone $paidQuery)->where('learner_detail.payment_mode', 3)->count();
        
       
-       $plan_wise_booking = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-        ->where('learner_detail.is_paid', 1)
+       $plan_wise_booking = LearnerDetail::whereNull('deleted_at')
         ->where('learner_detail.library_id', getLibraryId())
         ->when(getCurrentBranch() != 0, function($q) {
             $q->where('learner_detail.branch_id', getCurrentBranch());
@@ -613,7 +612,7 @@ class DashboardController extends Controller
         
            //plantype wise revenue
           $query = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-                ->where('learner_detail.is_paid', 1)
+                
                 ->where('learner_detail.library_id', getLibraryId());
 
             if (getCurrentBranch() != 0) {
