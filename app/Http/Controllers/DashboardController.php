@@ -171,7 +171,7 @@ class DashboardController extends Controller
          
             $plan_wise_booking = LearnerDetail::with('planType')
                 ->whereBetween('join_date', [$startDate, $endDate])
-                ->where('is_paid', 1)
+                ->whereNull('deleted_at')
                 ->groupBy('plan_type_id')
                 ->selectRaw('COUNT(id) as booking, plan_type_id')
                 ->get();
