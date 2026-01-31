@@ -362,6 +362,13 @@ class DashboardController extends Controller
 
        $generalBookings=(clone $query)->whereNull('seat_no')->count();
        $genactiveSeat=(clone $query)->where('status', 1)->whereNull('seat_no')->count();
+       $genactiveSeat = (clone $query)->where('status', 1)->whereNull('seat_no')->whereExists(function ($q) {
+            $q->select(DB::raw(1))
+            ->from('learners')
+            ->whereColumn('learners.id', 'learner_detail.learner_id')
+            ->whereNull('learners.deleted_at');
+        })->count();
+
   
         $gengenAboutToExpire = $this->getLearnersByLibrary()
         ->whereBetween('learner_detail.plan_end_date', [ Carbon::today()->format('Y-m-d'), $fiveDaysbetween->format('Y-m-d')])
