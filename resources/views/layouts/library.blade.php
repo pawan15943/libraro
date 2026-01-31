@@ -79,10 +79,21 @@
         <div class="content-area">
             <!-- Header -->
             @include('partials.library-header')
+            <style>
+                marquee.bg-danger.text-white.fw-bold {
+                    font-size: .8rem;
+                    font-weight: 400 !important;
+                    font-family: 'outfit', 'sans-sarif';
+                }
+            </style>
+            <div>
+                <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.</marquee>
+            </div>
 
 
             <!-- Begin Page Content -->
             <div class="content">
+
                 <div class="container-fluid">
                     @include('partials.breadcrumbs')
                     @if (session('error'))
@@ -107,17 +118,16 @@
 
                         setTimeout(function() {
                             Swal.fire({
-                                title: 'Session Expiring Soon'
-                                , text: 'Your session will expire in 1 minute. Please save your work or stay active.'
-                                , icon: 'warning'
-                                , confirmButtonText: 'Stay Logged In'
+                                title: 'Session Expiring Soon',
+                                text: 'Your session will expire in 1 minute. Please save your work or stay active.',
+                                icon: 'warning',
+                                confirmButtonText: 'Stay Logged In'
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     location.reload(); // refresh session
                                 }
                             });
                         }, warningTime * 1000);
-
                     </script>
 
                 </div>
@@ -222,7 +232,6 @@
                 transform: scale(1.1);
                 transition: all 0.3s ease;
             }
-
         </style>
 
     </div>
@@ -337,21 +346,20 @@
 
     <script>
         flatpickr(".dob", {
-            maxDate: "2010-01-01"
-            , disableMobile: "true"
-            , allowInput: true
+            maxDate: "2010-01-01",
+            disableMobile: "true",
+            allowInput: true
         });
 
         flatpickr(".datepicker", {
-            disableMobile: "true"
-            , allowInput: true
+            disableMobile: "true",
+            allowInput: true
         });
         flatpickr(".duedate", {
-            disableMobile: "true"
-            , minDate: "today"
-            , allowInput: true
+            disableMobile: "true",
+            minDate: "today",
+            allowInput: true
         });
-
     </script>
 
     <script>
@@ -384,7 +392,6 @@
                 }
             });
         });
-
     </script>
 
     <!-- jQuery -->
@@ -400,7 +407,6 @@
                 $('.toggleIcon1').toggleClass('fa-plus fa-minus');
             });
         });
-
     </script>
 
     <script>
@@ -420,7 +426,6 @@
                 $('.sidebar').toggleClass('w-120');
             });
         });
-
     </script>
     <script>
         $(document).ready(function() {
@@ -436,17 +441,16 @@
                 }
             });
         });
-
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // Function to show a popup
             function showOfflinePopup() {
                 Swal.fire({
-                    title: 'No Internet Connection'
-                    , text: 'Your internet connection is lost. Please check your connection.'
-                    , icon: 'error'
-                    , confirmButtonText: 'OK'
+                    title: 'No Internet Connection',
+                    text: 'Your internet connection is lost. Please check your connection.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
                 });
             }
 
@@ -462,10 +466,10 @@
 
             window.addEventListener('online', function() {
                 Swal.fire({
-                    title: 'Back Online'
-                    , text: 'Your internet connection has been restored.'
-                    , icon: 'success'
-                    , confirmButtonText: 'OK'
+                    title: 'Back Online',
+                    text: 'Your internet connection has been restored.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
                 });
             });
         });
@@ -487,15 +491,12 @@
             // Initial check when the page loads
             addClassOnResize();
         });
-
-       
     </script>
 
     <script>
         function toggleSupportCard() {
             $('#supportCard').toggle();
         }
-
     </script>
 
     <!-- Right Sidebar -->
@@ -513,7 +514,6 @@
                 $(this).find('#sidebar_mob').toggleClass('rotate-180');
             });
         });
-
     </script>
 
     <script>
@@ -528,7 +528,6 @@
                 });
             }, 1000); // adjust delay as needed
         });
-
     </script>
 
     <script>
@@ -550,7 +549,6 @@
             }
             lastTouchEnd = now;
         }, false);
-
     </script>
     @include('learner.script')
     <script>
@@ -558,7 +556,6 @@
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
         });
-
     </script>
 
     <script>
@@ -584,7 +581,6 @@
             form.reset(); // reset form fields
             window.location.href = form.action; // reload without filters
         });
-
     </script>
 
 
@@ -595,9 +591,9 @@
             const seatSelect = document.getElementById('seat_id');
 
             const seatChoices = new Choices(seatSelect, {
-                removeItemButton: true
-                , shouldSort: false
-            , });
+                removeItemButton: true,
+                shouldSort: false,
+            });
 
             function toggleSeat() {
                 if (generalSeat.value === 'yes') {
@@ -622,8 +618,8 @@
             // For select
             const selectElement = document.getElementById('stateid');
             const choicesSelect = new Choices(selectElement, {
-                removeItemButton: true
-            , });
+                removeItemButton: true,
+            });
 
         });
 
@@ -631,35 +627,34 @@
             // For select
             const selectElement = document.getElementById('seat_search');
             const choicesSelect = new Choices(selectElement, {
-                removeItemButton: true
-            , });
+                removeItemButton: true,
+            });
 
         });
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('state_id');
             const choicesSelect = new Choices(selectElement, {
-                removeItemButton: true
-            , });
+                removeItemButton: true,
+            });
 
         });
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('cityid');
             const choicesSelect = new Choices(selectElement, {
-                removeItemButton: true
-            , });
+                removeItemButton: true,
+            });
 
         });
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('duration');
             const choicesSelect = new Choices(selectElement, {
-                removeItemButton: true
-            , });
+                removeItemButton: true,
+            });
 
         });
-
     </script>
     <script>
         let cityChoices = null;
@@ -670,15 +665,14 @@
 
             // ❌ DO NOT reinitialize again
             cityChoices = new Choices(citySelect, {
-                removeItemButton: false
-                , searchEnabled: true
-                , shouldSort: false
-                , placeholder: true
-                , placeholderValue: 'Select City'
+                removeItemButton: false,
+                searchEnabled: true,
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Select City'
             });
 
         });
-
     </script>
 
 
