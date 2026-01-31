@@ -1902,7 +1902,7 @@ class LearnerController extends Controller
 
         if ($learner_detail && $learner_detail->plan_end_date < $currentDate && $endDate->gt($currentDate) && $is_paid == 1) {
             $status = 1;
-        } elseif ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
+        } elseif ($inextendDate >= Carbon::today() && $start_date <= Carbon::today()) {
             $status = 1;
         } else {
             $status = 0;
