@@ -17,6 +17,7 @@
                         <ul class="action-list">
                             <li><a href="{{ route('booking.form', $branch->uuid) }}">Book<br> Seat</a></li>
                             <li><a href="{{ route('renew.form', $branch->uuid) }}">Re-New Seat</a></li>
+                            <li><a href="{{ route('qr.attendance.link') }}">Open Attendence App</a></li>
                             <!-- <li><a href="">Upgrade Plan</a></li>
                                 <li><a href="">Change Plan</a></li>
                                 <li><a href="">Close Plan</a></li>

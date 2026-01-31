@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
@@ -31,6 +32,17 @@ use Illuminate\Support\Facades\Route;
 use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 
+
+
+Route::prefix('leads')->name('leads.')->group(function () {
+    Route::get('/', [LeadContactController::class, 'index'])->name('index');
+    
+
+    Route::post('/store', [LeadContactController::class, 'store'])->name('store');
+    Route::post('/{lead}/comment', [LeadContactController::class, 'addComment'])->name('comment');
+    Route::post('/{lead}/call-status', [LeadContactController::class, 'updateCallStatus'])->name('call');
+    Route::get('/{lead}/save-contact', [LeadContactController::class, 'saveContact'])->name('saveContact');
+});
 
 
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
@@ -110,7 +122,7 @@ Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
 Route::get('/receipt/{transactionId}', [LearnerController::class, 'viewReceipt'])->name('receipt.view');
-
+Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
  
@@ -286,7 +298,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
 
     Route::get('/seats/view', [DashboardController::class, 'viewSeats'])->name('learners.list.view');
-    Route::get('/upgrade/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade.renew');
+    Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade');
     Route::get('/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learner.renew.plan');
     Route::post('/upgrade/renew/store', [LearnerController::class, 'learnerUpgradeRenew'])->name('learner.upgrade.renew.store');
     Route::get('/attendance', [LearnerController::class, 'learnerAttendence'])->name('attendance');
@@ -329,7 +341,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('getPlanType', [LearnerController::class, 'getPlanType'])->name('gettypePlanwise');
   Route::get('getPlanTypeSeatWise', [LearnerController::class, 'getPlanTypeSeatWise'])->name('gettypeSeatwise');
   Route::get('getPrice', [LearnerController::class, 'getPrice'])->name('getPricePlanwise');
-  Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
+  Route::get('getPrice/master', [MasterController::class, 'getPriceMaster'])->name('getPricePlanwiseMaster');
+ 
 
   Route::get('getPricePlanwiseUpgrade', [LearnerController::class, 'getPricePlanwiseUpgrade'])->name('getPricePlanwiseUpgrade');
   Route::post('generateIdCard', [LearnerController::class, 'generateIdCard'])->name('generateIdCard');

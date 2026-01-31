@@ -1,6 +1,6 @@
-<div class="footer text-center d-none d-md-block">@ {{date('Y')}} All Rights Reserved by Libraro.</div>
+<div class="footer text-center d-none d-lg-block">@ {{date('Y')}} All Rights Reserved by Libraro.</div>
 @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
-<div class="mobile-app d-block d-md-none">
+<div class="mobile-app d-block d-lg-none">
     <ul class="mobile-menu">
         <li class="{{ request()->routeIs('library.home') ? 'active' : '' }}">
             <a href="{{ route('library.home') }}">

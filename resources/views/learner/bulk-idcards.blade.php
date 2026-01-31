@@ -293,7 +293,7 @@
             $endTime   = $end ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
            @endphp 
         
-        <div class="card front">
+        <div class="card front" style="background: linear-gradient(180deg, #ffffff, #ebe6ff);">
             <div class="profiile">
                 <div class="seattt">
                     <img src="{{ $learner_detail->learner->profile_picture ? asset($learner_detail->learner->profile_picture) : 'https://placehold.co/600x400'}}" alt="profile">
@@ -314,7 +314,7 @@
                 </div>
 
             </div>
-            <div class="plaanInfo">
+            <div class="plaanInfo" >
                <ul>
                    <li>
                         <span>Plan Start On</span>
@@ -345,46 +345,23 @@
             </div>
             <div class="library-name">{{$branch->display_name ?? $branch->name}}</div>
         </div>
-        <div class="card back">
-            <div class="library-innnfoo">
+        @if($print_type!='single')
+        <div class="card back" style="background: #ebe6ff;">
+            <div class="library-innnfoo text-center w-100">
                 <h4>Library Info</h4>
-                <ul>
-                    <li>Address : {{$branch->library_address ?? ''}} {{$branch->city->city_name ?? ''}}, {{$branch->state->state_name ?? ''}}, {{$branch->state->library_zip ?? ''}}</li>
-                    <li>Contact Number : {{$branch->mobile ?? ''}}</li>
-                    <li>Email Id : {{$branch->email ?? ''}}</li>
+                <ul style="width:100%; text-align:center;">
+                    @if($branch->library_address || $branch->city->city_name || $branch->state->state_name || $branch->state->library_zip)
+                    <li style="width:100%; text-align:center;">Address : {{$branch->library_address ?? ''}} {{$branch->city->city_name ?? ''}}, {{$branch->state->state_name ?? ''}}, {{$branch->state->library_zip ?? ''}}</li>
+                     @endif
+                    <li style="width:100%; text-align:center;">Contact Number : {{$branch->mobile ?? ''}}</li>
+                    <li style="width:100%; text-align:center;">Email Id : {{$branch->email ?? ''}}</li>
                 </ul>
             </div>
         </div>
+        @endif
         @endforeach
      </div>
-    {{-- <div class="receipt_wrapper">
-        <!-- header -->
-        <div class="receipt_header">
-            <div class="logo">
-                <img src="{{ asset('img/logo.png') }}" alt="Library Logo">
-            </div>
-            <div class="address_header text-right">
-                <h5>Library Management System Headquarters:</h5>
-                <div class="address">
-                    123 Library Road, Knowledge City<br>
-                    Near BookHub Station, Cityville, Countryland
-                </div>
-                <a href="www.librarysystem.com" title="Library System">Website: www.librarysystem.com</a><br>
-                <a href="mailto:support@librarysystem.com" title="Library System">Email: support@librarysystem.com</a>
-            </div>
-        </div>
-
-        <!-- Main content-->
-        <div class="seat--info">
-            
-        <span class="d-block ">Seat No : {{ $learner_detail->seat_no}}</span>
-        
-        <p>{{ $learner_detail->plan->name}}</p>
-        <p>{{ $learner_detail->plan_start_date}}</p>
-        <p>{{ $learner_detail->plan_end_date}}</p>
-        <button class="mb-3 print-id-card"> Booked for <b>{{ $learner_detail->planType->name}}</b></button>
-        </div>
-    </div> --}}
+    
 </body>
  <script>
         function printCards() {

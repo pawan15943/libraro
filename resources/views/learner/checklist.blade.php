@@ -6,6 +6,15 @@
 <div class="row mb-4">
     <div class="col-lg-12">
         <form method="POST" action="{{ route('learner.idcard.bulk') }}" target="_blank">
+            <div class="mb-3" style="max-width:250px;">
+            <label class="form-label">Print Type</label>
+            <select name="print_type" class="form-select" required>
+                <option value="">Select Print Type</option>
+                <option value="single">Print one side</option>
+                <option value="both">Print both side</option>
+            </select>
+        </div>
+
             <div class="table-responsive">
                 @csrf
                 <table class="table text-center datatable">
@@ -22,6 +31,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                       
                         @foreach($learners as $learner)
                         <tr>
                             <td>

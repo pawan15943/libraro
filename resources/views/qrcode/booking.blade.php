@@ -1,5 +1,8 @@
 @extends('sitelayouts.layout')
 @section('content')
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
+        rel="stylesheet" />
 <style>
     header,
     footer {
@@ -27,13 +30,92 @@
         margin-bottom: 1rem;
     }
 
-</style>
+    
+/* Modal background */
+.cropper-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.24);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1 !important;
+}
 
+/* Modal box */
+.cropper-box {
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Cropper area */
+
+
+.cropper-area {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+/* Buttons */
+.cropper-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.cropper-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#cancelCrop {
+    background: #e5e7eb;
+    color: #111;
+}
+
+.cropbtn {
+    background: navy;
+    color: #fff;
+}
+
+.cropper-modal {
+    background-color: #000000a3 !important;
+    opacity: .5;
+}
+
+</style>
+ <!-- Cropper Modal -->
+<div class="cropper-modal" id="cropperModal">
+    <div class="cropper-box">
+        <h5>Crop Profile Photo</h5>
+
+        <div class="cropper-area">
+            <img id="cropperImage" style="max-width:100%; display:block;">
+        </div>
+
+        <div class="cropper-actions">
+            <button class="cancelcrop">Cancel</button>
+            <button class="cropbtn">Crop & Save</button>
+        </div>
+    </div>
+</div>
+ 
 <section class="py-3 online-qr-booking">
 
     <div class="container">
         <!-- resources/views/booking/form.blade.php -->
-        <form action="{{ route('booking.store', $branch->uuid) }}" method="POST">
+        
             @if (session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
@@ -44,7 +126,8 @@
                 {{ session('success') }}
             </div>
             @endif
-
+              
+        <form action="{{ route('booking.store', $branch->uuid) }}" method="POST" enctype="multipart/form-data">
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
@@ -72,10 +155,10 @@
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
-                                    @foreach($availableSeats as $value)
-                                    <option value="{{ $value }}" {{ old('seat_no') == $value ? 'selected' : '' }}>
-                                        {{ $value }}
-                                    </option>
+                                 
+                                    @foreach($newAvailableSeat  as $key => $value)
+
+                                    <option value="{{ $value['main'] }}" {{ old('seat_no') == $value['main'] ? 'selected' : '' }}>{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -85,13 +168,25 @@
                                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
                                 @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-
+                            @if(!in_array('1', toggleHideField()))
+                            <div class="col-lg-12">
+                                <label for="">Email Id (Optional)</label>
+                                <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
+                                <span class="text-danger" id="email-error"></span>
+                            </div>
+                            @endif
                             <div class="col-lg-6">
                                 <label>Mobile (WhatsApp No)<span>*</span></label>
                                 <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
                                 @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-
+                            @if(!in_array('2', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="">DOB (Optional)</label>
+                                <input type="date" class="form-control dob" value="{{ old('dob') }}" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
+                            </div>
+                            @endif
+                          
                             <div class="col-lg-6">
                                 <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id3" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
@@ -117,19 +212,35 @@
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
                                 <input id="plan_price" type="text" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <span id="chargeable_day_book" class="text-info"></span>
                             </div>
 
                             <div class="col-lg-6">
                                 <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date" value="{{ old('plan_start_date') }}">
+                               <input type="date"
+                                    class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
+                                    name="plan_start_date"
+                                    id="plan_start_date"
+                                    value="{{ old('plan_start_date', now()->format('Y-m-d')) }}">
                                 @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            <div class="col-lg-6">
+                            
+                            @if(!in_array('8', toggleHideField()))
+                            <div class="col-lg-12">
+                                <label class="form-label">Upload Profile Photo</label>
+                                <input
+                                    type="file"
+                                    class="form-control image-cropper"
+                                    name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                            </div>
+                            @endif
+                            <div class="col-lg-12">
                                 <label for="">Payment Mode</label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
                                     <option value="online" {{ old('payment_mode') == 'online' ? 'selected' : '' }}>Online</option>
-                                    <option value="offline" {{ old('payment_mode') == 'offline' ? 'selected' : '' }}>Offline</option>
+                                    <option value="offline" {{ old('payment_mode') == 'offline' ? 'selected' : '' }}>Offline (Pay at Branch)</option>
 
                                 </select>
                                 @error('payment_mode')
@@ -138,21 +249,24 @@
                                 </div>
                                 @enderror
                             </div>
-
                             <div class="col-lg-12">
                                 <button type="submit" class="btn btn-primary button">Next <i class="fa fa-long-arrow-right ms-2"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>
+             </div>
         </form>
+   
     </div>
-    </div>
+
+
 </section>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
     $(document).ready(function() {
-
+         let oldPlanTypeId = "{{ old('plan_type_id') }}";
         function loadPlanTypes() {
             const generalSeat = $('#general_seat').val();
             const seatId = $('#seat_id').val();
@@ -190,8 +304,9 @@
             let plan_id = $('#plan_id3').val();
             let plan_type_id = $('#plan_type_id').val();
             let branch_id = $('#branch_id').val();
+            let plan_start_date = $('#plan_start_date').val();
 
-            if (plan_id && plan_type_id && branch_id) {
+            if (plan_id && plan_type_id && branch_id && plan_start_date) {
                 $.ajax({
                     url: "{{ route('get.plan.price') }}"
                     , type: "POST"
@@ -200,12 +315,30 @@
                         , plan_id: plan_id
                         , plan_type_id: plan_type_id
                         , branch_id: branch_id
+                        , plan_start_date: plan_start_date
                     }
                     , success: function(response) {
                         if (response.success) {
                             $('#plan_price').val(response.price);
                         } else {
                             $('#plan_price').val('');
+                        }
+                    }
+                });
+            }
+            if(plan_id && plan_start_date){
+                    $.ajax({
+                    url: "{{ route('getChargeableDays') }}",
+                    type: "GET",
+                    data: {
+                        plan_id: plan_id,
+                        plan_start_date: plan_start_date,
+                        branch_id:branch_id
+                    },
+                    success: function (res) {
+                            console.log(res);
+                        if (res.fixedBillingDate == 'true') {
+                            $('#chargeable_day_book').text('Billed for ' + res.chargeable_days + ' Days');
                         }
                     }
                 });
@@ -227,23 +360,48 @@
                 , success: function(html) {
                     console.log(html);
                     if (html) {
+                     if (html.length === 0) {
+                        $("#plan_type_id").empty().append(
+                            '<option value="">No added plan type</option>'
+                        );
+                        return;
+                    }
+                    let selectedValue = oldPlanTypeId 
+                        ? oldPlanTypeId 
+                        : $("#plan_type_id").find("option:selected").val();
 
-                        let selectedOption = $("#plan_type_id").find("option:selected");
+                    $("#plan_type_id").empty();
+                    $("#plan_type_id").append('<option value="">Choose Shift</option>');
 
-                        $("#plan_type_id").empty();
-                        $("#plan_type_id").append('<option value="">Choose Shift</option>');
-
-                        if (selectedOption.val() !== "") {
-                            $("#plan_type_id").append('<option value="' + selectedOption.val() + '" selected>' + selectedOption.text() + '</option>');
-                        }
-
+                    if (selectedValue) {
+                        // find text from html response
+                        let selectedText = '';
                         $.each(html, function(index, planType) {
-                            // Avoid adding the option that is already selected
-                            if (planType.id != selectedOption.val()) {
-                                $("#plan_type_id").append('<option value="' + planType.id + '">' + planType.name + '</option>');
+                            if (planType.id == selectedValue) {
+                                selectedText = planType.name;
                             }
                         });
-                    } else {
+
+                        $("#plan_type_id").append(
+                            '<option value="' + selectedValue + '" selected>' +
+                            selectedText +
+                            '</option>'
+                        );
+                    }
+
+                    $.each(html, function(index, planType) {
+                        if (planType.id != selectedValue) {
+                            $("#plan_type_id").append(
+                                '<option value="' + planType.id + '">' +
+                                planType.name +
+                                '</option>'
+                            );
+                        }
+                    });
+
+                    // clear old value after first use
+                    oldPlanTypeId = null;
+                }else {
                         $("#plan_type_id").empty();
                         $("#plan_type_id").append('<option value="">Select Plan Type</option>');
                     }
@@ -271,5 +429,114 @@
     });
 
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    let cropper = null;
+    let activeInput = null;
+    let activePreview = null;
+
+    const modal = document.getElementById("cropperModal");
+    const cropperImage = document.getElementById("cropperImage");
+    const cropBtn = document.querySelector(".cropbtn");
+    const cancelCrop = document.querySelector(".cancelcrop");
+
+    // 🔥 Find preview after input (robust)
+    function findPreview(input) {
+        let el = input.nextElementSibling;
+        while (el) {
+            if (el.classList.contains("preview-img")) return el;
+            el = el.nextElementSibling;
+        }
+        return null;
+    }
+
+    // 🔥 Dynamic crop size
+    function getCropConfig(input) {
+        if (input.classList.contains("id_proof_file")) {
+            return { width: 350, height: 200, ratio: 350 / 200 };
+        }
+        return { width: 200, height: 200, ratio: 1 };
+    }
+
+    document.querySelectorAll(".image-cropper").forEach(input => {
+
+        input.addEventListener("change", function () {
+
+            const file = this.files[0];
+            if (!file) return;
+
+            activeInput = this;
+            activePreview = findPreview(this);
+
+            const reader = new FileReader();
+            reader.onload = function () {
+
+                cropperImage.src = reader.result;
+                modal.style.display = "flex";
+
+                cropperImage.onload = () => {
+                    if (cropper) cropper.destroy();
+
+                    const cfg = getCropConfig(activeInput);
+
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: cfg.ratio,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        responsive: true,
+                    });
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    cropBtn.addEventListener("click", function () {
+        if (!cropper || !activeInput) return;
+
+        const cfg = getCropConfig(activeInput);
+
+        const canvas = cropper.getCroppedCanvas({
+            width: cfg.width,
+            height: cfg.height,
+            imageSmoothingQuality: "high",
+        });
+
+        canvas.toBlob(blob => {
+
+            const uniqueName = `profile_${Date.now()}.jpg`;
+
+            const file = new File([blob], uniqueName, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+            });
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            activeInput.files = dt.files;
+
+            if (activePreview) {
+                activePreview.src = URL.createObjectURL(blob);
+                activePreview.style.display = "block";
+            }
+
+            modal.style.display = "none";
+            cropper.destroy();
+            cropper = null;
+
+        }, "image/jpeg", 0.8);
+    });
+
+    cancelCrop.addEventListener("click", function () {
+        modal.style.display = "none";
+        if (cropper) cropper.destroy();
+        cropper = null;
+        activeInput = null;
+        activePreview = null;
+    });
+
+});
+</script>
+
 
 @endsection

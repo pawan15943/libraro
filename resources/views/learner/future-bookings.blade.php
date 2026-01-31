@@ -265,7 +265,7 @@
                             @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                                     @can('has-permission', 'Upgrade Seat Plan' )
                                     @if(!in_array('13', toggleHideField()))
-                                    <li><a href="{{route('learners.upgrade.renew',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
+                                    <li><a href="{{route('learners.upgrade',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
                                     @endif
                                     @endcan
 

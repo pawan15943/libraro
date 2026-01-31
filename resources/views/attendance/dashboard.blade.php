@@ -53,9 +53,10 @@
                             {{ $detail->library_name ?? 'Library' }}
                         </h4>
                     </div>
+                  
 
                     <h6 class="mt-3">
-                        Seat No : {{ $detail->seat_no ?? 'GEN' }}
+                        Seat No : {{ getSeatDisplayByMainNo2($detail->seat_no, $detail->branch_id) ?? 'GEN' }}
                     </h6>
 
                     <div class="mt-3 row">

@@ -296,7 +296,7 @@
         let routeUrl ='{{ route("master.delete", ":id") }}'.replace(':id', dataId);
         let table = btn.data('table');
         let row = $('#row-' + dataId); 
-
+        let deleteType = btn.hasClass('active-deactive') ? 'soft' : 'permanent';
         Swal.fire({
             title: 'Are you sure?',
             text: `you want to change the status?`,
@@ -312,10 +312,11 @@
                     type: 'DELETE',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
-                        table: table
+                        table: table,
+                        deleteType:deleteType
                     },
                     success: function (response) {
-                    Swal.fire({
+                        Swal.fire({
                             icon: 'success',
                             title: 'Changed!',
                             text: response.message,
@@ -326,10 +327,15 @@
 
                     },
                     error: function (xhr) {
+                          let errorMessage = 'Something went wrong while deleting.';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',
-                            text: 'Something went wrong while deleting.'
+                            text:  errorMessage
                         });
                     }
                 });
@@ -346,7 +352,7 @@
     if (plan_id !== "" && plan_type_id !== "") {
 
         $.ajax({
-            url: "{{ route('getPricePlanwise') }}",
+            url: "{{ route('getPricePlanwiseMaster') }}",
             method: "GET",
             data: {
                 plan_id: plan_id,

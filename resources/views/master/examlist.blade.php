@@ -84,7 +84,7 @@
                 <ul class="actionalbles">
                     <li>
                         <a href="javascript:void(0)" 
-                           class="delete" 
+                           class="delete m-0" 
                            data-id="{{ $value->id }}" 
                            data-table="Exam" 
                            title="Active/Deactive">
@@ -100,7 +100,7 @@
                             <i class="fas fa-edit"></i>
                         </a>
                     </li>
-                    <li>
+                    {{-- <li>
                         <a href="javascript:void(0)" 
                            class="delete-btn" 
                            data-id="{{ $value->id }}" 
@@ -108,7 +108,7 @@
                            title="Delete">
                             <i class="fa fa-trash"></i>
                         </a>
-                    </li>
+                    </li> --}}
                 </ul>
             </div>
         </div>

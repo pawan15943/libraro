@@ -59,6 +59,7 @@ class AttendanceController extends Controller
                 'libraries.library_mobile as library_mobile',
                 'branches.library_address as library_address',
                 'branches.library_images as library_images',
+                'branches.id as branch_id'
             ])
 
             // Eloquent relations
@@ -356,7 +357,7 @@ class AttendanceController extends Controller
             $now = now()->timestamp;
             $lastScanAt = session('last_scan_at', 0);
 
-            if (($now - $lastScanAt) < 31) {
+            if (($now - $lastScanAt) < 5) {
                 // 🚫 DO NOT validate QR
                 return response()->json([
                     'status'  => 'success',
@@ -377,58 +378,68 @@ class AttendanceController extends Controller
                 ->where('date', $date)
                 ->first();
 
+          try {
+            DB::beginTransaction();
+               // 🔐 Log insert MUST succeed
+            $data = [
+                'learner_id'     => $learnerId,
+                'branch_id'      => $branchId,
+                'punch_datetime' => $currentTime,
+                'source'         => 'QR'
+            ];
+
+            $this->logInsert($data); // throws exception if failed
             if ($existingAttendance) {
-                \Log::info('attendence update');
-                 $existingAttendance->out_time = $currentTime;
-                 if (!$existingAttendance->in_time){
+
+                \Log::info('attendance update');
+
+                $existingAttendance->out_time = $currentTime;
+
+                if (!$existingAttendance->in_time) {
                     $existingAttendance->in_time = $currentTime;
-                 }
+                }
 
                 $existingAttendance->save();
+
             } else {
-                \Log::info('attendence add');
-                // // 3. Mark attendance (safe)
+
+                \Log::info('attendance add');
+
                 Attendance::create([
                     'learner_id' => $learnerId,
                     'attendance' => $attendance,
-                    'date' => $date,
-                    'in_time' => $currentTime ? $currentTime : null,
-                    'out_time' => $currentTime ? $currentTime : null,
+                    'date'       => $date,
+                    'in_time'    => $currentTime,
+                    'out_time'   => $currentTime,
                     'library_id' => $libraryId->library_id,
-                    'branch_id' => $branchId,
+                    'branch_id'  => $branchId,
                 ]);
-            
-
-              
-
-
             }
-           
-            try {
 
-                $data = [
-                    'learner_id'     => $learnerId,
-                    'branch_id'      => $branchId,
-                    'punch_datetime' => $currentTime,
-                    'source'         => 'QR'
-                ];
+         
 
-                $this->logInsert($data);
+            DB::commit();
 
-            } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Thank You! Attendance marked'
+            ]);
 
-                \Log::error('Attendance log insert failed', [
-                    'error' => $e->getMessage(),
-                    'data'  => $data,
-                ]);
+        } catch (\Throwable $e) {
 
-            
-            }
-        
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Thank You! Attendance marked'
-        ]);
+            DB::rollBack();
+
+            \Log::error('Attendance or log failed', [
+                'learner_id' => $learnerId,
+                'error'      => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Attendance not marked. Please try again.'
+            ], 500);
+        }
+
     }
 
 
@@ -604,22 +615,7 @@ public function scan(Request $request)
 {
     \Log::info('SCAN HIT', $request->all());
 
-    // /* 1️⃣ Decode QR */
-    // $decoded = base64_decode($request->qr, true);
-    // if (!$decoded) {
-    //     \Log::warning('QR decode failed');
-    //     return response()->json(['message' => 'Invalid QR'], 403);
-    // }
-
-    // [$learnerId, $signature] = explode('|', $decoded);
-
-    // /* 2️⃣ Verify QR signature */
-    // $expected = hash_hmac('sha256', $learnerId, config('app.key'));
-
-    // if (!hash_equals($expected, $signature)) {
-    //     \Log::warning('QR signature mismatch', compact('learnerId'));
-    //     return response()->json(['message' => 'QR tampered'], 403);
-    // }
+    
     $learnerNo = trim($request->qr);
 
     if (!$learnerNo) {
@@ -646,6 +642,16 @@ public function scan(Request $request)
 
 
     $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+     /* 1️⃣ No active plan */
+    if (!$learnerDetail) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'No active plan found'
+        ], 403);
+    }
+
+
+
     $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
     $extendDay = $branch->extend_days; // assume integer
     $today = Carbon::today();
@@ -659,26 +665,21 @@ public function scan(Request $request)
     }
     $diffExtendDay = $today->diffInDays($inextendDate, false);
     
-    /* 1️⃣ No active plan */
-    if (!$learnerDetail) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => 'No active plan found'
-        ], 403);
-    }
-
-    /* 2️⃣ Plan expired check */
-    if ($learnerDetail->plan_end_date < date('Y-m-d')){
-    // if ($diffExtendDay < 0) {
-        return response()->json([
-            'status'  => 'expired',
-            'message' => 'Plan expired'
-        ], 403);
-    }
+    
+   
     if($learner->branch_id != getCurrentBranch()){
             return response()->json([
             'status'  => 'expired',
                 'message' => 'Ohh it seems like you scan wrong Library QR code.'
+        ], 403);
+    }
+
+        /* 2️⃣ Plan expired check */
+     if (Carbon::parse($learnerDetail->plan_end_date)->lt(today())) {
+    // if ($diffExtendDay < 0) {
+        return response()->json([
+            'status'  => 'expired',
+            'message' => 'Plan expired'
         ], 403);
     }
 
@@ -687,55 +688,74 @@ public function scan(Request $request)
     $attendance = Attendance::where('learner_id', $learner->id)
         ->where('date', today())
         ->first();
-
-    if (!$attendance) {
-        Attendance::create([
-            'learner_id' => $learner->id,
-            'library_id' => $learner->library_id,
-            'branch_id' => $learner->branch_id,
-            'date'       => today(),
-            'in_time'    => now(),
-            'attendance' => 1
-        ]);
-
-        
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Thank You! Punch IN successful'
-        ]);
-    }
-
-    // Punch OUT
-    $attendance->update([
-        'out_time' => now(),
-        'attendance' => 1
-    ]);
-
-    try {
-
-        $data = [
+    $data = [
         'learner_id'     => $learner->id,
         'branch_id'      => $learner->branch_id,
         'punch_datetime' => now(),
         'source'         => 'SCAN'
         ];
 
+    try {
+        DB::beginTransaction();
         $this->logInsert($data);
+        /* -------------------------
+         | Punch IN
+         |--------------------------*/
+        if (!$attendance) {
+
+            Attendance::create([
+                'learner_id' => $learner->id,
+                'library_id' => $learner->library_id,
+                'branch_id'  => $learner->branch_id,
+                'date'       => today(),
+                'in_time'    => now(),
+                'attendance' => 1
+            ]);
+
+            $this->logInsert($data);
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Thank You! Punch IN successful'
+            ]);
+        }
+
+        /* -------------------------
+         | Punch OUT
+         |--------------------------*/
+        $attendance->update([
+            'out_time'   => now(),
+            'attendance' => 1
+        ]);
+
+        
+
+        DB::commit();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Thank You! Punch OUT successful'
+        ]);
 
     } catch (\Throwable $e) {
 
-        \Log::error('Attendance log insert failed', [
-            'error' => $e->getMessage(),
-            'data'  => $data,
+        DB::rollBack();
+
+        \Log::error('Attendance scan failed', [
+            'learner_id' => $learner->id,
+            'error'      => $e->getMessage(),
         ]);
 
-    
+        return response()->json([
+            'status'  => false,
+            'message' => 'Attendance not marked. Please try again.'
+        ], 500);
     }
-    return response()->json([
-        'status'  => 'success',
-        'message' => 'Thank You! Punch OUT successful'
-    ]);
+
+
+    
 }
 
 
@@ -848,16 +868,20 @@ public function logs(Request $request)
     }
 }
 
-public function logInsert(array $data)
+public function logInsert(array $data): void
 {
-    DB::table('learner_attendance_logs')->insert([
+   $inserted= DB::table('learner_attendance_logs')->insert([
         'learner_id'     => $data['learner_id'],
         'branch_id'      => $data['branch_id'],
         'punch_datetime' => $data['punch_datetime'],
         'source'         => $data['source'],
         'created_at'     => now(),
-        // 'updated_at'     => now(),
+        
     ]);
+
+     if (!$inserted) {
+        throw new \Exception('Attendance log insert failed');
+    }
 }
 
 public function view()

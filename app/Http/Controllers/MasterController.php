@@ -740,6 +740,7 @@ class MasterController extends Controller
     public function deleteMaster(Request $request, $id){
        
         $table = $request->input('table');
+        $deleteType = $request->input('deleteType'); // soft | permanent
         
         $modelClass = 'App\\Models\\' . $table;
         
@@ -749,6 +750,45 @@ class MasterController extends Controller
         $data = $modelClass::withTrashed()->find($id);
             if (!$data) {
             return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+        }
+
+        if ($deleteType === 'permanent') {
+
+            // safety check (example: PlanType)
+            if ($table == 'PlanType') {
+             
+                $exists = LearnerDetail::where('plan_type_id', $id)
+                   
+                    ->exists();
+  
+                 if (!empty($id) && $exists) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'You cannot delete permanently, contact support'
+                    ], 422);
+                }
+            }
+             if ($table == 'Plan') {
+                $exists = LearnerDetail::where('plan_id', $id)
+                  
+                    ->exists();
+
+                 if (!empty($id) && $exists) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'You cannot delete permanently, contact support'
+                    ], 422);
+                }
+            }
+
+            // 🔥 Hard delete
+            $data->forceDelete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data permanently deleted',
+                'data_status' => 'permanently deleted'
+            ]);
         }
 
         if ($modelClass === 'App\\Models\\Floor') {
@@ -762,20 +802,6 @@ class MasterController extends Controller
                 $data->restore();
                 $status = 'activated';
             } else {
-                if($table=='PlanType'){
-                     $exists = LearnerDetail::where('plan_type_id', $id)
-                    ->where('status', 1)
-                    ->exists();
-                }
-               
-                if (!empty($id) && $exists) {
-                    return response()->json([
-                        'error' => true,
-                        'message' => 'You cannot update, contact support'
-                    ], 422);
-                }
-
-
                 $data->delete();
                 $status = 'deactivated';
             }
@@ -1169,7 +1195,22 @@ class MasterController extends Controller
     }
 
     
+  public function getPriceMaster(Request $request)
+    {
+        $plan_type_id = $request->plan_type_id;
+        $plan_id      = $request->plan_id;
+        $branchId     = getCurrentBranch();
 
+        if (!$plan_type_id || !$plan_id) {
+            return response()->json(0);
+        }
+
+        $PlanpPrice = getPlanPrice(
+                $plan_id,
+                $plan_type_id
+            );
+        return response()->json($PlanpPrice);
+    }
 
 
 

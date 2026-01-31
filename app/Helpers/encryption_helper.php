@@ -22,6 +22,17 @@ use App\Models\PlanType;
 use App\Models\Setting;
 use Carbon\Carbon;
 
+if (!function_exists('alreadyRenewed')) {
+    function alreadyRenewed($learnerId)
+    {
+        return LearnerDetail::where('learner_id', $learnerId)
+            ->where('status', 0) // future booking
+            ->whereDate('plan_start_date', '>', now())
+            ->exists();
+    }
+}
+
+
 if (!function_exists('generateLibraryCode')) {
     function generateLibraryCode() {
         $prefix = "LB";
@@ -230,9 +241,11 @@ if (!function_exists('getPlanPrice')) {
 
 
         if ($branch_id) {
+          
             $branchId  = $branch_id;
             $libraryId = Branch::where('id', $branchId)->value('library_id');
         } else {
+              
             $branchId  = getCurrentBranch();
             $libraryId = getLibraryId();
         }
@@ -245,8 +258,10 @@ if (!function_exists('getPlanPrice')) {
             ->select('price')->first();
 
         if ($alreadyPrice) {
+           
             return round($alreadyPrice->price, 2);
         } else {
+          
 
             $plan_price_all = PlanPrice::withoutGlobalScopes()
                 ->leftJoin('plans', function ($join) use ($libraryId) {
@@ -262,7 +277,7 @@ if (!function_exists('getPlanPrice')) {
                 ->select('plan_prices.price')
                 ->first();
 
-
+   
             $plan = Plan::where('id', $plan_id)->first();
 
 
@@ -328,46 +343,227 @@ if (!function_exists('getPlanPrice')) {
 //         return   $endDate;
 //     }
 // }
+// if (!function_exists('getEndDate')) {
+//     function getEndDate($plan_id, $planStartDate)
+//     {
+        
+//         $branch = Branch::select('fixed_billing_date')
+//             ->where('id', getCurrentBranch())
+//             ->first();
+
+//         // 🔹 CASE 1: Fixed Billing Enabled
+//         if ($branch && $branch->fixed_billing_date) {
+
+//             $fixedDay = (int) $branch->fixed_billing_date;
+//             $start    = $planStartDate->copy();
+
+//             // Decide billing month
+//             if ($start->day < $fixedDay) {
+//                 // Same month
+//                 $billingMonth = $start->copy();
+//             } else {
+//                 // Next month
+//                 $billingMonth = $start->copy()->addMonthNoOverflow();
+//             }
+
+//             // Set end date safely
+//             $end = $billingMonth->copy()->day(
+//                 min($fixedDay, $billingMonth->daysInMonth)
+//             );
+
+//             return $end;
+//         }
+
+//         // 🔹 CASE 2: NORMAL PLAN LOGIC (Your Existing Code)
+//         $planData = Plan::where('id', $plan_id)
+//             ->select('plan_id', 'type', 'monthdays')
+//             ->first();
+
+//         $type      = strtoupper($planData->type ?? '');
+//         $duration  = $planData->plan_id ?? 0;
+//         $monthdays = $planData->monthdays ?? null;
+
+//         switch ($type) {
+//             case 'DAY':
+//                 return $planStartDate->copy()->addDays($duration);
+
+//             case 'WEEK':
+//                 return $planStartDate->copy()->addWeeks($duration);
+
+//             case 'MONTH':
+//                 if (!empty($monthdays)) {
+//                     return $planStartDate->copy()->addDays($monthdays - 1);
+//                 }
+//                 return $planStartDate->copy()->addMonths($duration);
+
+//             case 'YEAR':
+//                 return $planStartDate->copy()->addYears($duration);
+
+//             default:
+//                 return $planStartDate;
+//         }
+//     }
+// }
+
+// if (!function_exists('getEndDate')) {
+
+//     function getEndDate($plan_id, $planStartDate)
+//     {
+//         $planStartDate = \Carbon\Carbon::parse($planStartDate);
+
+//         $planData = Plan::where('id', $plan_id)
+//             ->select('plan_id', 'type', 'monthdays')
+//             ->first();
+
+//         if (!$planData) {
+//             return $planStartDate;
+//         }
+
+//         $type      = strtoupper($planData->type);
+//         $duration  = (int) ($planData->plan_id ?? 1);
+//         $monthdays = $planData->monthdays;
+
+//         $branch = Branch::find(getCurrentBranch());
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | 🔹 CASE 1: FIXED BILLING DATE ENABLED
+//         |--------------------------------------------------------------------------
+//         */
+//         $fixedBillingDay=$branch->fixed_billing_date;
+//         if ($branch && !empty($branch->fixed_billing_date)) {
+            
+//             $fixedDay = (int) $branch->fixed_billing_date;
+
+//             switch ($type) {
+
+//                 case 'DAY':
+//                     $endDate = $planStartDate->copy()->addDays($duration);
+//                     break;
+
+//                 case 'WEEK':
+//                     $endDate = $planStartDate->copy()->addWeeks($duration);
+//                     break;
+
+//                 case 'MONTH':
+                    
+//                     $endDate = $planStartDate->copy()->addMonths($duration);
+//                     break;
+
+//                 case 'YEAR':
+//                     $endDate = $planStartDate->copy()->addYears($duration);
+//                     break;
+
+//                 default:
+//                     return $planStartDate;
+//             }
+
+            
+//             $billingDay = min($fixedDay, $endDate->daysInMonth);
+
+//             return $endDate->day($billingDay);
+//         }
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | 🔹 CASE 2: NORMAL PLAN LOGIC (UNCHANGED)
+//         |--------------------------------------------------------------------------
+//         */
+//         switch ($type) {
+
+//             case 'DAY':
+//                 return $planStartDate->copy()->addDays($duration);
+
+//             case 'WEEK':
+//                 return $planStartDate->copy()->addWeeks($duration);
+
+//             case 'MONTH':
+//                 if (!empty($monthdays)) {
+//                     return $planStartDate->copy()->addDays($monthdays - 1);
+//                 }
+//                 return $planStartDate->copy()->addMonths($duration);
+
+//             case 'YEAR':
+//                 return $planStartDate->copy()->addYears($duration);
+
+//             default:
+//                 return $planStartDate;
+//         }
+//     }
+// }
+
 if (!function_exists('getEndDate')) {
-    function getEndDate($plan_id, $planStartDate)
+
+    function getEndDate($plan_id, $planStartDate,$branch_id = null)
     {
-        $branch = Branch::select('fixed_billing_date')
-            ->where('id', getCurrentBranch())
-            ->first();
+        $planStartDate = \Carbon\Carbon::parse($planStartDate);
 
-        // 🔹 CASE 1: Fixed Billing Enabled
-        if ($branch && $branch->fixed_billing_date) {
-
-            $fixedDay = (int) $branch->fixed_billing_date;
-            $start    = $planStartDate->copy();
-
-            // Decide billing month
-            if ($start->day < $fixedDay) {
-                // Same month
-                $billingMonth = $start->copy();
-            } else {
-                // Next month
-                $billingMonth = $start->copy()->addMonthNoOverflow();
-            }
-
-            // Set end date safely
-            $end = $billingMonth->copy()->day(
-                min($fixedDay, $billingMonth->daysInMonth)
-            );
-
-            return $end;
-        }
-
-        // 🔹 CASE 2: NORMAL PLAN LOGIC (Your Existing Code)
         $planData = Plan::where('id', $plan_id)
             ->select('plan_id', 'type', 'monthdays')
             ->first();
 
-        $type      = strtoupper($planData->type ?? '');
-        $duration  = $planData->plan_id ?? 0;
-        $monthdays = $planData->monthdays ?? null;
+        if (!$planData) {
+            return $planStartDate;
+        }
 
+        $type      = strtoupper($planData->type);
+        $duration  = (int) ($planData->plan_id ?? 1);
+        $monthdays = $planData->monthdays;
+
+        $branchId  = $branch_id ?? getCurrentBranch();
+
+        $branch = Branch::find($branchId);
+       
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🔹 CASE 1: FIXED BILLING DATE ENABLED (FINAL FIX)
+        |--------------------------------------------------------------------------
+        */
+       if ($branch && !empty($branch->fixed_billing_date)) {
+
+            $fixedDay = (int) $branch->fixed_billing_date;
+
+            switch ($type) {
+
+                case 'DAY':
+                    return $planStartDate->copy()->addDays($duration);
+
+                case 'WEEK':
+                    return $planStartDate->copy()->addWeeks($duration);
+
+                case 'MONTH':
+                case 'YEAR':
+
+                    $cycles = ($type === 'YEAR') ? $duration * 12 : $duration;
+
+                    $billingMonth = $planStartDate->copy()->startOfMonth()->addMonth();
+
+                    if ($cycles > 1) {
+                        $billingMonth->addMonths($cycles - 1);
+                    }
+
+                    if ($fixedDay === 1) {
+                        return $billingMonth->copy()->subMonth()->endOfMonth();
+                    }
+
+                    return $billingMonth->day(
+                        min($fixedDay - 1, $billingMonth->daysInMonth)
+                    );
+
+                default:
+                    return $planStartDate;
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🔹 CASE 2: NORMAL PLAN LOGIC (UNCHANGED)
+        |--------------------------------------------------------------------------
+        */
         switch ($type) {
+
             case 'DAY':
                 return $planStartDate->copy()->addDays($duration);
 
@@ -388,19 +584,25 @@ if (!function_exists('getEndDate')) {
         }
     }
 }
+
+
 if (!function_exists('getBillingCyclePrice')) {
     function getBillingCyclePrice($plan_id, $plan_type_id,$planStartDate,$branch_id = null)
     {
-        $branchId = $branchId ?? getCurrentBranch();
+       
+        $branchId = $branch_id ?? getCurrentBranch();
         $startDate = Carbon::parse($planStartDate);
-
+              
         /* -------------------------------
          | 1. Get base plan price
          --------------------------------*/
-        $planPrice = getPlanPrice($plan_id, $plan_type_id);
+        $planPrice = getPlanPrice($plan_id, $plan_type_id ,$branchId);
+    
         if ($planPrice <= 0) {
+           
             return 0;
         }
+       
 
         /* -------------------------------
          | 2. Get plan details
@@ -420,7 +622,8 @@ if (!function_exists('getBillingCyclePrice')) {
         /* -------------------------------
          | 3. Calculate END DATE
          --------------------------------*/
-        $endDate = getEndDate($plan_id, $startDate);
+        $endDate = getEndDate($plan_id, $startDate,$branchId);
+        
 
         /* -------------------------------
          | 4. Calculate USED DAYS (inclusive)
@@ -442,10 +645,12 @@ if (!function_exists('getBillingCyclePrice')) {
 
             case 'MONTH':
                 if (!empty($monthdays)) {
+                  
                     $totalDays = $monthdays;
                 } else {
+                     
                     // Days in joining month
-                    $totalDays = $startDate->daysInMonth;
+                    $totalDays = 30 * $duration;
                 }
                 break;
 
@@ -461,15 +666,20 @@ if (!function_exists('getBillingCyclePrice')) {
          | 6. Safety checks
          --------------------------------*/
         if ($usedDays <= 0 || $totalDays <= 0) {
+           
             return round($planPrice, 0);
         }
+       
 
         /* -------------------------------
          | 7. Calculate FINAL PRICE
          --------------------------------*/
+       
         $perDayPrice = $planPrice / $totalDays;
+        
+       
         $finalPrice = $perDayPrice * $usedDays;
-
+            
         return round($finalPrice, 0);
     }
 }
@@ -484,7 +694,7 @@ if (!function_exists('getChargeableDays')) {
         $startDate = Carbon::parse($planStartDate);
 
         // Calculate end date (handles fixed billing internally)
-        $endDate = getEndDate($plan_id, $startDate);
+        $endDate = getEndDate($plan_id, $startDate ,$branchId);
 
         if (!$endDate) {
             return null;
@@ -493,10 +703,17 @@ if (!function_exists('getChargeableDays')) {
         // Chargeable days (inclusive)
         $chargeableDays = $startDate->diffInDays($endDate) + 1;
 
+        $branch = Branch::select('fixed_billing_date')
+        ->where('id', $branchId)
+        ->first();
+
+        $fixedBillingDate = $branch?->fixed_billing_date;
+
         return [
             'chargeable_days' => $chargeableDays,
             'start_date'      => $startDate->toDateString(),
             'end_date'        => $endDate->toDateString(),
+            'fixedBillingDate' => $fixedBillingDate ? 'true' : 'false',
         ];
     }
 }
@@ -549,7 +766,6 @@ if (!function_exists('getExtendDays')) {
     }
 }
 
-
 if (!function_exists('getSeatType')) {
     function getSeatType()
     {
@@ -594,7 +810,7 @@ if (!function_exists('getUserStatusWithSpan')) {
             ->where('plan_end_date', '<=', $today->copy()->addDays(5))
             ->exists();
 
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $is_renew_update = alreadyRenewed($learner_id); 
         $start_date = LearnerDetail::where('learner_id', $learner_id)
             ->where('plan_start_date',  '>', now())->where('status', 0)
             ->exists();
@@ -611,7 +827,7 @@ if (!function_exists('getUserStatusWithSpan')) {
 
         if (Learner::where('id', $learner_id)->where('frozen_status', 1)->exists()) {
             return '<span class="text-success">Frozen</span>';
-        } elseif ($diffInDays > 0 && !$isfuture_booking) {
+        } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($is_renew_update) {
             return '<span class="text-success"> 1 Plan in Queue</span>';
@@ -761,6 +977,26 @@ if (!function_exists('getAvailableSeatCount')) {
         return $totalSeats - $unavailable;
     }
 }
+
+if (!function_exists('getAvailableHoursSum')) {
+
+    function getAvailableHoursSum()
+    {
+        $totalHour = Hour::where('branch_id', getCurrentBranch())->value('hour');
+        $totalSeats = Hour::where('branch_id', getCurrentBranch())->value('seats') ?? 0;
+
+        return Learner::select('seat_no', DB::raw('SUM(hours) as used_hours'))
+            ->whereNotNull('seat_no')
+            ->where('status', 1)
+            ->where('branch_id', getCurrentBranch())
+            ->groupBy('seat_no')
+            ->get()
+            ->sum(function ($row) use ($totalHour) {
+                return max(0, $totalHour - $row->used_hours);
+            });
+    }
+}
+
 
 if (!function_exists('seatRemainingHour')) {
     function seatRemainingHour($seat)
@@ -1088,9 +1324,7 @@ if (!function_exists('getSeatDisplayByMainNo')) {
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-            // Try to extract floor number (like F1, F2)
-            // preg_match('/(\d+)/', $seat['floor_name'], $matches);
-            // $floorShort = isset($matches[1]) ? 'F' . $matches[1] : $seat['floor_name'];
+           
 
             return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
         }
@@ -1123,6 +1357,87 @@ if (!function_exists('getSeatDisplayShortFloor')) {
 
         // Fallback if no floor info exists
         return  $seat['main'];
+    }
+}
+
+if (!function_exists('getSeatDisplayByMainNo2')) {
+
+    function getSeatDisplayByMainNo2($mainSeatNo, $branchId)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect(generateSeatNumbers2($branchId));
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        // If floor name and floor seat number exist
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+           
+
+            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+        }
+
+        // Fallback if no floor info exists
+        return  $seat['main'];
+    }
+}
+if (!function_exists('generateSeatNumbers2')) {
+
+    function generateSeatNumbers2($branchId)
+    {
+            $result = [];
+        $mainSeatNo = 1;
+
+        // Get total seats dynamically
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
+        $totalSeats = $first_record ? $first_record->seats : 0;
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
+
+        // Get floors ordered by floor number
+        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
+
+        // Loop through all floors
+        if (!empty($floors)) {
+            foreach ($floors as $floor) {
+                $startSeat = $floor->from_seat ?? 1;
+                $endSeat   = $floor->to_seat ?? 0;
+
+
+
+                for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
+                    $result[] = [
+                        'main'       => $mainSeatNo,
+                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor_name' => $floor->name,
+                        'floor_no'   => $floor->floor_no,
+                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                    ];
+
+                    $mainSeatNo++;
+                }
+            }
+        }
+
+        // Add remaining seats (unassigned to any floor)
+        while ($mainSeatNo <= $totalSeats) {
+            $result[] = [
+                'main' => $mainSeatNo,
+                'floor' => null,
+                'floor_name' => null,
+                'display' => 'Seat No - ' . $mainSeatNo
+            ];
+            $mainSeatNo++;
+        }
+
+        return $result;
     }
 }
 
@@ -1420,13 +1735,7 @@ if (!function_exists('checkSeatAvailability')) {
             ->groupBy('learner_id')
             ->map(fn($rows) => $rows->sum('slot_hours'))
             ->sum();
-        // Log::info('For Seat exceeds', ['bookings' => $alreadyBookedHours,'hours'=>$hours,'totalAllowedHours'=>$totalAllowedHours]);
-        // if (($alreadyBookedHours + $hours) > $totalAllowedHours) {
-        //     return [
-        //         'error' => true,
-        //         'message' => 'Seat exceeds total available hours'
-        //     ];
-        // }
+       
 
         // 3️⃣ Time overlap check
         foreach ($bookings as $booking) {
@@ -1520,12 +1829,12 @@ if (!function_exists('checkAvailability')) {
             ]);
 
         // 🔴 All Day / Night blocks
-        if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
-            return [
-                'error' => true,
-                'message' => 'Seat already booked for all day or night'
-            ];
-        }
+        // if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
+        //     return [
+        //         'error' => true,
+        //         'message' => 'Seat already booked for all day or night'
+        //     ];
+        // }
 
         // ⏰ Time overlap
         foreach ($bookings as $booking) {
@@ -1583,7 +1892,7 @@ if (!function_exists('getStatusFromBranch')) {
             ->where('plan_end_date', '<=', $today->copy()->addDays(5))
             ->exists();
 
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        $is_renew_update = alreadyRenewed($learner_id);
         $start_date = LearnerDetail::where('learner_id', $learner_id)
             ->where('plan_start_date',  '>', now())->where('status', 0)
             ->exists();

@@ -1,7 +1,5 @@
 @can('has-permission', 'Book Seat')
 
-
-
 <div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
@@ -27,7 +25,6 @@
                                 <select name="general_seat" id="general_seat" class="form-select">
 
                                     <option value="yes">No</option>
-
                                     <option value="no">Yes, Allot a Seat No.</option>
                                 </select>
                             </div>
@@ -38,7 +35,7 @@
                                 <select name="seat_no" class="form-select" id="seat_id">
                                     <option value="">Choose Seat No</option>
                                     @foreach($newAvailableSeats as $key => $value)
-                                    
+
                                     <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
@@ -202,19 +199,14 @@
 
                         <div id="idProofFields" style="display: none;">
                             <div class="row g-3">
-                               @if(!in_array('8', toggleHideField()))
+                                @if(!in_array('8', toggleHideField()))
                                 <div class="col-lg-6">
                                     <label class="form-label">Upload Profile Photo</label>
                                     <input
                                         type="file"
                                         class="form-control image-cropper"
-                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp"
-                                    />
-
-                                    <!-- Final Image Preview -->
-                                    <div class="mt-3">
-                                        <img id="finalImage" class="profile-preview">
-                                    </div>
+                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                    <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
                                 </div>
                                 @endif
                                 @if(!in_array('30', toggleHideField()))
@@ -223,7 +215,7 @@
                                     <input type="text" class="form-control digit-only" name="alternate_mobile" id="alternate_mobile" maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No.">
                                 </div>
                                 @endif
-                                
+
                                 @if(!in_array('29', toggleHideField()))
                                 <div class="col-lg-6 ">
                                     <label for="father_name">Father Name</label>
@@ -243,7 +235,8 @@
                                 </div>
                                 @endif
 
-                            
+
+
                                 @if(!in_array('5', toggleHideField()))
                                 <div class="col-lg-6">
                                     <label for="">ID Proof Name(Optional)</label>
@@ -258,19 +251,20 @@
 
                                 <div class="col-lg-6">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                    <input type="file" class="form-control" name="id_proof_file" id="id_proof_file" autocomplete="off">
+                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof_file" autocomplete="off">
+                                    <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
 
-                                    <a href="javascript:;" id="viewButton" style="display: none;">
+                                    <!-- <a href="javascript:;" id="viewButton" style="display: none;">
                                         <i class="fa fa-eye"></i> View Uploaded File
                                     </a>
                                     <div id="filePopup" class="file-popup" style="display: none;">
                                         <img src="" id="imagePreview" style="display: none;" alt="Selected Image">
                                         <iframe id="pdfPreview" style="display: none;" frameborder="0"></iframe>
-                                    </div>
+                                    </div> -->
                                 </div>
                                 @endif
-                                
-                               
+
+
                                 @if(!in_array('32', toggleHideField()))
                                 <div class="col-lg-12 ">
                                     <label for="address">Address</label>
@@ -410,6 +404,7 @@
                                 <label for="">Total Amt (Plan Price + Locker Amt. - Discount)<span>*</span></label>
                                 <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="">
                                 <span id="pending_amt2" class="text-danger"></span>
+                                <span id="chargeable_days_renew" class="text-info"></span>
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Choose Due Date<span>*</span></label>
@@ -429,7 +424,7 @@
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
-                                <input type="submit" class="btn btn-primary btn-block button" id="submit" value="Renew Membership Now">
+                                <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Membership Now</button>
                             </div>
                         </div>
                     </div>
@@ -442,7 +437,7 @@
 
 <div class="modal fade" id="wabaSendModel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
-        
+
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5">Send WhatsApp Reminder</h1>
@@ -470,7 +465,7 @@
                                 <label for="">Message Content<span>*</span></label>
                                 <textarea id="waba_final_message" name="message" class="form-control mt-2" rows="5"></textarea>
                             </div>
-                           <div class="col-lg-12">
+                            <div class="col-lg-12">
                                 <label>Choose Mobile No. <span class="text-danger">*</span></label>
                                 <select id="learner_mobile_select" class="form-select" name="mobileNo">
                                     <option value="">Select Mobile</option>
@@ -495,7 +490,7 @@
 </div>
 <div class="modal fade" id="textSendModel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
-       
+
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title px-2 fs-5">Send Text Reminder</h1>
@@ -504,7 +499,7 @@
             <div class="modal-body p-4">
                 {{-- <div id="error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
                 <div id="validation-error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div> --}}
-                <form >
+                <form>
                     @csrf
                     <div class="detailes">
                         <div class="row g-3">
@@ -523,7 +518,7 @@
                                 <label for="">Message Content<span>*</span></label>
                                 <textarea id="text_final_message" name="message" class="form-control mt-2" rows="5"></textarea>
                             </div>
-                           <div class="col-lg-12">
+                            <div class="col-lg-12">
                                 <label>Choose Mobile No. <span class="text-danger">*</span></label>
                                 <select id="learner_mobile_select2" class="form-select" name="mobileNo">
                                     <option value="">Select Mobile</option>
@@ -546,5 +541,3 @@
         </div>
     </div>
 </div>
-
-

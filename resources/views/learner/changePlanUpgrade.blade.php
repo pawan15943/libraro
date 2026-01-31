@@ -24,35 +24,20 @@ if($customer->locker_no){
 }
 
 
-if(Route::currentRouteName() == 'learner.renew.plan'){
-    $paymentType='RENEW';
-    $route=route('learner.upgrade.renew.store');
-    $ids='renewSeat';
-}elseif(Route::currentRouteName() == 'learner.change.plan'){
+if(Route::currentRouteName() == 'learner.change.plan'){
     $paymentType='CHANGE PLAN';
     $route=route('learners.update.changePlan', $customer->id);
     $ids='changePlan';
+    $start_date = \Carbon\Carbon::parse($customer->plan_start_date)->format('Y-m-d');
 }else{
     $paymentType='UPGRADE';
     $route=route('learner.upgrade.renew.store');
     $ids='learnerUpgrade';
+    $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 }
 
 @endphp
-@php
-                    
-$hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-$discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
-$selectedDiscountType = $discountAmount ? 'amount' : '';
-$oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
-$today = \Carbon\Carbon::now();
-if($hasLocker){
-    $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
-}else{
-    $locker_amt=0;
-}
-$new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
-@endphp
+
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
@@ -91,9 +76,7 @@ $new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->for
 
             <div class="form-input mb-4">
                 <h4 class="inner-heading">
-                    @if(Route::currentRouteName() == 'learner.renew.plan')
-                    Renew Plan
-                    @elseif(Route::currentRouteName() == 'learner.change.plan')
+                    @if(Route::currentRouteName() == 'learner.change.plan')
                     Change Plan
                     @else
                     Upgrade Plan
@@ -118,8 +101,8 @@ $new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->for
                     <input type="hidden" name="learner_id" value="{{ $customer->id}}" >
                     <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="library_id" value="{{ $customer->library_id}}">  
-                    <input type="hidden" name="payment_type" value="{{ $paymentType}}">
-                    <input type="hidden" id="start_date10" value="{{$new_start_date}}">
+                    <input type="hidden" name="payment_type" value="{{ $paymentType}}" id="payment_type_operation">
+                    <input type="hidden" id="start_date10" value="{{$start_date}}">
                     
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
                     
@@ -227,7 +210,7 @@ $new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->for
                             <label for="">Last paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
                                 name="previous_amount" id="previous_amount10"
-                                value="{{ currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
+                                value="{{ (float) currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
                             @error('previous_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -242,7 +225,7 @@ $new_start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->for
                             @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
-                            <span id="chargeable_days10"></span>
+                            <span id="chargeable_days10" class="text-info"></span>
                         </div>
                         @if($paymentType=='CHANGE PLAN')
                         <div class="col-lg-4">
