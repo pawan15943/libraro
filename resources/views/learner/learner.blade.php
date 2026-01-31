@@ -57,7 +57,7 @@
         <div class="filter p-3 bg-white">
             <form action="{{ route('learners') }}" method="GET">
                 <div class="row g-3">
-                    <div class="col-lg-2">
+                    <div class="col-lg-3">
                         <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email" value="{{ request()->get('search') }}">
                     </div>
 
@@ -74,13 +74,13 @@
                     </div>
 
                     <!-- Filter By Payment Status -->
-                    <div class="col-lg-2">
+                    {{-- <div class="col-lg-2">
                         <select name="is_paid" id="is_paid" class="form-select">
                             <option value="">Choose Status</option>
                             <option value="1" {{ request()->get('is_paid') == '1' ? 'selected' : '' }}>Paid</option>
                             <option value="0" {{ request()->get('is_paid') == '0' ? 'selected' : '' }}>Unpaid</option>
                         </select>
-                    </div>
+                    </div> --}}
                     <!-- Filter By Active/Expired Status -->
                     <div class="col-lg-2">
                         <select name="status" id="status" class="form-select">
@@ -91,13 +91,14 @@
                     </div>
 
                     <!-- Filter By Seat No -->
-                    <div class="col-lg-2">
-                        <select name="seat_no" id="seat_no" class="form-select">
+                    <div class="col-lg-3">
+                        <select name="seat_no" id="seat_search" class="form-select">
                             <option value="">Seat No</option>
-                            @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) <option value="{{ $seatNo }}" {{ request()->get('seat_no') == $seatNo ? 'selected' : '' }}>
-                                {{ $seatNo }}
+                            @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) 
+                            <option value="{{ $seatNo }}" {{ request()->get('seat_no') == $seatNo ? 'selected' : '' }}>
+                                {{getSeatDisplayByMainNo($seatNo)}}
                                 </option>
-                                @endfor
+                            @endfor
                         </select>
                     </div>
 

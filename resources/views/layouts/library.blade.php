@@ -626,6 +626,15 @@
             , });
 
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // For select
+            const selectElement = document.getElementById('seat_search');
+            const choicesSelect = new Choices(selectElement, {
+                removeItemButton: true
+            , });
+
+        });
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('state_id');
