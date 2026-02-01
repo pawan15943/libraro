@@ -285,7 +285,7 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
 
 {{-- Pagination --}}
 @if ($learnerHistory->lastPage() > 1)
-<ul class="paginations">
+<ul class="paginations mt-4">
     {{-- Prev Button --}}
     <li>
         <a href="{{ $learnerHistory->onFirstPage() ? '#' : $learnerHistory->appends(request()->all())->previousPageUrl() }}" class="w-auto px-3 text-muted">
@@ -294,17 +294,23 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
     </li>
 
     {{-- Page Numbers --}}
-    @for ($i = 1; $i <= $learnerHistory->lastPage(); $i++)
+     @for ($i = max(1, $learnerHistory->currentPage() - 2); $i <= min($learnerHistory->lastPage(), $learnerHistory->currentPage() + 2); $i++)
+    {{-- @for ($i = 1; $i <= $learnerHistory->lastPage(); $i++) --}}
         <li>
-            <a href="{{ $learnerHistory->appends(request()->all())->url($i) }}" class="{{ $learnerHistory->currentPage() == $i ? 'active' : '' }}">
+            <a href="{{ $learnerHistory->url($i) }}" class="{{ $learnerHistory->currentPage() == $i ? 'active' : '' }}">
                 {{ $i }}
             </a>
         </li>
-        @endfor
+    @endfor
+     @if ($learnerHistory->currentPage() < $learnerHistory->lastPage() - 2)
+        <li><span>...</span></li>
+        <li><a href="{{ $learnerHistory->url($learnerHistory->lastPage()) }}">{{ $learnerHistory->lastPage() }}</a></li>
+    @endif
+
 
         {{-- Next Button --}}
         <li>
-            <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->appends(request()->all())->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">
+             <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
                 Next
             </a>
         </li>

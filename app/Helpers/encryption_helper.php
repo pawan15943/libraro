@@ -259,7 +259,7 @@ if (!function_exists('getPlanPrice')) {
 
         if ($alreadyPrice) {
            
-            return round($alreadyPrice->price, 2);
+            return round($alreadyPrice->price);
         } else {
           
 
@@ -297,7 +297,7 @@ if (!function_exists('getPlanPrice')) {
                     }
                 }
 
-                return round($PlanpPrice, 2);
+                return round($PlanpPrice);
             }
 
             return 0; // or null or handle if price or plan not found

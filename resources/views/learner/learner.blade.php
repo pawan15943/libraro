@@ -554,12 +554,12 @@ $learner_id=$value->id;
                 {{ $i }}
             </a>
         </li>
-        @endfor
+    @endfor
 
         @if ($learners->currentPage() < $learners->lastPage() - 2)
             <li><span>...</span></li>
             <li><a href="{{ $learners->url($learners->lastPage()) }}">{{ $learners->lastPage() }}</a></li>
-            @endif
+        @endif
 
             {{-- Next --}}
             <li>
