@@ -1690,11 +1690,16 @@ class LearnerController extends Controller
                 $learnerDetail->exam_id = $request->input('exam_id');
                 $updated = true;
             }
+            $alreadyStartDate = LearnerDetail::where('learner_id', $customer->id)
+                ->whereDate('plan_start_date', $request->plan_start_date)
+                ->exists();
+
+           
 
             // Start date update attempt
-            if ($request->filled('plan_start_date') && $request->filled('plan_id')) {
+            if ($request->filled('plan_start_date') && $request->filled('plan_id') && !$alreadyStartDate) {
 
-
+          
                  // Determine hours based on plan_type_id
       
                 $seat_no = $request->input('seat_no');
@@ -1726,12 +1731,12 @@ class LearnerController extends Controller
 
                 if ($learnerDetail && $learnerDetail->plan_end_date < $currentDate && $endDate->gt($currentDate)) {
                     $status = 1;
-                } elseif ($inextendDate > Carbon::today() && $startDate <= Carbon::today()) {
+                } elseif ($inextendDate >= Carbon::today() && $startDate <= Carbon::today()) {
                     $status = 1;
                 } else {
                     $status = 0;
                 }
-
+               
                 if ($check['error'] === false || $result['error'] === false) {
                     // ✅ Allowed
                     $learnerDetail->plan_start_date = $startDate;
@@ -1744,7 +1749,7 @@ class LearnerController extends Controller
                     $startDateBlocked = true;
                 }
             }
-
+       
             if ($updated) {
                 $learnerDetail->save();
             }
