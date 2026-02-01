@@ -829,8 +829,11 @@ if (!function_exists('getUserStatusWithSpan')) {
             return '<span class="text-success">Frozen</span>';
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
-        } elseif ($is_renew_update) {
-            return '<span class="text-success"> 1 Plan in Queue</span>';
+        } elseif ($is_renew_update && $diffInDays==0) {
+            return '<span class="text-success">Expires today (1 plan queued, activates tomorrow)</span>';
+
+        }elseif ($is_renew_update && $diffInDays!=0) {
+            return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
         } elseif ($isfuture_booking) {
             return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
