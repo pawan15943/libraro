@@ -208,7 +208,7 @@ $learner_id=$value->id;
             </div>
             <div class="seat-actions">
                 <ul>
-                    <li><a href="https://wa.me/?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}"
+                    <li><a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}"
                         target="_blank"
                         class="w-auto px-2">
                         <i class="fa-solid fa-share" 
@@ -239,7 +239,7 @@ $learner_id=$value->id;
                                 data-bs-placement="bottom"
                                 data-bs-toggle="tooltip"
                                 data-bs-title="Send Pending Payment Reminder"
-                                href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode(
                                     'Dear ' . $value->name . "\n\n" .
                                     'This is a gentle reminder that your library seat payment is still pending.' . "\n\n" .
                                     'Your due date was ' . \Carbon\Carbon::parse($due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
@@ -294,14 +294,14 @@ $learner_id=$value->id;
 
                                     @if($planStatus['class']=='extedned')
                                     <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                             <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                         </a>
                                     </li>
                                     @else
                                     <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                             <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                         </a>
@@ -425,7 +425,7 @@ $learner_id=$value->id;
                     @endcan --}}
                     <li>
                         <a target="_blank"
-                            href="https://wa.me/{{ $value->mobile }}?text={{ whatsappReceiptMessage($value) }}">
+                            href="https://wa.me/+91{{ $value->mobile }}?text={{ whatsappReceiptMessage($value) }}">
                             <i class="fa-solid fa-receipt"
                                 data-bs-toggle="tooltip"
                                 data-bs-title="Send Receipt"></i>
