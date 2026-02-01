@@ -830,7 +830,7 @@ if (!function_exists('getUserStatusWithSpan')) {
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($is_renew_update && $diffInDays==0) {
-            return '<span class="text-success">Expires today (1 plan queued, activates tomorrow)</span>';
+            return '<span class="text-success">Expires today (1 plan queued,active tomorrow)</span>';
 
         }elseif ($is_renew_update && $diffInDays!=0) {
             return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
