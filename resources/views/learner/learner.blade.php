@@ -425,7 +425,7 @@ $learner_id=$value->id;
                     @endcan --}}
                     <li>
                         <a target="_blank"
-                            href="https://wa.me/{{ $value->mobile }}?text={{ whatsappReceiptMessage($value) }}">
+                            href="https://wa.me/+91{{ $value->mobile }}?text={{ whatsappReceiptMessage($value) }}">
                             <i class="fa-solid fa-receipt"
                                 data-bs-toggle="tooltip"
                                 data-bs-title="Send Receipt"></i>
