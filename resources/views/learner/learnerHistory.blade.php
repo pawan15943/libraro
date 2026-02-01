@@ -311,8 +311,7 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
         {{-- Next Button --}}
         <li>
              <a href="{{ $learnerHistory->hasMorePages() ? $learnerHistory->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
-                Next
-            </a>
+           
         </li>
 </ul>
 @endif
