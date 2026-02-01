@@ -844,6 +844,7 @@ class LibraryController extends Controller
                         'start_time'  => $row['start_time'],
                         'end_time'    => $row['end_time'],
                         'slot_hours'  => $row['slot_hours'],
+                        'image'       =>'public/img/booked.png'
                     ]
                 );
 
