@@ -1823,14 +1823,16 @@ class LearnerController extends Controller
             $learnerTransaction->save();
 
             //learner Activity
-            $data = [];
-            $data['learner_id'] = $customer->id;
-            $data['particular'] = 'Paid By WEBSITE';
-            $data['payment_type'] = 'EDIT';
-            $data['payment_mode'] = 1;
-            $data['amount'] = $refund ?? 0;
-            $data['dr_cr'] = $dr_cr;
-            $this->learnerTransactionActivity($data);
+            if($refund && $refund!=0){
+                $data = [];
+                $data['learner_id'] = $customer->id;
+                $data['particular'] = 'Paid By WEBSITE';
+                $data['payment_type'] = 'EDIT';
+                $data['payment_mode'] = 1;
+                $data['amount'] = $refund ?? 0;
+                $data['dr_cr'] = $dr_cr;
+                $this->learnerTransactionActivity($data);
+            }
         }
 
         if ($startDateBlocked) {
