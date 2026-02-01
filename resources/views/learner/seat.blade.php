@@ -223,7 +223,7 @@ $today = Carbon::today();
                                             </small>
                                             @endforeach
 
-                                            <img src="{{ asset($user->image) }}" class="booked {{$class}}" alt="book">
+                                            <img src="{{ asset('public/img/booked.png') }}" class="booked {{$class}}" alt="book">
                                             <small class="text-dark">Seat No.{{ $startSeat }}</small>
 
                                             @else
@@ -387,7 +387,7 @@ $today = Carbon::today();
                                             </small>
                                             @endforeach
 
-                                            <img src="{{ asset($user->image) }}" class="booked {{$class}}" alt="book">
+                                            <img src="{{ asset('public/img/booked.png') }}" class="booked {{$class}}" alt="book">
                                             <small class="text-dark">Seat No.{{ $seatNo }}</small>
 
                                             @else
@@ -443,7 +443,7 @@ $today = Carbon::today();
                             @endif
                         </small>
 
-                        <img src="{{ asset($user->image) }}" class="booked {{$class}}" alt="book">
+                        <img src="{{ asset('public/img/booked.png') }}" class="booked {{$class}}" alt="book">
 
                         <small class="text-dark">General</small>
                     </div>
