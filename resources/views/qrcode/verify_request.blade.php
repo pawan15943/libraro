@@ -256,7 +256,7 @@ span.close-modal {
                                 class="form-control dob @error('dob') is-invalid @enderror"
                                 name="dob"
                                 value="{{ old('dob') ?? (optional($customer)->dob ? \Carbon\Carbon::parse($customer->dob)->format('Y-m-d') : '') }}"
-                                max="{{ date('Y-m-d', strtotime('-15 years')) }}">
+                                max="{{ date('Y-m-d', strtotime('-5 years')) }}">
 
                                  @error('dob')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
