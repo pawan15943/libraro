@@ -50,8 +50,21 @@ class LibraryController extends Controller
     {
         $this->libraryService = $libraryService;
     }
+
     
- 
+    public function confirmDailyPopup()
+    {
+        $library = Auth::guard('library')->check()
+            ? Auth::guard('library')->user()
+            : Library::find(Auth::guard('library_user')->user()->library_id);
+
+        $library->update([
+            'last_status_confirmed_date' => Carbon::today()->toDateString()
+        ]);
+
+        return redirect()->back();
+
+    }
     public function create(){
         $states=State::where('is_active',1)->get();
         return view('library.create',compact('states'));

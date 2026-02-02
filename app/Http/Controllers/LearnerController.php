@@ -198,7 +198,7 @@ class LearnerController extends Controller
 
     public function index()
     {
-        $this->dataUpdate();
+        // $this->dataUpdate();
         $users = $this->getLearnersByLibrary()->where('learners.status', 1)->where('learner_detail.library_id', getLibraryId());
 
         $count_fullday = $this->getLearnersByLibrary()->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('plan_types.day_type_id', 1)->where('learners.status', 1)->count();
@@ -3296,7 +3296,7 @@ class LearnerController extends Controller
                     $customer->forceDelete();
                 } else {
 
-                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->where('id', $request->learnerDetail)->first();
+                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->orderBy('DESC')->first();
                     if (!$lastLearnerDetail) {
                         throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
                     }
@@ -3310,10 +3310,10 @@ class LearnerController extends Controller
                             $customer->remark =  $request->remark;
                         }
                         // Delete associated LearnerTransaction records
-                        LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
+                        // LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
                         $lastLearnerDetail->status = 0;
                         $lastLearnerDetail->save();
-                        $lastLearnerDetail->delete();
+                        LearnerDetail::where('learner_id', $customer->id)->delete();
                         $customer->status = 0;
 
                         $customer->save();

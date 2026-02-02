@@ -51,7 +51,20 @@ class LoadMenus
                     ->orWhereNull('guard');
             })->with('children')->orderBy('order')->get();
         } elseif (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
+            $library = null;
 
+            if (Auth::guard('library')->check()) {
+                $library = Auth::guard('library')->user();
+            } elseif (Auth::guard('library_user')->check()) {
+                $library = Library::find(Auth::guard('library_user')->user()->library_id);
+            }
+
+            if ($library) {
+                $today = Carbon::today()->toDateString();
+
+                $showDailyPopup = $library->last_status_confirmed_date !== $today;
+                 View::share('showDailyPopup', $showDailyPopup);
+            }
 
            
             $menus = Menu::where('status', 1)->where(function ($query) {

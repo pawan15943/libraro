@@ -267,6 +267,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/attendance/qr', [AttendanceController::class, 'generate'])->name('attendance.qrcode');
     Route::post('/attendance/scan', [AttendanceController::class, 'scan'])->name('library.attendance.scan');
     
+    Route::get('/library/daily-popup', [LibraryController::class, 'dailyPopup'])->name('library.daily-popup');
+
+    Route::post('/library/daily-popup/confirm', [LibraryController::class, 'confirmDailyPopup'])->name('library.daily-popup.confirm');
 
 
   });

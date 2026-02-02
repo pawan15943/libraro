@@ -73,6 +73,36 @@ $user = getAuthenticatedUser();
     </div>
 </div>
 
+<!-- All learner status update -->
+ @if(!empty($showDailyPopup) && $showDailyPopup)
+<div class="modal show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Daily Confirmation</h5>
+            </div>
+
+            <div class="modal-body">
+                <p>Please confirm to continue using the library today.</p>
+            </div>
+
+            <div class="modal-footer">
+                <form method="POST" action="{{ route('library.daily-popup.confirm') }}">
+                    @csrf
+                    <button class="btn btn-primary w-100">
+                        I Understand, Continue
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endif
+
+
+
 <div class="header">
     <div class="d-flex" style="gap:1rem">
         <div class="conatent flex" style="flex: 1;">
