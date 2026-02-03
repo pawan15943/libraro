@@ -1776,10 +1776,12 @@ class LearnerController extends Controller
         $diff_amount    = $request->input('diffrence_amount');
         $paid_amount = $old_price + $diff_amount;
         $payment_mode=$learnerDetail->payment_mode;
+        
         if ($payment_mode == 3) {
-            $pending_amount = $paid_amount;
+            $pending_amount = $effectivePaid;
             $paid_amount    = 0;
         }
+      
         $refund = 0;
         $pending_refund = 0;
         // Handle difference amount (refund vs pending)
