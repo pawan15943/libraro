@@ -997,8 +997,8 @@ class QrEntryController extends Controller
             $learnerController->learnerTransactionActivity($data);
 
                 if ($status == 1) {
-
-                    $learnerController->dataUpdate();
+                    $learnerController->learnerStatusUpdate($customer->id);
+                    // $learnerController->dataUpdate();
                 }
                 $bookingurl->delete();
 

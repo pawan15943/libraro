@@ -196,6 +196,56 @@ class LearnerController extends Controller
         }
     }
 
+    public function learnerStatusUpdate($learnerIds){
+         $customerdatas = LearnerDetail::where('learner_id', $learnerIds)->get();
+
+        foreach ($customerdatas as $customerdata) {
+           $today = Carbon::today();
+            $futureCheckDate = $today->copy()->addDays(5);
+            $extend_day = getExtendDays();
+
+            $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+
+            $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                ->where('plan_end_date', '>', $futureCheckDate)
+                ->where('status', 0)
+                ->exists();
+
+            $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                ->where('plan_end_date', '<', $futureCheckDate)
+                ->exists();
+
+            $isRenewed = $hasFuturePlan && $hasPastPlan;
+
+            if ($planEndDateWithExtension->lte($today)) {
+                Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 0)
+                    ->update(['status' => 0]);
+
+                $customerdata->update(['status' => 0]);
+            } elseif ($isRenewed) {
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $futureCheckDate)
+                    ->update(['status' => 1]);
+
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('plan_end_date', '<', $today)
+                    ->update(['status' => 0]);
+            } else {
+                Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 1)
+                    ->update(['status' => 1]);
+
+                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('status', 0)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $today)
+                    ->update(['status' => 1]);
+            }
+        }
+    }
+
     public function index()
     {
         // $this->dataUpdate();
@@ -380,10 +430,10 @@ class LearnerController extends Controller
 
             $this->learnerTransactionAddUpdate($data);
 
-            if ($validated['status'] == 1) {
+            // if ($validated['status'] == 1) {
 
-                $this->dataUpdate();
-            }
+            //     $this->dataUpdate();
+            // }
             try {
                 $noti = new NotificationSentController;
 
@@ -499,16 +549,10 @@ class LearnerController extends Controller
                 } 
             }
 
-            
-
-            
             $planType = PlanType::find($plan_type_id);
             $startTime = $planType->start_time;
             $endTime = $planType->end_time;
             $hours = $planType->slot_hours;
-
-            $customer->hours = $hours;
-            $customer->save();
 
             if ($request->payment_type) {
                 $payment_type = $request->payment_type;
@@ -608,6 +652,10 @@ class LearnerController extends Controller
                 $LearnerDetail->hour = $hours;
                 $LearnerDetail->save();
             }
+
+            $customer->hours = $hours;
+            $customer->save();
+
             if ($data['payment_type'] == 'CHANGE PLAN') {
 
                 try {
@@ -662,8 +710,8 @@ class LearnerController extends Controller
                 }
             }
 
-
-            $this->dataUpdate();
+            $this->learnerStatusUpdate($customer->id);
+            // $this->dataUpdate();
             DB::commit();
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1560,8 +1608,8 @@ class LearnerController extends Controller
             $data['particular'] = 'Paid By Website';
             $this->learnerTransactionAddUpdate($data);
             if ($status == 1) {
-
-                $this->dataUpdate();
+                $this->learnerStatusUpdate($customer->id);
+                // $this->dataUpdate();
             }
 
             $customer->locker_no = $request->locker_no;
@@ -2599,8 +2647,8 @@ class LearnerController extends Controller
             $learnerTransaction->pending_amount = 0;
         }
 
-
-        $this->dataUpdate();
+        $this->learnerStatusUpdate($customer->id);
+        // $this->dataUpdate();
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -3138,7 +3186,6 @@ class LearnerController extends Controller
         ]);
 
         $learnerStatus = LearnerDetail::where('learner_id', $customer->id)
-            ->where('is_paid', 1)
             ->where('plan_end_date', '<', $currentDate) // Corrected comparison syntax
             ->where('status', 1)
             ->get();
@@ -3515,8 +3562,8 @@ class LearnerController extends Controller
         $LearnerDetail = LearnerDetail::where('learner_id', $customer->id)->first();
         $LearnerDetail->save();
 
-
-        $this->dataUpdate();
+        $this->learnerStatusUpdate($customer->id);
+        // $this->dataUpdate();
         return redirect()->route('learners')->with('success', 'Learner updated successfully.');
     }
 
