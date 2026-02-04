@@ -116,12 +116,12 @@ class AttendanceController extends Controller
        $validator = Validator::make($request->all(), [
             'login_with' => 'required|in:dob,email,learner_no',
             'uid'        => 'required',
-            'mobile'     => 'required|regex:/^[6-9]\d{9}$/'
+            'mobile'     => 'required|regex:/^[5-9]\d{9}$/'
         ], [
             'login_with.required' => 'Please choose login type',
             'uid.required'        => 'This field is required',
             'mobile.required'     => 'Mobile number is required',
-            'mobile.regex'        => 'Enter valid 10 digit mobile number'
+            'mobile.regex'        => 'Enter valid a mobile number'
         ]);
 
         if ($validator->fails()) {
@@ -134,37 +134,35 @@ class AttendanceController extends Controller
 
         // Safe DOB conversion
         try {
-              $dob = Carbon::createFromFormat('Y-m-d', $request->uid)->format('Y-m-d');
+            $dob = Carbon::createFromFormat('d/m/Y', $request->uid)->format('Y-m-d');
         } catch (\Exception $e) {
             $dob = null;
         }
             \Log::info('Attendqance dob', ['dob' => $dob]);
-       $learner = Learner::withoutGlobalScopes()
+
+ 
+        $learner = Learner::withoutGlobalScopes()
         ->where('mobile', encryptData($request->mobile))
-        ->where(function ($query) use ($request, $dob) {
-
-            if ($request->login_with == 'learner_no') {
-                $query->where('learner_no', $request->uid);
-            }
-
-            if ($request->login_with == 'dob' && $dob) {
-                \Log::info('dob part hit', ['dob' => $dob]);
-                $query->where('dob', $dob);
-            }
-
-            if ($request->login_with == 'email' &&
-                filter_var($request->uid, FILTER_VALIDATE_EMAIL)) {
-                $query->where('email', encryptData($request->uid));
-            }
-
+        ->when($request->login_with === 'learner_no' && $request->uid, function ($q) use ($request) {
+            $q->where('learner_no', $request->uid);
         })
-        ->first();
-        \Log::info('learner verify', ['learner' => $learner]);
+        ->when($request->login_with === 'dob' && $dob, function ($q) use ($dob) {
+            \Log::info('DOB condition applied', ['dob' => $dob]);
+            $q->where('dob', $dob);
+        })
+        ->when(
+            $request->login_with === 'email' &&
+            filter_var($request->uid, FILTER_VALIDATE_EMAIL),
+            function ($q) use ($request) {
+                $q->where('email', encryptData($request->uid));
+            }
+        )->first();
+       
         
         if (!$learner) {
             return response()->json([
                 'status' => false,
-                'message' => 'We found that the details you entered are invalid.'
+                'message' => 'Sorry, we couldn’t find your record. Please verify your details and try again.'
             ], 401);
         }
 
