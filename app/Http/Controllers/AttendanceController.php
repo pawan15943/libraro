@@ -440,7 +440,7 @@ class AttendanceController extends Controller
                     'date'       => $date,
                     'in_time'    => $currentTime,
                     'out_time'   => $currentTime,
-                    'library_id' => $libraryId->library_id,
+                    'library_id' => $branch->library_id,
                     'branch_id'  => $branchId,
                 ]);
             }
