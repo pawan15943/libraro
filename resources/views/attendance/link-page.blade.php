@@ -104,8 +104,10 @@
         let input = $('#learner_no_uid');
 
         if (value === 'dob') {
-            input.attr('type', 'date');          // ✅ browser-controlled
-            // input.attr('placeholder', 'DD-MM-YYYY');
+            input.attr('type', 'text').flatpickr({
+                dateFormat: "d/m/Y",
+                allowInput: true
+            });
         } 
         else if (value === 'email') {
             input.attr('placeholder', 'Enter Email ID');
