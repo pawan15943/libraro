@@ -349,24 +349,25 @@ class AttendanceController extends Controller
             ], 403);
         }
         $branch = Branch::where('id', $branchId)->select('extend_days','library_id')->first();
-         \Log::info('branch',$branch);
+         \Log::info('branch',['branch'=>$branch]);
         $extendDay = $branch->extend_days; // assume integer
-         \Log::info('extendDay',$extendDay);
+         \Log::info('extendDay',['extendDay'=>$extendDay]);
+         
         $today = Carbon::today();
         $endDate = Carbon::parse($learnerDetail->plan_end_date);
-         \Log::info('endDate',$endDate);
+         \Log::info('endDate',['endDate'=>$endDate]);
         $diffInDays = $today->diffInDays($endDate, false);
         if ($extendDay > 0) {
             $inextendDate = $endDate->copy()->addDays($extendDay);
         } else {
             $inextendDate = $endDate; // fallback to original end date
         }
-        \Log::info('inextendDate',$inextendDate);
+         \Log::info('inextendDate',['inextendDate'=>$inextendDate]);
         $diffExtendDay = $today->diffInDays($inextendDate, false);
 
         /* 3️⃣ Plan expired */
         // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
-        \Log::info('diffExtendDay',$diffExtendDay);
+        \Log::info('diffExtendDay',['diffExtendDay'=>$diffExtendDay]);
         if ($diffExtendDay < 0) {
             return response()->json([
                 'status'  => 'expired',
@@ -379,7 +380,7 @@ class AttendanceController extends Controller
             $extension=true;
         }
 
-            \Log::info('success part hit extension',$extension);
+            \Log::info('success part hit extension',['extension'=>$extension]);
             
          /**
      * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
@@ -422,7 +423,7 @@ class AttendanceController extends Controller
             $this->logInsert($data); // throws exception if failed
             if ($existingAttendance) {
 
-                \Log::info('attendance update');
+                \Log::info('attendance update',['extension'=>$extension]);
 
                 $existingAttendance->out_time = $currentTime;
 
@@ -434,7 +435,7 @@ class AttendanceController extends Controller
 
             } else {
 
-                \Log::info('attendance add');
+                \Log::info('attendance add',['extension'=>$extension]);
 
                 Attendance::create([
                     'learner_id' => $learnerId,
