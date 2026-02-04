@@ -142,7 +142,7 @@ class AttendanceController extends Controller
 
  
         $learner = Learner::withoutGlobalScopes()
-        ->where('mobile', encryptData($request->mobile))->where('status',1)
+        ->where('mobile', encryptData($request->mobile))
         ->when($request->login_with === 'learner_no' && $request->uid, function ($q) use ($request) {
             $q->where('learner_no', $request->uid);
         })
@@ -165,6 +165,7 @@ class AttendanceController extends Controller
                 'message' => 'Sorry, we couldn’t find your record. Please verify your details and try again.'
             ], 401);
         }
+        
 
         $verifyToken = hash_hmac(
             'sha256',
