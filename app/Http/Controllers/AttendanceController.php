@@ -138,12 +138,13 @@ class AttendanceController extends Controller
         } catch (\Exception $e) {
             $dob = null;
         }
-            \Log::info('Attendqance dob', ['dob' => $dob]);
+            \Log::info('Attendqance dob', ['dob' => $dob,'mobile'=>$request->mobile,'encry'=>encryptData($request->mobile)]);
        $learner = Learner::withoutGlobalScopes()
         ->where('mobile', encryptData($request->mobile))
         ->where(function ($query) use ($request, $dob) {
 
             if ($request->login_with == 'learner_no') {
+                \Log::info('Attendqance with learner_no');
                 $query->where('learner_no', $request->uid);
             }
 
@@ -155,6 +156,7 @@ class AttendanceController extends Controller
             if ($request->login_with == 'email' &&
                 filter_var($request->uid, FILTER_VALIDATE_EMAIL)) {
                 $query->where('email', encryptData($request->uid));
+                \Log::info('Attendqance with email');
             }
 
         })
