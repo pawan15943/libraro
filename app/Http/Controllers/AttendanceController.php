@@ -366,6 +366,7 @@ class AttendanceController extends Controller
         /* 3️⃣ Plan expired */
         // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
         \Log::info('diffExtendDay',['diff'=>$diffExtendDay]);
+        \Log::info('diffInDays',['diff'=>$diffInDays]);
         if ($diffExtendDay < 0 || !$detail) {
             return response()->json([
                 'status'  => 'expired',
@@ -374,11 +375,11 @@ class AttendanceController extends Controller
         }
         $extension=false;
 
-        if ($diffInDays < 0 && $diffExtendDay > 0){
+        if ($diffInDays < 0 && $diffExtendDay >= 0){
             $extension=true;
         }
 
-            \Log::info('success part hit extension',['extension'=>$extension]);
+        \Log::info('success part hit extension',['extension'=>$extension]);
             
          /**
      * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
