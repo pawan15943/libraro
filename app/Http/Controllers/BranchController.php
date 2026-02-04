@@ -472,6 +472,8 @@ class BranchController extends Controller
             'seats'           => 'required',
             'founder_day'     => 'required',
             'monthdays'       => 'nullable|integer|in:28,30',
+            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+
         ];
 
         // 🔹 Only require plans if no plan exists

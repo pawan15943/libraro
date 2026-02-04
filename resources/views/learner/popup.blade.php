@@ -54,7 +54,7 @@
                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
-                                <input type="date" class="form-control dob" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
+                                <input type="date" class="form-control " name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
                             </div>
                             @endif
                             @if(!in_array('1', toggleHideField()))
@@ -424,7 +424,7 @@
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
-                                <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Membership Now</button>
+                                <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Plan</button>
                             </div>
                         </div>
                     </div>

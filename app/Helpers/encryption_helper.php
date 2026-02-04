@@ -868,7 +868,7 @@ if (!function_exists('getPlanStatusDetails')) {
         $status = 'Active';
         $class = 'actives';
 
-        if ($diffInDays < 0 && $diffExtendDay > 0) {
+        if ($diffInDays < 0 && $diffExtendDay >=0) {
             $status = 'In Extension';
             $class = 'extedned';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
