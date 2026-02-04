@@ -142,7 +142,7 @@ class AttendanceController extends Controller
 
  
         $learner = Learner::withoutGlobalScopes()
-        ->where('mobile', encryptData($request->mobile))
+        ->where('mobile', encryptData($request->mobile))->where('status',1)
         ->when($request->login_with === 'learner_no' && $request->uid, function ($q) use ($request) {
             $q->where('learner_no', $request->uid);
         })
@@ -332,8 +332,8 @@ class AttendanceController extends Controller
             }
 
             return response()->json([
-                'status'  => 'error',
-                'message' => 'No active plan found'
+                'status'  => 'expired',
+                'message' => 'Plan expired'
             ], 403);
         }
 
