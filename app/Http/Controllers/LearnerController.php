@@ -3883,9 +3883,18 @@ class LearnerController extends Controller
         )->get();
 
         // ✅ Dynamic Counts
-        $totalStudents   = $learners->count();
-        $presentStudents = $learners->where('attendance', 1)->count();
-        $absentStudents  = $learners->where('attendance', 0)->count();
+        $totalStudents = $learners->unique('learner_id')->count();
+
+        $presentStudents = $learners
+            ->where('attendance', 1)
+            ->unique('learner_id')
+            ->count();
+
+        $absentStudents = $learners
+            ->where('attendance', 0)
+            ->unique('learner_id')
+            ->count();
+
 
         return view('library.learner-attendance', compact(
             'learners',

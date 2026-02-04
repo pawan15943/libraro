@@ -25,6 +25,7 @@
         <div id="planTypeWrapper">
             <div class="row g-4" id="planRowContainer">
                @php
+               
                     $rows = $planTypes->isNotEmpty()
                         ? $planTypes
                         : collect([ (object)[
@@ -61,6 +62,7 @@
                                 <label>Plan Type Name *</label>
                                 <select class="form-select plan-type @error('plan_types.0.day_type_id') is-invalid @enderror" name="plan_types[{{$index}}][day_type_id]">
                                     <option value="">Select</option>
+                                    
                                     @can('has-permission', 'Full Day')
                                     <option value="1"  @selected($row?->day_type_id==1)>Full Day</option>
                                     @endcan
@@ -442,7 +444,7 @@
     });
 </script>
 
-<script>
+{{-- <script>
     $('#configure').on('submit', function(e) {
         console.log($(this).serializeArray());
         e.preventDefault();
@@ -480,7 +482,7 @@
             data: form.serialize(),
 
             success: function(res) {
-
+                console.log(res);
                 if (res.status === true && res.redirect) {
                     window.location.href = res.redirect;
                 }
@@ -532,17 +534,87 @@
                      </div>`
                     );
                 }
-            },
-            complete: function() {
-                /* =========================
-                   RE-ENABLE BUTTON
-                ========================= */
-                submitBtn.prop('disabled', false);
-                submitBtn.text('Save');
             }
         });
     });
-</script>
+</script> --}}
 
+<script>
+$('#configure').on('submit', function (e) {
+    e.preventDefault();
+
+    let form = $(this);
+    let submitBtn = form.find('button[type="submit"], .button').first();
+
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+
+        success: function (res) {
+            if (res.status === true) {
+
+                toastr.success(res.message);
+
+                if (res.redirect) {
+                    // keep button disabled
+                    window.location.href = res.redirect;
+                }
+            }
+        },
+
+        error: function (xhr) {
+
+            // 🔓 Re-enable ONLY on error
+            if (submitBtn.length && submitBtn.data('original-text')) {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(submitBtn.data('original-text'));
+            }
+
+            // Clear old errors
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').remove();
+            $('.form-error').remove();
+
+            /* ========= Validation errors (422) ========= */
+            if (xhr.status === 422) {
+                let errors = xhr.responseJSON.errors;
+
+                $.each(errors, function (key) {
+                    let match = key.match(/plan_types\.(\d+)\.(.+)/);
+                    if (!match) return;
+
+                    let index = match[1];
+                    let field = match[2];
+
+                    let input = $(`[name="plan_types[${index}][${field}]"]`);
+
+                    if (input.length) {
+                        input.addClass('is-invalid');
+                        input.after(
+                            `<div class="invalid-feedback d-block">
+                                Shift ${parseInt(index) + 1} is invalid
+                             </div>`
+                        );
+                    }
+                });
+            }
+
+            /* ========= Business errors ========= */
+            if (xhr.status === 400 || xhr.status === 409) {
+                form.prepend(
+                    `<div class="alert alert-danger form-error">
+                        ${xhr.responseJSON.message}
+                     </div>`
+                );
+            }
+        }
+    });
+});
+
+$(window).on('pageshow', function () {
+    $('.loader').remove();
+});
+</script>
 
 @endsection

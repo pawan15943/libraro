@@ -424,7 +424,7 @@
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
-                                <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Membership Now</button>
+                                <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Plan</button>
                             </div>
                         </div>
                     </div>

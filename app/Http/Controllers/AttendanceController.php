@@ -134,24 +134,32 @@ class AttendanceController extends Controller
 
         // Safe DOB conversion
         try {
-            $dob = Carbon::parse($request->uid)->format('Y-m-d');
+              $dob = Carbon::createFromFormat('Y-m-d', $request->uid)->format('Y-m-d');
         } catch (\Exception $e) {
             $dob = null;
         }
             \Log::info('Attendqance dob', ['dob' => $dob]);
-       $learner = Learner::withoutGlobalScopes()->where(function ($query) use ($request,$dob) {
-                    $query->where('learner_no', $request->uid);
-                        if ($dob) {
-                            \Log::info('dob part hit',['dob'=>$dob]);
-                            $query->orWhere('dob', $dob);
-                        }
-                       // Email (only if valid)
-                        if (filter_var($request->uid, FILTER_VALIDATE_EMAIL)) {
-                            $query->orWhere('email', encryptData($request->uid));
-                        }
-                })
-                ->where('mobile', encryptData($request->mobile))
-                ->first();
+       $learner = Learner::withoutGlobalScopes()
+        ->where('mobile', encryptData($request->mobile))
+        ->where(function ($query) use ($request, $dob) {
+
+            if ($request->login_with === 'learner_no') {
+                $query->where('learner_no', $request->uid);
+            }
+
+            if ($request->login_with === 'dob' && $dob) {
+                \Log::info('dob part hit', ['dob' => $dob]);
+                $query->where('dob', $dob);
+            }
+
+            if ($request->login_with === 'email' &&
+                filter_var($request->uid, FILTER_VALIDATE_EMAIL)) {
+                $query->where('email', encryptData($request->uid));
+            }
+
+        })
+        ->first();
+
         
         if (!$learner) {
             return response()->json([
@@ -338,17 +346,34 @@ class AttendanceController extends Controller
                 'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
             ], 403);
         }
+        $branch = Branch::where('id', $branchId)->select('extend_days','library_id')->first();
+        $extendDay = $branch->extend_days; // assume integer
+        $today = Carbon::today();
+        $endDate = Carbon::parse($learnerDetail->plan_end_date);
+
+        $diffInDays = $today->diffInDays($endDate, false);
+        if ($extendDay > 0) {
+            $inextendDate = $endDate->copy()->addDays($extendDay);
+        } else {
+            $inextendDate = $endDate; // fallback to original end date
+        }
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
 
         /* 3️⃣ Plan expired */
-        if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+        // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+        if ($diffExtendDay < 0) {
             return response()->json([
                 'status'  => 'expired',
                 'message' => 'Plan expired'
             ], 403);
         }
+        $extension=false;
 
+        if ($diffInDays < 0 && $diffExtendDay > 0){
+            $extension=true;
+        }
 
-            \Log::info('success part hit');
+            \Log::info('success part hit extension',$extension);
             
          /**
      * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
@@ -372,7 +397,7 @@ class AttendanceController extends Controller
             $attendance = 1;
             $date = date('Y-m-d');
             $currentTime = now();
-            $libraryId=Branch::where('id',$branchId)->select('library_id')->first();
+            $libraryId=$branch->library_id;
 
             $existingAttendance = Attendance::where('learner_id', $learnerId)
                 ->where('date', $date)
@@ -417,13 +442,20 @@ class AttendanceController extends Controller
             }
 
          
-
             DB::commit();
+            if($extension==true){
+                return response()->json([
+                    'status'  => 'extension',
+                    'message' => 'Thank You! Attendance marked'
+                ]);
+            }else{
+                 return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Thank You! Attendance marked'
+                ]);
+            }
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Thank You! Attendance marked'
-            ]);
+           
 
         } catch (\Throwable $e) {
 
@@ -675,15 +707,21 @@ public function scan(Request $request)
     }
 
         /* 2️⃣ Plan expired check */
-     if (Carbon::parse($learnerDetail->plan_end_date)->lt(today())) {
-    // if ($diffExtendDay < 0) {
+    //  if (Carbon::parse($learnerDetail->plan_end_date)->lt(today())) {
+    if ($diffExtendDay < 0) {
         return response()->json([
             'status'  => 'expired',
             'message' => 'Plan expired'
         ], 403);
     }
 
+    $extension=false;
 
+    if ($diffInDays < 0 && $diffExtendDay > 0){
+        $extension=true;
+    }
+
+    \Log::info('extension',$extension);
     /* 5️⃣ Attendance logic */
     $attendance = Attendance::where('learner_id', $learner->id)
         ->where('date', today())
@@ -715,11 +753,18 @@ public function scan(Request $request)
             $this->logInsert($data);
 
             DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Thank You! Punch IN successful'
-            ]);
+            if($extension==true){
+                return response()->json([
+                    'status'  => 'extension',
+                    'message' => 'Thank You! Punch IN successful'
+                ]);
+            }else{
+                 return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Thank You! Punch IN successful'
+                ]);
+            }
+           
         }
 
         /* -------------------------
@@ -733,11 +778,18 @@ public function scan(Request $request)
         
 
         DB::commit();
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Thank You! Punch OUT successful'
-        ]);
+        if($extension==true){
+            return response()->json([
+                'status'  => 'extension',
+                'message' => 'Thank You! Punch OUT successful'
+            ]);
+        }else{
+                return response()->json([
+                'status'  => 'success',
+                'message' => 'Thank You! Punch OUT successful'
+            ]);
+        }
+       
 
     } catch (\Throwable $e) {
 

@@ -1163,6 +1163,7 @@ class MasterController extends Controller
 
     public function deletePlanType(Request $request)
     {
+        
         $planType = PlanType::where('id', $request->id)
             ->where('branch_id', getCurrentBranch())
             ->first();
@@ -1174,24 +1175,38 @@ class MasterController extends Controller
             ]);
         }
 
-        $exists = LearnerDetail::where('plan_type_id', $request->id)->where('status', 1)->exists();
+        $exists = LearnerDetail::where('plan_type_id', $request->id)->exists();
                
                
-        if (!empty($id) && $exists) {
+        if (!empty($request->id) && $exists) {
             return response()->json([
                 'error' => true,
-                'message' => 'You cannot update, contact support'
+                'message' => 'This plan type cannot be deleted because one or more learners are currently enrolled in it. Please remove or reassign the learners before deleting this plan type.'
             ], 422);
         }
 
 
-        PlanPrice::where('plan_type_id', $planType->id)->delete();
-        $planType->delete();
+       DB::beginTransaction();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Shift deleted successfully'
-        ]);
+            try {
+                 PlanPrice::where('plan_type_id', $planType->id)->forceDelete();
+                 $planType->forceDelete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Shift deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete shift'
+            ], 500);
+        }
+
     }
 
     

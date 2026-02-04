@@ -71,9 +71,12 @@
     const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
     const audioExpired = new Audio("{{asset('public/audio/expired.mp3')}}");
     const audioError = new Audio("{{asset('public/audio/error.mpeg')}}");
+    const audioExtension = new Audio("{{asset('public/audio/extension.mp3')}}");
     audioSuccess.preload = 'auto';
     audioExpired.preload = 'auto';
     audioError.preload = 'auto';
+    audioExtension.preload = 'auto';
+    
 
     /* ===============================
        QR TAB – jQuery AJAX
@@ -187,7 +190,7 @@
             .then(res => {
 
                 const scanMsg = document.getElementById('scanMsg');
-                if (res.status === 'success') {
+                if (res.status === 'success' || res.status === 'extension') {
                     setScanMessage(res.message, 'success');
                 } else {
                     setScanMessage(res.message, 'danger');
@@ -209,7 +212,12 @@
                 else if (res.status === 'expired') {
                     animation = failedAnimation;
                     audio = audioExpired;
-                } 
+                }
+                 else if (res.status === 'extension') {
+                    animation = successAnimation;
+                    audio = audioExtension;
+                }
+                 
                 else {
                     animation = errorAnimation;
                     audio = audioError;

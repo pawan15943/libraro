@@ -79,7 +79,7 @@ $class=$planDetails['class'];
 
                     </div>
                     <div class="button-list mt-4">
-                        <input type="submit" class="btn btn-primary btn-block button w-25" id="swapsubmit" value="Swap Seat">
+                        <button type="submit" class="btn btn-primary btn-block button w-25" id="swapsubmit">Swap Seat</button>
                     </div>
                 </form>
             </div>
