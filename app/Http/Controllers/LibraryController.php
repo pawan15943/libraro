@@ -704,7 +704,7 @@ class LibraryController extends Controller
         }
 
         // ✅ Validate final combined window
-        if (!empty($starts) && !empty($ends)) {
+        if (!empty($starts) && !empty($ends) && $branchRecord->hour != 24) {
 
             $globalStart = collect($starts)->min();
             $globalEnd   = collect($ends)->max();
@@ -719,7 +719,7 @@ class LibraryController extends Controller
             foreach ($request->plan_types as $row) {
 
                 /* Slot hour check */
-                if ($row['slot_hours'] > $branchRecord->hour) {
+                if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
                     throw new \Exception('Selected hours exceed the library’s available hours.');
                 }
                 
