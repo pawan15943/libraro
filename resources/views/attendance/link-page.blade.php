@@ -105,7 +105,7 @@
 
         if (value === 'dob') {
             input.attr('type', 'date');          // ✅ browser-controlled
-            input.attr('placeholder', 'YYYY-MM-DD');
+            input.attr('placeholder', 'DD-MM-YYYY');
         } 
         else if (value === 'email') {
             input.attr('placeholder', 'Enter Email ID');

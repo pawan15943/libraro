@@ -143,23 +143,23 @@ class AttendanceController extends Controller
         ->where('mobile', encryptData($request->mobile))
         ->where(function ($query) use ($request, $dob) {
 
-            if ($request->login_with === 'learner_no') {
+            if ($request->login_with == 'learner_no') {
                 $query->where('learner_no', $request->uid);
             }
 
-            if ($request->login_with === 'dob' && $dob) {
+            if ($request->login_with == 'dob' && $dob) {
                 \Log::info('dob part hit', ['dob' => $dob]);
                 $query->where('dob', $dob);
             }
 
-            if ($request->login_with === 'email' &&
+            if ($request->login_with == 'email' &&
                 filter_var($request->uid, FILTER_VALIDATE_EMAIL)) {
                 $query->where('email', encryptData($request->uid));
             }
 
         })
         ->first();
-
+        \Log::info('learner verify', ['learner' => $learner]);
         
         if (!$learner) {
             return response()->json([
