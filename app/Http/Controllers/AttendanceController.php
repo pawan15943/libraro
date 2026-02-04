@@ -147,7 +147,7 @@ class AttendanceController extends Controller
             $q->where('learner_no', $request->uid);
         })
         ->when($request->login_with === 'dob' && $dob, function ($q) use ($dob) {
-            \Log::info('DOB condition applied', ['dob' => $dob]);
+            
             $q->where('dob', $dob);
         })
         ->when(
