@@ -212,8 +212,10 @@
             <tr>
                 <th style="width:25%">Plan</th>
                 <td style="width:25%">{{ $subscription ?? '' }}</td>
+                @if($month)
                 <th style="width:25%">Duration</th>
                 <td style="width:25%">{{ $month ?? '' }} Month(s)</td>
+                @endif
             </tr>
             <tr>
                 <th>Start Date</th>
@@ -221,10 +223,12 @@
                 <th>End Date</th>
                 <td>{{ $end_date ?? '' }}</td>
             </tr>
+            @if($shift_timing)
             <tr>
                 <th>Shift Timing</th>
                 <td colspan="3">{{ $shift_timing ?? 'Not Available' }}</td>
             </tr>
+            @endif
         </table>
     </div>
 
