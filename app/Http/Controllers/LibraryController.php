@@ -686,6 +686,10 @@ class LibraryController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        /* =========================
+        GLOBAL SHIFT WINDOW CHECK
+        ========================= */
+
         $starts = [];
         $ends   = [];
 
@@ -720,6 +724,12 @@ class LibraryController extends Controller
             }
         }
 
+                /* =========================
+        DUPLICATE CHECK PREP
+        ========================= */
+        $timePairs = [];
+
+
         foreach ($request->plan_types as $row) {
 
             /* Slot hour check */
@@ -727,43 +737,47 @@ class LibraryController extends Controller
                 throw new \Exception('Selected hours exceed the library’s available hours.');
             }
             
+            /* Validate slot vs actual time */
+            $start = Carbon::parse($row['start_time']);
+            $end   = Carbon::parse($row['end_time']);
+            if ($end->lessThanOrEqualTo($start)) {
+                $end->addDay();
+            }
 
+            $actualHours = $start->diffInHours($end);
+            if ($row['slot_hours'] != $actualHours) {
+                throw new \Exception(
+                    "Slot hours must match shift time ({$actualHours} hours)."
+                );
+            }
 
-            /* Duplicate plan type */
-            
-            if ($row['day_type_id'] != 0) {
-                // ✅ SYSTEM PLAN TYPE DUPLICATE CHECK
-                $exists = PlanType::where('branch_id', $branch->id)
-                    ->where('day_type_id', $row['day_type_id'])
-                    ->where('start_time', $row['start_time'])
-                    ->where('end_time', $row['end_time'])
-                    ->when(!empty($row['plan_type_id']), function ($q) use ($row) {
-                        $q->where('id', '!=', $row['plan_type_id']);
-                    })
-                    ->exists();
+            /* =========================
+            DUPLICATE CHECK (REQUEST)
+            ========================= */
+            $pairKey = $row['start_time'] . '-' . $row['end_time'];
 
-                if ($exists) {
-                    throw new \Exception(
-                        'This system shift already exists.'
-                    );
-                }
+            if (isset($timePairs[$pairKey])) {
+                throw new \Exception(
+                    'Duplicate shift detected with same start and end time.'
+                );
+            }
+            $timePairs[$pairKey] = true;
 
-            } else {
-                // ✅ CUSTOM PLAN TYPE CHECK (against SYSTEM shifts only)
-                $exists = PlanType::where('branch_id', $branch->id)
-                    ->where('day_type_id', '!=', 0)
-                    ->where('start_time', $row['start_time'])
-                    ->where('end_time', $row['end_time'])
-                    ->when(!empty($row['plan_type_id']), function ($q) use ($row) {
-                        $q->where('id', '!=', $row['plan_type_id']);
-                    })
-                    ->exists();
+            /* =========================
+            DUPLICATE CHECK (DATABASE)
+            ========================= */
+            $exists = PlanType::where('branch_id', $branch->id)
+                ->where('start_time', $row['start_time'])
+                ->where('end_time', $row['end_time'])
+                ->when(!empty($row['plan_type_id']), function ($q) use ($row) {
+                    $q->where('id', '!=', $row['plan_type_id']);
+                })
+                ->exists();
 
-                if ($exists) {
-                    throw new \Exception(
-                        'Custom shift time conflicts with an existing system shift.'
-                    );
-                }
+            if ($exists) {
+                throw new \Exception(
+                    'A shift with the same time range already exists.'
+                );
             }
 
 
@@ -787,7 +801,13 @@ class LibraryController extends Controller
             if (!empty($row['plan_type_id'])) {
                 // UPDATE
                 $isUpdating = true;
-                $planType = PlanType::where('id', $row['plan_type_id'])->first();
+                $planType = PlanType::where('id', $row['plan_type_id'])
+                    ->where('branch_id', $branch->id)
+                    ->first();
+
+                if (!$planType) {
+                    throw new \Exception('Invalid shift selected.');
+                }
                
                 $planType->update([
                    
