@@ -3871,6 +3871,14 @@ class LearnerController extends Controller
             ]);
         }
         $learner = Learner::where('id', $learnerId)->select('name')->first();
+        DB::table('learner_attendance_logs')->insert([
+            'learner_id'     => $learnerId,
+            'branch_id'      => getCurrentBranch(),
+            'punch_datetime' => $currentTime,
+            'source'         => 'MANUAL',
+            'created_at'     => now(),
+            
+        ]);
 
         if ($attendance == 1) {
             $message = 'Attendance of ' . $learner->name . ' has been marked Present!';
@@ -3884,63 +3892,70 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
-        $data = Learner::where('branch_id', getCurrentBranch())
-            ->where('status', 1)
-            ->pluck('name', 'id');
+        // Dropdown data
+    $data = Learner::where('branch_id', getCurrentBranch())
+        ->where('status', 1)
+        ->pluck('name', 'id');
 
-        // Base Query
-        $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-            ->leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
-            ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
-            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->where('learners.library_id', getLibraryId())
-            ->where('learners.branch_id', getCurrentBranch())
-            ->where('learners.status', 1)
-            ->where('learner_detail.status', 1);
+    // Base Query
+    $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        ->leftJoin('attendances', function ($join) use ($request) {
+            $join->on('learners.id', '=', 'attendances.learner_id');
 
-        // Apply Filters Dynamically
-        if ($request->has('date')) {
+            // Apply date filter inside join (important)
+            if ($request->filled('date')) {
+                $join->whereDate('attendances.date', '=', $request->date);
+            }
+        })
+        ->where('learners.library_id', getLibraryId())
+        ->where('learners.branch_id', getCurrentBranch())
+        ->where('learners.status', 1)
+        ->where('learner_detail.status', 1);
 
-            $learners->whereDate('attendances.date', '=', $request->date);
-        }
+    // Filter by learner
+    if ($request->filled('learner_id')) {
+        $learners->where('learners.id', $request->learner_id);
+    }
 
-        if ($request->has('learner_id')) {
+    // Select required columns
+    $learners = $learners->select(
+        'learners.id as learner_id',
+        'learners.name as name',
+        'learners.email as email',
+        'learners.dob as dob',
+        'learners.mobile',
+        'learners.seat_no',
+        'learner_detail.plan_start_date',
+        'learner_detail.plan_end_date',
+        'learners.library_id',
+        'learners.status',
+        'plans.name as plan_name',
+        'plan_types.name as plan_type_name',
+        'attendances.in_time',
+        'attendances.out_time',
+        'attendances.attendance',
+        'attendances.date'
+    )->get();
 
-            $learners->where('learners.id', '=', $request->learner_id);
-        }
+    /* =========================
+       COUNTS
+    ========================= */
 
-        // Select required columns
-        $learners = $learners->select(
-            'learners.id as learner_id',
-            'learners.name as name',
-            'learners.email as email',
-            'learners.dob as dob',
-            'learners.mobile',
-            'learners.seat_no',
-            'learner_detail.plan_start_date',
-            'learner_detail.plan_end_date',
-            'learners.library_id',
-            'learners.status',
-            'plans.name as plan_name',
-            'plan_types.name as plan_type_name',
-            'attendances.in_time',
-            'attendances.out_time',
-            'attendances.attendance',
-            'attendances.date'
-        )->get();
+    $totalStudents = $learners->unique('learner_id')->count();
 
-        // ✅ Dynamic Counts
-        $totalStudents = $learners->unique('learner_id')->count();
+    $presentStudents = $learners
+        ->where('attendance', 1)
+        ->unique('learner_id')
+        ->count();
 
-        $presentStudents = $learners
-            ->where('attendance', 1)
-            ->unique('learner_id')
-            ->count();
-
-        $absentStudents = $learners
-            ->where('attendance', 0)
-            ->unique('learner_id')
-            ->count();
+    $absentStudents = $learners
+        ->filter(function ($row) {
+            return $row->attendance == 0 || $row->attendance === null;
+        })
+        ->unique('learner_id')
+        ->count();
 
 
         return view('library.learner-attendance', compact(
