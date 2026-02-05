@@ -672,6 +672,7 @@ class LibraryController extends Controller
         $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
         
         $existingPlanTypeCount = PlanType::where('branch_id', getCurrentBranch())->count();
+       
         $isFirstTimeSetup = $existingPlanTypeCount === 0;   
 
 
@@ -754,25 +755,35 @@ class LibraryController extends Controller
             /* =========================
             DUPLICATE CHECK (REQUEST)
             ========================= */
-            $pairKey = $row['start_time'] . '-' . $row['end_time'];
+           $pairKey = $row['start_time'] . '-' . $row['end_time'];
+            $rowId   = $row['plan_type_id'] ?? 'new_' . uniqid();
 
             if (isset($timePairs[$pairKey])) {
-                throw new \Exception(
-                    'Duplicate shift detected with same start and end time.'
-                );
+
+                // If both rows are different records → block
+                if ($timePairs[$pairKey] != $rowId) {
+                    throw new \Exception(
+                        'Duplicate shift detected with same start and end time.'
+                    );
+                }
             }
-            $timePairs[$pairKey] = true;
+
+            $timePairs[$pairKey] = $rowId;
+
 
             /* =========================
             DUPLICATE CHECK (DATABASE)
             ========================= */
-            $exists = PlanType::where('branch_id', $branch->id)
+            
+            $query = PlanType::where('branch_id', $branch->id)
                 ->where('start_time', $row['start_time'])
-                ->where('end_time', $row['end_time'])
-                ->when(!empty($row['plan_type_id']), function ($q) use ($row) {
-                    $q->where('id', '!=', $row['plan_type_id']);
-                })
-                ->exists();
+                ->where('end_time', $row['end_time']);
+
+            if (isset($row['plan_type_id']) && $row['plan_type_id'] !== null && $row['plan_type_id'] !== '') {
+                $query->where('id', '!=', $row['plan_type_id']);
+            }
+
+            $exists = $query->exists();
 
             if ($exists) {
                 throw new \Exception(
