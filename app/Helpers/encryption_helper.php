@@ -574,10 +574,10 @@ if (!function_exists('getEndDate')) {
                 if (!empty($monthdays)) {
                     return $planStartDate->copy()->addDays($monthdays - 1);
                 }
-                return $planStartDate->copy()->addMonths($duration);
+                return $planStartDate->copy()->addMonths($duration- 1);
 
             case 'YEAR':
-                return $planStartDate->copy()->addYears($duration);
+                return $planStartDate->copy()->addYears($duration- 1);
 
             default:
                 return $planStartDate;
