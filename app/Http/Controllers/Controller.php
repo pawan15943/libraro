@@ -57,11 +57,10 @@ class Controller extends BaseController
             $transaction_id = $data->transaction_id;
             $branch_logo = null;
             $branch_slug = null;
+            $shift_timing=null;
         }
         if ($request->type == 'learner') {
             // id is tran id and learner_id 
-
-
 
             $data = LearnerTransaction::withoutGlobalScopes()->where('id', $request->id)->where('is_paid', 1)->first();
 
@@ -94,6 +93,12 @@ class Controller extends BaseController
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
             $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
             $branch_slug = Branch::where('id', getCurrentBranch())->value('slug') ?? null;
+            $start = date('h:i A', strtotime($learnerDeatail->planType->start_time));
+            $end   = date('h:i A', strtotime($learnerDeatail->planType->end_time));
+
+            $shift_timing = $start . ' to ' . $end;
+
+
         }
 
 
@@ -117,7 +122,8 @@ class Controller extends BaseController
             'library_mobile' => $library->library_mobile,
             'library_address' => $library->library_address,
             'branch_logo' => $branch_logo,
-            'branch_slug' => $branch_slug
+            'branch_slug' => $branch_slug,
+            'shift_timing'=>$shift_timing
         ];
 
 

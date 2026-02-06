@@ -174,8 +174,8 @@
 
         <div class="company-info">
             <h2>{{ $library_name ?? '' }}</h2>
-            <p><b>Address:</b> {{ $library_address ?? '' }}</p>
-            <p><b>Email:</b> {{ $library_email ?? '' }}</p>
+            <p><b>Address:</b> {{ empty($library_address) ? 'Not Updated Yet' : $library_address }} </p>
+            <p><b>Email:</b> {{ $library_email ?? 'Email Not Updated' }}</p>
             <p><b>Mobile:</b> {{ $library_mobile ?? '' }}</p>
             <p>
                 <b>Website:</b>
@@ -198,7 +198,8 @@
             </tr>
             <tr>
                 <th>Email</th>
-                <td colspan="3">{{ $email ?? 'Not Updated Yet' }}</td>
+                <td colspan="3">{{ empty($email) ? 'Not Updated Yet' : $email }}</td>
+
             </tr>
         </table>
     </div>
@@ -212,8 +213,10 @@
             <tr>
                 <th style="width:25%">Plan</th>
                 <td style="width:25%">{{ $subscription ?? '' }}</td>
+                @if($month)
                 <th style="width:25%">Duration</th>
                 <td style="width:25%">{{ $month ?? '' }} Month(s)</td>
+                @endif
             </tr>
             <tr>
                 <th>Start Date</th>
@@ -221,10 +224,12 @@
                 <th>End Date</th>
                 <td>{{ $end_date ?? '' }}</td>
             </tr>
+            @if($shift_timing)
             <tr>
                 <th>Shift Timing</th>
                 <td colspan="3">{{ $shift_timing ?? 'Not Available' }}</td>
             </tr>
+            @endif
         </table>
     </div>
 
