@@ -276,9 +276,38 @@ class AttendanceController extends Controller
                 ], 403);
             }
             $learnerId = session('learner_id');
+            $learner = Learner::where('id', $learnerId)->first();
+
+            if (!$learner) {
+                \Log::warning('Learner not found');
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Learner not found'
+                ], 404);
+            }
 
             // 2. Validate QR (your existing logic)
             $branchId = $this->validateQrToken($request->qr);
+
+
+              /**
+         * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
+            * Same QR + same session → ignore for 15 seconds
+            */
+            $now = now()->timestamp;
+            $lastScanAt = session('last_scan_at', 0);
+
+            if (($now - $lastScanAt) < 5) {
+                // 🚫 DO NOT validate QR
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Attendance captured'
+                ]);
+            }
+
+            // Update scan time immediately (important)
+            session(['last_scan_at' => $now]);
+    
 
 
             \Log::info('SESSION CHECK', [
@@ -296,187 +325,175 @@ class AttendanceController extends Controller
                     'message' => 'QR expired or invalid'
                 ], 403);
             }
+
+        return response()->json(
+            $this->processAttendance($learnerId, $branchId, 'QR')
+        );
+
            
 
-                /* 🔹 Get latest learner plan */
-        $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
-            ->orderBy('plan_end_date', 'DESC')
-            ->first();
+        //         /* 🔹 Get latest learner plan */
+        // $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+        //     ->orderBy('plan_end_date', 'DESC')
+        //     ->first();
 
-        /* 1️⃣ No plan OR inactive plan */
-        if (!$learnerDetail || $learnerDetail->status != 1) {
+        // /* 1️⃣ No plan OR inactive plan */
+        // if (!$learnerDetail || $learnerDetail->status != 1) {
 
-            $detail = LearnerDetail::withTrashed()
-                ->where('learner_id', $learnerId)
-                ->orderBy('plan_end_date', 'DESC')
-                ->first();
+        //     $detail = LearnerDetail::withTrashed()
+        //         ->where('learner_id', $learnerId)
+        //         ->orderBy('plan_end_date', 'DESC')
+        //         ->first();
 
-            if ($detail) {
+        //     if ($detail) {
 
-                $operation = DB::table('learner_operations_log')
-                    ->where('learner_detail_id', $detail->id)
-                    ->value('operation');
+        //         $operation = DB::table('learner_operations_log')
+        //             ->where('learner_detail_id', $detail->id)
+        //             ->value('operation');
 
-                if ($operation === 'deleteSeat') {
-                    return response()->json([
-                        'status'  => 'error',
-                        'message' => 'Your plan has been deleted'
-                    ], 403);
-                }
+        //         if ($operation === 'deleteSeat') {
+        //             return response()->json([
+        //                 'status'  => 'error',
+        //                 'message' => 'Your plan has been deleted'
+        //             ], 403);
+        //         }
 
-                if ($operation === 'closeSeat') {
-                    return response()->json([
-                        'status'  => 'error',
-                        'message' => 'Your plan has been closed'
-                    ], 403);
-                }
-            }
+        //         if ($operation === 'closeSeat') {
+        //             return response()->json([
+        //                 'status'  => 'error',
+        //                 'message' => 'Your plan has been closed'
+        //             ], 403);
+        //         }
+        //     }
 
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
+        //     return response()->json([
+        //         'status'  => 'expired',
+        //         'message' => 'Plan expired'
+        //     ], 403);
+        // }
 
-        /* 2️⃣ Wrong branch QR */
-        if ($learnerDetail->branch_id != $branchId) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
-            ], 403);
-        }
-        $branch = Branch::where('id', $branchId)->select('extend_days','library_id')->first();
+        // /* 2️⃣ Wrong branch QR */
+        // if ($learnerDetail->branch_id != $branchId) {
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
+        //     ], 403);
+        // }
+        // $branch = Branch::where('id', $branchId)->select('extend_days','library_id')->first();
       
-        $extendDay = $branch->extend_days; // assume integer
+        // $extendDay = $branch->extend_days; // assume integer
        
-        $today = Carbon::today();
-        $detail= LearnerDetail::where('learner_id', $learnerId)
-            ->orderBy('plan_end_date', 'DESC')->where('status',1)->first();
-        $endDate = Carbon::parse($detail->plan_end_date);
+        // $today = Carbon::today();
+        // $detail= LearnerDetail::where('learner_id', $learnerId)
+        //     ->orderBy('plan_end_date', 'DESC')->where('status',1)->first();
+        // $endDate = Carbon::parse($detail->plan_end_date);
         
-        $diffInDays = $today->diffInDays($endDate, false);
-        if ($extendDay > 0) {
-            $inextendDate = $endDate->copy()->addDays($extendDay);
-        } else {
-            $inextendDate = $endDate; // fallback to original end date
-        }
+        // $diffInDays = $today->diffInDays($endDate, false);
+        // if ($extendDay > 0) {
+        //     $inextendDate = $endDate->copy()->addDays($extendDay);
+        // } else {
+        //     $inextendDate = $endDate; // fallback to original end date
+        // }
       
-        $diffExtendDay = $today->diffInDays($inextendDate, false);
+        // $diffExtendDay = $today->diffInDays($inextendDate, false);
 
-        /* 3️⃣ Plan expired */
-        // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
-        \Log::info('diffExtendDay',['diff'=>$diffExtendDay]);
-        \Log::info('diffInDays',['diff'=>$diffInDays]);
-        if ($diffExtendDay < 0 || !$detail) {
-            return response()->json([
-                'status'  => 'expired',
-                'message' => 'Plan expired'
-            ], 403);
-        }
-        $extension=false;
+        // /* 3️⃣ Plan expired */
+        // // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+        // \Log::info('diffExtendDay',['diff'=>$diffExtendDay]);
+        // \Log::info('diffInDays',['diff'=>$diffInDays]);
+        // if ($diffExtendDay < 0 || !$detail) {
+        //     return response()->json([
+        //         'status'  => 'expired',
+        //         'message' => 'Plan expired'
+        //     ], 403);
+        // }
+        // $extension=false;
 
-        if ($diffInDays < 0 && $diffExtendDay >= 0){
-            $extension=true;
-        }
+        // if ($diffInDays < 0 && $diffExtendDay >= 0){
+        //     $extension=true;
+        // }
 
-        \Log::info('success part hit extension',['extension'=>$extension]);
+        // \Log::info('success part hit extension',['extension'=>$extension]);
             
-         /**
-     * 🔁 DUPLICATE SCAN PROTECTION (MOST IMPORTANT)
-        * Same QR + same session → ignore for 15 seconds
-        */
-            $now = now()->timestamp;
-            $lastScanAt = session('last_scan_at', 0);
-
-            if (($now - $lastScanAt) < 5) {
-                // 🚫 DO NOT validate QR
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Attendance captured'
-                ]);
-            }
-
-            // Update scan time immediately (important)
-            session(['last_scan_at' => $now]);
-    
+       
             
-            $attendance = 1;
-            $date = date('Y-m-d');
-            $currentTime = now();
-            $libraryId=$branch->library_id;
+        //     $attendance = 1;
+        //     $date = date('Y-m-d');
+        //     $currentTime = now();
+        //     $libraryId=$branch->library_id;
 
-            $existingAttendance = Attendance::where('learner_id', $learnerId)
-                ->where('date', $date)
-                ->first();
+        //     $existingAttendance = Attendance::where('learner_id', $learnerId)
+        //         ->where('date', $date)
+        //         ->first();
 
-          try {
-            DB::beginTransaction();
-               // 🔐 Log insert MUST succeed
-            $data = [
-                'learner_id'     => $learnerId,
-                'branch_id'      => $branchId,
-                'punch_datetime' => $currentTime,
-                'source'         => 'QR'
-            ];
+        //   try {
+        //     DB::beginTransaction();
+        //        // 🔐 Log insert MUST succeed
+        //     $data = [
+        //         'learner_id'     => $learnerId,
+        //         'branch_id'      => $branchId,
+        //         'punch_datetime' => $currentTime,
+        //         'source'         => 'QR'
+        //     ];
 
-            $this->logInsert($data); // throws exception if failed
-            if ($existingAttendance) {
+        //     $this->logInsert($data); // throws exception if failed
+        //     if ($existingAttendance) {
 
                 
 
-                $existingAttendance->out_time = $currentTime;
+        //         $existingAttendance->out_time = $currentTime;
 
-                if (!$existingAttendance->in_time) {
-                    $existingAttendance->in_time = $currentTime;
-                }
+        //         if (!$existingAttendance->in_time) {
+        //             $existingAttendance->in_time = $currentTime;
+        //         }
 
-                $existingAttendance->save();
+        //         $existingAttendance->save();
 
-            } else {
+        //     } else {
 
                 
 
-                Attendance::create([
-                    'learner_id' => $learnerId,
-                    'attendance' => $attendance,
-                    'date'       => $date,
-                    'in_time'    => $currentTime,
-                    'out_time'   => $currentTime,
-                    'library_id' => $branch->library_id,
-                    'branch_id'  => $branchId,
-                ]);
-            }
+        //         Attendance::create([
+        //             'learner_id' => $learnerId,
+        //             'attendance' => $attendance,
+        //             'date'       => $date,
+        //             'in_time'    => $currentTime,
+        //             'out_time'   => $currentTime,
+        //             'library_id' => $branch->library_id,
+        //             'branch_id'  => $branchId,
+        //         ]);
+        //     }
 
          
-            DB::commit();
-            if($extension==true){
-                return response()->json([
-                    'status'  => 'extension',
-                    'message' => 'Thank You! Attendance marked'
-                ]);
-            }else{
-                 return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Thank You! Attendance marked'
-                ]);
-            }
+        //     DB::commit();
+        //     if($extension==true){
+        //         return response()->json([
+        //             'status'  => 'extension',
+        //             'message' => 'Thank You! Attendance marked'
+        //         ]);
+        //     }else{
+        //          return response()->json([
+        //             'status'  => 'success',
+        //             'message' => 'Thank You! Attendance marked'
+        //         ]);
+        //     }
 
            
 
-        } catch (\Throwable $e) {
+        // } catch (\Throwable $e) {
 
-            DB::rollBack();
+        //     DB::rollBack();
 
-            \Log::error('Attendance or log failed', [
-                'learner_id' => $learnerId,
-                'error'      => $e->getMessage(),
-            ]);
+        //     \Log::error('Attendance or log failed', [
+        //         'learner_id' => $learnerId,
+        //         'error'      => $e->getMessage(),
+        //     ]);
 
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Attendance not marked. Please try again.'
-            ], 500);
-        }
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Attendance not marked. Please try again.'
+        //     ], 500);
+        // }
 
     }
 
@@ -648,6 +665,177 @@ class AttendanceController extends Controller
     //         'message' => 'Thank You! Punch OUT successful'
     //     ]);
     // }
+private function processAttendance($learnerId, $branchId, $source ){
+        if (!$branchId) {
+                    
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'QR expired or invalid'
+            ], 403);
+        }
+
+               /* 🔹 Get latest learner plan */
+        $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
+            ->orderBy('plan_end_date', 'DESC')
+            ->first();
+
+        /* 1️⃣ No plan OR inactive plan */
+        if (!$learnerDetail || $learnerDetail->status != 1) {
+
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $learnerId)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
+
+            if ($detail) {
+
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+
+                if ($operation === 'deleteSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been deleted'
+                    ], 403);
+                }
+
+                if ($operation === 'closeSeat') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Your plan has been closed'
+                    ], 403);
+                }
+            }
+
+            return response()->json([
+                'status'  => 'expired',
+                'message' => 'Plan expired'
+            ], 403);
+        }
+
+        /* 2️⃣ Wrong branch QR */
+        if ($learnerDetail->branch_id != $branchId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Ohh, it seems like you scanned the wrong library QR code.'
+            ], 403);
+        }
+        $branch = Branch::where('id', $branchId)->select('extend_days','library_id')->first();
+      
+        $extendDay = $branch->extend_days; // assume integer
+       
+        $today = Carbon::today();
+        $detail= LearnerDetail::where('learner_id', $learnerId)
+            ->orderBy('plan_end_date', 'DESC')->where('status',1)->first();
+        $endDate = Carbon::parse($detail->plan_end_date);
+        
+        $diffInDays = $today->diffInDays($endDate, false);
+        if ($extendDay > 0) {
+            $inextendDate = $endDate->copy()->addDays($extendDay);
+        } else {
+            $inextendDate = $endDate; // fallback to original end date
+        }
+      
+        $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+        /* 3️⃣ Plan expired */
+        // if ($learnerDetail->plan_end_date < date('Y-m-d')) {
+        \Log::info('diffExtendDay',['diff'=>$diffExtendDay]);
+        \Log::info('diffInDays',['diff'=>$diffInDays]);
+        if ($diffExtendDay < 0 || !$detail) {
+            return response()->json([
+                'status'  => 'expired',
+                'message' => 'Plan expired'
+            ], 403);
+        }
+        $extension=false;
+
+        if ($diffInDays < 0 && $diffExtendDay >= 0){
+            $extension=true;
+        }
+
+        \Log::info('success part hit extension',['extension'=>$extension]);
+
+        $attendance = 1;
+        $date = date('Y-m-d');
+        $currentTime = now();
+        $libraryId=$branch->library_id;
+
+        $existingAttendance = Attendance::where('learner_id', $learnerId)
+            ->where('date', $date)
+            ->first();
+
+
+          try {
+            DB::beginTransaction();
+               // 🔐 Log insert MUST succeed
+            $data = [
+                'learner_id'     => $learnerId,
+                'branch_id'      => $branchId,
+                'punch_datetime' => $currentTime,
+                'source'         => 'QR'
+            ];
+
+            $this->logInsert($data); // throws exception if failed
+            if ($existingAttendance) {
+
+                
+
+                $existingAttendance->out_time = $currentTime;
+
+                if (!$existingAttendance->in_time) {
+                    $existingAttendance->in_time = $currentTime;
+                }
+
+                $existingAttendance->save();
+
+            } else {
+
+                
+
+                Attendance::create([
+                    'learner_id' => $learnerId,
+                    'attendance' => $attendance,
+                    'date'       => $date,
+                    'in_time'    => $currentTime,
+                    'out_time'   => $currentTime,
+                    'library_id' => $branch->library_id,
+                    'branch_id'  => $branchId,
+                ]);
+            }
+
+         
+            DB::commit();
+            if($extension==true){
+                return response()->json([
+                    'status'  => 'extension',
+                    'message' => 'Thank You! Attendance marked'
+                ]);
+            }else{
+                 return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Thank You! Attendance marked'
+                ]);
+            }
+
+           
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            \Log::error('Attendance or log failed', [
+                'learner_id' => $learnerId,
+                'error'      => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Attendance not marked. Please try again.'
+            ], 500);
+        }
+}
 
 public function scan(Request $request)
 {
@@ -666,7 +854,6 @@ public function scan(Request $request)
 
     /* 3️⃣ Learner validation */
     $learner = Learner::where('learner_no', $learnerNo)
-        ->where('status', 1)
         ->first();
 
     if (!$learner) {
@@ -676,35 +863,6 @@ public function scan(Request $request)
             'message' => 'Learner not found'
         ], 404);
     }
-    
-
-
-    $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
-     /* 1️⃣ No active plan */
-    if (!$learnerDetail) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => 'No active plan found'
-        ], 403);
-    }
-
-
-
-    $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
-    $extendDay = $branch->extend_days; // assume integer
-    $today = Carbon::today();
-    $endDate = Carbon::parse($learnerDetail->plan_end_date);
-
-    $diffInDays = $today->diffInDays($endDate, false);
-    if ($extendDay > 0) {
-        $inextendDate = $endDate->copy()->addDays($extendDay);
-    } else {
-        $inextendDate = $endDate; // fallback to original end date
-    }
-    $diffExtendDay = $today->diffInDays($inextendDate, false);
-    
-    
-   
     if($learner->branch_id != getCurrentBranch()){
             return response()->json([
             'status'  => 'expired',
@@ -712,105 +870,137 @@ public function scan(Request $request)
         ], 403);
     }
 
-        /* 2️⃣ Plan expired check */
-    //  if (Carbon::parse($learnerDetail->plan_end_date)->lt(today())) {
-    if ($diffExtendDay < 0) {
-        return response()->json([
-            'status'  => 'expired',
-            'message' => 'Plan expired'
-        ], 403);
-    }
+    return response()->json(
+        $this->processAttendance($learner->id, $learner->branch_id, 'SCAN')
+    );
 
-    $extension=false;
+    // $learnerDetail=LearnerDetail::where('learner_id',$learner->id)->where('status',1)->select('plan_end_date')->first();
+    //  /* 1️⃣ No active plan */
+    // if (!$learnerDetail) {
+    //     return response()->json([
+    //         'status'  => 'error',
+    //         'message' => 'No active plan found'
+    //     ], 403);
+    // }
 
-    if ($diffInDays < 0 && $diffExtendDay > 0){
-        $extension=true;
-    }
 
-    \Log::info('extension',$extension);
-    /* 5️⃣ Attendance logic */
-    $attendance = Attendance::where('learner_id', $learner->id)
-        ->where('date', today())
-        ->first();
-    $data = [
-        'learner_id'     => $learner->id,
-        'branch_id'      => $learner->branch_id,
-        'punch_datetime' => now(),
-        'source'         => 'SCAN'
-        ];
 
-    try {
-        DB::beginTransaction();
-        $this->logInsert($data);
-        /* -------------------------
-         | Punch IN
-         |--------------------------*/
-        if (!$attendance) {
+    // $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
+    // $extendDay = $branch->extend_days; // assume integer
+    // $today = Carbon::today();
+    // $endDate = Carbon::parse($learnerDetail->plan_end_date);
 
-            Attendance::create([
-                'learner_id' => $learner->id,
-                'library_id' => $learner->library_id,
-                'branch_id'  => $learner->branch_id,
-                'date'       => today(),
-                'in_time'    => now(),
-                'attendance' => 1
-            ]);
+    // $diffInDays = $today->diffInDays($endDate, false);
+    // if ($extendDay > 0) {
+    //     $inextendDate = $endDate->copy()->addDays($extendDay);
+    // } else {
+    //     $inextendDate = $endDate; // fallback to original end date
+    // }
+    // $diffExtendDay = $today->diffInDays($inextendDate, false);
+    
+    
+   
+    
 
-            $this->logInsert($data);
+    //     /* 2️⃣ Plan expired check */
+    // //  if (Carbon::parse($learnerDetail->plan_end_date)->lt(today())) {
+    // if ($diffExtendDay < 0) {
+    //     return response()->json([
+    //         'status'  => 'expired',
+    //         'message' => 'Plan expired'
+    //     ], 403);
+    // }
 
-            DB::commit();
-            if($extension==true){
-                return response()->json([
-                    'status'  => 'extension',
-                    'message' => 'Thank You! Punch IN successful'
-                ]);
-            }else{
-                 return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Thank You! Punch IN successful'
-                ]);
-            }
+    // $extension=false;
+
+    // if ($diffInDays < 0 && $diffExtendDay > 0){
+    //     $extension=true;
+    // }
+
+    // \Log::info('extension',$extension);
+    // /* 5️⃣ Attendance logic */
+    // $attendance = Attendance::where('learner_id', $learner->id)
+    //     ->where('date', today())
+    //     ->first();
+    // $data = [
+    //     'learner_id'     => $learner->id,
+    //     'branch_id'      => $learner->branch_id,
+    //     'punch_datetime' => now(),
+    //     'source'         => 'SCAN'
+    //     ];
+
+    // try {
+    //     DB::beginTransaction();
+    //     $this->logInsert($data);
+    //     /* -------------------------
+    //      | Punch IN
+    //      |--------------------------*/
+    //     if (!$attendance) {
+
+    //         Attendance::create([
+    //             'learner_id' => $learner->id,
+    //             'library_id' => $learner->library_id,
+    //             'branch_id'  => $learner->branch_id,
+    //             'date'       => today(),
+    //             'in_time'    => now(),
+    //             'attendance' => 1
+    //         ]);
+
+    //         $this->logInsert($data);
+
+    //         DB::commit();
+    //         if($extension==true){
+    //             return response()->json([
+    //                 'status'  => 'extension',
+    //                 'message' => 'Thank You! Punch IN successful'
+    //             ]);
+    //         }else{
+    //              return response()->json([
+    //                 'status'  => 'success',
+    //                 'message' => 'Thank You! Punch IN successful'
+    //             ]);
+    //         }
            
-        }
+    //     }
 
-        /* -------------------------
-         | Punch OUT
-         |--------------------------*/
-        $attendance->update([
-            'out_time'   => now(),
-            'attendance' => 1
-        ]);
+    //     /* -------------------------
+    //      | Punch OUT
+    //      |--------------------------*/
+    //     $attendance->update([
+    //         'out_time'   => now(),
+    //         'attendance' => 1
+    //     ]);
 
         
 
-        DB::commit();
-        if($extension==true){
-            return response()->json([
-                'status'  => 'extension',
-                'message' => 'Thank You! Punch OUT successful'
-            ]);
-        }else{
-                return response()->json([
-                'status'  => 'success',
-                'message' => 'Thank You! Punch OUT successful'
-            ]);
-        }
+    //     DB::commit();
+    //     if($extension==true){
+    //         return response()->json([
+    //             'status'  => 'extension',
+    //             'message' => 'Thank You! Punch OUT successful'
+    //         ]);
+    //     }else{
+    //             return response()->json([
+    //             'status'  => 'success',
+    //             'message' => 'Thank You! Punch OUT successful'
+    //         ]);
+    //     }
        
 
-    } catch (\Throwable $e) {
+    // } catch (\Throwable $e) {
 
-        DB::rollBack();
+    //     DB::rollBack();
 
-        \Log::error('Attendance scan failed', [
-            'learner_id' => $learner->id,
-            'error'      => $e->getMessage(),
-        ]);
+    //     \Log::error('Attendance scan failed', [
+    //         'learner_id' => $learner->id,
+    //         'error'      => $e->getMessage(),
+    //     ]);
 
-        return response()->json([
-            'status'  => false,
-            'message' => 'Attendance not marked. Please try again.'
-        ], 500);
-    }
+    //     return response()->json([
+    //         'status'  => false,
+    //         'message' => 'Attendance not marked. Please try again.'
+    //     ], 500);
+    // }
 
 
     
