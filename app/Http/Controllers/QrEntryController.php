@@ -1101,7 +1101,7 @@ class QrEntryController extends Controller
         if ($seatNo && $bookings) {
 
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScope(LibraryScope::class)->where('branch_id', $branch_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->get();
             Log::info('Plan types fetched', [
                 'count' => $planTypes->count(),
                 'plan_type_ids' => $planTypes->pluck('id')
@@ -1129,7 +1129,7 @@ class QrEntryController extends Controller
                 }
             }
             if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::withoutGlobalScope(LibraryScope::class)->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
+                $planTypeId = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->where('day_type_id', 8)->value('id') ?? 0;
             }
 
             if (!is_null($planTypeId)) {
@@ -1151,7 +1151,7 @@ class QrEntryController extends Controller
             }
             // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
             if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::withoutGlobalScope(LibraryScope::class)->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
+                $dayTypePlanIds = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
                 $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
             }
             // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
@@ -1166,11 +1166,11 @@ class QrEntryController extends Controller
             $total_hour = $first_record ? $first_record->hour : null;
 
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::withoutGlobalScope(LibraryScope::class)->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
                     ->select('id', 'name')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::withoutGlobalScope(LibraryScope::class)->where('branch_id', $branch_id)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->select('id', 'name')->get();
             }
 
         }
