@@ -29,7 +29,7 @@ use App\Models\LearnerTransactionActivity;
 use App\Models\PlanType;
 use App\Models\Subscription;
 use Log;
-
+ use App\Models\Scopes\LibraryScope;
 
 
 
@@ -621,44 +621,56 @@ class DashboardController extends Controller
         $bookingcount = $plan_wise_booking->pluck('booking')->toArray(); 
          
         
-           //plantype wise revenue
-            $query = LearnerTransaction::join(
-                    'learner_detail',
-                    'learner_detail.id',
-                    '=',
-                    'learner_transactions.learner_detail_id'
-                )
-                ->where('learner_detail.library_id', getLibraryId())
-                ->where('learner_transactions.is_paid', 1);
+       
 
-            if (getCurrentBranch() != 0) {
-                $query->where('learner_detail.branch_id', getCurrentBranch());
-            }
+// plan type wise revenue
+$query = LearnerTransaction::withoutGlobalScope(LibraryScope::class)
+    ->join(
+        'learner_detail',
+        'learner_detail.id',
+        '=',
+        'learner_transactions.learner_detail_id'
+    )
+    ->where('learner_detail.library_id', getLibraryId())
+    ->where('learner_transactions.is_paid', 1);
 
-            /**
-             * Year-wise revenue
-             */
-            $query->when($request->filled('year') && !$request->filled('month'), function ($q) use ($request) {
-                $q->whereYear('learner_transactions.paid_date', $request->year);
-            });
+if (getCurrentBranch() != 0) {
+    $query->where('learner_detail.branch_id', getCurrentBranch());
+}
 
-            /**
-             * Month + Year-wise revenue
-             */
-            $query->when($request->filled('year') && $request->filled('month'), function ($q) use ($request) {
-                $q->whereYear('learner_transactions.paid_date', $request->year)
-                ->whereMonth('learner_transactions.paid_date', $request->month);
-            });
+/**
+ * Year-wise revenue
+ */
+$query->when(
+    $request->filled('year') && !$request->filled('month'),
+    function ($q) use ($request) {
+        $q->whereYear('learner_transactions.paid_date', $request->year);
+    }
+);
 
-            $planTypeWiseRevenue = $query
-                ->groupBy('learner_detail.plan_type_id')
-                ->selectRaw(
-                    'learner_detail.plan_type_id,
-                    ROUND(SUM(learner_transactions.paid_amount), 0) as revenue'
-                )
-                ->with('planType')
-                ->get();
+/**
+ * Month + Year-wise revenue
+ */
+$query->when(
+    $request->filled('year') && $request->filled('month'),
+    function ($q) use ($request) {
+        $q->whereYear('learner_transactions.paid_date', $request->year)
+          ->whereMonth('learner_transactions.paid_date', $request->month);
+    }
+);
 
+$planTypeWiseRevenue = $query
+    ->groupBy('learner_detail.plan_type_id')
+    ->selectRaw(
+        'learner_detail.plan_type_id,
+        ROUND(SUM(learner_transactions.paid_amount), 0) as revenue'
+    )
+    ->with('planType')
+    ->get();
+
+         // Prepare labels and data for revenue
+            $revenueLabels = $planTypeWiseRevenue->pluck('planType.name')->toArray();
+            $revenueData = $planTypeWiseRevenue->pluck('revenue')->toArray();
 
 
         //recenue expense div
