@@ -631,7 +631,7 @@ $query = LearnerTransaction::withoutGlobalScope(LibraryScope::class)
         '=',
         'learner_transactions.learner_detail_id'
     )
-    ->where('learner_detail.library_id', getLibraryId())
+   
     ->where('learner_transactions.is_paid', 1);
 
 if (getCurrentBranch() != 0) {
