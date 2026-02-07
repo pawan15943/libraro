@@ -4747,6 +4747,11 @@ class LearnerController extends Controller
         $tran = LearnerTransactionActivity::where('learner_id', $transaction->learner_id)
             ->value('transaction_id');
 
+        $start = date('h:i A', strtotime($learnerDetail->planType->start_time));
+        $end   = date('h:i A', strtotime($learnerDetail->planType->end_time));
+
+        $shift_timing = $start . ' to ' . $end;
+
         $send_data = [
             'branch_logo'      => $branch_logo ?? '',
             'subscription'     => $learnerDetail->planType->name ?? 'NA',
@@ -4766,8 +4771,11 @@ class LearnerController extends Controller
             'library_email'    => $library->email ?? '',
             'library_mobile'   => $library->library_mobile ?? '',
             'library_address'  => $library->library_address ?? '',
-            'branch_slug'      => $branch_slug ?? ''
+            'branch_slug'      => $branch_slug ?? '',
+            'shift_timing'=>$shift_timing
         ];
+
+        
 
         $pdf = PDF::loadView('recieptPdf', $send_data);
 
