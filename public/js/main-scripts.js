@@ -86,27 +86,64 @@ function closeNotification() {
   //   }
   // });
 
-  $(document).on("submit", "form", function (e) {
-      var form = $(this);
-      var submitButton = form.find(".button");
+$(document).on('submit', 'form', function () {
 
-      // Prevent double submit
-      if (submitButton.prop("disabled")) {
-          return false;
-      }
+    let form = $(this);
 
-      // Save original text only once
-      if (!submitButton.data("btn-text")) {
-          submitButton.data("btn-text", submitButton.html());
-      }
+    let submitBtn = form.find('button[type="submit"]').first();
+    if (!submitBtn.length) {
+        submitBtn = form.find('.button').first();
+    }
 
-      // Disable + add loader
-      submitButton.prop("disabled", true);
-      submitButton.html(
-          submitButton.data("btn-text") +
-          ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
-      );
-  });
+    if (!submitBtn.length) return;
+
+    // Prevent double submit
+    if (submitBtn.prop('disabled')) {
+        return false;
+    }
+
+    // Save original text once
+    if (!submitBtn.data('original-text')) {
+        submitBtn.data('original-text', submitBtn.html());
+    }
+
+    // 🔒 HARD disable
+    submitBtn.prop('disabled', true);
+    submitBtn.attr('disabled', 'disabled');
+    submitBtn.css({
+        'pointer-events': 'none',
+        'opacity': '0.7'
+    });
+
+    // 🔄 Loader
+    submitBtn.html(
+        submitBtn.data('original-text') +
+        ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
+    );
+});
+
+
+//   $(document).on("submit", "form", function (e) {
+//       var form = $(this);
+//       var submitButton = form.find(".button");
+
+//       // Prevent double submit
+//       if (submitButton.prop("disabled")) {
+//           return false;
+//       }
+
+//       // Save original text only once
+//       if (!submitButton.data("btn-text")) {
+//           submitButton.data("btn-text", submitButton.html());
+//       }
+
+//       // Disable + add loader
+//       submitButton.prop("disabled", true);
+//       submitButton.html(
+//           submitButton.data("btn-text") +
+//           ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
+//       );
+//   });
 
   $(document).on("input change", "input, select, textarea", function () {
       var form = $(this).closest("form");

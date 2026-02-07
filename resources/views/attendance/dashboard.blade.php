@@ -50,7 +50,7 @@
                 <div class="id-front">
                     <div class="d-flex justify-content-between">
                         <h4 class="uppercase">
-                            {{ $detail->library_name ?? 'Library' }}
+                            {{ $detail->branch_name ?? 'Library' }}
                         </h4>
                     </div>
                   

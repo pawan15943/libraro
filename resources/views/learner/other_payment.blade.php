@@ -86,7 +86,7 @@ $class=$planDetails['class'];
                             @enderror
                         </div>
                         <div class="col-lg-4">
-                                <label for="">Payment Mode</label>
+                                <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode"  class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
                                     <option value="Online" >Online</option>
@@ -100,7 +100,7 @@ $class=$planDetails['class'];
                                 @enderror
                         </div>
                         <div class="col-lg-3">
-                            <input type="submit" class="btn btn-primary button" value="Make Payment">
+                            <button type="submit" class="btn btn-primary button">Make Payment</button>
                         </div>          
                     </div>
 

@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QR Attendance App</title>
-
+<link rel="shortcut icon" href="{{ asset('public/img/favicon.ico') }}" type="image/png">
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -403,6 +403,7 @@
     <a onclick="navigate('profile')"><i data-lucide="user"></i> Profile</a>
     <a onclick="navigate('scan')"><i data-lucide="qr-code"></i> Scan QR</a>
     <a onclick="navigate('support')"><i data-lucide="phone"></i> Support</a>
+    {{-- <a onclick="clearAllAndRedirect()"><i data-lucide="log-out"></i> Logout</a> --}}
   </div>
 
   @yield('content')
@@ -421,10 +422,12 @@
     const audioSuccess = new Audio("{{ asset('public/audio/success.mp3') }}");
     const audioExpired = new Audio("{{ asset('public/audio/expired.mp3') }}");
     const audioError = new Audio("{{ asset('public/audio/error.mpeg') }}");
+    const audioExtension = new Audio("{{asset('public/audio/extension.mp3')}}");
 
     audioSuccess.preload = 'auto';
     audioExpired.preload = 'auto';
     audioError.preload = 'auto';
+    audioExtension.preload = 'auto';
 
     lucide.createIcons();
     let scanner = null;
@@ -565,7 +568,7 @@
 
           // alert(res.status);
           const scanMsg = document.getElementById('scanResult');
-          if (res.status === 'success') {
+          if (res.status === 'success' || res.status === 'extension') {
             setScanMessage(res.message, 'success');
           } else {
             setScanMessage(res.message, 'danger');
@@ -584,6 +587,9 @@
           } else if (res.status === 'expired') {
             animation = failedAnimation;
             audio = audioExpired;
+          }else if (res.status === 'extension') {
+            animation = successAnimation;
+            audio = audioExtension;
           } else {
             animation = errorAnimation;
             audio = audioError;
@@ -628,6 +634,8 @@
         });
       }
     });
+
+    
   </script>
 
 

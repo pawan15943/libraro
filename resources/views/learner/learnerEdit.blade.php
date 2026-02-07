@@ -372,7 +372,7 @@ if($customer->locker_no){
                     </div>
                     <div class="row mt-3">
                         <div class="col-lg-3">
-                            <input type="submit" class="btn btn-primary btn-block button"  value="Update Seat Info" autocomplete="off">
+                            <button type="submit" class="btn btn-primary btn-block button">Update Seat Info</button>
                         </div>
                     </div>
                 </div>

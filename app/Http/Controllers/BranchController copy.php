@@ -106,6 +106,8 @@ class BranchController extends Controller
             'plans.*' => 'string',
 
             'monthdays' => 'nullable|integer|in:28,30',
+            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+
            
             // 'floors' => 'nullable|array',
             // 'floors.*.name' => 'required_with:floors.*.from,floors.*.to',
@@ -350,6 +352,8 @@ class BranchController extends Controller
             'latitude'=>'required',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+
         ]);
         
         
@@ -472,6 +476,7 @@ class BranchController extends Controller
             'seats'           => 'required',
             'founder_day'     => 'required',
             'monthdays'       => 'nullable|integer|in:28,30',
+            'fixed_billing_date'=>'nullable',
         ];
 
         // 🔹 Only require plans if no plan exists

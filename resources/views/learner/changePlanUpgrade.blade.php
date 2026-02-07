@@ -269,11 +269,13 @@ if(Route::currentRouteName() == 'learner.change.plan'){
                     <div class="button-list mt-4">
                         @if(Route::currentRouteName() == 'learner.change.plan' && !$today->greaterThanOrEqualTo($oneWeekLater))
                        
-                        <input type="submit" class="btn btn-primary btn-block button w-25" value="Update Seat Info">
+                        <button type="submit" class="btn btn-primary btn-block button w-25" >Update Seat Info</button>
                         @else  
                         
                             @if($planDetails['diff_in_days'] <= 5 && $planDetails['diff_extend_day']> 0 && !$is_renew && !$isalreadyRenew)
-                            <input type="submit" class="btn btn-primary btn-block button w-25" value="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}">
+                                <button type="submit" class="btn btn-primary btn-block button w-25" >{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}</button>
+
+                            {{-- <input type="submit" class="btn btn-primary btn-block button w-25" value="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}"> --}}
                             @else
                             <p class="text-danger"><b>*</b>Button is available when you renew your Seat Booking</p>
                             @endif

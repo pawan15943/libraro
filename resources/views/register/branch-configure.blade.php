@@ -154,6 +154,15 @@
                         </span>
                         @enderror
                     </div>
+                    <div class="col-lg-6">
+                        <label for="">Billing Fix Date(optional) </label>
+                        <input type="text" class="form-control digit-only @error('fixed_billing_date') is-invalid @enderror no-validate" name="fixed_billing_date" placeholder="Enter like 1" value="{{old('fixed_billing_date')}}" maxlength="2" >
+                        @error('fixed_billing_date')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
                 </div>
             </div>
 

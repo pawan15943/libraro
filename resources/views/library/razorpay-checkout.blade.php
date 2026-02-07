@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Razorpay Payment</title>
+    <title>Payment</title>
+    <link rel="shortcut icon" href="{{ asset('public/img/favicon.ico') }}" type="image/png">
+
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
