@@ -1469,6 +1469,10 @@
                         $("#locker_no2").removeAttr('readonly');
                         }      
                     }
+                    if (html[7]) {
+                        
+                        $("#previous_pending").val(html[7]); 
+                    }
                     
                     popupautoCalculatePaidAmount(); 
                 },
@@ -2526,6 +2530,7 @@
         const lockerAmount = parseFloat($('#locker_amount2').val()) || 0;
         const discountRaw = parseFloat($('#discount_amount3').val()) || 0;
         const discountType = $('#discount_type').val();
+        const previous_pending = parseFloat($('#previous_pending').val()) || 0; 
         
         let discountAmountt = 0;
        
@@ -2541,20 +2546,20 @@
       
         var autoPaidnew;
         if(planPrice && lockerAmount && discountAmountt){
-            autoPaidnew = planPrice + lockerAmount - discountAmountt;
+            autoPaidnew = planPrice + lockerAmount - discountAmountt +previous_pending;
         } else if (planPrice && lockerAmount) {
-            autoPaidnew = planPrice + lockerAmount;
+            autoPaidnew = planPrice + lockerAmount + previous_pending;
         }else if (planPrice && discountAmountt) {
-            autoPaidnew = planPrice - discountAmountt;
+            autoPaidnew = planPrice - discountAmountt + previous_pending;
         } else {
-            autoPaidnew = planPrice;
+            autoPaidnew = planPrice + previous_pending;
         }
         // console.log('planPrice',planPrice);
         // console.log('lockerAmount',lockerAmount);
         // console.log('discountRaw',discountRaw);
         // console.log('discountType',discountType);
         // console.log('discountAmountt',discountAmountt);
-        // console.log('autoPaidnew',autoPaidnew);
+        console.log('autoPaidnew',autoPaidnew);
         
         $('#new_plan_price2').val(autoPaidnew);
         calculatePendingAmountRenew();
@@ -2568,6 +2573,7 @@
         const lockerAmount = parseFloat($('#locker_amount2').val()) || 0;
         const discountRaw = parseFloat($('#discount_amount3').val()) || 0;
         const discountType = $('#discount_type').val();
+         const previous_pending = parseFloat($('#previous_pending').val()) || 0; 
         let discountAmount = 0;
 
         if (discountType === 'percentage') {
@@ -2576,7 +2582,7 @@
             discountAmount = discountRaw;
         }
 
-        const effectivePaid = planPrice+lockerAmount - discountAmount;
+        const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending;
         const pendingAmount = effectivePaid-paidAmount;
        
         

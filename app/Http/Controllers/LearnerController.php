@@ -2143,7 +2143,12 @@ class LearnerController extends Controller
 
         }
         $days=getChargeableDays($selectedbothId->plan_id, $start_date, getCurrentBranch());
-        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days]);
+        $previous_pending = LearnerTransaction::where(
+        'learner_id',
+        optional($selectedbothId)->learner_id
+        )->sum('pending_amount') ?? 0;
+
+        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days,$previous_pending]);
     }
     public function getPrice(Request $request)
     {

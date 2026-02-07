@@ -401,6 +401,11 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-lg-6">
+                                <label for="">Previous Pending Amount <span>*</span></label>
+                                <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending" readonly>
+
+                            </div>
+                            <div class="col-lg-6">
                                 <label for="">Total Amt (Plan Price + Locker Amt. - Discount)<span>*</span></label>
                                 <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" value="">
                                 <span id="pending_amt2" class="text-danger"></span>
