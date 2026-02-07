@@ -1434,9 +1434,13 @@ class LearnerController extends Controller
             $plan_type_id = $request->input('plan_type_id');
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $endDate = getEndDate($plan_id, $start_date);
-
+            $learnerId = Learner::where('id', $customer->id)->where('status', 0)->exists();
+           
+            if(LearnerDetail::where('learner_id',$customer->id)->where('status', 1)->exists()){
+                return redirect()->back()->with('error', 'Your Plan Already Active')->withInput();
+            }
              if ($request->seat_no) {
-                $learnerId = Learner::where('id', $customer->id)->where('status', 1)->exists();
+                
                 $result = checkSeatAvailability($seat_no, $learnerId ? $customer->id : null, $request->plan_type_id, $start_date, $endDate);
 
                 if ($result['error']) {
