@@ -627,7 +627,7 @@ class DashboardController extends Controller
           $query = LearnerDetail::leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')->where('learner_transactions.is_paid',1)->where('learner_detail.library_id', getLibraryId()) 
         ->where('learner_detail.branch_id', getCurrentBranch());
                 
-          
+          dd($query->toSql(), $query->getBindings());
            $query->when($year && $month, function ($q) use ($year,$month) { 
             $q->whereYear('learner_transactions.paid_date', $year) 
             ->whereMonth('learner_transactions.paid_date', $month); 
