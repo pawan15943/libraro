@@ -162,6 +162,41 @@
                 });
             });
         });
+        $(document).on('submit', 'form', function () {
+
+            let form = $(this);
+
+            let submitBtn = form.find('button[type="submit"]').first();
+            if (!submitBtn.length) {
+                submitBtn = form.find('.button').first();
+            }
+
+            if (!submitBtn.length) return;
+
+            // Prevent double submit
+            if (submitBtn.prop('disabled')) {
+                return false;
+            }
+
+            // Save original text once
+            if (!submitBtn.data('original-text')) {
+                submitBtn.data('original-text', submitBtn.html());
+            }
+
+            // 🔒 HARD disable
+            submitBtn.prop('disabled', true);
+            submitBtn.attr('disabled', 'disabled');
+            submitBtn.css({
+                'pointer-events': 'none',
+                'opacity': '0.7'
+            });
+
+            // 🔄 Loader
+            submitBtn.html(
+                submitBtn.data('original-text') +
+                ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
+            );
+        });
     </script>
 
 

@@ -495,7 +495,10 @@ class QrEntryController extends Controller
             $booking = Booking::create([
                 'name'            => $validated['name'],
                 'mobile' => encryptData($validated['mobile']),
-                'email' => $validated['email'] ? encryptData($validated['email']) : null,
+               'email' => !empty($validated['email']) 
+                ? encryptData($validated['email']) 
+                : null,
+
               
                  'dob' => $validated['dob'],
                 'password'        => $password,

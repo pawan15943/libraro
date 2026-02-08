@@ -350,6 +350,7 @@ class BranchController extends Controller
             'latitude'=>'required',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'fixed_billing_date'=>'nullable|integer|min:1|max:31',
         ]);
         
         
