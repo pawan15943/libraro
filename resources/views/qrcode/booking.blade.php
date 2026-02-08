@@ -31,68 +31,68 @@
     }
 
     
-/* Modal background */
-.cropper-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.24);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    opacity: 1 !important;
-}
+    /* Modal background */
+    .cropper-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.24);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 1 !important;
+    }
 
-/* Modal box */
-.cropper-box {
-    background: #fff;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 10px;
-    padding: 20px;
-    box-sizing: border-box;
-    text-align: center;
-}
+    /* Modal box */
+    .cropper-box {
+        background: #fff;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 10px;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+    }
 
-/* Cropper area */
+    /* Cropper area */
 
 
-.cropper-area {
-    width: 100%;
-    max-height: 300px;
-    overflow: hidden;
-    margin: 15px 0;
-}
+    .cropper-area {
+        width: 100%;
+        max-height: 300px;
+        overflow: hidden;
+        margin: 15px 0;
+    }
 
-/* Buttons */
-.cropper-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
+    /* Buttons */
+    .cropper-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
 
-.cropper-actions button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-}
+    .cropper-actions button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+    }
 
-#cancelCrop {
-    background: #e5e7eb;
-    color: #111;
-}
+    #cancelCrop {
+        background: #e5e7eb;
+        color: #111;
+    }
 
-.cropbtn {
-    background: navy;
-    color: #fff;
-}
+    .cropbtn {
+        background: navy;
+        color: #fff;
+    }
 
-.cropper-modal {
-    background-color: #000000a3 !important;
-    opacity: .5;
-}
+    .cropper-modal {
+        background-color: #000000a3 !important;
+        opacity: .5;
+    }
 
 </style>
  <!-- Cropper Modal -->

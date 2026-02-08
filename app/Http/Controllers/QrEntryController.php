@@ -91,9 +91,9 @@ class QrEntryController extends Controller
                 }
             }
       
-        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->whereNull('deleted_at')->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->whereNull('deleted_at')->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeat'));
     }
@@ -650,9 +650,13 @@ class QrEntryController extends Controller
             $transaction=null;
              $learner=null;
         }
-       
+        if ($customer->seat_no) {
+            $filteredPlanTypes = filterPlantypeFromseat($customer->seat_no, null);
+        } else {
+            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+        }
 
-        return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner'));
+        return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner','filteredPlanTypes'));
     }
 
     public function requestApproveEdit(Request $request)
@@ -1288,6 +1292,7 @@ class QrEntryController extends Controller
             }
         }
         // Return the filtered plan types as JSON
+       
         return response()->json($filteredPlanTypes);
     }
 
