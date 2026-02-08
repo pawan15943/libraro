@@ -1194,9 +1194,12 @@ class LearnerController extends Controller
                 } 
             }
 
-           
+            $planType = PlanType::find($plan_type_id);
+            $hours = $planType->slot_hours;
+
             $planPrice = (float) $request->input('plan_price_id', 0);
             $locker = (float) $request->input('locker_amount', 0);
+            $paid_amount = (float) $request->input('paid_amount', 0);
             if ($request->discountType == 'amount') {
                 $discount = $request->discount_amount;
             } elseif ($request->discountType == 'percentage') {
@@ -1206,20 +1209,19 @@ class LearnerController extends Controller
                 $discount = 0;
             }
 
-            $paid_amount = (float) $request->input('paid_amount', 0);
+            
             $effectivePaid = $planPrice + $locker - $discount;
             $pending_amount =  $effectivePaid - $paid_amount;
             $payment_mode = $request->payment_mode;
            
-            $planType = PlanType::find($plan_type_id);
-            $hours = $planType->slot_hours;
-
-           
-
             if ($payment_mode == 3) {
                 $pending_amount = $paid_amount;
                 $paid_amount    = 0;
             }
+
+
+
+
             if ($request->payment_mode == 1 || $request->payment_mode == 2) {
                 $is_paid = 1;
             } else {
@@ -1295,6 +1297,8 @@ class LearnerController extends Controller
             } else {
                 $payment_type = 'UPGRADE';
             }
+
+           
 
             $data = [];
             $data['planPrice'] = $planPrice;
