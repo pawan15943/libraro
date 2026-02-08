@@ -118,7 +118,7 @@ span.close-modal {
     </div>
 </div>
     <div class="row mb-4">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             <div class="card">
                 <div class="row g-4">
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
@@ -553,7 +553,7 @@ span.close-modal {
 
                         <div class="row mt-4">
                             <div class="col-lg-4">
-                                <input type="submit" class="btn btn-primary btn-block button" value="Book Library Seat Now" autocomplete="off">
+                                <button type="submit" class="btn btn-primary btn-block button">Verify and Allot Seat</button>
                             </div>
                         </div>
 

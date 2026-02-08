@@ -466,6 +466,17 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('learner.home'),
                 'Library Users List' => route('library-users.index'),
             ],
+         'booking.details' => [
+            'Dashboard' => route('learner.home'),
+            'Verify and Allot Seat' => route('booking.details', [
+                'id' => is_array($parameters)
+                    ? ($parameters['id'] ?? reset($parameters))
+                    : $parameters
+            ]),
+        ],
+
+
+
 
         ];
 
@@ -559,6 +570,7 @@ class AppServiceProvider extends ServiceProvider
             'attendance.apply' => 'QR Attendance',
             'branch.configure.create' => 'Setup Branch & Floors',
             'library.configration' => 'Add Shifts',
+            'booking.details' => 'Verify and Allot Seat',
 
         ];
 
