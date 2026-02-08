@@ -1413,7 +1413,7 @@
                 },
                 dataType: 'json',
                 success: function (html) {
-                    console.log("renew",html);
+                   
                     $("#plan_type_id_renew").empty(); 
                     $("#plan_id2").empty(); 
 
@@ -1435,7 +1435,7 @@
                     if (html[5]){
                         $("#plan_price_id2").val(html[5]);      
                     }
-                    if (html[6]) {
+                    if (html[6] && html[6].fixedBillingDate==true) {
                         
                         $("#chargeable_days_renew").text('Billed for ' + html[6].chargeable_days + ' Days');  
                     }

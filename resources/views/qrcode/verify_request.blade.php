@@ -118,7 +118,7 @@ span.close-modal {
     </div>
 </div>
     <div class="row mb-4">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             <div class="card">
                 <div class="row g-4">
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
@@ -253,7 +253,7 @@ span.close-modal {
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
                                 <input type="date"
-                                class="form-control dob @error('dob') is-invalid @enderror"
+                                class="form-control  @error('dob') is-invalid @enderror"
                                 name="dob"
                                 value="{{ old('dob') ?? (optional($customer)->dob ? \Carbon\Carbon::parse($customer->dob)->format('Y-m-d') : '') }}"
                                 max="{{ date('Y-m-d', strtotime('-5 years')) }}">
@@ -291,7 +291,7 @@ span.close-modal {
 
                             <div class="col-lg-4">
                                 <label for="plan_type_id11">Plan Type <span>*</span></label>
-                                <select id="plan_type_id11" class="form-control form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
+                                {{-- <select id="plan_type_id11" class="form-control form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
 
                                     <option value="">Choose Shift</option>
                                     @if(!empty($customer->plan_type_id))
@@ -299,6 +299,14 @@ span.close-modal {
                                         {{ $customer->planType->name ?? 'Selected Plan' }}
                                     </option>
                                     @endif
+                                </select> --}}
+                                 <select id="plan_type_id11" class="form-control form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
+                                    @foreach($filteredPlanTypes as $planType)
+                                    <option value="{{ $planType['id'] }}"
+                                        {{ ($customer->plan_type_id == $planType['id']) ? 'selected' : (old('plan_type_id') == $planType['id'] ? 'selected' : '') }}>
+                                        {{ $planType['name'] }}
+                                    </option>
+                                    @endforeach
                                 </select>
 
                                 @error('plan_type_id')
@@ -426,7 +434,60 @@ span.close-modal {
 
                        <div class="qr_idProofFields" style="display: none;">
                         <div class="row g-3">
+                             @if(!in_array('8', toggleHideField()))
+                           
+                            <div class="col-lg-6">
+                                <label for="profile_picture">Upload Profile Photo</label>
+                                <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
+                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
 
+
+                                @error('profile_picture')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                                @if($customer->profile_picture)
+                                    <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
+                                    
+                                @endif
+                            </div>
+                            @endif
+                              {{-- ================= ALTERNATE MOBILE ================= --}}
+                            @if(!in_array('30', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="alternate_mobile">Alternate Mobile No.</label>
+                                <input type="text"
+                                    class="form-control digit-only"
+                                    name="alternate_mobile"
+                                    maxlength="10"
+                                    minlength="10"
+                                    placeholder="Enter Alternate Mobile No."
+                                    value="{{ old('alternate_mobile') ?? $customer->alternate_mobile ?? '' }}">
+                            </div>
+                            @endif
+                              @if(!in_array('29', toggleHideField()))
+                            <div class="col-lg-6 ">
+                                <label for="father_name">Father Name</label>
+                                <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name" value="{{old('father_name')}}">
+                            </div>
+                            @endif
+                            {{-- ================= PREPARE FOR ================= --}}
+                            @if(!in_array('4', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="prepareFor">Prepare For</label>
+                                <select name="exam_id" class="form-select">
+                                    <option value="">Learner is Prepare For Exam</option>
+                                    @foreach($exams as $value)
+                                        <option value="{{ $value->id }}"
+                                            {{ (old('exam_id') ?? $customer->exam_id ?? '') == $value->id ? 'selected' : '' }}>
+                                            {{ $value->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
                             {{-- ================= ID PROOF ================= --}}
                             @if(!in_array('5', toggleHideField()))
                             <div class="col-lg-6">
@@ -466,63 +527,7 @@ span.close-modal {
                                 @endif
                             </div>
                             @endif
-                             @if(!in_array('8', toggleHideField()))
-                           
-                             <div class="col-lg-6">
-                                <label for="profile_picture">Upload Profile Photo</label>
-                                <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
-                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
-                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
-
-
-                                @error('profile_picture')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            @if($customer->profile_picture)
-                                <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
-                                
-                            @endif
-                            </div>
-                            @endif
-                            @if(!in_array('29', toggleHideField()))
-                            <div class="col-lg-6 ">
-                                <label for="father_name">Father Name</label>
-                                <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name" value="{{old('father_name')}}">
-                            </div>
-                            @endif
-
-                            {{-- ================= ALTERNATE MOBILE ================= --}}
-                            @if(!in_array('30', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="alternate_mobile">Alternate Mobile No.</label>
-                                <input type="text"
-                                    class="form-control digit-only"
-                                    name="alternate_mobile"
-                                    maxlength="10"
-                                    minlength="10"
-                                    placeholder="Enter Alternate Mobile No."
-                                    value="{{ old('alternate_mobile') ?? $customer->alternate_mobile ?? '' }}">
-                            </div>
-                            @endif
-
-                            {{-- ================= PREPARE FOR ================= --}}
-                            @if(!in_array('4', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="prepareFor">Prepare For</label>
-                                <select name="exam_id" class="form-select">
-                                    <option value="">Learner is Prepare For Exam</option>
-                                    @foreach($exams as $value)
-                                        <option value="{{ $value->id }}"
-                                            {{ (old('exam_id') ?? $customer->exam_id ?? '') == $value->id ? 'selected' : '' }}>
-                                            {{ $value->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @endif
-
+                            
                             {{-- ================= ADDRESS ================= --}}
                             @if(!in_array('32', toggleHideField()))
                             <div class="col-lg-12">
@@ -553,7 +558,7 @@ span.close-modal {
 
                         <div class="row mt-4">
                             <div class="col-lg-4">
-                                <input type="submit" class="btn btn-primary btn-block button" value="Book Library Seat Now" autocomplete="off">
+                                <button type="submit" class="btn btn-primary btn-block button">Verify and Allot Seat</button>
                             </div>
                         </div>
 

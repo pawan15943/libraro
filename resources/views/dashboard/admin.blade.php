@@ -518,7 +518,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 </td>
                                 <td>{{$value->name}}<br>{{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</td>
                                 <td>{{$value->mobile ? '+91'.decryptData($value->mobile) : ''}}</td>
-                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }} | {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
+                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ number_format($value->total_amount ?? 0, 0) }} <br> {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
 
                                 @if($value->payment_screenshot)
                                 <td>
