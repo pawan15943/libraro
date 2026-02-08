@@ -1486,9 +1486,13 @@ class LearnerController extends Controller
             $plan_type_id = $request->input('plan_type_id');
             $start_date = Carbon::parse($request->input('plan_start_date'));
             $endDate = getEndDate($plan_id, $start_date);
-
+            $learnerId = Learner::where('id', $customer->id)->where('status', 0)->exists();
+           
+            if(LearnerDetail::where('learner_id',$customer->id)->where('status', 1)->exists()){
+                return redirect()->back()->with('error', 'Your Plan Already Active')->withInput();
+            }
              if ($request->seat_no) {
-                $learnerId = Learner::where('id', $customer->id)->where('status', 1)->exists();
+                
                 $result = checkSeatAvailability($seat_no, $learnerId ? $customer->id : null, $request->plan_type_id, $start_date, $endDate);
 
                 if ($result['error']) {
@@ -4336,12 +4340,33 @@ class LearnerController extends Controller
         return view('learner.bulk-idcards', compact('learner_details', 'branch','print_type'));
     }
 
-    public function learnerChecklist()
+   public function learnerChecklist()
     {
-        $learners = Learner::leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')->where('learners.status', 1)->where('learners.branch_id', getCurrentBranch())->select('learners.name', 'learners.learner_no','learners.mobile', 'learners.father_name', 'learner_detail.is_paid', 'learner_detail.plan_end_date', 'learners.id','learners.profile_picture')->get();
-       
+        $learners = Learner::leftJoin('learner_detail as ld', function ($join) {
+                $join->on('learners.id', '=', 'ld.learner_id')
+                    ->whereRaw('ld.id = (
+                        SELECT MAX(id) 
+                        FROM learner_detail 
+                        WHERE learner_id = learners.id
+                    )');
+            })
+            ->where('learners.status', 1)
+            ->where('learners.branch_id', getCurrentBranch())
+            ->select(
+                'learners.name',
+                'learners.learner_no',
+                'learners.mobile',
+                'learners.father_name',
+                'ld.is_paid',
+                'ld.plan_end_date',
+                'learners.id',
+                'learners.profile_picture'
+            )
+            ->get();
+
         return view('learner.checklist', compact('learners'));
     }
+
 
     public function learnerTransactionActivity($data)
     {
