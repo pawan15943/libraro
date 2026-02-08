@@ -624,6 +624,8 @@ class DashboardController extends Controller
        
 
  //plantype wise revenue
+ dd(LearnerDetail::leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')->where('learner_transactions.is_paid',1)->where('learner_detail.library_id', getLibraryId()) 
+        ->where('learner_detail.branch_id', getCurrentBranch())->toSql());
           $query = LearnerDetail::leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')->where('learner_transactions.is_paid',1)->where('learner_detail.library_id', getLibraryId()) 
         ->where('learner_detail.branch_id', getCurrentBranch());
                 
