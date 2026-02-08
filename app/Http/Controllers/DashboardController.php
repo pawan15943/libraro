@@ -624,39 +624,16 @@ class DashboardController extends Controller
        
 
  //plantype wise revenue
-          $query = LearnerDetail::leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+          $query = LearnerDetail::leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')->where('learner_transactions.is_paid',1);
                 
-                ->where('learner_detail.library_id', getLibraryId());
-
-            if (getCurrentBranch() != 0) {
-                $query->where('learner_detail.branch_id', getCurrentBranch());
-            }
-
-            $query->when($request->filled('year') && !$request->filled('month'), function ($query) use ($request) {
-                $year = $request->year;
-                return $query->where(function ($q) use ($year) {
-                    $q->whereYear('plan_start_date', '<=', $year)
-                    ->whereYear('plan_end_date', '>=', $year);
-                });
-            });
-
-            $query->when($request->filled('year') && $request->filled('month'), function ($query) use ($request) {
-                $year = $request->year;
-                $month = $request->month;
-                $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-                $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-
-                return $query->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                    $q->where('plan_start_date', '<=', $endOfMonth)
-                    ->where('plan_end_date', '>=', $startOfMonth);
-                });
-            });
-
-            $planTypeWiseRevenue = $query
-                ->groupBy('plan_type_id')
-                ->selectRaw('ROUND(SUM(learner_detail.plan_price_id / plans.plan_id), 2) as revenue, learner_detail.plan_type_id')
-                ->with('planType')
-                ->get();
+          
+           $query->when($year && $month, function ($q) use ($year,$month) { 
+            $q->whereYear('learner_transactions.paid_date', $year) 
+            ->whereMonth('learner_transactions.paid_date', $month); 
+            }); 
+            $planTypeWiseRevenue = $query ->groupBy('learner_detail.plan_type_id') 
+            ->selectRaw( 'learner_detail.plan_type_id, ROUND(SUM(learner_transactions.paid_amount), 0) as revenue' ) 
+            ->with('planType') ->get();
 
             // Prepare labels and data for revenue
             $revenueLabels = $planTypeWiseRevenue->pluck('planType.name')->toArray();
