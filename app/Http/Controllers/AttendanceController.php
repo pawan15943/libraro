@@ -849,7 +849,17 @@ public function summary(Request $request, $learner)
     1️⃣ SUMMARY FROM attendances
     =============================== */
     $attendance = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
-        ->leftJoin('learner_detail', 'learners.id', '=', 'learner_detail.learner_id')
+       ->leftJoin('learner_detail', function ($join) {
+            $join->on('learners.id', '=', 'learner_detail.learner_id')
+                ->where('learner_detail.id', function ($query) {
+                    $query->select('id')
+                        ->from('learner_detail as ld')
+                        ->whereColumn('ld.learner_id', 'learner_detail.learner_id')
+                        ->where('ld.status', 1)
+                        ->orderByDesc('ld.id')
+                        ->limit(1);
+                });
+        })
         ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
         ->where('attendances.learner_id', $learnerId)
         ->where('learners.status', 1)
@@ -873,7 +883,7 @@ public function summary(Request $request, $learner)
     $totalStudents   = $attendance->count();
     $presentStudents = $attendance->where('attendance', 1)->count();
     $absentStudents  = $attendance->where('attendance', 0)->count();
-
+    $learnerName=Learner::where('id',$learnerId)->value('name');
     return view('attendance.summary', compact(
         'attendance',
         'fromDate',
@@ -881,7 +891,8 @@ public function summary(Request $request, $learner)
         'learnerId',
         'totalStudents',
         'presentStudents',
-        'absentStudents'
+        'absentStudents',
+        'learnerName'
     ));
 }
 

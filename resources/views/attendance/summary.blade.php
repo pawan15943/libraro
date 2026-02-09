@@ -102,7 +102,7 @@ $current_route = Route::currentRouteName();
 
 <div class="row mb-4">
     <div class="col-lg-12">
-        <h4 class="mb-4">Attendace Summery</h4>
+        <h4 class="mb-4">Attendace Summery-{{$learnerName}}</h4>
         <div class="row g-2 mb-4">
 
             @forelse($attendance as $index => $value)
