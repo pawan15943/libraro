@@ -130,7 +130,7 @@ $currentMonth = date('m');
                                         <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                         <input type="hidden" name="type" value="learner">
 
-                                        <button type="submit">
+                                        <button type="submit" class="noLoader">
                                             <i class="fa fa-print"></i>
                                         </button>
                                     </form>

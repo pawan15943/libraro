@@ -62,7 +62,7 @@
                                         <input type="hidden" id="custId" name="id" value="{{ $value->id }}">
                                         <input type="hidden" name="type" value="learner">
 
-                                        <button type="submit">
+                                        <button type="submit" class="noLoader">
                                             <i class="fa fa-print"></i>
                                         </button>
                                     </form>

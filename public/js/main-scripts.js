@@ -97,6 +97,11 @@ $(document).on('submit', 'form', function () {
 
     if (!submitBtn.length) return;
 
+    // ❌ Skip if button has .noLoader class
+    if (submitBtn.hasClass('noLoader')) {
+        return;
+    }
+
     // Prevent double submit
     if (submitBtn.prop('disabled')) {
         return false;
