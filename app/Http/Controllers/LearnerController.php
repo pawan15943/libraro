@@ -4161,14 +4161,18 @@ class LearnerController extends Controller
     {
 
         $id = $request->id;
-        $pendingPayment = LearnerTransaction::where('id', $id)->first();
-        $customer = LearnerDetail::where('id', $pendingPayment->learner_detail_id)
+        $tran = LearnerTransaction::where('id', $id) ->first();
+       $pendingPayment = LearnerTransaction::where('learner_id', $tran->learner_id)
+        ->whereNull('deleted_at')
+        ->sum('pending_amount');
+
+        $customer = LearnerDetail::where('id', $tran->learner_detail_id)
             ->with('learner', 'plan', 'plantype')
             ->orderBy('id', 'DESC')
             ->first();
 
 
-        return view('learner.pending-payment', compact('customer', 'pendingPayment'));
+        return view('learner.pending-payment', compact('customer', 'pendingPayment','tran'));
     }
 
     public function getTransactionDetail(Request $request)
@@ -4385,50 +4389,245 @@ class LearnerController extends Controller
         ]);
     }
 
+    // public function learnerTransactionAddUpdate($data)
+    // {
+    //     // 1. Save LearnerTransaction
+    //     $effectivePaid = $data['planPrice'] + $data['locker'] - $data['discount'];
+    //     $pending_amount =  $effectivePaid - $data['paid_amount'];
+
+    //     if ($data['paid_date']) {
+    //         $transaction_date = $data['paid_date']->format('Y-m-d');
+    //     } elseif ($data['start_date']->format('Y-m-d')) {
+    //         $transaction_date = $data['start_date']->format('Y-m-d');
+    //     } else {
+    //         $transaction_date = date('Y-m-d');
+    //     }
+
+    //     $learnerPendingTran=LearnerTransaction::where('learner_id',$data['learner_id'])->where('pending_amount','>',0)->get();
+    //     $oldPendingTotal=LearnerTransaction::where('learner_id',$data['learner_id'])->sum('pending_amount');
+
+    //     if($learnerPendingTran){
+    //         foreach($learnerPendingTran as $data){
+    //             $new_paid=$data['paid_amount'];
+    //             if($new_paid >= $data->pending_amount){
+    //                     $paid_new_amount=$data->pending_amount;
+    //                     $newPending=0;
+    //                     $remaining=$new_paid-$data->pending_amount;
+    //             }else{
+    //                 $paid_new_amount=$new_paid;
+    //                 $newPending=$data->pending_amount-$new_paid;
+    //                 $remaining=0;
+    //             }
+
+    //             $learnerTransaction = LearnerTransaction::where('id',$data->id)->update([
+                   
+                   
+    //                 'paid_amount'       => $paid_new_amount,
+    //                 'pending_amount'    => $newPending,
+    //                 'paid_date'         => $transaction_date,
+    //                 'due_date'        => $data['due_date'],
+                   
+
+    //             ]);
+
+    //             $new_paid=$remaining;
+
+    //         }
+    //         $learnerTransaction = LearnerTransaction::create([
+    //                 'learner_id'        => $data['learner_id'],
+    //                 'library_id'        => getLibraryId(),
+    //                 'learner_detail_id' => $data['learner_detail_id'],
+    //                 'total_amount'      => $effectivePaid,
+    //                 'paid_amount'       => $paid_new_amount,
+    //                 'pending_amount'    => $newPending,
+    //                 'locker_amount'     => $data['locker'] ?? 0,
+    //                 'discount_amount'   => $data['discount'] ?? 0,
+    //                 'paid_date'         => $transaction_date,
+    //                 'is_paid'           => $data['is_paid'] ?? 0,
+    //                 'branch_id'         => getCurrentBranch(),
+    //                 'due_date'        => $data['due_date'],
+    //                 'transaction_id' => transaction_id(),
+
+    //             ]);
+    //          // 2. Add to LearnerTransactionActivity
+    //          if( $data['paid_amount'] >=  $oldPendingTotal){
+    //                 $activityData1 = [
+    //                     'learner_id'   => $data['learner_id'],
+    //                     'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
+    //                     'payment_type' => 'PENDING',
+    //                     'payment_mode' => $data['payment_mode'],
+    //                     'amount'       => $oldPendingTotal,
+    //                     'dr_cr'        => 'Cr',
+    //                 ];
+    //                 $this->learnerTransactionActivity($activityData1);
+    //                 $activityData2 = [
+    //                     'learner_id'   => $data['learner_id'],
+    //                     'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
+    //                     'payment_type' => $data['payment_type'],
+    //                     'payment_mode' => $data['payment_mode'],
+    //                     'amount'       => $data['paid_amount']-$oldPendingTotal,
+    //                     'dr_cr'        => 'Cr',
+    //                 ];
+    //                 $this->learnerTransactionActivity($activityData2);
+    //          }else{
+    //             $activityData1 = [
+    //                 'learner_id'   => $data['learner_id'],
+    //                 'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
+    //                 'payment_type' => 'PENDING',
+    //                 'payment_mode' => $data['payment_mode'],
+    //                 'amount'       => $data['paid_amount'],
+    //                 'dr_cr'        => 'Cr',
+    //             ];
+    //             $this->learnerTransactionActivity($activityData1);
+    //          }
+            
+
+    //     }else{
+    //         $learnerTransaction = LearnerTransaction::create([
+    //             'learner_id'        => $data['learner_id'],
+    //             'library_id'        => getLibraryId(),
+    //             'learner_detail_id' => $data['learner_detail_id'],
+    //             'total_amount'      => $effectivePaid,
+    //             'paid_amount'       => $data['paid_amount'],
+    //             'pending_amount'    => $pending_amount,
+    //             'locker_amount'     => $data['locker'] ?? 0,
+    //             'discount_amount'   => $data['discount'] ?? 0,
+    //             'paid_date'         => $transaction_date,
+    //             'is_paid'           => $data['is_paid'] ?? 0,
+    //             'branch_id'         => getCurrentBranch(),
+    //             'due_date'        => $data['due_date'],
+    //             'transaction_id' => transaction_id(),
+
+    //         ]);
+    //          // 2. Add to LearnerTransactionActivity
+    //         $activityData = [
+    //             'learner_id'   => $data['learner_id'],
+    //             'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
+    //             'payment_type' => $data['payment_type'],
+    //             'payment_mode' => $data['payment_mode'],
+    //             'amount'       => $data['paid_amount'],
+    //             'dr_cr'        => 'Cr',
+    //         ];
+    //     }
+
+       
+    //     $this->learnerTransactionActivity($activityData);
+
+
+    //     return $learnerTransaction;
+    // }
+
     public function learnerTransactionAddUpdate($data)
     {
-        // 1. Save LearnerTransaction
+        // 1. Calculate new plan total
         $effectivePaid = $data['planPrice'] + $data['locker'] - $data['discount'];
-        $pending_amount =  $effectivePaid - $data['paid_amount'];
 
         if ($data['paid_date']) {
             $transaction_date = $data['paid_date']->format('Y-m-d');
-        } elseif ($data['start_date']->format('Y-m-d')) {
+        } elseif ($data['start_date']) {
             $transaction_date = $data['start_date']->format('Y-m-d');
         } else {
             $transaction_date = date('Y-m-d');
         }
+
+        // 2. Get old pending transactions
+        $pendingTransactions = LearnerTransaction::where('learner_id', $data['learner_id'])
+            ->where('pending_amount', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $oldPendingTotal = $pendingTransactions->sum('pending_amount');
+
+        $paidAmount = $data['paid_amount'];
+
+        // 3. Apply payment to old pending first
+        $pendingPaid = min($paidAmount, $oldPendingTotal);
+        $remainingForNewPlan = $paidAmount - $pendingPaid;
+
+        $remainingPendingPayment = $pendingPaid;
+
+        foreach ($pendingTransactions as $tran) {
+            if ($remainingPendingPayment <= 0) {
+                break;
+            }
+
+            $tranPending = $tran->pending_amount;
+
+            if ($remainingPendingPayment >= $tranPending) {
+                // Fully clear this transaction
+                $paidNow = $tranPending;
+                $newPending = 0;
+            } else {
+                // Partially clear
+                $paidNow = $remainingPendingPayment;
+                $newPending = $tranPending - $paidNow;
+            }
+
+            $tran->update([
+                'paid_amount'    => $tran->paid_amount + $paidNow,
+                'pending_amount' => $newPending,
+                'paid_date'      => $transaction_date,
+            ]);
+
+            $remainingPendingPayment -= $paidNow;
+        }
+
+        // 4. New plan payment
+        $newPlanPaid = max(0, $remainingForNewPlan);
+        $newPlanPending = $effectivePaid - $newPlanPaid;
+
+        if ($newPlanPending < 0) {
+            $newPlanPending = 0;
+        }
+
+        // 5. Create new plan transaction
         $learnerTransaction = LearnerTransaction::create([
             'learner_id'        => $data['learner_id'],
             'library_id'        => getLibraryId(),
             'learner_detail_id' => $data['learner_detail_id'],
             'total_amount'      => $effectivePaid,
-            'paid_amount'       => $data['paid_amount'],
-            'pending_amount'    => $pending_amount,
+            'paid_amount'       => $newPlanPaid,
+            'pending_amount'    => $newPlanPending,
             'locker_amount'     => $data['locker'] ?? 0,
             'discount_amount'   => $data['discount'] ?? 0,
             'paid_date'         => $transaction_date,
             'is_paid'           => $data['is_paid'] ?? 0,
             'branch_id'         => getCurrentBranch(),
-            'due_date'        => $data['due_date'],
-            'transaction_id' => transaction_id(),
-
+            'due_date'          => $data['due_date'],
+            'transaction_id'    => transaction_id(),
         ]);
 
-        // 2. Add to LearnerTransactionActivity
-        $activityData = [
-            'learner_id'   => $data['learner_id'],
-            'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
-            'payment_type' => $data['payment_type'],
-            'payment_mode' => $data['payment_mode'],
-            'amount'       => $data['paid_amount'],
-            'dr_cr'        => 'Cr',
-        ];
-        $this->learnerTransactionActivity($activityData);
+        // 6. Activity entries
 
+        // Pending payment activity
+        if ($pendingPaid > 0) {
+            $activityData1 = [
+                'learner_id'   => $data['learner_id'],
+                'particular'   => $data['particular'] ?? 'Paid By Trans',
+                'payment_type' => 'PENDING',
+                'payment_mode' => $data['payment_mode'],
+                'amount'       => $pendingPaid,
+                'dr_cr'        => 'Cr',
+            ];
+            $this->learnerTransactionActivity($activityData1);
+        }
+
+        // New plan payment activity
+        if ($newPlanPaid > 0) {
+            $activityData2 = [
+                'learner_id'   => $data['learner_id'],
+                'particular'   => $data['particular'] ?? 'Paid By Trans',
+                'payment_type' => $data['payment_type'],
+                'payment_mode' => $data['payment_mode'],
+                'amount'       => $newPlanPaid,
+                'dr_cr'        => 'Cr',
+            ];
+            $this->learnerTransactionActivity($activityData2);
+        }
 
         return $learnerTransaction;
     }
+
 
     public function updateLearnerTransactionPayment($transaction, $paid_amount, $payment_mode, $due_date)
     {

@@ -51,12 +51,12 @@ $class=$planDetails['class'];
                         <div class="row g-4">
                             <div class="col-lg-6">
                                 <label for="">Last Due Date <span>*</span>
-                                    @if($pendingPayment?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($pendingPayment->due_date)))
+                                    @if($tran?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($tran->due_date)))
                                     <small class="text-danger"><strong>Overdue</strong></small>
                                     @endif
 
                                 </label>
-                                <input type="date" class="form-control @error('due_date') is-invalid @enderror" id="due_date" value="{{$pendingPayment->due_date ?? 0}}" readonly>
+                                <input type="date" class="form-control @error('due_date') is-invalid @enderror" id="due_date" value="{{$tran->due_date ?? 0}}" readonly>
                                 @error('due_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -67,16 +67,18 @@ $class=$planDetails['class'];
                             <div class="col-lg-6">
                                 <label for="">Pending Payment </label>
                                 <input id="for_pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    value="{{ intval($pendingPayment->pending_amount) }}" @readonly(true)>
-                                <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
+                                    value="{{ intval($pendingPayment) }}" @readonly(true)>
+                                <input type="hidden" name="transaction_id" value="{{ $tra->id ?? '' }}">
+                                <input type="hidden" name="learner_id" value="{{ $tra->learner_id ?? '' }}">
                             </div>
 
                             
                             <div class="col-lg-4">
                                 <label for="">Amount want to Pay <span>*</span></label>
                                 <input id="amount_to_pay" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    name="pending_amount" value="{{ intval($pendingPayment->pending_amount) }}">
-                                <input type="hidden" name="transaction_id" value="{{ $pendingPayment->id ?? '' }}">
+                                    name="pending_amount" value="{{ intval($pendingPayment) }}">
+                                <input type="hidden" name="transaction_id" value="{{ $tra->id ?? '' }}">
+                                <input type="hidden" name="learner_id" value="{{ $tra->learner_id ?? '' }}">
                             </div>
                             <div class="col-lg-4 due-date-wrapper">
                                 <label for="">Next Due Date <span>*</span></label>
@@ -102,7 +104,7 @@ $class=$planDetails['class'];
 
                         </div>
 
-                        @if($pendingPayment && $pendingPayment->pending_amount)
+                        @if($pendingPayment && $pendingPayment > 0)
 
                         <div class="row mt-4">
                             <div class="col-lg-3">
