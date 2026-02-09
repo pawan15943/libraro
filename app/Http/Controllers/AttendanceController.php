@@ -851,7 +851,14 @@ public function summary(Request $request, $learner)
     $attendance = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
        ->leftJoin('learner_detail', function ($join) {
             $join->on('learners.id', '=', 'learner_detail.learner_id')
-                ->where('learner_detail.status', 1);
+                ->where('learner_detail.id', function ($query) {
+                    $query->select('id')
+                        ->from('learner_detail as ld')
+                        ->whereColumn('ld.learner_id', 'learner_detail.learner_id')
+                        ->where('ld.status', 1)
+                        ->orderByDesc('ld.id')
+                        ->limit(1);
+                });
         })
         ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
         ->where('attendances.learner_id', $learnerId)
