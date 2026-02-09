@@ -335,7 +335,26 @@ class LoadMenus
                     )
                     ->get();
                 
+                // for dropdown year and month
+                $dates = LearnerDetail::withTrashed()->select('plan_start_date', 'plan_end_date')->get();
 
+                $months = [];
+                foreach ($dates as $date) {
+                    $start = Carbon::parse($date->plan_start_date)->startOfMonth();
+                    $end = Carbon::parse($date->plan_end_date)->startOfMonth();
+            
+                    // Loop through the months within the start and end date range
+                    while ($start <= $end) {
+                        $year = $start->year;
+                        $monthNumber = $start->month;
+                        $monthName = $start->format('F');
+            
+                        // Add month to the respective year in the months array
+                        $months[$year][$monthNumber] = $monthName;
+            
+                        $start->addMonth();
+                    }
+                }
 
             }else{
                 $diffInExtensionDays='';
@@ -343,6 +362,7 @@ class LoadMenus
                 $lib_extenday='';
                 $wabaTemplates ='';
                 $textTemplates ='';
+                $months='';
                
             }
         
@@ -387,6 +407,7 @@ class LoadMenus
             View::share('lib_extenday', $lib_extenday);
             View::share('wabaTemplates', $wabaTemplates);
             View::share('textTemplates', $textTemplates);
+            View::share('months', $months);
           
           
         }
