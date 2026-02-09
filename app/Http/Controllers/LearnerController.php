@@ -3358,7 +3358,7 @@ class LearnerController extends Controller
                     $customer->forceDelete();
                 } else {
 
-                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->orderBy('DESC')->first();
+                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->orderBy('id', 'DESC')->first();
                     if (!$lastLearnerDetail) {
                         throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
                     }
