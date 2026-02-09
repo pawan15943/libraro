@@ -227,6 +227,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     // Other Pages Routes
 
+    Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report');
+    Route::get('/monthly-payment-export', [ReportController::class, 'exportMonthlyPayment'])->name('monthly.payment.export');
+
     Route::get('pending/payment', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
     Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');
     Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report');
