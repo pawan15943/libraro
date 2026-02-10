@@ -651,11 +651,11 @@ class QrEntryController extends Controller
              $learner=null;
         }
         if ($customer->seat_no) {
-            $filteredPlanTypes = filterPlantypeFromseat($customer->seat_no, null);
+            $filteredPlanTypes = filterPlantypeFromseat($customer->seat_no, $learner?$learner->id : null);
         } else {
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
-
+      
         return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner','filteredPlanTypes'));
     }
 
@@ -869,14 +869,24 @@ class QrEntryController extends Controller
 
             }
 
+            if (!empty($seat_no)) {
+               
+                $check = checkAvailability(getCurrentBranch(),$seat_no,$learnerId ?? null,
+                    $plan_type_id,$plan_id,$start_date
+                );
 
-            if($seat_no){
-                $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
-                 if ($result['error']) {
-                    return redirect()->back()->with('error', $result['message'])->withInput();
-                
+                // 🔴 STOP immediately if seat is not available
+                if ($check['error'] === true) {
+                   return redirect()->back()->with('error', $check['message'])->withInput();
                 }
             }
+            // if($seat_no){
+            //     $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+            //      if ($result['error']) {
+            //         return redirect()->back()->with('error', $result['message'])->withInput();
+                
+            //     }
+            // }
             
             
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
@@ -977,7 +987,7 @@ class QrEntryController extends Controller
                    
 
              $learnerTransaction = LearnerTransaction::create([
-                'learner_id' => $customer->id,
+                'learner_id'        => $customer->id,
                 'library_id'        => getLibraryId(),
                 'branch_id'         => getCurrentBranch(),
                 'learner_detail_id' => $learner_detail->id,
@@ -988,9 +998,9 @@ class QrEntryController extends Controller
                 'discount_amount'   => $discount ?? 0,
                 'paid_date'         => $transaction_date,
                 'is_paid'           => $is_paid ?? 0,
-                'due_date'        => $request->due_date ?? null,
-                'refund'        => $pending_refund,
-                 'transaction_id' => transaction_id(),
+                'due_date'          => $request->due_date ?? null,
+                'refund'            => $pending_refund,
+                'transaction_id'    => transaction_id(),
             ]);
            
             //learner Activity
@@ -1030,49 +1040,96 @@ class QrEntryController extends Controller
 
     public function findCustomer(Request $request, $uuid)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
+            'login_with' => 'required|in:dob,email,learner_no',
             'mobile' => 'required|digits:10',
             'learner_no'=>'required'
+        ],[
+             'login_with.required' => 'Please choose login type',
         ]);
-         try {
-            $dob = Carbon::parse($request->learner_no)->format('Y-m-d');
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();   // important
+        }
+         
+        $dob = null;
+
+        // Safe DOB conversion
+        try {
+            $dob = Carbon::createFromFormat('d/m/Y', $request->learner_no)->format('Y-m-d');
         } catch (\Exception $e) {
             $dob = null;
         }
 
+
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
-        // Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-        //     ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
-        //     ->first();
-        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)->where(function ($query) use ($request,$dob) {
-                    $query->where('learner_no', $request->input('learner_no'));
-                        if ($dob) {
-                            \Log::info('dob part hit',['dob'=>$dob]);
-                            $query->orWhere('dob', $dob);
-                        }
-                       // Email (only if valid)
-                        if (filter_var($request->input('learner_no'), FILTER_VALIDATE_EMAIL)) {
-                            $query->orWhere('email', encryptData($request->input('learner_no')));
-                        }
-                })
-                ->where('mobile', encryptData($request->mobile))
-                ->first();
+      
+        $customer = Learner::withoutGlobalScopes()
+        ->where('branch_id', $branch->id) ->where('mobile', encryptData($request->mobile))
+       ->when($request->login_with === 'learner_no' && $request->learner_no, function ($q) use ($request) {
+            $q->where('learner_no', $request->learner_no);
+        })
+        ->when($request->login_with === 'dob' && $dob, function ($q) use ($dob) {
+            
+            $q->where('dob', $dob);
+        })
+        ->when(
+            $request->login_with === 'email' &&
+            filter_var($request->learner_no, FILTER_VALIDATE_EMAIL),
+            function ($q) use ($request) {
+                $q->where('email', encryptData($request->learner_no));
+            }
+        )->first();
 
         if (!$customer) {
-            return redirect()->back()->with('error', 'No customer found with this mobile.');
+            return redirect()->back()->with('error', 'Sorry, we couldn’t find your record. Please verify your details and try again.')->withInput();
         }
 
-        $customer_detail = LearnerDetail::withoutGlobalScopes()->where('learner_id', $customer->id)
+        $customer_detail = LearnerDetail::where('learner_id', $customer->id)
             ->with('plan', 'planType')
             ->latest() // gets the latest detail record
             ->first();
-       
+        if (!$customer_detail ) {
+
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $customer->id)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
+
+            if ($detail) {
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+
+                if ($operation === 'deleteSeat') {
+                     return redirect()->back()->with('error', 'Your plan has been deleted')->withInput();
+                   
+                }
+
+                if ($operation === 'closeSeat') {
+                    return redirect()->back()->with('error', 'Your plan has been closed')->withInput();
+                   
+                }
+            }
+           return redirect()->back()->with('error', 'Plan Not Available')->withInput(); 
+           
+        }
+        if($customer_detail->status!=1){
+            return redirect()->back()->with('error', 'Plan Expired.Please Reactivate Your plan')->withInput(); 
+        }
+        $today = Carbon::today();
+        $diffInDays = $today->diffInDays($customer_detail->plan_end_date, false);
+        if($diffInDays > 5){
+            return redirect()->back()->with('error', 'Plan is Active now please try before 5 days of your expiry or contact library owner')->withInput(); 
+        }
         $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
         if (!$transaction) {
-            return redirect()->back()->with('error', 'No customer transaction found with this mobile.');
+            return redirect()->back()->with('error', 'No customer transaction found with this mobile.')->withInput();
 
         }
         $learnerSeat=$this->getSeatDisplayByMainNo($customer->seat_no,$customer->branch_id);
+
 
         return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction','learnerSeat'));
     }

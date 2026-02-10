@@ -1899,7 +1899,7 @@ if (!function_exists('checkAvailability')) {
         }
         $startDate = Carbon::parse($startDate);
 
-        $endDate = getEndDate($planId, $startDate);
+        $endDate = getEndDate($planId, $startDate,$branchId);
 
         $requestedRanges = normalizeTimeRange(
             $planType->start_time,

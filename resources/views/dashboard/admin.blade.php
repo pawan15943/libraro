@@ -540,7 +540,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                                 @csrf
                                                 <input type="hidden" name="booking_id" value="{{ $value->id }}">
                                                 <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-check"></i></button>
+                                                <button type="submit" class="btn btn-success noLoader" ><i class="fa fa-check"></i></button>
                                             </form>
 
                                         </li>
