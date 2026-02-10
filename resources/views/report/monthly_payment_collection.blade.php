@@ -26,9 +26,6 @@ $currentMonth = date('m');
 
                 <div class="row">
                    
-
-
-
                     <div class="col-lg-4">
                         <label>Start Date</label>
                         <input type="date" class="form-control" name="start_date" value="{{ request('start_date') }}">

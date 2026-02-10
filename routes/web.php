@@ -230,7 +230,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report');
     Route::get('/monthly-payment-export', [ReportController::class, 'exportMonthlyPayment'])->name('monthly.payment.export');
 
-    Route::get('pending/payment', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
+    Route::get('pending/payment/report', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
     Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');
     Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report');
     Route::get('payment/collection/report', [ReportController::class, 'paymentCollection'])->name('payment.collection.report');
@@ -300,7 +300,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/payment/{id?}', [LearnerController::class, 'makePayment'])->name('learner.payment');
     Route::post('/payment/store', [LearnerController::class, 'paymentStore'])->name('learner.payment.store');
     Route::get('/getTransactionDetail', [LearnerController::class, 'getTransactionDetail'])->name('getTransactionDetail');
-    Route::get('learner/pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
+    Route::get('pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
 
     Route::get('/seats/view', [DashboardController::class, 'viewSeats'])->name('learners.list.view');
