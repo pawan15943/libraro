@@ -392,6 +392,10 @@ span.close-modal {
                                 @error('paid_amount')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
+                                @if($customer->payment_screenshot)
+                                    <a href="{{ asset($customer->payment_screenshot) }}" class="view-image">View</a>
+                                    
+                                @endif
                             </div>
 
                             <div class="col-lg-4">
