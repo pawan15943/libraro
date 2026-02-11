@@ -1090,31 +1090,32 @@ class QrEntryController extends Controller
             ->with('plan', 'planType')
             ->latest() // gets the latest detail record
             ->first();
-        if (!$customer_detail ) {
+        
 
             $detail = LearnerDetail::withTrashed()
                 ->where('learner_id', $customer->id)
                 ->orderBy('plan_end_date', 'DESC')
                 ->first();
+               
 
             if ($detail) {
                 $operation = DB::table('learner_operations_log')
                     ->where('learner_detail_id', $detail->id)
                     ->value('operation');
-
+              
                 if ($operation === 'deleteSeat') {
-                     return redirect()->back()->with('error', 'Your plan has been deleted')->withInput();
+                     return redirect()->back()->with('error', 'Your plan has been deleted. Please Contact library owner to activate')->withInput();
                    
                 }
 
                 if ($operation === 'closeSeat') {
-                    return redirect()->back()->with('error', 'Your plan has been closed')->withInput();
+                    return redirect()->back()->with('error', 'Your plan has been closed. Please Contact library owner to activate')->withInput();
                    
                 }
             }
-           return redirect()->back()->with('error', 'Plan Not Available')->withInput(); 
            
-        }
+           
+       
         if($customer_detail->status!=1){
             return redirect()->back()->with('error', 'Plan Expired.Please Reactivate Your plan')->withInput(); 
         }

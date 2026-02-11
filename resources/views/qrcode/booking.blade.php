@@ -210,7 +210,7 @@
 
                             <div class="col-lg-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="plan_price" type="text" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
+                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 <span id="chargeable_day_book" class="text-info"></span>
                             </div>
