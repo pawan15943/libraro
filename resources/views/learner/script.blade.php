@@ -1773,8 +1773,9 @@
                    
                     showFormErrors(response.errors);
                 }  else {
-                    $("#error-message").text(response.message).show();
-                    $("#success-message").hide();
+                    
+                    $(".error-message").text(response.message).show();
+                    $(".success-message").hide();
                     // Swal.fire({
                     //     icon: 'error',
                     //     title: 'Error!',
@@ -1790,7 +1791,7 @@
                 if (xhr.status === 422) {
                    
                     const response = xhr.responseJSON;
-                    console.log('err',response.message);
+                    
                     // showFormErrors(response); 
                     if (response.error) {
                         $(".error-message").text(response.message).show();

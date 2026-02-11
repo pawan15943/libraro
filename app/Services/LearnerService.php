@@ -301,14 +301,14 @@ class LearnerService
             $customer = Learner::findOrFail($data['learner_id']);
              if (!$customer) {
                 return [
-                    'error' => true,
+                    'success' => false,
                     'message' => 'Learner not found.'
                 ];
             }
 
             if (alreadyRenewed($customer->id)) {
                 return [
-                    'error' => true,
+                    'success' => false,
                     'message' => 'Already have plan in queue'
                 ];
             }
@@ -346,7 +346,7 @@ class LearnerService
 
                 if ($result['error']) {
                     return [
-                        'error' => true,
+                        'success' => false,
                         'message' => $result['message']
                     ];
                 }
@@ -408,14 +408,14 @@ class LearnerService
 
              if ( ($paid_amount > ($effectivePaid+$oldTotalPending)) || ($paid_amount == 0 && $payment_mode != 3)) {
                  return [
-                        'error' => true,
+                        'success' => false,
                         'message' => 'Paid amount is not valid',
                     ];
             
             }
             if (($pending_amount > 0) &&  empty($due_date)  && $payment_mode != 3) {
                     return [
-                        'error' => true,
+                        'success' => false,
                         'message' => 'Due date is required',
                     ];
             }
