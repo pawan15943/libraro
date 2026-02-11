@@ -273,7 +273,7 @@ class LearnerService
         }
 
         // New plan payment activity
-        if ($newPlanPaid > 0) {
+        if ($newPlanPaid >=0) {
             $activityData2 = [
                 'branchId'    =>$data['branchId'],
                 'learner_id'   => $data['learner_id'],
