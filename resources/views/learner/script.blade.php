@@ -1696,7 +1696,7 @@
 
      // RENEW FORM SUBMIT
     $(document).on('submit', '#upgradeForm', function(event) {
-        
+       
         event.preventDefault();
         var formData = new FormData(this);
         var user_id = $('#update_user_id').val();
@@ -1768,25 +1768,35 @@
 
                    
                 } else if (response.errors) {
+                   
                     showFormErrors(response.errors);
                 }  else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: response.message || 'Something went wrong. Please try again.'
-                        }).then((result) => {
+                    $("#error-message").text(response.message).show();
+                    $("#success-message").hide();
+                    // Swal.fire({
+                    //     icon: 'error',
+                    //     title: 'Error!',
+                    //     text: response.message || 'Something went wrong. Please try again.'
+                    //     }).then((result) => {
                         
-                        $('#seatAllotmentModal3').modal('hide');
-                    });
+                    //     $('#seatAllotmentModal3').modal('hide');
+                    // });
                 }
             },
             error: function(xhr, status, error) {
                             
                 if (xhr.status === 422) {
-                    const errors = xhr.responseJSON.errors;
-                    showFormErrors(errors);                       
+                   
+                    const response = xhr.responseJSON;
+                    console.log('err',response.message);
+                    // showFormErrors(response); 
+                    if (response.error) {
+                        $(".error-message").text(response.message).show();
+                        $(".success-message").hide();
+                    }                      
                 } else {
                    if (xhr.status === 409) {
+                  
                         Swal.fire({
                             icon: 'warning',
                             title: 'Renewal Blocked',
@@ -1797,6 +1807,7 @@
                       
                             });
                     } else {
+                   
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',

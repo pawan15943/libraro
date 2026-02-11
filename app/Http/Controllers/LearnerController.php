@@ -728,7 +728,407 @@ class LearnerController extends Controller
         }
     }
 
-    //  public function changePlanUpdate(Request $request, $id = null)
+   
+
+     //upgrade form view
+    public function getLearner(Request $request, $id = null)
+    {
+        $routeName = $request->route()->getName();
+        $today = Carbon::today()->format('Y-m-d');
+        $customerId = $request->id ?? $id;
+        $hasFuturePlan = LearnerDetail::where('learner_id', $customerId)
+            ->where('plan_end_date', '>', $today)
+            ->exists();
+        $hasPastPlan = LearnerDetail::where('learner_id', $customerId)
+            ->where('plan_end_date', '<=', $today)
+            ->exists();
+        $isalreadyRenew = LearnerDetail::where('learner_id', $customerId)
+            ->where('plan_end_date', '>', $today)
+            ->where('status', 0)
+            ->exists();
+
+        $is_renew = $hasFuturePlan && $hasPastPlan; // 3rd learner detail condition fail
+
+
+        $available_seat = $this->learnerService->getAvailableSeats();
+
+        $customer = $this->fetchCustomerData($customerId, $is_renew, $status = 1, $detailStatus = 1, $perPage = 10, $paginate = false);
+        $customer_detail = LearnerDetail::where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
+
+        $oneWeekLater = Carbon::parse($customer->plan_start_date)->addWeek();
+        $showButton = Carbon::now()->greaterThanOrEqualTo($oneWeekLater);
+        $plantype = PlanType::get();
+        $otherPlantype = LearnerDetail::where('learner_id', '!=', $customerId)
+            ->where('seat_no', $customer_detail->seat_no)
+            ->where('status', 1)
+            ->pluck('plan_type_id');
+
+        if ($customer_detail->seat_no) {
+            $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
+        } else {
+            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+        }
+
+        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
+        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+        $selectedDiscountType = $discountAmount ? 'amount' : '';
+        $today = \Carbon\Carbon::now();
+        if($hasLocker){
+            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
+        }else{
+            $locker_amt=0;
+        }
+
+        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
+    }
+   
+    //renew and learner  Upgrade
+    public function learnerUpgradeRenew(Request $request,LearnerService $service)
+    {
+
+        
+        $rules = [
+
+            'plan_id' => 'required',
+            'plan_type_id' => 'required|exists:plan_types,id',
+            'plan_price_id' => 'required',
+            'payment_mode' => 'required',
+            'user_id' => 'required',
+            'discountType' => 'nullable',
+            'discount_amount' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
+                        $fail('Discount type must be selected when providing a discount amount.');
+                    }
+                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
+                        $fail('Discount amount is required when a discount type is selected.');
+                    }
+                }
+            ],
+            'locker_no' => [
+                'nullable',
+                'required_if:locker,yes',
+                'numeric'
+            ],
+
+        ];
+
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        
+        if ($request->payment_type == 'RENEW') {
+            if (!Gate::allows('has-permission', 'Renew Seat')) {
+              
+                return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+            }
+        }
+
+       
+
+         $result = $service->processPlan([
+            'learner_id' => $request->user_id,
+            'plan_id' => $request->plan_id,
+            'plan_type_id' => $request->plan_type_id,
+            'plan_price' => $request->plan_price_id,
+            'payment_mode' => $request->payment_mode,
+            'discount_type' => $request->discountType,
+            'discount_amount' => $request->discount_amount,
+            'paid_amount' => $request->paid_amount,
+            'locker_amount' => $request->locker_amount,
+            'locker_no' => $request->locker_no,
+            'payment_type' => $request->payment_type ?? 'RENEW',
+            'paid_date' => $request->paid_date,
+            'due_date' => $request->due_date,
+            'particular' => 'Paid by website',
+            'branchId' =>getCurrentBranch(),
+            'library_id' =>getLibraryId()
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json($result);
+        }
+
+        if ($result['success']) {
+            return redirect()->route('learners')
+                ->with('success', $result['message']);
+        }
+
+        return redirect()->back()
+            ->with('error', $result['message']);
+
+
+
+    }
+    // reactive learner get
+    public function reactiveUser(Request $request, $id = null)
+    {
+
+        $customerId = $request->id ?? $id;
+
+        $is_renew = $this->learnerService->getRenewalStatus($customerId);
+        $available_seat = $this->learnerService->getAvailableSeats();
+
+        $customer = $this->fetchCustomerData($customerId, false, $status = 0, $detailStatus = 0, $perPage = 10, $paginate = false);
+
+        $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
+        
+        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
+        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+        $selectedDiscountType = $discountAmount ? 'amount' : '';
+        $oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
+        $today = \Carbon\Carbon::now();
+        if($hasLocker){
+            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
+        }else{
+            $locker_amt=0;
+        }
+
+        if ($request->expectsJson() || $request->has('id')) {
+
+            return response()->json($customer);
+        } else {
+
+            return view('learner.reactive', compact('customer', 'available_seat','hasLocker','discountAmount','selectedDiscountType','oneWeekLater','today','locker_amt'));
+        }
+    }
+    // reactive learner store
+    public function reactiveLearner(Request $request, $id)
+    {
+
+
+        $rules = [
+
+            'plan_id' => 'required',
+            'seat_no' => 'nullable',
+            'plan_type_id' => 'required',
+            'plan_price_id' => 'required',
+            'plan_start_date' => 'required',
+            'user_id' => 'required',
+            'learner_detail' => 'required',
+            'payment_mode' => 'required',
+            'discountType' => 'nullable',
+            'discount_amount' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
+                        $fail('Discount type must be selected when providing a discount amount.');
+                    }
+                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
+                        $fail('Discount amount is required when a discount type is selected.');
+                    }
+                }
+            ],
+            'locker_no' => [
+                'nullable',
+                'required_if:locker,yes',
+                'numeric'
+            ],
+            'locker_amount' => [
+                'nullable',
+                'required_if:locker,yes',
+               
+            ],
+
+        ];
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+        if (!Gate::allows('has-permission', 'Reactive Seat')) {
+            // if (!Auth::user()->can('has-permission', 'Reactive Seat')) {
+            return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
+        }
+
+
+        DB::beginTransaction();
+
+        try {
+            // for log value
+
+            $old_value = LearnerDetail::withTrashed()
+                ->where('id', $request->learner_detail)
+                ->first();
+
+            // for log value end
+            $customer = Learner::withTrashed()
+                ->findOrFail($request->user_id);
+            if (!$customer) {
+                return redirect()->back()->with('error', 'Learner not found.');
+            }
+
+            if ($request->seat_no) {
+                $seat_no = $request->input('seat_no');
+            } else {
+                $seat_no = null;
+            }
+          
+            $plan_id = $request->input('plan_id');
+            $plan_type_id = $request->input('plan_type_id');
+            $start_date = Carbon::parse($request->input('plan_start_date'));
+            $endDate = getEndDate($plan_id, $start_date);
+            $learnerId = Learner::where('id', $customer->id)->where('status', 0)->exists();
+           
+            if(LearnerDetail::where('learner_id',$customer->id)->where('status', 1)->exists()){
+                return redirect()->back()->with('error', 'Your Plan Already Active')->withInput();
+            }
+             if ($request->seat_no) {
+                
+                $result = checkSeatAvailability($seat_no, $learnerId ? $customer->id : null, $request->plan_type_id, $start_date, $endDate);
+
+                if ($result['error']) {
+                    return redirect()->back()->with('error', $result['message'])->withInput();
+                }
+
+               
+            }
+            $locker = (float) $request->input('locker_amount', 0);
+            $planPrice = (float) $request->input('plan_price_id', 0);
+            if ($request->discountType == 'amount') {
+                $discount = $request->discount_amount;
+            } elseif ($request->discountType == 'percentage') {
+                $total = $planPrice + $locker;
+                $discount = ($total * $request->discount_amount) / 100;
+            } else {
+                $discount = 0;
+            }
+            $paid_amount = (float) $request->input('paid_amount', 0);
+            $effectivePaid = $planPrice + $locker - $discount;
+            $pending_amount =  $effectivePaid - $paid_amount;
+
+            
+            $planType = PlanType::find($request->plan_type_id);
+            $hours = $planType->slot_hours;
+
+           
+            if ($request->payment_mode == 1 || $request->payment_mode == 2) {
+                $is_paid = 1;
+                $payment_mode = $request->payment_mode;
+            } else {
+                $is_paid = 0;
+                $payment_mode = 3;
+            }
+            if ($request->input('payment_mode') == 3) {
+
+                $pending_amount = $paid_amount;
+                $paid_amount = 0;
+            }
+            
+            $extendDay = getExtendDays();
+
+            $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+            if ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
+                $status = 1;
+            } else {
+                $status = 0;
+            }
+
+            if ($request->paid_date) {
+                $transaction_date = $request->paid_date;
+            } else {
+                $transaction_date = null;
+            }
+           
+            $due_date = $request->due_date ?? null;
+            
+           
+            if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3)) {
+                return redirect()->back()->withInput()->with('error', 'Paid amount is not valid');
+            }
+
+            if (($pending_amount > 0) && (empty($due_date)) && $payment_mode != 3) {
+                return redirect()->back()->withInput()->with('error', 'Due date is required');
+            }
+
+            $customer->seat_no = $seat_no;
+            $customer->hours = $hours;
+            $customer->status = $status;
+            if ($customer->trashed()) {
+                $customer->restore();
+            }
+           
+            $learner_detail = LearnerDetail::create([
+                'library_id' => getLibraryId(),
+                'branch_id' => getCurrentBranch(),
+                'learner_id' => $customer->id,
+                'plan_id' => $plan_id,
+               'plan_type_id' => $plan_type_id,
+                'plan_price_id' => $planPrice,
+                'plan_start_date' => $start_date->format('Y-m-d'),
+                'plan_end_date' => $endDate->format('Y-m-d'),
+                'join_date' => $start_date->format('Y-m-d'),
+                'hour' => $hours,
+                'seat_no' => $seat_no,
+                'payment_mode' => $payment_mode,
+                'is_paid' => 1,
+                'status' => $status,
+            ]);
+
+            // learner log table update
+            DB::table('learner_operations_log')->insert([
+                'learner_id' => $customer->id,
+                'learner_detail_id' => $learner_detail->id,
+                'library_id' => $customer->library_id,
+                'field_updated' => 'seat_no',
+                'old_value' => $old_value->seat_no,
+                'new_value' => $request->seat_no,
+                'updated_by' => getLibraryId(),
+                'branch_id' =>  getCurrentBranch(),
+                'operation' => 'reactive',
+                'created_at' => now(),
+            ]);
+
+            if ($request->payment_type) {
+                $payment_type = $request->payment_type;
+            }
+            $data = [];
+            $data['planPrice'] = $planPrice;
+            $data['paid_amount'] = $paid_amount;
+            $data['locker'] = $locker;
+            $data['discount'] = $discount;
+            $data['start_date'] = $start_date;
+            $data['paid_date'] = $transaction_date;
+            $data['is_paid'] = $is_paid;
+            $data['learner_detail_id'] = $learner_detail->id;
+            $data['learner_id'] = $customer->id;
+            $data['payment_type'] = 'REACTIVE';
+            $data['payment_mode'] = $payment_mode;
+            $data['due_date'] = $request->due_date ?? null;
+            $data['particular'] = 'Paid By Website';
+            $this->learnerTransactionAddUpdate($data);
+            if ($status == 1) {
+                $this->learnerStatusUpdate($customer->id);
+                // $this->dataUpdate();
+            }
+
+            $customer->locker_no = $request->locker_no;
+            $customer->save();
+           
+
+            DB::commit();
+
+            return redirect()->route('learnerHistory')->with('success', 'Learner updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
+    }
+
+     //  public function changePlanUpdate(Request $request, $id = null)
     // {
 
     //     $rules = [
@@ -1038,600 +1438,6 @@ class LearnerController extends Controller
     //     }
     // }
     // 
-
-     //upgrade form view
-    public function getLearner(Request $request, $id = null)
-    {
-        $routeName = $request->route()->getName();
-        $today = Carbon::today()->format('Y-m-d');
-        $customerId = $request->id ?? $id;
-        $hasFuturePlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '>', $today)
-            ->exists();
-        $hasPastPlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '<=', $today)
-            ->exists();
-        $isalreadyRenew = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '>', $today)
-            ->where('status', 0)
-            ->exists();
-
-        $is_renew = $hasFuturePlan && $hasPastPlan; // 3rd learner detail condition fail
-
-
-        $available_seat = $this->learnerService->getAvailableSeats();
-
-        $customer = $this->fetchCustomerData($customerId, $is_renew, $status = 1, $detailStatus = 1, $perPage = 10, $paginate = false);
-        $customer_detail = LearnerDetail::where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
-
-        $oneWeekLater = Carbon::parse($customer->plan_start_date)->addWeek();
-        $showButton = Carbon::now()->greaterThanOrEqualTo($oneWeekLater);
-        $plantype = PlanType::get();
-        $otherPlantype = LearnerDetail::where('learner_id', '!=', $customerId)
-            ->where('seat_no', $customer_detail->seat_no)
-            ->where('status', 1)
-            ->pluck('plan_type_id');
-
-        if ($customer_detail->seat_no) {
-            $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
-        } else {
-            $filteredPlanTypes = PlanType::select('id', 'name')->get();
-        }
-
-        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
-        $selectedDiscountType = $discountAmount ? 'amount' : '';
-        $today = \Carbon\Carbon::now();
-        if($hasLocker){
-            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
-        }else{
-            $locker_amt=0;
-        }
-
-        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
-    }
-   
-    //renew and learner  Upgrade
-    public function learnerUpgradeRenew(Request $request)
-    {
-
-        
-        $rules = [
-
-            'plan_id' => 'required',
-            'plan_type_id' => 'required|exists:plan_types,id',
-            'plan_price_id' => 'required',
-            'payment_mode' => 'required',
-            'user_id' => 'required',
-            'discountType' => 'nullable',
-            'discount_amount' => [
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
-                        $fail('Discount type must be selected when providing a discount amount.');
-                    }
-                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
-                        $fail('Discount amount is required when a discount type is selected.');
-                    }
-                }
-            ],
-            'locker_no' => [
-                'nullable',
-                'required_if:locker,yes',
-                'numeric'
-            ],
-
-        ];
-
-
-        $validator = Validator::make($request->all(), $rules);
-        if ($validator->fails()) {
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        
-        if ($request->payment_type == 'RENEW') {
-            if (!Gate::allows('has-permission', 'Renew Seat')) {
-                //  if (!Auth::user()->can('has-permission', 'Renew Seat')) {
-                return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
-            }
-        }
-
-        $currentDate = date('Y-m-d');
-        DB::beginTransaction();
-
-        try {
-            $customer = Learner::findOrFail($request->user_id);
-            
-            if (!$customer) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Learner not found.'
-                ], 404);
-            }
-            
-
-            if(alreadyRenewed($request->user_id)){
-                 return response()->json([
-                    'success' => false,
-                    'message' => 'Already Have plan in que'
-                ], 409);
-            }
-
-
-            if ($request->learner_detail) {
-                $learner_detail = LearnerDetail::where('id', $request->learner_detail)->first();
-            } else {
-                $learner_detail = LearnerDetail::where('learner_id', $request->user_id)->orderBy('id', 'DESC')->first();
-            }
-            // Determine hours based on plan_type_id
-            $seat_no = $customer->seat_no;
-            $plan_type_id = $request->input('plan_type_id');
-            $plan_id = $request->plan_id;
-            $start_date = Carbon::parse($learner_detail->plan_end_date)->addDay();
-            $endDate = getEndDate($plan_id, $start_date);
-            if ($seat_no) {
-                $result = checkSeatAvailability($seat_no, $customer->id, $plan_type_id, $start_date, $endDate);
-
-                if ($result['error']) {
-                    if ($request->expectsJson()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => $result['message']
-                        ], 422);
-                    }
-                    return redirect()->back()->with('error', $result['message'])->withInput();
-                } 
-            }
-
-            $planType = PlanType::find($plan_type_id);
-            $hours = $planType->slot_hours;
-
-            $planPrice = (float) $request->input('plan_price_id', 0);
-            $locker = (float) $request->input('locker_amount', 0);
-            $paid_amount = (float) $request->input('paid_amount', 0);
-            if ($request->discountType == 'amount') {
-                $discount = $request->discount_amount;
-            } elseif ($request->discountType == 'percentage') {
-                $total = $planPrice + $locker;
-                $discount = ($total * $request->discount_amount) / 100;
-            } else {
-                $discount = 0;
-            }
-
-            
-            $effectivePaid = $planPrice + $locker - $discount;
-            $pending_amount =  $effectivePaid - $paid_amount;
-            $payment_mode = $request->payment_mode;
-           
-            if ($payment_mode == 3) {
-                $pending_amount = $paid_amount;
-                $paid_amount    = 0;
-            }
-
-
-
-
-            if ($request->payment_mode == 1 || $request->payment_mode == 2) {
-                $is_paid = 1;
-            } else {
-                $is_paid = 0;
-            }
-
-            $extendDay   = getExtendDays();
-            $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-            $currentDate  = date('Y-m-d');
-
-            if ($learner_detail && $learner_detail->plan_end_date < $currentDate && $endDate->gt($currentDate) && $is_paid == 1) {
-                $status = 1;
-            } elseif ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
-                $status = 1;
-            } else {
-                $status = 0;
-            }
-
-
-            if ($request->paid_date) {
-                $transaction_date = $request->paid_date;
-            } else {
-                $transaction_date = null;
-            }
-
-            $due_date = $request->due_date ?? null;
-
-
-            if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3) && $request->expectsJson()) {
-                return response()->json([
-                    'error' => true,
-                    'message' => 'Paid amount is not valid',
-                ], 422);
-                die;
-            }
-            if (($pending_amount > 0) &&  empty($due_date)  && $request->expectsJson() && $payment_mode != 3) {
-                return response()->json([
-                    'error' => true,
-                    'message' => 'Due date is required',
-                ], 422);
-                die;
-            }
-            if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3)) {
-                return redirect()->back()->with('error', 'Paid amount is not valid');
-            }
-
-            if (($pending_amount > 0) && (empty($due_date)) && $payment_mode != 3) {
-                return redirect()->back()->with('error', 'Due date is required');
-            }
-
-            $learner_detail = LearnerDetail::create([
-                'library_id' => $customer->library_id,
-                'branch_id' => getCurrentBranch(),
-                'learner_id' => $customer->id,
-                'plan_id' => $plan_id,
-                'plan_type_id' => $plan_type_id,
-                'plan_price_id' => $planPrice,
-                'plan_start_date' => $start_date->format('Y-m-d'),
-                'plan_end_date' => $endDate->format('Y-m-d'),
-                'join_date' => $learner_detail->join_date,
-                'hour' => $hours,
-                'seat_no' => $learner_detail->seat_no,
-                'payment_mode' => $payment_mode,
-                'status' => $status,
-                'is_paid' => $is_paid,
-                
-            ]);
-
-            if ($request->payment_type) {
-                $payment_type = $request->payment_type;
-            } elseif ($request->expectsJson()) {
-                $payment_type = 'RENEW';
-            } else {
-                $payment_type = 'UPGRADE';
-            }
-
-           
-
-            $data = [];
-            $data['planPrice'] = $planPrice;
-            $data['paid_amount'] = $paid_amount;
-            $data['locker'] = $locker;
-            $data['discount'] = $discount;
-            $data['start_date'] = $start_date;
-            $data['paid_date'] = $transaction_date;
-            $data['is_paid'] = $is_paid;
-            $data['learner_detail_id'] = $learner_detail->id;
-            $data['learner_id'] = $customer->id;
-            $data['payment_type'] = $payment_type;
-            $data['payment_mode'] = $payment_mode;
-            $data['due_date'] = $request->due_date ?? null;
-            $data['particular'] = 'Paid By Website';
-            $this->learnerTransactionAddUpdate($data);
-
-            if ($status == 1) {
-                $customer->hours = $hours;
-                LearnerDetail::where('learner_id', $customer->id)
-                    ->where('id', '!=', $learner_detail->id)
-                    ->update(['status' => 0]);
-            }
-            $customer->locker_no = $request->locker_no;
-            $customer->save();
-            try {
-                if ($payment_type == "RENEW") {
-                    $noti = new NotificationSentController;
-
-                    if (autowabaNotificationActive()) {
-                        \Log::info('autowabaNotificationActive');
-                        $noti->autoMessage($customer->id, 'waba', 'renew-waba');
-                    } else {
-                        \Log::info('nowaba seond part RENEW');
-                    }
-                    if (autotextNotificationActive()) {
-                        \Log::info('autotextNotificationActive');
-                        $noti->autoMessage($customer->id, 'text', 'renew-sms');
-                    } else {
-                        \Log::info('no text seond part RENEW');
-                    }
-                }
-                if ($payment_type == "UPGRADE") {
-                    $noti = new NotificationSentController;
-
-                    if (autowabaNotificationActive()) {
-                        \Log::info('autowabaNotificationActive');
-                        $noti->autoMessage($customer->id, 'waba', 'upgrade-waba');
-                    } else {
-                        \Log::info('nowaba seond part upgrade');
-                    }
-                    if (autotextNotificationActive()) {
-                        \Log::info('autotextNotificationActive');
-                        $noti->autoMessage($customer->id, 'text', 'upgrade-sms');
-                    } else {
-                        \Log::info('no text seond part upgrade');
-                    }
-                }
-            } catch (\Throwable $e) {
-                // Log the error (won't break your main code)
-                \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                    'exception' => $e
-                ]);
-            }
-            DB::commit();
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Learner Renew successfully!',
-                ], 200);
-            } else {
-                return redirect()->route('learners')->with('success', 'Learner updated successfully!');
-            }
-        } catch (\Exception $e) {
-            DB::rollBack(); // Something went wrong, rollback
-
-            return redirect()->back()->with('error', 'Something went wrong: ' . $e->getMessage());
-        }
-    }
-    // reactive learner get
-    public function reactiveUser(Request $request, $id = null)
-    {
-
-        $customerId = $request->id ?? $id;
-
-        $is_renew = $this->learnerService->getRenewalStatus($customerId);
-        $available_seat = $this->learnerService->getAvailableSeats();
-
-        $customer = $this->fetchCustomerData($customerId, false, $status = 0, $detailStatus = 0, $perPage = 10, $paginate = false);
-
-        $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
-        
-        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
-        $selectedDiscountType = $discountAmount ? 'amount' : '';
-        $oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
-        $today = \Carbon\Carbon::now();
-        if($hasLocker){
-            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
-        }else{
-            $locker_amt=0;
-        }
-
-        if ($request->expectsJson() || $request->has('id')) {
-
-            return response()->json($customer);
-        } else {
-
-            return view('learner.reactive', compact('customer', 'available_seat','hasLocker','discountAmount','selectedDiscountType','oneWeekLater','today','locker_amt'));
-        }
-    }
-    // reactive learner store
-    public function reactiveLearner(Request $request, $id)
-    {
-
-
-        $rules = [
-
-            'plan_id' => 'required',
-            'seat_no' => 'nullable',
-            'plan_type_id' => 'required',
-            'plan_price_id' => 'required',
-            'plan_start_date' => 'required',
-            'user_id' => 'required',
-            'learner_detail' => 'required',
-            'payment_mode' => 'required',
-            'discountType' => 'nullable',
-            'discount_amount' => [
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
-                        $fail('Discount type must be selected when providing a discount amount.');
-                    }
-                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
-                        $fail('Discount amount is required when a discount type is selected.');
-                    }
-                }
-            ],
-            'locker_no' => [
-                'nullable',
-                'required_if:locker,yes',
-                'numeric'
-            ],
-            'locker_amount' => [
-                'nullable',
-                'required_if:locker,yes',
-               
-            ],
-
-        ];
-        $validator = Validator::make($request->all(), $rules);
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-        if (!Gate::allows('has-permission', 'Reactive Seat')) {
-            // if (!Auth::user()->can('has-permission', 'Reactive Seat')) {
-            return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
-        }
-
-
-        DB::beginTransaction();
-
-        try {
-            // for log value
-
-            $old_value = LearnerDetail::withTrashed()
-                ->where('id', $request->learner_detail)
-                ->first();
-
-            // for log value end
-            $customer = Learner::withTrashed()
-                ->findOrFail($request->user_id);
-            if (!$customer) {
-                return redirect()->back()->with('error', 'Learner not found.');
-            }
-
-            if ($request->seat_no) {
-                $seat_no = $request->input('seat_no');
-            } else {
-                $seat_no = null;
-            }
-          
-            $plan_id = $request->input('plan_id');
-            $plan_type_id = $request->input('plan_type_id');
-            $start_date = Carbon::parse($request->input('plan_start_date'));
-            $endDate = getEndDate($plan_id, $start_date);
-            $learnerId = Learner::where('id', $customer->id)->where('status', 0)->exists();
-           
-            if(LearnerDetail::where('learner_id',$customer->id)->where('status', 1)->exists()){
-                return redirect()->back()->with('error', 'Your Plan Already Active')->withInput();
-            }
-             if ($request->seat_no) {
-                
-                $result = checkSeatAvailability($seat_no, $learnerId ? $customer->id : null, $request->plan_type_id, $start_date, $endDate);
-
-                if ($result['error']) {
-                    return redirect()->back()->with('error', $result['message'])->withInput();
-                }
-
-               
-            }
-            $locker = (float) $request->input('locker_amount', 0);
-            $planPrice = (float) $request->input('plan_price_id', 0);
-            if ($request->discountType == 'amount') {
-                $discount = $request->discount_amount;
-            } elseif ($request->discountType == 'percentage') {
-                $total = $planPrice + $locker;
-                $discount = ($total * $request->discount_amount) / 100;
-            } else {
-                $discount = 0;
-            }
-            $paid_amount = (float) $request->input('paid_amount', 0);
-            $effectivePaid = $planPrice + $locker - $discount;
-            $pending_amount =  $effectivePaid - $paid_amount;
-
-            
-            $planType = PlanType::find($request->plan_type_id);
-            $hours = $planType->slot_hours;
-
-           
-            if ($request->payment_mode == 1 || $request->payment_mode == 2) {
-                $is_paid = 1;
-                $payment_mode = $request->payment_mode;
-            } else {
-                $is_paid = 0;
-                $payment_mode = 3;
-            }
-            if ($request->input('payment_mode') == 3) {
-
-                $pending_amount = $paid_amount;
-                $paid_amount = 0;
-            }
-            
-            $extendDay = getExtendDays();
-
-            $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-            if ($inextendDate > Carbon::today() && $start_date <= Carbon::today()) {
-                $status = 1;
-            } else {
-                $status = 0;
-            }
-
-            if ($request->paid_date) {
-                $transaction_date = $request->paid_date;
-            } else {
-                $transaction_date = null;
-            }
-           
-            $due_date = $request->due_date ?? null;
-            
-           
-            if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3)) {
-                return redirect()->back()->withInput()->with('error', 'Paid amount is not valid');
-            }
-
-            if (($pending_amount > 0) && (empty($due_date)) && $payment_mode != 3) {
-                return redirect()->back()->withInput()->with('error', 'Due date is required');
-            }
-
-            $customer->seat_no = $seat_no;
-            $customer->hours = $hours;
-            $customer->status = $status;
-            if ($customer->trashed()) {
-                $customer->restore();
-            }
-           
-            $learner_detail = LearnerDetail::create([
-                'library_id' => getLibraryId(),
-                'branch_id' => getCurrentBranch(),
-                'learner_id' => $customer->id,
-                'plan_id' => $plan_id,
-               'plan_type_id' => $plan_type_id,
-                'plan_price_id' => $planPrice,
-                'plan_start_date' => $start_date->format('Y-m-d'),
-                'plan_end_date' => $endDate->format('Y-m-d'),
-                'join_date' => $start_date->format('Y-m-d'),
-                'hour' => $hours,
-                'seat_no' => $seat_no,
-                'payment_mode' => $payment_mode,
-                'is_paid' => 1,
-                'status' => $status,
-            ]);
-
-            // learner log table update
-            DB::table('learner_operations_log')->insert([
-                'learner_id' => $customer->id,
-                'learner_detail_id' => $learner_detail->id,
-                'library_id' => $customer->library_id,
-                'field_updated' => 'seat_no',
-                'old_value' => $old_value->seat_no,
-                'new_value' => $request->seat_no,
-                'updated_by' => getLibraryId(),
-                'branch_id' =>  getCurrentBranch(),
-                'operation' => 'reactive',
-                'created_at' => now(),
-            ]);
-
-            if ($request->payment_type) {
-                $payment_type = $request->payment_type;
-            }
-            $data = [];
-            $data['planPrice'] = $planPrice;
-            $data['paid_amount'] = $paid_amount;
-            $data['locker'] = $locker;
-            $data['discount'] = $discount;
-            $data['start_date'] = $start_date;
-            $data['paid_date'] = $transaction_date;
-            $data['is_paid'] = $is_paid;
-            $data['learner_detail_id'] = $learner_detail->id;
-            $data['learner_id'] = $customer->id;
-            $data['payment_type'] = 'REACTIVE';
-            $data['payment_mode'] = $payment_mode;
-            $data['due_date'] = $request->due_date ?? null;
-            $data['particular'] = 'Paid By Website';
-            $this->learnerTransactionAddUpdate($data);
-            if ($status == 1) {
-                $this->learnerStatusUpdate($customer->id);
-                // $this->dataUpdate();
-            }
-
-            $customer->locker_no = $request->locker_no;
-            $customer->save();
-           
-
-            DB::commit();
-
-            return redirect()->route('learnerHistory')->with('success', 'Learner updated successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
-        }
-    }
     // payment store
     public function paymentStore(Request $request)
     {

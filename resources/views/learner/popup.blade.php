@@ -301,8 +301,7 @@
 
 @can('has-permission', 'Renew Seat')
 <div class="modal fade" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div id="success-message" class="alert alert-success" style="display:none;"></div>
-    <div id="error-message" class="alert alert-danger" style="display:none;"></div>
+   
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -310,6 +309,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body m-0">
+                 <div  class="alert alert-success success-message" style="display:none;"></div>
+                <div  class="alert alert-danger error-message" style="display:none;"></div>
                 <form id="upgradeForm">
 
                     <div class="detailes">

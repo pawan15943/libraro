@@ -759,9 +759,9 @@ if (!function_exists('getLockerPrice')) {
     }
 }
 if (!function_exists('getExtendDays')) {
-    function getExtendDays()
+    function getExtendDays($branch_id = null)
     {
-        $branchId = getCurrentBranch();
+        $branchId = $branch_id ?? getCurrentBranch();
         $extend_days = 0;
 
         if ($branchId) {
