@@ -408,6 +408,24 @@ class AppServiceProvider extends ServiceProvider
                 'Add Shifts' => route('library.configration'),
             ],
 
+             'library-users.create' => [
+                'Dashboard' => route('library.home'),
+                'Users List' => route('library-users.index', $parameters),
+                'Create Library User' => route('library-users.create'),
+            ],
+            'library-users.index' => [
+                'Dashboard' => route('library.home'),
+                'Library Users List' => route('library-users.index'),
+            ],
+            'booking.details' => [
+                'Dashboard' => route('library.home'),
+                'Verify and Allot Seat' => route('booking.details', [
+                    'id' => is_array($parameters)
+                        ? ($parameters['id'] ?? reset($parameters))
+                        : $parameters
+                ]),
+            ],
+
 
             // Learner Bread crumb
 
@@ -457,23 +475,7 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('learner.home'),
                 'Support' => route('support'),
             ],
-            'library-users.create' => [
-                'Dashboard' => route('learner.home'),
-                'Users List' => route('library-users.index', $parameters),
-                'Create Library User' => route('library-users.create'),
-            ],
-            'library-users.index' => [
-                'Dashboard' => route('learner.home'),
-                'Library Users List' => route('library-users.index'),
-            ],
-         'booking.details' => [
-            'Dashboard' => route('learner.home'),
-            'Verify and Allot Seat' => route('booking.details', [
-                'id' => is_array($parameters)
-                    ? ($parameters['id'] ?? reset($parameters))
-                    : $parameters
-            ]),
-        ],
+           
 
 
 

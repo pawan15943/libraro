@@ -124,20 +124,7 @@ span.close-modal {
                 <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="detailes">
-                        {{-- @php
-                            // Normalize available seats
-                            $availableSeatsArray = collect($availableseats)->filter()->values()->toArray();
-                                // Default (BOOK case)
-                            $seatList = $availableSeatsArray;
-                            // Renew case → ensure current seat is present
-                            if (isset($customer) && ($customer->type ?? null) === 'qr_renew' && !empty($customer->seat_no) && !in_array($customer->seat_no, $availableSeatsArray)) {
-                                $seatList = array_merge([$customer->seat_no], $seatList);
-                            }
-
-                            // Always keep order clean
-                            sort($seatList);
                        
-                        @endphp --}}
 
                         @php
                             /*
@@ -226,6 +213,7 @@ span.close-modal {
                                             </option>
                                         @endforeach
                                 </select>
+                                <input type="hidden" id="seat_id12" value="{{$customer->seat_no}}">
                                  @error('seat_no')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -291,15 +279,7 @@ span.close-modal {
 
                             <div class="col-lg-4">
                                 <label for="plan_type_id11">Plan Type <span>*</span></label>
-                                {{-- <select id="plan_type_id11" class="form-control form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
-
-                                    <option value="">Choose Shift</option>
-                                    @if(!empty($customer->plan_type_id))
-                                    <option value="{{ $customer->plan_type_id }}" selected>
-                                        {{ $customer->planType->name ?? 'Selected Plan' }}
-                                    </option>
-                                    @endif
-                                </select> --}}
+                                
                                  <select id="plan_type_id11" class="form-control form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                                     @foreach($filteredPlanTypes as $planType)
                                     <option value="{{ $planType['id'] }}"
@@ -308,7 +288,7 @@ span.close-modal {
                                     </option>
                                     @endforeach
                                 </select>
-
+                                <input type="hidden" id="plan_type_id12" value="{{$customer->plan_type_id}}">
                                 @error('plan_type_id')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -643,7 +623,7 @@ span.close-modal {
         const learner_id = $('#renew_learner_id').val();
 
         const seatNo = $('#seat_id11').val();
-        console.log('selectedPlanType',selectedPlanType);
+        
      
         var seatDisplayMap = @json(
             collect(generateSeatNumbers())->mapWithKeys(function($seat) {
@@ -688,11 +668,11 @@ span.close-modal {
             if ($(this).val() === 'no') {
                 $('#seat_id11').prop('disabled', false);
                  $('#seat_id11').val(seatNo);
-                 getTypeSeatwise(seatNo,selectedPlanType);
+                 getTypeSeatwiseVerify(seatNo,selectedPlanType);
             } else {
                 $('#seat_id11').val($('#seat_id11 option:first').val()); 
                 $('#seat_id11').prop('disabled', true);
-                getTypeSeatwise('',selectedPlanType);
+                getTypeSeatwiseVerify('',selectedPlanType);
             }
         });
        
@@ -702,21 +682,21 @@ span.close-modal {
         if (learner_id) {
 
             if (!seatNo || seatNo === 'gen') {
-                getTypeSeatwise('',selectedPlanType)
+                getTypeSeatwiseVerify('',selectedPlanType)
             } else {
-                getTypeSeatwise(seatNo, selectedPlanType); 
+                getTypeSeatwiseVerify(seatNo, selectedPlanType); 
             }
 
         } else {
 
 
             if (!seatNo || seatNo === 'gen') {
-                getTypeSeatwise('', selectedPlanType); // load all plan types
+                getTypeSeatwiseVerify('', selectedPlanType); // load all plan types
             } else {
-                getTypeSeatwise(seatNo, selectedPlanType); // load plan types seatwise
+                getTypeSeatwiseVerify(seatNo, selectedPlanType); // load plan types seatwise
             }
         }
-        getPlanPrice(selectedPlanType, plan_id11);
+        getPlanPriceVerify(selectedPlanType,plan_id11);
         calculatePaidTotalAmount();
 
         var lockerCheck = $('#toggleFieldCheckbox11').val();
@@ -738,11 +718,54 @@ span.close-modal {
 
 
     });
+    
     $('#seat_id11').on('change', function() {
         const newSeat = $(this).val();
-        getTypeSeatwise(newSeat, null); // reset plan type when seat changes
-        $('#paid_amount11').val("");
+        const learner_id = $('#renew_learner_id').val();
+        const selectedPlanTyp = $('#plan_type_id12').val();
+        let seat_id12 = $('#seat_id12').val();
+ 
+
+            if (learner_id) {
+
+                if (!newSeat || newSeat === 'gen') {
+
+                    if (String(newSeat) === String(seat_id12)) {
+                        getTypeSeatwiseVerify('', selectedPlanTyp);
+                    } else {
+                        getTypeSeatwiseVerify('', null);
+                    }
+
+                } else {
+
+                    if (String(newSeat) === String(seat_id12)) {
+                      
+                        getTypeSeatwiseVerify(newSeat, selectedPlanTyp);
+                    } else {
+                        
+                        getTypeSeatwiseVerify(newSeat, null);
+                    }
+                }
+
+            } else {
+
+                if (!newSeat || newSeat === 'gen') {
+                    getTypeSeatwiseVerify('', selectedPlanTyp);
+                } else {
+                    getTypeSeatwiseVerify(newSeat, selectedPlanTyp);
+                }
+            }
+
+        seat_id12 = newSeat; // update old value
+
+        
+       
+
+        
     });
+
+      
+       
 
     $('#plan_id11').on('change', function(event) {
         event.preventDefault();
@@ -750,7 +773,7 @@ span.close-modal {
         const plan_type_id11 = $('#plan_type_id11').val();
         var lockerCheck = $('#toggleFieldCheckbox11').val();
         if (plan_type_id11 && plan_id11) {
-            getPlanPrice(plan_type_id11, plan_id11);
+            getPlanPriceVerify(plan_type_id11,plan_id11);
             calculatePaidTotalAmount();
             if (lockerCheck == 'yes') {
                 lockerAmtGet(plan_id11);
@@ -771,8 +794,8 @@ span.close-modal {
             , lockerCheck
         });
         if (plan_type_id11 && plan_id11) {
-            console.log("Calling getPlanPriceAmount...");
-            getPlanPrice(plan_type_id11, plan_id11);
+            console.log("Calling getPlanPriceVerifyAmount...");
+            getPlanPriceVerify(plan_type_id11,plan_id11);
 
             if (lockerCheck == 'yes') {
                 lockerAmtGet(plan_id11);
@@ -828,8 +851,9 @@ span.close-modal {
         calculatePendingAmt($(this).val());
     });
 
-    function getPlanPrice(plan_type_id11, plan_id11) {
-
+    function getPlanPriceVerify(plan_type_id11,plan_id11) {
+        console.log("jhhhtype",plan_type_id11);
+        console.log("jhhhtypeplan_id11",plan_id11);
         if (plan_type_id11 && plan_id11) {
             $.ajax({
                 url: "{{ route('getPricePlanwise') }}"
@@ -841,7 +865,7 @@ span.close-modal {
                 , }
                 , dataType: 'json'
                 , success: function(html) {
-                    console.log('htmoll', html);
+                    console.log('htmoll222', html);
 
                     if (html && html !== undefined) {
 
@@ -867,7 +891,8 @@ span.close-modal {
         }
     }
 
-    function getTypeSeatwise(seatId, selectedPlanType = null) {
+    function getTypeSeatwiseVerify(seatId,selectedPlanType = null) {
+       
         $('#plan_type_id11').empty().append('<option value="">Choose Shift</option>');
 
         $.ajax({
@@ -881,10 +906,9 @@ span.close-modal {
             , }
             , dataType: 'json'
             , success: function(html) {
-                console.log('plantype',html);
+                console.log('plantypeheena',html);
                 if (html && html.length > 0) {
-                    // $("#plan_type_id11").empty().append('<option value="">Choose Shift</option>');
-
+                    
                     $.each(html, function(index, planType) {
                         let isSelected = (selectedPlanType && selectedPlanType == planType.id) ? 'selected' : '';
                         $("#plan_type_id11").append('<option value="' + planType.id + '" ' + isSelected + '>' + planType.name + '</option>');
@@ -892,6 +916,9 @@ span.close-modal {
                 } else {
                     $("#plan_type_id11").empty().append('<option value="">No Plan Types Available</option>');
                 }
+                 let finalPlanType = $('#plan_type_id11').val();
+                let planId = $('#plan_id11').val();
+                getPlanPriceVerify(finalPlanType, planId);
             }
             , error: function(xhr, status, error) {
                 console.error("AJAX error:", status, error);
@@ -1001,89 +1028,7 @@ span.close-modal {
 
     }
 
-    // function fetchPlanTypesRenewSeat(seat_no,learner_id) {
-
-    //     if (seat_no  && learner_id) {
-    //         $.ajax({
-    //             url: '{{ route('getPlanTypeForRenew') }}',
-    //             headers: {
-    //                 'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-    //             },
-    //             type: 'GET',
-    //             data: {
-    //                 "_token": "{{ csrf_token() }}",
-    //                 "seat_no": seat_no,
-    //                 "learner_id": learner_id,
-    //             },
-    //             dataType: 'json',
-    //             success: function (html) {
-    //                 console.log("renew",html);
-    //                 $("#plan_type_id_renew").empty(); 
-    //                 $("#plan_id2").empty(); 
-
-    //                 if (html[0]) {
-    //                     $.each(html[0], function (key, value) {
-    //                         $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
-    //                     });
-    //                 } else {
-    //                     $("#plan_type_id_renew").append('<option value="">Choose</option>');
-    //                 }
-
-
-    //                 if (html[1]) {
-    //                         $.each(html[1], function (key, value) {
-    //                         $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
-    //                     });
-    //                 }
-
-    //                 if (html[2]){
-    //                     $("#plan_price_id2").val(html[2].plan_price_id);      
-    //                 }
-
-    //                 if(html[3]){
-    //                     $("#locker_amount2").val(html[3].locker_amount);  
-    //                     $("#discount_amount3").val(html[3].discount_amount);  
-    //                     $("#new_plan_price").val(html[3].discount_amount);  
-
-    //                     if (html[3].locker_amount && parseFloat(html[3].locker_amount) > 0) {
-    //                         $("#locker").val('yes');
-    //                         $("#locker_amount2").val(html[3].locker_amount);
-
-    //                     } else {
-    //                         $("#locker").val('no');
-    //                         $("#locker_amount2").val('');
-
-    //                     }
-
-    //                     if (html[3].discount_amount && parseFloat(html[3].discount_amount) > 0) {
-    //                         $("#discount_type").val('amount');
-    //                         $("#discount_amount3").val(html[3].discount_amount);
-    //                     } else {
-    //                         $("#discount_type").val('');
-    //                         $("#discount_amount3").val('');
-    //                     }
-    //                 }
-    //                     if (html[4]){
-    //                     $("#locker_no2").val(html[4].locker_no);
-    //                     if(html[4].locker_no){
-    //                     $("#locker_no2").removeAttr('readonly');
-    //                     }      
-    //                 }
-
-    //                 popupautoCalculatePaidAmount(); 
-    //             },
-    //             error: function (xhr, status, error) {
-    //                 console.error("AJAX error:", status, error); // Log any errors
-    //             }
-    //         });
-    //     } else {
-    //         $("#plan_type_id_renew").empty();
-    //         $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
-    //     }
-    // }
-
-    
-
+   
 </script>
 
 <script>
