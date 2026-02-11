@@ -4419,7 +4419,7 @@ class LearnerController extends Controller
         }
 
         // New plan payment activity
-        if ($newPlanPaid > 0) {
+        if ($newPlanPaid >= 0) {
             $activityData2 = [
                 'learner_id'   => $data['learner_id'],
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
