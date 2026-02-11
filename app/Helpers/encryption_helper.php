@@ -177,6 +177,13 @@ if (!function_exists('learnerTransaction')) {
         return  $transaction;
     }
 }
+if (!function_exists('totalPending')) {
+    function totalPending($id)
+    {
+        $transaction = LearnerTransaction::withTrashed()->where('learner_id', $id)->sum('pending_amount');
+        return  $transaction;
+    }
+}
 
 if (!function_exists('getLibraryId')) {
     function getLibraryId()
