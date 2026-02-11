@@ -301,14 +301,14 @@ class LearnerService
             $customer = Learner::findOrFail($data['learner_id']);
              if (!$customer) {
                 return [
-                    'success' => false,
+                    'error' => true,
                     'message' => 'Learner not found.'
                 ];
             }
 
             if (alreadyRenewed($customer->id)) {
                 return [
-                    'success' => false,
+                    'error' => true,
                     'message' => 'Already have plan in queue'
                 ];
             }
@@ -346,7 +346,7 @@ class LearnerService
 
                 if ($result['error']) {
                     return [
-                        'success' => false,
+                        'error' => true,
                         'message' => $result['message']
                     ];
                 }

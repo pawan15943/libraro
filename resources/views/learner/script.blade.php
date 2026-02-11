@@ -1470,9 +1470,11 @@
                         }      
                     }
                     if (html[7]) {
-                        
-                        $("#previous_pending").val(html[7]); 
+                        let amount = parseFloat(html[7]); // convert to number
+                        $("#previous_pending").val(parseInt(amount)); // remove decimals
                     }
+
+                  
                     
                     popupautoCalculatePaidAmount(); 
                 },
