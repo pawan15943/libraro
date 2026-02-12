@@ -367,6 +367,7 @@ class QrEntryController extends Controller
     }
     public function store(Request $request, $uuid)
     {
+       
         try {
           
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
@@ -378,17 +379,44 @@ class QrEntryController extends Controller
                 'email'        => 'nullable',
                 'dob'        => 'nullable',
                 'profile_picture' => 'nullable',
-                'seat_no'        => 'nullable',
+                'general_seat' => 'nullable|in:yes,no',
+    
+                'seat_no' => [
+                    'nullable',
+                    'required_if:general_seat,no'
+                ],
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
             ];
+            $messages = [
+                'name.required'            => 'Name is required.',
+                'name.max'                 => 'Name must not exceed 191 characters.',
+                'seat_no.required_if' => 'Seat number is required',
+                'mobile.required'          => 'Mobile number is required.',
+                'mobile.integer'           => 'Mobile number must contain only digits.',
+                'mobile.digits_between'    => 'Mobile number must be between 8 and 15 digits.',
+
+                'plan_id.required'         => 'Please select a plan.',
+                'plan_id.exists'           => 'Selected plan is invalid.',
+
+                'plan_type_id.required'    => 'Please select a plan type.',
+                'plan_type_id.exists'      => 'Selected plan type is invalid.',
+
+                'plan_price_id.required'   => 'Plan price is required.',
+
+                'plan_start_date.required' => 'Plan start date is required.',
+                'plan_start_date.date'     => 'Please enter a valid start date.',
+
+                'payment_mode.required'    => 'Please select a payment mode.',
+                'payment_mode.in'          => 'Invalid payment mode selected.',
+            ];
             
             
 
-            $validated = $request->validate($rules);
+            $validated = $request->validate($rules,$messages);
             $plan_id=$validated['plan_id'];
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 

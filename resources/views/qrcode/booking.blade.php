@@ -140,7 +140,7 @@
 
                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No?</label>
-                                <select name="general_seat" id="general_seat" class="form-select">
+                                <select name="general_seat" id="general_seat" class="form-select @error('general_seat') is-invalid @enderror">
                                     <option value="yes" {{ old('general_seat') == 'yes' ? 'selected' : '' }}>
                                         No
                                     </option>
@@ -149,11 +149,12 @@
                                     </option>
 
                                 </select>
+                                 @error('general_seat') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select" id="seat_id">
+                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id">
                                     <option value="">Choose Seat No</option>
                                  
                                     @foreach($newAvailableSeat  as $key => $value)
@@ -161,6 +162,7 @@
                                     <option value="{{ $value['main'] }}" {{ old('seat_no') == $value['main'] ? 'selected' : '' }}>{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
+                                @error('seat_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-lg-12">
