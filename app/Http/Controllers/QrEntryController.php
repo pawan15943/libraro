@@ -699,7 +699,7 @@ class QrEntryController extends Controller
             'plan_id' => 'required',
             'plan_type_id' => 'required',
             'plan_price_id' => 'required',
-            'plan_start_date' => 'required',
+            'plan_start_date' => 'nullable',
             'paid_amount' => 'nullable',
            
             'payment_mode' => 'required',
@@ -738,8 +738,25 @@ class QrEntryController extends Controller
 
         ];
        
-        
-        $validator = Validator::make($request->all(), $rules);
+        $messages = [
+            'booking_id.required' => 'Booking ID is required.',
+            'branch_id.required' => 'Please select a branch.',
+            'plan_id.required' => 'Please select a plan.',
+            'plan_type_id.required' => 'Please select a plan type.',
+            'plan_price_id.required' => 'Please select a plan price.',
+           
+            'payment_mode.required' => 'Please select a payment mode.',
+
+            'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+            'alternate_mobile.digits' => 'Alternate mobile must be exactly 10 digits.',
+            'email.email' => 'Please enter a valid email address.',
+            'dob.date' => 'Please enter a valid date of birth.',
+
+            'locker_no.required_if' => 'Locker number is required when locker is selected.',
+            'locker_no.numeric' => 'Locker number must be numeric.',
+            'locker_amount.required_if' => 'Locker amount is required when locker is selected.',
+        ];
+        $validator = Validator::make($request->all(), $rules,$messages);
         if ($validator->fails()) {
             
             return redirect()->back()->withErrors($validator)->withInput();
@@ -804,7 +821,7 @@ class QrEntryController extends Controller
                     return redirect()->back()->with('error', 'Due date is required')->withInput();
                 }
 
-                $start_date = Carbon::parse($request->input('plan_start_date'));
+                $start_date = $request->input('plan_start_date')? Carbon::parse($request->input('plan_start_date')) : Carbon::parse($bookingurl->plan_start_date);
                 $plan_id = $request->input('plan_id');
                 $plan_type_id = $request->input('plan_type_id');
                 $locker_no=$request->input('locker_no');

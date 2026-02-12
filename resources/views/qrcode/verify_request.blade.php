@@ -204,15 +204,21 @@ span.close-modal {
                             <div class="col-lg-6">
                                 <label for="seat_id11">Choose Seat No. <span>*</span></label>
 
-                                <select name="seat_no" class="form-select  @error('seat_no') is-invalid @enderror" id="seat_id11">
-                                        <option value="">GEN</option>
-                                      @foreach ($seatList as $seat)
-                                            <option value="{{ $seat['main'] }}"
-                                                {{ ($customer->seat_no ?? '') == $seat['main'] ? 'selected' : '' }}>
-                                                {{ $seat['display'] }}
-                                            </option>
-                                        @endforeach
+                               <select name="seat_no"
+                                    class="form-select @error('seat_no') is-invalid @enderror"
+                                    id="seat_id11"
+                                    {{ ($customer->type ?? '') == 'qr_renew' ? 'disabled' : '' }}>
+
+                                    <option value="">GEN</option>
+
+                                    @foreach ($seatList as $seat)
+                                        <option value="{{ $seat['main'] }}"
+                                            {{ ($customer->seat_no ?? '') == $seat['main'] ? 'selected' : '' }}>
+                                            {{ $seat['display'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
+
                                 <input type="hidden" id="seat_id12" value="{{$customer->seat_no}}">
                                  @error('seat_no')
                                     <span class="invalid-feedback" role="alert">
@@ -296,7 +302,7 @@ span.close-modal {
 
                             <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" name="plan_start_date" class="form-control @error('plan_start_date') is-invalid @enderror" value="{{ old('plan_start_date', $customer->plan_start_date) }}">
+                                <input type="date" name="plan_start_date" class="form-control @error('plan_start_date') is-invalid @enderror" value="{{ old('plan_start_date', $customer->plan_start_date) }}" {{ ($customer->type ?? '') == 'qr_renew' ? 'disabled' : '' }}>
                                  @error('plan_start_date')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
