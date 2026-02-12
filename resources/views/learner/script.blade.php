@@ -710,10 +710,8 @@
         const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
         const discountRaw = parseFloat($('#discount_amount10').val()) || 0;
         const discountType = $('#discountType10').val();
-        console.log('planPrice',planPrice);
-        console.log('lockerAmount',lockerAmount);
-        console.log('discountRaw',discountRaw);
-        console.log('discountType',discountType);
+        const previous_pending = parseFloat($('#previous_pending10').val()) || 0; 
+        
     
         
         var discountAmount = 0;
@@ -728,7 +726,7 @@
             $('#discount_amount10').val("");
         }
             
-        const autoPaid = planPrice + lockerAmount - discountAmount;
+        const autoPaid = planPrice + lockerAmount - discountAmount+previous_pending;
         $('#total_amount10').val(autoPaid);
 
         // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
@@ -755,7 +753,7 @@
         const discountRaw = parseFloat($('#discount_amount10').val()) || 0;
         const discountType = $('#discountType10').val();
         const previous_amount10 = parseFloat($('#previous_amount10').val()) || 0;
-
+        const previous_pending = parseFloat($('#previous_pending10').val()) || 0; 
 
         discountAmount =0;
         if (discountType === 'percentage') {
@@ -764,7 +762,7 @@
             discountAmount = discountRaw;
         }
 
-        const effectivePaid = planPrice+lockerAmount - discountAmount;
+        const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending;
 
         
         let pendingAmount;
@@ -2609,11 +2607,7 @@
             $('#pending_amt2').html('');
         }
 
-        console.log('lockerAmount',lockerAmount);
-        console.log('discountAmount',discountAmount);
-        //console.log('planPrice',planPrice); 
-        console.log('effectivePaid',effectivePaid);
-        console.log('pendingAmount',pendingAmount);
+       
 
         if (pendingAmount > 0) {
             $('#due_date2').removeAttr('readonly');

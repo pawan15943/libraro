@@ -778,7 +778,7 @@ class LearnerController extends Controller
         }else{
             $locker_amt=0;
         }
-
+        
         return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
     }
    

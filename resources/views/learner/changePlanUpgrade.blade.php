@@ -218,7 +218,10 @@ if(Route::currentRouteName() == 'learner.change.plan'){
                             @enderror
                         </div>
                         @endif
-                        
+                        <div class="col-lg-4">
+                             <label for="">Previous Pending Amount <span>*</span></label>
+                            <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending10" value="{{ old('previous_pending', totalPending($customer->id)) }}" readonly>
+                        </div>
                         <div class="col-lg-4">
                             <label>Total Amount <span>*</span></label>
                             <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
