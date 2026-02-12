@@ -778,7 +778,7 @@ class LearnerController extends Controller
         }else{
             $locker_amt=0;
         }
-        
+
         return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
     }
    
@@ -1472,7 +1472,6 @@ class LearnerController extends Controller
         ]);
         $this->learnerTransactionActivity($activityData);
 
-        // $this->updateLearnerTransactionPayment($tranDetail, $request->paid_amount, $request->payment_mode,$due_date);
 
         return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
     }
@@ -4001,24 +4000,20 @@ class LearnerController extends Controller
 
     public function pendingPaymentStore(Request $request)
     {
-
+       
         $this->validate($request, [
             // 'transaction_image' => 'nullable|mimes:webp,png,jpg,jpeg|max:200',
-            'transaction_id' => 'required|exists:learner_transactions,id',
-            'pending_amount' => 'required',
+            'learner_id' => 'required|exists:learners,id',
+            'total_pending' => 'nullable',
+            'amount_to_pay' => 'required',
             'payment_mode' => 'required',
+            'due_date'=>'nullable'
 
         ]);
 
 
-        $transaction = LearnerTransaction::where('id', $request->transaction_id)->first();
 
-        if (!$transaction) {
-            return redirect()->route('learners')->withErrors(['error' => 'Transaction not found.']);
-        }
-
-
-        if (($transaction->pending_amount - $request->pending_amount) > 0 && !$request->due_date) {
+        if ($request->total_pending != $request->amount_to_pay && !$request->due_date) {
 
             return redirect()->back()->with('error', ' Due date is required');
         }
@@ -4031,7 +4026,7 @@ class LearnerController extends Controller
 
         try {
 
-            $this->updateLearnerTransactionPayment($transaction, $request->pending_amount, $request->payment_mode, $due_dat);
+            $this->updateLearnerTransactionPayment($request->learner_id,$request->amount_to_pay, $request->total_pending, $request->payment_mode, $due_dat);
 
             return redirect()->route('learners')->with('success', 'Payment successfully recorded.');
         } catch (\Exception $e) {
@@ -4435,46 +4430,76 @@ class LearnerController extends Controller
     }
 
 
-    public function updateLearnerTransactionPayment($transaction, $paid_amount, $payment_mode, $due_date)
+    public function updateLearnerTransactionPayment($learnerId, $paidAmount,$pending_amount,$payment_mode, $due_date)
     {
-        // 1. Update amounts
-        $newPending = $transaction->pending_amount - $paid_amount;
-        $newPaid    = $transaction->paid_amount + $paid_amount;
-        $isPaid     = $newPending <= 0 ? 1 : 0;
-        $due_date = $due_date ?? ($newPending > 0 ? date("Y-m-d") : null);
-        $pay_mode = LearnerDetail::where('id', $transaction->learner_detail_id)
-            ->value('payment_mode');
+            $transaction_date = date('Y-m-d');
 
-        $type  = $pay_mode == 3 ? 'SEAT ASSIGNMENT' : 'PENDING';
-        $parti = $pay_mode == 3 ? 'PAY LATER PAYMENT' : 'REMAINING PAYMENT';
+                // Get old pending transactions
+            $pendingTransactions = LearnerTransaction::where('learner_id', $learnerId)
+                ->where('pending_amount', '>', 0)
+                ->orderBy('id', 'asc')
+                ->get();
 
-        $transaction->update([
-            'pending_amount' => $newPending,
-            'paid_amount'    => $newPaid,
-            'is_paid'        => $isPaid,
-            'paid_date'      => now()->format('Y-m-d'),
-            'due_date'      => $due_date
-        ]);
-        if ($payment_mode == 'Online') {
-            $mode = 1;
-        } else {
-            $mode = 2;
-        }
-        LearnerDetail::where('id', $transaction->learner_detail_id)->update([
-            'payment_mode' => $mode
-        ]);
+            $oldPendingTotal = $pendingTransactions->sum('pending_amount');
 
-        // 3. Insert into LearnerTransactionActivity
+            // Apply payment to old pending first
+            $pendingPaid = min($paidAmount, $oldPendingTotal);
+            $remainingForNewPlan = $paidAmount - $pendingPaid;
 
-        $activityData = [
-            'learner_id'   => $transaction->learner_id,
-            'particular'   => $parti,
-            'payment_type' =>  $type,
-            'payment_mode' => $payment_mode,
-            'amount'       => $paid_amount,
-            'dr_cr'        => 'Cr',
-        ];
-        $this->learnerTransactionActivity($activityData);
+            $remainingPendingPayment = $pendingPaid;
+
+            foreach ($pendingTransactions as $tran) {
+                if ($remainingPendingPayment <= 0) {
+                    break;
+                }
+
+                $tranPending = $tran->pending_amount;
+
+                if ($remainingPendingPayment >= $tranPending) {
+                    // Fully clear this transaction
+                    $paidNow = $tranPending;
+                    $newPending = 0;
+                } else {
+                    // Partially clear
+                    $paidNow = $remainingPendingPayment;
+                    $newPending = $tranPending - $paidNow;
+                }
+
+                $updateData = [
+                    'paid_amount'    => $tran->paid_amount + $paidNow,
+                    'pending_amount' => $newPending,
+                    'paid_date'      => $transaction_date,
+                    'is_paid'        => $newPending == 0 ? 1 : 0,
+                ];
+
+                // Update due date only if still pending
+                if ($newPending > 0 && $due_date) {
+                    $updateData['due_date'] = $due_date;
+                }
+
+                $tran->update($updateData);
+
+                $remainingPendingPayment -= $paidNow;
+            }
+
+            $type  = 'PENDING';
+            $parti = 'REMAINING PAYMENT';
+
+            // Pending payment activity
+            if ($pendingPaid > 0) {
+                $activityData1 = [
+                    'branchId'     => getCurrentBranch(),
+                    'learner_id'   => $learnerId,
+                    'particular'   => $parti ?? 'Paid By Trans',
+                    'payment_type' => $type,
+                    'payment_mode' => $payment_mode,
+                    'amount'       => $pendingPaid,
+                    'dr_cr'        => 'Cr',
+                ];
+                $this->learnerTransactionActivity($activityData1);
+            }
+
+
     }
 
 

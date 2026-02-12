@@ -49,7 +49,7 @@ $class=$planDetails['class'];
                         
 
                         <div class="row g-4">
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
                                 <label for="">Last Due Date <span>*</span>
                                     @if($tran?->due_date && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($tran->due_date)))
                                     <small class="text-danger"><strong>Overdue</strong></small>
@@ -64,32 +64,34 @@ $class=$planDetails['class'];
                                 @enderror
 
                             </div>
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
                                 <label for="">Pending Payment </label>
-                                <input id="for_pending_amount" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    value="{{ intval($pendingPayment) }}" @readonly(true)>
-                                <input type="hidden" name="transaction_id" value="{{ $tra->id ?? '' }}">
-                                <input type="hidden" name="learner_id" value="{{ $tra->learner_id ?? '' }}">
+                                <input id="for_pending_amount" name="total_pending" class="form-control @error('pending_amount') is-invalid @enderror" value="{{ intval($pendingPayment) }}" @readonly(true) >
+                               
                             </div>
 
                             
                             <div class="col-lg-4">
                                 <label for="">Amount want to Pay <span>*</span></label>
-                                <input id="amount_to_pay" class="form-control @error('pending_amount') is-invalid @enderror"
-                                    name="pending_amount" value="{{ intval($pendingPayment) }}">
-                                <input type="hidden" name="transaction_id" value="{{ $tra->id ?? '' }}">
-                                <input type="hidden" name="learner_id" value="{{ $tra->learner_id ?? '' }}">
+                                <input id="amount_to_pay" class="form-control @error('amount_to_pay') is-invalid @enderror" name="amount_to_pay" value="{{ intval($pendingPayment) }}">
+                                @error('amount_to_pay')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                                <input type="hidden" name="transaction_id" value="{{ $tran->id ?? '' }}">
+                                <input type="hidden" name="learner_id" value="{{ $tran->learner_id ?? '' }}">
                             </div>
-                            <div class="col-lg-4 due-date-wrapper">
+                            <div class="col-lg-6 due-date-wrapper">
                                 <label for="">Next Due Date <span>*</span></label>
                                 <input type="date" class="form-control" name="due_date" id="for_pending_due_date">
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
-                                    <option value="Online">Online</option>
-                                    <option value="Offline">Offline</option>
+                                    <option value="1">Online</option>
+                                    <option value="2">Offline</option>
                                     
                                 </select>
                                 @error('payment_mode')
