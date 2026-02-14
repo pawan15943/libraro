@@ -25,6 +25,7 @@ use App\Http\Controllers\LearnerController;
 use App\Models\Floor;
 use App\Models\Scopes\LibraryScope;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\LearnerService;
 
 class QrEntryController extends Controller
 {
@@ -428,7 +429,7 @@ class QrEntryController extends Controller
                 ->first();
             Log::info('Transaction check', ['transaction' => $transactions]);
              $learnerId = $transactions?->learner_id ?? null;
-              if($request->seat_no){
+            if($request->seat_no){
                
                     
                 Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
@@ -486,22 +487,23 @@ class QrEntryController extends Controller
                 }
 
             }
+            
 
             if (!is_null($transactions)) {
-
+           
                 $learnerId = $transactions->learner_id;
 
                 $password = Learner::where('id', $learnerId)->value('password')
                             ?? Hash::make($validated['mobile']);
 
-                $total_amount = $transactions->total_amount ?? $validated['plan_price_id'];
+                $total_amount = $request->paid_amount ?? $validated['plan_price_id'];
 
             } else {
-
+  
                 $password     = Hash::make($validated['mobile']);
                 $total_amount = $validated['plan_price_id'];
             }
-
+          
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
 
             $seat_type = $request->has('renewal') ? 'qr_renew' : 'qr_seat_book';
@@ -687,7 +689,7 @@ class QrEntryController extends Controller
         return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner','filteredPlanTypes'));
     }
 
-    public function requestApproveEdit(Request $request)
+    public function requestApproveEdit(Request $request,LearnerService $service)
     {
       
         if(!$request->direct_validate && !isset($request->direct_validate)){
@@ -701,7 +703,7 @@ class QrEntryController extends Controller
             'plan_price_id' => 'required',
             'plan_start_date' => 'nullable',
             'paid_amount' => 'nullable',
-           
+            'previous_pending' => 'nullable',
             'payment_mode' => 'required',
             'discount_type' => 'nullable',
            
@@ -766,7 +768,7 @@ class QrEntryController extends Controller
         // }
 
         }
-    
+   
         DB::beginTransaction();
 
         try {
@@ -932,14 +934,19 @@ class QrEntryController extends Controller
                 
             //     }
             // }
+            if($request->previous_pending){
+                $reprevious_pending=$request->previous_pending;
+            }else{
+                $reprevious_pending=0;
+            }
             
             
-            if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
+            if (($paid_amount > ($total_amt +$reprevious_pending)) || ($paid_amount == 0)) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
             }
             if (($pending_amount > 0) && (!$request->due_date)) {
-                return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
+                return redirect()->back()->with('error', 'Due Date is required')->withInput();
               
             }
             
@@ -1024,46 +1031,72 @@ class QrEntryController extends Controller
                 'status' => $detailStatus,
             ]);
 
-            if ($bookingurl->created_at) {
-                $transaction_date = $bookingurl->created_at;
-            } else {
-                $transaction_date =null;
-            }
+             $tran = [
+                'planPrice' => $planPrice,
+                'paid_amount' => $paid_amount,
+                'locker' => $locker,
+                'discount' => $discount,
+                'start_date' =>$start_date->format('Y-m-d'),
+                'paid_date' => $bookingurl->created_at->format('Y-m-d') ?? null,
+                'is_paid' => $is_paid,
+                'learner_detail_id' => $learner_detail->id,
+                'learner_id' => $customer->id,
+                'payment_type' => $bookingurl->type == 'qr_renew' ? 'RENEW' : 'SEAT ASSIGNMENT',
+                'payment_mode' => $payment_mode,
+                'due_date' => $request->due_date ?? null,
+                'particular' => $data['particular'] ?? 'System',
+                'library_id'=>getLibraryId(),
+                'branchId'    =>getCurrentBranch(),
+                'transaction_date'=>$bookingurl->created_at->format('Y-m-d')
+        ];
+       
+
+        $result = $service->learnerTransactionAddUpdate($tran);
+
+
+
+            // if ($bookingurl->created_at) {
+            //     $transaction_date = $bookingurl->created_at;
+            // } else {
+            //     $transaction_date =null;
+            // }
                    
 
-             $learnerTransaction = LearnerTransaction::create([
-                'learner_id'        => $customer->id,
-                'library_id'        => getLibraryId(),
-                'branch_id'         => getCurrentBranch(),
-                'learner_detail_id' => $learner_detail->id,
-                'total_amount'      => $total_amt,
-                'paid_amount'       => $paid_amount,
-                'pending_amount'    => $pending_amount,
-                'locker_amount'     => $locker ?? 0,
-                'discount_amount'   => $discount ?? 0,
-                'paid_date'         => $transaction_date,
-                'is_paid'           => $is_paid ?? 0,
-                'due_date'          => $request->due_date ?? null,
-                'refund'            => $pending_refund,
-                'transaction_id'    => transaction_id(),
-            ]);
+            //  $learnerTransaction = LearnerTransaction::create([
+            //     'learner_id'        => $customer->id,
+            //     'library_id'        => getLibraryId(),
+            //     'branch_id'         => getCurrentBranch(),
+            //     'learner_detail_id' => $learner_detail->id,
+            //     'total_amount'      => $total_amt,
+            //     'paid_amount'       => $paid_amount,
+            //     'pending_amount'    => $pending_amount,
+            //     'locker_amount'     => $locker ?? 0,
+            //     'discount_amount'   => $discount ?? 0,
+            //     'paid_date'         => $transaction_date,
+            //     'is_paid'           => $is_paid ?? 0,
+            //     'due_date'          => $request->due_date ?? null,
+            //     'refund'            => $pending_refund,
+            //     'transaction_id'    => transaction_id(),
+                
+            // ]);
            
-            //learner Activity
-            $data=[];
-            $data['learner_id']=$customer->id;
-            $data['particular']='Paid By Trans';
-            $data['payment_type']='SEAT ASSIGNMENT';
-            $data['payment_mode']=1;
-            $data['amount']=$paid_amount;
-            $data['dr_cr']='Cr';
+            // //learner Activity
+            // $data=[];
+            // $data['learner_id']=$customer->id;
+            // $data['particular']='Paid By Trans';
+            // $data['payment_type']='SEAT ASSIGNMENT';
+            // $data['payment_mode']=1;
+            // $data['amount']=$paid_amount;
+            // $data['dr_cr']='Cr';
           
-            $learnerController->learnerTransactionActivity($data);
+            // $learnerController->learnerTransactionActivity($data);
 
-                if ($status == 1) {
-                    $learnerController->learnerStatusUpdate($customer->id);
-                    // $learnerController->dataUpdate();
-                }
-                $bookingurl->delete();
+            // if ($status == 1) {
+            //     $learnerController->learnerStatusUpdate($customer->id);
+            //     // $learnerController->dataUpdate();
+            // }
+
+            $bookingurl->delete();
 
             DB::commit();
 
@@ -1169,15 +1202,15 @@ class QrEntryController extends Controller
         if($diffInDays > 5){
             return redirect()->back()->with('error', 'Plan is Active now please try before 5 days of your expiry or contact library owner')->withInput(); 
         }
-        $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
-        if (!$transaction) {
-            return redirect()->back()->with('error', 'No customer transaction found with this mobile.')->withInput();
-
-        }
+        $transactions = LearnerTransaction::withoutGlobalScopes()->leftJoin('learner_detail','learner_detail.id','=','learner_transactions.learner_detail_id')->where('learner_transactions.learner_id', $customer->id)->select('learner_transactions.locker_amount','discount_amount','total_amount','paid_amount','pending_amount','learner_detail.plan_price_id')->get();
+       
         $learnerSeat=$this->getSeatDisplayByMainNo($customer->seat_no,$customer->branch_id);
 
-
-        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction','learnerSeat'));
+        $lastamount=LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id',$customer_detail->id)->select('total_amount','id')->first();
+        
+        
+        
+        return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transactions','learnerSeat','lastamount'));
     }
     public function destroy($id)
     {

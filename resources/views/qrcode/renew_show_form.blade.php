@@ -43,9 +43,6 @@
         {{-- Page Header --}}
 
 
-
-
-
         <div class="row justify-content-center">
             <div class="col-lg-6 col-md-8 col-12">
                 <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
@@ -85,7 +82,7 @@
                         </div>
                     </div>
 
-                    @if($transaction)
+                    @if($transactions)
                     {{-- Last Transaction --}}
                     <div class="card shadow-sm mb-3">
                         <div class="card-header bg-light fw-semibold">
@@ -107,14 +104,18 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @foreach($transactions as $key => $transaction)
                                         <tr>
-                                            <td>{{ $customer_detail->plan_price_id }}</td>
+                                             <td>{{ rtrim(rtrim(number_format($transaction->plan_price_id, 2, '.', ''), '0'), '.') }}</td>
+                                           
                                             <td>{{ $transaction->locker_amount }}</td>
-                                            <td>{{ $transaction->discount_amount }}</td>
-                                            <td>{{ $transaction->total_amount }}</td>
-                                            <td>{{ $transaction->paid_amount }}</td>
-                                            <td>{{ $transaction->pending_amount }}</td>
+                                           <td>{{ rtrim(rtrim(number_format($transaction->discount_amount, 2, '.', ''), '0'), '.') }}</td>
+                                            <td>{{ rtrim(rtrim(number_format($transaction->total_amount, 2, '.', ''), '0'), '.') }}</td>
+                                            <td>{{ rtrim(rtrim(number_format($transaction->paid_amount, 2, '.', ''), '0'), '.') }}</td>
+                                            <td>{{ rtrim(rtrim(number_format($transaction->pending_amount, 2, '.', ''), '0'), '.') }}</td>
+
                                         </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -149,16 +150,29 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Amount --}}
-                    <div class="alert alert-success text-center fw-bold mb-3">
-                        Amount to Pay: ₹ {{ $transaction->total_amount }}
+                     @endif
+                    <div class="col-lg-6">
+                            <label for="">Previous Pending Amount <span>*</span></label>
+                        <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending"  value="{{ rtrim(rtrim(number_format(totalPending($customer->id), 2, '.', ''), '0'), '.') }}" readonly>
                     </div>
-                    @endif
+                   
+                    <div class="col-lg-6">
+                         <label for="">Amount to Pay<span>*</span></label> 
+                        <input type="text" class="form-control @error('total_amount') is-invalid @enderror" name="total_amount"   value="{{ rtrim(rtrim(number_format($lastamount->total_amount + totalPending($customer->id), 2, '.', ''), '0'), '.') }}" readonly> 
 
-                    {{-- Renew Form --}}
+                    </div>
+                    {{-- Amount --}}
                     <form action="{{ route('booking.store', $branch->uuid) }}" method="POST">
                         @csrf
+                    <div class="col-lg-6">
+                         <label for="">Final Payble amount<span>*</span></label> 
+                        <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount',  $lastamount->total_amount+totalPending($customer->id))}}"> 
+
+                    </div>
+                    
+
+                    {{-- Renew Form --}}
+                    
 
                         {{-- Hidden Fields (UNCHANGED) --}}
                         <input type="hidden" name="renewal" value="1">
@@ -173,7 +187,7 @@
                         <input type="hidden" name="plan_start_date" value="{{ \Carbon\Carbon::parse($customer_detail->plan_end_date)->addDay()->toDateString() }}">
                         <input type="hidden" name="payment_mode" value="online">
                         <input type="hidden" name="learner_detail_id" value="{{ $customer_detail->id }}">
-                        <input type="hidden" name="learner_transaction_id" value="{{ $transaction->id }}">
+                        <input type="hidden" name="learner_transaction_id" value="{{ $lastamount->id }}">
 
                         {{-- CTA --}}
                         <button type="submit" class="btn btn-primary button">Proceed to Pay <i class="fa fa-long-arrow-right ms-2"></i></button>

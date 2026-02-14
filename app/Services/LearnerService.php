@@ -179,13 +179,12 @@ class LearnerService
         // 1. Calculate new plan total
         $effectivePaid = $data['planPrice'] + $data['locker'] - $data['discount'];
 
-        if ($data['paid_date']) {
-            $transaction_date = $data['paid_date']->format('Y-m-d');
-        } elseif ($data['start_date']) {
-            $transaction_date = $data['start_date']->format('Y-m-d');
-        } else {
-            $transaction_date = date('Y-m-d');
-        }
+        $transaction_date =
+            $data['transaction_date']
+            ?? optional($data['paid_date'])->format('Y-m-d')
+            ?? optional($data['start_date'])->format('Y-m-d')
+            ?? date('Y-m-d');
+
 
         // 2. Get old pending transactions
         $pendingTransactions = LearnerTransaction::where('learner_id', $data['learner_id'])
@@ -330,8 +329,8 @@ class LearnerService
             $branchId=$data['branchId'];
             $plan_id = $data['plan_id'];
             $plan_type_id = $data['plan_type_id'];
-            $seat_no = $customer->seat_no;
-            $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
+            $seat_no = $data['seat_no'];
+            $start_date = $data['start_date'] ? Carbon::parse($data['start_date']) :Carbon::parse($lastDetail->plan_end_date)->addDay();
             $endDate = getEndDate($plan_id, $start_date,$branchId);
             $learnerId=$customer->id;
             $planType = PlanType::findOrFail($plan_type_id);
@@ -341,6 +340,7 @@ class LearnerService
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
+            
             if ($customer->seat_no) {
                 $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
 
@@ -394,16 +394,18 @@ class LearnerService
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
             $today = Carbon::today();
 
-            if (
-                $lastDetail->plan_end_date < $today &&
-                $endDate->gt($today) &&
-                $is_paid == 1
-            ) {
-                $status = 1;
+            if($customer->status==0 && ($start_date==$today)){
+                 $status = 1;
+            }else{
+                 $status = $customer->status;
+            }
+
+            if ($lastDetail->plan_end_date < $today && $endDate->gt($today) && $is_paid == 1) {
+                $detailstatus = 1;
             } elseif ($inextendDate > $today && $start_date <= $today) {
-                $status = 1;
+                $detailstatus = 1;
             } else {
-                $status = 0;
+                $detailstatus = 0;
             }
 
              if ( ($paid_amount > ($effectivePaid+$oldTotalPending)) || ($paid_amount == 0 && $payment_mode != 3)) {
@@ -440,9 +442,9 @@ class LearnerService
                 'plan_end_date' => $endDate->format('Y-m-d'),
                 'join_date' => $lastDetail->join_date,
                 'hour' => $hours,
-                'seat_no' => $lastDetail->seat_no,
+                'seat_no' => $seat_no,
                 'payment_mode' => $payment_mode,
-                'status' => $status,
+                'status' => $detailstatus,
                 'is_paid' => $is_paid,
             ]);
 
@@ -473,8 +475,13 @@ class LearnerService
             /* ---------------------------------------------------------
             | 10. Update Learner and Learner Detail Status
             ---------------------------------------------------------*/
+             if ($customer->trashed()) {
+                $customer->restore();
+            }
             if ($status == 1) {
                 $customer->hours = $hours;
+                $customer->seat_no = $seat_no;
+                $customer->status = $status;
                 LearnerDetail::where('learner_id', $customer->id)
                     ->where('id', '!=', $learner_detail->id)
                     ->update(['status' => 0]);
@@ -483,11 +490,28 @@ class LearnerService
             if (!empty($data['locker_no'])) {
                 $customer->locker_no = $data['locker_no'];
             }
+           
 
             $customer->save();
-
+            /* ---------------------------------------------------------
+            | 11. Operation log add
+            ---------------------------------------------------------*/
+            if($data['payment_type']=='REACTIVE') {
+                DB::table('learner_operations_log')->insert([
+                    'learner_id' => $customer->id,
+                    'learner_detail_id' => $learner_detail->id,
+                    'library_id' => $customer->library_id,
+                    'field_updated' => 'seat_no',
+                    'old_value' =>$data['old_value'] ?? null,
+                    'new_value' => $data['seat_no'] ?? null,
+                    'updated_by' => $customer->library_id,
+                    'branch_id' =>  $branchId,
+                    'operation' => 'reactive',
+                    'created_at' => now(),
+                ]);
+            }
              /* ---------------------------------------------------------
-            | 11. Notofication Sent
+            | 12. Notofication Sent
             ---------------------------------------------------------*/
 
              try {

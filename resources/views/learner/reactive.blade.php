@@ -253,7 +253,13 @@ if($customer->locker_no){
 
                             </div>
                         </div>
-                        <div class="g-4 row">         
+                        <div class="g-4 row">
+                            @if(totalPending($customer->id) > 0)
+                             <div class="col-lg-4">
+                                <label for="">Previous Pending Amount <span>*</span></label>
+                                <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending10" value="{{ old('previous_pending', totalPending($customer->id)) }}" readonly>
+                            </div> 
+                            @endif        
                             <div class="col-lg-4">
                                 <label>Total Amount <span>*</span></label>
                                 <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" placeholder="0.00"  value="{{ old('paid_amount') }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
