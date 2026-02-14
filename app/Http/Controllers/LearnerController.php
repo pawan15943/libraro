@@ -907,6 +907,81 @@ class LearnerController extends Controller
             return view('learner.reactive', compact('customer', 'available_seat','hasLocker','discountAmount','selectedDiscountType','oneWeekLater','today','locker_amt'));
         }
     }
+      // reactive learner store
+   public function reactiveLearner(Request $request, $id, LearnerService $service)
+    {
+        $rules = [
+            'plan_id' => 'required',
+            'seat_no' => 'nullable',
+            'plan_type_id' => 'required',
+            'plan_price_id' => 'required',
+            'plan_start_date' => 'required',
+            'user_id' => 'required',
+            'learner_detail' => 'required',
+            'payment_mode' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        if (!Gate::allows('has-permission', 'Reactive Seat')) {
+            return redirect()->back()->with('error', 'You do not have permission.');
+        }
+
+        try {
+
+            $old_value = LearnerDetail::withTrashed()
+                ->where('id', $request->learner_detail)
+                ->first();
+
+            $customer = Learner::withTrashed()
+                ->findOrFail($request->user_id);
+
+            if (LearnerDetail::where('learner_id', $customer->id)
+                ->where('status', 1)->exists()) {
+                return redirect()->back()
+                    ->with('error', 'Your Plan Already Active')
+                    ->withInput();
+            }
+
+            $result = $service->processPlan([
+                'learner_id' => $customer->id,
+                'plan_id' => $request->plan_id,
+                'plan_type_id' => $request->plan_type_id,
+                'plan_price' => (float) $request->plan_price_id,
+                'payment_mode' => $request->payment_mode,
+                'discount_type' => $request->discountType,
+                'discount_amount' => $request->discount_amount,
+                'paid_amount' => (float) $request->paid_amount,
+                'locker_amount' => $request->locker_amount,
+                'locker_no' => $request->locker_no,
+                'payment_type' => 'REACTIVE',
+                'paid_date' => $request->paid_date,
+                'due_date' => $request->due_date,
+                'particular' => 'Paid by website',
+                'branchId' => getCurrentBranch(),
+                'library_id' => getLibraryId(),
+                'start_date' => $request->plan_start_date,
+                'seat_no' => $request->seat_no,
+                'old_value' => $old_value->seat_no ?? null,
+            ]);
+
+            if ($result['success']) {
+                return redirect()->route('learners')
+                    ->with('success', $result['message']);
+            }
+
+            return redirect()->back()
+                ->with('error', $result['message']);
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'An error occurred: ' . $e->getMessage());
+        }
+    }
     // reactive learner store
     // public function reactiveLearner(Request $request, $id)
     // {
@@ -1128,81 +1203,7 @@ class LearnerController extends Controller
     //         return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
     //     }
     // }
-    // reactive learner store
-   public function reactiveLearner(Request $request, $id, LearnerService $service)
-    {
-        $rules = [
-            'plan_id' => 'required',
-            'seat_no' => 'nullable',
-            'plan_type_id' => 'required',
-            'plan_price_id' => 'required',
-            'plan_start_date' => 'required',
-            'user_id' => 'required',
-            'learner_detail' => 'required',
-            'payment_mode' => 'required',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
-        if (!Gate::allows('has-permission', 'Reactive Seat')) {
-            return redirect()->back()->with('error', 'You do not have permission.');
-        }
-
-        try {
-
-            $old_value = LearnerDetail::withTrashed()
-                ->where('id', $request->learner_detail)
-                ->first();
-
-            $customer = Learner::withTrashed()
-                ->findOrFail($request->user_id);
-
-            if (LearnerDetail::where('learner_id', $customer->id)
-                ->where('status', 1)->exists()) {
-                return redirect()->back()
-                    ->with('error', 'Your Plan Already Active')
-                    ->withInput();
-            }
-
-            $result = $service->processPlan([
-                'learner_id' => $customer->id,
-                'plan_id' => $request->plan_id,
-                'plan_type_id' => $request->plan_type_id,
-                'plan_price' => (float) $request->plan_price_id,
-                'payment_mode' => $request->payment_mode,
-                'discount_type' => $request->discountType,
-                'discount_amount' => $request->discount_amount,
-                'paid_amount' => (float) $request->paid_amount,
-                'locker_amount' => $request->locker_amount,
-                'locker_no' => $request->locker_no,
-                'payment_type' => 'REACTIVE',
-                'paid_date' => $request->paid_date,
-                'due_date' => $request->due_date,
-                'particular' => 'Paid by website',
-                'branchId' => getCurrentBranch(),
-                'library_id' => getLibraryId(),
-                'start_date' => $request->plan_start_date,
-                'seat_no' => $request->seat_no,
-                'old_value' => $old_value->seat_no ?? null,
-            ]);
-
-            if ($result['success']) {
-                return redirect()->route('learners')
-                    ->with('success', $result['message']);
-            }
-
-            return redirect()->back()
-                ->with('error', $result['message']);
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'An error occurred: ' . $e->getMessage());
-        }
-    }
+  
 
 
      //  public function changePlanUpdate(Request $request, $id = null)

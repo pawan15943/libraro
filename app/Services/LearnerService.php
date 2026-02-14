@@ -330,7 +330,9 @@ class LearnerService
             $plan_id = $data['plan_id'];
             $plan_type_id = $data['plan_type_id'];
             $seat_no = $data['seat_no'];
-            $start_date = $data['start_date'] ? Carbon::parse($data['start_date']) :Carbon::parse($lastDetail->plan_end_date)->addDay();
+            
+            $start_date = Carbon::parse($data['start_date'] ?? $lastDetail->plan_end_date)->addDay();
+
             $endDate = getEndDate($plan_id, $start_date,$branchId);
             $learnerId=$customer->id;
             $planType = PlanType::findOrFail($plan_type_id);
@@ -478,7 +480,7 @@ class LearnerService
              if ($customer->trashed()) {
                 $customer->restore();
             }
-            if ($status == 1) {
+            if ($detailstatus == 1) {
                 $customer->hours = $hours;
                 $customer->seat_no = $seat_no;
                 $customer->status = $status;
