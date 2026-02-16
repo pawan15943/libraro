@@ -107,6 +107,8 @@
                                     @can('has-permission', 'Custom Plan')
                                     <option value="0"  @selected((string)$row?->day_type_id == '0')>Custom</option>
                                     @endcan
+                                    <option value="10"  @selected((string)$row?->day_type_id == '10')>Reserved</option>
+                                    <option value="11"  @selected((string)$row?->day_type_id == '11')>VIP</option>
                                 </select>
                                     
                                 @error('plan_types.0.day_type_id')
@@ -404,9 +406,11 @@ $(document).on('submit', '#configure', function(e) {
                         window.location.href = res.redirect;
                     } else {
                         submitBtn.prop('disabled', false);
+                        location.reload(); // ← add this
                     }
                 }
             },
+
 
 
         error: function(xhr){

@@ -597,6 +597,7 @@ class LibraryController extends Controller
     }
     public function configrationStore(Request $request)
     {
+     
          $planTypes = collect($request->plan_types ?? [])
         ->filter(function ($row) {
             // ADD mode → always true (day_type_id exists)
@@ -747,27 +748,37 @@ class LibraryController extends Controller
             $pairKey = $row['start_time'] . '-' . $row['end_time'];
             $rowId   = $row['plan_type_id'] ?? 'new';
 
-            if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId) {
-                throw new \Exception(
-                    'Duplicate shift detected with same start and end time.'
-                );
+            if (isset($timePairs[$pairKey])) {
+
+                $existing = $timePairs[$pairKey];
+
+                // block only when both are non-custom
+                if (
+                    $existing['row_id'] != $rowId &&
+                    $existing['day_type_id'] != 0 &&
+                    $row['day_type_id'] != 0
+                ) {
+                    throw new \Exception(
+                        'Duplicate shift detected with same start and end time.'
+                    );
+                }
             }
 
             $timePairs[$pairKey] = $rowId;
-
+            
 
             /* =========================
                DATABASE DUPLICATE CHECK
             ========================= */
             $query = PlanType::where('branch_id', $branch->id)
                 ->where('start_time', $row['start_time'])
-                ->where('end_time', $row['end_time']);
+                ->where('end_time', $row['end_time'])->where('day_type_id', '!=', 0);
 
             if (!empty($row['plan_type_id'])) {
                 $query->where('id', '!=', $row['plan_type_id']);
             }
 
-            if ($query->exists()) {
+            if ($row['day_type_id'] != 0 && $query->exists()) {
                 throw new \Exception(
                     'A shift with the same time range already exists.'
                 );
@@ -783,6 +794,8 @@ class LibraryController extends Controller
                 3 => 'Second Half',
                 8 => 'All Day',
                 9 => 'Full Night',
+                10 => 'Reserved',
+                11 => 'VIP',
                 0 => $row['custom_plan_type'],
                 default => 'Custom',
             };

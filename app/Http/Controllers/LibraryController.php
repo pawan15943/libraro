@@ -782,34 +782,9 @@ class LibraryController extends Controller
     DB::beginTransaction();
 
     try {
+        $finalShiftIds = [];
 
-        /* =========================
-           DELETE REMOVED SHIFTS
-        ========================= */
-        $submittedIds = collect($request->plan_types)
-            ->pluck('plan_type_id')
-            ->filter()
-            ->toArray();
-
-        $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
-
-        foreach ($existingShifts as $planType) {
-
-            if (!in_array($planType->id, $submittedIds)) {
-
-                $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
-
-                if ($exists) {
-                    throw new \Exception(
-                        "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
-                    );
-                }
-
-                PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
-                $planType->forcedelete();
-            }
-        }
-
+       
         /* =========================
            GLOBAL SHIFT COVERAGE CHECK
         ========================= */
@@ -842,8 +817,12 @@ class LibraryController extends Controller
         $timePairs = [];
         $isCreating = false;
         $isUpdating = false;
+        $planTypesss = $request->plan_types;
 
-        foreach ($request->plan_types as $row) {
+        foreach ($planTypesss as $index => $row) {
+
+
+
 
             if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
                 throw new \Exception('Selected hours exceed the library’s available hours.');
@@ -865,31 +844,90 @@ class LibraryController extends Controller
             }
 
             /* Duplicate check inside request */
-            $pairKey = $row['start_time'] . '-' . $row['end_time'];
-            $rowId   = $row['plan_type_id'] ?? 'new';
+        
+            $rowId = $row['plan_type_id'] ?? 'new';
+            $currentDayType = (int) $row['day_type_id'];
 
-            if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId) {
-                throw new \Exception(
-                    'Duplicate shift detected with same start and end time.'
-                );
+            if ($currentDayType === 0) {
+                // CUSTOM SHIFT → check by time range
+                $pairKey = $row['start_time'] . '-' . $row['end_time'];
+
+                if (isset($timePairs['custom'][$pairKey])) {
+                    throw new \Exception(
+                        'Duplicate custom shift detected for same time range.'
+                    );
+                }
+
+                $timePairs['custom'][$pairKey] = true;
+
+            } else {
+                // NON-CUSTOM SHIFT → check by day_type_id
+                if (isset($timePairs['non_custom'][$currentDayType])) {
+                    throw new \Exception(
+                        'Duplicate shift detected.'
+                    );
+                }
+
+                $timePairs['non_custom'][$currentDayType] = true;
             }
 
-            $timePairs[$pairKey] = $rowId;
 
-            /* Duplicate check in DB */
-            $query = PlanType::where('branch_id', $branch->id)
-                ->where('start_time', $row['start_time'])
-                ->where('end_time', $row['end_time']);
+           /* Duplicate check in DB */
 
-            if (!empty($row['plan_type_id'])) {
-                $query->where('id', '!=', $row['plan_type_id']);
+           $currentId = $row['plan_type_id'] ?? null;
+
+            if ($row['day_type_id'] == 0) {
+
+                // CUSTOM → check by time range
+                $existing = PlanType::where('branch_id', $branch->id)
+                    ->where('day_type_id', 0)
+                    ->where('start_time', $row['start_time'])
+                    ->where('end_time', $row['end_time'])
+                    ->first();
+
+                if ($existing) {
+
+                    // if editing same shift without ID → treat as update
+                    if (!$currentId) {
+                        $planTypesss[$index]['plan_type_id'] = $existing->id;
+                        $row['plan_type_id'] = $existing->id; 
+                        $currentId = $existing->id;
+                    }
+
+                    // if different record → block
+                    elseif ($existing->id != $currentId) {
+                        throw new \Exception(
+                            'Custom shift already exists for this time range.'
+                        );
+                    }
+                }
+
+            } else {
+
+                // NON-CUSTOM → check by day_type_id
+                $existing = PlanType::where('branch_id', $branch->id)
+                    ->where('day_type_id', $row['day_type_id'])
+                    ->first();
+
+                if ($existing) {
+
+                   if (!$currentId) {
+                        $planTypesss[$index]['plan_type_id'] = $existing->id;
+                        $row['plan_type_id'] = $existing->id;
+                        $currentId = $existing->id;
+                    }
+
+
+                    elseif ($existing->id != $currentId) {
+                        throw new \Exception(
+                            'This shift type already exists.'
+                        );
+                    }
+                }
             }
 
-            if ($query->exists()) {
-                throw new \Exception(
-                    'A shift with the same time range already exists.'
-                );
-            }
+
+
 
             /* Plan name logic */
             $dayTypeId = (int) $row['day_type_id'];
@@ -900,16 +938,19 @@ class LibraryController extends Controller
                 3 => 'Second Half',
                 8 => 'All Day',
                 9 => 'Full Night',
+                10 => 'Reserved',
+                11 => 'VIP',
                 0 => $row['custom_plan_type'],
                 default => 'Custom',
             };
 
+         
+            $shiftId = $currentId;
             /* CREATE or UPDATE */
-            if (!empty($row['plan_type_id'])) {
-
+            if ($shiftId) {
                 $isUpdating = true;
 
-                $planType = PlanType::where('id', $row['plan_type_id'])
+                $planType = PlanType::where('id', $shiftId)
                     ->where('branch_id', $branch->id)
                     ->first();
 
@@ -943,6 +984,7 @@ class LibraryController extends Controller
                     'image'       => 'public/img/booked.png',
                 ]);
             }
+            $finalShiftIds[] = $planType->id;
 
             /* Price */
             if (!empty($row['plan_price_id'])) {
@@ -960,6 +1002,58 @@ class LibraryController extends Controller
                 ]);
             }
         }
+
+        /* =========================
+        DELETE REMOVED SHIFTS (SAFE)
+        ========================= */
+        $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
+
+        foreach ($existingShifts as $planType) {
+
+            if (!in_array($planType->id, $finalShiftIds)) {
+
+                $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
+
+                if ($exists) {
+                    throw new \Exception(
+                        "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
+                    );
+                }
+
+                PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
+                $planType->forcedelete();
+            }
+        }
+
+
+         /* =========================
+           DELETE REMOVED SHIFTS
+        ========================= */
+        // $submittedIds = collect($request->plan_types)
+        //     ->pluck('plan_type_id')
+        //     ->filter()
+        //     ->toArray();
+
+        // $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
+        
+
+        // foreach ($existingShifts as $planType) {
+
+        //     if (!in_array($planType->id, $submittedIds)) {
+
+        //         $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
+
+        //         if ($exists) {
+        //             throw new \Exception(
+        //                 "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
+        //             );
+        //         }
+
+        //         PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
+        //         $planType->forcedelete();
+        //     }
+        // }
+
 
         /* =========================
            LIBRARY CODE GENERATION
