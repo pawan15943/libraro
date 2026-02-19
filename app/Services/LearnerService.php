@@ -396,7 +396,7 @@ class LearnerService
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
             $today = Carbon::today();
 
-            if($customer->status==0 && ($start_date==$today)){
+            if($customer->status==0 && ($start_date<=$today)){
                  $status = 1;
             }else{
                  $status = $customer->status;
