@@ -658,14 +658,19 @@ class LearnerService
             }else{
                  $status = 0;
             }
+           
 
-            if ($endDate->gt($today) && $is_paid == 1) {
+            if ($endDate->gt($today) && $start_date <= $today && $is_paid == 1) {
+               
                 $detailstatus = 1;
             } elseif ($inextendDate > $today && $start_date <= $today) {
+               
                 $detailstatus = 1;
             } else {
+               
                 $detailstatus = 0;
             }
+           
 
              if ( ($paid_amount > ($effectivePaid)) ) {
                  throw new \Exception('Paid amount is not valid');
