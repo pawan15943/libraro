@@ -929,7 +929,7 @@ class LibraryController extends Controller
                     $shiftName = $dayTypeId == 11 ? 'VIP' : 'Reserved';
 
                     throw new \Exception(
-                        "{$shiftName} shift must match full-day timing ({$branchRecord->hour} hours)."
+                        "{$shiftName} shift must match library timing ({$branchRecord->hour} hours)."
                     );
                 }
             }
