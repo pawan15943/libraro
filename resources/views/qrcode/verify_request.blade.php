@@ -868,8 +868,7 @@ span.close-modal {
     });
 
     function getPlanPriceVerify(plan_type_id11,plan_id11) {
-        console.log("jhhhtype",plan_type_id11);
-        console.log("jhhhtypeplan_id11",plan_id11);
+        
         if (plan_type_id11 && plan_id11) {
             $.ajax({
                 url: "{{ route('getPricePlanwise') }}"
@@ -881,9 +880,9 @@ span.close-modal {
                 , }
                 , dataType: 'json'
                 , success: function(html) {
-                    console.log('htmoll222', html);
+                   
 
-                    if (html && html !== undefined) {
+                    if (html !== undefined && html !== null && html !== '') {
 
                         $('#pending_amt11').html('');
                         $("#plan_price11").prop("value", html);

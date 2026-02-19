@@ -585,7 +585,7 @@
             data.plan_start_date = start_date;
         }
 
-        console.log("start_date",start_date);
+      
         if (plan_type_id && plan_id) {
                 $.ajax({
                     url: '{{ route('getPricePlanwise') }}',
@@ -593,8 +593,8 @@
                     data: data,
                     dataType: 'json',
                     success: function(html) {
-                        console.log("sfpriev",html);
-                        if (html && html !== undefined) {
+                        
+                        if (html !== undefined && html !== null && html !== '') {
                                 $('#pending_amt3').html('');
                             if ($("#plan_price_id").length) {
                                 console.log("1plantype");
@@ -670,7 +670,7 @@
                     dataType: 'json',
                     success: function(html) {
                     
-                        if (html && html !== undefined) {
+                        if (html !== undefined && html !== null && html !== '') {
                             
                             $('#pending_amt10').html('');
                             $("#plan_price10").val(html);
@@ -1139,9 +1139,10 @@
             errors.payment_mode = 'Payment Mode is required.';
         }
 
-        if (!paid_amount) {
+       if (paid_amount === '' || paid_amount === null || paid_amount === undefined) {
             errors.paid_amount = 'Paid amount is required.';
         }
+
 
             
         if(paid_amount > (plan_price_value +locker_amount- discount_amount)){
@@ -1936,7 +1937,7 @@
                         },
                         dataType: 'json',
                         success: function(html) {
-                            if (html && html !== undefined) {
+                           if (html !== undefined && html !== null && html !== '') {
                                 $('#pending_amt3').html('');
                                 if ($("#plan_price").length) {
                                    
@@ -1976,7 +1977,7 @@
                         },
                         dataType: 'json',
                         success: function(html) {
-                            if (html && html !== undefined) {
+                            if (html !== undefined && html !== null && html !== '') {
 
                                 if ($("#plan_price_id2").length) {
                                    

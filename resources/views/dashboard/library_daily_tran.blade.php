@@ -435,7 +435,7 @@ use Carbon\Carbon;
                 </li>
                 
                 <li>
-                    <span>Final Balance</span>
+                    <span>Final Balence</span>
                     <p>{{ number_format($row['final_balance']) }}</p>
                 </li>
 

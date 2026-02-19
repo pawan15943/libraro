@@ -180,7 +180,7 @@
                                 </select>
                             </div>
                             @if(notificationActive())
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label for="">Send Reminders Via (Optional)</label>
                                 <select id="sended_message_type" class="form-select" name="sended_message_type">
                                     <option value="">Select Type</option>
@@ -191,6 +191,15 @@
                                 </select>
                             </div>
                             @endif
+                            <div class="col-lg-6">
+                                <label for="">No Expiry Seat (Optional)</label>
+                                <select name="no_expiry" id="no_expiry" class="form-select">
+                                    <option value="">Select Expiry Mode</option>
+                                    <option value="1">Yes, Make it non expired seat.</option>
+                                    <option value="0" selected>No</option>
+
+                                </select>
+                            </div>
                         </div>
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields
@@ -234,6 +243,7 @@
                                     </select>
                                 </div>
                                 @endif
+                               
 
 
 
@@ -281,7 +291,7 @@
 
                         </div>
                         @endif
-
+                        
                         <div class="row mt-4">
                             <div class="col-lg-4">
                                 <button type="submit" class="btn btn-primary btn-block button">Book Seat Now</button>
@@ -426,6 +436,7 @@
                                 </select>
                             </div>
                         </div>
+                       
                         <div class="row g-3 mt-2">
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">

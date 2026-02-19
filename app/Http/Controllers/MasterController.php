@@ -370,6 +370,10 @@ class MasterController extends Controller
             $plan_type_name='All Day';
            }elseif($request->day_type_id==9){
             $plan_type_name='Full Night';
+           }elseif($request->day_type_id==10){
+            $plan_type_name='Reserved';
+           }elseif($request->day_type_id==11){
+            $plan_type_name='VIP';
            }elseif($request->day_type_id==0){
             $plan_type_name=$request->custom_plan_type;
            }
@@ -416,6 +420,19 @@ class MasterController extends Controller
             
 
         }
+        if ($request->databasemodel == 'PlanType') {
+
+            $exist_hour = Hour::where('branch_id', $request->branch_id)->value('hour');
+           
+
+            // VIP or Reserved must match full day hours
+            if (in_array($request->day_type_id, [10, 11]) && $request->slot_hours != $exist_hour) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'VIP and Reserved shift timing must be equal to Library hours.'
+                ]);
+            }
+        }
 
 
     
@@ -445,7 +462,7 @@ class MasterController extends Controller
              
             unset($data['redirect']);
              
-
+            
           
             if($request->databasemodel ){
                 if (is_null($data['id'])) {

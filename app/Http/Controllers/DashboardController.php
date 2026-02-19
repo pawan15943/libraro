@@ -1457,7 +1457,7 @@ class DashboardController extends Controller
             case 'today_balance':
                 $query->whereDate('date', now()->toDateString());
            
-            $data['label'] = 'Today Balance';
+            $data['label'] = 'Today Balence';
 
             break;
             case 'monthly_collection':
@@ -1540,7 +1540,7 @@ class DashboardController extends Controller
                     ];
                 }
                 
-                $data['label'] = 'Monthly Balance';
+                $data['label'] = 'Monthly Balence';
 
                 break;
         

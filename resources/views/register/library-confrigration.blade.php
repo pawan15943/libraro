@@ -150,9 +150,8 @@
 
                             <div class="col-lg-6">
                                 <label>Price *</label>
-                                <input type="text" inputmode="numeric"
-                                        pattern="[0-9]*"
-                                        maxlength="5" name="plan_types[{{$index}}][price]" value="{{ $row->price->price ?? '' }}" class="form-control @error('plan_types.0.price') is-invalid @enderror" max="4" min="1">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                                        maxlength="5" name="plan_types[{{$index}}][price]" value="{{ $row->price->price ?? '' }}" class="form-control price-input @error('plan_types.0.price') is-invalid @enderror" max="4" min="1">
                                 @error('plan_types.0.price')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -269,6 +268,35 @@ $(document).ready(function(){
     }
 
     /* =======================
+    VIP PRICE HANDLING
+    ======================= */
+    function initVipPrice(wrapper){
+
+        let select = wrapper.find('.plan-type');
+        let priceInput = wrapper.find('.price-input');
+
+        function applyVipRule(){
+            let dayType = select.val();
+
+            if(dayType == '11'){ // VIP
+                priceInput.val(0);
+                priceInput.prop('readonly', true);
+            } else {
+                priceInput.prop('readonly', false);
+            }
+        }
+
+        // trigger on change
+        select.off('change.vip').on('change.vip', function(){
+            applyVipRule();
+        });
+
+        // run on load
+        applyVipRule();
+    }
+
+
+    /* =======================
        REINDEX ROWS
     ======================= */
     function reindexPlanRows(){
@@ -295,6 +323,7 @@ $(document).ready(function(){
     $('.plan-row-wrapper').each(function(){
         initFlatpickr($(this));
         initCustomPlan($(this));
+        initVipPrice($(this));
     });
 
     /* =======================
@@ -314,6 +343,7 @@ $(document).ready(function(){
         reindexPlanRows();
         initFlatpickr(clone);
         initCustomPlan(clone);
+        initVipPrice(clone);
     });
 
     /* =======================

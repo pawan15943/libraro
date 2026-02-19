@@ -42,9 +42,9 @@ class QrEntryController extends Controller
             ->margin(2)
             ->generate($url)
             );
-        $branch=Branch::where('uuid', $uuid)->select('name','display_name','mobile')->first();
-
-        $pdf = PDF::loadView('library.branch-qr', compact('qrCode', 'uuid','branch'))
+        $branch=Branch::where('uuid', $uuid)->select('name','display_name','mobile','library_id','library_address','mobile')->first();
+        $library_name=Library::where('id',$branch->library_id)->select('library_name')->first();
+        $pdf = PDF::loadView('library.branch-qr', compact('qrCode', 'uuid','branch','library_name'))
                 ->setPaper('a4', 'portrait');
 
         return $pdf->download("branch-qr-{$uuid}.pdf");

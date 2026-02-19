@@ -56,6 +56,8 @@ class LibraryController extends Controller
         $today = Carbon::today();
         $futureCheckDate = $today->copy()->addDays(5);
         $extend_day = getExtendDays();
+
+        $this->nonExpiredUpdate();
         // ---- Case 1: Renewed Learners ----
         $renewedLearners = LearnerDetail::select('learner_id')
             ->groupBy('learner_id')
@@ -63,7 +65,7 @@ class LibraryController extends Controller
                 SUM(CASE WHEN plan_end_date <= ? THEN 1 ELSE 0 END) > 0 
                 AND 
                 SUM(CASE WHEN plan_end_date > ? AND status = 0 THEN 1 ELSE 0 END) > 0
-            ', [$today->copy()->addDays(5), $today->copy()->addDays(5)])
+            ', [$futureCheckDate, $futureCheckDate])
             ->pluck('learner_id');
 
         // ---- Case 2: Expired Learners ----
@@ -84,58 +86,132 @@ class LibraryController extends Controller
         $learnerIds = $renewedLearners
             ->merge($expiredLearners)
             ->merge($futureLearners)
-            ->unique();
+            ->unique()->values();
 
+        if ($learnerIds->isEmpty()) {
+            return true;
+        }
+        $customerdatas = LearnerDetail::whereIn('learner_id', $learnerIds)
+        ->orderBy('learner_id')
+        ->orderBy('plan_start_date')
+        ->get()
+        ->groupBy('learner_id');
+       foreach ($customerdatas as $learnerId => $details) {
 
-        $customerdatas = LearnerDetail::whereIn('learner_id', $learnerIds)->get();
+            $activeDetail = null;
 
-        foreach ($customerdatas as $customerdata) {
-            $branchId = $customerdata->branch_id;
-            $branch = $branchId ? Branch::find($branchId) : null;
-            $extend_day = $branch ? $branch->extend_days : 0;
+            foreach ($details as $detail) {
 
-            $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
+                $branchId = $detail->branch_id;
+                $branch = $branchId ? Branch::find($branchId) : null;
+                $extend_day = $branch ? $branch->extend_days : 0;
 
-            $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
-                ->where('plan_end_date', '>', $futureCheckDate)
-                ->where('status', 0)
-                ->exists();
+                $planEndDateWithExtension = Carbon::parse($detail->plan_end_date)
+                    ->addDays($extend_day);
 
-            $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
-                ->where('plan_end_date', '<', $futureCheckDate)
-                ->exists();
+                // Check if this detail is active today
+                if (
+                    $detail->plan_start_date <= $today &&
+                    $planEndDateWithExtension > $today
+                ) {
+                    $activeDetail = $detail;
+                    break;
+                }
+            }
 
-            $isRenewed = $hasFuturePlan && $hasPastPlan;
+            if ($activeDetail) {
 
-            if ($planEndDateWithExtension->lte($today)) {
-                Learner::where('id', $customerdata->learner_id)
-                    ->where('status', '!=', 0)
-                    ->update(['status' => 0]);
-
-                $customerdata->update(['status' => 0]);
-            } elseif ($isRenewed) {
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
-                    ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>', $futureCheckDate)
-                    ->update(['status' => 1]);
-
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
-                    ->where('plan_end_date', '<', $today)
-                    ->update(['status' => 0]);
-            } else {
-                Learner::where('id', $customerdata->learner_id)
+                // Activate learner
+                Learner::where('id', $learnerId)
                     ->where('status', '!=', 1)
                     ->update(['status' => 1]);
 
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
-                    ->where('status', 0)
-                    ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>', $today)
-                    ->update(['status' => 1]);
+                // Deactivate all details
+                LearnerDetail::where('learner_id', $learnerId)
+                    ->update(['status' => 0]);
+
+                // Activate correct detail
+                $activeDetail->update(['status' => 1]);
+
+            } else {
+
+                // No active plan
+                Learner::where('id', $learnerId)
+                    ->where('status', '!=', 0)
+                    ->update(['status' => 0]);
+
+                LearnerDetail::where('learner_id', $learnerId)
+                    ->update(['status' => 0]);
             }
         }
 
+
         return true;
+    }
+
+    public function nonExpiredUpdate()
+    {
+        $today = Carbon::today();
+        $yesterday=Carbon::today()->subDay();
+
+       $nonExpiredLearners = LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+        ->where('learner_detail.status', 1)
+        ->whereDate('learner_detail.plan_end_date', $yesterday)
+        ->where('learners.no_expiry', 1)
+        ->select('learner_detail.*')
+        ->get();
+         $branchId  = $branch_id ?? getCurrentBranch();
+
+        $branch = Branch::find($branchId);
+
+        foreach ($nonExpiredLearners as $detail) {
+            DB::transaction(function () use ($detail, $branchId) {
+                // New end date
+                $start_date = Carbon::parse($detail->plan_end_date)->addDay();
+                $newEndDate = getEndDate($detail->plan_id, $start_date, $branchId);
+
+                $lastTransaction = LearnerTransaction::where('learner_detail_id', $detail->id)
+                    ->latest()
+                    ->first();
+                
+                // Add same detail record
+                $learner_detail = LearnerDetail::create([
+                    'library_id' => $detail->library_id,
+                    'branch_id' =>  $detail->branch_id,
+                    'learner_id' =>  $detail->learner_id,
+                    'plan_id' => $detail->plan_id,
+                    'plan_type_id' => $detail->plan_type_id,
+                    'plan_price_id' => $detail->plan_price_id,
+                    'plan_start_date' => $start_date->format('Y-m-d'),
+                    'plan_end_date' => $newEndDate->format('Y-m-d'),
+                    'join_date' => $detail->join_date,
+                    'hour' => $detail->hour,
+                    'seat_no' => $detail->seat_no,
+                    'payment_mode' => 3,
+                    'status' => 1,
+                    'is_paid' => 0,
+                ]);
+                // add new transaction entry
+                LearnerTransaction::create([
+                    'learner_id'        => $lastTransaction->learner_id,
+                    'library_id'        => $lastTransaction->library_id,
+                    'branch_id'         => $lastTransaction->branch_id,
+                    'learner_detail_id' => $learner_detail->id,
+                    'total_amount'      => $lastTransaction->total_amount,
+                    'paid_amount'       => 0 ,
+                    'pending_amount'    => $lastTransaction->total_amount,
+                    'locker_amount'     => $lastTransaction->locker ?? 0,
+                    'discount_amount'   => $lastTransaction->discount ?? 0,
+                    'is_paid'           => 0,
+                    'due_date'          => date('Y-m-d'),
+                    'transaction_id'    => transaction_id(),
+                ]);
+            
+                $detail->update([
+                        'status' => 0
+                ]);
+            });
+        }
     }
     public function confirmDailyPopup()
     {
@@ -822,8 +898,6 @@ class LibraryController extends Controller
         foreach ($planTypesss as $index => $row) {
 
 
-
-
             if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
                 throw new \Exception('Selected hours exceed the library’s available hours.');
             }
@@ -841,6 +915,23 @@ class LibraryController extends Controller
                 throw new \Exception(
                     "Slot hours must match shift time ({$actualHours} hours)."
                 );
+            }
+
+            /* =========================
+            VIP / RESERVED VALIDATION
+            ========================= */
+            $dayTypeId = (int) $row['day_type_id'];
+
+            if (in_array($dayTypeId, [10, 11])) {
+
+                // Must match branch full-day hours
+                if ($actualHours != $branchRecord->hour) {
+                    $shiftName = $dayTypeId == 11 ? 'VIP' : 'Reserved';
+
+                    throw new \Exception(
+                        "{$shiftName} shift must match full-day timing ({$branchRecord->hour} hours)."
+                    );
+                }
             }
 
             /* Duplicate check inside request */
@@ -986,6 +1077,9 @@ class LibraryController extends Controller
             }
             $finalShiftIds[] = $planType->id;
 
+            if ($dayTypeId == 11) {
+                $row['price'] = 0;
+            }
             /* Price */
             if (!empty($row['plan_price_id'])) {
                 PlanPrice::where('id', $row['plan_price_id'])->update([
@@ -1026,33 +1120,6 @@ class LibraryController extends Controller
         }
 
 
-         /* =========================
-           DELETE REMOVED SHIFTS
-        ========================= */
-        // $submittedIds = collect($request->plan_types)
-        //     ->pluck('plan_type_id')
-        //     ->filter()
-        //     ->toArray();
-
-        // $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
-        
-
-        // foreach ($existingShifts as $planType) {
-
-        //     if (!in_array($planType->id, $submittedIds)) {
-
-        //         $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
-
-        //         if ($exists) {
-        //             throw new \Exception(
-        //                 "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
-        //             );
-        //         }
-
-        //         PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
-        //         $planType->forcedelete();
-        //     }
-        // }
 
 
         /* =========================

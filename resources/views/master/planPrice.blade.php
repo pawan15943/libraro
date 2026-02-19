@@ -61,7 +61,7 @@
                 <select name="plan_type_id" id="master_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror event">
                     <option value="">Select Plan Type</option>
                     @foreach($plantypes as $planType)
-                    <option value="{{ $planType->id }}" {{ isset($planPrice) && $planPrice->plan_type_id == $planType->id ? 'selected' : '' }}>
+                    <option value="{{ $planType->id }}" data-type="{{ $planType->day_type_id }}" {{ isset($planPrice) && $planPrice->plan_type_id == $planType->id ? 'selected' : '' }}>
                         {{ $planType->name }}
                     </option>
                     @endforeach
@@ -115,6 +115,25 @@
             });
         });
     })(jQuery);
+
+    $(document).ready(function(){
+        $('#master_plan_type_id').trigger('change');
+    });
+
+    $(document).on('change', '#master_plan_type_id', function(){
+
+    let selected = $(this).find(':selected');
+    let dayType = selected.data('type');
+    let priceInput = $('#master_price');
+
+    if(dayType == 11){ // VIP
+        priceInput.val(0);
+        priceInput.prop('readonly', true);
+    } else {
+        priceInput.prop('readonly', false);
+    }
+});
+
 </script>
 
 

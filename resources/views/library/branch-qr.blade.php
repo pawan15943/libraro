@@ -18,6 +18,8 @@
 <body>
     <h2>Branch QR Code</h2>
    <h6>{{$branch->name}}</h6>
+   <h6>{{$library_name}}</h6>
+   <h6>{{$branch->mobile}}-{{$branch->library_address}}</h6>
     <div class="qr-code">
          <img src="data:image/png;base64,{{ $qrCode }}" alt="Branch QR Code">
     </div>

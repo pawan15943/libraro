@@ -250,7 +250,7 @@ class LearnerService
             'discount_amount'   => $data['discount'] ?? 0,
             'paid_date'         => $transaction_date,
             'is_paid'           => $data['is_paid'] ?? 0,
-            'branch_id'         => $data['branchId'],
+            
             'due_date'          => $data['due_date'],
             'transaction_id'    => transaction_id(),
         ]);
@@ -343,7 +343,7 @@ class LearnerService
             | 4. Seat Availability
             ---------------------------------------------------------*/
             
-            if ($customer->seat_no) {
+            if (!empty($data['seat_no'])) {
                 $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
 
                 if ($result['error']) {
@@ -563,6 +563,234 @@ class LearnerService
             return [
                 'success' => true,
                 'message' => 'Plan processed successfully',
+                'learner_detail_id' => $learner_detail->id
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function processLearnerStore(array $data)
+    {
+        DB::beginTransaction();
+
+        try {
+
+           
+
+            /* ---------------------------------------------------------
+            | 3. Plan Dates
+            ---------------------------------------------------------*/
+            $branchId=$data['branchId'];
+            $plan_id = $data['plan_id'];
+            $plan_type_id = $data['plan_type_id'];
+            $seat_no = $data['seat_no'];
+            
+            $start_date = Carbon::parse($data['start_date']);
+
+            $endDate = getEndDate($plan_id, $start_date,$branchId);
+            $learnerId=null;
+            $planType = PlanType::findOrFail($plan_type_id);
+            $hours = $planType->slot_hours;
+            
+
+            /* ---------------------------------------------------------
+            | 4. Seat Availability
+            ---------------------------------------------------------*/
+            
+           if (!empty($data['seat_no'])) {
+                $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
+
+                 if ($result['error']) {
+                    throw new \Exception($result['message']);
+                }
+            }
+
+          
+            
+
+            /* ---------------------------------------------------------
+            | 6. Payment Calculation
+            ---------------------------------------------------------*/
+            $planPrice = (float) ($data['plan_price'] ?? 0);
+            $locker = (float) ($data['locker_amount'] ?? 0);
+            $paid_amount = (float) ($data['paid_amount'] ?? 0);
+
+            $discount = 0;
+            if (($data['discount_type'] ?? null) == 'amount') {
+                $discount = $data['discount_amount'];
+            } elseif (($data['discount_type'] ?? null) == 'percentage') {
+                $total = $planPrice + $locker;
+                $discount = ($total * $data['discount_amount']) / 100;
+            }
+
+            $effectivePaid = $planPrice + $locker - $discount;
+            $pending_amount = $effectivePaid - $paid_amount;
+        
+
+            $payment_mode = $data['payment_mode'];
+
+            if ($payment_mode == 3) {
+                $pending_amount = $paid_amount;
+                $paid_amount = 0;
+            }
+
+            $is_paid = in_array($payment_mode, [1, 2]) ? 1 : 0;
+            
+
+            $transaction_date= $data['paid_date'] ?? null;
+            $due_date = $data['due_date'] ?? null;
+
+            /* ---------------------------------------------------------
+            | 7. Status Calculation
+            ---------------------------------------------------------*/
+            $extendDay = getExtendDays($branchId);
+            $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+            $today = Carbon::today();
+
+            if($start_date==$today){
+                 $status = 1;
+            }else{
+                 $status = 0;
+            }
+
+            if ($endDate->gt($today) && $is_paid == 1) {
+                $detailstatus = 1;
+            } elseif ($inextendDate > $today && $start_date <= $today) {
+                $detailstatus = 1;
+            } else {
+                $detailstatus = 0;
+            }
+
+             if ( ($paid_amount > ($effectivePaid)) ) {
+                 throw new \Exception('Paid amount is not valid');
+            
+            }
+            if (($pending_amount > 0) &&  empty($due_date)  && $payment_mode != 3) {
+                    throw new \Exception('Due date is required');
+            }
+            
+           if ($data['payment_type']) {
+                $payment_type = $data['payment_type'];
+            } 
+
+            /* ---------------------------------------------------------
+            | 1. Find Learner
+            ---------------------------------------------------------*/
+            $customer = Learner::create($data['learner_data']);
+             if (!$customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Learner not found.'
+                ];
+            }
+
+            /* ---------------------------------------------------------
+            | 8. Create Learner Detail
+            ---------------------------------------------------------*/
+            $learner_detail = LearnerDetail::create([
+                'library_id' => $customer->library_id,
+                'branch_id' => $branchId,
+                'learner_id' => $customer->id,
+                'plan_id' => $plan_id,
+                'plan_type_id' => $plan_type_id,
+                'plan_price_id' => $planPrice,
+                'plan_start_date' => $start_date->format('Y-m-d'),
+                'plan_end_date' => $endDate->format('Y-m-d'),
+                'join_date' => $start_date->format('Y-m-d'),
+                'hour' => $hours,
+                'seat_no' => $seat_no,
+                'payment_mode' => $payment_mode,
+                'status' => $detailstatus,
+                'is_paid' => $is_paid,
+                'exam_id'=>$data['exam_id'] ?? null,
+            ]);
+
+            /* ---------------------------------------------------------
+            | 9. Add Transaction AND Transaction Activity
+            ---------------------------------------------------------*/
+            $transactionData = [
+                'planPrice' => $planPrice,
+                'paid_amount' => $paid_amount,
+                'locker' => $locker,
+                'discount' => $discount,
+                'start_date' => $start_date,
+                'paid_date' => $data['paid_date'] ?? null,
+                'is_paid' => $is_paid,
+                'learner_detail_id' => $learner_detail->id,
+                'learner_id' => $customer->id,
+                'payment_type' => $data['payment_type'],
+                'payment_mode' => $payment_mode,
+                'due_date' => $data['due_date'] ?? null,
+                'particular' => $data['particular'] ?? 'System',
+                'library_id'=>$customer->library_id,
+                'branchId'    =>$branchId,
+            ];
+
+           
+            $this->learnerTransactionAddUpdate($transactionData);
+
+            /* ---------------------------------------------------------
+            | 10. Update Learner and Learner Detail Status
+            ---------------------------------------------------------*/
+            
+            if ($detailstatus == 1) {
+                $customer->hours = $hours;
+                $customer->seat_no = $seat_no;
+                $customer->status = $status;
+                LearnerDetail::where('learner_id', $customer->id)
+                    ->where('id', '!=', $learner_detail->id)
+                    ->update(['status' => 0]);
+            }
+
+            if (!empty($data['locker_no'])) {
+                $customer->locker_no = $data['locker_no'];
+            }
+           
+
+            $customer->save();
+         
+             /* ---------------------------------------------------------
+            | 12. Notofication Sent
+            ---------------------------------------------------------*/
+
+             try {
+                if($data['particular']=='Website book form'){
+                    $noti = new NotificationSentController;
+
+                    if (autowabaNotificationActive()) {
+                        \Log::info('autowabaNotificationActive');
+                        $noti->autoMessage($customer->id, 'waba', 'book-waba');
+                    } else {
+                        \Log::info('nowaba seond part swap');
+                    }
+                    if (autotextNotificationActive()) {
+                        \Log::info('autotextNotificationActive');
+                        $noti->autoMessage($customer->id, 'text', 'book-sms');
+                    } else {
+                        \Log::info('no text seond part swap');
+                    }
+                }
+               
+            } catch (\Throwable $e) {
+                // Log the error (won't break your main code)
+                \Log::error('Notification sending failed: ' . $e->getMessage(), [
+
+                    'exception' => $e
+                ]);
+            }
+
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Learner created successfully!',
                 'learner_detail_id' => $learner_detail->id
             ];
         } catch (\Exception $e) {

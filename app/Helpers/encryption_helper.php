@@ -844,6 +844,8 @@ if (!function_exists('getUserStatusWithSpan')) {
 
         if (Learner::where('id', $learner_id)->where('frozen_status', 1)->exists()) {
             return '<span class="text-success">Frozen</span>';
+        }elseif(has_vip($learner_id)){
+            return '<span class="text-success">VIP</span>';
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($is_renew_update && $diffInDays==0) {
@@ -928,6 +930,27 @@ if (!function_exists('getUserStatusDetails')) {
         } else {
             return '<span class="extended">Expired ' . abs($diffInDays) . ' days ago</span>';
         }
+    }
+}
+if (!function_exists('has_vip')) {
+    function has_vip($learner_id)
+    {
+        return LearnerDetail::leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->where('plan_types.day_type_id', 11)  
+            ->where('learner_detail.status', 1)
+            ->where('learner_detail.learner_id', $learner_id)
+            ->exists();
+    }
+}
+
+if (!function_exists('has_reserved')) {
+    function has_reserved($learner_id)
+    {
+        return LearnerDetail::leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->where('plan_types.day_type_id', 10)   
+            ->where('learner_detail.status', 1)
+            ->where('learner_detail.learner_id', $learner_id)
+            ->exists();
     }
 }
 
@@ -1912,6 +1935,7 @@ if (!function_exists('checkAvailability')) {
             $planType->start_time,
             $planType->end_time
         );
+        
 
         $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
@@ -1939,6 +1963,7 @@ if (!function_exists('checkAvailability')) {
         // }
 
         // ⏰ Time overlap
+        
         foreach ($bookings as $booking) {
 
             $existingRanges = normalizeTimeRange(
@@ -1952,10 +1977,21 @@ if (!function_exists('checkAvailability')) {
                         $req['start'] < $exist['end'] &&
                         $req['end'] > $exist['start']
                     ) {
-                        return [
+                        if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                        ->where('learner_detail.branch_id', $branchId)
+                        ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists()){
+                            return [
+                            'error' => true,
+                            'message' => 'This seat already have a future booking'
+                            ];
+                        }else{
+                            return [
                             'error' => true,
                             'message' => 'Time slot overlaps with existing booking'
-                        ];
+                            ];
+                        }
+                      
+                        
                     }
                 }
             }

@@ -69,6 +69,9 @@
                     @can('has-permission', 'Custom Plan')
                     <option value="0" {{ old('day_type_id', $planType->day_type_id ?? '') == 0 ? 'selected' : '' }}>Custom</option>
                     @endcan
+                     <option value="10" {{ old('day_type_id', $planType->day_type_id ?? '') == 10 ? 'selected' : '' }}>Reserved</option>
+                     <option value="11" {{ old('day_type_id', $planType->day_type_id ?? '') == 11 ? 'selected' : '' }}>VIP</option>
+                
                 </select>
 
                 @error('day_type_id')

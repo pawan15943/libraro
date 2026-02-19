@@ -265,15 +265,15 @@ class LearnerController extends Controller
         return view('learner.seat', compact('availableseats', 'users',  'count_fullday', 'count_firstH', 'count_secondH', 'available', 'not_available', 'count_hourly', 'floors'));
     }
     //learner store seat and without seat
-    public function learnerStore(Request $request)
+    public function learnerStore(Request $request,LearnerService $service)
     {
-
-        $additionalRules = [
+       
+       $additionalRules = [
             'payment_mode'     => 'required',
             'plan_start_date'  => 'required|date',
-            'paid_amount'      => 'required',
-
+            'paid_amount'      => 'required|numeric|min:0',
         ];
+
 
         if ($request->general_seat != 'yes') {
             $additionalRules['seat_no'] = 'required|integer';
@@ -302,40 +302,29 @@ class LearnerController extends Controller
                 'message' => 'The email has already been taken.'
             ], 422);
         }
-
-
-
-        $plan_id = $request->input('plan_id');
-        $plan_type_id = $request->plan_type_id;
-        $start_date = Carbon::parse($request->input('plan_start_date'));
-        $payment_mode = $request->payment_mode;
-        if ($request->seat_no) {
-            $seat_no = $request->input('seat_no');
-        } else {
-            $seat_no = null;
+        
+         $day_type=PlanType::where('id',$request->plan_type_id)->select('day_type_id','slot_hours')->first();
+         if($day_type->day_type_id==11){
+            $locker=0;
+         }else{
+            $locker = (float) $request->input('locker_amount', 0);
+         }
+        if($request->no_expiry==1){
+            $no_expiry=1;
+        }elseif($day_type->day_type_id==11){
+            $no_expiry=1;
+        }else{
+            $no_expiry=0;
         }
-        $due_date = $request->due_date ?? null;
-        // price calculation
-        $planPrice = (float) $request->input('plan_price_id', 0);
-        $paid_amount = (float) $request->input('paid_amount', 0);
-        $locker = (float) $request->input('locker_amount', 0);
-        if ($request->discountType == 'amount') {
-            $discount = $request->discount_amount;
-        } elseif ($request->discountType == 'percentage') {
-            $total = $planPrice + $locker;
-            $discount = ($total * $request->discount_amount) / 100;
-        } else {
-            $discount = 0;
+        if($day_type->day_type_id==11){
+                $payment_type='VIP';
+        }elseif($day_type->day_type_id==10){
+                $payment_type='RESERVED';
+        }elseif($no_expiry==1 && $day_type->day_type_id!=11 && $day_type->day_type_id!=10){
+            $payment_type='NON-EXPIRED';
+        }else{
+            $payment_type='SEAT ASSIGNMENT';
         }
-
-
-
-        if ($request->paid_date) {
-            $transaction_date = $request->paid_date;
-        } else {
-            $transaction_date = null;
-        }
-
         if ($request->hasFile('id_proof_file')) {
             $this->validate($request, ['id_proof_file' => 'mimes:webp,png,jpg,jpeg|max:200']);
             $id_proof_file = $request->id_proof_file;
@@ -354,117 +343,75 @@ class LearnerController extends Controller
         } else {
             $profile_picture = null;
         }
-        $learner_detail_id = null;
-        // Custom validation
-        $validated = $this->validateLearnerCustom($plan_id, $plan_type_id, $start_date, $planPrice, $paid_amount, $locker, $discount, $seat_no, $due_date, $payment_mode, $learner_detail_id);
-        if ($validated['error']) {
-            return response()->json(['error' => true, 'message' => $validated['message']], 422);
-        }
-       
-        // Creation
-        try {
 
-            DB::beginTransaction();
-            $customer = Learner::create([
-                'seat_no' => $seat_no,
-                'name' => $request->input('name'),
-                'mobile' => encryptData($request->input('mobile')),
-                'email' => $request->input('email') ? encryptData($request->input('email')) : null,
-                'dob' => $request->input('dob'),
+        $processData = [
+            'learner_data' => [
+                'seat_no' => $request->seat_no ?? null,
+                'name' => $request->name,
+                'mobile' => encryptData($request->mobile),
+                'email' => $request->email ? encryptData($request->email) : null,
+                'dob' => $request->dob,
+                'library_id' => getLibraryId(),
+                'branch_id' => getCurrentBranch(),
+                'password' => bcrypt($request->mobile),
+                'learner_no' => generateLearnerCode(),
+                'hours' => $day_type->slot_hours,
+                'status' => 0,
+                'locker_no' => $request->input('locker_no') ?? null,
+                'no_expiry' => $no_expiry,
                 'id_proof_name' => $request->input('id_proof_name'),
                 'id_proof_file' => $id_proof_file,
-                'hours' => $validated['hours'],
-                'status' => $validated['status'],
-                'library_id' => getLibraryId(),
-                'password' => bcrypt($request->mobile),
-                'branch_id' => getCurrentBranch(),
-                'learner_no' => generateLearnerCode(),
                 'father_name' => $request->input('father_name'),
                 'alternate_mobile' => $request->input('alternate_mobile'),
                 'remark' => $request->input('remark'),
                 'profile_picture' => $profile_picture,
                 'address' => $request->input('address'),
-                'locker_no' => $request->input('locker_no') ?? null,
-                'sended_message_type' => $request->input('sended_message_type') ?? 'no'
-            ]);
+                'sended_message_type' => $request->input('sended_message_type') ?? 'no',
+            ],
 
-            $learner_detail = LearnerDetail::create([
-                'learner_id' => $customer->id,
-                'plan_id' => $plan_id,
-                'plan_type_id' => $plan_type_id,
-                'plan_price_id' => $planPrice,
-                'plan_start_date' => $start_date->format('Y-m-d'),
-                'plan_end_date' => $validated['end_date']->format('Y-m-d'),
-                'join_date' =>  $start_date->format('Y-m-d'),
-                'hour' => $validated['hours'],
-                'library_id' => getLibraryId(),
-                'is_paid' => 1,
-                'status' => $validated['status'],
-                'payment_mode' => $payment_mode,
-                'seat_no' => $seat_no,
-                'branch_id' => getCurrentBranch(),
-                'exam_id' => $request->input('exam_id') ?? null,
-            ]);
-            if ($payment_mode == 3) {
-                $pending_amount = $paid_amount;
-                $paid_amount    = 0;
-                if (!$due_date) {
-                    $due_date = date('Y-m-d');
-                }
+            'plan_id' => $request->plan_id,
+            'plan_type_id' => $request->plan_type_id,
+            'plan_price' => $request->plan_price_id,
+            'payment_mode' => $request->payment_mode,
+            'paid_amount' => $request->paid_amount,
+            'locker_amount' => $locker,
+            'payment_type' => $payment_type,
+            'start_date' => $request->plan_start_date,
+            'seat_no' => $request->seat_no,
+            'branchId' => getCurrentBranch(),
+            'discount_type' => $request->discountType,
+            'discount_amount' => $request->discount_amount,
+            'paid_date' => date('Y-m-d'),
+            'due_date' => $request->due_date,
+            'particular' => 'Website book form',
+            'library_id' => getLibraryId(),
+            'exam_id'=>$request->input('exam_id') ?? null,
+        ];
+
+        
+
+
+        try {
+
+           
+           
+            $result = $service->processLearnerStore($processData);
+                if ($request->expectsJson()) {
+                return response()->json($result);
             }
 
-            $data = [];
-            $data['planPrice'] = $planPrice;
-            $data['paid_amount'] = $paid_amount;
-            $data['locker'] = $locker;
-            $data['discount'] = $discount;
-            $data['start_date'] = $start_date;
-            $data['paid_date'] = $transaction_date;
-            $data['is_paid'] = $validated['is_paid'];
-            $data['learner_detail_id'] = $learner_detail->id;
-            $data['learner_id'] = $customer->id;
-            $data['payment_type'] = 'SEAT ASSIGNMENT';
-            $data['payment_mode'] = $payment_mode;
-            $data['due_date'] = $due_date;
-            $data['particular'] = "Website book form";
-
-            $this->learnerTransactionAddUpdate($data);
-
-            // if ($validated['status'] == 1) {
-
-            //     $this->dataUpdate();
-            // }
-            try {
-                $noti = new NotificationSentController;
-
-                if (autowabaNotificationActive()) {
-                    \Log::info('autowabaNotificationActive');
-                    $noti->autoMessage($customer->id, 'waba', 'book-waba');
-                } else {
-                    \Log::info('nowaba seond part swap');
-                }
-                if (autotextNotificationActive()) {
-                    \Log::info('autotextNotificationActive');
-                    $noti->autoMessage($customer->id, 'text', 'book-sms');
-                } else {
-                    \Log::info('no text seond part swap');
-                }
-            } catch (\Throwable $e) {
-                // Log the error (won't break your main code)
-                \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                    'exception' => $e
-                ]);
+            if ($result['success']) {
+                return redirect()->route('learners')
+                    ->with('success', $result['message']);
             }
 
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Learner created successfully!',
-            ], 201);
+            return redirect()->back()
+                ->with('error', $result['message']);
+
+          
         } catch (\Exception $e) {
 
-            DB::rollBack();
+           
 
             \Log::error("Learner Create Error: " . $e->getMessage(), [
                 'line' => $e->getLine(),
@@ -474,7 +421,7 @@ class LearnerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong while creating learner!',
-                'error' => $e->getMessage(), // remove in production
+                
             ], 500);
         }
     }
