@@ -119,6 +119,8 @@ $today = Carbon::today();
                                             $halldaybooking=$usersForSeat->where('day_type_id', 8)->count();
                                             $nightbooking=$usersForSeat->where('day_type_id', 9)->count();
                                             $fulldaybooking=$usersForSeat->where('day_type_id', 1)->count();
+                                            $reservedbooking=$usersForSeat->where('day_type_id', 10)->count();
+                                            $vipbooking=$usersForSeat->where('day_type_id', 11)->count();
                                             $custombooking=$usersForSeat->where('day_type_id', 0)->count();
                                             if($remainingHours==0 || $remainingHours<0){
                                                 $seatCount=0;
@@ -134,6 +136,10 @@ $today = Carbon::today();
                                                 }elseif($nightbooking==1 && $remainingHours != 0){
                                                 $seatCount = 1;
                                                 }elseif($fulldaybooking==1 && $remainingHours != 0){
+                                                $seatCount = 1;
+                                                }elseif($reservedbooking==1 && $remainingHours != 0){
+                                                $seatCount = 1;
+                                                }elseif($vipbooking==1 && $remainingHours != 0){
                                                 $seatCount = 1;
                                                 }elseif( $custombooking >=1 && $remainingHours !=0){
                                                 $seatCount = 1;
@@ -158,7 +164,7 @@ $today = Carbon::today();
 
                                                 @endphp
 
-                                                @if($user->day_type_id == 1)
+                                                @if($user->day_type_id == 1 || $user->day_type_id==10 || $user->day_type_id==11)
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup " data-seat_no="{{ $seatNo }}" 
                                                         data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}"><i
                                                             class="fa-solid fa-check-circle booked {{$class}}"></i></a></li>
@@ -211,7 +217,7 @@ $today = Carbon::today();
                                             }else{
                                             $class=$planDetails['class'];
                                             }
-                                            $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN'];
+                                            $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                                             @endphp
 
                                             <small class="text-dark d-inline {{ $class }}">
@@ -284,6 +290,8 @@ $today = Carbon::today();
                                             $nightbooking=$usersForSeat->where('day_type_id', 9)->count();
                                             $fulldaybooking=$usersForSeat->where('day_type_id', 1)->count();
                                             $custombooking=$usersForSeat->where('day_type_id', 0)->count();
+                                            $reservedbooking=$usersForSeat->where('day_type_id', 10)->count();
+                                            $vipbooking=$usersForSeat->where('day_type_id', 11)->count();
                                             if($remainingHours==0 || $remainingHours<0){
                                                 $seatCount=0;
                                                 }
@@ -298,6 +306,10 @@ $today = Carbon::today();
                                                 }elseif($nightbooking==1 && $remainingHours != 0){
                                                 $seatCount = 1;
                                                 }elseif($fulldaybooking==1 && $remainingHours != 0){
+                                                $seatCount = 1;
+                                                }elseif($reservedbooking==1 && $remainingHours != 0){
+                                                $seatCount = 1;
+                                                }elseif($vipbooking==1 && $remainingHours != 0){
                                                 $seatCount = 1;
                                                 }elseif( $custombooking >=1 && $remainingHours !=0){
                                                 $seatCount = 1;
@@ -322,7 +334,7 @@ $today = Carbon::today();
 
                                                 @endphp
 
-                                                @if($user->day_type_id == 1)
+                                                @if($user->day_type_id == 1 || $user->day_type_id == 10 || $user->day_type_id == 11)
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup " data-seat_no="{{ $seatNo }}"
                                                         data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}"><i
                                                             class="fa-solid fa-check-circle booked {{$class}}"></i></a></li>
@@ -375,7 +387,7 @@ $today = Carbon::today();
                                             }else{
                                             $class=$planDetails['class'];
                                             }
-                                            $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN'];
+                                            $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                                             @endphp
 
                                             <small class="text-dark d-inline {{ $class }}">
@@ -427,7 +439,7 @@ $today = Carbon::today();
                         @php
                         $planDetails = getPlanStatusDetails($user->plan_end_date);
                         $class=$planDetails['class'];
-                        $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN'];
+                        $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                         @endphp
 
                         <ul>
