@@ -190,6 +190,7 @@ class LibraryController extends Controller
                     'payment_mode' => 3,
                     'status' => 1,
                     'is_paid' => 0,
+                
                 ]);
                 // add new transaction entry
                 LearnerTransaction::create([
@@ -205,6 +206,7 @@ class LibraryController extends Controller
                     'is_paid'           => 0,
                     'due_date'          => date('Y-m-d'),
                     'transaction_id'    => transaction_id(),
+                    'paid_date'          => date('Y-m-d'),
                 ]);
             
                 $detail->update([
