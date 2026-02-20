@@ -173,6 +173,20 @@ class LibraryController extends Controller
                 $lastTransaction = LearnerTransaction::where('learner_detail_id', $detail->id)
                     ->latest()
                     ->first();
+                // price Get
+                $hasFixedBilling = Branch::where('id', $branchId)
+                    ->whereNotNull('fixed_billing_date')
+                    ->exists();
+
+                if ($hasFixedBilling) {
+
+                    $planPrice= getBillingCyclePrice($detail->plan_id,$detail->plan_type_id,$start_date);
+
+                } else {
+
+                    $planPrice= getPlanPrice($detail->plan_id,$detail->plan_type_id);
+                }
+                 $effectivePaid = $planPrice + $lastTransaction->locker_amount - $lastTransaction->discount_amount;
                 
                 // Add same detail record
                 $learner_detail = LearnerDetail::create([
@@ -181,7 +195,7 @@ class LibraryController extends Controller
                     'learner_id' =>  $detail->learner_id,
                     'plan_id' => $detail->plan_id,
                     'plan_type_id' => $detail->plan_type_id,
-                    'plan_price_id' => $detail->plan_price_id,
+                    'plan_price_id' => $planPrice,
                     'plan_start_date' => $start_date->format('Y-m-d'),
                     'plan_end_date' => $newEndDate->format('Y-m-d'),
                     'join_date' => $detail->join_date,
@@ -192,17 +206,18 @@ class LibraryController extends Controller
                     'is_paid' => 0,
                 
                 ]);
+                
                 // add new transaction entry
                 LearnerTransaction::create([
                     'learner_id'        => $lastTransaction->learner_id,
                     'library_id'        => $lastTransaction->library_id,
                     'branch_id'         => $lastTransaction->branch_id,
                     'learner_detail_id' => $learner_detail->id,
-                    'total_amount'      => $lastTransaction->total_amount,
+                    'total_amount'      => $effectivePaid,
                     'paid_amount'       => 0 ,
-                    'pending_amount'    => $lastTransaction->total_amount,
-                    'locker_amount'     => $lastTransaction->locker ?? 0,
-                    'discount_amount'   => $lastTransaction->discount ?? 0,
+                    'pending_amount'    => $effectivePaid,
+                    'locker_amount'     => $lastTransaction->locker_amount ?? 0,
+                    'discount_amount'   => $lastTransaction->discount_amount ?? 0,
                     'is_paid'           => 0,
                     'due_date'          => date('Y-m-d'),
                     'transaction_id'    => transaction_id(),

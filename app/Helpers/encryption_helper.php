@@ -953,6 +953,12 @@ if (!function_exists('has_reserved')) {
             ->exists();
     }
 }
+if (!function_exists('has_non_expired')) {
+    function has_non_expired($learner_id)
+    {
+               return Learner::where('id',$learner_id)->where('no_expiry',1)->exists();
+    }
+}
 
 if (!function_exists('myLearner')) {
     function myLearner($learner_id)
@@ -1935,6 +1941,7 @@ if (!function_exists('checkAvailability')) {
             $planType->start_time,
             $planType->end_time
         );
+       
         
 
         $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')

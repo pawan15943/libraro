@@ -577,6 +577,7 @@ class LearnerService
 
     public function processLearnerStore(array $data)
     {
+       
         DB::beginTransaction();
 
         try {
@@ -602,6 +603,12 @@ class LearnerService
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
+             // future booking and non expired seat check
+            if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                        ->where('learner_detail.branch_id', $branchId)
+                        ->where('learner_detail.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists() && $data['learner_data']['no_expiry']==1){
+                throw new \Exception('This seat already have a future booking so non expired seat not booked');
+            }
             
            if (!empty($data['seat_no'])) {
                 $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
