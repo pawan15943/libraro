@@ -735,8 +735,9 @@ if (!function_exists('getChargeableDays')) {
     }
 }
 if (!function_exists('getLockerPrice')) {
-    function getLockerPrice(?int $planId = null)
+    function getLockerPrice(?int $planId = null,?int $planTypeId = null)
     {
+        
         $branchId = getCurrentBranch();
         if ($branchId && $planId) {
             $plan = Plan::find($planId);
@@ -760,6 +761,11 @@ if (!function_exists('getLockerPrice')) {
         } else {
             $locker_amount = 0;
         }
+        if( PlanType::where('id',$planTypeId)->where('day_type_id',11)->exists()){
+            $locker_amount = 0;
+        }
+       
+
 
 
         return $locker_amount;

@@ -597,7 +597,7 @@
                         if (html !== undefined && html !== null && html !== '') {
                                 $('#pending_amt3').html('');
                             if ($("#plan_price_id").length) {
-                                console.log("1plantype");
+                               
                                 $("#plan_price_id").val(html);
                                 autoCalculatePaidAmount();
                                 $("#error-message").hide();
@@ -966,10 +966,12 @@
            
             var needLocker = $('#toggleFieldCheckbox2').val();
             var planId     = $('#plan_id3').val();
-
+             var planTypeID  = $('#plan_type_id').val(); // important
+            
+          
             if (needLocker === 'yes') {
                 $('#locker_no').removeAttr('readonly');
-                $.get("{{ route('locker.price') }}", { plan_id: planId })
+                $.get("{{ route('locker.price') }}", { plan_id: planId ,plan_type_id: planTypeID})
                 .done(function(json) {
                     console.log('lockeamount',json.price);
                     $('#locker_amount_book').val(json.price);

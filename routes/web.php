@@ -355,7 +355,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('idCard/{id}', [LearnerController::class, 'learnerIdCard'])->name('idCard');
   Route::get('/locker-price', function (\Illuminate\Http\Request $req) {
     return response()->json([
-      'price' => getLockerPrice($req->query('plan_id'))
+      'price' => getLockerPrice($req->query('plan_id'),$req->query('plan_type_id'))
     ]);
   })->name('locker.price');
 
