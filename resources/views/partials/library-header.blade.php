@@ -74,7 +74,7 @@ $user = getAuthenticatedUser();
 </div>
 
 <!-- All learner status update -->
- @if(!empty($showDailyPopup) && $showDailyPopup)
+ {{-- @if(!empty($showDailyPopup) && $showDailyPopup)
 <div class="modal show d-block" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -99,7 +99,7 @@ $user = getAuthenticatedUser();
         </div>
     </div>
 </div>
-@endif
+@endif --}}
 
 
 

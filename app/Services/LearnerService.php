@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Controllers\NotificationSentController;
+use App\Models\Branch;
 use App\Models\CustomerDetail;
 use App\Models\Hour;
 use App\Models\Learner;
@@ -18,6 +19,203 @@ use Carbon\Carbon;
 
 class LearnerService
 {
+    public function runDailyUpdate()
+    {
+        $today = Carbon::today()->format('Y-m-d');
+
+        DB::transaction(function () use ($today) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | 1️⃣ DEACTIVATE ONLY EXPIRED NORMAL DETAILS
+            |--------------------------------------------------------------------------
+            */
+            
+            DB::statement("
+                UPDATE learner_detail ld
+                JOIN learners l ON l.id = ld.learner_id
+                SET ld.status = 0
+                WHERE l.no_expiry = 0
+                AND ld.status = 1
+            ");
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | 2️⃣ ACTIVATE ONLY THE LATEST VALID PLAN PER LEARNER
+            |--------------------------------------------------------------------------
+            | Covers:
+            | - Renewal overrides extension
+            | - Future booking activates when start date matches
+            | - Only ONE active per learner
+            |--------------------------------------------------------------------------
+            */
+           DB::statement(" 
+           UPDATE learner_detail ld 
+           JOIN ( 
+            SELECT ld1.id FROM learner_detail ld1 
+                JOIN branches b ON b.id = ld1.branch_id 
+                    JOIN ( 
+                        SELECT learner_id, MAX(plan_start_date) as latest_start 
+                            FROM learner_detail ld2 
+                                JOIN learners l2 ON l2.id = ld2.learner_id 
+                                JOIN branches b2 ON b2.id = ld2.branch_id WHERE l2.no_expiry = 0 
+                                AND ld2.plan_start_date <= ?
+                                AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) > ? 
+                                GROUP BY learner_id ) 
+                                latest 
+                                ON latest.learner_id = ld1.learner_id AND latest.latest_start = ld1.plan_start_date ) active_ids ON active_ids.id = ld.id SET ld.status = 1 ",
+                                 [$today, $today]);
+
+          
+
+            /*
+            |--------------------------------------------------------------------------
+            | 3️⃣ SYNC LEARNERS TABLE
+            |--------------------------------------------------------------------------
+            */
+
+            
+
+            DB::statement("
+                UPDATE learners l
+                SET l.status = 1
+                WHERE l.no_expiry = 0
+                AND EXISTS (
+                    SELECT 1 FROM learner_detail ld
+                    WHERE ld.learner_id = l.id
+                    AND ld.status = 1
+                )
+            ");
+
+            DB::statement("
+               UPDATE learners l
+                SET l.status = 0
+                WHERE l.no_expiry = 0
+                AND NOT EXISTS (
+                    SELECT 1 FROM learner_detail ld
+                    WHERE ld.learner_id = l.id
+                    AND ld.status = 1
+                )
+            ");
+
+            
+
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4️⃣ PROCESS VIP / NON-EXPIRED OUTSIDE MAIN TRANSACTION
+        |--------------------------------------------------------------------------
+        */
+
+        $this->processNonExpired();
+
+        return true;
+    }
+
+    private function processNonExpired()
+    {
+        $today = Carbon::today();
+
+        Learner::where('no_expiry', 1)
+            ->select('id')
+            ->chunkById(1000, function ($learners) use ($today) {
+
+                foreach ($learners as $learner) {
+
+                    // Only check latest detail
+                    $lastDetail = LearnerDetail::where('learner_id', $learner->id)
+                        ->orderByDesc('plan_start_date')
+                        ->first();
+
+                    if (!$lastDetail) {
+                        continue;
+                    }
+
+                    // 🔥 IMPORTANT CONDITION
+                    if ($lastDetail->status != 1) {
+                        continue; // manually inactive, skip
+                    }
+
+                    $endDate = Carbon::parse($lastDetail->plan_end_date);
+
+                    if ($endDate->lt($today)) {
+                        $this->generateNextCycle($lastDetail, $today);
+                    }
+                }
+            });
+    }
+
+    private function generateNextCycle($detail, $today)
+    {
+        $branchId = $detail->branch_id;
+
+        $startDate = Carbon::parse($detail->plan_end_date)->addDay();
+
+        $newEndDate = getEndDate($detail->plan_id, $startDate, $branchId);
+
+        DB::transaction(function () use ($detail, $startDate, $newEndDate) {
+
+            // deactivate old
+            LearnerDetail::where('id', $detail->id)
+                ->update(['status' => 0]);
+
+            // create new active cycle
+           $learner_detail = LearnerDetail::create([
+                'library_id'      => $detail->library_id,
+                'branch_id'       => $detail->branch_id,
+                'learner_id'      => $detail->learner_id,
+                'plan_id'         => $detail->plan_id,
+                'plan_type_id'    => $detail->plan_type_id,
+                'plan_price_id'   => $detail->plan_price_id,
+                'plan_start_date' => $startDate->format('Y-m-d'),
+                'plan_end_date'   => $newEndDate->format('Y-m-d'),
+                'join_date'       => $detail->join_date,
+                'hour'            => $detail->hour,
+                'seat_no'         => $detail->seat_no,
+                'payment_mode'    => 3,
+                'status'          => 1,
+                'is_paid'         => 0,
+            ]);
+
+             $lastTransaction = LearnerTransaction::where('learner_detail_id', $detail->id)
+                    ->latest()
+                    ->first();
+                // price Get
+                $hasFixedBilling = Branch::where('id', $learner_detail->branch_id)
+                    ->whereNotNull('fixed_billing_date')
+                    ->exists();
+
+                if ($hasFixedBilling) {
+
+                    $planPrice= getBillingCyclePrice($detail->plan_id,$detail->plan_type_id,$startDate,$learner_detail->branch_id);
+
+                } else {
+
+                    $planPrice= getPlanPrice($detail->plan_id,$detail->plan_type_id,$learner_detail->branch_id);
+                }
+                 $effectivePaid = $planPrice + $lastTransaction->locker_amount - $lastTransaction->discount_amount;
+
+                // add new transaction entry
+                LearnerTransaction::create([
+                    'learner_id'        => $lastTransaction->learner_id,
+                    'library_id'        => $lastTransaction->library_id,
+                    'branch_id'         => $lastTransaction->branch_id,
+                    'learner_detail_id' => $learner_detail->id,
+                    'total_amount'      => $effectivePaid,
+                    'paid_amount'       => 0 ,
+                    'pending_amount'    => $effectivePaid,
+                    'locker_amount'     => $lastTransaction->locker_amount ?? 0,
+                    'discount_amount'   => $lastTransaction->discount_amount ?? 0,
+                    'is_paid'           => 0,
+                    'due_date'          => date('Y-m-d'),
+                    'transaction_id'    => transaction_id(),
+                    'paid_date'          => date('Y-m-d'),
+                ]);
+        });
+    }
+
     public function getRenewalStatus($customerId)
     {
         $today = Carbon::today()->format('Y-m-d');
@@ -401,14 +599,20 @@ class LearnerService
             }else{
                  $status = $customer->status;
             }
+ 
+            
 
-            if ($lastDetail->plan_end_date < $today && $endDate->gt($today) && $is_paid == 1) {
+            if (Carbon::parse($lastDetail->plan_end_date) < $today && $endDate->gt($today) && $is_paid == 1) {
+                
                 $detailstatus = 1;
             } elseif ($inextendDate > $today && $start_date <= $today) {
+                
                 $detailstatus = 1;
             } else {
+                 
                 $detailstatus = 0;
             }
+            
 
              if ( ($paid_amount > ($effectivePaid+$oldTotalPending)) || ($paid_amount == 0 && $payment_mode != 3)) {
                  return [
@@ -604,10 +808,26 @@ class LearnerService
             | 4. Seat Availability
             ---------------------------------------------------------*/
              // future booking and non expired seat check
-            if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                        ->where('learner_detail.branch_id', $branchId)
-                        ->where('learner_detail.seat_no', $seat_no)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists() && $data['learner_data']['no_expiry']==1){
-                throw new \Exception('This seat already have a future booking so non expired seat not booked');
+            $exists_future = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
+                ->where('learner_detail.branch_id', $branchId)
+                ->where('learner_detail.seat_no', $seat_no)
+                ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+                ->where(function ($query) use ($plan_type_id) {
+
+                    $query->whereExists(function ($sub) use ($plan_type_id) {
+
+                        $sub->select(\DB::raw(1))
+                            ->from('plan_types as new_pt')
+                            ->where('new_pt.id', $plan_type_id)
+                            ->whereRaw('existing_pt.start_time < new_pt.end_time')
+                            ->whereRaw('existing_pt.end_time > new_pt.start_time');
+                    });
+
+                })
+                ->exists();
+
+            if ($exists_future && $data['learner_data']['no_expiry'] == 1) {
+                throw new \Exception('This seat already has a future booking that overlaps with the selected time.');
             }
             
            if (!empty($data['seat_no'])) {
@@ -676,6 +896,10 @@ class LearnerService
             } else {
                
                 $detailstatus = 0;
+            }
+
+            if(($detailstatus == 0 || $status == 0) && $data['learner_data']['no_expiry']==1){
+                throw new \Exception('Your plan duration has completed. Please select a higher duration plan to continue using the non expired seat.');
             }
            
 

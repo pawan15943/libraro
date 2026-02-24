@@ -233,7 +233,7 @@ $learner_id=$value->id;
                         <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due</a></li>
                         @endif
 
-                        @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount) )
+                       @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)?->pending_amount))
                         <li>
                             <a class="" target="_blank"
                                 data-bs-placement="bottom"

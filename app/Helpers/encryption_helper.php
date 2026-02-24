@@ -2083,7 +2083,11 @@ if (!function_exists('whatsappReceiptMessage')) {
     function whatsappReceiptMessage($learner)
     {
         $transaction = learnerTransaction($learner->id, $learner->learner_detail_id);
-        $receiptUrl = route('receipt.view', $transaction->id);
+        $receiptUrl = null;
+        if ($transaction) {
+            $receiptUrl = route('receipt.view', $transaction->id);
+        }
+        
         $shortUrl   = makeTinyUrl($receiptUrl);
         return rawurlencode(
             "Dear {$learner->name},\n\n"
