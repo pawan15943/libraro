@@ -91,9 +91,9 @@ class QrEntryController extends Controller
                 }
             }
       
-        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->whereNull('deleted_at')->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->whereNull('deleted_at')->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeat'));
     }
@@ -367,6 +367,7 @@ class QrEntryController extends Controller
     }
     public function store(Request $request, $uuid)
     {
+       
         try {
           
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
@@ -378,17 +379,44 @@ class QrEntryController extends Controller
                 'email'        => 'nullable',
                 'dob'        => 'nullable',
                 'profile_picture' => 'nullable',
-                'seat_no'        => 'nullable',
+                'general_seat' => 'nullable|in:yes,no',
+    
+                'seat_no' => [
+                    'nullable',
+                    'required_if:general_seat,no'
+                ],
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
             ];
+            $messages = [
+                'name.required'            => 'Name is required.',
+                'name.max'                 => 'Name must not exceed 191 characters.',
+                'seat_no.required_if' => 'Seat number is required',
+                'mobile.required'          => 'Mobile number is required.',
+                'mobile.integer'           => 'Mobile number must contain only digits.',
+                'mobile.digits_between'    => 'Mobile number must be between 8 and 15 digits.',
+
+                'plan_id.required'         => 'Please select a plan.',
+                'plan_id.exists'           => 'Selected plan is invalid.',
+
+                'plan_type_id.required'    => 'Please select a plan type.',
+                'plan_type_id.exists'      => 'Selected plan type is invalid.',
+
+                'plan_price_id.required'   => 'Plan price is required.',
+
+                'plan_start_date.required' => 'Plan start date is required.',
+                'plan_start_date.date'     => 'Please enter a valid start date.',
+
+                'payment_mode.required'    => 'Please select a payment mode.',
+                'payment_mode.in'          => 'Invalid payment mode selected.',
+            ];
             
             
 
-            $validated = $request->validate($rules);
+            $validated = $request->validate($rules,$messages);
             $plan_id=$validated['plan_id'];
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
@@ -650,9 +678,13 @@ class QrEntryController extends Controller
             $transaction=null;
              $learner=null;
         }
-       
-
-        return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner'));
+        if ($customer->seat_no) {
+            $filteredPlanTypes = filterPlantypeFromseat($customer->seat_no, $learner?$learner->id : null);
+        } else {
+            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+        }
+      
+        return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner','filteredPlanTypes'));
     }
 
     public function requestApproveEdit(Request $request)
@@ -667,7 +699,7 @@ class QrEntryController extends Controller
             'plan_id' => 'required',
             'plan_type_id' => 'required',
             'plan_price_id' => 'required',
-            'plan_start_date' => 'required',
+            'plan_start_date' => 'nullable',
             'paid_amount' => 'nullable',
            
             'payment_mode' => 'required',
@@ -706,8 +738,25 @@ class QrEntryController extends Controller
 
         ];
        
-        
-        $validator = Validator::make($request->all(), $rules);
+        $messages = [
+            'booking_id.required' => 'Booking ID is required.',
+            'branch_id.required' => 'Please select a branch.',
+            'plan_id.required' => 'Please select a plan.',
+            'plan_type_id.required' => 'Please select a plan type.',
+            'plan_price_id.required' => 'Please select a plan price.',
+           
+            'payment_mode.required' => 'Please select a payment mode.',
+
+            'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+            'alternate_mobile.digits' => 'Alternate mobile must be exactly 10 digits.',
+            'email.email' => 'Please enter a valid email address.',
+            'dob.date' => 'Please enter a valid date of birth.',
+
+            'locker_no.required_if' => 'Locker number is required when locker is selected.',
+            'locker_no.numeric' => 'Locker number must be numeric.',
+            'locker_amount.required_if' => 'Locker amount is required when locker is selected.',
+        ];
+        $validator = Validator::make($request->all(), $rules,$messages);
         if ($validator->fails()) {
             
             return redirect()->back()->withErrors($validator)->withInput();
@@ -772,7 +821,7 @@ class QrEntryController extends Controller
                     return redirect()->back()->with('error', 'Due date is required')->withInput();
                 }
 
-                $start_date = Carbon::parse($request->input('plan_start_date'));
+                $start_date = $request->input('plan_start_date')? Carbon::parse($request->input('plan_start_date')) : Carbon::parse($bookingurl->plan_start_date);
                 $plan_id = $request->input('plan_id');
                 $plan_type_id = $request->input('plan_type_id');
                 $locker_no=$request->input('locker_no');
@@ -865,14 +914,24 @@ class QrEntryController extends Controller
 
             }
 
+            if (!empty($seat_no)) {
+               
+                $check = checkAvailability(getCurrentBranch(),$seat_no,$learnerId ?? null,
+                    $plan_type_id,$plan_id,$start_date
+                );
 
-            if($seat_no){
-                $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
-                 if ($result['error']) {
-                    return redirect()->back()->with('error', $result['message'])->withInput();
-                
+                // 🔴 STOP immediately if seat is not available
+                if ($check['error'] === true) {
+                   return redirect()->back()->with('error', $check['message'])->withInput();
                 }
             }
+            // if($seat_no){
+            //     $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
+            //      if ($result['error']) {
+            //         return redirect()->back()->with('error', $result['message'])->withInput();
+                
+            //     }
+            // }
             
             
             if (($paid_amount > $total_amt) || ($paid_amount == 0)) {
@@ -973,7 +1032,7 @@ class QrEntryController extends Controller
                    
 
              $learnerTransaction = LearnerTransaction::create([
-                'learner_id' => $customer->id,
+                'learner_id'        => $customer->id,
                 'library_id'        => getLibraryId(),
                 'branch_id'         => getCurrentBranch(),
                 'learner_detail_id' => $learner_detail->id,
@@ -984,9 +1043,9 @@ class QrEntryController extends Controller
                 'discount_amount'   => $discount ?? 0,
                 'paid_date'         => $transaction_date,
                 'is_paid'           => $is_paid ?? 0,
-                'due_date'        => $request->due_date ?? null,
-                'refund'        => $pending_refund,
-                 'transaction_id' => transaction_id(),
+                'due_date'          => $request->due_date ?? null,
+                'refund'            => $pending_refund,
+                'transaction_id'    => transaction_id(),
             ]);
            
             //learner Activity
@@ -1026,49 +1085,97 @@ class QrEntryController extends Controller
 
     public function findCustomer(Request $request, $uuid)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
+            'login_with' => 'required|in:dob,email,learner_no',
             'mobile' => 'required|digits:10',
             'learner_no'=>'required'
+        ],[
+             'login_with.required' => 'Please choose login type',
         ]);
-         try {
-            $dob = Carbon::parse($request->learner_no)->format('Y-m-d');
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();   // important
+        }
+         
+        $dob = null;
+
+        // Safe DOB conversion
+        try {
+            $dob = Carbon::createFromFormat('d/m/Y', $request->learner_no)->format('Y-m-d');
         } catch (\Exception $e) {
             $dob = null;
         }
 
+
         $branch = Branch::where('uuid', $uuid)->firstOrFail();
-        // Learner::withoutGlobalScopes()->where('branch_id', $branch->id)
-        //     ->where('mobile', encryptData($request->input('mobile')))->where('learner_no',$request->input('learner_no'))
-        //     ->first();
-        $customer = Learner::withoutGlobalScopes()->where('branch_id', $branch->id)->where(function ($query) use ($request,$dob) {
-                    $query->where('learner_no', $request->input('learner_no'));
-                        if ($dob) {
-                            \Log::info('dob part hit',['dob'=>$dob]);
-                            $query->orWhere('dob', $dob);
-                        }
-                       // Email (only if valid)
-                        if (filter_var($request->input('learner_no'), FILTER_VALIDATE_EMAIL)) {
-                            $query->orWhere('email', encryptData($request->input('learner_no')));
-                        }
-                })
-                ->where('mobile', encryptData($request->mobile))
-                ->first();
+      
+        $customer = Learner::withoutGlobalScopes()
+        ->where('branch_id', $branch->id) ->where('mobile', encryptData($request->mobile))
+       ->when($request->login_with === 'learner_no' && $request->learner_no, function ($q) use ($request) {
+            $q->where('learner_no', $request->learner_no);
+        })
+        ->when($request->login_with === 'dob' && $dob, function ($q) use ($dob) {
+            
+            $q->where('dob', $dob);
+        })
+        ->when(
+            $request->login_with === 'email' &&
+            filter_var($request->learner_no, FILTER_VALIDATE_EMAIL),
+            function ($q) use ($request) {
+                $q->where('email', encryptData($request->learner_no));
+            }
+        )->first();
 
         if (!$customer) {
-            return redirect()->back()->with('error', 'No customer found with this mobile.');
+            return redirect()->back()->with('error', 'Sorry, we couldn’t find your record. Please verify your details and try again.')->withInput();
         }
 
-        $customer_detail = LearnerDetail::withoutGlobalScopes()->where('learner_id', $customer->id)
+        $customer_detail = LearnerDetail::where('learner_id', $customer->id)
             ->with('plan', 'planType')
             ->latest() // gets the latest detail record
             ->first();
+        
+
+            $detail = LearnerDetail::withTrashed()
+                ->where('learner_id', $customer->id)
+                ->orderBy('plan_end_date', 'DESC')
+                ->first();
+               
+
+            if ($detail) {
+                $operation = DB::table('learner_operations_log')
+                    ->where('learner_detail_id', $detail->id)
+                    ->value('operation');
+              
+                if ($operation === 'deleteSeat') {
+                     return redirect()->back()->with('error', 'Your plan has been deleted. Please Contact library owner to activate')->withInput();
+                   
+                }
+
+                if ($operation === 'closeSeat') {
+                    return redirect()->back()->with('error', 'Your plan has been closed. Please Contact library owner to activate')->withInput();
+                   
+                }
+            }
+           
+           
        
+        if($customer_detail->status!=1){
+            return redirect()->back()->with('error', 'Plan Expired.Please Reactivate Your plan')->withInput(); 
+        }
+        $today = Carbon::today();
+        $diffInDays = $today->diffInDays($customer_detail->plan_end_date, false);
+        if($diffInDays > 5){
+            return redirect()->back()->with('error', 'Plan is Active now please try before 5 days of your expiry or contact library owner')->withInput(); 
+        }
         $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_detail_id', $customer_detail->id)->first();
         if (!$transaction) {
-            return redirect()->back()->with('error', 'No customer transaction found with this mobile.');
+            return redirect()->back()->with('error', 'No customer transaction found with this mobile.')->withInput();
 
         }
         $learnerSeat=$this->getSeatDisplayByMainNo($customer->seat_no,$customer->branch_id);
+
 
         return view('qrcode.renew_show_form', compact('branch', 'customer', 'customer_detail','transaction','learnerSeat'));
     }
@@ -1288,6 +1395,7 @@ class QrEntryController extends Controller
             }
         }
         // Return the filtered plan types as JSON
+       
         return response()->json($filteredPlanTypes);
     }
 

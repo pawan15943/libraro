@@ -31,68 +31,68 @@
     }
 
     
-/* Modal background */
-.cropper-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.24);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    opacity: 1 !important;
-}
+    /* Modal background */
+    .cropper-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.24);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 1 !important;
+    }
 
-/* Modal box */
-.cropper-box {
-    background: #fff;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 10px;
-    padding: 20px;
-    box-sizing: border-box;
-    text-align: center;
-}
+    /* Modal box */
+    .cropper-box {
+        background: #fff;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 10px;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+    }
 
-/* Cropper area */
+    /* Cropper area */
 
 
-.cropper-area {
-    width: 100%;
-    max-height: 300px;
-    overflow: hidden;
-    margin: 15px 0;
-}
+    .cropper-area {
+        width: 100%;
+        max-height: 300px;
+        overflow: hidden;
+        margin: 15px 0;
+    }
 
-/* Buttons */
-.cropper-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
+    /* Buttons */
+    .cropper-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
 
-.cropper-actions button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-}
+    .cropper-actions button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+    }
 
-#cancelCrop {
-    background: #e5e7eb;
-    color: #111;
-}
+    #cancelCrop {
+        background: #e5e7eb;
+        color: #111;
+    }
 
-.cropbtn {
-    background: navy;
-    color: #fff;
-}
+    .cropbtn {
+        background: navy;
+        color: #fff;
+    }
 
-.cropper-modal {
-    background-color: #000000a3 !important;
-    opacity: .5;
-}
+    .cropper-modal {
+        background-color: #000000a3 !important;
+        opacity: .5;
+    }
 
 </style>
  <!-- Cropper Modal -->
@@ -140,7 +140,7 @@
 
                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No?</label>
-                                <select name="general_seat" id="general_seat" class="form-select">
+                                <select name="general_seat" id="general_seat" class="form-select @error('general_seat') is-invalid @enderror">
                                     <option value="yes" {{ old('general_seat') == 'yes' ? 'selected' : '' }}>
                                         No
                                     </option>
@@ -149,11 +149,12 @@
                                     </option>
 
                                 </select>
+                                 @error('general_seat') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select" id="seat_id">
+                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id">
                                     <option value="">Choose Seat No</option>
                                  
                                     @foreach($newAvailableSeat  as $key => $value)
@@ -161,6 +162,7 @@
                                     <option value="{{ $value['main'] }}" {{ old('seat_no') == $value['main'] ? 'selected' : '' }}>{{ $value['display'] }}</option>
                                     @endforeach
                                 </select>
+                                @error('seat_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-lg-12">
@@ -210,7 +212,7 @@
 
                             <div class="col-lg-6">
                                 <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="plan_price" type="text" class="form-control digit-only" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
+                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 <span id="chargeable_day_book" class="text-info"></span>
                             </div>

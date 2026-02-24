@@ -1,10 +1,6 @@
 @extends('sitelayouts.layout')
 @section('content')
-@if(session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
+
 <style>
     header,
     footer {
@@ -54,17 +50,22 @@
                         @endif
                         <div class="row g-4 ">
                             <input type="hidden" value="{{$branch->id}}" name="branch">
-                                <div class="col-lg-12">
-                                <select class="form-select form-control" id="login_with" name="login_with">
+                            <div class="col-lg-12">
+                                <select class="form-select form-control @error('login_with') is-invalid @enderror" id="login_with" name="login_with">
                                     <option value="">Choose</option>
-                                    <option value="dob">Proceed with DOB</option>
-                                    <option value="email">Proceed with Email ID</option>
-                                    <option value="learner_no">Proceed with Member UID</option>
+                                    <option value="dob" {{ old('login_with') == 'dob' ? 'selected' : '' }}>Proceed with DOB</option>
+                                    <option value="email" {{ old('login_with') == 'email' ? 'selected' : '' }}>Proceed with Email ID</option>
+                                    <option value="learner_no" {{ old('login_with') == 'learner_no' ? 'selected' : '' }}>Proceed with Member UID</option>
                                 </select>
+                                @error('login_with')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
                             </div>
                          
                             <div class="col-lg-12">
-                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" id="learner_no_uid" placeholder="Enter your Member UID" name="learner_no">
+                                <input type="text" class="form-control @error('learner_no') is-invalid @enderror" id="learner_no_uid" placeholder="Enter your Member UID" name="learner_no" value="{{old('learner_no')}}">
                                 @error('learner_no')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -72,7 +73,7 @@
                                 @enderror
                             </div>
                             <div class="col-lg-12">
-                                <input type="text" class="form-control @error('mobile') is-invalid @enderror" placeholder="Enter your mobile Number" name="mobile">
+                                <input type="text" class="form-control @error('mobile') is-invalid @enderror" placeholder="Enter your mobile Number" name="mobile" value="{{old('mobile')}}" maxlength="10">
                                 @error('mobile')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -90,26 +91,28 @@
     </div>
 </section>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        let dobPicker = null;
     $('#login_with').on('change', function () {
-        let value = $(this).val();
+       let value = $(this).val();
         let input = $('#learner_no_uid');
 
+        if (dobPicker) {
+            dobPicker.destroy();
+            dobPicker = null;
+        }
+
         if (value === 'dob') {
-            input.attr('placeholder', 'DD/MM/YYYY');
-            input.attr('type', 'text');
-        } 
-        else if (value === 'email') {
-            input.attr('placeholder', 'Enter Email ID');
-            input.attr('type', 'email');
-        } 
-        else if (value === 'learner_no') {
-            input.attr('placeholder', 'Enter Member UID');
-            input.attr('type', 'text');
-        } 
-        else {
-            input.attr('placeholder', 'Enter Value');
-            input.attr('type', 'text');
+            input.attr('type', 'text').attr('placeholder', 'DD/MM/YYYY');
+            dobPicker = flatpickr(input[0], {
+                dateFormat: "d/m/Y",
+                allowInput: true
+            });
+        } else if (value === 'email') {
+            input.attr('placeholder', 'Enter Email ID').attr('type', 'email');
+        } else {
+            input.attr('placeholder', 'Enter Member UID').attr('type', 'text');
         }
     });
 </script>

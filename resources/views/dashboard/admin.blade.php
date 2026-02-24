@@ -517,8 +517,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     @endif
                                 </td>
                                 <td>{{$value->name}}<br>{{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</td>
-                                <td>{{$value->mobile ? '+91'.decryptData($value->mobile) : ''}}</td>
-                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ $value->total_amount ?? '0' }} | {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
+                                <td>{{$value->mobile ? '+91-'.decryptData($value->mobile) : ''}}</td>
+                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ number_format($value->total_amount ?? 0, 0) }} <br> {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
 
                                 @if($value->payment_screenshot)
                                 <td>
@@ -534,13 +534,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                 <td>
                                     <ul class="actions-icons">
-                                        @if($value->type=='qr_seat_book' && $value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday())
+                                        {{-- @if( $value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday()) --}}
+                                        @if( $value->payment_screenshot && $value->payment_mode=='online' )
                                         <li>
                                             <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
                                                 @csrf
                                                 <input type="hidden" name="booking_id" value="{{ $value->id }}">
                                                 <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-check"></i></button>
+                                                <button type="submit" class="btn btn-success noLoader" ><i class="fa fa-check"></i></button>
                                             </form>
 
                                         </li>

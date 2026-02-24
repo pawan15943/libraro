@@ -208,7 +208,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/payment/error', [LibraryController::class, 'handleError'])->name('library.payment.error');
     Route::get('/toggle/feature/list', [MasterController::class, 'toggleFeature'])->name('toggle.feature');
     Route::post('/branch/update/hidefield', [MasterController::class, 'updateHidefield'])->name('branch.update.hidefield');
-    Route::get('/csv/library/upload', [Controller::class, 'showUploadForm'])->name('library.upload.form');
+    Route::get('/csv/upload', [Controller::class, 'showUploadForm'])->name('library.upload.form');
 
     Route::post('/master/store', [MasterController::class, 'storemaster'])->name('master.store');
     Route::get('/master/edit', [MasterController::class, 'masterEdit'])->name('master.edit');
@@ -226,6 +226,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('library/video-training', [LibraryController::class, 'videoTraining'])->name('library.video-training');
 
     // Other Pages Routes
+
+    Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report');
+    Route::get('/monthly-payment-export', [ReportController::class, 'exportMonthlyPayment'])->name('monthly.payment.export');
 
     Route::get('pending/payment', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
     Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');

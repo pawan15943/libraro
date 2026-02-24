@@ -287,7 +287,7 @@
                                                 <input type="hidden" name="learner_detail_id" value="{{ $value->id ?? 'NA'}}">
                                                 <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
-                                                <button type="submit">
+                                                <button type="submit" class="noLoader">
                                                     <i class="fa fa-print"></i>
                                                 </button>
                                             </form>
@@ -350,7 +350,8 @@
                                                 <input type="hidden" name="learner_detail_id" value="{{ $firstDetail->id ?? 'NA'}}">
                                                 <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
-                                                <button type="submit">
+                                                
+                                                <button type="submit" class="noLoader">
                                                     <i class="fa fa-print"></i>
                                                 </button>
                                             </form>
@@ -389,7 +390,7 @@
                                                 <input type="hidden" name="learner_detail_id" value="{{ $detail->id ?? 'NA'}}">
                                                 <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA'}}">
                                                 <input type="hidden" name="type" value="learner">
-                                                <button type="submit">
+                                                <button type="submit" class="noLoader">
                                                     <i class="fa fa-print"></i>
                                                 </button>
                                             </form>

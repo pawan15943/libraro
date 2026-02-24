@@ -86,6 +86,49 @@ function closeNotification() {
   //   }
   // });
 
+// =================================================
+
+// $(document).on('submit', 'form', function () {
+
+//     let form = $(this);
+
+//     let submitBtn = form.find('button[type="submit"]').first();
+//     if (!submitBtn.length) {
+//         submitBtn = form.find('.button').first();
+//     }
+
+//     if (!submitBtn.length) return;
+
+//     // ❌ Skip if button has .noLoader class
+//     if (submitBtn.hasClass('noLoader')) {
+//         return;
+//     }
+
+//     // Prevent double submit
+//     if (submitBtn.prop('disabled')) {
+//         return false;
+//     }
+
+//     // Save original text once
+//     if (!submitBtn.data('original-text')) {
+//         submitBtn.data('original-text', submitBtn.html());
+//     }
+
+//     // 🔒 HARD disable
+//     submitBtn.prop('disabled', true);
+//     submitBtn.attr('disabled', 'disabled');
+//     submitBtn.css({
+//         'pointer-events': 'none',
+//         'opacity': '0.7'
+//     });
+
+//     // 🔄 Loader
+//     submitBtn.html(
+//         submitBtn.data('original-text') +
+//         ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
+//     );
+// });
+// Submit handler
 $(document).on('submit', 'form', function () {
 
     let form = $(this);
@@ -97,6 +140,11 @@ $(document).on('submit', 'form', function () {
 
     if (!submitBtn.length) return;
 
+    // Skip if button has .noLoader class
+    if (submitBtn.hasClass('noLoader')) {
+        return;
+    }
+
     // Prevent double submit
     if (submitBtn.prop('disabled')) {
         return false;
@@ -107,21 +155,51 @@ $(document).on('submit', 'form', function () {
         submitBtn.data('original-text', submitBtn.html());
     }
 
-    // 🔒 HARD disable
+    // Disable button
     submitBtn.prop('disabled', true);
-    submitBtn.attr('disabled', 'disabled');
     submitBtn.css({
         'pointer-events': 'none',
         'opacity': '0.7'
     });
 
-    // 🔄 Loader
+    // Add loader
     submitBtn.html(
         submitBtn.data('original-text') +
         ' <span class="spinner-border spinner-border-sm loader" role="status"></span>'
     );
 });
 
+
+// Re-enable button when user edits any field
+$(document).on('input change', 'form input, form select, form textarea', function () {
+
+    let form = $(this).closest('form');
+
+    let submitBtn = form.find('button[type="submit"]').first();
+    if (!submitBtn.length) {
+        submitBtn = form.find('.button').first();
+    }
+
+    if (!submitBtn.length) return;
+
+    // Remove loader if exists
+    submitBtn.find('.loader').remove();
+
+    // Restore original text
+    if (submitBtn.data('original-text')) {
+        submitBtn.html(submitBtn.data('original-text'));
+    }
+
+    // Enable button
+    submitBtn.prop('disabled', false);
+    submitBtn.css({
+        'pointer-events': '',
+        'opacity': ''
+    });
+});
+
+
+//==================================================
 
 //   $(document).on("submit", "form", function (e) {
 //       var form = $(this);

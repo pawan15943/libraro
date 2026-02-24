@@ -227,7 +227,7 @@
                                         <input type="hidden" id="custId" name="id" value="{{ $transaction->id }}">
                                         <input type="hidden" name="type" value="library">
 
-                                        <button type="submit">
+                                        <button type="submit" class="noLoader">
                                             <i class="fa fa-print"></i>
                                         </button>
                                     </form>

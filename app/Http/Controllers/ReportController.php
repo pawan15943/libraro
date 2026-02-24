@@ -653,6 +653,199 @@ class ReportController extends Controller
 
     }
 
+    
+    public function monthlyPaymentCollection(Request $request)
+    {
+            // If date range selected
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+
+            $fromDate = Carbon::parse($request->start_date)->startOfDay();
+            $toDate   = Carbon::parse($request->end_date)->endOfDay();
+
+        }
+        // If month + year selected
+        elseif ($request->filled('month') && $request->filled('year')) {
+
+            $fromDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+            $toDate   = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+
+        }
+        // Default: current month
+        else {
+
+            $fromDate = Carbon::now()->startOfMonth();
+            $toDate   = Carbon::now()->endOfMonth();
+        }
+
+
+        // Fetch transactions
+       $transactions = LearnerTransactionActivity::withoutGlobalScopes()
+            ->leftJoin(
+                'learners',
+                'learners.id',
+                '=',
+                'learner_transaction_activity.learner_id'
+            )
+            ->whereBetween(
+                'learner_transaction_activity.date',
+                [$fromDate->toDateString(), $toDate->toDateString()]
+            )
+            ->select(
+                'learner_transaction_activity.*',
+                'learners.name',
+                'learners.seat_no'
+            )
+            ->where('learner_transaction_activity.branch_id', getCurrentBranch())
+            ->orderBy('learner_transaction_activity.date', 'asc')
+            ->get();
+
+        $groupedTransactions = $transactions->groupBy(function ($row) {
+            return Carbon::parse($row->date)->format('Y-m-d');
+        });
+        $totalCr = $transactions->where('dr_cr', 'Cr')->sum('amount');
+        $totalDr = $transactions->where('dr_cr', 'Dr')->sum('amount');
+        $grandBalance = $totalCr - $totalDr;
+
+        $totalCollection = $transactions
+            ->where('dr_cr', 'Cr')
+            ->sum('amount');
+
+        $totalExpense = $transactions
+            ->where('dr_cr', 'Dr')
+            ->where('payment_type', 'EXPENSE')
+            ->sum('amount');
+
+        $totalRevenue = $transactions
+            ->where('dr_cr', 'Dr')
+            ->where('payment_type', 'REFUND')
+            ->sum('amount');
+
+        $grandTotal = $totalCollection - $totalExpense - $totalRevenue;
+
+      
+        return view('report.monthly_payment_collection', compact( 'groupedTransactions','totalCr','totalDr', 'totalCollection','totalExpense','totalRevenue','grandTotal'));
+    }
+
+
+public function exportMonthlyPayment(Request $request)
+{
+    // Filter logic
+    if ($request->filled('start_date') && $request->filled('end_date')) {
+        $fromDate = Carbon::parse($request->start_date)->startOfDay();
+        $toDate   = Carbon::parse($request->end_date)->endOfDay();
+    } elseif ($request->filled('month') && $request->filled('year')) {
+        $fromDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+        $toDate   = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+    } else {
+        $fromDate = Carbon::now()->startOfMonth();
+        $toDate   = Carbon::now()->endOfMonth();
+    }
+
+    $transactions = LearnerTransactionActivity::withoutGlobalScopes()
+        ->leftJoin('learners', 'learners.id', '=', 'learner_transaction_activity.learner_id')
+        ->whereBetween(
+            'learner_transaction_activity.date',
+            [$fromDate->toDateString(), $toDate->toDateString()]
+        )
+        ->where('learner_transaction_activity.branch_id', getCurrentBranch())
+        ->select(
+            'learner_transaction_activity.*',
+            'learners.name',
+            'learners.seat_no'
+        )
+        ->orderBy('learner_transaction_activity.date', 'asc')
+        ->get();
+
+    // Group by date
+    $grouped = $transactions->groupBy(function ($row) {
+        return Carbon::parse($row->date)->format('Y-m-d');
+    });
+
+    // Totals
+    $totalCollection = $transactions->where('dr_cr', 'Cr')->sum('amount');
+
+    $totalExpense = $transactions
+        ->where('dr_cr', 'Dr')
+        ->where('payment_type', 'EXPENSE')
+        ->sum('amount');
+
+    $totalRevenue = $transactions
+        ->where('dr_cr', 'Dr')
+        ->where('payment_type', 'REFUND')
+        ->sum('amount');
+
+    $grandTotal = $totalCollection - $totalExpense - $totalRevenue;
+
+    $fileName = 'monthly_payment_report.csv';
+
+    $headers = [
+        "Content-type" => "text/csv",
+        "Content-Disposition" => "attachment; filename=$fileName",
+        "Pragma" => "no-cache",
+        "Cache-Control" => "must-revalidate",
+        "Expires" => "0"
+    ];
+
+    $callback = function () use (
+        $grouped,
+        $totalCollection,
+        $totalExpense,
+        $totalRevenue,
+        $grandTotal
+    ) {
+        $handle = fopen('php://output', 'w');
+
+        // Header
+        fputcsv($handle, [
+            'Date',
+            'Seat No',
+            'Name',
+            'Amount',
+            'Transaction',
+            'Type',
+            'Mode',
+            'Day Balance'
+        ]);
+
+        foreach ($grouped as $date => $rows) {
+
+            $dayCr = $rows->where('dr_cr', 'Cr')->sum('amount');
+            $dayDr = $rows->where('dr_cr', 'Dr')->sum('amount');
+            $dayBalance = $dayCr - $dayDr;
+
+            foreach ($rows as $index => $row) {
+
+                $type = $row->dr_cr == 'Cr' ? 'CREDIT' : 'DEBIT';
+                $amount = ($row->dr_cr == 'Cr' ? '+' : '-') . $row->amount;
+
+                fputcsv($handle, [
+                    $index == 0 ? $date : '',
+                    $row->seat_no ?? 'GEN',
+                    $row->name,
+                    $amount,
+                    $row->payment_type,
+                    $type,
+                    $row->payment_mode,
+                    $index == 0 ? $dayBalance : ''
+                ]);
+            }
+        }
+
+        // Empty row
+        fputcsv($handle, []);
+
+        // Summary rows
+        fputcsv($handle, ['Total Collection', '', '', $totalCollection]);
+        fputcsv($handle, ['Total Expense', '', '', $totalExpense]);
+        fputcsv($handle, ['Total Revenue (Refund)', '', '', $totalRevenue]);
+        fputcsv($handle, ['Grand Total', '', '', $grandTotal]);
+
+        fclose($handle);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
 
     
 }
