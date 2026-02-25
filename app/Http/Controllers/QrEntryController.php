@@ -857,24 +857,25 @@ class QrEntryController extends Controller
                 $detailStatus = 0;
             }
 
-            if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
-                $status = 1;
-            } else {
-                $status = 0;
-            }
-
-            $is_paid = 1;
+             $is_paid = 1;
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
             }else{
                 $payment_mode = 0;
             }
-            
-         
 
             $learnerId=$request->learner_id;
-           
-            if ($learnerId) {
+            $customer=Learner::find($learnerId);
+            if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
+                $status = 1;
+            } elseif($customer) {
+                $status = $customer->status;
+            }else{
+                $status =0;
+            }
+
+         
+            if ($learnerId && $customer) {
 
                 $today        = Carbon::today();
                 $expiryLimit  = Carbon::today()->addDays(7);
