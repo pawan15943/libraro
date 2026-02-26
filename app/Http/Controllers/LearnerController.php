@@ -433,7 +433,7 @@ class LearnerController extends Controller
             'plan_type_id' => 'required|exists:plan_types,id',
             'plan_price_id' => 'required',
             'paid_amount' => 'required',
-            'diffrence_amount' => 'required',
+            'diffrence_amount' => 'nullable|integer',
             'previous_amount' => 'required',
             'payment_mode' => 'required',
             'user_id' => 'required|exists:learners,id',
@@ -545,7 +545,7 @@ class LearnerController extends Controller
                 $dr_cr = 'Dr';
             } else {
 
-                // extra payment (pending dues)
+              // extra payment (pending dues)
                 $pending_amount = $pending_amount ?? 0;
                 $refund = $diff_amount;
                 $pending_refund = 0;
