@@ -550,11 +550,7 @@
             $('#pending_amt').html('');
         }
 
-        console.log('lockerAmount',lockerAmount);
-        console.log('discountAmount',discountAmount);
-        //console.log('planPrice',planPrice); 
-        console.log('effectivePaid',effectivePaid);
-        console.log('pendingAmount',pendingAmount);
+    
 
         if (pendingAmount > 0) {
             $('#due_date').removeAttr('readonly');
@@ -585,7 +581,7 @@
             data.plan_start_date = start_date;
         }
 
-        console.log("start_date",start_date);
+       
         if (plan_type_id && plan_id) {
                 $.ajax({
                     url: '{{ route('getPricePlanwise') }}',
@@ -597,7 +593,7 @@
                         if (html && html !== undefined) {
                                 $('#pending_amt3').html('');
                             if ($("#plan_price_id").length) {
-                                console.log("1plantype");
+                               
                                 $("#plan_price_id").val(html);
                                 autoCalculatePaidAmount();
                                 $("#error-message").hide();
@@ -634,7 +630,7 @@
                 plan_start_date: plan_start_date
             },
             success: function (res) {
-                    console.log(res);
+                    
                 if (res.fixedBillingDate == 'true') {
 
                      $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
@@ -646,8 +642,10 @@
                     // }else{
                     //     $('#chargeable_days').text('Billed Monthly');
                     // }
-
-                    
+ 
+                }
+                if(res.fixedBillingDate == 'false'){
+                     $('#plan_end_date_edit').val(res.end_date);
                     
                 }
             }
@@ -729,7 +727,8 @@
         }
             
         const autoPaid = planPrice + lockerAmount - discountAmount;
-        $('#total_amount10').val(autoPaid);
+ 
+        $('#total_amount10').val(autoPaid ?? 0);
 
         // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
         const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
@@ -2683,14 +2682,14 @@
 
 
 </script>
+
+
+
+
+
+
+
 <script>
-
-
-
-
-
-
-
 // for Waba send all function
 function loadLearnerMobiles(learnerId,mobileId) {
     
