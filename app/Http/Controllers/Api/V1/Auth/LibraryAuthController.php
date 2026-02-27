@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Actions\RegisterLibrary;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BaseApiResource;
 use App\Models\Branch;
 use App\Models\Library;
 use App\Models\LibraryUser;
@@ -17,7 +18,15 @@ use DB;
 
 class LibraryAuthController extends Controller
 {
-
+    protected function apiResponse($data, $message = 'Success', $code = 200)
+    {
+        return response()->json([
+            'status' => true,
+            'code' => $code,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
     public function setting()
     {
         return response()->json([
@@ -213,27 +222,37 @@ class LibraryAuthController extends Controller
             'status' => true,
             'code' => 200,
             'message' => 'Login successful.',
-            'is_email_verified' => 0,
+            'is_email_verified' => 1,
             'token' => $token,
-            // 'data' => [
-            //     'token' => $token,
-            //     // id, name, email,contact, role 
-            //     'library' => cleanNull($user->toArray())
-            // ],
+           
            
         ], 200);
     }
 
     public function libraryPlan()
     {
-        $plans = Subscription::all();
+        $plans = Subscription::select([
+        'id',
+        'name',
+        'monthly_fees',
+        'three_monthly_fees',
+        'six_monthly_fees',
+        'yearly_fees',
+        'two_yearly_fees',
+        'slash_price',
+        'three_monthly_slash_price',
+        'six_monthly_slash_price',
+        'yearly_slash_price',
+        'two_yearly_slash_price',
+        'plan_description'
+    ])->get();
+
+        return $this->apiResponse(
+            BaseApiResource::collection($plans),
+            'Subscription plans fetched successfully'
+        );
       
-        return response()->json([
-            'status' => true,
-            'code' => 200,
-            'message' => 'Subscription plans fetched successfully.',
-            'data' => $plans
-        ], 200);
+  
     }
 
 
