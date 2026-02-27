@@ -41,7 +41,7 @@ if($customer->locker_no){
                     <div class="row g-4">
                         <div class="col-lg-6">
                             <label for="" class="text-white">Seat Owner Name <span>*</span></label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror char-only" placeholder="Full Name" name="name" id="name" value="{{ old('name', $customer->name) }}">
+                            <input type="text" class="form-control @error('name') is-invalid @enderror " placeholder="Full Name" name="name" id="name" value="{{ old('name', $customer->name) }}">
                             @error('name')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
