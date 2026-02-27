@@ -18,6 +18,8 @@ Route::post('library/login', [LibraryAuthController::class, 'login']);
 Route::middleware('auth:library_api')->group(function () {
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
+    Route::get('library/payment/create-order', [LibraryAuthController::class, 'paymentApi']);
+    Route::post('library/payment/create-order', [LibraryAuthController::class, 'paymentApi']);
 });
 
 // Learner login

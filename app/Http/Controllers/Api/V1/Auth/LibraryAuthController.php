@@ -229,30 +229,62 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
+   
     public function libraryPlan()
     {
-        $plans = Subscription::select([
-        'id',
-        'name',
-        'monthly_fees',
-        'three_monthly_fees',
-        'six_monthly_fees',
-        'yearly_fees',
-        'two_yearly_fees',
-        'slash_price',
-        'three_monthly_slash_price',
-        'six_monthly_slash_price',
-        'yearly_slash_price',
-        'two_yearly_slash_price',
-        'plan_description'
-    ])->get();
+        $subscriptions = Subscription::get();
 
-        return $this->apiResponse(
-            BaseApiResource::collection($plans),
-            'Subscription plans fetched successfully'
-        );
-      
-  
+        $features = DB::table('subscription_plan_features')
+            ->where('feature_status', 1)
+            ->whereNull('deleted_at')
+            ->get();
+
+        // Get all unique feature names (like your blade)
+        $allFeatures = $features->pluck('name')->unique()->values();
+
+        $formattedPlans = $subscriptions->map(function ($subscription) use ($features, $allFeatures) {
+
+            // Features of current subscription
+            $subscriptionFeatures = $features
+                ->where('subscription_id', $subscription->id)
+                ->pluck('name')
+                ->toArray();
+
+            $featureList = $allFeatures->map(function ($featureName) use ($subscriptionFeatures) {
+
+                return [
+                    'name' => $featureName,
+                    'enabled' => in_array($featureName, $subscriptionFeatures)
+                ];
+            });
+
+            return [
+                'id' => (int) $subscription->id,
+                'name' => $subscription->name,
+
+                'modes' => [
+                    [
+                        'type' => 'monthly',
+                        'price' => (int) $subscription->monthly_fees,
+                        'original_price' => (int) $subscription->slash_price,
+                    ],
+                    [
+                        'type' => 'yearly',
+                        'price' => (int) $subscription->yearly_fees,
+                        'original_price' => (int) $subscription->yearly_slash_price,
+                    ],
+                ],
+
+                'features' => $featureList->values(),
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'code' => 200,
+            'message' => 'Plans fetched successfully',
+            'data' => $formattedPlans
+        ]);
     }
 
 
@@ -431,26 +463,32 @@ class LibraryAuthController extends Controller
 
     public function paymentApi(Request $request)
     {
-        $request->validate([
-            'library_id'      => 'required',
-            'subscription_id' => 'required',
-            'plan_mode'       => 'required',
+        $validated = $request->validate([
+            'library_id'      => 'required|exists:libraries,id',
+            'subscription_id' => 'required|exists:subscriptions,id',
+            'plan_mode'       => 'required|integer|in:1,2,3,4,5',
         ]);
 
         try {
-            $data = $this->razorpayPaymentCore(
-                $request->subscription_id,
-                $request->plan_mode,
-                $request->library_id
+             $data = $this->razorpayPaymentCore(
+                (int) $validated['subscription_id'],
+                (int) $validated['plan_mode'],
+                (int) $validated['library_id']
             );
-
+            
             return response()->json([
                 'status'  => true,
-                'order'   => $data['order'],
-                'amount'  => $data['amount'],
-                'currency'=> 'INR',
-                'transaction_id' => $data['transaction']->id,
+                'code'    => 200,
+                'message' => 'Order created successfully',
+                'data'    => [
+                    'order'       => $data['order'],
+                    'amount'         => $data['amount'],
+                    'currency'       => 'INR',
+                    'transaction_id' => $data['transaction']->id,
+                ]
             ]);
+
+           
 
         } catch (\Exception $e) {
             return response()->json([

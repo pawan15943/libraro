@@ -16,6 +16,7 @@ class Subscription extends Model
     use HasFactory,SoftDeletes,Notifiable;
     protected $table = 'subscriptions';
     protected $guarded = []; 
+ 
 
     public function permissions()
     {
