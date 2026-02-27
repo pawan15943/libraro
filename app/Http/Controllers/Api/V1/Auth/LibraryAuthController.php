@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Actions\RegisterLibrary;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Library;
@@ -42,13 +43,14 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
-    public function register(Request $request)
+    public function register(Request $request,RegisterLibrary $action)
     {
+       
         //  smtp email check verify valid remaining
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'library_name' => 'required|string|max:255',
             'email' => 'required|email|unique:libraries,email',
-            'mobile' => 'required|digits:10',
+            'library_mobile' => 'required|digits:10',
             'password' => 'required|min:6',
             'device_type' => 'required',
             'device_id' => 'required',
@@ -63,55 +65,28 @@ class LibraryAuthController extends Controller
                 
             ], 200);
         }
-
-
-        $validated = $validator->validated();
-        $otp = rand(100000, 999999);
-
         try {
-            $library = Library::create([
-                'library_name' => $validated['name'],
-                'email' => $validated['email'],
-                'library_mobile' => $validated['mobile'],
-                'password' => Hash::make($validated['password']),
-                'email_otp' => $otp,
-            ]);
 
-             $library->devices()->updateOrCreate(
-                ['device_id' => $validated['device_id']],
-                [
-                    'device_type' => $validated['device_type'],
-                    'guard_name' => 'library',
-                ]
-            );
-
-            $data = [
-                'name' => $library->library_name,
-                'email' => $library->email,
-                'otp' => $otp,
-            ];
-             \Log::info('Verify Your Email Address');
-
-            // Mail::send('email.verify-email', $data, function ($message) use ($data) {
-            //     $message->to($data['email'], $data['name'])
-            //             ->subject('Verify Your Email Address');
-            // });
+            $library = $action->handle($validator->validated());
 
             return response()->json([
-                'status' => true,
+                'status'  => true,
                 'message' => 'OTP sent to registered email.',
-                'data' => [
+                'data'    => [
                     'library_id' => $library->id
                 ]
-            ], 200);
+            ], 201);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+
+            \Log::error('Library Registration Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
-                'status' => false,
-                'code' => 500,
-                'message' => 'Failed to register or send OTP email.',
-                'error' => app()->environment('production') ? null : $e->getMessage(),
-                
+                'status'  => false,
+                'message' => 'Failed to register.',
+                'error'   => app()->environment('production') ? null : $e->getMessage(),
             ], 500);
         }
     }
@@ -421,11 +396,6 @@ class LibraryAuthController extends Controller
             ]
         ], 200);
     }
-
-
-
-
-
 
     public function profile(Request $request)
     {

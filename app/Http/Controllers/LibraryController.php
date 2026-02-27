@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RegisterLibrary;
 use App\Http\Requests\StoreLibraryRequest;
 use App\Models\City;
 use App\Models\Complaint;
@@ -290,20 +291,30 @@ class LibraryController extends Controller
         return Validator::make($request->all(), $rules);
     }
 
-    public function sendVerificationEmail($library)
-    {
-        \Log::info('sendVerificationEmail');
-        // Prepare the data to send to the email view
+   public function sendVerificationEmail($library)
+{
+    try {
+
         $data = [
-            'name' => $library->library_name,
+            'name'  => $library->library_name,
             'email' => $library->email,
-            'otp' => $library->email_otp,
+            'otp'   => $library->email_otp,
         ];
 
-        Mail::send('email.verify-email', $data, function($message) use ($data) {
-            $message->to($data['email'], $data['name'])->subject('Verify Your Email Address');
+        Mail::send('email.verify-email', $data, function ($message) use ($data) {
+            $message->to($data['email'], $data['name'])
+                    ->subject('Verify Your Email Address');
         });
+
+    } catch (\Throwable $e) {
+
+        \Log::error('Mail sending failed inside method', [
+            'message' => $e->getMessage()
+        ]);
+
+        // IMPORTANT: do not throw
     }
+}
 
     public function verifyOtp(Request $request)
     {
@@ -362,7 +373,83 @@ class LibraryController extends Controller
         return view('register.plan', compact('subscriptions','premiumSub','features'));
     }
 
-    public function store(Request $request)
+    // public function store(Request $request,RegisterLibrary $action)
+    // {
+      
+    //     // Validate the request
+    //     $validatedData = $this->libraryValidation($request);
+        
+    //     if ($validatedData->fails()) {
+    //         return redirect()->back()->withErrors($validatedData)->withInput();
+    //     }
+
+    //     $validated = $validatedData->validated();
+    //     unset($validated['terms']);
+    //     $validated['original_password'] = $validated['password'];
+
+    //     $validated['password'] = bcrypt($validated['password']);
+    //     $validated['slug']=Str::slug($validated['library_name']);
+    //     try {
+    //         $library = Library::create($validated);
+
+    //         if ($library) {
+               
+    //             $otp = Str::random(6); 
+    //             $library->email_otp = $otp;
+    //             $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
+    //             $library->save();
+                
+    //             if ($request->referral_code) {
+    //                 $referrer = Library::where('referral_code', $request->referral_code)->first();
+
+    //                 if ($referrer && $referrer->id !== $library->id) {
+
+    //                     $library->referred_by = $referrer->id;
+    //                     $library->save();
+
+    //                     LibraryReferral::create([
+    //                         'referrer_library_id' => $referrer->id,
+    //                         'referred_library_id' => $library->id,
+    //                         'referral_code' => $request->referral_code,
+    //                         'referral_type' => $request->has('qr') ? 'qr' : 'code',
+    //                         'status' => 'pending'
+    //                     ]);
+    //                 }
+    //             }
+                
+                
+    //             try {
+                 
+    //                 $this->sendVerificationEmail($library);
+    //                 \Log::info('sendVerificationEmail success', [
+    //                     'library_id' => $library->id ?? null,
+    //                 ]);
+
+    //             } catch (\Throwable $e) {
+
+    //                 \Log::error('sendVerificationEmail failed', [
+    //                     'library_id' => $library->id ?? null,
+    //                     'email'      => $library->email ?? null,
+    //                     'message'    => $e->getMessage(),
+    //                     'file'       => $e->getFile(),
+    //                     'line'       => $e->getLine(),
+    //                 ]);
+
+    //                 // ✔ Continue execution (do nothing else)
+    //             }
+                                
+    //             session(['library_email' => $library->email]);
+
+    //             return redirect()->route('verification.notice')
+    //                 ->with('message', 'Please verify your email to continue.');
+    //         } else {
+    //             return response()->json(['error' => 'Library creation failed.'], 500);
+    //         }
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+    //     }
+    // }
+     public function store(Request $request,RegisterLibrary $action)
     {
       
         // Validate the request
@@ -374,69 +461,23 @@ class LibraryController extends Controller
 
         $validated = $validatedData->validated();
         unset($validated['terms']);
-        $validated['original_password'] = $validated['password'];
-
-        $validated['password'] = bcrypt($validated['password']);
-        $validated['slug']=Str::slug($validated['library_name']);
+        $validated['referral_type']=$request->has('qr') ? 'qr' : 'code';
+      
         try {
-            $library = Library::create($validated);
 
-            if ($library) {
-               
-                $otp = Str::random(6); 
-                $library->email_otp = $otp;
-                $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
-                $library->save();
-                
-                if ($request->referral_code) {
-                    $referrer = Library::where('referral_code', $request->referral_code)->first();
+            $library = $action->handle($validated);
+          
+            session(['library_email' => $library->email]);
 
-                    if ($referrer && $referrer->id !== $library->id) {
+            return redirect()
+                ->route('verification.notice')
+                ->with('message', 'Please verify your email to continue.');
 
-                        $library->referred_by = $referrer->id;
-                        $library->save();
+        } catch (\Throwable $e) {
 
-                        LibraryReferral::create([
-                            'referrer_library_id' => $referrer->id,
-                            'referred_library_id' => $library->id,
-                            'referral_code' => $request->referral_code,
-                            'referral_type' => $request->has('qr') ? 'qr' : 'code',
-                            'status' => 'pending'
-                        ]);
-                    }
-                }
-                
-                
-                try {
-                 
-                    $this->sendVerificationEmail($library);
-                    \Log::info('sendVerificationEmail success', [
-                        'library_id' => $library->id ?? null,
-                    ]);
-
-                } catch (\Throwable $e) {
-
-                \Log::error('sendVerificationEmail failed', [
-                        'library_id' => $library->id ?? null,
-                        'email'      => $library->email ?? null,
-                        'message'    => $e->getMessage(),
-                        'file'       => $e->getFile(),
-                        'line'       => $e->getLine(),
-                    ]);
-
-                    // ✔ Continue execution (do nothing else)
-                }
-                                
-                session(['library_email' => $library->email]);
-
-                return redirect()->route('verification.notice')
-                    ->with('message', 'Please verify your email to continue.');
-            } else {
-                return response()->json(['error' => 'Library creation failed.'], 500);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+            return back()->with('error', 'Something went wrong.');
         }
+      
     }
 
     public function payment(Request $request)
