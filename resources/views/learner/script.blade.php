@@ -635,6 +635,8 @@
 
                      $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
                     $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
+                   
+                    
 
                     // if(res.chargeable_days < 31){
                     //     $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
@@ -646,6 +648,7 @@
                 }
                 if(res.fixedBillingDate == 'false'){
                      $('#plan_end_date_edit').val(res.end_date);
+                     $('#end_date_show').text('End date ' + res.end_date );
                     
                 }
             }
