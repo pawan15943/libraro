@@ -21,7 +21,7 @@ class Kernel extends ConsoleKernel
              ->withoutOverlapping();
       
          $schedule->command('library:daily-status')
-        ->dailyAt('09:02')
+        ->dailyAt('09:07')
         ->withoutOverlapping()
         ->runInBackground();
         
