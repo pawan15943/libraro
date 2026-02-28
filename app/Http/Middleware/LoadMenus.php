@@ -289,8 +289,8 @@ class LoadMenus
             }
 
             if (Auth::guard('library')->check() || Auth::guard('library_user')->check()){
-                $this->statusInactive();
-                $this->updateLibraryStatus();
+                // $this->statusInactive();
+                // $this->updateLibraryStatus();
                 $lib_extenday=Library::where('id', getAuthenticatedUser()->id)->value('extend_days') ?? 0;
                 $lib_enddate= LibraryTransaction::withoutGlobalScopes()->where('library_id', getAuthenticatedUser()->id)->where('is_paid', 1)->latest('end_date')->value('end_date')??0;
                 

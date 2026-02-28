@@ -6,8 +6,83 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Library;
 use App\Models\LibraryTransaction;
 
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 class LibraryService
 {
+    public function runDailyUpdate()
+    {
+        $today = Carbon::today('Asia/Kolkata');
+
+        Library::select('id')
+            ->chunkById(200, function ($libraries) use ($today) {
+
+                foreach ($libraries as $library) {
+
+                    try {
+                        $this->processSingleLibrary($library->id, $today);
+                    } catch (\Throwable $e) {
+
+                        Log::error('Library status update failed', [
+                            'library_id' => $library->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            });
+    }
+
+    private function processSingleLibrary($libraryId, $today)
+    {
+        $library = Library::find($libraryId);
+        if (!$library) return;
+
+        $extendDays = $library->extend_days ?? 0;
+
+        DB::transaction(function () use ($library, $today, $extendDays) {
+
+            // 1️⃣ Deactivate all transactions
+            LibraryTransaction::withoutGlobalScopes()
+                ->where('library_id', $library->id)
+                ->update(['status' => 0]);
+
+            // 2️⃣ Find valid transaction (extension aware)
+            $validTransaction = LibraryTransaction::withoutGlobalScopes()
+                ->where('library_id', $library->id)
+                ->where('is_paid', 1)
+                ->whereDate('start_date', '<=', $today)
+                ->get()
+                ->filter(function ($transaction) use ($today, $extendDays) {
+
+                    $endWithExtend = Carbon::parse($transaction->end_date)
+                        ->addDays($extendDays);
+
+                    return $endWithExtend->gte($today);
+                })
+                ->sortByDesc('start_date')
+                ->first();
+
+            if ($validTransaction) {
+
+                $validTransaction->update(['status' => 1]);
+
+                $library->update([
+                    'status' => 1,
+                    'is_paid' => 1,
+                    'library_type' => $validTransaction->subscription
+                ]);
+
+            } else {
+
+                $library->update([
+                    'status' => 0,
+                    'is_paid' => 0
+                ]);
+            }
+        });
+    }
     public function checkLibraryStatus()
     {
         if (Auth::check()) {

@@ -55,7 +55,7 @@ $user = getAuthenticatedUser();
 </div>
 <!-- Expiry Warning Ends -->
 
-<div class="modal" tabindex="-1" id="todayrenew">
+{{-- <div class="modal" tabindex="-1" id="todayrenew">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <!-- <div class="modal-header">
@@ -71,7 +71,7 @@ $user = getAuthenticatedUser();
            
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- All learner status update -->
  {{-- @if(!empty($showDailyPopup) && $showDailyPopup)

@@ -19,9 +19,16 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DailyStatusUpdateJob())
              ->dailyAt('07:15')
              ->withoutOverlapping();
+      
+         $schedule->command('library:daily-status')
+        ->dailyAt('03:00')
+        ->withoutOverlapping()
+        ->runInBackground();
+        
+
         // $schedule->command('notifications:update-status')->daily();
         // $schedule->command('data:update')->dailyAt('00:00');
-        //  $schedule->command('learner:update-status')->dailyAt('06:00');
+        //  $schedule->command('learner:update-status')->dailyAt('06:00'); 
     }
 
     /**
