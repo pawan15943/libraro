@@ -86,9 +86,9 @@
                     font-family: 'outfit', 'sans-sarif';
                 }
             </style>
-            <div>
+            {{-- <div>
                 <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.</marquee>
-            </div>
+            </div> --}}
 
 
             <!-- Begin Page Content -->
