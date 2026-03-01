@@ -25,6 +25,12 @@ class PlanType extends Model
 
         
     }
+    public function scopeByBranch($query, $branchId)
+    {
+        return $query
+            ->withoutGlobalScope('branch')
+            ->where('branch_id', $branchId);
+    }
     public function price()
     {
         return $this->hasOne(PlanPrice::class, 'plan_type_id');

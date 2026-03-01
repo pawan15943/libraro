@@ -34,6 +34,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\NotificationSentController;
 use App\Models\Category;
+use App\Services\LibraryService;
+use App\Services\PlanService;
 
 class LearnerController extends Controller
 {
@@ -1988,139 +1990,35 @@ class LearnerController extends Controller
 
         return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days,$previous_pending]);
     }
-    public function getPrice(Request $request)
+    public function getPrice(Request $request, PlanService $priceService)
     {
-        $plan_type_id = $request->plan_type_id;
-        $plan_id      = $request->plan_id;
-        $branchId     = getCurrentBranch();
-
-        if (!$plan_type_id || !$plan_id) {
+        if (!$request->plan_type_id || !$request->plan_id) {
             return response()->json(0);
         }
 
-        $start_date = Carbon::parse($request->plan_start_date);
-        $end_date=getEndDate($plan_id, $start_date);
-        // ✅ Check fixed billing
-        $hasFixedBilling = Branch::where('id', $branchId)
-            ->whereNotNull('fixed_billing_date')
-            ->exists();
-        $branch = Branch::select('fixed_billing_date')
-        ->where('id', $branchId)
-        ->first();
+        $branchId = getCurrentBranch();
 
-        $fixedBillingDate = $branch?->fixed_billing_date;
-        
-        // ✅ CASE 1: Fixed billing → prorated price
-        // if ($start_date->day != $fixedBillingDate && $hasFixedBilling && $start_date->day != ($fixedBillingDate+1)) {
-        if ($hasFixedBilling ) {
-         
-            $PlanpPrice = getBillingCyclePrice(
-                $plan_id,
-                $plan_type_id,
-                $start_date     
-            );
+        $result = $priceService->calculatePrice(
+            $request->plan_id,
+            $request->plan_type_id,
+            $request->plan_start_date,
+            $branchId
+        );
 
-        }else {
-
-            $PlanpPrice = getPlanPrice(
-                $plan_id,
-                $plan_type_id
-            );
-
-        }
-
-        return response()->json($PlanpPrice);
+        return response()->json($result['price']);
     }
+    
 
-
-    public function getPlanTypeSeatWise(Request $request)
+    
+    public function getPlanTypeSeatWise(Request $request, PlanService $service)
     {
 
         $seatNo = $request->seatNo;
-        if ($seatNo) {
+        $branchId = getCurrentBranch();
 
+        $data = $service->getAvailablePlanTypes($seatNo, $branchId);
 
-            // Step 1: Retrieve all bookings for the given seat
-            $bookings = $this->getLearnersByLibrary()
-                ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                ->where('learner_detail.seat_no', $seatNo)
-                ->where('learners.status', 1)
-                ->where('learner_detail.status', 1)
-                ->where('learners.branch_id', getCurrentBranch())
-                ->where('learner_detail.branch_id', getCurrentBranch())
-                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-
-            // Step 2: Retrieve all plan types
-            $planTypes = PlanType::get();
-
-            // Step 3: Initialize an array to store the plan_type_ids to be removed
-            $planTypesRemovals = [];
-
-            // Step 4: Calculate total booked hours for the seat
-            $totalBookedHours = $bookings->sum('slot_hours');
-
-            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->exists();
-
-            // Step 5: Determine conflicts based on plan_type_id and hours
-            $planTypeId = null;
-            if ($totalBookedHours < 24) {
-
-                foreach ($bookings as $booking) {
-                    foreach ($planTypes as $planType) {
-                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
-                            $planTypesRemovals[] = $planType->id;
-                        }
-                    }
-                }
-            }
-            if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::where('day_type_id', 8)->value('id') ?? 0;
-            }
-
-            if (!is_null($planTypeId)) {
-                $planTypesRemovals[] = $planTypeId;
-            }
-            if ($nightseatBooked) {
-                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
-                $planTypesRemovals[] = $planTypeid;
-            }
-            // Remove duplicate entries in planTypesRemovals
-            $planTypesRemovals = array_unique($planTypesRemovals);
-
-            // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
-            $total_hour = $first_record ? $first_record->hour : null;
-
-            if ($totalBookedHours >= $total_hour) {
-                $planTypesRemovals = $planTypes->pluck('id')->toArray();
-            }
-            // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
-            if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
-                $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
-            }
-            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
-            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
-                return !in_array($planType->id, $planTypesRemovals);
-            })->map(function ($planType) {
-                return ['id' => $planType->id, 'name' => $planType->name];
-            })->values(); // Ensure the keys are reset to a continuous numerical index
-        } else {
-
-            $first_record = Hour::where('branch_id', getCurrentBranch())->first();
-            $total_hour = $first_record ? $first_record->hour : null;
-
-            if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::whereNotIn('day_type_id', [8, 9])
-                    ->select('id', 'name')
-                    ->get();
-            } else {
-                $filteredPlanTypes = PlanType::select('id', 'name')->get();
-            }
-        }
-
-        // Return the filtered plan types as JSON
-        return response()->json($filteredPlanTypes);
+        return response()->json($data);
     }
 
 

@@ -10,6 +10,7 @@ use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\State;
+use App\Services\LibraryConfigurationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DB;
@@ -440,7 +441,7 @@ class BranchController extends Controller
     }
 
     
-    public function branchConfigure(Request $request)
+    public function branchConfigure(Request $request,LibraryConfigurationService $service)
     {
         /* =========================
         BRANCH COUNT VALIDATION
@@ -487,8 +488,15 @@ class BranchController extends Controller
 
         $validator = Validator::make($request->all(), $rules);
 
-        $plans  = $request->input('plans', []);
-        $floorses = $request->input('floors', []);
+       $validated['logo'] = null;
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')
+                ->store('uploads/logo', 'public');
+        }
+
+        $validated['features'] = $request->features ?? null;
+        $validated['google_map'] = $request->google_map ?? null;
 
         /* =========================
         UNIQUE BRANCH NAME
@@ -509,10 +517,7 @@ class BranchController extends Controller
           
             $validator->after(function ($validator) use ($plans) {
 
-                // $alreadyHave = Plan::where('library_id', getLibraryId())
-                //     ->where('plan_id', 1)
-                //     ->where('type', 'MONTH')
-                //     ->exists();
+               
 
                 $hasMonthPlan = false;
             
@@ -543,187 +548,16 @@ class BranchController extends Controller
             ], 422);
         }
 
-        DB::beginTransaction();
+        /* ================= CALL SERVICE ================= */
 
-        try {
+        $response = $service->configure(
+             $validated,
+            getLibraryId(),
+            $existingBranch,
+            $branchCount
+        );
 
-            $validated = $validator->validated();
-            
-            $validated['library_id']  = getLibraryId();
-            $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
-
-           
-
-            $hour  = $validated['hour'];
-            $seats = $validated['seats'];
-            unset($validated['hour'], $validated['seats']);
-
-            /* =========================
-            FLOOR VALIDATION
-            ========================= */
-            $floors = collect($floorses)
-                ->filter(fn ($floor) =>
-                    filled($floor['name']) ||
-                    filled($floor['from']) ||
-                    filled($floor['to'])
-                )
-                ->values()
-                ->toArray();
-
-            $totalFloorSeats = 0;
-
-            foreach ($floors as $index => $floor) {
-                 //  If from/to is filled, name is required
-                if ((filled($floor['from']) || filled($floor['to'])) && empty($floor['name'])) {
-                    throw new \Exception(
-                        "Floor name is required when seat range is provided (Row ".($index + 1).")"
-                    );
-                }
-
-                if (empty($floor['from']) || empty($floor['to'])) {
-                    throw new \Exception(
-                        'Seat range is required for each floor.'
-                    );
-                }
-
-                if ($floor['to'] < $floor['from']) {
-                    throw new \Exception(
-                        'Seat To must be greater than or equal to Seat From.'
-                    );
-                }
-
-                $totalFloorSeats += ($floor['to'] - $floor['from']) + 1;
-            }
-
-            if ($totalFloorSeats > $seats) {
-                throw new \Exception(
-                    "Total floor seats ({$totalFloorSeats}) cannot exceed branch seats ({$seats})"
-                );
-            }
-
-            /* =========================
-            CREATE BRANCH
-            ========================= */
-            $branchData = collect($validated)->except([
-                'plans',
-                'monthdays',
-                'floors',
-            ])->toArray();
-
-            $branch = $existingBranch ?? new Branch();
-             $branch->fill($branchData);
-            $branch->library_id = getLibraryId();
-            
-            if ($request->hasFile('logo')) {
-                $branch->logo = $request->file('logo')
-                    ->store('uploads/logo', 'public');
-            }
-
-            if ($request->has('features')) {
-                $branch->features = json_encode($request->features);
-            }
-
-            $branch->google_map = $request->google_map;
-            $branch->slug = $slug;
-            $branch->save();
-
-            /* =========================
-            HOURS
-            ========================= */
-             Hour::updateOrCreate(
-                [
-                    'branch_id'  => $branch->id,
-                    'library_id' => getLibraryId(),
-                ],
-                [
-                    'hour'  => $hour,
-                    'seats' => $seats,
-                ]
-            );
-
-            /* =========================
-            PLANS
-            ========================= */
-           if ($existingBranch || $branchCount == 0){
-            
-                    // DELETE REMOVED PLANS
-                Plan::where('library_id', getLibraryId())
-                    ->whereNotIn('name', $plans)
-                    ->delete();
-
-                $baseMonthDays = null;
-                foreach ($plans as $plan) {
-                    [$num, $type] = explode(' ', $plan);
-                    if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
-                        $baseMonthDays = $request->monthdays ?: null;
-                        break;
-                    }
-                }
-
-                foreach ($plans as $plan) {
-                    [$num, $type] = explode(' ', $plan);
-
-                    Plan::updateOrCreate(
-                        [
-                            'library_id' => getLibraryId(),
-                            'name'       => $plan,
-                        ],
-                        [
-                            'plan_id'   => (int)$num,
-                            'type'      => strtoupper($type),
-                            'monthdays' => strtoupper($type) === 'MONTH'
-                                ? $baseMonthDays
-                                : null,
-                        ]
-                    );
-                }
-            }
-
-            /* =========================
-            FLOORS
-            ========================= */
-            Floor::where('branch_id', $branch->id)->delete();
-
-            foreach ($floors as $index => $floor) {
-                Floor::create([
-                    'branch_id'   => $branch->id,
-                    'name'        => $floor['name'],
-                    'floor_no'    => $index + 1,
-                    'from_seat'   => (int)$floor['from'],
-                    'to_seat'     => (int)$floor['to'],
-                    
-                ]);
-            }
-
-            /* =========================
-            LIBRARY IMAGES
-            ========================= */
-            if ($request->hasFile('library_images')) {
-                foreach ($request->file('library_images') as $image) {
-                    $image->store('uploads/library_images', 'public');
-                }
-            }
-            Library::where('id',getLibraryId())->update([
-                'current_branch'=> $branch->id
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-            'status'   => true,
-            'redirect' => route('library.home'),
-                'message'  => 'Branch added successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'status'  => false,
-                'message' => $e->getMessage()
-            ], 400);
-        }
+        return response()->json($response);
     }
 
     

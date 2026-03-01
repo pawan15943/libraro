@@ -29,6 +29,7 @@ class LibraryAuthController extends Controller
     }
     public function setting()
     {
+       
         return response()->json([
             'status' => true,
             'message' => 'Settings fetched successfully.',
