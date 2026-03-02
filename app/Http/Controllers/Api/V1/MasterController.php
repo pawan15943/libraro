@@ -109,7 +109,7 @@ $planDurations = collect()
  
         $validated = $request->validate([
             'seat_no' => 'nullable',
-            'branch_id' => 'required'
+            'branch_id' => 'required|exists:branches,id'
         ]);
        
 

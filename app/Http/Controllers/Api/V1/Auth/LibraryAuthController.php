@@ -39,7 +39,7 @@ class LibraryAuthController extends Controller
             'message' => 'Razorpay credentials fetched successfully',
             'data'    => [
                 'key_id' => config('services.razorpay.key'),
-                'secret' => config('services.razorpay.secret')
+                // 'secret' => config('services.razorpay.secret')
             ]
         ]);
     }
