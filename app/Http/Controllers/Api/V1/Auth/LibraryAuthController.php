@@ -8,7 +8,11 @@ use App\Http\Resources\BaseApiResource;
 use App\Models\Branch;
 use App\Models\Library;
 use App\Models\LibraryUser;
+use App\Models\Plan;
+use App\Models\PlanPrice;
+use App\Models\PlanType;
 use App\Models\Subscription;
+use App\Services\LibraryConfigurationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -27,6 +31,18 @@ class LibraryAuthController extends Controller
             'data' => $data
         ], $code);
     }
+    public function getRazorpayCredentials()
+    {
+        return response()->json([
+            'status'  => true,
+            'code'    => 200,
+            'message' => 'Razorpay credentials fetched successfully',
+            'data'    => [
+                'key_id' => config('services.razorpay.key'),
+                'secret' => config('services.razorpay.secret')
+            ]
+        ]);
+    }
     public function setting()
     {
        
@@ -34,7 +50,7 @@ class LibraryAuthController extends Controller
             'status' => true,
             'message' => 'Settings fetched successfully.',
             'data' => [
-                'app_version' => 'v1',
+                'app_version' => '1.0',
                 'force_update' => false,
                 'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
@@ -48,7 +64,7 @@ class LibraryAuthController extends Controller
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
                 'isMaintenance'=>false,
-                'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
+                // 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
     }
@@ -85,7 +101,7 @@ class LibraryAuthController extends Controller
                 'data'    => [
                     'library_id' => $library->id
                 ]
-            ], 201);
+            ], 200);
 
         } catch (\Throwable $e) {
 
@@ -166,45 +182,56 @@ class LibraryAuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required',
+            'email'       => 'required|email',
+            'password'    => 'required',
             'device_type' => 'required',
-            'device_id' => 'required',
+            'device_id'   => 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'code' => 200,
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-                'data' => (object)[]
+                'status'  => false,
+                'code'    => 200,
+                'message' => $validator->errors()->first(),
+                'data'    => (object)[]
             ], 200);
         }
 
         $user = Library::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
             return response()->json([
-                'status' => false,
-                'code' => 200,
-                'message' => 'User Not Register',
-               'registration' => 0
+                'status'  => false,
+                'code'    => 200,
+                'message' => 'No Library registered with this email',
+            ], 200);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status'  => false,
+                'code'    => 200,
+                'message' => 'Password is invalid',
             ], 200);
         }
 
         if (is_null($user->email_verified_at)) {
             return response()->json([
-                'status' => true,
-                'code' => 200,
-                'message' => 'Please verify your email before logging in.',
-                'is_email_verified' => 0
+                'status'             => true,
+                'code'               => 200,
+                'message'            => 'Please verify your email before logging in.',
+                'is_email_verified'  => 0,
+                'is_last_step'       => 0
             ], 200);
         }
 
+        // Assign role if not exists
         if (!$user->hasAnyRole(['admin', 'library'])) {
-            $user->assignRole('library'); 
+            $user->assignRole('library');
         }
+
+        // Revoke old tokens (optional but recommended)
+        $user->tokens()->delete();
 
         $token = $user->createToken('library_token')->plainTextToken;
 
@@ -212,21 +239,60 @@ class LibraryAuthController extends Controller
             ['device_id' => $request->device_id],
             [
                 'device_type' => $request->device_type,
-                'token' => $token,
-                'guard_name' => 'library_api',
+                'token'       => $token,
+                'guard_name'  => 'library_api',
             ]
         );
 
-        // registration=> 0=>user not register,1=> email not verify,2=>
-        //suceess is_email_verified
+        /*
+        |--------------------------------------------------------------------------
+        | Determine is_last_step Properly
+        |--------------------------------------------------------------------------
+        */
+
+        $is_last_step = 0;
+
+        if ($user->is_paid) {
+            $is_last_step = 1;
+        }
+
+        if (Branch::where('library_id', $user->id)->where('status', 1)->exists()) {
+            $is_last_step = 2;
+        }
+
+        $isPlanComplete =
+            $user->status == 1 &&
+            Plan::where('library_id', $user->id)->exists() &&
+            PlanType::where('library_id', $user->id)->exists() &&
+            PlanPrice::where('library_id', $user->id)->exists();
+
+        if ($isPlanComplete) {
+            $is_last_step = 3;
+        }
+
+        $branches = Branch::leftJoin('hour','branches.id','=','hour.branch_id')
+            ->where('branches.library_id', $user->id)
+            ->select(
+                'branches.id',
+                'branches.name',
+                'branches.uuid',
+                'branches.display_name',
+                'branches.status',
+                'branches.is_profile',
+                'hour.hour as operating_hour',
+                'hour.seats'
+            )
+            ->get();
+
         return response()->json([
-            'status' => true,
-            'code' => 200,
-            'message' => 'Login successful.',
+            'status'            => true,
+            'code'              => 200,
+            'message'           => 'Login successful.',
             'is_email_verified' => 1,
-            'token' => $token,
-           
-           
+            'is_last_step'      => $is_last_step,
+            'token'             => $token,
+            'library_id'        => $user->id,
+            'data'              => $branches ?? [],
         ], 200);
     }
 
@@ -240,51 +306,97 @@ class LibraryAuthController extends Controller
             ->whereNull('deleted_at')
             ->get();
 
-        // Get all unique feature names (like your blade)
+        // All unique features (like your blade logic)
         $allFeatures = $features->pluck('name')->unique()->values();
 
-        $formattedPlans = $subscriptions->map(function ($subscription) use ($features, $allFeatures) {
+        /*
+        |--------------------------------------------------------------------------
+        | Subscription Modes Mapping
+        |--------------------------------------------------------------------------
+        | NULL  => Deactivated
+        | 0     => Free but Active
+        | > 0   => Paid
+        |--------------------------------------------------------------------------
+        */
 
-            // Features of current subscription
-            $subscriptionFeatures = $features
-                ->where('subscription_id', $subscription->id)
-                ->pluck('name')
-                ->toArray();
+        $modesMap = [
+            'monthly'       => ['monthly_fees', 'slash_price'],
+            'three_monthly' => ['three_monthly_fees', 'three_monthly_slash_price'],
+            'six_monthly'   => ['six_monthly_fees', 'six_monthly_slash_price'],
+            'yearly'        => ['yearly_fees', 'yearly_slash_price'],
+            'two_yearly'    => ['two_yearly_fees', 'two_yearly_slash_price'],
+        ];
 
-            $featureList = $allFeatures->map(function ($featureName) use ($subscriptionFeatures) {
+        $subscriptionPlans = [];
 
-                return [
-                    'name' => $featureName,
-                    'enabled' => in_array($featureName, $subscriptionFeatures)
+        foreach ($modesMap as $modeName => $columns) {
+
+            [$feeColumn, $slashColumn] = $columns;
+
+            $plans = [];
+
+            foreach ($subscriptions as $subscription) {
+
+                // 🚫 If NULL → Deactivated Mode
+                if (is_null($subscription->$feeColumn)) {
+                    continue;
+                }
+
+                $subscriptionFeatures = $features
+                    ->where('subscription_id', $subscription->id)
+                    ->pluck('name')
+                    ->toArray();
+
+                $featureList = $allFeatures->map(function ($featureName) use ($subscriptionFeatures) {
+                    return [
+                        'name'    => $featureName,
+                        'enabled' => in_array($featureName, $subscriptionFeatures)
+                    ];
+                })->values();
+
+                $plans[] = [
+                    'name'           => $subscription->name,
+                    'price'          => (int) $subscription->$feeColumn,
+                    'original_price' => (int) ($subscription->$slashColumn ?? 0),
+                    'features'       => $featureList
                 ];
-            });
+            }
 
-            return [
-                'id' => (int) $subscription->id,
-                'name' => $subscription->name,
+            if (!empty($plans)) {
+                $subscriptionPlans[] = [
+                    'name'  => $modeName,
+                    'plans' => $plans
+                ];
+            }
+        }
 
-                'modes' => [
-                    [
-                        'type' => 'monthly',
-                        'price' => (int) $subscription->monthly_fees,
-                        'original_price' => (int) $subscription->slash_price,
-                    ],
-                    [
-                        'type' => 'yearly',
-                        'price' => (int) $subscription->yearly_fees,
-                        'original_price' => (int) $subscription->yearly_slash_price,
-                    ],
-                ],
+        /*
+        |--------------------------------------------------------------------------
+        | Build Subscription Type List
+        |--------------------------------------------------------------------------
+        */
 
-                'features' => $featureList->values(),
-            ];
-        });
+        $subscriptionTypes = collect($subscriptionPlans)
+            ->pluck('name')
+            ->map(function ($name) {
+                return ['name' => $name];
+            })
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Final Response
+        |--------------------------------------------------------------------------
+        */
 
         return response()->json([
-            'status' => true,
-            'code' => 200,
+            'status'  => true,
+            'code'    => 200,
             'message' => 'Plans fetched successfully',
-            'data' => $formattedPlans
+            'data'    => [
+                'subscription_type' => $subscriptionTypes,
+                'subscription_plan' => $subscriptionPlans
+            ]
         ]);
     }
 
@@ -292,19 +404,19 @@ class LibraryAuthController extends Controller
     public function sendResetLinkEmail(Request $request)
     {
         
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:libraries,email'
+         $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'code' => 422,
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-                'data' => (object)[]
+                'status'  => false,
+                'code'    => 422,
+                'message' => $validator->errors()->first(),
+                'data'    => (object)[]
             ], 422);
         }
+
 
         $user = Library::where('email', $request->email)
             ->select('library_name as name', 'email')
@@ -318,10 +430,10 @@ class LibraryAuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => false,
-                'code' => 404,
-                'message' => 'Email not found.',
+                'code' => 200,
+                'message' => 'No user register with this email',
                 'data' => (object)[]
-            ], 404);
+            ],200);
         }
 
         $token = Str::random(60); 
@@ -346,7 +458,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => true,
                 'code' => 200,
-                'message' => 'Reset token sent to your email.',
+                'message' => 'Reset Password link has been sent to your email address.',
                 'token'=>$token,
                 'data' => (object)[]
             ], 200);
@@ -355,8 +467,8 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'code' => 500,
-                'message' => 'Failed to send email.',
-                'error' => app()->environment('production') ? null : $e->getMessage(),
+                'message' => 'Failed to send email from mail service down',
+                
                 'data' => (object)[]
             ], 500);
         }
@@ -497,6 +609,124 @@ class LibraryAuthController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         }
+    }
+
+    public function configure(Request $request,LibraryConfigurationService $service) {
+         $validated = $request->validate([
+            'library_id'      => 'required|exists:libraries,id',
+            
+        ]);
+
+        $validation = branchCountValidation();
+
+        if ($validation['success']) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validation['message']
+            ], 400);
+        }
+
+        $libraryId =$request->library_id;
+
+        $planCount = Plan::where('library_id', $libraryId)->count();
+
+        /* ================= BASE VALIDATION ================= */
+
+        $rules = [
+            'name'        => 'required|string|max:255',
+            'email'       => 'required|email',
+            'mobile'      => 'required|digits:10',
+            'locker_amount' => 'required',
+            'extend_days' => 'required',
+            'hour'        => 'required',
+            'seats'       => 'required',
+            'founder_day' => 'required',
+            'plans'       => $planCount === 0 ? 'required|array|min:1' : 'nullable|array',
+            'plans.*'     => 'string',
+            'floors'      => 'nullable|array',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        $plans = $request->input('plans', []);
+
+        $slug = Str::slug($request->name.'-'.$libraryId);
+
+        $existingBranch = Branch::where('slug', $slug)
+            ->where('library_id', $libraryId)
+            ->first();
+
+        $branchCount = Branch::where('library_id', $libraryId)->count();
+
+        /* ================= KEEP YOUR 1 MONTH RULE ================= */
+
+        if ($existingBranch || $branchCount == 0) {
+
+            $validator->after(function ($validator) use ($plans) {
+
+                $hasMonthPlan = false;
+
+                foreach ($plans ?? [] as $plan) {
+                    if (strtoupper($plan) === '1 MONTH') {
+                        $hasMonthPlan = true;
+                        break;
+                    }
+                }
+
+                if ($hasMonthPlan == false) {
+                    $validator->errors()->add(
+                        'plans',
+                        '1 MONTH plan is required.'
+                    );
+                }
+            });
+        }
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        $validated['logo'] = null;
+        $validated['library_images'] = [];
+        $validated['features'] = $request->features ?? null;
+        $validated['google_map'] = $request->google_map ?? null;
+
+        /* ================= CALL GLOBAL SERVICE ================= */
+
+        $response = $service->configure(
+            $request->all(),
+            $libraryId,
+            $existingBranch,
+            $branchCount
+        );
+
+        return response()->json($response);
+    }
+
+    public function shiftConfigure(Request $request,LibraryConfigurationService $shiftService) {
+        $validator = Validator::make($request->all(), [
+            'plan_types'                   => 'required|array|min:1',
+            'plan_types.*.day_type_id'     => 'required',
+            'plan_types.*.start_time'      => 'required|date_format:H:i',
+            'plan_types.*.end_time'        => 'required|date_format:H:i',
+            'plan_types.*.slot_hours'      => 'required|numeric|min:1',
+            'plan_types.*.price'           => 'required|numeric|min:0',
+            'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
+            'branch_id'  => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $response = $shiftService->shiftConfigure($validator->validated(),$request->branch_id);
+
+        return response()->json($response);
     }
 
 }

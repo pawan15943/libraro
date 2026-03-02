@@ -441,6 +441,292 @@ class BranchController extends Controller
     }
 
     
+    // public function branchConfigure(Request $request)
+    // {
+    //     /* =========================
+    //     BRANCH COUNT VALIDATION
+    //     ========================= */
+    //     $validation = branchCountValidation();
+
+    //     if ($validation['success']) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => $validation['message']
+    //         ], 400);
+    //     }
+
+    //     $planCount =Plan::where('library_id', getLibraryId())->count();
+
+    //     /* =========================
+    //     BASE VALIDATION
+    //     ========================= */
+    //     $rules = [
+    //         'name'            => 'required|string|max:255',
+    //         'email'           => 'required|email',
+    //         'mobile'          => 'required|digits:10',
+    //         'logo'            => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+    //         'library_images.*'=> 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+    //         'locker_amount'   => 'required',
+    //         'token_money'     => 'nullable',
+    //         'upi_id'          => 'nullable',
+    //         'extend_days'     => 'required',
+    //         'hour'            => 'required',
+    //         'seats'           => 'required',
+    //         'founder_day'     => 'required',
+    //         'monthdays'       => 'nullable|integer|in:28,30',
+    //         'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+
+    //     ];
+
+    //     // 🔹 Only require plans if no plan exists
+    //     if ($planCount === 0) {
+    //         $rules['plans']   = 'required|array|min:1';
+    //         $rules['plans.*'] = 'string';
+    //     } else {
+    //         $rules['plans'] = 'nullable|array';
+    //     }
+
+    //     $validator = Validator::make($request->all(), $rules);
+
+    //     $plans  = $request->input('plans', []);
+    //     $floorses = $request->input('floors', []);
+
+    //     /* =========================
+    //     UNIQUE BRANCH NAME
+    //     ========================= */
+    //     $slug = Str::slug($request->name.'-'.getLibraryId());
+        
+    //     $existingBranch = Branch::where('slug', $slug)
+    //         ->where('library_id', getLibraryId())
+    //         ->first();
+
+    //    $branchCount= Branch::where('library_id', getLibraryId())->count();
+
+    //     /* =========================
+    //     MONTH PLAN REQUIRED
+    //     ========================= */
+       
+    //     if ($existingBranch || $branchCount == 0){
+          
+    //         $validator->after(function ($validator) use ($plans) {
+
+    //             // $alreadyHave = Plan::where('library_id', getLibraryId())
+    //             //     ->where('plan_id', 1)
+    //             //     ->where('type', 'MONTH')
+    //             //     ->exists();
+
+    //             $hasMonthPlan = false;
+            
+
+    //             foreach ($plans ?? [] as $plan) {
+                
+    //                 if (strtoupper($plan) === '1 MONTH') {
+    //                     $hasMonthPlan = true;
+    //                     break;
+    //                 }
+    //             }
+            
+    //             if ($hasMonthPlan == false ) {
+            
+    //                 $validator->errors()->add(
+    //                     'plans',
+    //                     '1 MONTH plan is required.'
+    //                 );
+    //             }
+                
+    //         });
+    //     }
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'errors' => $validator->errors()
+    //         ], 422);
+    //     }
+
+    //     DB::beginTransaction();
+
+    //     try {
+
+    //         $validated = $validator->validated();
+            
+    //         $validated['library_id']  = getLibraryId();
+    //         $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
+
+           
+
+    //         $hour  = $validated['hour'];
+    //         $seats = $validated['seats'];
+    //         unset($validated['hour'], $validated['seats']);
+
+    //         /* =========================
+    //         FLOOR VALIDATION
+    //         ========================= */
+    //         $floors = collect($floorses)
+    //             ->filter(fn ($floor) =>
+    //                 filled($floor['name']) ||
+    //                 filled($floor['from']) ||
+    //                 filled($floor['to'])
+    //             )
+    //             ->values()
+    //             ->toArray();
+
+    //         $totalFloorSeats = 0;
+
+    //         foreach ($floors as $index => $floor) {
+    //              //  If from/to is filled, name is required
+    //             if ((filled($floor['from']) || filled($floor['to'])) && empty($floor['name'])) {
+    //                 throw new \Exception(
+    //                     "Floor name is required when seat range is provided (Row ".($index + 1).")"
+    //                 );
+    //             }
+
+    //             if (empty($floor['from']) || empty($floor['to'])) {
+    //                 throw new \Exception(
+    //                     'Seat range is required for each floor.'
+    //                 );
+    //             }
+
+    //             if ($floor['to'] < $floor['from']) {
+    //                 throw new \Exception(
+    //                     'Seat To must be greater than or equal to Seat From.'
+    //                 );
+    //             }
+
+    //             $totalFloorSeats += ($floor['to'] - $floor['from']) + 1;
+    //         }
+
+    //         if ($totalFloorSeats > $seats) {
+    //             throw new \Exception(
+    //                 "Total floor seats ({$totalFloorSeats}) cannot exceed branch seats ({$seats})"
+    //             );
+    //         }
+
+    //         /* =========================
+    //         CREATE BRANCH
+    //         ========================= */
+    //         $branchData = collect($validated)->except([
+    //             'plans',
+    //             'monthdays',
+    //             'floors',
+    //         ])->toArray();
+
+    //         $branch = $existingBranch ?? new Branch();
+    //          $branch->fill($branchData);
+    //         $branch->library_id = getLibraryId();
+            
+    //         if ($request->hasFile('logo')) {
+    //             $branch->logo = $request->file('logo')
+    //                 ->store('uploads/logo', 'public');
+    //         }
+
+    //         if ($request->has('features')) {
+    //             $branch->features = json_encode($request->features);
+    //         }
+
+    //         $branch->google_map = $request->google_map;
+    //         $branch->slug = $slug;
+    //         $branch->save();
+
+    //         /* =========================
+    //         HOURS
+    //         ========================= */
+    //          Hour::updateOrCreate(
+    //             [
+    //                 'branch_id'  => $branch->id,
+    //                 'library_id' => getLibraryId(),
+    //             ],
+    //             [
+    //                 'hour'  => $hour,
+    //                 'seats' => $seats,
+    //             ]
+    //         );
+
+    //         /* =========================
+    //         PLANS
+    //         ========================= */
+    //        if ($existingBranch || $branchCount == 0){
+            
+    //                 // DELETE REMOVED PLANS
+    //             Plan::where('library_id', getLibraryId())
+    //                 ->whereNotIn('name', $plans)
+    //                 ->delete();
+
+    //             $baseMonthDays = null;
+    //             foreach ($plans as $plan) {
+    //                 [$num, $type] = explode(' ', $plan);
+    //                 if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
+    //                     $baseMonthDays = $request->monthdays ?: null;
+    //                     break;
+    //                 }
+    //             }
+
+    //             foreach ($plans as $plan) {
+    //                 [$num, $type] = explode(' ', $plan);
+
+    //                 Plan::updateOrCreate(
+    //                     [
+    //                         'library_id' => getLibraryId(),
+    //                         'name'       => $plan,
+    //                     ],
+    //                     [
+    //                         'plan_id'   => (int)$num,
+    //                         'type'      => strtoupper($type),
+    //                         'monthdays' => strtoupper($type) === 'MONTH'
+    //                             ? $baseMonthDays
+    //                             : null,
+    //                     ]
+    //                 );
+    //             }
+    //         }
+
+    //         /* =========================
+    //         FLOORS
+    //         ========================= */
+    //         Floor::where('branch_id', $branch->id)->delete();
+
+    //         foreach ($floors as $index => $floor) {
+    //             Floor::create([
+    //                 'branch_id'   => $branch->id,
+    //                 'name'        => $floor['name'],
+    //                 'floor_no'    => $index + 1,
+    //                 'from_seat'   => (int)$floor['from'],
+    //                 'to_seat'     => (int)$floor['to'],
+                    
+    //             ]);
+    //         }
+
+    //         /* =========================
+    //         LIBRARY IMAGES
+    //         ========================= */
+    //         if ($request->hasFile('library_images')) {
+    //             foreach ($request->file('library_images') as $image) {
+    //                 $image->store('uploads/library_images', 'public');
+    //             }
+    //         }
+    //         Library::where('id',getLibraryId())->update([
+    //             'current_branch'=> $branch->id
+    //         ]);
+
+    //         DB::commit();
+
+    //         return response()->json([
+    //         'status'   => true,
+    //         'redirect' => route('library.home'),
+    //             'message'  => 'Branch added successfully.'
+    //         ]);
+
+    //     } catch (\Exception $e) {
+
+    //         DB::rollBack();
+
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => $e->getMessage()
+    //         ], 400);
+    //     }
+    // }
+
     public function branchConfigure(Request $request,LibraryConfigurationService $service)
     {
         /* =========================
@@ -486,7 +772,10 @@ class BranchController extends Controller
             $rules['plans'] = 'nullable|array';
         }
 
+
         $validator = Validator::make($request->all(), $rules);
+
+        $validated = $validator->validated();
 
        $validated['logo'] = null;
 
@@ -497,6 +786,14 @@ class BranchController extends Controller
 
         $validated['features'] = $request->features ?? null;
         $validated['google_map'] = $request->google_map ?? null;
+        $validated['library_images'] = [];
+
+        if ($request->hasFile('library_images')) {
+            foreach ($request->file('library_images') as $image) {
+                $validated['library_images'][] =
+                    $image->store('uploads/library_images', 'public');
+            }
+        }
 
         /* =========================
         UNIQUE BRANCH NAME
@@ -508,6 +805,8 @@ class BranchController extends Controller
             ->first();
 
        $branchCount= Branch::where('library_id', getLibraryId())->count();
+        $plans  = $request->input('plans', []);
+        $floorses = $request->input('floors', []);
 
         /* =========================
         MONTH PLAN REQUIRED
@@ -557,7 +856,17 @@ class BranchController extends Controller
             $branchCount
         );
 
+        if ($response['status'] === true) {
+            return response()->json([
+                'status'   => true,
+                'redirect' => route('library.home'),
+                'message'  => $response['message']
+            ]);
+        }
+
         return response()->json($response);
+
+        
     }
 
     

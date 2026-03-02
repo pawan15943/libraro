@@ -5,16 +5,17 @@ use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
 use App\Http\Controllers\Api\V1\MasterController;
 
 Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
-Route::get('library/library-plan', [LibraryAuthController::class, 'libraryPlan']);
+Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
 Route::post('library/register', [LibraryAuthController::class, 'register']);
 Route::post('library/verify-email', [LibraryAuthController::class, 'verifyEmailOtp']);
 Route::post('library/forgot-password', [LibraryAuthController::class, 'sendResetLinkEmail']);
 Route::post('library/reset-password', [LibraryAuthController::class, 'resetPassword']);
 Route::get('plans', [MasterController::class, 'plans']);
-Route::get('plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
+Route::get('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
 Route::get('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
 Route::get('plan-price', [MasterController::class, 'getPriceApi']);
-
+Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
+Route::get('master/static-data', [MasterController::class, 'getStaticMasters']);
 
 // Library login
 Route::post('library/login', [LibraryAuthController::class, 'login']);
@@ -23,6 +24,8 @@ Route::middleware('auth:library_api')->group(function () {
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
     Route::get('library/payment/create-order', [LibraryAuthController::class, 'paymentApi']);
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'paymentApi']);
+    Route::post('library/branch/configure', [LibraryAuthController::class, 'configure']);
+    Route::post('library/shift/configure', [LibraryAuthController::class, 'configure']);
    
 });
 
