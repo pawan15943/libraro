@@ -14,6 +14,12 @@ class Branch extends Model
     use HasSeatType;
     protected $guarded = [];
     use SoftDeletes;
+
+    protected $casts = [
+        'features' => 'array',
+        'library_images' => 'array',
+    ];
+
     public function hour()
     {
         return $this->hasOne(Hour::class, 'branch_id'); // or hasMany if needed
@@ -46,5 +52,7 @@ class Branch extends Model
             }
         });
     }
+
+   
 
 }

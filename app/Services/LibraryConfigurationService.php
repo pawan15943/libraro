@@ -20,19 +20,42 @@ use Illuminate\Support\Str;
 class LibraryConfigurationService
 {
    
-    public function configure(array $validated,int $libraryId,$existingBranch,int $branchCount)
+    public function configure($request,array $validated,int $libraryId,$existingBranch,int $branchCount)
     {
         DB::beginTransaction();
 
         try {
 
+           /* ======================
+           HANDLE LOGO UPLOAD
+            ======================= */
+           // Remove raw uploaded file from validated
+            unset($validated['library_logo']);
+
+            if ($request->hasFile('library_logo')) {
+                $validated['library_logo'] = $request->file('library_logo')
+                    ->store('uploads/logo', 'public');
+            }
+
+            /* ======================
+            HANDLE LIBRARY IMAGES
+            ======================= */
            
+
+            if ($request->hasFile('library_images')) {
+                foreach ($request->file('library_images') as $image) {
+                    $validated['library_images'][] =
+                        $image->store('uploads/library_images', 'public');
+                }
+            }
+
             
            $validated['library_id'] = $libraryId;
             $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
 
            $floorses= $validated['floors'];
-           $plans= $validated['plans'];
+          
+           $plans = $validated['plans'] ?? [];
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
@@ -52,6 +75,7 @@ class LibraryConfigurationService
                 ->toArray();
 
             $totalFloorSeats = 0;
+          
 
             foreach ($floors as $index => $floor) {
                  //  If from/to is filled, name is required
@@ -82,6 +106,10 @@ class LibraryConfigurationService
                 );
             }
 
+            if (isset($validated['library_logo']) && $validated['library_logo'] instanceof \Illuminate\Http\UploadedFile) {
+                unset($validated['library_logo']);
+            }
+
             /* =========================
             CREATE BRANCH
             ========================= */
@@ -92,13 +120,18 @@ class LibraryConfigurationService
             ])->toArray();
 
             $branch = $existingBranch ?? new Branch();
-             $branch->fill($branchData);
-            $branch->library_id = $libraryId;
             
-           if (!empty($validated['logo'])) {
-                $branch->logo = $validated['logo'];
-            }
+            $branch->fill($branchData);
+            $branch->library_id = $libraryId;
 
+            if (!empty($validated['library_logo'])) {
+              
+                $branch->library_logo = $validated['library_logo'];
+            }
+            
+            
+          
+           
             if (!empty($validated['features'])) {
                 $branch->features = json_encode($validated['features']);
             }
@@ -178,11 +211,7 @@ class LibraryConfigurationService
             /* =========================
             LIBRARY IMAGES
             ========================= */
-             if (!empty($validated['library_images'])) {
-                foreach ($validated['library_images'] as $imagePath) {
-                    // already stored path
-                }
-            }
+             
             Library::where('id', $libraryId,)->update([
                 'current_branch'=> $branch->id
             ]);

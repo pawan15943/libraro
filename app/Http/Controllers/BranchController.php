@@ -354,7 +354,7 @@ class BranchController extends Controller
             'fixed_billing_date'=>'nullable|integer|min:1|max:31',
         ]);
         
-        
+       
         if ($request->hasFile('library_images')) {
             $uploadedFiles = [];
             
@@ -750,7 +750,7 @@ class BranchController extends Controller
             'name'            => 'required|string|max:255',
             'email'           => 'required|email',
             'mobile'          => 'required|digits:10',
-            'logo'            => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'library_logo'            => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'library_images.*'=> 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'locker_amount'   => 'required',
             'token_money'     => 'nullable',
@@ -762,7 +762,13 @@ class BranchController extends Controller
             'monthdays'       => 'nullable|integer|in:28,30',
             'fixed_billing_date' => 'nullable|integer|min:1|max:31',
 
+            'floors' => 'nullable|array',
+            'floors.*.name' => 'nullable|string',
+            'floors.*.from' => 'nullable|integer|min:1',
+            'floors.*.to'   => 'nullable|integer|min:1',
+
         ];
+
 
         // 🔹 Only require plans if no plan exists
         if ($planCount === 0) {
@@ -777,23 +783,9 @@ class BranchController extends Controller
 
         $validated = $validator->validated();
 
-       $validated['logo'] = null;
-
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')
-                ->store('uploads/logo', 'public');
-        }
-
         $validated['features'] = $request->features ?? null;
         $validated['google_map'] = $request->google_map ?? null;
-        $validated['library_images'] = [];
-
-        if ($request->hasFile('library_images')) {
-            foreach ($request->file('library_images') as $image) {
-                $validated['library_images'][] =
-                    $image->store('uploads/library_images', 'public');
-            }
-        }
+       
 
         /* =========================
         UNIQUE BRANCH NAME
@@ -815,9 +807,6 @@ class BranchController extends Controller
         if ($existingBranch || $branchCount == 0){
           
             $validator->after(function ($validator) use ($plans) {
-
-               
-
                 $hasMonthPlan = false;
             
 
@@ -850,7 +839,8 @@ class BranchController extends Controller
         /* ================= CALL SERVICE ================= */
 
         $response = $service->configure(
-             $validated,
+            $request,          // pass full request
+            $validated,
             getLibraryId(),
             $existingBranch,
             $branchCount

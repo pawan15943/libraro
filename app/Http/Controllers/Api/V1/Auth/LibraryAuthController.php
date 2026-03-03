@@ -574,42 +574,42 @@ class LibraryAuthController extends Controller
         return response()->json(['message' => 'Logged out']);
     }
 
-    public function paymentApi(Request $request)
-    {
-        $validated = $request->validate([
-            'library_id'      => 'required|exists:libraries,id',
-            'subscription_id' => 'required|exists:subscriptions,id',
-            'plan_mode'       => 'required|integer|in:1,2,3,4,5',
-        ]);
+    // public function paymentApi(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'library_id'      => 'required|exists:libraries,id',
+    //         'subscription_id' => 'required|exists:subscriptions,id',
+    //         'plan_mode'       => 'required|integer|in:1,2,3,4,5',
+    //     ]);
 
-        try {
-             $data = $this->razorpayPaymentCore(
-                (int) $validated['subscription_id'],
-                (int) $validated['plan_mode'],
-                (int) $validated['library_id']
-            );
+    //     try {
+    //          $data = $this->razorpayPaymentCore(
+    //             (int) $validated['subscription_id'],
+    //             (int) $validated['plan_mode'],
+    //             (int) $validated['library_id']
+    //         );
             
-            return response()->json([
-                'status'  => true,
-                'code'    => 200,
-                'message' => 'Order created successfully',
-                'data'    => [
-                    'order'       => $data['order'],
-                    'amount'         => $data['amount'],
-                    'currency'       => 'INR',
-                    'transaction_id' => $data['transaction']->id,
-                ]
-            ]);
+    //         return response()->json([
+    //             'status'  => true,
+    //             'code'    => 200,
+    //             'message' => 'Order created successfully',
+    //             'data'    => [
+    //                 'order'       => $data['order'],
+    //                 'amount'         => $data['amount'],
+    //                 'currency'       => 'INR',
+    //                 'transaction_id' => $data['transaction']->id,
+    //             ]
+    //         ]);
 
            
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => $e->getMessage(),
-            ], 400);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => $e->getMessage(),
+    //         ], 400);
+    //     }
+    // }
 
     public function configure(Request $request,LibraryConfigurationService $service) {
          $validated = $request->validate([
