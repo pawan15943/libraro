@@ -219,6 +219,7 @@ class DashboardController extends Controller
                         ->where('dr_cr', 'Cr');
                 });
             })->sum('amount');
+            
             $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
 
             $todayExpense =LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');

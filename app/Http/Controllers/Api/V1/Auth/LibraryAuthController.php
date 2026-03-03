@@ -7,12 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BaseApiResource;
 use App\Models\Branch;
 use App\Models\Library;
+use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Subscription;
 use App\Services\LibraryConfigurationService;
+use App\Services\LibraryPaymentService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -574,42 +577,122 @@ class LibraryAuthController extends Controller
         return response()->json(['message' => 'Logged out']);
     }
 
-    // public function paymentApi(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'library_id'      => 'required|exists:libraries,id',
-    //         'subscription_id' => 'required|exists:subscriptions,id',
-    //         'plan_mode'       => 'required|integer|in:1,2,3,4,5',
-    //     ]);
+    public function createOrderApi(Request $request, LibraryPaymentService $service)
+    {
+        
+        $validated = $request->validate([
+            'subscription_id' => 'required|exists:subscriptions,id',
+            'plan_mode'       => 'required|integer|in:1,2,3,4,5',
+        ]);
+       
 
-    //     try {
-    //          $data = $this->razorpayPaymentCore(
-    //             (int) $validated['subscription_id'],
-    //             (int) $validated['plan_mode'],
-    //             (int) $validated['library_id']
-    //         );
-            
-    //         return response()->json([
-    //             'status'  => true,
-    //             'code'    => 200,
-    //             'message' => 'Order created successfully',
-    //             'data'    => [
-    //                 'order'       => $data['order'],
-    //                 'amount'         => $data['amount'],
-    //                 'currency'       => 'INR',
-    //                 'transaction_id' => $data['transaction']->id,
-    //             ]
-    //         ]);
+        $libraryId = auth('library_api')->id();
 
-           
+      
 
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status'  => false,
-    //             'message' => $e->getMessage(),
-    //         ], 400);
-    //     }
-    // }
+       try {
+            $data = $service->razorpayPaymentCore(
+                (int) $validated['subscription_id'],
+                (int) $validated['plan_mode'],
+                (int) $libraryId
+            );
+
+            if ($data['type'] === 'free') {
+
+                DB::transaction(function () use ($service, $data) {
+                    $service->finalize($data['transaction'], 'FREE');
+                });
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Free plan activated successfully'
+                ]);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Order created successfully',
+                'data' => [
+                    'order_id' => $data['order']['id'],
+                    'amount' => $data['order']['amount'],
+                    'currency' => 'INR',
+                    'transaction_id' => $data['transaction']->id,
+                    'key_id' => config('services.razorpay.key'),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+
+            \Log::error('Create Order Failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to create order'
+            ], 500);
+        }
+    }
+
+    public function verifyPaymentApi(Request $request, LibraryPaymentService $service)
+    {
+        $validated = $request->validate([
+            'transaction_id'      => 'required|exists:library_transactions,id',
+            'razorpay_payment_id' => 'required',
+            'razorpay_order_id'   => 'required',
+            'razorpay_signature'  => 'required',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $transaction = LibraryTransaction::where('id', $validated['transaction_id'])
+                ->where('is_paid', 0)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Prevent double payment
+            if ($transaction->is_paid == 1) {
+                throw new \Exception('Payment already processed');
+            }
+
+            // Verify signature
+            if (!$service->verifySignature(
+                $validated['razorpay_order_id'],
+                $validated['razorpay_payment_id'],
+                $validated['razorpay_signature']
+            )) {
+                throw new \Exception('Invalid payment signature');
+            }
+
+            // Finalize subscription
+            $service->finalize(
+                $transaction,
+                $validated['razorpay_payment_id']
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment successful'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            \Log::error('Payment Verification Failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function configure(Request $request,LibraryConfigurationService $service) {
          $validated = $request->validate([
