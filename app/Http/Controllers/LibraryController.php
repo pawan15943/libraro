@@ -1339,10 +1339,12 @@ class LibraryController extends Controller
         SETUP REDIRECT
         ========================= */
         $redirect = null;
+        
 
-        if ($response['setup'] === 'completed') {
+       if (!empty($response['setup']) && $response['setup'] === 'completed') {
             $redirect = route('library.home', ['setup' => 'completed']);
         }
+      
 
         return response()->json([
             'status'   => true,

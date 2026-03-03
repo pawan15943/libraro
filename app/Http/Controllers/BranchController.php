@@ -847,12 +847,14 @@ class BranchController extends Controller
         );
 
         if ($response['status'] === true) {
+           
             return response()->json([
                 'status'   => true,
                 'redirect' => route('library.home'),
                 'message'  => $response['message']
             ]);
         }
+       
 
         return response()->json($response);
 

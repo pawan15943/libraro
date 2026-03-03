@@ -442,11 +442,14 @@ class LibraryConfigurationService
                     $row['price'] = 0;
                 }
 
-                if (!empty($row['plan_price_id'])) {
+                $existingPrice = PlanPrice::where('plan_type_id', $planType->id)
+                    ->where('branch_id', $branchId)
+                    ->first();
 
-                    PlanPrice::where('id', $row['plan_price_id'])->update([
-                        'price'        => $row['price'],
-                        'plan_type_id' => $planType->id,
+                if ($existingPrice) {
+
+                    $existingPrice->update([
+                        'price' => $row['price'],
                     ]);
 
                 } else {
@@ -481,13 +484,14 @@ class LibraryConfigurationService
                     $planType->forceDelete();
                 }
             }
+            
 
             DB::commit();
-
+            
             return [
                 'status' => true,
                 'message' => 'Library shifts saved successfully.',
-                'setup' => $isFirstTimeSetup && $isCreating && !$isUpdating ? 'completed' : '' ,
+                'setup' => ($isFirstTimeSetup && $isCreating && !$isUpdating) ? 'completed' : '' ,
             ];
 
         } catch (\Exception $e) {

@@ -246,7 +246,7 @@ class LibraryAuthController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Determine is_last_step Properly
+        | Determine is_last_step Properly is_last_step=1 paid,is_last_step=2 branch added, is_last_step=3 shift add and comleted
         |--------------------------------------------------------------------------
         */
 
@@ -696,7 +696,7 @@ class LibraryAuthController extends Controller
         /* ================= CALL GLOBAL SERVICE ================= */
 
         $response = $service->configure(
-            $request->all(),
+           $request,$validated,
             $libraryId,
             $existingBranch,
             $branchCount

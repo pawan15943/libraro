@@ -476,9 +476,9 @@
                     <div class="col-lg-12">
                         <div class="preview" id="preview">
                             @if(old('library_logo'))
-                            <img src="{{ asset('public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                            <img src="{{ asset('storage/app/public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                             @elseif(isset($branch) && $branch->library_logo)
-                            <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                            <img src="{{ asset('storage/app/public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                             @else
                             <!-- Show empty preview or placeholder -->
                             <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
