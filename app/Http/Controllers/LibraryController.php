@@ -761,12 +761,14 @@ class LibraryController extends Controller
                     "Slot hours must match shift time ({$actualHours} hours)."
                 );
             }
+             /* Plan name logic */
+            $dayTypeId = (int) $row['day_type_id'];
 
             /* Duplicate check inside request */
             $pairKey = $row['start_time'] . '-' . $row['end_time'];
             $rowId   = $row['plan_type_id'] ?? 'new';
 
-            if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId) {
+            if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId && $dayTypeId!=0) {
                 throw new \Exception(
                     'Duplicate shift detected with same start and end time.'
                 );
@@ -774,23 +776,38 @@ class LibraryController extends Controller
 
             $timePairs[$pairKey] = $rowId;
 
-            /* Duplicate check in DB */
-            $query = PlanType::where('branch_id', $branch->id)
-                ->where('start_time', $row['start_time'])
-                ->where('end_time', $row['end_time']);
+            if($dayTypeId != 0)  {          
+                /* Duplicate check in DB */
+                $query = PlanType::where('branch_id', $branch->id)
+                    ->where('start_time', $row['start_time'])
+                    ->where('end_time', $row['end_time'])->where('day_type_id', '!=', 0);
+                
 
-            if (!empty($row['plan_type_id'])) {
-                $query->where('id', '!=', $row['plan_type_id']);
+                if (!empty($row['plan_type_id'])) {
+                    $query->where('id', '!=', $row['plan_type_id']);
+                }
+        
+
+                if ($query->exists()) {
+                    throw new \Exception('A shift with the same time range already exists.');
+                }
+
             }
+            if($dayTypeId != 0)  {          
+                /* Duplicate check in DB */
+                $query = PlanType::where('branch_id', $branch->id)->where('day_type_id', '!=', 0)->where('day_type_id', $dayTypeId);
+                
 
-            if ($query->exists()) {
-                throw new \Exception(
-                    'A shift with the same time range already exists.'
-                );
+                if (!empty($row['plan_type_id'])) {
+                    $query->where('id', '!=', $row['plan_type_id']);
+                }
+        
+
+                if ($query->exists()) {
+                    throw new \Exception('A shift with the same name already exists.');
+                }
+
             }
-
-            /* Plan name logic */
-            $dayTypeId = (int) $row['day_type_id'];
 
             $planTypeName = match ($dayTypeId) {
                 1 => 'Full Day',

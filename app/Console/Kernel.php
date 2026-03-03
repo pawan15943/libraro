@@ -15,6 +15,13 @@ class Kernel extends ConsoleKernel
     ];
     protected function schedule(Schedule $schedule): void
     {
+        // current 1 command active
+         $schedule->command('library:daily-status')
+        ->dailyAt('03:00')
+        ->withoutOverlapping()
+        ->runInBackground();
+
+
         $schedule->command('notifications:update-status')->daily();
         $schedule->command('data:update')->dailyAt('00:00');
          $schedule->command('learner:update-status')->dailyAt('06:00'); // 6 AM daily
