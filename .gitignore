@@ -7,3 +7,4 @@
 /public/uploade
 /public/allpdf
 /storage/logs/laravel.log
+/storage/app/public/.gitignore
