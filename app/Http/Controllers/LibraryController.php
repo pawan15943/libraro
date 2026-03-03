@@ -767,14 +767,16 @@ class LibraryController extends Controller
             /* Duplicate check inside request */
             $pairKey = $row['start_time'] . '-' . $row['end_time'];
             $rowId   = $row['plan_type_id'] ?? 'new';
+            if ($dayTypeId != 0) {
+                if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId && $dayTypeId!=0) {
+                    throw new \Exception(
+                        'Duplicate shift detected with same start and end time.'
+                    );
+                }
+            
 
-            if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId && $dayTypeId!=0) {
-                throw new \Exception(
-                    'Duplicate shift detected with same start and end time.'
-                );
+                $timePairs[$pairKey] = $rowId;
             }
-
-            $timePairs[$pairKey] = $rowId;
 
             if($dayTypeId != 0)  {          
                 /* Duplicate check in DB */
