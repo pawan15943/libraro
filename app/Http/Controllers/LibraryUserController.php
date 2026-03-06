@@ -63,15 +63,15 @@ class LibraryUserController extends Controller
 
         $subscription = Subscription::find(Auth::user()->library_type);
 
-            $groupedPermissions = collect();
+        $groupedPermissions = collect();
 
-            if ($subscription) {
-                $permissions = $subscription->permissions()->get();
+        if ($subscription) {
+            $permissions = $subscription->permissions()->get();
 
-                $groupedPermissions = $permissions->groupBy('permission_category_id')->map(function ($group) {
-                    return $group->pluck('id', 'name');
-                });
-            }
+            $groupedPermissions = $permissions->groupBy('permission_category_id')->map(function ($group) {
+                return $group->pluck('id', 'name');
+            });
+        }
 
 
          $branches=Branch::where('library_id',getLibraryId())->get();
@@ -82,24 +82,24 @@ class LibraryUserController extends Controller
     public function store(Request $request)
     {
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:library_users,email,' . $request->id,
-            'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
-            'password_confirmation' => $request->id 
-            ? 'nullable|min:6' 
-            : 'required|min:6',
-            'branch' => 'required|array|min:1',
-            'branch.*' => 'integer|exists:branches,id',
-            'mobile' => 'required|digits:10',
-            'role' => 'required|string', 
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
-        ],
-        [
-        'branch.required' => 'Please select at least one branch.',
-        'branch.min' => 'Please select at least one branch.',
-        ]
-    );
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:library_users,email,' . $request->id,
+                'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
+                'password_confirmation' => $request->id 
+                ? 'nullable|min:6' 
+                : 'required|min:6',
+                'branch' => 'required|array|min:1',
+                'branch.*' => 'integer|exists:branches,id',
+                'mobile' => 'required|digits:10',
+                'role' => 'required|string', 
+                'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
+            ],
+            [
+            'branch.required' => 'Please select at least one branch.',
+            'branch.min' => 'Please select at least one branch.',
+            ]
+        );
         
 
         DB::beginTransaction();
@@ -157,28 +157,28 @@ class LibraryUserController extends Controller
         }
     }
         
-public function editPermissions($id)
-{
-    $user = LibraryUser::with('permissions')->findOrFail($id);
+    public function editPermissions($id)
+    {
+        $user = LibraryUser::with('permissions')->findOrFail($id);
 
-    $subscription = Subscription::find(auth()->user()->library_type);
-    $groupedPermissions = collect();
+        $subscription = Subscription::find(auth()->user()->library_type);
+        $groupedPermissions = collect();
 
-    if ($subscription) {
-        $permissions = $subscription->permissions()->get();
-        $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
+        if ($subscription) {
+            $permissions = $subscription->permissions()->get();
+            $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
+        }
+
+        return view('library_users.permissions', compact('user', 'groupedPermissions'));
     }
 
-    return view('library_users.permissions', compact('user', 'groupedPermissions'));
-}
-
-public function updatePermissions(Request $request, $id)
-{
-    $user = LibraryUser::findOrFail($id);
-     $user->permissions()->sync($request->permissions); 
-   
-    return redirect()->route('library-users.index')->with('success', 'Permissions updated successfully.');
-}
+    public function updatePermissions(Request $request, $id)
+    {
+        $user = LibraryUser::findOrFail($id);
+        $user->permissions()->sync($request->permissions); 
+    
+        return redirect()->route('library-users.index')->with('success', 'Permissions updated successfully.');
+    }
 
 
      

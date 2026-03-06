@@ -18,10 +18,12 @@ class LibraryUser extends Authenticatable
      use HasRoles;
      use HasLibraryUserPermissions;
     protected $guarded = []; 
-    protected $guard_name = 'library_user';
+   
     protected $casts = [
         'branch_id' => 'array',  // This ensures 'branch_id' is treated as an array
     ];
+
+   protected $guard_name = 'library_user';
     public function getBranchIdAttribute($value)
     {
         return json_decode($value, true); // This will return an array

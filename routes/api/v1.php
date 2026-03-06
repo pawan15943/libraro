@@ -24,7 +24,7 @@ Route::middleware('auth:library_api')->group(function () {
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
    
     Route::post('library/branch/configure', [LibraryAuthController::class, 'configure']);
-    Route::post('library/shift/configure', [LibraryAuthController::class, 'configure']);
+    Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
     Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
     Route::get('plans', [MasterController::class, 'plans']);
     Route::get('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
@@ -35,6 +35,23 @@ Route::middleware('auth:library_api')->group(function () {
     Route::get('library/branches', [LibraryController::class, 'branches']);
 
     Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
+    Route::post('/floor/store', [MasterController::class, 'floorStore']);
+    Route::get('/floor/list', [MasterController::class, 'floorlist']);
+    Route::post('/plan/store',[MasterController::class,'planStore']);
+    Route::get('/plan/edit',[MasterController::class,'planEdit']);
+    Route::get('/plan/list', [MasterController::class, 'planlist']);
+    Route::get('/plantype/edit',[MasterController::class,'planTypeEdit']);
+    Route::post('/plantype/store',[MasterController::class,'plantypeStore']);
+    Route::get('/plantype/list', [MasterController::class, 'planTypelist']);
+    Route::get('/planprice/edit',[MasterController::class,'planPriceEdit']);
+    Route::post('/price/store',[MasterController::class,'priceStore']);
+    
+    Route::get('/price/list', [MasterController::class, 'pricelist']);
+    
+    Route::get('/library/permissions', [MasterController::class, 'libraryPermissions']);
+    Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
+    Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
+    
 });
 
 // Learner login

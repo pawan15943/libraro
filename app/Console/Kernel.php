@@ -17,7 +17,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->job(new DailyStatusUpdateJob())
-             ->dailyAt('07:15')
+             ->dailyAt('06:40')
              ->withoutOverlapping();
       
          $schedule->command('library:daily-status')

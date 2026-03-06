@@ -15,7 +15,7 @@ class Library extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory , Notifiable;
     use HasRoles;
-    protected $guard = 'library';
+   
     protected $guarded = []; 
    
     protected $hidden = [
@@ -26,6 +26,8 @@ class Library extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'email_verified_at' => 'datetime',
     ];
+
+    protected $guard_name = ['library', 'library_api'];
     
     public function library_transactions()
     {

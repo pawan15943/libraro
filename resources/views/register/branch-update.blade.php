@@ -419,11 +419,14 @@
                 <h4 class="mb-4">Library Features</h4>
                 <div class="row g-4">
                     <div class="col-lg-12">
-                        @php
+                       @php
+
                         $selectedFeatures = old('features', []);
+
                         if (isset($branch) && $branch !== null && $branch->features) {
-                        $selectedFeatures = old('features', json_decode($branch->features, true));
+                            $selectedFeatures = old('features', $branch->features);
                         }
+
                         @endphp
 
                         <ul class="libraryFeatures">

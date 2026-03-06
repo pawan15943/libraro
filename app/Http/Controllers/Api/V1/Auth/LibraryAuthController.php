@@ -182,6 +182,8 @@ class LibraryAuthController extends Controller
         ], 200);
     }
 
+   
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -194,49 +196,102 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status'  => false,
-                'code'    => 200,
+                'code'    => 422,
                 'message' => $validator->errors()->first(),
                 'data'    => (object)[]
-            ], 200);
+            ]);
         }
 
-        $user = Library::where('email', $request->email)->first();
+        $user = null;
+        $userType = null;
+
+        /*
+        |---------------------------------------------------
+        | 1️⃣ Check Library Owner
+        |---------------------------------------------------
+        */
+
+        $library = Library::where('email', $request->email)->first();
+
+        if ($library && Hash::check($request->password, $library->password)) {
+
+            if (is_null($library->email_verified_at)) {
+                return response()->json([
+                    'status' => false,
+                    'code'   => 403,
+                    'message'=> 'Please verify your email before login'
+                ]);
+            }
+
+            $user = $library;
+            $userType = 'library';
+        }
+
+        /*
+        |---------------------------------------------------
+        | 2️⃣ Check Library Staff
+        |---------------------------------------------------
+        */
+
+        if (!$user) {
+
+            $libraryUser = LibraryUser::where('email', $request->email)->first();
+
+            if ($libraryUser && Hash::check($request->password, $libraryUser->password)) {
+                $user = $libraryUser;
+                $userType = 'library_user';
+            }
+        }
+
+        /*
+        |---------------------------------------------------
+        | 3️⃣ Invalid Credentials
+        |---------------------------------------------------
+        */
 
         if (!$user) {
             return response()->json([
                 'status'  => false,
-                'code'    => 200,
-                'message' => 'No Library registered with this email',
-            ], 200);
+                'code'    => 401,
+                'message' => 'Invalid email or password',
+            ]);
         }
 
-        if (!Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'status'  => false,
-                'code'    => 200,
-                'message' => 'Password is invalid',
-            ], 200);
+        /*
+        |---------------------------------------------------
+        | 4️⃣ Assign Role If Missing
+        |---------------------------------------------------
+        */
+
+        if ($userType == 'library' && !$user->hasRole('library')) {
+            $user->assignRole('admin');
         }
 
-        if (is_null($user->email_verified_at)) {
-            return response()->json([
-                'status'             => true,
-                'code'               => 200,
-                'message'            => 'Please verify your email before logging in.',
-                'is_email_verified'  => 0,
-                'is_last_step'       => 0
-            ], 200);
+        if ($userType == 'library_user' && !$user->hasRole('admin_user')) {
+            $user->assignRole('admin_user');
         }
 
-        // Assign role if not exists
-        if (!$user->hasAnyRole(['admin', 'library'])) {
-            $user->assignRole('library');
-        }
+        /*
+        |---------------------------------------------------
+        | 5️⃣ Remove Old Tokens
+        |---------------------------------------------------
+        */
 
-        // Revoke old tokens (optional but recommended)
         $user->tokens()->delete();
 
+        /*
+        |---------------------------------------------------
+        | 6️⃣ Create Sanctum Token
+        |---------------------------------------------------
+        */
+
         $token = $user->createToken('library_token')->plainTextToken;
+
+        /*
+        |---------------------------------------------------
+        | 7️⃣ Store Device Info
+        |---------------------------------------------------
+        */
 
         $user->devices()->updateOrCreate(
             ['device_id' => $request->device_id],
@@ -247,56 +302,75 @@ class LibraryAuthController extends Controller
             ]
         );
 
+        
+            /*
+            |--------------------------------------------------------------------------
+            | Determine is_last_step Properly is_last_step=1 paid,is_last_step=2 branch added, is_last_step=3 shift add and comleted
+            |--------------------------------------------------------------------------
+            */
+
+            $is_last_step = 0;
+
+            if ($user->is_paid) {
+                $is_last_step = 1;
+            }
+
+            if (Branch::where('library_id', $user->id)->where('status', 1)->exists()) {
+                $is_last_step = 2;
+            }
+
+            $isPlanComplete =
+                $user->status == 1 &&
+                Plan::where('library_id', $user->id)->exists() &&
+                PlanType::where('library_id', $user->id)->exists() &&
+                PlanPrice::where('library_id', $user->id)->exists();
+
+            if ($isPlanComplete) {
+                $is_last_step = 3;
+            }
+
         /*
-        |--------------------------------------------------------------------------
-        | Determine is_last_step Properly is_last_step=1 paid,is_last_step=2 branch added, is_last_step=3 shift add and comleted
-        |--------------------------------------------------------------------------
+        |---------------------------------------------------
+        | 8️⃣ Get Branch Data (if Library)
+        |---------------------------------------------------
         */
 
-        $is_last_step = 0;
+        $branches = [];
 
-        if ($user->is_paid) {
-            $is_last_step = 1;
+        if ($userType == 'library') {
+
+            $branches = Branch::leftJoin('hour','branches.id','=','hour.branch_id')
+                ->where('branches.library_id', $user->id)
+                ->select(
+                    'branches.id',
+                    'branches.name',
+                    'branches.uuid',
+                    'branches.display_name',
+                    'branches.status',
+                    'branches.is_profile',
+                    'hour.hour as operating_hour',
+                    'hour.seats'
+                )
+                ->get();
         }
 
-        if (Branch::where('library_id', $user->id)->where('status', 1)->exists()) {
-            $is_last_step = 2;
-        }
-
-        $isPlanComplete =
-            $user->status == 1 &&
-            Plan::where('library_id', $user->id)->exists() &&
-            PlanType::where('library_id', $user->id)->exists() &&
-            PlanPrice::where('library_id', $user->id)->exists();
-
-        if ($isPlanComplete) {
-            $is_last_step = 3;
-        }
-
-        $branches = Branch::leftJoin('hour','branches.id','=','hour.branch_id')
-            ->where('branches.library_id', $user->id)
-            ->select(
-                'branches.id',
-                'branches.name',
-                'branches.uuid',
-                'branches.display_name',
-                'branches.status',
-                'branches.is_profile',
-                'hour.hour as operating_hour',
-                'hour.seats'
-            )
-            ->get();
+        /*
+        |---------------------------------------------------
+        | 9️⃣ Response
+        |---------------------------------------------------
+        */
 
         return response()->json([
-            'status'            => true,
-            'code'              => 200,
-            'message'           => 'Login successful.',
+            'status'      => true,
+            'code'        => 200,
+            'message'     => 'Login successful',
+            'token'       => $token,
             'is_email_verified' => 1,
             'is_last_step'      => $is_last_step,
-            'token'             => $token,
-            'library_id'        => $user->id,
-            'data'              => $branches ?? [],
-        ], 200);
+            'user_type'   => $userType,
+            'library_id'  => $userType == 'library' ? $user->id : $user->library_id,
+            'data'        => $branches
+        ]);
     }
 
    
@@ -588,8 +662,6 @@ class LibraryAuthController extends Controller
 
         $libraryId = auth('library_api')->id();
 
-      
-
        try {
             $data = $service->razorpayPaymentCore(
                 (int) $validated['subscription_id'],
@@ -695,21 +767,35 @@ class LibraryAuthController extends Controller
     }
 
     public function configure(Request $request,LibraryConfigurationService $service) {
-         $validated = $request->validate([
-            'library_id'      => 'required|exists:libraries,id',
+       $user = auth('library_api')->user();
+
+        if ($user instanceof \App\Models\Library) {
+            $libraryId = $user->id;
+        }
+
+        if ($user instanceof \App\Models\LibraryUser) {
+            $libraryId = $user->library_id;
+        }
+
+       
+         $request->validate([
+           
+            'branch_id'  => 'nullable|exists:branches,id'
             
         ]);
 
-        $validation = branchCountValidation();
+          
+        // $validation = branchCountValidation();
 
-        if ($validation['success']) {
-            return response()->json([
-                'status'  => false,
-                'message' => $validation['message']
-            ], 400);
-        }
+        // if ($validation['success']) {
+        //     return response()->json([
+        //         'status'  => false,
+        //         'message' => $validation['message']
+        //     ], 400);
+        // }
 
-        $libraryId =$request->library_id;
+
+        $branchId  = $request->branch_id ?? null;
 
         $planCount = Plan::where('library_id', $libraryId)->count();
 
@@ -734,16 +820,46 @@ class LibraryAuthController extends Controller
         $plans = $request->input('plans', []);
 
         $slug = Str::slug($request->name.'-'.$libraryId);
-
-        $existingBranch = Branch::where('slug', $slug)
-            ->where('library_id', $libraryId)
+   
+        if($branchId){
+              $existingBranch = Branch::where('library_id', $libraryId)
+            ->where('id', $branchId)
             ->first();
+        }else{
+             $existingBranch = Branch::where('library_id', $libraryId)
+            ->where('slug', $slug)
+            ->when($branchId, function ($query) use ($branchId) {
+                $query->where('id', '!=', $branchId); // ignore current branch
+            })
+            ->first();
+    
+        }
+      
+   
+        if (!$branchId && $existingBranch) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch with same name already exists'
+            ], 200);
+        }
 
         $branchCount = Branch::where('library_id', $libraryId)->count();
 
         /* ================= KEEP YOUR 1 MONTH RULE ================= */
+       $shouldValidatePlans = false;
 
-        if ($existingBranch || $branchCount == 0) {
+        if ($branchCount == 0) {
+            // First branch creation
+            $shouldValidatePlans = true;
+        }
+
+        if ($branchId && $branchCount == 1) {
+            // Editing the first branch
+            $shouldValidatePlans = true;
+        }
+
+        if ($planCount == 0 || ($branchId && $branchCount == 1)) {
+
 
             $validator->after(function ($validator) use ($plans) {
 
@@ -771,19 +887,15 @@ class LibraryAuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        $validated['logo'] = null;
+        $validated = $validator->validated();
         $validated['library_images'] = [];
         $validated['features'] = $request->features ?? null;
         $validated['google_map'] = $request->google_map ?? null;
 
         /* ================= CALL GLOBAL SERVICE ================= */
+      
 
-        $response = $service->configure(
-           $request,$validated,
-            $libraryId,
-            $existingBranch,
-            $branchCount
-        );
+        $response = $service->configure($request,$validated,$libraryId,$existingBranch,$branchCount);
 
         return response()->json($response);
     }

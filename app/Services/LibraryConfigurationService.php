@@ -25,7 +25,7 @@ class LibraryConfigurationService
         DB::beginTransaction();
 
         try {
-
+          
            /* ======================
            HANDLE LOGO UPLOAD
             ======================= */
@@ -42,25 +42,55 @@ class LibraryConfigurationService
             ======================= */
            
 
-            if ($request->hasFile('library_images')) {
-                foreach ($request->file('library_images') as $image) {
-                    $validated['library_images'][] =
-                        $image->store('uploads/library_images', 'public');
-                }
-            }
+           if ($request->hasFile('library_images')) {
+
+    $images = [];
+
+    // keep old images in edit mode
+    if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+
+        $existingImages = $existingBranch->library_images;
+
+        // if stored as JSON string
+        if (is_string($existingImages)) {
+            $images = json_decode($existingImages, true);
+        }
+
+        // if already array
+        if (is_array($existingImages)) {
+            $images = $existingImages;
+        }
+    }
+
+    foreach ($request->file('library_images') as $image) {
+        $images[] = $image->store('uploads/library_images', 'public');
+    }
+
+    $validated['library_images'] = json_encode($images);
+
+} else {
+
+    if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+        $validated['library_images'] = is_array($existingBranch->library_images)
+            ? json_encode($existingBranch->library_images)
+            : $existingBranch->library_images;
+    } else {
+        $validated['library_images'] = null;
+    }
+}
 
             
            $validated['library_id'] = $libraryId;
-            $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
+           $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
 
-           $floorses= $validated['floors'];
+           $floorses = $validated['floors'] ?? [];
           
            $plans = $validated['plans'] ?? [];
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
             unset($validated['hour'], $validated['seats']);
-            $slug = \Str::slug($validated['name'].'-'.$libraryId);
+           
 
             /* =========================
             FLOOR VALIDATION
@@ -120,24 +150,42 @@ class LibraryConfigurationService
             ])->toArray();
 
             $branch = $existingBranch ?? new Branch();
-            
+           
             $branch->fill($branchData);
             $branch->library_id = $libraryId;
+            if (!$existingBranch) {
+
+                $baseSlug = Str::slug($validated['name'].'-'.$libraryId);
+                $slug = $baseSlug;
+                $count = 1;
+
+                while (Branch::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug.'-'.$count++;
+                }
+
+                $branch->slug = $slug;
+            }
 
             if (!empty($validated['library_logo'])) {
               
                 $branch->library_logo = $validated['library_logo'];
             }
             
-            
-          
-           
+   
+
             if (!empty($validated['features'])) {
-                $branch->features = json_encode($validated['features']);
+
+                $features = $validated['features'];
+
+                if (is_string($features)) {
+                    $features = json_decode($features, true);
+                }
+
+                $branch->features = $features; 
             }
 
             $branch->google_map = $validated['google_map'] ?? null;
-            $branch->slug = $slug;
+          
             $branch->save();
 
             /* =========================
@@ -157,7 +205,7 @@ class LibraryConfigurationService
             /* =========================
             PLANS
             ========================= */
-           if ($existingBranch || $branchCount == 0){
+            if ($existingBranch || $branchCount == 0){
             
                     // DELETE REMOVED PLANS
                 Plan::where('library_id', $libraryId)
@@ -211,6 +259,12 @@ class LibraryConfigurationService
             /* =========================
             LIBRARY IMAGES
             ========================= */
+         
+            if ($existingBranch){
+                $message='Branch updated successfully.';
+            }else{
+                $message='Branch added successfully.';
+            }
              
             Library::where('id', $libraryId,)->update([
                 'current_branch'=> $branch->id
@@ -220,7 +274,7 @@ class LibraryConfigurationService
 
             return [
                 'status'   => true,
-                'message'  => 'Branch added successfully.',
+                'message'  => $message,
                 'branch_id'=> $branch->id
             ];
 
