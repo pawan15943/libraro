@@ -887,6 +887,7 @@ class LibraryController extends Controller
         if (empty($library->library_no)) {
             $libraryCode = generateLibraryCode();
             $library->library_no = $libraryCode;
+            $library->status=1;
             $library->save();
             DB::commit();
 
