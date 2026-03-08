@@ -106,7 +106,7 @@ class PlanService
         return $filteredPlanTypes;
     }
 
-    public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId) {
+    public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId,float $lockerAmount = 0,?string $discountType = null,float $discountValue = 0,float $paidAmount = 0) {
 
         $startDate = Carbon::parse($planStartDate);
        
@@ -119,7 +119,7 @@ class PlanService
 
         if ($hasFixedBilling) {
 
-            $price = getBillingCyclePrice(
+            $planPrice = getBillingCyclePrice(
                 $planId,
                 $planTypeId,
                 $startDate,
@@ -128,16 +128,44 @@ class PlanService
 
         } else {
 
-            $price = getPlanPrice(
+            $planPrice = getPlanPrice(
                 $planId,
                 $planTypeId,
                 $branchId
             );
         }
+         /* -----------------------------
+       DISCOUNT CALCULATION
+    ------------------------------*/
+
+    $discountAmount = 0;
+
+    if ($discountType === 'percentage') {
+        $discountAmount = (($planPrice + $lockerAmount) * $discountValue) / 100;
+    } elseif ($discountType === 'amount') {
+        $discountAmount = $discountValue;
+    }
+
+    /* -----------------------------
+       TOTAL PRICE
+    ------------------------------*/
+
+    $totalAmount = ($planPrice + $lockerAmount) - $discountAmount;
+
+    /* -----------------------------
+       PENDING AMOUNT
+    ------------------------------*/
+
+    $pendingAmount = $totalAmount - $paidAmount;
 
         return [
-            'price' => (float) $price,
-            'fixed_billing' => $hasFixedBilling,
+            'price' => (float) $planPrice,
+            'locker_amount'   => (float)$lockerAmount,
+            'discount_amount' => (float)$discountAmount,
+            'total_amount'    => (float)$totalAmount,
+            'paid_amount'     => (float)$paidAmount,
+            'pending_amount'  => (float)$pendingAmount,
+            'fixed_billing'   => $hasFixedBilling
         ];
     }
 }

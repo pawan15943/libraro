@@ -1039,5 +1039,303 @@ class LearnerService
         }
     }
     
-    
+    public function getLearnerDetails($learnerId)
+    {
+
+        $branchId = getCurrentBranch();
+
+        $learner = Learner::where('branch_id',$branchId)
+            ->find($learnerId);
+
+        if(!$learner){
+            throw new \Exception("Learner not found");
+        }
+
+        $detail = LearnerDetail::with([
+            'plan',
+            'planType'
+        ])
+        ->where('learner_id',$learnerId)
+        ->where('status',1)
+        ->latest()
+        ->first();
+
+        $transaction = LearnerTransaction::where('learner_detail_id',$detail->id)
+            ->latest()
+            ->first();
+        $transaction_all= LearnerTransactionActivity::where('learner_id',$learnerId)->get();
+        $all_detail=LearnerDetail::with([
+            'plan',
+            'planType'
+        ])
+        ->where('learner_id',$learnerId)->get();
+
+        return [
+
+            'personal_info'=>[
+                'learner_no'=>$learner->learner_no,
+                'seat_no'=>$learner->seat_no ,
+                'name'=>$learner->name,
+                'mobile'=>decryptData($learner->mobile),
+                'email'=>$learner->email ? decryptData($learner->email) : '',
+                'dob'=>$learner->dob,
+                'father_name'=>$learner->father_name,
+                'profile_picture'=>$learner->profile_picture,
+               
+               
+                
+            ],
+
+            'detail_info'=>[
+                'plan'=>$detail->plan->name ?? '',
+                'plan_type'=>$detail->planType->name ?? '',
+                'price'=>$detail->plan_price_id,
+                'duration'=>$detail->plan->monthdays ?? '',
+                'start_date'=>$detail->plan_start_date,
+                'end_date'=>$detail->plan_end_date,
+                'start_time'=>$detail->planType->start_time ?? '',
+                'end_time'=>$detail->planType->end_time ?? '',
+            ],
+
+            'payment_information'=>[
+                'total_amount'=>$transaction->total_amount,
+                'paid_amount'=>$transaction->paid_amount,
+                'pending_amount'=>$transaction->pending_amount,
+                'paid_date'=>$transaction->paid_date,
+                'payment_mode'=>$detail->payment_mode,
+                 'locker_amount'=>$transaction->locker_amount,
+                'discount'=>$transaction->discount_amount,
+                'token_money'=>$transaction->token_money,
+                'miscellaneous'=>$transaction->miscellaneous,
+                'pending_refund'=>$transaction->refund,
+                'due_date'=>$transaction->due_date,
+               
+            ],
+
+            'other_details'=>[
+                'alternate_mobile'=>$learner->alternate_mobile,
+                'id_proof_name'=>$learner->id_proof_name,
+                'id_proof_image'=>$learner->id_proof_file,
+                'address'=>$learner->address,
+                'remark'=>$learner->remark,
+            ],
+
+            'all_transaction'=>$transaction_all->map(function($txn){
+
+                return [
+                    'transaction_id'=>$txn->transaction_id ?? '',
+                    'amount'=>$txn->amount?? '',
+                    'particular'=>$txn->particular,
+                    'mode'=>$txn->payment_mode,
+                    'date'=>$txn->date,
+                    'dr_cr'=>$txn->dr_cr
+                ];
+
+            }),
+            'all_detail'=>$all_detail->map(function($all_deatil){
+
+                return [
+                    'plan'=>$all_deatil->plan->name ?? '',
+                    'plan_type'=>$all_deatil->planType->name ?? '',
+                    'price'=>$all_deatil->plan_price_id,
+                    'duration'=>$all_deatil->plan->monthdays ?? '',
+                    'start_date'=>$all_deatil->plan_start_date,
+                    'end_date'=>$all_deatil->plan_end_date,
+                    'start_time'=>$all_deatil->planType->start_time ?? '',
+                    'end_time'=>$all_deatil->planType->end_time ?? '',
+                  
+                ];
+
+            })
+
+        ];
+    }
+
+   public function getLearnersList($filters = [])
+    {
+        $branchId = getCurrentBranch();
+
+        $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
+            ->groupBy('learner_id');
+
+        $query = LearnerDetail::query()
+
+            ->joinSub($latestDetail,'latest',function($join){
+                $join->on('learner_detail.id','=','latest.id');
+            })
+
+            ->join('learners','learners.id','=','learner_detail.learner_id')
+
+            ->leftJoin('plans','plans.id','=','learner_detail.plan_id')
+
+            ->leftJoin('plan_types','plan_types.id','=','learner_detail.plan_type_id')
+
+            ->where('learner_detail.branch_id',$branchId);
+
+        /* -----------------------------
+        SEARCH
+        ------------------------------*/
+
+        if (!empty($filters['search'])) {
+
+            $search = $filters['search'];
+            $encryptdata = encryptData($search);
+
+            $query->where(function ($q) use ($search, $encryptdata) {
+
+                $q->where('learners.name','LIKE',"%{$search}%")
+                ->orWhere('learners.mobile','LIKE',"%{$encryptdata}%")
+                ->orWhere('learner_detail.seat_no','LIKE',"%{$search}%")
+                ->orWhere('learners.email',$encryptdata);
+
+            });
+        }
+
+        /* -----------------------------
+        STATUS FILTER
+        ------------------------------*/
+
+        if (!empty($filters['status'])) {
+
+            switch ($filters['status']) {
+
+                case 'active':
+
+                    $query->where('learner_detail.status',1)
+                        ->whereDate('learner_detail.plan_end_date','>=',now());
+
+                break;
+
+                case 'about_to_expire':
+
+                    $query->where('learner_detail.status',1)
+                        ->whereBetween('learner_detail.plan_end_date',[now(), now()->addDays(5)]);
+
+                break;
+
+                case 'extended':
+
+                    $extendDays = getExtendDays($branchId);
+
+                    $query->whereDate('learner_detail.plan_end_date','<',now())
+                        ->whereDate(
+                            'learner_detail.plan_end_date',
+                            '>=',
+                            now()->subDays($extendDays)
+                        );
+
+                break;
+
+                case 'future':
+
+                    $query->whereDate('learner_detail.plan_start_date','>',now());
+
+                break;
+
+                case 'expired':
+
+                    $query->whereDate('learner_detail.plan_end_date','<',now())->where('learners.status',0);
+
+                break;
+
+                case 'closed':
+
+                    $query->where('learner_detail.status',0)->join('learner_operations_log as op', function ($join) {
+                            $join->on('op.learner_detail_id', '=', 'learner_detail.id');
+                        })
+                        ->where('op.operation', 'closeSeat');
+
+                break;
+
+                case 'deleted':
+
+                    $query->whereNotNull('learners.deleted_at')->whereNull('learners.deleted_at');
+
+                break;
+
+            }
+        }
+
+        /* -----------------------------
+        SELECT
+        ------------------------------*/
+
+        $query->select([
+
+            'learners.id',
+            'learners.learner_no',
+            'learners.name',
+            'learners.profile_picture',
+
+            'learner_detail.seat_no',
+            'learner_detail.plan_start_date',
+            'learner_detail.plan_end_date',
+
+            'plans.name as plan_name',
+            'plan_types.name as plan_type',
+            'learner_detail.id as learner_detail_id',
+            'learners.deleted_at'
+
+        ]);
+
+        $learners = $query->orderBy('learner_detail.seat_no','asc')
+            ->paginate(20);
+
+        /* -----------------------------
+        FORMAT RESPONSE
+        ------------------------------*/
+
+        $learners->getCollection()->transform(function($learner){
+
+        $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
+             $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
+             $planStatus =getPlanStatusDetails($learner->plan_end_date);
+            if($operation == 'closeSeat'){
+                     $status='Closed';
+             }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+                    $status='Deleted';
+             }else{
+                     $status = strip_tags(
+                        getUserStatusWithSpan($learner->plan_end_date,$learner->id)
+                    );
+             }
+            
+             
+            
+             if($operation == 'closeSeat'){
+                     $mainstatus='Closed';
+             }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+                    $mainstatus='Deleted';
+             }else{
+                     $mainstatus=$planStatus['status'];
+             }
+             
+           
+
+
+            return [
+
+                'id'=>$learner->id,
+                'learner_no'=>$learner->learner_no,
+                'name'=>$learner->name,
+                'seat_no'=>$learner->seat_no ?? 'GEN',
+
+                'profile_picture'=>$learner->profile_picture ?? '',
+
+                'plan'=>$learner->plan_name ?? '',
+                'plan_type'=>$learner->plan_type ?? '',
+
+                'plan_end_date'=>$learner->plan_end_date ?? '',
+
+                'days_left'=>$planStatus['diff_in_days'],
+
+                'status'=>$status,
+                'mainstatus'=>$mainstatus
+
+            ];
+
+        });
+
+        return $learners;
+    }
 }

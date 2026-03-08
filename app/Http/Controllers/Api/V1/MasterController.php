@@ -174,18 +174,27 @@ class MasterController extends Controller
     public function getPriceApi(Request $request, PlanService $priceService)
     {
         $validated = $request->validate([
-            'plan_id'        => 'required|exists:plans,id',
-            'plan_type_id'   => 'required|exists:plan_types,id',
-            'plan_start_date'=> 'nullable|date',
-            'branch_id'      => 'required|exists:branches,id',
-        ]);
+        'plan_id'        => 'required|exists:plans,id',
+        'plan_type_id'   => 'required|exists:plan_types,id',
+        'plan_start_date'=> 'nullable|date',
+        'branch_id'      => 'required|exists:branches,id',
 
-        $result = $priceService->calculatePrice(
-            $validated['plan_id'],
-            $validated['plan_type_id'],
-            $validated['plan_start_date'] ?? null,
-            $validated['branch_id']
-        );
+        'locker_amount'  => 'nullable|numeric',
+        'discount_type'  => 'nullable|in:percentage,amount',
+        'discount_value' => 'nullable|numeric',
+        'paid_amount'    => 'nullable|numeric'
+    ]);
+
+       $result = $priceService->calculatePrice(
+        $validated['plan_id'],
+        $validated['plan_type_id'],
+        $validated['plan_start_date'] ?? null,
+        $validated['branch_id'],
+        $validated['locker_amount'] ?? 0,
+        $validated['discount_type'] ?? null,
+        $validated['discount_value'] ?? 0,
+        $validated['paid_amount'] ?? 0
+    );
 
         return response()->json([
             'status' => true,

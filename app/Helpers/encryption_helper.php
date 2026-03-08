@@ -192,10 +192,24 @@ if (!function_exists('getLibraryId')) {
 
         if (Auth::guard('library')->check()) {
             $library_id = Auth::guard('library')->user()->id;
+
         } elseif (Auth::guard('library_user')->check()) {
             $library_id = Auth::guard('library_user')->user()->library_id;
+
         } elseif (Auth::guard('learner')->check()) {
             $library_id = Auth::guard('learner')->user()->library_id;
+
+        } elseif (Auth::guard('library_api')->check()) {
+
+            $user = Auth::guard('library_api')->user();
+
+            if ($user instanceof \App\Models\Library) {
+                $library_id = $user->id;
+            }
+
+            if ($user instanceof \App\Models\LibraryUser) {
+                $library_id = $user->library_id;
+            }
         }
 
         return $library_id;
@@ -208,14 +222,25 @@ if (!function_exists('getCurrentBranch')) {
         $currentBranch = null;
 
         if (Auth::guard('library')->check()) {
-            $user = Auth::guard('library')->user();
-            $currentBranch = $user->current_branch;
+            $currentBranch = Auth::guard('library')->user()->current_branch;
+
         } elseif (Auth::guard('library_user')->check()) {
-            $user = Auth::guard('library_user')->user();
-            $currentBranch = $user->current_branch;
+            $currentBranch = Auth::guard('library_user')->user()->current_branch;
+
         } elseif (Auth::guard('learner')->check()) {
-            $user = Auth::guard('learner')->user();
-            $currentBranch = $user->branch_id;
+            $currentBranch = Auth::guard('learner')->user()->branch_id;
+
+        } elseif (Auth::guard('library_api')->check()) {
+
+            $user = Auth::guard('library_api')->user();
+
+            if ($user instanceof \App\Models\Library) {
+                $currentBranch = $user->current_branch;
+            }
+
+            if ($user instanceof \App\Models\LibraryUser) {
+                $currentBranch = $user->current_branch;
+            }
         }
 
         return $currentBranch;

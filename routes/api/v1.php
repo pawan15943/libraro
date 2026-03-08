@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LibraryAuthController;
 use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
+use App\Http\Controllers\Api\V1\LearnerController;
 use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
 
@@ -51,6 +52,8 @@ Route::middleware('auth:library_api')->group(function () {
     Route::get('/library/permissions', [MasterController::class, 'libraryPermissions']);
     Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
+    Route::post('library/learners/seat-book', [LearnerController::class,'learnerStore']);
+    Route::get('library/learners/list', [LearnerController::class, 'index']);
     
 });
 
