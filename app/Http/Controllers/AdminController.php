@@ -35,7 +35,7 @@ class AdminController extends Controller
                 'libraries.library_name', 
                 'libraries.library_mobile', 
                 'libraries.email'
-            );
+            )->orderByDesc('libraries.id');
     
           
 
@@ -244,12 +244,17 @@ class AdminController extends Controller
             Log::info('Creating new library transaction', ['data' => $data]);
             LibraryTransaction::create($data);
         }
+
+        if($start_date==Carbon::now()->format('Y-m-d')){
+            $status=1;
+        }
     
         if ($request->payment == 'new') {
             Log::info('NEW payment detected, updating status');
             Library::where('id', $request->library_id)->update([
                 'library_type' => $subscription,
                 'is_paid' => 1,
+                'status' => $status,
             ]);
         }
 
@@ -258,7 +263,7 @@ class AdminController extends Controller
             Library::where('id', $request->library_id)->update([
                 'library_type' => $subscription,
                 'is_paid' => 1,
-                'status' => 1,
+                'status' => $status,
             ]);
         }
     

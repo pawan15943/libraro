@@ -644,7 +644,7 @@ class BranchController extends Controller
             /* =========================
             PLANS
             ========================= */
-           if ($existingBranch || $branchCount == 0){
+            if ($existingBranch || $branchCount == 0){
             
                     // DELETE REMOVED PLANS
                 Plan::where('library_id', getLibraryId())
@@ -704,7 +704,8 @@ class BranchController extends Controller
                 }
             }
             Library::where('id',getLibraryId())->update([
-                'current_branch'=> $branch->id
+                'current_branch'=> $branch->id,
+                'status'=>1
             ]);
 
             DB::commit();
