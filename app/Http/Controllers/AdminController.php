@@ -254,7 +254,6 @@ class AdminController extends Controller
             Library::where('id', $request->library_id)->update([
                 'library_type' => $subscription,
                 'is_paid' => 1,
-                'status' => $status,
             ]);
         }
 
