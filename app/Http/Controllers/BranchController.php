@@ -705,7 +705,7 @@ class BranchController extends Controller
             }
             Library::where('id',getLibraryId())->update([
                 'current_branch'=> $branch->id,
-                'status'=>1
+                
             ]);
 
             DB::commit();
