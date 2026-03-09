@@ -10,6 +10,7 @@ use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\State;
+use App\Services\LibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DB;
@@ -45,7 +46,19 @@ class BranchController extends Controller
         return back();
     }
 
-    public function index(){
+   public function index(LibraryService $libraryService)
+    {
+        $library = getLibrary();
+
+       if ($library->is_paid == 1 && Branch::where('library_id',$library->id)->count() == 0) {
+
+        $redirectUrl = $libraryService->checkLibraryStatus();
+
+        if ($redirectUrl) {
+            return redirect()->to($redirectUrl);
+        }
+    }
+
           $branches = [];
 
             if (Auth::guard('library')->check()) {

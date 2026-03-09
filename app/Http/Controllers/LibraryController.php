@@ -161,9 +161,17 @@ class LibraryController extends Controller
     public function choosePlan()
     {
         
+        
         $subscriptions = Subscription::with('permissions')->get();
         $premiumSub=Subscription::orderBy('id','DESC')->first();
         $features=DB::table('subscription_plan_features')->where('feature_status',1)->get();
+        $library=getLibrary();
+      
+         if($library->is_paid==1 && (Branch::where('library_id',$library->id)->count()==0)){
+             $redirectUrl = $this->libraryService->checkLibraryStatus();
+         
+            return redirect($redirectUrl);
+        }
         return view('register.plan', compact('subscriptions','premiumSub','features'));
     }
 
@@ -997,6 +1005,8 @@ class LibraryController extends Controller
         ->first();
         
         $plan=Subscription::where('id',$data->library_type)->first();
+
+       
        
         return view('library.my-plan',compact('data','month','plan'));
     }
