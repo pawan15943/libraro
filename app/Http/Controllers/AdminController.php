@@ -150,6 +150,16 @@ class AdminController extends Controller
 
     public function libraryPaymentStore(Request $request)
     {
+         $request->validate([
+            'library_id'        => 'required|integer|exists:libraries,id',
+            'library_type'      => 'required|string',
+            'payment'           => 'required|in:new,renew,pre,pending',
+            'month'             => 'nullable|in:monthly,yearly',
+            'amount'            => 'required|numeric|min:0',
+            'paid_amount'       => 'required|numeric|min:0',
+            'transaction_id'    => 'nullable|string|max:255',
+            'transaction_date'  => 'required|date',
+        ]);
         $library_id = (int) trim($request->library_id);
 
         $subscription = $request->library_type;
