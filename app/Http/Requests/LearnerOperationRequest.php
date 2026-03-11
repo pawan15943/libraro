@@ -17,6 +17,7 @@ class LearnerOperationRequest extends FormRequest
 
     public function rules()
     {
+        
        
         return [
 
@@ -75,7 +76,15 @@ class LearnerOperationRequest extends FormRequest
 
             'locker_amount'=>'nullable|numeric|min:0',
 
-            'seat_no'=>'nullable|numeric'
+            'seat_no'=>'nullable|numeric',
+            'learner_detail'=>'nullable',
+            'learner_id'=>'nullable',
+            'payment_type'=>'nullable',
+            'previous_pending'=>'nullable|min:0',
+            'pending_amount'=>'nullable',
+            'due_date'=>'nullable'
+
+
 
         ];
     }

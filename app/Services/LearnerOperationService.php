@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use Exception;
+use Log;
 
 class LearnerOperationService
 {
@@ -47,11 +48,13 @@ class LearnerOperationService
 
             $planType = PlanType::findOrFail($dto->plan_type_id);
             $hours = $planType->slot_hours;
+            $seat=$lastDetail->seat_no;
              
-
+            
             /* Seat check */
 
-            if($dto->seat_no){
+            if($seat){
+               
                 
                 $seatCheck = checkAvailability(
                     $dto->branch_id,
@@ -81,7 +84,7 @@ class LearnerOperationService
 
             if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
 
-                $detail = $this->createDetail($dto,$start_date,$endDate,$hours,$detailstatus,$billing['is_paid'],$lastDetail->join_date);
+                $detail = $this->createDetail($dto,$start_date,$endDate,$hours,$detailstatus,$billing['is_paid'],$lastDetail->join_date,$seat);
                
             }else{
                 
@@ -97,6 +100,9 @@ class LearnerOperationService
             /* Update learner */
 
             $this->updateLearner($dto,$detail,$status);
+
+            /*send reminder */
+            $this->sendReminder($dto->operation,$dto->learner_id);
 
             DB::commit();
 
@@ -219,7 +225,7 @@ class LearnerOperationService
     }
 
 
-    private function createDetail($dto,$start_date,$endDate, $hours,$detailstatus,$is_paid,$join_date){
+    private function createDetail($dto,$start_date,$endDate, $hours,$detailstatus,$is_paid,$join_date,$seat){
 
         return LearnerDetail::create([
 
@@ -232,7 +238,7 @@ class LearnerOperationService
             'plan_start_date'=>$start_date,
             'plan_end_date'=>$endDate,
             'hour'=>$hours,
-            'seat_no'=>$dto->seat_no,
+            'seat_no'=>$seat,
             'status'=>$detailstatus,
             'is_paid' => $is_paid,
             'payment_mode'=> $dto->payment_mode,
@@ -435,7 +441,7 @@ class LearnerOperationService
         return $learnerTransaction;
     }
 
-      public function learnerTransactionActivity($data)
+    public function learnerTransactionActivity($data)
     {
 
 
@@ -450,6 +456,62 @@ class LearnerOperationService
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
         ]);
+    }
+
+    public function sendReminder($operation,$learnerId){
+        if ($operation == 'CHANGE PLAN') {
+
+            try {
+
+                $noti = new NotificationSentController;
+
+                // WABA Notification
+                if (autowabaNotificationActive()) {
+                    \Log::info('autowabaNotificationActive');
+                    $noti->autoMessage($learnerId, 'waba', 'change-plan-waba');
+                }
+
+                // TEXT Notification
+                if (autotextNotificationActive()) {
+                    \Log::info('autotextNotificationActive');
+                    $noti->autoMessage($learnerId, 'text', 'change-plan-sms');
+                }
+            } catch (\Throwable $e) {
+
+                // Log the error (won't break your main code)
+                \Log::error('Notification sending failed: ' . $e->getMessage(), [
+
+                    'exception' => $e
+                ]);
+            }
+        }
+
+        if ($operation == 'UPGRADE') {
+
+            try {
+
+                $noti = new NotificationSentController;
+
+                // WABA Notification
+                if (autowabaNotificationActive()) {
+                    \Log::info('autowabaNotificationActive');
+                    $noti->autoMessage($learnerId, 'waba', 'upgrade-waba');
+                }
+
+                // TEXT Notification
+                if (autotextNotificationActive()) {
+                    \Log::info('autotextNotificationActive');
+                    $noti->autoMessage($learnerId, 'text', 'upgrade-sms');
+                }
+            } catch (\Throwable $e) {
+
+                // Log the error (won't break your main code)
+                \Log::error('Notification sending failed: ' . $e->getMessage(), [
+
+                    'exception' => $e
+                ]);
+            }
+        }
     }
 
 }

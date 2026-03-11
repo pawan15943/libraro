@@ -75,7 +75,7 @@ class LearnerOperationDTO
             branch_id:getCurrentBranch(),
             library_id:getLibraryId(),
 
-            operation:$request->operation ?? 'RENEW'
+            operation:$request->payment_type ?? 'RENEW'
 
         );
     }
