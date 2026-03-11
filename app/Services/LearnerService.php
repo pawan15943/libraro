@@ -1039,6 +1039,7 @@ class LearnerService
         }
     }
     
+    
     public function getLearnerDetails($learnerId)
     {
 
@@ -1151,7 +1152,7 @@ class LearnerService
         ];
     }
 
-   public function getLearnersList($filters = [])
+    public function getLearnersList($filters = [])
     {
         $branchId = getCurrentBranch();
 

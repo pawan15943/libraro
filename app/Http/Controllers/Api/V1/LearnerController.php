@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLearnerRequest;
 use App\Services\LearnerService;
 use Illuminate\Http\Request;
+use App\DTO\LearnerOperationDTO;
+use App\Enums\LearnerOperation;
+use App\Http\Requests\LearnerOperationRequest;
+use App\Services\LearnerOperationService;
 
 class LearnerController extends Controller
 {
-    public function learnerStore(StoreLearnerRequest $request, LearnerService $service)
+    public function store(StoreLearnerRequest $request, LearnerService $service)
     {
+       
 
         try {
 
@@ -85,5 +90,16 @@ class LearnerController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function process(LearnerOperationRequest $request, LearnerOperationService $service)
+    {
+
+         $dto = LearnerOperationDTO::fromRequest($request);
+
+        return response()->json(
+            $service->process($dto)
+        );
+
     }
 }

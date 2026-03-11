@@ -52,8 +52,19 @@ Route::middleware('auth:library_api')->group(function () {
     Route::get('/library/permissions', [MasterController::class, 'libraryPermissions']);
     Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
-    Route::post('library/learners/seat-book', [LearnerController::class,'learnerStore']);
-    Route::get('library/learners/list', [LearnerController::class, 'index']);
+
+    Route::prefix('library/learners')->group(function () {
+
+        Route::post('/seat-book', [LearnerController::class,'store']);
+        Route::get('/list', [LearnerController::class,'index']);
+        Route::get('/{id}', [LearnerController::class,'show']);
+        Route::put('/{id}', [LearnerController::class,'update']);
+
+        Route::post('/operation',[LearnerController::class,'process']);
+
+    });
+   
+    
     
 });
 

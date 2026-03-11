@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\LearnerOperationDTO;
 use App\Models\Attendance;
 use App\Models\Hour;
 use App\Models\Learner;
@@ -33,8 +34,10 @@ use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\NotificationSentController;
+use App\Http\Requests\LearnerOperationRequest;
 use App\Http\Requests\StoreLearnerRequest;
 use App\Models\Category;
+use App\Services\LearnerOperationService;
 use App\Services\LibraryService;
 use App\Services\PlanService;
 
@@ -268,7 +271,7 @@ class LearnerController extends Controller
         return view('learner.seat', compact('availableseats', 'users',  'count_fullday', 'count_firstH', 'count_secondH', 'available', 'not_available', 'count_hourly', 'floors'));
     }
     //learner store seat and without seat
-   public function learnerStore(StoreLearnerRequest $request, LearnerService $service)
+    public function learnerStore(StoreLearnerRequest $request, LearnerService $service)
     {
 
         try {
@@ -607,82 +610,12 @@ class LearnerController extends Controller
     }
    
     //renew and learner  Upgrade
-    public function learnerUpgradeRenew(Request $request,LearnerService $service)
+     public function learnerUpgradeRenew(LearnerOperationRequest $request, LearnerOperationService $service)
     {
-
         
-        $rules = [
-
-            'plan_id' => 'required',
-            'plan_type_id' => 'required|exists:plan_types,id',
-            'plan_price_id' => 'required',
-            'payment_mode' => 'required',
-            'user_id' => 'required',
-            'discountType' => 'nullable',
-            'discount_amount' => [
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    if (!in_array($request->discountType, ['amount', 'percentage']) && $value) {
-                        $fail('Discount type must be selected when providing a discount amount.');
-                    }
-                    if (in_array($request->discountType, ['amount', 'percentage']) && !$value) {
-                        $fail('Discount amount is required when a discount type is selected.');
-                    }
-                }
-            ],
-            'locker_no' => [
-                'nullable',
-                'required_if:locker,yes',
-                'numeric'
-            ],
-
-        ];
-
-
-        $validator = Validator::make($request->all(), $rules);
-        if ($validator->fails()) {
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        
-        if ($request->payment_type == 'RENEW') {
-            if (!Gate::allows('has-permission', 'Renew Seat')) {
-              
-                return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
-            }
-        }
-
-        $customer = Learner::findOrFail($request->user_id);
-
-         $result = $service->processPlan([
-            'learner_id' => $request->user_id,
-            'plan_id' => $request->plan_id,
-            'plan_type_id' => $request->plan_type_id,
-            'plan_price' => $request->plan_price_id,
-            'payment_mode' => $request->payment_mode,
-            'discount_type' => $request->discountType,
-            'discount_amount' => $request->discount_amount,
-            'paid_amount' => $request->paid_amount,
-            'locker_amount' => $request->locker_amount,
-            'locker_no' => $request->locker_no,
-            'payment_type' => $request->payment_type ?? 'RENEW',
-            'paid_date' => $request->paid_date,
-            'due_date' => $request->due_date,
-            'particular' => 'Paid by website',
-            'branchId' =>getCurrentBranch(),
-            'library_id' =>getLibraryId(),
-            'seat_no'=>$customer->seat_no
-        ]);
+        $dto = LearnerOperationDTO::fromRequest($request);
+       
+        $result = $service->process($dto);
 
         if ($request->expectsJson()) {
             return response()->json($result);
