@@ -284,7 +284,7 @@
 
     <!-- ================= FOOTER ================= -->
     <div class="footer">
-        <p><b>Website:</b>{{$branch_slug ?? 'www.libraro.in'}} | <b>Call Us:</b> +91-{{ $library_mobile ?? '' }}</p>
+        <p><b>Website: </b>{{'www.libraro.in/'.$branch_slug ?? 'www.libraro.in'}} | <b>Call Us:</b> +91-{{ $library_mobile ?? '' }}</p>
         <p><b>Head Office:</b> {{ empty($library_address) ? '' : $library_address }}</p>
     </div>
 
