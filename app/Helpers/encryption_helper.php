@@ -2115,3 +2115,11 @@ if (!function_exists('calculatePlanDays')) {
     }
 }
 
+if (!function_exists('changeFormate')) {
+    function changeFormate($date){
+            return \Carbon\Carbon::parse($date)->format('d-m-Y');
+    }
+}
+
+
+
