@@ -1861,6 +1861,7 @@ if (!function_exists('checkSeatAvailability')) {
         if ($totalAllowedHours <= 0) {
             return ['error' => true, 'message' => 'Library hours not configured'];
         }
+       
 
         // ACTIVE + FUTURE bookings (status ignored)
         $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
@@ -1883,6 +1884,7 @@ if (!function_exists('checkSeatAvailability')) {
                 'plan_types.slot_hours',
                 'plan_types.day_type_id'
             ]);
+          
 
         // 1️⃣ All-day / Night block
         if ($bookings->whereIn('day_type_id', [8, 9])->count() > 0) {

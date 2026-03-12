@@ -82,7 +82,11 @@ class LearnerOperationRequest extends FormRequest
             'payment_type'=>'nullable',
             'previous_pending'=>'nullable|min:0',
             'pending_amount'=>'nullable',
-            'due_date'=>'nullable'
+            'due_date'=>'nullable',
+            'diffrence_amount'=> [
+                'nullable',
+                'required_if:payment_type,CHANGE PLAN'
+            ],
 
 
 

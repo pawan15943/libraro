@@ -41,12 +41,13 @@ class LearnerOperationDTO
 
         public int $library_id,
 
-        public string $operation 
+        public string $operation ,
+        public ?float $diffrence_amount,
 
     ) {}
 
 
-   public static function fromRequest($request)
+    public static function fromRequest($request)
     {
         return new self(
 
@@ -64,6 +65,7 @@ class LearnerOperationDTO
 
             discount_type:$request->discountType,
             discount_amount:$request->discount_amount,
+            diffrence_amount:$request->diffrence_amount,
 
             payment_mode:$request->payment_mode,
 

@@ -35,10 +35,12 @@ class LearnerOperationService
            
 
             /* Plan dates */
-
-            $start_date = Carbon::parse(
-                $dto->start_date ?? $lastDetail->plan_end_date
-            )->addDay();
+             if($dto->operation=='CHANGE PLAN'){
+                 $start_date = Carbon::parse($lastDetail->plan_start_date);
+             }else{
+                 $start_date = Carbon::parse($dto->start_date ?? $lastDetail->plan_end_date)->addDay();
+             }
+           
             
 
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
@@ -55,18 +57,18 @@ class LearnerOperationService
 
             if($seat){
                
-                
-                $seatCheck = checkAvailability(
-                    $dto->branch_id,
-                    $dto->seat_no,
-                    $dto->learner_id,
-                    $dto->plan_type_id,
-                    $dto->plan_id,
-                    $start_date
-                );
-               
+                 if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
+                    $seatCheck = checkAvailability($dto->branch_id,$seat,$dto->learner_id,$dto->plan_type_id,$dto->plan_id,$start_date);
+                 }
+                 if($dto->operation=='CHANGE PLAN'){
+                    $seatCheck = checkSeatAvailability($seat,$dto->learner_id,$dto->plan_type_id,$start_date,$endDate);
+                 }
+
                 if($seatCheck['error']){
-                    return $seatCheck;
+                    return [
+                        'success' => false,
+                        'message' => $seatCheck['message']
+                    ];
                 }
             }
 
@@ -89,7 +91,7 @@ class LearnerOperationService
             }else{
                 
 
-                $detail = $this->updateDetail($dto,$endDate,$hours,$detailstatus);
+                $detail = $this->updateDetail($dto,$endDate,$hours,$detailstatus,$seat);
 
             }
 
@@ -99,7 +101,7 @@ class LearnerOperationService
 
             /* Update learner */
 
-            $this->updateLearner($dto,$detail,$status);
+            $this->updateLearner($dto,$detail,$status,$seat);
 
             /*send reminder */
             $this->sendReminder($dto->operation,$dto->learner_id);
@@ -125,14 +127,14 @@ class LearnerOperationService
 
     private function loadLearnerData($dto)
     {
-        $customer = Learner::findOrFail($dto->learner_id);
+        $customer = Learner::withTrashed()->findOrFail($dto->learner_id);
 
         if(alreadyRenewed($customer->id)){
             throw new Exception("Already have plan in queue");
         }
 
-        $lastDetail = LearnerDetail::where('learner_id',$customer->id)
-            ->latest()
+        $lastDetail = LearnerDetail::withTrashed()->where('learner_id',$customer->id)
+            ->latest('id')
             ->first();
 
         if(!$lastDetail){
@@ -157,21 +159,63 @@ class LearnerOperationService
         }
 
         if($dto->discount_type=='percentage'){
-            $discount =
-            ($planPrice+$locker)*$dto->discount_amount/100;
+            $discount =($planPrice+$locker)*$dto->discount_amount/100;
         }
 
         $effective = $planPrice+$locker-$discount;
 
-        $pending = $effective-$dto->paid_amount;
+        if($dto->operation=='CHANGE PLAN'){
+            $learnerTransaction = LearnerTransaction::where('learner_id', $customer->id)->latest()->first();
+        
+             $old_price      = $learnerTransaction->paid_amount ?? 0;
+             $old_pending      = $learnerTransaction->pending_amount ?? 0;
+             $old_pending_refund      = $learnerTransaction->refund ?? 0;
+            $diff_amount= $dto->diffrence_amount;
+            $paid_amount= $old_price + $diff_amount;
+            $pending_amount =$effective-$paid_amount;
+             if ($dto->payment_mode == 3) {
+                $pending_amount = $paid_amount;
+                $paid_amount    = 0;
+            }
+            $activityamount = 0;
+            $pending_refund = $old_pending_refund;
 
-        $oldPending = LearnerTransaction::where(
-            'learner_id',$customer->id
-        )->where('pending_amount','>',0)->sum('pending_amount');
+            
+            // Handle difference amount (refund vs pending)
+            if ($diff_amount < 0) {
 
-        if($dto->paid_amount > ($effective+$oldPending)){
-            throw new Exception("Paid amount not valid");
+                // refund case
+                $activityamount = abs($diff_amount);
+                $pending_refund = abs($pending_amount) + $pending_refund;
+                $pending = 0;
+                $dr_cr = 'Dr';
+            } else {
+
+              // extra payment (pending dues)
+                $pending = $pending_amount ?? 0;
+                $activityamount = $diff_amount;
+                $pending_refund = 0;
+                $dr_cr = 'Cr';
+            }
+
+
+        }else{
+            $pending = $effective-$dto->paid_amount;
+            $paid_amount=$dto->paid_amount;
+            $activityamount=$paid_amount;
+            $pending_refund=0;
+             $dr_cr = 'Cr';
+
+            $oldPending = LearnerTransaction::where(
+                'learner_id',$customer->id
+            )->where('pending_amount','>',0)->sum('pending_amount');
+
+            if($dto->paid_amount > ($effective+$oldPending)){
+                throw new Exception("Paid amount not valid");
+            }
         }
+
+        
 
         if($pending>0 && empty($dto->due_date)){
             throw new Exception("Due date required");
@@ -180,11 +224,15 @@ class LearnerOperationService
         $is_paid = in_array($dto->payment_mode,[1,2]) ? 1 : 0;
 
         return [
-            'paid'=>$dto->paid_amount,
+            'paid'=>$paid_amount,
+            'total_amount'=>$effective,
             'pending'=>$pending,
             'discount'=>$discount,
             'locker'=>$locker,
-            'is_paid'=>$is_paid
+            'is_paid'=>$is_paid,
+            'activityamount'=>$activityamount,
+            'pending_refund'=>$pending_refund,
+            'dr_cr'=>$dr_cr
         ];
     }
 
@@ -193,8 +241,7 @@ class LearnerOperationService
 
         $extendDay = getExtendDays($branchId);
 
-        $inextendDate = Carbon::parse($endDate)
-            ->addDays($extendDay);
+        $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
 
         $today = Carbon::today();
 
@@ -203,21 +250,18 @@ class LearnerOperationService
         }else{
             $status = $customer->status;
         }
+       
 
-        if(
-            Carbon::parse($lastDetail->plan_end_date) < $today
-            && $endDate > $today
-            && $is_paid == 1
-        ){
+        if(Carbon::parse($lastDetail->plan_end_date) < $today && $endDate > $today && $is_paid == 1){
+           
             $detailstatus = 1;
 
-        }elseif(
-            $inextendDate > $today
-            && $start_date <= $today
-        ){
+        }elseif($inextendDate > $today && $start_date <= $today){
+          
             $detailstatus = 1;
 
         }else{
+           
             $detailstatus = 0;
         }
 
@@ -251,7 +295,7 @@ class LearnerOperationService
         $dto,
         $endDate,
         $hours,
-        $detailstatus
+        $detailstatus,$seat
     ){
 
         $detail = LearnerDetail::where(
@@ -265,7 +309,7 @@ class LearnerOperationService
             'plan_type_id'=>$dto->plan_type_id,
             'plan_price_id'=>$dto->plan_price,
 
-            'seat_no'=>$dto->seat_no,
+            'seat_no'=>$seat,
 
             'hour'=>$hours,
 
@@ -278,7 +322,7 @@ class LearnerOperationService
     }
 
 
-    private function updateLearner($dto,$detail,$status)
+    private function updateLearner($dto,$detail,$status,$seat)
     {
 
         $learner = Learner::findOrFail($dto->learner_id);
@@ -287,7 +331,7 @@ class LearnerOperationService
             $learner->restore();
         }
 
-        $learner->seat_no = $detail->seat_no;
+        $learner->seat_no = $seat;
 
         $learner->hours = $detail->hour;
 
@@ -302,8 +346,7 @@ class LearnerOperationService
 
 
     public function createTransaction($dto,$detail,$billing,$start_date){
-
-        return $this->learnerTransactionAddUpdate([
+        $data=[
 
             'planPrice' => $dto->plan_price,
             'paid_amount' => $billing['paid'],
@@ -326,8 +369,43 @@ class LearnerOperationService
             'branchId' => $dto->branch_id,
             'library_id' => $dto->library_id,
 
-            'is_paid' => $billing['is_paid']
-        ]);
+            'is_paid' => $billing['is_paid'],
+            'dr_cr'=> $billing['dr_cr'],
+            'activityamount'=>$billing['activityamount'],
+            'pending_refund'=>$billing['pending_refund'],
+            'total_amount'=>$billing['total_amount'],
+            'pending'=>$billing['pending'],
+
+        ];
+        if($dto->operation=='CHANGE PLAN'){
+            return $this->learnerTransactionUpdate($data);
+        }else{
+            return $this->learnerTransactionAddUpdate($data);
+        }
+
+        
+    }
+
+    public function learnerTransactionUpdate($data){
+        $learnerTransaction = LearnerTransaction::where('learner_detail_id', $data['learner_detail_id'])->latest()->first();
+        $learnerTransaction->locker_amount =$data['locker'];
+        $learnerTransaction->total_amount   = $data['total_amount'];
+        $learnerTransaction->paid_amount    = $data['paid_amount'];
+        $learnerTransaction->pending_amount = $data['pending'];
+        $learnerTransaction->refund         = $data['pending_refund'];  
+        $learnerTransaction->due_date       = $data['due_date'] ?? null;
+        $learnerTransaction->discount_amount = $data['discount'];
+
+        $learnerTransaction->save();
+         $activityData = [
+                'learner_id'   => $data['learner_id'],
+                'particular'   => $data['particular'] ?? 'Paid By Trans',
+                'payment_type' => $data['payment_type'],
+                'payment_mode' => $data['payment_mode'],
+                'amount'       => $data['activityamount'],
+                'dr_cr'        => $data['dr_cr'],
+            ];
+            $this->learnerTransactionActivity($activityData);
     }
 
      public function learnerTransactionAddUpdate($data)
@@ -375,9 +453,10 @@ class LearnerOperationService
                 $paidNow = $remainingPendingPayment;
                 $newPending = $tranPending - $paidNow;
             }
+            $total_paid=$tran->paid_amount + $paidNow;
 
             $tran->update([
-                'paid_amount'    => $tran->paid_amount + $paidNow,
+                'paid_amount'    => $total_paid,
                 'pending_amount' => $newPending,
                 'paid_date'      => $transaction_date,
             ]);
@@ -420,7 +499,7 @@ class LearnerOperationService
                 'payment_type' => 'PENDING',
                 'payment_mode' => $data['payment_mode'],
                 'amount'       => $pendingPaid,
-                'dr_cr'        => 'Cr',
+                'dr_cr'        => $data['dr_cr'],
             ];
             $this->learnerTransactionActivity($activityData1);
         }
@@ -433,7 +512,7 @@ class LearnerOperationService
                 'payment_type' => $data['payment_type'],
                 'payment_mode' => $data['payment_mode'],
                 'amount'       => $newPlanPaid,
-                'dr_cr'        => 'Cr',
+                'dr_cr'        => $data['dr_cr'],
             ];
             $this->learnerTransactionActivity($activityData2);
         }
@@ -510,6 +589,22 @@ class LearnerOperationService
 
                     'exception' => $e
                 ]);
+            }
+        }
+        if ($operation == "RENEW") {
+            $noti = new NotificationSentController;
+
+            if (autowabaNotificationActive()) {
+                \Log::info('autowabaNotificationActive');
+                $noti->autoMessage($learnerId, 'waba', 'renew-waba');
+            } else {
+                \Log::info('nowaba seond part RENEW');
+            }
+            if (autotextNotificationActive()) {
+                \Log::info('autotextNotificationActive');
+                $noti->autoMessage($learnerId, 'text', 'renew-sms');
+            } else {
+                \Log::info('no text seond part RENEW');
             }
         }
     }
