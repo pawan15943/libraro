@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use App\Events\LibraryRegistered;
 
 class LibraryAuthController extends Controller
 {
@@ -298,6 +299,7 @@ class LibraryAuthController extends Controller
                 'message'=> 'Please verify your email before login',
                 'is_email_verified' => 0,
                 'is_last_step'      => $is_last_step,
+                 'library_id'  => $libraryId, // ⭐ CHANGED
             ],200); // ⭐ CHANGED
         }
 
@@ -389,6 +391,47 @@ class LibraryAuthController extends Controller
             'library_id'  => $libraryId, // ⭐ CHANGED
             'data'        => $branches
         ],200);
+    }
+
+    public function resendEmailOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'library_id' => 'required|exists:libraries,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 200);
+        }
+
+        $library = Library::find($request->library_id);
+
+        if ($library->email_verified_at) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Email already verified.',
+            ], 200);
+        }
+
+        // Generate new OTP
+        $otp = rand(100000, 999999);
+
+        $library->email_otp = 123456;
+        // $library->email_otp = $otp;
+        $library->save();
+
+        // Send email again
+        event(new LibraryRegistered($library));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'OTP resent successfully.',
+            'data' => [
+                'library_id' => $library->id
+            ]
+        ], 200);
     }
 
    
