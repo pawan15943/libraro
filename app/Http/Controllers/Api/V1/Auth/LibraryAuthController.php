@@ -299,7 +299,9 @@ class LibraryAuthController extends Controller
                 'message'=> 'Please verify your email before login',
                 'is_email_verified' => 0,
                 'is_last_step'      => $is_last_step,
-                 'library_id'  => $libraryId, // ⭐ CHANGED
+                'data'    => [
+                    'library_id' => $library->id
+                ]
             ],200); // ⭐ CHANGED
         }
 
