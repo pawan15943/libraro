@@ -20,7 +20,8 @@ class ApiKeyMiddleware
         if (!$apiKey || $apiKey !== env('APP_API_KEY')) {
             return response()->json([
                 'status' => false,
-                'message' => 'Unauthorized access'
+                'message' => 'Unauthorized access',
+                'code'=>401
             ], 401);
         }
 
