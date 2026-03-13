@@ -35,7 +35,8 @@ class RegisterLibrary
            
           
             // Generate OTP & Referral Code
-            $library->email_otp = rand(100000, 999999);
+            // $library->email_otp = rand(100000, 999999);
+            $library->email_otp = 12345;
             $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
             $library->save();
             
