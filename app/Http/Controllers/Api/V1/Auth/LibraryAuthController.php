@@ -81,8 +81,7 @@ class LibraryAuthController extends Controller
             'email' => 'required|email|unique:libraries,email',
             'library_mobile' => 'required|digits:10',
             'password' => 'required|min:6',
-            'device_type' => 'required',
-            'device_id' => 'required',
+            
         ]);
 
         if ($validator->fails()) {
@@ -126,8 +125,7 @@ class LibraryAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'library_id' => 'required|exists:libraries,id',
             'otp' => 'required|digits:6',
-            'device_type' => 'required',
-            'device_id' => 'required',
+          
         ]);
 
         if ($validator->fails()) {
@@ -162,11 +160,14 @@ class LibraryAuthController extends Controller
         $library->save();
         $token = $library->createToken('library_token')->plainTextToken;
 
-        if ($request->device_id && $request->device_type) {
+        $deviceType = request()->header('device-type'); 
+        $deviceId   = request()->header('device-id');   
+
+        if ($deviceId && $deviceType) {
             $library->devices()->updateOrCreate(
-                ['device_id' => $request->device_id],
+                ['device_id' => $deviceId],
                 [
-                    'device_type' => $request->device_type,
+                    'device_type' => $deviceType,
                     'token' => $token,
                     'guard_name' => 'library_api',
                 ]
@@ -176,6 +177,7 @@ class LibraryAuthController extends Controller
             'status' => true,
             'message' => 'Email verified successfully.',
             'token' => $token,
+            'is_email_verified' => 1,
             'data' => [
                 'library_id' => $library->id
             ]
@@ -185,208 +187,209 @@ class LibraryAuthController extends Controller
    
 
    public function login(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email'       => 'required|email',
-        'password'    => 'required',
-        'device_type' => 'required',
-        'device_id'   => 'required',
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'email'       => 'required|email',
+            'password'    => 'required',
+           
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'status'  => false,
-            'message' => $validator->errors()->first(),
-            'data'    => (object)[]
-        ],422);
-    }
-
-    $user = null;
-    $userType = null;
-
-    /*
-    |---------------------------------------------------
-    | 1️⃣ Check Library Owner
-    |---------------------------------------------------
-    */
-
-    $library = Library::where('email', $request->email)->first();
-
-    if ($library && Hash::check($request->password, $library->password)) {
-
-        $user = $library;
-        $userType = 'library';
-    }
-
-    /*
-    |---------------------------------------------------
-    | 2️⃣ Check Library Staff
-    |---------------------------------------------------
-    */
-
-    if (!$user) {
-
-        $libraryUser = LibraryUser::where('email', $request->email)->first();
-
-        if ($libraryUser && Hash::check($request->password, $libraryUser->password)) {
-            $user = $libraryUser;
-            $userType = 'library_user';
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validator->errors()->first(),
+                'data'    => (object)[]
+            ],422);
         }
-    }
 
-    /*
-    |---------------------------------------------------
-    | 3️⃣ Invalid Credentials
-    |---------------------------------------------------
-    */
+        $user = null;
+        $userType = null;
 
-    if (!$user) {
+        /*
+        |---------------------------------------------------
+        | 1️⃣ Check Library Owner
+        |---------------------------------------------------
+        */
+
+        $library = Library::where('email', $request->email)->first();
+
+        if ($library && Hash::check($request->password, $library->password)) {
+
+            $user = $library;
+            $userType = 'library';
+        }
+
+        /*
+        |---------------------------------------------------
+        | 2️⃣ Check Library Staff
+        |---------------------------------------------------
+        */
+
+        if (!$user) {
+
+            $libraryUser = LibraryUser::where('email', $request->email)->first();
+
+            if ($libraryUser && Hash::check($request->password, $libraryUser->password)) {
+                $user = $libraryUser;
+                $userType = 'library_user';
+            }
+        }
+
+        /*
+        |---------------------------------------------------
+        | 3️⃣ Invalid Credentials
+        |---------------------------------------------------
+        */
+
+        if (!$user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Invalid email or password',
+            ],401); // ⭐ CHANGED (added response code)
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ⭐ ADDED : Determine Library Record For Both Login Types
+        |--------------------------------------------------------------------------
+        */
+
+        $libraryRecord = $userType == 'library'
+            ? $user
+            : Library::find($user->library_id);
+
+        $libraryId = $libraryRecord->id; // ⭐ ADDED
+
+        /*
+        |--------------------------------------------------------------------------
+        | Determine is_last_step
+        |--------------------------------------------------------------------------
+        */
+
+        $is_last_step = 0;
+
+        if ($libraryRecord->is_paid) { // ⭐ CHANGED ($user -> $libraryRecord)
+            $is_last_step = 1;
+        }
+
+        if (Branch::where('library_id', $libraryId)->where('status', 1)->exists()) { // ⭐ CHANGED
+            $is_last_step = 2;
+        }
+
+        $isPlanComplete =
+            $libraryRecord->status == 1 && // ⭐ CHANGED
+            Plan::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
+            PlanType::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
+            PlanPrice::where('library_id', $libraryId)->exists(); // ⭐ CHANGED
+
+        if ($isPlanComplete) {
+            $is_last_step = 3;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ⭐ CHANGED : Email Verification Check (Works for both user types)
+        |--------------------------------------------------------------------------
+        */
+
+        if (is_null($libraryRecord->email_verified_at)) {
+            return response()->json([
+                'status' => false,
+                'message'=> 'Please verify your email before login',
+                'is_email_verified' => 0,
+                'is_last_step'      => $is_last_step,
+            ],403); // ⭐ CHANGED
+        }
+
+        /*
+        |---------------------------------------------------
+        | 4️⃣ Assign Role If Missing
+        |---------------------------------------------------
+        */
+
+        if ($userType == 'library' && !$user->hasRole('library')) {
+            $user->assignRole('admin'); // ⭐ CHANGED (role corrected)
+        }
+
+        if ($userType == 'library_user' && !$user->hasRole('admin_user')) {
+            $user->assignRole('admin_user');
+        }
+
+        /*
+        |---------------------------------------------------
+        | 5️⃣ Remove Old Tokens
+        |---------------------------------------------------
+        */
+
+        $user->tokens()->delete();
+
+        /*
+        |---------------------------------------------------
+        | 6️⃣ Create Sanctum Token
+        |---------------------------------------------------
+        */
+
+        $token = $user->createToken('library_token')->plainTextToken;
+
+        /*
+        |---------------------------------------------------
+        | 7️⃣ Store Device Info
+        |---------------------------------------------------
+        */
+        $deviceType = request()->header('device-type'); 
+        $deviceId   = request()->header('device-id');   
+
+        $user->devices()->updateOrCreate(
+            ['device_id' => $deviceId],
+            [
+                'device_type' => $deviceType,
+                'token'       => $token,
+                'guard_name'  => 'library_api',
+            ]
+        );
+
+        /*
+        |---------------------------------------------------
+        | 8️⃣ Get Branch Data (if Library)
+        |---------------------------------------------------
+        */
+
+        $branches = [];
+
+        if ($userType == 'library') {
+
+            $branches = Branch::leftJoin('hour','branches.id','=','hour.branch_id')
+                ->where('branches.library_id', $libraryId) // ⭐ CHANGED
+                ->select(
+                    'branches.id',
+                    'branches.name',
+                    'branches.uuid',
+                    'branches.display_name',
+                    'branches.status',
+                    'branches.is_profile',
+                    'hour.hour as operating_hour',
+                    'hour.seats'
+                )
+                ->get();
+        }
+
+        /*
+        |---------------------------------------------------
+        | 9️⃣ Response
+        |---------------------------------------------------
+        */
+
         return response()->json([
-            'status'  => false,
-            'message' => 'Invalid email or password',
-        ],401); // ⭐ CHANGED (added response code)
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ⭐ ADDED : Determine Library Record For Both Login Types
-    |--------------------------------------------------------------------------
-    */
-
-    $libraryRecord = $userType == 'library'
-        ? $user
-        : Library::find($user->library_id);
-
-    $libraryId = $libraryRecord->id; // ⭐ ADDED
-
-    /*
-    |--------------------------------------------------------------------------
-    | Determine is_last_step
-    |--------------------------------------------------------------------------
-    */
-
-    $is_last_step = 0;
-
-    if ($libraryRecord->is_paid) { // ⭐ CHANGED ($user -> $libraryRecord)
-        $is_last_step = 1;
-    }
-
-    if (Branch::where('library_id', $libraryId)->where('status', 1)->exists()) { // ⭐ CHANGED
-        $is_last_step = 2;
-    }
-
-    $isPlanComplete =
-        $libraryRecord->status == 1 && // ⭐ CHANGED
-        Plan::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
-        PlanType::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
-        PlanPrice::where('library_id', $libraryId)->exists(); // ⭐ CHANGED
-
-    if ($isPlanComplete) {
-        $is_last_step = 3;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ⭐ CHANGED : Email Verification Check (Works for both user types)
-    |--------------------------------------------------------------------------
-    */
-
-    if (is_null($libraryRecord->email_verified_at)) {
-        return response()->json([
-            'status' => false,
-            'message'=> 'Please verify your email before login',
-            'is_email_verified' => 0,
-            'is_last_step'      => $is_last_step,
-        ],403); // ⭐ CHANGED
-    }
-
-    /*
-    |---------------------------------------------------
-    | 4️⃣ Assign Role If Missing
-    |---------------------------------------------------
-    */
-
-    if ($userType == 'library' && !$user->hasRole('library')) {
-        $user->assignRole('library'); // ⭐ CHANGED (role corrected)
-    }
-
-    if ($userType == 'library_user' && !$user->hasRole('admin_user')) {
-        $user->assignRole('admin_user');
-    }
-
-    /*
-    |---------------------------------------------------
-    | 5️⃣ Remove Old Tokens
-    |---------------------------------------------------
-    */
-
-    $user->tokens()->delete();
-
-    /*
-    |---------------------------------------------------
-    | 6️⃣ Create Sanctum Token
-    |---------------------------------------------------
-    */
-
-    $token = $user->createToken('library_token')->plainTextToken;
-
-    /*
-    |---------------------------------------------------
-    | 7️⃣ Store Device Info
-    |---------------------------------------------------
-    */
-
-    $user->devices()->updateOrCreate(
-        ['device_id' => $request->device_id],
-        [
-            'device_type' => $request->device_type,
+            'status'      => true,
+            'message'     => 'Login successful',
             'token'       => $token,
-            'guard_name'  => 'library_api',
-        ]
-    );
-
-    /*
-    |---------------------------------------------------
-    | 8️⃣ Get Branch Data (if Library)
-    |---------------------------------------------------
-    */
-
-    $branches = [];
-
-    if ($userType == 'library') {
-
-        $branches = Branch::leftJoin('hour','branches.id','=','hour.branch_id')
-            ->where('branches.library_id', $libraryId) // ⭐ CHANGED
-            ->select(
-                'branches.id',
-                'branches.name',
-                'branches.uuid',
-                'branches.display_name',
-                'branches.status',
-                'branches.is_profile',
-                'hour.hour as operating_hour',
-                'hour.seats'
-            )
-            ->get();
+            'is_email_verified' => 1,
+            'is_last_step'      => $is_last_step,
+            'user_type'   => $userType,
+            'library_id'  => $libraryId, // ⭐ CHANGED
+            'data'        => $branches
+        ],200);
     }
-
-    /*
-    |---------------------------------------------------
-    | 9️⃣ Response
-    |---------------------------------------------------
-    */
-
-    return response()->json([
-        'status'      => true,
-        'message'     => 'Login successful',
-        'token'       => $token,
-        'is_email_verified' => 1,
-        'is_last_step'      => $is_last_step,
-        'user_type'   => $userType,
-        'library_id'  => $libraryId, // ⭐ CHANGED
-        'data'        => $branches
-    ],200);
-}
 
    
     public function libraryPlan()

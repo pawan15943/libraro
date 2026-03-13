@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
 
 
-
+Route::middleware(['device.check'])->group(function () {
 Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
     Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
@@ -67,6 +67,8 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
    
     
     
+});
+
 });
 
 // Learner login

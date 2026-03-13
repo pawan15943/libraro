@@ -22,12 +22,14 @@ class RegisterLibrary
             $data['password'] = bcrypt($data['password']);
             
             $data['slug'] = Str::slug($data['library_name']) . '-' . Str::lower(Str::random(6));
-            $deviceType = $data['device_type'] ?? null;
-            $deviceId   = $data['device_id'] ?? null;
+
+            $deviceType = request()->header('device-type'); 
+            $deviceId   = request()->header('device-id');   
+
             $referral_code   = $data['referral_code'] ?? null;
             $referral_type   = $data['referral_type'] ?? null;
 
-            unset($data['device_type'], $data['device_id'],$data['referral_code'],$data['referral_type']);
+            unset($data['referral_code'],$data['referral_type']);
             // Create Library
            
             $library = Library::create($data);
@@ -36,7 +38,7 @@ class RegisterLibrary
           
             // Generate OTP & Referral Code
             // $library->email_otp = rand(100000, 999999);
-            $library->email_otp = 12345;
+            $library->email_otp = 123456;
             $library->referral_code = ReferralHelper::generateLibraryReferralCode($library->id);
             $library->save();
             

@@ -84,5 +84,6 @@ class Kernel extends HttpKernel
         'check.app.version' => \App\Http\Middleware\CheckAppVersion::class,
         'enforce.guard' => \App\Http\Middleware\EnforceSingleGuard::class,
         'api_key' => \App\Http\Middleware\ApiKeyMiddleware::class,
+        'device.check' => \App\Http\Middleware\CheckDeviceHeader::class,
     ];
 }
