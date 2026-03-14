@@ -300,7 +300,7 @@ class LibraryAuthController extends Controller
 
         if (is_null($libraryRecord->email_verified_at)) {
             return response()->json([
-                'status' => false,
+                'status' => true,
                 'message'=> 'Please verify your email before login',
                 'is_email_verified' => 0,
                 'is_last_step'      => $is_last_step,
@@ -503,6 +503,7 @@ class LibraryAuthController extends Controller
                 })->values();
 
                 $plans[] = [
+                    'id'=>$subscription->id,
                     'name'           => $subscription->name,
                     'price'          => (int) $subscription->$feeColumn,
                     'original_price' => (int) ($subscription->$slashColumn ?? 0),
@@ -523,13 +524,25 @@ class LibraryAuthController extends Controller
         | Build Subscription Type List
         |--------------------------------------------------------------------------
         */
-
+        
+        $modeIds = [
+            'monthly'       => 1,
+            'yearly'        => 2,
+            'three_monthly' => 3,
+            'six_monthly'   => 4,
+            'two_yearly'    => 5,
+        ];
         $subscriptionTypes = collect($subscriptionPlans)
-            ->pluck('name')
-            ->map(function ($name) {
-                return ['name' => $name];
-            })
-            ->values();
+        ->pluck('name')
+        ->map(function ($name) use ($modeIds) {
+            return [
+                'id'   => $modeIds[$name] ?? null,
+                'name' => $name
+            ];
+        })
+        ->values();
+
+     
 
         /*
         |--------------------------------------------------------------------------
