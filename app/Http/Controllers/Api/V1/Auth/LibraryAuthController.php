@@ -30,7 +30,6 @@ class LibraryAuthController extends Controller
     {
         return response()->json([
             'status' => true,
-            'code' => $code,
             'message' => $message,
             'data' => $data
         ], $code);
@@ -534,13 +533,12 @@ class LibraryAuthController extends Controller
 
         return response()->json([
             'status'  => true,
-            'code'    => 200,
             'message' => 'Plans fetched successfully',
             'data'    => [
                 'subscription_type' => $subscriptionTypes,
                 'subscription_plan' => $subscriptionPlans
             ]
-        ]);
+        ],200);
     }
 
 
@@ -554,7 +552,6 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status'  => false,
-                'code'    => 422,
                 'message' => $validator->errors()->first(),
                 'data'    => (object)[]
             ], 422);
@@ -573,7 +570,6 @@ class LibraryAuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => false,
-                'code' => 200,
                 'message' => 'No user register with this email',
                 'data' => (object)[]
             ],200);
@@ -600,7 +596,6 @@ class LibraryAuthController extends Controller
 
             return response()->json([
                 'status' => true,
-                'code' => 200,
                 'message' => 'Reset Password link has been sent to your email address.',
                 'token'=>$token,
                 'data' => (object)[]
@@ -609,7 +604,6 @@ class LibraryAuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'code' => 500,
                 'message' => 'Failed to send email from mail service down',
                 
                 'data' => (object)[]
@@ -628,7 +622,6 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'code' => 422,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
                 'data' => (object)[]
@@ -640,7 +633,6 @@ class LibraryAuthController extends Controller
         if (!$record || !hash_equals($record->token, $request->token)) {
             return response()->json([
                 'status' => false,
-                'code' => 401,
                 'message' => 'Invalid or expired token.',
                 'data' => (object)[]
             ], 401);
@@ -652,7 +644,6 @@ class LibraryAuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => false,
-                'code' => 404,
                 'message' => 'User not found.',
                 'data' => (object)[]
             ], 404);
@@ -666,7 +657,6 @@ class LibraryAuthController extends Controller
 
         return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Password has been reset successfully.',
             'data' => [
                 'user_id' => $user->id,
@@ -685,7 +675,6 @@ class LibraryAuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'code' => 422,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
                 'data' => (object)[]
@@ -696,7 +685,6 @@ class LibraryAuthController extends Controller
 
           return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Branch detail fetched successfully.',
             'data' => [
                 'branch' => $branch
