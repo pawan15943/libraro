@@ -173,11 +173,17 @@ class LibraryAuthController extends Controller
                 ]
             );
         }
+
+        $userType = null;
+
+
         return response()->json([
             'status' => true,
             'message' => 'Email verified successfully.',
             'token' => $token,
             'is_email_verified' => 1,
+            'is_last_step'      => 0,
+            'user_type'   => 'library',
             'data' => [
                 'library_id' => $library->id
             ]
