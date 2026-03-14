@@ -174,7 +174,18 @@ class LibraryAuthController extends Controller
             );
         }
 
-        $userType = null;
+       
+      
+         $is_last_step = 0;
+
+        if ($library->is_paid) { // ⭐ CHANGED ($user -> $libraryRecord)
+            $is_last_step = 1;
+        }
+        $libraryId = $library->id; // ⭐ ADDED
+
+        if (Branch::where('library_id', $libraryId)->where('status', 1)->exists()) { // ⭐ CHANGED
+            $is_last_step = 2;
+        }
 
 
         return response()->json([
@@ -182,17 +193,57 @@ class LibraryAuthController extends Controller
             'message' => 'Email verified successfully.',
             'token' => $token,
             'is_email_verified' => 1,
-            'is_last_step'      => 0,
+            'is_last_step'      => $is_last_step,
             'user_type'   => 'library',
+            'data' => [
+                'library_id' => $request->library_id
+            ]
+        ], 200);
+    }
+
+   
+     public function resendEmailOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'library_id' => 'required|exists:libraries,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 200);
+        }
+
+        $library = Library::find($request->library_id);
+
+        if ($library->email_verified_at) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Email already verified.',
+            ], 200);
+        }
+
+        // Generate new OTP
+        $otp = rand(100000, 999999);
+
+        $library->email_otp = 123456;
+        // $library->email_otp = $otp;
+        $library->save();
+
+        // Send email again
+        event(new LibraryRegistered($library));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'OTP resent successfully.',
             'data' => [
                 'library_id' => $library->id
             ]
         ], 200);
     }
 
-   
-
-   public function login(Request $request)
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email'       => 'required|email',
@@ -403,47 +454,7 @@ class LibraryAuthController extends Controller
         ],200);
     }
 
-    public function resendEmailOtp(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'library_id' => 'required|exists:libraries,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => $validator->errors()->first(),
-            ], 200);
-        }
-
-        $library = Library::find($request->library_id);
-
-        if ($library->email_verified_at) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Email already verified.',
-            ], 200);
-        }
-
-        // Generate new OTP
-        $otp = rand(100000, 999999);
-
-        $library->email_otp = 123456;
-        // $library->email_otp = $otp;
-        $library->save();
-
-        // Send email again
-        event(new LibraryRegistered($library));
-
-        return response()->json([
-            'status' => true,
-            'message' => 'OTP resent successfully.',
-            'data' => [
-                'library_id' => $library->id
-            ]
-        ], 200);
-    }
-
+   
    
     public function libraryPlan()
     {
@@ -505,8 +516,8 @@ class LibraryAuthController extends Controller
                 $plans[] = [
                     'id'=>$subscription->id,
                     'name'           => $subscription->name,
-                    'price'          => (int) $subscription->$feeColumn,
-                    'original_price' => (int) ($subscription->$slashColumn ?? 0),
+                     'price'          => (string) $subscription->$feeColumn,
+                    'original_price' => (string) ($subscription->$slashColumn ?? '0'),
                     'features'       => $featureList
                 ];
             }
@@ -572,7 +583,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => $validator->errors()->first(),
-                'data'    => (object)[]
+              
             ], 422);
         }
 
@@ -590,7 +601,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'No user register with this email',
-                'data' => (object)[]
+               
             ],200);
         }
 
@@ -617,7 +628,6 @@ class LibraryAuthController extends Controller
                 'status' => true,
                 'message' => 'Reset Password link has been sent to your email address.',
                 'token'=>$token,
-                'data' => (object)[]
             ], 200);
 
         } catch (\Exception $e) {
@@ -625,7 +635,6 @@ class LibraryAuthController extends Controller
                 'status' => false,
                 'message' => 'Failed to send email from mail service down',
                 
-                'data' => (object)[]
             ], 500);
         }
     }
@@ -643,7 +652,7 @@ class LibraryAuthController extends Controller
                 'status' => false,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
-                'data' => (object)[]
+              
             ], 422);
         }
 
@@ -653,7 +662,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Invalid or expired token.',
-                'data' => (object)[]
+              
             ], 401);
         }
 
@@ -664,7 +673,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'User not found.',
-                'data' => (object)[]
+                
             ], 404);
         }
 
@@ -733,7 +742,7 @@ class LibraryAuthController extends Controller
         ]);
        
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = authLibraryId();
 
        try {
             $data = $service->razorpayPaymentCore(
@@ -821,7 +830,7 @@ class LibraryAuthController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Payment successful'
+                'message' => 'Your Payment successful'
             ]);
 
         } catch (\Exception $e) {
@@ -835,20 +844,12 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], 200);
         }
     }
 
     public function configure(Request $request,LibraryConfigurationService $service) {
-       $user = auth('library_api')->user();
-
-        if ($user instanceof \App\Models\Library) {
-            $libraryId = $user->id;
-        }
-
-        if ($user instanceof \App\Models\LibraryUser) {
-            $libraryId = $user->library_id;
-        }
+        $libraryId = authLibraryId();
 
        
          $request->validate([

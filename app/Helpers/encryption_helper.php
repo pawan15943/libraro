@@ -2202,3 +2202,21 @@ if (!function_exists('calculatePlanDays')) {
     }
 }
 
+if (!function_exists('authLibraryId')) {
+
+    function authLibraryId()
+    {
+        $user = auth('library_api')->user();
+
+        if ($user instanceof \App\Models\Library) {
+            return $user->id;
+        }
+
+        if ($user instanceof \App\Models\LibraryUser) {
+            return $user->library_id;
+        }
+
+        return null;
+    }
+}
+

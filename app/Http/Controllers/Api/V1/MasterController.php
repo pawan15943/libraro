@@ -83,7 +83,7 @@ class MasterController extends Controller
         $monthlyOptions = [
             ['value' => 30, 'label' => '30 Days'],
             ['value' => 28, 'label' => '28 Days'],
-            ['value' => null, 'label' => 'According to Months'],
+            ['value' => '', 'label' => 'Caleder wise'],
         ];
          $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get();
          $exams=DB::table('exams')->whereNull('deleted_at')->select('id','name',)->get();
@@ -174,27 +174,27 @@ class MasterController extends Controller
     public function getPriceApi(Request $request, PlanService $priceService)
     {
         $validated = $request->validate([
-        'plan_id'        => 'required|exists:plans,id',
-        'plan_type_id'   => 'required|exists:plan_types,id',
-        'plan_start_date'=> 'nullable|date',
-        'branch_id'      => 'required|exists:branches,id',
+            'plan_id'        => 'required|exists:plans,id',
+            'plan_type_id'   => 'required|exists:plan_types,id',
+            'plan_start_date'=> 'nullable|date',
+            'branch_id'      => 'required|exists:branches,id',
 
-        'locker_amount'  => 'nullable|numeric',
-        'discount_type'  => 'nullable|in:percentage,amount',
-        'discount_value' => 'nullable|numeric',
-        'paid_amount'    => 'nullable|numeric'
-    ]);
+            'locker_amount'  => 'nullable|numeric',
+            'discount_type'  => 'nullable|in:percentage,amount',
+            'discount_value' => 'nullable|numeric',
+            'paid_amount'    => 'nullable|numeric'
+        ]);
 
        $result = $priceService->calculatePrice(
-        $validated['plan_id'],
-        $validated['plan_type_id'],
-        $validated['plan_start_date'] ?? null,
-        $validated['branch_id'],
-        $validated['locker_amount'] ?? 0,
-        $validated['discount_type'] ?? null,
-        $validated['discount_value'] ?? 0,
-        $validated['paid_amount'] ?? 0
-    );
+            $validated['plan_id'],
+            $validated['plan_type_id'],
+            $validated['plan_start_date'] ?? null,
+            $validated['branch_id'],
+            $validated['locker_amount'] ?? 0,
+            $validated['discount_type'] ?? null,
+            $validated['discount_value'] ?? 0,
+            $validated['paid_amount'] ?? 0
+        );
 
         return response()->json([
             'status' => true,
