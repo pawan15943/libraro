@@ -70,7 +70,7 @@ class LearnerOperationService
 
             if($seat){
                
-                 if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
+                 if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE','EDIT'])){
                     $seatCheck = checkAvailability($dto->branch_id,$seat,$dto->learner_id,$dto->plan_type_id,$dto->plan_id,$start_date);
                  }
                  if($dto->operation=='CHANGE PLAN'){

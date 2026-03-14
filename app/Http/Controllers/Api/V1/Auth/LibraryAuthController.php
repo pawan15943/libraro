@@ -246,7 +246,7 @@ class LibraryAuthController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => 'Invalid email or password',
-            ],401); // ⭐ CHANGED (added response code)
+            ],200); // ⭐ CHANGED (added response code)
         }
 
         /*
@@ -390,8 +390,11 @@ class LibraryAuthController extends Controller
             'is_email_verified' => 1,
             'is_last_step'      => $is_last_step,
             'user_type'   => $userType,
-            'library_id'  => $libraryId, // ⭐ CHANGED
-            'data'        => $branches
+            'data'    => [
+                    'library_id' => $libraryId,
+                    'branch'=>$branches
+                ]
+            
         ],200);
     }
 
