@@ -37,11 +37,18 @@ class LearnerOperationService
             /* Plan dates */
              if($dto->operation=='CHANGE PLAN'){
                  $start_date = Carbon::parse($lastDetail->plan_start_date);
+                 
              }else{
-                 $start_date = Carbon::parse($dto->start_date ?? $lastDetail->plan_end_date)->addDay();
+                if($dto->start_date){
+                     $start_date = Carbon::parse($dto->start_date);
+                }else{
+                     $start_date = Carbon::parse($lastDetail->plan_end_date)->addDay();
+                }
+                
+                
              }
            
-            
+           
 
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
@@ -50,10 +57,16 @@ class LearnerOperationService
 
             $planType = PlanType::findOrFail($dto->plan_type_id);
             $hours = $planType->slot_hours;
-            $seat=$lastDetail->seat_no;
+            if($dto->operation=='REACTIVE'){
+                $seat=$dto->seat_no;
+            }else{
+                $seat=$lastDetail->seat_no;
+            }
+            
              
             
             /* Seat check */
+           
 
             if($seat){
                

@@ -18,7 +18,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::post('library/verify-email', [LibraryAuthController::class, 'verifyEmailOtp']);
     Route::post('library/forgot-password', [LibraryAuthController::class, 'sendResetLinkEmail']);
     Route::post('library/reset-password', [LibraryAuthController::class, 'resetPassword']);
-    Route::post('library/resend-email-otp', [LibraryAuthController::class, 'resendEmailOtp']);
+    Route::post('library/resend-otp', [LibraryAuthController::class, 'resendEmailOtp']);
    
 });
 

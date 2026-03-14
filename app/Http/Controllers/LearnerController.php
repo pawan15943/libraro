@@ -447,7 +447,6 @@ class LearnerController extends Controller
         
         $dto = LearnerOperationDTO::fromRequest($request);
        
-       
         $result = $service->process($dto);
 
         if ($request->expectsJson()) {
