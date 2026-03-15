@@ -798,10 +798,10 @@ class LibraryAuthController extends Controller
     {
         $validated = $request->validate([
             'transaction_id'      => 'required|exists:library_transactions,id',
-            'razorpay_payment_id' => 'required',
-            'razorpay_order_id'   => 'required',
-            'razorpay_signature'  => 'required',
-            'payment_status'      => 'required',
+            'payment_status'      => 'required|in:success,failed',
+            'razorpay_payment_id' => 'required_if:payment_status,success',
+            'razorpay_order_id'   => 'required_if:payment_status,success',
+            'razorpay_signature'  => 'required_if:payment_status,success',
             'payment_response'    => 'nullable'
         ]);
 
