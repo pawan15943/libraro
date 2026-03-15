@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use App\Events\LibraryRegistered;
+use App\Models\TempOrder;
 
 class LibraryAuthController extends Controller
 {
@@ -759,7 +760,8 @@ class LibraryAuthController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Free plan activated successfully'
+                    'message' => 'Free plan activated successfully',
+                     'is_paid'=>true         // if free then true otherwise false
                 ]);
             }
 
@@ -772,6 +774,7 @@ class LibraryAuthController extends Controller
                     'currency' => 'INR',
                     'transaction_id' => (string) $data['transaction']->id,
                     'key_id' => config('services.razorpay.key'),
+                    'is_paid'=>false         // if free then true otherwise false
                 ]
             ]);
 
@@ -795,6 +798,8 @@ class LibraryAuthController extends Controller
             'razorpay_payment_id' => 'required',
             'razorpay_order_id'   => 'required',
             'razorpay_signature'  => 'required',
+            'payment_status'      => 'required',
+            'payment_response'    => 'nullable'
         ]);
 
         DB::beginTransaction();
@@ -823,15 +828,24 @@ class LibraryAuthController extends Controller
             // Finalize subscription
             $service->finalize(
                 $transaction,
-                $validated['razorpay_payment_id']
+                $validated['razorpay_payment_id'],
+                 $validated['payment_response']
             );
 
             DB::commit();
 
-            return response()->json([
+            $response = [
                 'status' => true,
-                'message' => 'Your Payment successful'
-            ]);
+                'message' => 'Your payment successful'
+            ];
+
+            TempOrder::where('razorpay_order_id', $validated['razorpay_order_id'])
+                ->update([
+                    'payment_status' => 'success',
+                    'response'   => json_encode($response)
+                ]);
+
+           return response()->json($response,200);
 
         } catch (\Exception $e) {
 
@@ -840,11 +854,26 @@ class LibraryAuthController extends Controller
             \Log::error('Payment Verification Failed', [
                 'error' => $e->getMessage()
             ]);
-
-            return response()->json([
+            $response = [
                 'status' => false,
-                'message' => $e->getMessage()
-            ], 200);
+                'message' => $e->getMessage(),
+                'data' => [
+                    'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
+                    'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
+                ]
+            ];
+
+            // save error in temp_orders
+            TempOrder::where('razorpay_order_id', $validated['razorpay_order_id'])
+                ->update([
+                    'payment_status' => 'failed',
+                    'error_message'  => $e->getMessage(),
+                    'response'   => json_encode($response)
+                ]);
+
+            return response()->json($response,200);
+
+           
         }
     }
 
