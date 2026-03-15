@@ -761,7 +761,10 @@ class LibraryAuthController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Free plan activated successfully',
-                     'is_paid'=>true         // if free then true otherwise false
+                    'data' => [
+                         'is_paid'=>true         // if free then true otherwise false
+                    ]
+                    
                 ]);
             }
 
