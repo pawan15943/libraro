@@ -795,112 +795,112 @@ class LibraryAuthController extends Controller
     }
 
     public function verifyPaymentApi(Request $request, LibraryPaymentService $service)
-    {
-        $request->merge([
-            'payment_status' => strtolower($request->payment_status)
-        ]);
-        $validated = $request->validate([
-            'transaction_id'      => 'required|exists:library_transactions,id',
-            'payment_status'      => 'required|in:success,failed',
-            'razorpay_payment_id' => 'required_if:payment_status,success',
-            'razorpay_order_id'   => 'required_if:payment_status,success',
-            'razorpay_signature'  => 'required_if:payment_status,success',
-            'payment_response'    => 'nullable'
-        ]);
+{
+    $request->merge([
+        'payment_status' => strtolower($request->payment_status)
+    ]);
 
-        DB::beginTransaction();
+    $validated = $request->validate([
+        'transaction_id'      => 'required|exists:library_transactions,id',
+        'payment_status'      => 'required|in:success,failed',
+        'razorpay_payment_id' => 'required_if:payment_status,success',
+        'razorpay_order_id'   => 'required_if:payment_status,success',
+        'razorpay_signature'  => 'required_if:payment_status,success',
+        'payment_response'    => 'nullable'
+    ]);
 
-        try {
+    $tempOrder = TempOrder::where('library_transaction_id', $validated['transaction_id'])->first();
 
-            $transaction = LibraryTransaction::where('id', $validated['transaction_id'])
-                ->where('is_paid', 0)
-                ->lockForUpdate()
-                ->firstOrFail();
+    if ($validated['payment_status'] === 'failed') {
 
-           if ($validated['payment_status'] === 'failed') {
-
-                TempOrder::where('library_transaction_id', $validated['transaction_id'])
-                    ->update([
-                        'payment_status' => 'failed',
-                        'response'       => $validated['payment_response']
-                    ]);
-
-                DB::commit();
-
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Payment failed',
-                    'data' => [
-                        'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
-                        'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
-                    ]
-                ], 200);
-            }
-            // Prevent double payment
-            if ($transaction->is_paid == 1) {
-                throw new \Exception('Payment already processed');
-            }
-
-            // Verify signature
-            if (!$service->verifySignature(
-                $validated['razorpay_order_id'],
-                $validated['razorpay_payment_id'],
-                $validated['razorpay_signature']
-            )) {
-                throw new \Exception('Invalid payment signature');
-            }
-
-            // Finalize subscription
-            $service->finalize(
-                $transaction,
-                $validated['razorpay_payment_id'],
-                 $validated['payment_response']
-            );
-
-            DB::commit();
-
-            $response = [
-                'status' => true,
-                'message' => 'Your payment successful'
-            ];
-
-            TempOrder::where('razorpay_order_id', $validated['razorpay_order_id'])
-                ->update([
-                    'payment_status' => 'success',
-                    'response'   => json_encode($response)
-                ]);
-
-           return response()->json($response,200);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            \Log::error('Payment Verification Failed', [
-                'error' => $e->getMessage()
+        if ($tempOrder) {
+            $tempOrder->update([
+                'payment_status' => 'failed',
+                'response' => $validated['payment_response'] ?? null
             ]);
-            $response = [
-                'status' => false,
-                'message' => $e->getMessage(),
-                'data' => [
-                    'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
-                    'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
-                ]
-            ];
-
-            // save error in temp_orders
-            TempOrder::where('razorpay_order_id', $validated['razorpay_order_id'])
-                ->update([
-                    'payment_status' => 'failed',
-                    'error_message'  => $e->getMessage(),
-                    'response'   => json_encode($response)
-                ]);
-
-            return response()->json($response,200);
-
-           
         }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Payment failed',
+            'data' => [
+                'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
+                'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
+            ]
+        ], 200);
     }
+
+    DB::beginTransaction();
+
+    try {
+
+        $transaction = LibraryTransaction::where('id', $validated['transaction_id'])
+            ->where('is_paid', 0)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($transaction->is_paid == 1) {
+            throw new \Exception('Payment already processed');
+        }
+
+        if (!$service->verifySignature(
+            $validated['razorpay_order_id'],
+            $validated['razorpay_payment_id'],
+            $validated['razorpay_signature']
+        )) {
+            throw new \Exception('Invalid payment signature');
+        }
+
+        $service->finalize(
+            $transaction,
+            $validated['razorpay_payment_id'],
+            $validated['payment_response']
+        );
+
+        DB::commit();
+
+        $response = [
+            'status' => true,
+            'message' => 'Your payment successful'
+        ];
+
+        if ($tempOrder) {
+            $tempOrder->update([
+                'payment_status' => 'success',
+                'response' => json_encode($response)
+            ]);
+        }
+
+        return response()->json($response, 200);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        \Log::error('Payment Verification Failed', [
+            'error' => $e->getMessage()
+        ]);
+
+        $response = [
+            'status' => false,
+            'message' => $e->getMessage(),
+            'data' => [
+                'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
+                'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
+            ]
+        ];
+
+        if ($tempOrder) {
+            $tempOrder->update([
+                'payment_status' => 'failed',
+                'error_message'  => $e->getMessage(),
+                'response'       => json_encode($response)
+            ]);
+        }
+
+        return response()->json($response, 200);
+    }
+}
 
     public function configure(Request $request,LibraryConfigurationService $service) {
         $libraryId = authLibraryId();
