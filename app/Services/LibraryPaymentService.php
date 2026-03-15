@@ -83,6 +83,8 @@ class LibraryPaymentService
         ];
     }
 
+    
+
     /*
     |--------------------------------------------------------------------------
     | Verify Razorpay Signature
@@ -106,7 +108,7 @@ class LibraryPaymentService
     |--------------------------------------------------------------------------
     */
 
-    public function finalize(LibraryTransaction $transaction, string $paymentId): void
+    public function finalize(LibraryTransaction $transaction, string $paymentId,$response = null): void
     {
         $duration = $transaction->month ?? 0;
 
