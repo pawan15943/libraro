@@ -768,9 +768,9 @@ class LibraryAuthController extends Controller
                 'message' => 'Order created successfully',
                 'data' => [
                     'order_id' => $data['order']['id'],
-                    'amount' => $data['order']['amount'],
+                    'amount' => (string) $data['order']['amount'],
                     'currency' => 'INR',
-                    'transaction_id' => $data['transaction']->id,
+                    'transaction_id' => (string) $data['transaction']->id,
                     'key_id' => config('services.razorpay.key'),
                 ]
             ]);
