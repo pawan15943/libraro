@@ -796,6 +796,9 @@ class LibraryAuthController extends Controller
 
     public function verifyPaymentApi(Request $request, LibraryPaymentService $service)
     {
+        $request->merge([
+            'payment_status' => strtolower($request->payment_status)
+        ]);
         $validated = $request->validate([
             'transaction_id'      => 'required|exists:library_transactions,id',
             'payment_status'      => 'required|in:success,failed',
@@ -814,6 +817,25 @@ class LibraryAuthController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
+           if ($validated['payment_status'] === 'failed') {
+
+                TempOrder::where('library_transaction_id', $validated['transaction_id'])
+                    ->update([
+                        'payment_status' => 'failed',
+                        'response'       => $validated['payment_response']
+                    ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment failed',
+                    'data' => [
+                        'razorpay_payment_id' => $validated['razorpay_payment_id'] ?? null,
+                        'razorpay_order_id'   => $validated['razorpay_order_id'] ?? null,
+                    ]
+                ], 200);
+            }
             // Prevent double payment
             if ($transaction->is_paid == 1) {
                 throw new \Exception('Payment already processed');
