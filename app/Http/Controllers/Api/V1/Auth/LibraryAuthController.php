@@ -870,7 +870,7 @@ class LibraryAuthController extends Controller
 
             $tempOrder->update([
                 'payment_status' => 'success',
-                'response' => json_encode($response)
+                'response' => $validated['payment_response']
             ]);
 
             return response()->json($response, 200);
@@ -895,7 +895,7 @@ class LibraryAuthController extends Controller
             $tempOrder->update([
                 'payment_status' => 'failed',
                 'error_message'  => $e->getMessage(),
-                'response'       => json_encode($response)
+                'response'       => $validated['payment_response']
             ]);
 
             return response()->json($response, 200);
