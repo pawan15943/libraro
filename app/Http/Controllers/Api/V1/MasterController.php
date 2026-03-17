@@ -81,8 +81,8 @@ class MasterController extends Controller
         */
 
         $monthlyOptions = [
-            ['value' => 30, 'label' => '30 Days'],
-            ['value' => 28, 'label' => '28 Days'],
+            ['value' => '30', 'label' => '30 Days'],
+            ['value' => '28', 'label' => '28 Days'],
             ['value' => '', 'label' => 'Caleder wise'],
         ];
          $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get();
@@ -92,7 +92,6 @@ class MasterController extends Controller
 
         return response()->json([
             'status' => true,
-            'code'   => 200,
             'message'=> 'Static master data fetched successfully',
             'data'   => [
                 'plan_duration' => $planDurations,
@@ -119,7 +118,6 @@ class MasterController extends Controller
 
         return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Plans fetched successfully',
             'data' => $plans
         ]);
@@ -144,7 +142,6 @@ class MasterController extends Controller
 
         return response()->json([
             'status' => true,
-            'code' => 200,
             'message' => 'Plan types fetched successfully',
             'data' => $data
         ]);
@@ -165,7 +162,6 @@ class MasterController extends Controller
 
         return response()->json([
             'status'  => true,
-            'code'    => 200,
             'message' => 'Chargeable days calculated successfully',
             'data'    => $daysInfo
         ]);
@@ -198,7 +194,6 @@ class MasterController extends Controller
 
         return response()->json([
             'status' => true,
-            'code'   => 200,
             'data'   => $result
         ]);
     }
@@ -1025,6 +1020,97 @@ class MasterController extends Controller
             ],500);
         }
     }
+
+    public function editLibraryUser($id)
+    {
+        $libraryId = auth('library_api')->id();
+
+        $user = LibraryUser::where('id', $id)
+            ->where('library_id', $libraryId)
+            ->select(
+                'id',
+                'name',
+                'email',
+                'mobile',
+                'profile_picture'
+            )
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found'
+            ],404);
+        }
+
+        // Branch ids (stored as json)
+       $branch = Branch::whereIn('id',$user->branch_id)->select('id','name')->get();
+
+        // User role
+        $role = $user->roles()->select('id','name')->first();
+
+        // Profile picture full url
+        if ($user->profile_picture) {
+            $user->profile_picture = asset('storage/'.$user->profile_picture);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'User detail fetched successfully',
+            'data' => [
+                'user' => $user,
+                'role' => $role,
+                'branch'=>$branch
+            ]
+        ]);
+    }
+
+    public function libraryUserList()
+{
+    $libraryId = auth('library_api')->id();
+
+    $users = LibraryUser::where('library_id', $libraryId)
+        ->with('roles:id,name')
+        ->select(
+            'id',
+            'name',
+            'email',
+            'mobile',
+            'branch_id',
+            'profile_picture',
+            'status'
+        )
+        ->latest()
+        ->get();
+
+    $users->transform(function ($user) {
+
+        // Branch names
+        $branchIds = $user->branch_id ?? [];
+
+        $branches = Branch::whereIn('id', $branchIds)
+            ->pluck('name');
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'mobile' => $user->mobile,
+            'email' => $user->email,
+            'role' => optional($user->roles->first())->name,
+            'branches' => $branches,
+            'status' => $user->status ? 'Active' : 'Inactive',
+            'profile_picture' => $user->profile_picture
+                ? asset('storage/'.$user->profile_picture)
+                : null
+        ];
+    });
+
+    return response()->json([
+        'status' => true,
+        'message' => 'User list fetched successfully',
+        'data' => $users
+    ]);
+}
 
     public function assignPermissions(Request $request)
     {

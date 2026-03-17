@@ -1953,6 +1953,8 @@ if (!function_exists('normalizeTimeRange')) {
     }
 }
 
+//for all operation book,edit,renew,upgrade,changeplan/platype,reactive
+
 if (!function_exists('checkAvailability')) {
     function checkAvailability(int $branchId,?int $seatNo,?int $learnerId,int $planTypeId,string $planId,string $startDate): array {
 
@@ -1994,15 +1996,7 @@ if (!function_exists('checkAvailability')) {
                 'plan_types.day_type_id'
             ]);
 
-        // 🔴 All Day / Night blocks
-        // if ($bookings->whereIn('day_type_id', [8, 9])->isNotEmpty()) {
-        //     return [
-        //         'error' => true,
-        //         'message' => 'Seat already booked for all day or night'
-        //     ];
-        // }
-
-        // ⏰ Time overlap
+       
         
         foreach ($bookings as $booking) {
 
@@ -2017,25 +2011,47 @@ if (!function_exists('checkAvailability')) {
                         $req['start'] < $exist['end'] &&
                         $req['end'] > $exist['start']
                     ) {
-                        if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                        ->where('learner_detail.branch_id', $branchId)
-                        ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists()){
-                            return [
-                            'error' => true,
-                            'message' => 'This seat already have a future booking'
-                            ];
-                        }else{
-                            return [
+                        // if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                        // ->where('learner_detail.branch_id', $branchId)
+                        // ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists()){
+                        //     return [
+                        //     'error' => true,
+                        //     'message' => 'This seat already have a future booking'
+                        //     ];
+                        // }else{
+                        //     return [
+                        //     'error' => true,
+                        //     'message' => 'Time slot overlaps with existing booking'
+                        //     ];
+                        // }
+
+                         return [
                             'error' => true,
                             'message' => 'Time slot overlaps with existing booking'
                             ];
-                        }
                       
                         
                     }
                 }
             }
         }
+
+        // future booking protection
+        $futureBooking = LearnerDetail::where('branch_id', $branchId)
+            ->where('seat_no', $seatNo)
+            ->whereDate('plan_start_date', '>', today())
+            ->when($learnerId, fn ($q) =>
+                $q->where('learner_id', '!=', $learnerId)
+            )
+            ->exists();
+
+        if ($futureBooking) {
+            return [
+                'error' => true,
+                'message' => 'Seat already has a future booking'
+            ];
+        }
+
 
         return ['error' => false];
     }

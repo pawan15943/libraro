@@ -38,7 +38,11 @@ class LearnerOperationService
              if($dto->operation=='CHANGE PLAN'){
                  $start_date = Carbon::parse($lastDetail->plan_start_date);
                  
-             }else{
+             } elseif($dto->operation == 'EDIT'){
+                $start_date = $dto->start_date
+                    ? Carbon::parse($dto->start_date)
+                    : Carbon::parse($lastDetail->plan_start_date);
+            }else{
                 if($dto->start_date){
                      $start_date = Carbon::parse($dto->start_date);
                 }else{
@@ -57,7 +61,7 @@ class LearnerOperationService
 
             $planType = PlanType::findOrFail($dto->plan_type_id);
             $hours = $planType->slot_hours;
-            if($dto->operation=='REACTIVE'){
+            if(in_array($dto->operation,['REACTIVE','EDIT'])){
                 $seat=$dto->seat_no;
             }else{
                 $seat=$lastDetail->seat_no;
@@ -67,7 +71,7 @@ class LearnerOperationService
             
             /* Seat check */
            
-
+            $startDateBlocked = false;
             if($seat){
                
                  if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE','EDIT'])){
@@ -78,10 +82,20 @@ class LearnerOperationService
                  }
 
                 if($seatCheck['error']){
-                    return [
-                        'success' => false,
-                        'message' => $seatCheck['message']
-                    ];
+                   if ($dto->operation == 'EDIT') {
+                        // Only block start date update
+                        $startDateBlocked = true;
+
+                        // revert start date to previous
+                        $start_date = Carbon::parse($lastDetail->plan_start_date);
+                        $endDate = Carbon::parse($lastDetail->plan_end_date);
+
+                    } else {
+                        return [
+                            'success' => false,
+                            'message' => $seatCheck['message']
+                        ];
+                    }
                 }
             }
 
@@ -103,8 +117,8 @@ class LearnerOperationService
                
             }else{
                 
-
-                $detail = $this->updateDetail($dto,$endDate,$hours,$detailstatus,$seat);
+               
+                $detail = $this->updateDetail($dto,$start_date,$endDate,$hours,$detailstatus,$seat,$startDateBlocked);
 
             }
 
@@ -123,6 +137,7 @@ class LearnerOperationService
 
             return [
                 'success'=>true,
+                'start_date_blocked' => $startDateBlocked,
                 'message'=>'Operation completed'
             ];
 
@@ -305,10 +320,10 @@ class LearnerOperationService
 
 
     private function updateDetail(
-        $dto,
+        $dto,$start_date,
         $endDate,
         $hours,
-        $detailstatus,$seat
+        $detailstatus,$seat,$startDateBlocked
     ){
 
         $detail = LearnerDetail::where(
@@ -323,13 +338,66 @@ class LearnerOperationService
             'plan_price_id'=>$dto->plan_price,
 
             'seat_no'=>$seat,
-
+       
             'hour'=>$hours,
 
-            'plan_end_date'=>$endDate,
+            // 'plan_end_date'=>$endDate,
 
             'status'=>$detailstatus
         ]);
+        if($dto->operation == 'EDIT' && !$startDateBlocked){
+            $detail->plan_start_date = $start_date;
+            $detail->plan_end_date = $endDate;
+        }
+
+        return $detail;
+    }
+
+   private function editDetail(
+        $dto,
+        $start_date,
+        $endDate,
+        $hours,
+        $detailstatus,
+        $seat
+    ){
+        $detail = LearnerDetail::where('learner_id',$dto->learner_id)
+            ->latest()
+            ->first();
+
+        if(!$detail){
+            throw new Exception("Learner detail not found");
+        }
+
+        if($dto->exam_id){
+            $detail->exam_id = $dto->exam_id;
+        }
+
+        if($dto->plan_id){
+            $detail->plan_id = $dto->plan_id;
+        }
+
+        if($dto->plan_type_id){
+            $detail->plan_type_id = $dto->plan_type_id;
+        }
+
+        if($dto->plan_price){
+            $detail->plan_price_id = $dto->plan_price;
+        }
+
+        if($dto->start_date){
+            $detail->plan_start_date = $start_date;
+            $detail->plan_end_date   = $endDate;
+        }
+
+        if($seat){
+            $detail->seat_no = $seat;
+        }
+
+        $detail->hour = $hours;
+        $detail->status = $detailstatus;
+
+        $detail->save();
 
         return $detail;
     }
@@ -353,6 +421,35 @@ class LearnerOperationService
         if($dto->locker_no){
             $learner->locker_no = $dto->locker_no;
         }
+            // Optional profile fields
+        if($dto->name){
+            $learner->name = $dto->name;
+        }
+
+        if($dto->email){
+            $learner->email = encryptData($dto->email);
+        }
+
+        if($dto->mobile){
+            $learner->mobile = encryptData($dto->mobile);
+        }
+
+        if($dto->dob){
+            $learner->dob = $dto->dob;
+        }
+
+        if($dto->father_name){
+            $learner->father_name = $dto->father_name;
+        }
+
+        if($dto->address){
+            $learner->address = $dto->address;
+        }
+
+        if($dto->remark){
+            $learner->remark = $dto->remark;
+        }
+
 
         $learner->save();
     }

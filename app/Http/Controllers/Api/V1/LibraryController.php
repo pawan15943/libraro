@@ -4,7 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Floor;
+use App\Models\Hour;
 use App\Models\Library;
+use App\Models\LibraryTransaction;
+use App\Models\Plan;
+use App\Models\PlanPrice;
+use App\Models\PlanType;
+use App\Models\Subscription;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -12,41 +19,190 @@ use DB;
 
 class LibraryController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | library detail API
+    |--------------------------------------------------------------------------
+    */
+
+   public function getLibraryDetail()
+   {
+      $libraryId = authLibraryId();
+
+      // Library detail
+      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile')->findOrFail($libraryId);
+
+      // Branches
+      $branches = Branch::where('library_id', $libraryId)
+         ->where('status', 1)
+         ->select('id', 'name')
+         ->get();
+       $getPaymentUpi=  Branch::where('library_id', $libraryId)
+         ->where('status', 1)->where('upi_id','!=',null)
+         ->select('upi_id')
+         ->first();
+
+      // Active plan with subscription name
+      $activePlan = LibraryTransaction::where('library_transactions.library_id', $libraryId)
+         ->where('library_transactions.status', 1)
+         ->leftJoin('subscriptions', 'subscriptions.id', '=', 'library_transactions.subscription')
+         ->select(
+               'library_transactions.subscription as plan_id',
+               'subscriptions.name as plan_name',
+               'library_transactions.month',
+               'library_transactions.start_date',
+               'library_transactions.end_date',
+               'library_transactions.status',
+               'library_transactions.paid_amount'
+         )
+         ->latest('library_transactions.id')
+         ->first();
+
+      $planData = null;
+
+      if ($activePlan) {
+
+         $planTypes = [
+               1  => 'monthly',
+               3  => 'three_monthly',
+               6  => 'six_monthly',
+               12 => 'yearly',
+               24 => 'two_yearly',
+         ];
+
+         $planType = $planTypes[$activePlan->month] ?? $activePlan->month . '_months';
+
+         $planData = [
+               'plan_id'    => $activePlan->plan_id,
+               'plan_name'  => $activePlan->plan_name ?? '',
+               'plan_type'  => $planType,
+               'price'      => (string) ($activePlan->paid_amount ?? ''),
+               'start_date' => $activePlan->start_date,
+               'end_date'   => $activePlan->end_date,
+               'status'     => $activePlan->status ? 'active' : 'inactive',
+         ];
+      }
+
+      return response()->json([
+         'status'  => true,
+         'message' => 'Library data fetched successfully',
+         'data'    => [
+               'library_id'     => $library->library_id,
+               'library_name'   => $library->library_name,
+               'library_email'  => $library->library_email,
+               'library_mobile' => $library->library_mobile,
+                'pyment_upi'=>$getPaymentUpi->upi_id,
+               'branches'       => $branches,
+               'active_plan'    => $planData,
+              
+         ]
+      ]);
+   }
+
+   /*
+    |--------------------------------------------------------------------------
+    | Current Branch API
+    |--------------------------------------------------------------------------
+    */
+
+  public function getCurrentBranchDetail()
+   {
+      $branchId  = getCurrentBranch();
+      $libraryId = authLibraryId();
+
+      // Branch details
+      $branch = Branch::select(
+         'name as branch_name',
+         'founder_day as founded_date',
+         'email',
+         'mobile as contact_number',
+         'upi_id',
+         'extend_days',
+         'locker_amount'
+      )->where('id', $branchId)->first();
+
+      // Branch master
+      $branchMaster = Hour::where('branch_id', $branchId)
+         ->select(
+               'seats as total_seats',
+               'hour as operating_hours'
+         )->first();
+
+      // Plans
+      $plans = Plan::where('library_id', $libraryId)
+         ->get();
+
+      // Floors
+      $floors = Floor::where('branch_id', $branchId)
+         ->select(
+               'floor_no',
+               'name as floor_name',
+               'from_seat',
+               'to_seat',
+               'total_seats'
+         )->get();
+
+      // Shifts
+      $shifts = collect();
+
+      if ($branchId) {
+            // PlanPrice::leftJoin('plan_prices', 'plan_prices.plan_type_id', '=', 'plan_types.id')
+         $shifts = PlanType::withoutGlobalScopes()
+               ->where('branch_id', $branchId)
+               ->select(
+                  'name',
+                  'day_type_id as type',
+                  'name as custom_name',
+                  'start_time',
+                  'end_time',
+                  'slot_hours as duration_hours',
+               )
+               ->get();
+      }
+
+      return response()->json([
+         'status'  => true,
+         'message' => 'Branch data fetched successfully',
+         'data'    => [
+               'branch_details' => $branch ?? [],
+
+               'branch_master' => [
+                  'total_seats'      => $branchMaster->total_seats ?? 0,
+                  'operating_hours'  => $branchMaster->operating_hours ?? 0,
+                  'extend_days'      => $branch->extend_days ?? 0,
+                  'locker_amount'    => $branch->locker_amount ?? 0,
+               ],
+
+               'plan'   => $plans,
+               'floors' => $floors,
+               'shifts' => $shifts
+         ]
+      ]);
+   }
+
      /*
     |--------------------------------------------------------------------------
     | Branch Dropdown API
     |--------------------------------------------------------------------------
     */
 
-  public function branches()
-   {
-      $library = auth('library_api')->user();
+   // public function branches()
+   // {
+   //    $library = auth('library_api')->user();
+   //     $libraryId = authLibraryId();
+   //    $branches = Branch::where('library_id', $libraryId)
+   //       ->where('status', 1)
+   //       ->select('id', 'name')
+   //       ->get();
 
-      $branches = Branch::where('library_id', $library->id)
-         ->where('status', 1)
-         ->select('id', 'name')
-         ->get();
-
-      if ($branches->isEmpty()) {
-         return response()->json([
-               'status' => false,
-               'message' => 'No active branches found',
-               'data' => []
-         ], 404);
-      }
-
-      // Ensure current_branch exists in active branches
-      $activeBranchId = $branches->pluck('id')->contains($library->current_branch)? $library->current_branch
-               : $branches->first()->id;
-
-      return response()->json([
-         'status' => true,
-         'data' => [
-               'active_branch_id' => $activeBranchId,
-               'branches' => $branches
-         ]
-      ]);
-   }
+   //    return response()->json([
+   //       'status' => true,
+   //       'data' => [
+   //             'active_branch_id' => getCurrentBranch(),
+   //             'branches' => $branches
+   //       ]
+   //    ]);
+   // }
 
     /*
     |--------------------------------------------------------------------------
@@ -61,20 +217,22 @@ class LibraryController extends Controller
             'type'      => 'nullable|in:daily,monthly'
         ]);
 
-        $library = auth('library_api')->user();
+        $libraryId = authLibraryId();
 
-        $branches = Branch::where('library_id', $library->id)
-         ->where('status', 1)
-         ->select('id', 'name')
-         ->get();
+      //   $library = auth('library_api')->user();
+
+      //   $branches = Branch::where('library_id', $library->id)
+      //    ->where('status', 1)
+      //    ->select('id', 'name')
+      //    ->get();
 
         // 🔐 Security: ensure branch belongs to library
-        $branch =  $branches->pluck('id')->contains($library->current_branch)? $library->current_branch
-               : $branches->first()->id;
+      //   $branch =  $branches->pluck('id')->contains($library->current_branch)? $library->current_branch
+      //          : $branches->first()->id;
 
         $type = $validated['type'] ?? 'daily';
 
-        $data = $service->getDashboardData($branch, $type);
+        $data = $service->getDashboardData(getCurrentBranch(), $type);
 
         return response()->json([
             'status' => true,

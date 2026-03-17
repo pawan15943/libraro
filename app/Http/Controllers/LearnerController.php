@@ -465,236 +465,339 @@ class LearnerController extends Controller
 
     }
 
-     //learner  update
     public function learnerUpdate(Request $request, $id = null)
-    {
+{
+    $validator = $this->validateCustomer($request);
 
-        $validator = $this->validateCustomer($request);
-        if ($validator->fails()) {
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors()
-                ], 422);
-            } else {
-                return redirect()->back()->withErrors($validator)->withInput();
-            }
+    if ($validator->fails()) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
+
+    $user_id = $id ?: $request->input('user_id');
+
+    $learner = Learner::findOrFail($user_id);
+
+    /*
+    |--------------------------------------------------------------------------
+    | File Upload
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->hasFile('profile_picture')) {
+
+        $request->validate([
+            'profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200'
+        ]);
+
+        $file = $request->file('profile_picture');
+
+        $name = "profile_picture_" . time() . $file->getClientOriginalName();
+
+        $file->move(public_path('uploade'), $name);
+
+        $learner->profile_picture = 'public/uploade/'.$name;
+    }
+
+    if ($request->hasFile('id_proof_file')) {
+
+        $file = $request->file('id_proof_file');
+
+        $name = "id_proof_" . time() . $file->getClientOriginalName();
+
+        $file->move(public_path('uploads'), $name);
+
+        $learner->id_proof_file = 'public/uploads/'.$name;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profile Update
+    |--------------------------------------------------------------------------
+    */
+
+    $learner->name = $request->input('name',$learner->name);
+    $learner->email = encryptData($request->input('email',$learner->email));
+    $learner->mobile = encryptData($request->input('mobile',$learner->mobile));
+    $learner->dob = $request->input('dob',$learner->dob);
+    $learner->father_name = $request->input('father_name',$learner->father_name);
+    $learner->alternate_mobile = $request->input('alternate_mobile',$learner->alternate_mobile);
+    $learner->address = $request->input('address',$learner->address);
+    $learner->remark = $request->input('remark',$learner->remark);
+    $learner->id_proof_name = $request->input('id_proof_name',$learner->id_proof_name);
+
+    $learner->save();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Prepare DTO for EDIT operation
+    |--------------------------------------------------------------------------
+    */
+
+    $dto = LearnerOperationDTO::fromRequest($request);
+
+    $dto->operation = 'EDIT';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Call Global Operation Service
+    |--------------------------------------------------------------------------
+    */
+
+    $result = app(LearnerOperationService::class)->process($dto);
+
+    if(!$result['success']){
+        return redirect()->back()->with('error',$result['message']);
+    }
+
+    if(!empty($result['start_date_blocked'])){
+        return redirect()
+            ->route('learners')
+            ->with('success','Learner updated successfully. Start date could not be updated due to seat availability.');
+    }
+
+    return redirect()
+        ->route('learners')
+        ->with('success','Learner updated successfully');
+}
+
+     //learner  update
+    // public function learnerUpdate(Request $request, $id = null)
+    // {
+
+    //     $validator = $this->validateCustomer($request);
+    //     if ($validator->fails()) {
+
+    //         if ($request->expectsJson()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'errors' => $validator->errors()
+    //             ], 422);
+    //         } else {
+    //             return redirect()->back()->withErrors($validator)->withInput();
+    //         }
+    //     }
         
        
-        // Determine user_id based on $id or request input
-        $user_id = $id ?: $request->input('user_id');
+    //     // Determine user_id based on $id or request input
+    //     $user_id = $id ?: $request->input('user_id');
 
 
-        $customer = Learner::findOrFail($user_id);
+    //     $customer = Learner::findOrFail($user_id);
 
-        // Handle the profile picture upload
-        if ($request->hasFile('profile_picture')) {
-            $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
-            $profile_picture = $request->profile_picture;
-            $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
-            $profile_picture->move('public/uploade/', $profile_pictureNewName);
-            $profile_picturePath = 'public/uploade/' . $profile_pictureNewName;
-            $customer->profile_picture = $profile_picturePath;
-        }
+    //     // Handle the profile picture upload
+    //     if ($request->hasFile('profile_picture')) {
+    //         $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
+    //         $profile_picture = $request->profile_picture;
+    //         $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
+    //         $profile_picture->move('public/uploade/', $profile_pictureNewName);
+    //         $profile_picturePath = 'public/uploade/' . $profile_pictureNewName;
+    //         $customer->profile_picture = $profile_picturePath;
+    //     }
 
-        // Handle the id proof file upload
-        if ($request->hasFile('id_proof_file')) {
-            $id_proof_file = $request->file('id_proof_file');
-            $id_proof_fileNewName = "id_proof_file_" . time() . "_" . $id_proof_file->getClientOriginalName();
+    //     // Handle the id proof file upload
+    //     if ($request->hasFile('id_proof_file')) {
+    //         $id_proof_file = $request->file('id_proof_file');
+    //         $id_proof_fileNewName = "id_proof_file_" . time() . "_" . $id_proof_file->getClientOriginalName();
 
-            // Store the file in the 'public/uploads' directory
-            $id_proof_file->move(public_path('uploads'), $id_proof_fileNewName);
-            $id_proof_filePath = 'public/uploads/' . $id_proof_fileNewName;
+    //         // Store the file in the 'public/uploads' directory
+    //         $id_proof_file->move(public_path('uploads'), $id_proof_fileNewName);
+    //         $id_proof_filePath = 'public/uploads/' . $id_proof_fileNewName;
 
-            // Set the path in the customer model
-            $customer->id_proof_file = $id_proof_filePath;
-        }
+    //         // Set the path in the customer model
+    //         $customer->id_proof_file = $id_proof_filePath;
+    //     }
 
         
-        // Update customer details
+    //     // Update customer details
 
-        $customer->name = $request->input('name', $customer->name);
-        $customer->email = encryptData($request->input('email', $customer->email));
-        $customer->mobile = encryptData($request->input('mobile', $customer->mobile));
-        $customer->dob = $request->input('dob', $customer->dob);
-        $customer->father_name = $request->input('father_name', $customer->father_name);
-        $customer->alternate_mobile = $request->input('alternate_mobile', $customer->alternate_mobile);
-        $customer->address = $request->input('address', $customer->address);
-        $customer->remark = $request->input('remark', $customer->remark);
-        $customer->id_proof_name = $request->input('id_proof_name', $customer->id_proof_name);
+    //     $customer->name = $request->input('name', $customer->name);
+    //     $customer->email = encryptData($request->input('email', $customer->email));
+    //     $customer->mobile = encryptData($request->input('mobile', $customer->mobile));
+    //     $customer->dob = $request->input('dob', $customer->dob);
+    //     $customer->father_name = $request->input('father_name', $customer->father_name);
+    //     $customer->alternate_mobile = $request->input('alternate_mobile', $customer->alternate_mobile);
+    //     $customer->address = $request->input('address', $customer->address);
+    //     $customer->remark = $request->input('remark', $customer->remark);
+    //     $customer->id_proof_name = $request->input('id_proof_name', $customer->id_proof_name);
 
        
-        // Update exam_id in learner_detail table if provided
-        $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
-            ->latest()
-            ->first();
-        $branchId = getCurrentBranch();
-        $startDateBlocked = false;
+    //     // Update exam_id in learner_detail table if provided
+    //     $learnerDetail = LearnerDetail::where('learner_id', $customer->id)
+    //         ->latest()
+    //         ->first();
+    //     $branchId = getCurrentBranch();
+    //     $startDateBlocked = false;
 
-        if ($learnerDetail) {
-            $updated = false;
+    //     if ($learnerDetail) {
+    //         $updated = false;
 
-            // Update exam_id
-            if ($request->has('exam_id')) {
-                $learnerDetail->exam_id = $request->input('exam_id');
-                $updated = true;
-            }
-            $alreadyStartDate = LearnerDetail::where('learner_id', $customer->id)
-                ->whereDate('plan_start_date', $request->plan_start_date)
-                ->exists();
+    //         // Update exam_id
+    //         if ($request->has('exam_id')) {
+    //             $learnerDetail->exam_id = $request->input('exam_id');
+    //             $updated = true;
+    //         }
+    //         $alreadyStartDate = LearnerDetail::where('learner_id', $customer->id)
+    //             ->whereDate('plan_start_date', $request->plan_start_date)
+    //             ->exists();
 
            
 
-            // Start date update attempt
-            if ($request->filled('plan_start_date') && $request->filled('plan_id') && !$alreadyStartDate) {
+    //         // Start date update attempt
+    //         if ($request->filled('plan_start_date') && $request->filled('plan_id') && !$alreadyStartDate) {
 
           
-                 // Determine hours based on plan_type_id
+    //              // Determine hours based on plan_type_id
       
-                $seat_no = $request->input('seat_no');
-                $plan_type_id = $request->input('plan_type_id');
-                $plan_id = $request->plan_id;
+    //             $seat_no = $request->input('seat_no');
+    //             $plan_type_id = $request->input('plan_type_id');
+    //             $plan_id = $request->plan_id;
 
-                $startDate = Carbon::parse($request->input('plan_start_date'));
-                $endDate   = getEndDate($learnerDetail->plan_id, $startDate);
-                if ($seat_no) {
-                    $result = checkSeatAvailability($seat_no, $customer->id, $plan_type_id, $startDate, $endDate);
+    //             $startDate = Carbon::parse($request->input('plan_start_date'));
+    //             $endDate   = getEndDate($learnerDetail->plan_id, $startDate);
+    //             if ($seat_no) {
+    //                 $result = checkSeatAvailability($seat_no, $customer->id, $plan_type_id, $startDate, $endDate);
 
-                    if ($result['error']) {
-                        return redirect()->back()->with('error', $result['message'])->withInput();
-                    } 
-                }
+    //                 if ($result['error']) {
+    //                     return redirect()->back()->with('error', $result['message'])->withInput();
+    //                 } 
+    //             }
 
-                $check = checkAvailability(
-                    $branchId,
-                    $learnerDetail->seat_no,      // nullable allowed
-                    $customer->id,
-                    $learnerDetail->plan_type_id,
-                    $learnerDetail->plan_id,
-                    $startDate
-                );
+    //             $check = checkAvailability(
+    //                 $branchId,
+    //                 $learnerDetail->seat_no,      // nullable allowed
+    //                 $customer->id,
+    //                 $learnerDetail->plan_type_id,
+    //                 $learnerDetail->plan_id,
+    //                 $startDate
+    //             );
 
-                $extendDay   = getExtendDays();
-                $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
-                $currentDate  = date('Y-m-d');
+    //             $extendDay   = getExtendDays();
+    //             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+    //             $currentDate  = date('Y-m-d');
 
-                if ($learnerDetail && $learnerDetail->plan_end_date < $currentDate && $endDate->gt($currentDate)) {
-                    $status = 1;
-                } elseif ($inextendDate >= Carbon::today() && $startDate <= Carbon::today()) {
-                    $status = 1;
-                } else {
-                    $status = 0;
-                }
+    //             if ($learnerDetail && $learnerDetail->plan_end_date < $currentDate && $endDate->gt($currentDate)) {
+    //                 $status = 1;
+    //             } elseif ($inextendDate >= Carbon::today() && $startDate <= Carbon::today()) {
+    //                 $status = 1;
+    //             } else {
+    //                 $status = 0;
+    //             }
                
-                if ($check['error'] === false || $result['error'] === false) {
-                    // ✅ Allowed
-                    $learnerDetail->plan_start_date = $startDate;
-                    $learnerDetail->plan_end_date   = $endDate;
-                    $learnerDetail->status=$status;
-                    $customer->status=$status;
+    //             if ($check['error'] === false || $result['error'] === false) {
+    //                 // ✅ Allowed
+    //                 $learnerDetail->plan_start_date = $startDate;
+    //                 $learnerDetail->plan_end_date   = $endDate;
+    //                 $learnerDetail->status=$status;
+    //                 $customer->status=$status;
 
-                    $updated = true;
-                } else {
-                    $startDateBlocked = true;
-                }
-            }
+    //                 $updated = true;
+    //             } else {
+    //                 $startDateBlocked = true;
+    //             }
+    //         }
        
-            if ($updated) {
-                $learnerDetail->save();
-            }
-        }
+    //         if ($updated) {
+    //             $learnerDetail->save();
+    //         }
+    //     }
 
-        // Save the customer details
-        $customer->save();
+    //     // Save the customer details
+    //     $customer->save();
 
-        $learnerTransaction = LearnerTransaction::where('learner_detail_id', $learnerDetail->id)->first();
-        $planPrice = (float) $request->input('plan_price_id', 0);
-        $locker = (float) $request->input('locker_amount', 0);
-        if ($request->discountType == 'amount') {
-            $discount = $request->discount_amount;
-        } elseif ($request->discountType == 'percentage') {
-            $total = $planPrice + $locker;
-            $discount = ($total * $request->discount_amount) / 100;
-        } else {
-            $discount = 0;
-        }
+    //     $learnerTransaction = LearnerTransaction::where('learner_detail_id', $learnerDetail->id)->first();
+    //     $planPrice = (float) $request->input('plan_price_id', 0);
+    //     $locker = (float) $request->input('locker_amount', 0);
+    //     if ($request->discountType == 'amount') {
+    //         $discount = $request->discount_amount;
+    //     } elseif ($request->discountType == 'percentage') {
+    //         $total = $planPrice + $locker;
+    //         $discount = ($total * $request->discount_amount) / 100;
+    //     } else {
+    //         $discount = 0;
+    //     }
 
-        $effectivePaid = $planPrice + $locker - $discount; 
-        $old_price      = $learnerTransaction->paid_amount ?? 0;
-        $pending_amount = $request->input('pending_amount');
-        $diff_amount    = $request->input('diffrence_amount');
-        $paid_amount = $old_price + $diff_amount;
-        $payment_mode=$learnerDetail->payment_mode;
+    //     $effectivePaid = $planPrice + $locker - $discount; 
+    //     $old_price      = $learnerTransaction->paid_amount ?? 0;
+    //     $pending_amount = $request->input('pending_amount');
+    //     $diff_amount    = $request->input('diffrence_amount');
+    //     $paid_amount = $old_price + $diff_amount;
+    //     $payment_mode=$learnerDetail->payment_mode;
         
-        if ($payment_mode == 3) {
-            $pending_amount = $effectivePaid;
-            $paid_amount    = 0;
-        }
+    //     if ($payment_mode == 3) {
+    //         $pending_amount = $effectivePaid;
+    //         $paid_amount    = 0;
+    //     }
       
-        $refund = 0;
-        $pending_refund = 0;
-        // Handle difference amount (refund vs pending)
-        if ($diff_amount < 0) {
+    //     $refund = 0;
+    //     $pending_refund = 0;
+    //     // Handle difference amount (refund vs pending)
+    //     if ($diff_amount < 0) {
 
-            // refund case
-            $refund = abs($diff_amount);
-            $pending_refund = abs($pending_amount);
-            $pending_amount = 0;
-            $dr_cr = 'Dr';
-        } else {
+    //         // refund case
+    //         $refund = abs($diff_amount);
+    //         $pending_refund = abs($pending_amount);
+    //         $pending_amount = 0;
+    //         $dr_cr = 'Dr';
+    //     } else {
 
-            // extra payment (pending dues)
-            $pending_amount = $pending_amount ?? 0;
-            $refund = $diff_amount;
-            $pending_refund = 0;
-            $dr_cr = 'Cr';
-        }
-        $due_date = $request->due_date ?? null;
+    //         // extra payment (pending dues)
+    //         $pending_amount = $pending_amount ?? 0;
+    //         $refund = $diff_amount;
+    //         $pending_refund = 0;
+    //         $dr_cr = 'Cr';
+    //     }
+    //     $due_date = $request->due_date ?? null;
         
-        if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3)) {
-            return redirect()->back()->with('error', 'Paid amount is not valid');
-        }
+    //     if (($paid_amount > $effectivePaid) || ($paid_amount == 0 && $payment_mode != 3)) {
+    //         return redirect()->back()->with('error', 'Paid amount is not valid');
+    //     }
 
-        if (($pending_amount > 0) && (empty($due_date)) && $payment_mode != 3) {
-            return redirect()->back()->with('error', 'Due date is required');
-        }
+    //     if (($pending_amount > 0) && (empty($due_date)) && $payment_mode != 3) {
+    //         return redirect()->back()->with('error', 'Due date is required');
+    //     }
         
-        if ($learnerTransaction) {
-            if ($request->locker == 'yes') {
-                $learnerTransaction->locker_amount = $locker;
-            }
+    //     if ($learnerTransaction) {
+    //         if ($request->locker == 'yes') {
+    //             $learnerTransaction->locker_amount = $locker;
+    //         }
 
-            $learnerTransaction->total_amount   = $effectivePaid ?? $paid_amount;
-            $learnerTransaction->paid_amount    = $paid_amount;
-            $learnerTransaction->pending_amount = $pending_amount;
-            $learnerTransaction->refund         = $pending_refund;   // keep refund only if negative diff
-            $learnerTransaction->due_date       = $due_date ?? null;
-            $learnerTransaction->discount_amount = $discount;
+    //         $learnerTransaction->total_amount   = $effectivePaid ?? $paid_amount;
+    //         $learnerTransaction->paid_amount    = $paid_amount;
+    //         $learnerTransaction->pending_amount = $pending_amount;
+    //         $learnerTransaction->refund         = $pending_refund;   // keep refund only if negative diff
+    //         $learnerTransaction->due_date       = $due_date ?? null;
+    //         $learnerTransaction->discount_amount = $discount;
 
-            $learnerTransaction->save();
+    //         $learnerTransaction->save();
 
-            //learner Activity
-            if($refund && $refund!=0){
-                $data = [];
-                $data['learner_id'] = $customer->id;
-                $data['particular'] = 'Paid By WEBSITE';
-                $data['payment_type'] = 'EDIT';
-                $data['payment_mode'] = 1;
-                $data['amount'] = $refund ?? 0;
-                $data['dr_cr'] = $dr_cr;
-                $this->learnerTransactionActivity($data);
-            }
-        }
+    //         //learner Activity
+    //         if($refund && $refund!=0){
+    //             $data = [];
+    //             $data['learner_id'] = $customer->id;
+    //             $data['particular'] = 'Paid By WEBSITE';
+    //             $data['payment_type'] = 'EDIT';
+    //             $data['payment_mode'] = 1;
+    //             $data['amount'] = $refund ?? 0;
+    //             $data['dr_cr'] = $dr_cr;
+    //             $this->learnerTransactionActivity($data);
+    //         }
+    //     }
 
-        if ($startDateBlocked) {
-            return redirect()
-                ->route('learners')
-                ->with('success', 'Learner updated successfully. Start date could not be updated due to seat availability.');
-        }
-        return redirect()->route('learners')->with('success', 'Learner updated successfully.');
-    }
+    //     if ($startDateBlocked) {
+    //         return redirect()
+    //             ->route('learners')
+    //             ->with('success', 'Learner updated successfully. Start date could not be updated due to seat availability.');
+    //     }
+    //     return redirect()->route('learners')->with('success', 'Learner updated successfully.');
+    // }
+
+
       // reactive learner store
     // public function reactiveLearner(Request $request, $id, LearnerService $service)
     // {
