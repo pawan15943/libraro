@@ -1007,7 +1007,12 @@ class MasterController extends Controller
             return response()->json([
                 'status'=>true,
                 'message'=>'Library user saved successfully.',
-                'data'=>$user
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'mobile' => $user->mobile,
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -1027,13 +1032,7 @@ class MasterController extends Controller
 
         $user = LibraryUser::where('id', $id)
             ->where('library_id', $libraryId)
-            ->select(
-                'id',
-                'name',
-                'email',
-                'mobile',
-                'profile_picture'
-            )
+            ->select( 'id','name','email','mobile',)
             ->first();
 
         if (!$user) {
@@ -1049,16 +1048,18 @@ class MasterController extends Controller
         // User role
         $role = $user->roles()->select('id','name')->first();
 
-        // Profile picture full url
-        if ($user->profile_picture) {
-            $user->profile_picture = asset('storage/'.$user->profile_picture);
-        }
 
         return response()->json([
             'status' => true,
             'message' => 'User detail fetched successfully',
             'data' => [
-                'user' => $user,
+                 'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'mobile' => $user->mobile,
+                'role_id' => $role->id ?? null,
+                'branch_ids' => $user->branch_id,
+                //optional
                 'role' => $role,
                 'branch'=>$branch
             ]
@@ -1066,51 +1067,42 @@ class MasterController extends Controller
     }
 
     public function libraryUserList()
-{
-    $libraryId = auth('library_api')->id();
+    {
+        $libraryId = auth('library_api')->id();
 
-    $users = LibraryUser::where('library_id', $libraryId)
-        ->with('roles:id,name')
-        ->select(
-            'id',
-            'name',
-            'email',
-            'mobile',
-            'branch_id',
-            'profile_picture',
-            'status'
-        )
-        ->latest()
-        ->get();
+        $users = LibraryUser::where('library_id', $libraryId)
+            ->with('roles:id,name')
+            ->select('id',
+                'name','email','mobile','branch_id','status'
+            )
+            ->latest()
+            ->get();
 
-    $users->transform(function ($user) {
+        $users->transform(function ($user) {
 
-        // Branch names
-        $branchIds = $user->branch_id ?? [];
+            // Branch names
+            $branchIds = $user->branch_id ?? [];
 
-        $branches = Branch::whereIn('id', $branchIds)
-            ->pluck('name');
+            $branches = Branch::whereIn('id', $branchIds)
+                ->pluck('name');
 
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'mobile' => $user->mobile,
-            'email' => $user->email,
-            'role' => optional($user->roles->first())->name,
-            'branches' => $branches,
-            'status' => $user->status ? 'Active' : 'Inactive',
-            'profile_picture' => $user->profile_picture
-                ? asset('storage/'.$user->profile_picture)
-                : null
-        ];
-    });
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'mobile' => $user->mobile,
+                'email' => $user->email,
+                'role' => optional($user->roles->first())->name,
+                'branches' => $branches,
+                'status' => $user->status ? 'Active' : 'Inactive',
+            ];
+        });
 
-    return response()->json([
-        'status' => true,
-        'message' => 'User list fetched successfully',
-        'data' => $users
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'message' => 'User list fetched successfully',
+            'data' => $users
+        ]);
+    }
 
     public function assignPermissions(Request $request)
     {
@@ -1135,11 +1127,35 @@ class MasterController extends Controller
         /* Sync permissions */
         $user->permissions()->sync($validated['permissions']); 
      
-
+       
         return response()->json([
             'status'=>true,
             'message'=>'Permissions applied successfully',
+            
            
+        ]);
+    }
+
+    public function deleteLibraryUser($id)
+    {
+        $libraryId = auth('library_api')->id();
+
+        $user = LibraryUser::where('id',$id)
+            ->where('library_id',$libraryId)
+            ->first();
+
+        if(!$user){
+            return response()->json([
+                'status'=>false,
+                'message'=>'User not found'
+            ],404);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'status'=>true,
+            'message'=>'User deleted successfully'
         ]);
     }
     

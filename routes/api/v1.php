@@ -36,7 +36,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
     Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
     Route::get('library/detail', [LibraryController::class, 'getLibraryDetail']);
-    Route::get('library/branch/detail', [LibraryController::class, 'getCurrentBranchDetail']);
+    Route::get('library/branches', [LibraryController::class, 'getCurrentBranchDetail']);
 
     Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
     Route::post('/floor/store', [MasterController::class, 'floorStore']);
@@ -57,7 +57,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::get('/library/user/edit/{id}',[MasterController::class,'editLibraryUser']);
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
-
+    Route::delete('/library/user/{id}', [MasterController::class, 'deleteLibraryUser']);
     Route::prefix('library/learners')->group(function () {
 
         Route::post('/seat-book', [LearnerController::class,'store']);
