@@ -101,17 +101,18 @@ class LibraryService
      
 
             if (($checkSub && $ispaid && $isBranch)) {
+           
                
                 return route('library.configration');
             }
 
             if ($checkSub && $ispaid) {
-               
+           
                 return route('branch.configure.create');
             }
 
             if ($isEmailVeri) {
-              
+             
                 $planId = session('selected_plan_id');
                 $planMode = session('selected_plan_mode');
                 if($planId && $planMode){
@@ -124,7 +125,7 @@ class LibraryService
                
                
             }
-
+ 
             return route('verification.notice');
         }
 

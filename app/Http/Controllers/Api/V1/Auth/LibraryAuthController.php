@@ -905,7 +905,54 @@ class LibraryAuthController extends Controller
     public function configure(Request $request,LibraryConfigurationService $service) {
         $libraryId = authLibraryId();
 
-       
+        if ($request->has('branch_detail') || $request->has('branch_master')) {
+
+            $normalized = [];
+
+            /* ================= BRANCH DETAIL ================= */
+            $detail = $request->branch_detail ?? [];
+
+            $normalized['name']         = $detail['branch_name'] ?? null;
+            $normalized['display_name'] = $detail['branch_name'] ?? null;
+            $normalized['email']        = $detail['email'] ?? null;
+            $normalized['mobile']       = $detail['contact_number'] ?? null;
+            $normalized['founder_day']  = $detail['founded_date'] ?? null;
+            $normalized['upi_id']       = $detail['upi_id'] ?? null;
+
+            /* ================= MASTER ================= */
+            $master = $request->branch_master ?? [];
+
+            $normalized['seats']         = $master['total_seats'] ?? null;
+            $normalized['hour']          = $master['operating_hours'] ?? null;
+            $normalized['locker_amount'] = $master['locker_amount'] ?? null;
+            $normalized['extend_days']   = $master['extend_days'] ?? null;
+
+            /* ================= PLAN ================= */
+            if ($request->has('plan')) {
+                $plan = $request->plan;
+
+                if (!empty($plan['plan_name'])) {
+                    $normalized['plans'] = [$plan['plan_name']];
+                }
+
+                if (!empty($plan['days'])) {
+                    $normalized['monthdays'] = $plan['days'];
+                }
+            }
+
+            /* ================= FLOORS ================= */
+            $normalized['floors'] = $request->floors ?? [];
+
+            /* ================= BRANCH ID ================= */
+            if ($request->has('branch_id')) {
+                $normalized['branch_id'] = $request->branch_id;
+            }
+
+            /* ================= MERGE ================= */
+            $request->merge($normalized);
+        }
+
+
          $request->validate([
            
             'branch_id'  => 'nullable|exists:branches,id'
@@ -950,9 +997,7 @@ class LibraryAuthController extends Controller
         $slug = Str::slug($request->name.'-'.$libraryId);
    
         if($branchId){
-              $existingBranch = Branch::where('library_id', $libraryId)
-            ->where('id', $branchId)
-            ->first();
+              $existingBranch = Branch::where('library_id', $libraryId)->where('id', $branchId) ->first();
         }else{
              $existingBranch = Branch::where('library_id', $libraryId)
             ->where('slug', $slug)
@@ -1022,10 +1067,42 @@ class LibraryAuthController extends Controller
 
         /* ================= CALL GLOBAL SERVICE ================= */
       
+        DB::beginTransaction();
+        try {
+            $response = $service->configure($request, $validated, $libraryId, $existingBranch, $branchCount,false);
+            if (!$response['status']) {
+                throw new \Exception($response['message']);
+            }
+            /* ================= SHIFT CONFIGURE ================= */
 
-        $response = $service->configure($request,$validated,$libraryId,$existingBranch,$branchCount);
+            if (!empty($request->shifts) && isset($response['branch_id']) && $response['status']) {
 
-        return response()->json($response);
+                $shiftData = [
+                    'plan_types' => $request->shifts
+                ];
+
+                $shiftResponse =$service->shiftConfigure($shiftData, $response['branch_id'],false);
+                if (!$shiftResponse['status']) {
+                    throw new \Exception($shiftResponse['message']);
+                }
+            
+            }
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Branch and shifts configured successfully.',
+            ]);
+       
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 
     public function shiftConfigure(Request $request,LibraryConfigurationService $shiftService) {

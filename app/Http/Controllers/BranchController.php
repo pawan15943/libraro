@@ -11,6 +11,7 @@ use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\State;
 use App\Services\LibraryConfigurationService;
+use App\Services\LibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DB;
@@ -46,7 +47,19 @@ class BranchController extends Controller
         return back();
     }
 
-    public function index(){
+   public function index(LibraryService $libraryService)
+    {
+        $library = getLibrary();
+
+       if ($library->is_paid == 1 && Branch::where('library_id',$library->id)->count() == 0) {
+
+        $redirectUrl = $libraryService->checkLibraryStatus();
+
+        if ($redirectUrl) {
+            return redirect()->to($redirectUrl);
+        }
+    }
+
           $branches = [];
 
             if (Auth::guard('library')->check()) {
@@ -88,25 +101,26 @@ class BranchController extends Controller
             'display_name' => 'nullable|string|max:255',
             'email' => 'required|email',
             'mobile' => 'required|digits:10',
-            'working_days' => 'nullable',
-            'description'=>'nullable',
-            'library_category' => 'nullable',
-            'library_address' => 'required|string',
-            'state_id' => 'required|integer',
-            'city_id' => 'required|integer',
-            'library_zip' => 'required|digits:6',
+           
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'locker_amount'=>'required',
             'token_money'=>'nullable',
+            'upi_id'          => 'nullable',
             'extend_days'=>'required',
             'hour'=>'required',
             'seats'=>'required',
             'founder_day'=>'required',
+             'monthdays' => 'nullable|integer|in:28,30',
             'plans' => 'required|array|min:1',
             'plans.*' => 'string',
-
-            'monthdays' => 'nullable|integer|in:28,30',
+            'working_days' => 'nullable',
+            'description'=>'nullable',
+            'library_category' => 'nullable',
+            'library_address' => 'required|string',
+            'state_id' => 'nullable|integer',
+            'city_id' => 'nullable|integer',
+            'library_zip' => 'nullable|digits:6',
            
             // 'floors' => 'nullable|array',
             // 'floors.*.name' => 'required_with:floors.*.from,floors.*.to',
@@ -748,6 +762,7 @@ class BranchController extends Controller
         ========================= */
         $rules = [
             'name'            => 'required|string|max:255',
+            'display_name'    => 'nullable|string',
             'email'           => 'required|email',
             'mobile'          => 'required|digits:10',
             'library_logo'            => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',

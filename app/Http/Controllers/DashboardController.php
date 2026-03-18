@@ -888,6 +888,9 @@ class DashboardController extends Controller
                     ->where('plan_end_date', '>=', $startOfGivenMonth);
             });
         }
+        $startOfGivenMonth = Carbon::create($year, $month, 1)->startOfMonth();
+        $endOfGivenMonth = Carbon::create($year, $month, 1)->endOfMonth();
+        
 
         $query_total =$this->getLearnersByLibrary()->whereDate('learner_detail.plan_start_date', '<=', $endOfGivenMonth)
         ->whereNull('learners.deleted_at')

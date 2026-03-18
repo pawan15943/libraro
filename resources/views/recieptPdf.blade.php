@@ -270,8 +270,8 @@
     <div class="terms">
         <h4>Terms & Conditions</h4>
         <ul class="pdf_descContent">
-            <li>This receipt is not a VAT Invoice.</li>
-            <li>VAT Invoice will be provided upon request within 30 days.</li>
+            {{-- <li>This receipt is not a VAT Invoice.</li>
+            <li>VAT Invoice will be provided upon request within 30 days.</li> --}}
             <li>This is a computer-generated receipt; no signature is required.</li>
             <li>All subscription plans (Basic, Standard, and Premium) are non-refundable and non-transferable.</li>
             <li>Plan upgrades are available at any time with additional charges applied.</li>
@@ -284,8 +284,8 @@
 
     <!-- ================= FOOTER ================= -->
     <div class="footer">
-        <p><b>Website:</b> www.libraro.in | <b>Call Us:</b> +91-8114479678</p>
-        <p><b>Head Office:</b> Kota, Rajasthan – 324005</p>
+        <p><b>Website: </b>{{'www.libraro.in/'.$branch_slug ?? 'www.libraro.in'}} | <b>Call Us:</b> +91-{{ $library_mobile ?? '' }}</p>
+        <p><b>Head Office:</b> {{ empty($library_address) ? '' : $library_address }}</p>
     </div>
 
 </body>

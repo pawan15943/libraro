@@ -294,14 +294,15 @@ $learner_id=$value->id;
 
                                     @if($planStatus['class']=='extedned')
                                     <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                             <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                         </a>
                                     </li>
                                     @else
+                                    
                                     <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
                                             <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                         </a>

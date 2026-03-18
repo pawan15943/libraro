@@ -12,6 +12,7 @@ use App\Models\LibraryTransaction;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
+use App\Models\Scopes\LibraryScope;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,9 +21,9 @@ use Illuminate\Support\Str;
 class LibraryConfigurationService
 {
    
-    public function configure($request,array $validated,int $libraryId,$existingBranch,int $branchCount)
+    public function configure($request,array $validated,int $libraryId,$existingBranch,int $branchCount,$useTransaction = true)
     {
-        DB::beginTransaction();
+       if ($useTransaction) DB::beginTransaction();
 
         try {
           
@@ -44,40 +45,31 @@ class LibraryConfigurationService
 
            if ($request->hasFile('library_images')) {
 
-    $images = [];
+                $images = [];
 
-    // keep old images in edit mode
-    if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+                // keep old images in edit mode
+                if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
 
-        $existingImages = $existingBranch->library_images;
+                    $existingImages = $existingBranch->library_images;
 
-        // if stored as JSON string
-        if (is_string($existingImages)) {
-            $images = json_decode($existingImages, true);
-        }
 
-        // if already array
-        if (is_array($existingImages)) {
-            $images = $existingImages;
-        }
-    }
+                    $images = is_array($existingImages) ? $existingImages : json_decode($existingImages ?? '[]', true);
+                }
 
-    foreach ($request->file('library_images') as $image) {
-        $images[] = $image->store('uploads/library_images', 'public');
-    }
+                foreach ($request->file('library_images') as $image) {
+                    $images[] = $image->store('uploads/library_images', 'public');
+                }
 
-    $validated['library_images'] = json_encode($images);
+                $validated['library_images'] = json_encode($images);
 
-} else {
+            } else {
 
-    if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
-        $validated['library_images'] = is_array($existingBranch->library_images)
-            ? json_encode($existingBranch->library_images)
-            : $existingBranch->library_images;
-    } else {
-        $validated['library_images'] = null;
-    }
-}
+                if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+                    $validated['library_images'] = is_array($existingBranch->library_images) ? json_encode($existingBranch->library_images) : $existingBranch->library_images;
+                } else {
+                    $validated['library_images'] = null;
+                }
+            }
 
             
            $validated['library_id'] = $libraryId;
@@ -155,11 +147,16 @@ class LibraryConfigurationService
             $branch->library_id = $libraryId;
             if (!$existingBranch) {
 
-                $baseSlug = Str::slug($validated['name'].'-'.$libraryId);
+               $baseSlug = Str::slug($validated['name'].'-'.$libraryId);
+
+                $existingSlugs = Branch::where('slug', 'like', $baseSlug.'%')
+                    ->pluck('slug')
+                    ->toArray();
+
                 $slug = $baseSlug;
                 $count = 1;
 
-                while (Branch::where('slug', $slug)->exists()) {
+                while (in_array($slug, $existingSlugs)) {
                     $slug = $baseSlug.'-'.$count++;
                 }
 
@@ -207,54 +204,79 @@ class LibraryConfigurationService
             ========================= */
             if ($existingBranch || $branchCount == 0){
             
-                    // DELETE REMOVED PLANS
-                Plan::where('library_id', $libraryId)
-                    ->whereNotIn('name', $plans)
-                    ->delete();
+                $existingPlans = Plan::where('library_id', $libraryId)
+                    ->get()
+                    ->keyBy('name');
+
+                $incomingPlanNames = [];
 
                 $baseMonthDays = null;
                 foreach ($plans as $plan) {
                     [$num, $type] = explode(' ', $plan);
+
                     if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
-                         $baseMonthDays = $validated['monthdays'] ?? null;
-                        break;
+                        $baseMonthDays = $validated['monthdays'] ?? null;
                     }
                 }
 
                 foreach ($plans as $plan) {
+
                     [$num, $type] = explode(' ', $plan);
 
-                    Plan::updateOrCreate(
-                        [
-                            'library_id' =>  $libraryId,
-                            'name'       => $plan,
-                        ],
-                        [
-                            'plan_id'   => (int)$num,
-                            'type'      => strtoupper($type),
-                            'monthdays' => strtoupper($type) === 'MONTH'
-                                ? $baseMonthDays
-                                : null,
-                        ]
-                    );
+                    $data = [
+                        'library_id' => $libraryId,
+                        'name'       => $plan,
+                        'plan_id'    => (int)$num,
+                        'type'       => strtoupper($type),
+                        'monthdays'  => strtoupper($type) === 'MONTH' ? $baseMonthDays : null,
+                    ];
+
+                    if (isset($existingPlans[$plan])) {
+                        $existingPlans[$plan]->update($data);
+                    } else {
+                        Plan::create($data);
+                    }
+
+                    $incomingPlanNames[] = $plan;
                 }
+
+                /* DELETE UNUSED PLANS */
+                Plan::where('library_id', $libraryId)
+                    ->whereNotIn('name', $incomingPlanNames)
+                    ->delete();
             }
 
             /* =========================
             FLOORS
             ========================= */
-            Floor::where('branch_id', $branch->id)->delete();
+            $existingFloors = Floor::where('branch_id', $branch->id)
+                ->get()
+                ->keyBy('floor_no');
+
+            $incomingFloorNos = [];
 
             foreach ($floors as $index => $floor) {
-                Floor::create([
-                    'branch_id'   => $branch->id,
-                    'name'        => $floor['name'],
-                    'floor_no'    => $index + 1,
-                    'from_seat'   => (int)$floor['from'],
-                    'to_seat'     => (int)$floor['to'],
-                    
-                ]);
+                $floorNo = $index + 1;
+                $data = [
+                    'branch_id' => $branch->id,
+                    'name'      => $floor['name'],
+                    'floor_no'  => $floorNo,
+                    'from_seat' => (int)$floor['from'],
+                    'to_seat'   => (int)$floor['to'],
+                ];
+
+                if (isset($existingFloors[$floorNo])) {
+                    $existingFloors[$floorNo]->update($data);
+                } else {
+                    Floor::create($data);
+                }
+
+                $incomingFloorNos[] = $floorNo;
             }
+
+            Floor::where('branch_id', $branch->id)
+            ->whereNotIn('floor_no', $incomingFloorNos)
+            ->delete();
 
             /* =========================
             LIBRARY IMAGES
@@ -270,7 +292,7 @@ class LibraryConfigurationService
                 'current_branch'=> $branch->id
             ]);
 
-            DB::commit();
+            if ($useTransaction) DB::commit();
 
             return [
                 'status'   => true,
@@ -280,20 +302,21 @@ class LibraryConfigurationService
 
         } catch (\Exception $e) {
 
-            DB::rollBack();
+            if ($useTransaction) DB::rollBack();
 
-           return [
-            'status'  => false,
-            'message' => $e->getMessage()
-        ];
+            return [
+                'status'  => false,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
-    public function shiftConfigure(array $validated,int $branchId)
+    public function shiftConfigure(array $validated,int $branchId,$useTransaction = true)
     {
-        DB::beginTransaction();
+        if ($useTransaction) DB::beginTransaction();
 
         try {
+          
 
             $branch = Branch::find($branchId);
              if (!$branch) {
@@ -308,17 +331,24 @@ class LibraryConfigurationService
             if (!$plan) {
                 throw new \Exception('Ops, System not found any plan to proceed for shifts.');
             }
+            
 
-            $branchRecord = Hour::where('branch_id', $branchId)->first();
+          $branchRecord = Hour::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->first();
 
-            $existingPlanTypeCount = PlanType::where('branch_id', $branchId)->count();
-            $isFirstTimeSetup = $existingPlanTypeCount === 0;
+       
+            $existingPlanTypes = PlanType::where('branch_id', $branchId)->get();
+            $existingPlanTypesById = $existingPlanTypes->keyBy('id');
+
+            $isFirstTimeSetup = $existingPlanTypes->count() === 0;
 
             $finalShiftIds = [];
             $coveredMinutes = [];
+           
 
             /* ================= GLOBAL COVERAGE CHECK ================= */
-
+            $totalMinutes = 0;
             foreach ($validated['plan_types'] as $row) {
 
                 $start = Carbon::parse($row['start_time']);
@@ -327,6 +357,7 @@ class LibraryConfigurationService
                 if ($end->lessThanOrEqualTo($start)) {
                     $end->addDay();
                 }
+                //  $totalMinutes += $start->diffInMinutes($end);
 
                 while ($start < $end) {
                     $coveredMinutes[$start->format('H:i')] = true;
@@ -335,6 +366,7 @@ class LibraryConfigurationService
             }
 
             $totalCoveredHours = count($coveredMinutes) / 60;
+            // $totalCoveredHours = $totalMinutes / 60;
 
             if ($branchRecord->hour != 24 && $totalCoveredHours > $branchRecord->hour) {
                 throw new \Exception('Shift timing exceeds library hours.');
@@ -405,7 +437,7 @@ class LibraryConfigurationService
                 $currentId = $row['plan_type_id'] ?? null;
 
                 /* ================= DB DUPLICATE CHECK ================= */
-
+                $existing = null;
                 if ($row['day_type_id'] == 0) {
 
                     $existing = PlanType::where('branch_id', $branchId)
@@ -451,13 +483,11 @@ class LibraryConfigurationService
                 };
                 $shiftId = $currentId;
 
-                if ($shiftId) {
+                if ($shiftId && isset($existingPlanTypesById[$shiftId])) {
 
                     $isUpdating = true;
 
-                    $planType = PlanType::where('id', $shiftId)
-                        ->where('branch_id', $branchId)
-                        ->first();
+                    $planType = $existingPlanTypesById[$shiftId];
 
                     if (!$planType) {
                         throw new \Exception('Invalid shift selected.');
@@ -496,9 +526,15 @@ class LibraryConfigurationService
                     $row['price'] = 0;
                 }
 
-                $existingPrice = PlanPrice::where('plan_type_id', $planType->id)
-                    ->where('branch_id', $branchId)
-                    ->first();
+               
+
+                // $existingPrice = PlanPrice::where('plan_type_id', $planType->id)
+                //     ->where('branch_id', $branchId)
+                //     ->first();
+
+
+                 $existingPrices = PlanPrice::where('branch_id', $branchId)->get()->keyBy('plan_type_id');
+                $existingPrice = $existingPrices[$planType->id] ?? null;
 
                 if ($existingPrice) {
 
@@ -540,7 +576,7 @@ class LibraryConfigurationService
             }
             
 
-            DB::commit();
+           if ($useTransaction) DB::commit();
             
             return [
                 'status' => true,
@@ -550,7 +586,7 @@ class LibraryConfigurationService
 
         } catch (\Exception $e) {
 
-            DB::rollBack();
+            if ($useTransaction) DB::rollBack();
 
             return [
                 'status' => false,

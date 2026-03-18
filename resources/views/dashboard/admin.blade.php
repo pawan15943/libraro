@@ -1038,6 +1038,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(!$renewSeats->isEmpty())
 
                         @foreach($renewSeats as $key => $value)
+                        
                      
                         <li>
                             <div class="d-flex">
@@ -1083,14 +1084,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <li>
                                         <a target="_blank"
                                             href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
-                                                "Dear {$value->name},\n\nYour plan expired on {$value->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                        ) }}">
+                                                "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                            ) }}">
                                             <i class="fab fa-whatsapp"
                                                 data-bs-placement="bottom"
                                                 data-bs-toggle="tooltip"
                                                 data-bs-title="Send Reminder"></i>
                                         </a>
-
                                     </li>
 
 
@@ -1120,7 +1120,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <ul class="contents">
                         @if(!$extend_sets->isEmpty())
 
+
                         @foreach($extend_sets as $seat)
+                       
                         <li>
                             <div class="d-flex">
                                 <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
@@ -1169,7 +1171,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     <li>
                                         <a target="_blank"
                                             href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
-                                                "Dear {$seat->name},\n\nYour plan expired on {$seat->plan_end_date}.\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                                "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
                                         ) }}">
                                             <i class="fab fa-whatsapp"
                                                 data-bs-placement="bottom"

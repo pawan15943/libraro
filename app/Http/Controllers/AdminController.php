@@ -35,7 +35,7 @@ class AdminController extends Controller
                 'libraries.library_name', 
                 'libraries.library_mobile', 
                 'libraries.email'
-            );
+            )->orderByDesc('libraries.id');
     
           
 
@@ -150,6 +150,16 @@ class AdminController extends Controller
 
     public function libraryPaymentStore(Request $request)
     {
+         $request->validate([
+            'library_id'        => 'required|integer|exists:libraries,id',
+            'library_type'      => 'required|string',
+            'payment'           => 'required|in:new,renew,pre,pending',
+            'month'             => 'nullable|in:monthly,yearly',
+            'amount'            => 'required|numeric|min:0',
+            'paid_amount'       => 'required|numeric|min:0',
+            'transaction_id'    => 'nullable|string|max:255',
+            'transaction_date'  => 'required|date',
+        ]);
         $library_id = (int) trim($request->library_id);
 
         $subscription = $request->library_type;
@@ -244,6 +254,10 @@ class AdminController extends Controller
             Log::info('Creating new library transaction', ['data' => $data]);
             LibraryTransaction::create($data);
         }
+
+        if($start_date==Carbon::now()->format('Y-m-d')){
+            $status=1;
+        }
     
         if ($request->payment == 'new') {
             Log::info('NEW payment detected, updating status');
@@ -258,7 +272,7 @@ class AdminController extends Controller
             Library::where('id', $request->library_id)->update([
                 'library_type' => $subscription,
                 'is_paid' => 1,
-                'status' => 1,
+                'status' => $status,
             ]);
         }
     
