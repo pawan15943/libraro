@@ -1028,18 +1028,19 @@ class MasterController extends Controller
 
     public function editLibraryUser($id)
     {
+        
         $libraryId = auth('library_api')->id();
 
         $user = LibraryUser::where('id', $id)
             ->where('library_id', $libraryId)
-            ->select( 'id','name','email','mobile',)
+            ->select( 'id','name','email','mobile','branch_id')
             ->first();
-
+          
         if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'User not found'
-            ],404);
+            ],200);
         }
 
         // Branch ids (stored as json)
