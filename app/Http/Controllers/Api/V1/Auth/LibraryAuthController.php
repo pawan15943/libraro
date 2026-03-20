@@ -915,11 +915,34 @@ class LibraryAuthController extends Controller
             $detail = $request->branch_detail ?? [];
 
             $normalized['name']         = $detail['branch_name'] ?? null;
-            $normalized['display_name'] = $detail['branch_name'] ?? null;
+            $normalized['display_name'] = $detail['display_name'] ?? $detail['branch_name'] ?? null;
             $normalized['email']        = $detail['email'] ?? null;
             $normalized['mobile']       = $detail['contact_number'] ?? null;
             $normalized['founder_day']  = $detail['founded_date'] ?? null;
             $normalized['upi_id']       = $detail['upi_id'] ?? null;
+
+            /* ================= NEW FIELDS (ADD THIS) ================= */
+            $normalized['library_category'] = $detail['library_category'] ?? null;
+             $normalized['working_days'] = $detail['working_days'] ?? null;
+
+            $normalized['library_address']  = $detail['library_address'] ?? null;
+            $normalized['library_zip']      = $detail['library_zip'] ?? null;
+
+            $normalized['state_id'] = !empty($detail['state_id']) ? $detail['state_id'] : null;
+            $normalized['city_id']  = !empty($detail['city_id']) ? $detail['city_id'] : null;
+
+            $normalized['google_map']       = $detail['google_map'] ?? null;
+            $normalized['description']      = $detail['description'] ?? null;
+
+            $normalized['latitude']         = $detail['latitude'] ?? null;
+            $normalized['longitude']        = $detail['longitude'] ?? null;
+
+            $normalized['fixed_billing_date'] = $detail['fixed_billing_date'] ?? null;
+
+            /* ================= FEATURES (IMPORTANT) ================= */
+            $normalized['features'] = is_array($request->features) ? $request->features : [];
+            /* ================= LIBRARY IMAGES ================= */
+            $normalized['library_images'] = $request->file('library_images') ?? [];
 
             /* ================= MASTER ================= */
             $master = $request->branch_master ?? [];
@@ -973,6 +996,8 @@ class LibraryAuthController extends Controller
 
 
         $branchId  = $request->branch_id ?? null;
+       
+       
 
         $planCount = Plan::where('library_id', $libraryId)->count();
 
@@ -990,11 +1015,44 @@ class LibraryAuthController extends Controller
             'plans'       => $planCount === 0 ? 'required|array|min:1' : 'nullable|array',
             'plans.*'     => 'string',
             'floors'      => 'nullable|array',
+            'library_address' => 'nullable|string',
+            'library_zip'     => 'nullable|string|max:6',
+            'state_id'        => 'nullable|exists:states,id',
+            'city_id'         => 'nullable|exists:cities,id',
+
+            'latitude'        => 'nullable',
+            'longitude'       => 'nullable',
+
+            'google_map'      => 'nullable|string',
+            'description'     => 'nullable|string',
+
+            'library_category'=> 'nullable|string|in:public,private',
+             'working_days'   => 'nullable|array',
+            'working_days.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+
+            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+            'features'   => 'nullable|array',
+            'features.*' => 'integer',
+            'library_images'   => 'nullable|array|max:4',
+            'library_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
         $validator = Validator::make($request->all(), $rules);
+        // ✅ FIRST get validated data
+        $validated = $validator->validated();
+                // working_days fix
+       // working_days
+      if (array_key_exists('working_days', $validated)) {
+            $validated['working_days'] = !empty($validated['working_days'])
+                ? implode(', ', $validated['working_days'])
+                : null;
+        }
 
-        $plans = $request->input('plans', []);
+       
+
+        $plans = $request->has('plan') 
+        ? ($validated['plans'] ?? []) 
+        : null;
 
         $slug = Str::slug($request->name.'-'.$libraryId);
    
@@ -1063,9 +1121,9 @@ class LibraryAuthController extends Controller
             ], 422);
         }
         $validated = $validator->validated();
-        $validated['library_images'] = [];
-        $validated['features'] = $request->features ?? null;
-        $validated['google_map'] = $request->google_map ?? null;
+        $validated['library_images'] = $request->file('library_images') ?? null;
+        $validated['features'] = $validated['features'] ?? [];
+        $validated['google_map'] = $validated['google_map'] ?? null;
 
         /* ================= CALL GLOBAL SERVICE ================= */
       
@@ -1130,6 +1188,44 @@ class LibraryAuthController extends Controller
 
         return response()->json($response);
     }
+
+          /*
+    |--------------------------------------------------------------------------
+    | Branch List API
+    |--------------------------------------------------------------------------
+    */
+
+   public function branches()
+   {
+      $library = auth('library_api')->user();
+       $libraryId = authLibraryId();
+      $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
+        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id')
+        ->get() 
+        ->map(function ($branch) {
+
+            return [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'mobile' => $branch->mobile,
+                'email' => $branch->email,
+                'address' => $branch->library_address ?? '',
+                'state' => $branch->state->state_name ?? '',
+                'city' => $branch->city->city_name ?? '',
+                'zip_code' => $branch->library_zip ?? '',
+                'status' => $branch->status == 1 ? 'Active' : 'Deactive',
+
+                // 🔥 main logic
+                'can_delete' => $branch->learners_count == 0 ? true : false
+            ];
+        });
+
+
+        return response()->json([
+            'status' => true,
+            'data' => $branches
+        ]);
+   }
 
     // public function branchShiftConfigure(Request $request){
     //     $branchId  =$request->branch_id;

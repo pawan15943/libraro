@@ -27,7 +27,13 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
     Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
     Route::post('library/branch/configure', [LibraryAuthController::class, 'configure']);
+    Route::post('library/branch/store', [LibraryAuthController::class, 'configure']);
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
+    Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
+    
+
+    Route::post('branch/status/{id}', [MasterController::class, 'branchStatus']);
+    Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     
 
@@ -46,11 +52,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
 
-    Route::get('branch/list', [MasterController::class, 'branches']);
-    Route::post('branch/store', [MasterController::class, 'branchStore']);
-    Route::post('branch/shift-config/{id}', [MasterController::class, 'shiftConfig']);
-    Route::post('branch/status/{id}', [MasterController::class, 'branchStatus']);
-    Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
+   
 
     Route::post('/floor/store', [MasterController::class, 'floorStore']);
     Route::get('/floor/list', [MasterController::class, 'floorlist']);

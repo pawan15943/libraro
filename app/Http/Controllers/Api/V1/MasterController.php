@@ -1166,42 +1166,26 @@ class MasterController extends Controller
         ]);
     }
 
-         /*
-    |--------------------------------------------------------------------------
-    | Branch List API
-    |--------------------------------------------------------------------------
-    */
-
-   public function branches()
-   {
-      $library = auth('library_api')->user();
-       $libraryId = authLibraryId();
-      $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
-        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id')
-        ->get() 
-        ->map(function ($branch) {
-
-            return [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'mobile' => $branch->mobile,
-                'email' => $branch->email,
-                'address' => $branch->library_address ?? '',
-                'state' => $branch->state->state_name ?? '',
-                'city' => $branch->city->city_name ?? '',
-                'zip_code' => $branch->library_zip ?? '',
-                'status' => $branch->status == 1 ? 'Active' : 'Deactive',
-
-                // 🔥 main logic
-                'can_delete' => $branch->learners_count == 0 ? true : false
-            ];
-        });
-
+   public function branchStatus($id)
+    {
+        $branch = Branch::findOrFail($id);
+        $branch->status = !$branch->status;
+        $branch->save();
 
         return response()->json([
             'status' => true,
-            'data' => $branches
+            'message' => 'Status updated'
         ]);
-   }
+    }
+
+    public function branchDestroy($id)
+    {
+        Branch::findOrFail($id)->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Deleted successfully'
+        ]);
+    }
     
 }

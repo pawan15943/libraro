@@ -77,7 +77,9 @@ class LibraryConfigurationService
 
            $floorses = $validated['floors'] ?? [];
           
-           $plans = $validated['plans'] ?? [];
+           $plans = $request->has('plan') 
+            ? ($validated['plans'] ?? []) 
+            : null;
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
@@ -143,7 +145,12 @@ class LibraryConfigurationService
 
             $branch = $existingBranch ?? new Branch();
            
-            $branch->fill($branchData);
+            // $branch->fill($branchData);
+            foreach ($branchData as $key => $value) {
+                if (!is_null($value)) {
+                    $branch->$key = $value;
+                }
+            }
             $branch->library_id = $libraryId;
             if (!$existingBranch) {
 
@@ -170,7 +177,17 @@ class LibraryConfigurationService
             
    
 
-            if (!empty($validated['features'])) {
+            // if (!empty($validated['features'])) {
+
+            //     $features = $validated['features'];
+
+            //     if (is_string($features)) {
+            //         $features = json_decode($features, true);
+            //     }
+
+            //     $branch->features = $features; 
+            // }
+            if (array_key_exists('features', $validated)) {
 
                 $features = $validated['features'];
 
@@ -178,11 +195,15 @@ class LibraryConfigurationService
                     $features = json_decode($features, true);
                 }
 
-                $branch->features = $features; 
+                // if empty array → store null
+                $branch->features = !empty($features) ? $features : null;
             }
 
             $branch->google_map = $validated['google_map'] ?? null;
-          
+            if (array_key_exists('working_days', $validated)) {
+                $branch->working_days = $validated['working_days']; // allow null also
+            }
+                    
             $branch->save();
 
             /* =========================
@@ -202,7 +223,7 @@ class LibraryConfigurationService
             /* =========================
             PLANS
             ========================= */
-            if ($existingBranch || $branchCount == 0){
+            if ($plans !== null && ($existingBranch || $branchCount == 0)) {
             
                 $existingPlans = Plan::where('library_id', $libraryId)
                     ->get()
@@ -278,9 +299,7 @@ class LibraryConfigurationService
             ->whereNotIn('floor_no', $incomingFloorNos)
             ->delete();
 
-            /* =========================
-            LIBRARY IMAGES
-            ========================= */
+           
          
             if ($existingBranch){
                 $message='Branch updated successfully.';
