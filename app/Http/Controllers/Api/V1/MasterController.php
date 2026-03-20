@@ -873,17 +873,23 @@ class MasterController extends Controller
                 )
                 ->get();
 
-            $result = $permissions->groupBy('category_name')
-                ->map(function ($items) {
+            $grouped = $permissions->groupBy('category_name');
 
-                    return $items->map(function ($permission) {
+            $result = $grouped->map(function ($items, $category) {
+
+                return [
+                    'category' => $category,
+                    'display_name' => ucfirst($category) . ' Permissions',
+                    'permissions' => $items->map(function ($permission) {
                         return [
-                            'id'   => $permission->id,
-                            'name' => $permission->name
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+                            'is_selected' => false // 👈 default OR dynamic
                         ];
-                    })->values();
+                    })->values()
+                ];
 
-                });
+            })->values(); // महत्वपूर्ण (important)
         }
 
         return response()->json([
@@ -1159,5 +1165,43 @@ class MasterController extends Controller
             'message'=>'User deleted successfully'
         ]);
     }
+
+         /*
+    |--------------------------------------------------------------------------
+    | Branch List API
+    |--------------------------------------------------------------------------
+    */
+
+   public function branches()
+   {
+      $library = auth('library_api')->user();
+       $libraryId = authLibraryId();
+      $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
+        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id')
+        ->get() 
+        ->map(function ($branch) {
+
+            return [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'mobile' => $branch->mobile,
+                'email' => $branch->email,
+                'address' => $branch->library_address ?? '',
+                'state' => $branch->state->state_name ?? '',
+                'city' => $branch->city->city_name ?? '',
+                'zip_code' => $branch->library_zip ?? '',
+                'status' => $branch->status == 1 ? 'Active' : 'Deactive',
+
+                // 🔥 main logic
+                'can_delete' => $branch->learners_count == 0 ? true : false
+            ];
+        });
+
+
+        return response()->json([
+            'status' => true,
+            'data' => $branches
+        ]);
+   }
     
 }

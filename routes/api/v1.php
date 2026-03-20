@@ -25,20 +25,33 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(function () {
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
-   
+    Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
     Route::post('library/branch/configure', [LibraryAuthController::class, 'configure']);
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
-    Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
+    // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
+    
+
+
     Route::get('plans', [MasterController::class, 'plans']);
     Route::get('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
     Route::get('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
     Route::get('plan-price', [MasterController::class, 'getPriceApi']);
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
     Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
+
+
     Route::get('library/detail', [LibraryController::class, 'getLibraryDetail']);
-    Route::get('library/branches', [LibraryController::class, 'getCurrentBranchDetail']);
+    
+    // Route::get('library/branches', [LibraryController::class, 'getCurrentBranchDetail']);
 
     Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
+
+    Route::get('branch/list', [MasterController::class, 'branches']);
+    Route::post('branch/store', [MasterController::class, 'branchStore']);
+    Route::post('branch/shift-config/{id}', [MasterController::class, 'shiftConfig']);
+    Route::post('branch/status/{id}', [MasterController::class, 'branchStatus']);
+    Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
+
     Route::post('/floor/store', [MasterController::class, 'floorStore']);
     Route::get('/floor/list', [MasterController::class, 'floorlist']);
     Route::post('/plan/store',[MasterController::class,'planStore']);

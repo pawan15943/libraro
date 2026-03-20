@@ -19,6 +19,10 @@ class Branch extends Model
         'features' => 'array',
         'library_images' => 'array',
     ];
+    public function learners()
+    {
+        return $this->hasMany(Learner::class, 'branch_id');
+    }
 
     public function hour()
     {

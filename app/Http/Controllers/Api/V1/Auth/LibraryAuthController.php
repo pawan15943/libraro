@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use App\Events\LibraryRegistered;
+use App\Models\Floor;
+use App\Models\Hour;
 use App\Models\TempOrder;
 
 class LibraryAuthController extends Controller
@@ -1128,5 +1130,80 @@ class LibraryAuthController extends Controller
 
         return response()->json($response);
     }
+
+    // public function branchShiftConfigure(Request $request){
+    //     $branchId  =$request->branch_id;
+    //   $libraryId = authLibraryId();
+
+    //   // Branch details
+    //   $branch = Branch::select(
+    //      'name as branch_name',
+    //      'founder_day as founded_date',
+    //      'email',
+    //      'mobile as contact_number',
+    //      'upi_id',
+    //      'extend_days',
+    //      'locker_amount'
+    //   )->where('id', $branchId)->first();
+
+    //   // Branch master
+    //   $branchMaster = Hour::where('branch_id', $branchId)
+    //      ->select(
+    //            'seats as total_seats',
+    //            'hour as operating_hours'
+    //      )->first();
+
+    //   // Plans
+    //   $plans = Plan::where('library_id', $libraryId)->select('id','name','monthdays')
+    //      ->get();
+
+    //   // Floors
+    //   $floors = Floor::where('branch_id', $branchId)
+    //      ->select(
+    //            'floor_no',
+    //            'name as floor_name',
+    //            'from_seat',
+    //            'to_seat',
+    //            'total_seats'
+    //      )->get();
+
+    //   // Shifts
+    //   $shifts = collect();
+
+    //   if ($branchId) {
+    //         // PlanPrice::leftJoin('plan_prices', 'plan_prices.plan_type_id', '=', 'plan_types.id')
+    //      $shifts = PlanType::withoutGlobalScopes()
+    //            ->where('branch_id', $branchId)
+    //            ->select(
+    //               'name',
+    //               'day_type_id as type',
+    //               'name as custom_name',
+    //               'start_time',
+    //               'end_time',
+    //               'slot_hours as duration_hours',
+    //            )
+    //            ->get();
+    //   }
+
+    //   return response()->json([
+    //      'status'  => true,
+    //      'message' => 'Branch data fetched successfully',
+    //      'data'    => [
+    //            'branch_details' => $branch ?? [],
+
+    //            'branch_master' => [
+    //               'total_seats'      => $branchMaster->total_seats ?? 0,
+    //               'operating_hours'  => $branchMaster->operating_hours ?? 0,
+    //               'extend_days'      => $branch->extend_days ?? 0,
+    //               'locker_amount'    => $branch->locker_amount ?? 0,
+    //            ],
+
+    //            'plan'   => $plans,
+    //            'floors' => $floors,
+    //            'shifts' => $shifts
+    //      ]
+    //   ]);
+
+    // }
 
 }

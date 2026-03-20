@@ -91,7 +91,7 @@ class LibraryController extends Controller
                'library_name'   => $library->library_name,
                'library_email'  => $library->library_email,
                'library_mobile' => $library->library_mobile,
-                'pyment_upi'=>$getPaymentUpi->upi_id,
+               'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
               
@@ -105,104 +105,82 @@ class LibraryController extends Controller
     |--------------------------------------------------------------------------
     */
 
-  public function getCurrentBranchDetail()
-   {
-      $branchId  = getCurrentBranch();
-      $libraryId = authLibraryId();
+//   public function getCurrentBranchDetail()
+//    {
+//       $branchId  = getCurrentBranch();
+//       $libraryId = authLibraryId();
 
-      // Branch details
-      $branch = Branch::select(
-         'name as branch_name',
-         'founder_day as founded_date',
-         'email',
-         'mobile as contact_number',
-         'upi_id',
-         'extend_days',
-         'locker_amount'
-      )->where('id', $branchId)->first();
+//       // Branch details
+//       $branch = Branch::select(
+//          'name as branch_name',
+//          'founder_day as founded_date',
+//          'email',
+//          'mobile as contact_number',
+//          'upi_id',
+//          'extend_days',
+//          'locker_amount'
+//       )->where('id', $branchId)->first();
 
-      // Branch master
-      $branchMaster = Hour::where('branch_id', $branchId)
-         ->select(
-               'seats as total_seats',
-               'hour as operating_hours'
-         )->first();
+//       // Branch master
+//       $branchMaster = Hour::where('branch_id', $branchId)
+//          ->select(
+//                'seats as total_seats',
+//                'hour as operating_hours'
+//          )->first();
 
-      // Plans
-      $plans = Plan::where('library_id', $libraryId)
-         ->get();
+//       // Plans
+//       $plans = Plan::where('library_id', $libraryId)
+//          ->get();
 
-      // Floors
-      $floors = Floor::where('branch_id', $branchId)
-         ->select(
-               'floor_no',
-               'name as floor_name',
-               'from_seat',
-               'to_seat',
-               'total_seats'
-         )->get();
+//       // Floors
+//       $floors = Floor::where('branch_id', $branchId)
+//          ->select(
+//                'floor_no',
+//                'name as floor_name',
+//                'from_seat',
+//                'to_seat',
+//                'total_seats'
+//          )->get();
 
-      // Shifts
-      $shifts = collect();
+//       // Shifts
+//       $shifts = collect();
 
-      if ($branchId) {
-            // PlanPrice::leftJoin('plan_prices', 'plan_prices.plan_type_id', '=', 'plan_types.id')
-         $shifts = PlanType::withoutGlobalScopes()
-               ->where('branch_id', $branchId)
-               ->select(
-                  'name',
-                  'day_type_id as type',
-                  'name as custom_name',
-                  'start_time',
-                  'end_time',
-                  'slot_hours as duration_hours',
-               )
-               ->get();
-      }
+//       if ($branchId) {
+//             // PlanPrice::leftJoin('plan_prices', 'plan_prices.plan_type_id', '=', 'plan_types.id')
+//          $shifts = PlanType::withoutGlobalScopes()
+//                ->where('branch_id', $branchId)
+//                ->select(
+//                   'name',
+//                   'day_type_id as type',
+//                   'name as custom_name',
+//                   'start_time',
+//                   'end_time',
+//                   'slot_hours as duration_hours',
+//                )
+//                ->get();
+//       }
 
-      return response()->json([
-         'status'  => true,
-         'message' => 'Branch data fetched successfully',
-         'data'    => [
-               'branch_details' => $branch ?? [],
+//       return response()->json([
+//          'status'  => true,
+//          'message' => 'Branch data fetched successfully',
+//          'data'    => [
+//                'branch_details' => $branch ?? [],
 
-               'branch_master' => [
-                  'total_seats'      => $branchMaster->total_seats ?? 0,
-                  'operating_hours'  => $branchMaster->operating_hours ?? 0,
-                  'extend_days'      => $branch->extend_days ?? 0,
-                  'locker_amount'    => $branch->locker_amount ?? 0,
-               ],
+//                'branch_master' => [
+//                   'total_seats'      => $branchMaster->total_seats ?? 0,
+//                   'operating_hours'  => $branchMaster->operating_hours ?? 0,
+//                   'extend_days'      => $branch->extend_days ?? 0,
+//                   'locker_amount'    => $branch->locker_amount ?? 0,
+//                ],
 
-               'plan'   => $plans,
-               'floors' => $floors,
-               'shifts' => $shifts
-         ]
-      ]);
-   }
+//                'plan'   => $plans,
+//                'floors' => $floors,
+//                'shifts' => $shifts
+//          ]
+//       ]);
+//    }
 
-     /*
-    |--------------------------------------------------------------------------
-    | Branch Dropdown API
-    |--------------------------------------------------------------------------
-    */
 
-   // public function branches()
-   // {
-   //    $library = auth('library_api')->user();
-   //     $libraryId = authLibraryId();
-   //    $branches = Branch::where('library_id', $libraryId)
-   //       ->where('status', 1)
-   //       ->select('id', 'name')
-   //       ->get();
-
-   //    return response()->json([
-   //       'status' => true,
-   //       'data' => [
-   //             'active_branch_id' => getCurrentBranch(),
-   //             'branches' => $branches
-   //       ]
-   //    ]);
-   // }
 
     /*
     |--------------------------------------------------------------------------
