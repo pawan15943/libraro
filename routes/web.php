@@ -14,6 +14,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataController;
+use App\Http\Controllers\DemoUserController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\LearnerController;
@@ -330,8 +331,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
         [AttendanceController::class, 'summary']
     )->name('attendance.summary');
 
-
-    
+    Route::get('demo-users', [DemoUserController::class, 'index'])->name('demo-users.index');
+    Route::post('demo-users/store', [DemoUserController::class, 'store'])->name('demo-users.store');
+    Route::get('demo-users/create', [DemoUserController::class, 'create'])->name('demo-users.create');
 
 
   });
