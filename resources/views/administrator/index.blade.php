@@ -69,6 +69,7 @@
                         <th>Plan</th>
                         <th>Starts On</th>
                         <th>Expired On</th>
+                        <th>OTP</th>
                         <th style="width:30%">Action</th>
                     </tr>
                 </thead>
@@ -145,6 +146,7 @@
                             @endif
                             
                         </td>
+                        <td>{{$value->email_otp}}</td>
 
                         <td>
                             
