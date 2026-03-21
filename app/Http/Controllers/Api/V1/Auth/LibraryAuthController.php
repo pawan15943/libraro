@@ -1206,6 +1206,7 @@ class LibraryAuthController extends Controller
 
             return [
                 'id' => $branch->id,
+                'uuid'=>$branch->uuid ?? '',
                 'name' => $branch->name,
                 'mobile' => $branch->mobile,
                 'email' => $branch->email,
@@ -1214,7 +1215,8 @@ class LibraryAuthController extends Controller
                 'city' => $branch->city->city_name ?? '',
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
-
+               'library_logo' => $branch->library_logo ? asset('public/' . $branch->library_logo) : asset('public/img/user.png'),
+                
                 // 🔥 main logic
                 'can_delete' => $branch->learners_count == 0 ? true : false
             ];
@@ -1226,6 +1228,97 @@ class LibraryAuthController extends Controller
             'data' => $branches
         ]);
    }
+
+   public function branchDetailEdit(Request $request)
+    {
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id'
+        ]);
+        $libraryId = authLibraryId();
+        $branch = Branch::where('id', $request->branch_id)
+            ->where('library_id', authLibraryId())
+            ->with(['state','city'])
+            ->first();
+
+        if (!$branch) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch not found for this library'
+            ], 404);
+        }
+
+        $hour = Hour::withoutGlobalScopes()
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        return response()->json([
+            'status' => true,
+           'data' => [
+            'branch_id'=>$branch->id,
+            'branch_uuid'=>$branch->uuid,
+
+    /* ================= BASIC ================= */
+    'branch_detail' => [
+        'branch_name'   => $branch->name ?? '',
+        'display_name'  => $branch->display_name ?? '',
+        'email'         => $branch->email ?? '',
+        'contact_number'=> $branch->mobile ?? '',
+        'founded_date'  => $branch->founder_day ?? '',
+        'upi_id'        => $branch->upi_id ?? '',
+
+        'library_category' => $branch->library_category ?? '',
+
+        'working_days' => !empty($branch->working_days)
+            ? explode(', ', $branch->working_days)
+            : [],
+
+        'library_address' => $branch->library_address ?? '',
+        'library_zip'     => $branch->library_zip ?? '',
+
+        'state_id' => $branch->state_id ?? null,
+        'city_id'  => $branch->city_id ?? null,
+
+        'google_map' => $branch->google_map ?? '',
+        'description'=> $branch->description ?? '',
+
+        'latitude'  => $branch->latitude ?? '',
+        'longitude' => $branch->longitude ?? '',
+
+        'fixed_billing_date' => $branch->fixed_billing_date ?? null,
+
+        // ✅ keep only ONE logo here
+        'library_logo' => !empty($branch->library_logo)
+            ? asset('storage/'.$branch->library_logo)
+            : asset('public/img/user.png'),
+    ],
+
+    /* ================= MASTER ================= */
+    'branch_master' => [
+        'total_seats'      => $hour->seats ?? 0,
+        'operating_hours'  => $hour->hour ?? 0,
+        'locker_amount'    => $branch->locker_amount ?? 0,
+        'extend_days'      => $branch->extend_days ?? 0,
+        'token_money'      => $branch->token_money ?? 0,
+    ],
+
+    /* ================= FEATURES ================= */
+    'features' => is_array($branch->features)
+        ? $branch->features
+        : (json_decode($branch->features, true) ?? []),
+
+    /* ================= IMAGES ================= */
+    'library_images' => !empty($branch->library_images)
+        ? collect(json_decode($branch->library_images, true) ?? [])
+            ->map(fn($img) => asset('storage/'.$img))
+            ->values()
+        : [],
+
+    /* ================= EXTRA ================= */
+    'state_name' => optional($branch->state)->state_name ?? '',
+    'city_name'  => optional($branch->city)->city_name ?? '',
+]
+        ]);
+    }
 
     // public function branchShiftConfigure(Request $request){
     //     $branchId  =$request->branch_id;

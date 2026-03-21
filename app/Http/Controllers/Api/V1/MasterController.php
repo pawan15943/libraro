@@ -854,13 +854,26 @@ class MasterController extends Controller
         ]);
     }
 
-    public function libraryPermissions(Request $request)
+   public function libraryPermissions(Request $request)
     {
         $library = auth('library_api')->user();
 
         $subscription = Subscription::find($library->library_type);
 
         $result = [];
+
+        // ✅ get user permissions (if user_id passed)
+        $userPermissionIds = [];
+
+        if (!empty($request->library_user_id)) {
+
+            $user = LibraryUser::find($request->library_user_id);
+
+            if ($user) {
+                // assuming spatie
+                $userPermissionIds = $user->getAllPermissions()->pluck('id')->toArray();
+            }
+        }
 
         if ($subscription) {
 
@@ -875,21 +888,24 @@ class MasterController extends Controller
 
             $grouped = $permissions->groupBy('category_name');
 
-            $result = $grouped->map(function ($items, $category) {
+            $result = $grouped->map(function ($items, $category) use ($userPermissionIds) {
 
                 return [
                     'category' => $category,
                     'display_name' => ucfirst($category) . ' Permissions',
-                    'permissions' => $items->map(function ($permission) {
+                    'permissions' => $items->map(function ($permission) use ($userPermissionIds) {
+
                         return [
                             'id' => $permission->id,
                             'name' => $permission->name,
-                            'is_selected' => false // 👈 default OR dynamic
+
+                            // ✅ MAIN LOGIC
+                            'is_selected' => in_array($permission->id, $userPermissionIds)
                         ];
                     })->values()
                 ];
 
-            })->values(); // महत्वपूर्ण (important)
+            })->values();
         }
 
         return response()->json([
@@ -916,8 +932,8 @@ class MasterController extends Controller
             ],
 
             'password' => $request->id
-                ? 'nullable|min:6|confirmed'
-                : 'required|min:6|confirmed',
+                ? 'nullable|min:6'
+                : 'required|min:6',
 
             'mobile' => 'required|digits:10',
 
@@ -1032,12 +1048,16 @@ class MasterController extends Controller
         }
     }
 
-    public function editLibraryUser($id)
+    public function editLibraryUser(Request $request)
     {
         
         $libraryId = auth('library_api')->id();
+        $request->validate([
+            'library_user_id' => 'required|exists:library_users,id'
+        ]);
 
-        $user = LibraryUser::where('id', $id)
+
+        $user = LibraryUser::where('id', $request->library_user_id)
             ->where('library_id', $libraryId)
             ->select( 'id','name','email','mobile','branch_id')
             ->first();
@@ -1165,6 +1185,8 @@ class MasterController extends Controller
             'message'=>'User deleted successfully'
         ]);
     }
+
+    
 
    public function branchStatus($id)
     {

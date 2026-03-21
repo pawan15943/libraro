@@ -30,7 +30,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/branch/store', [LibraryAuthController::class, 'configure']);
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
     Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
-    
+    Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
 
     Route::post('branch/status/{id}', [MasterController::class, 'branchStatus']);
     Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
@@ -67,9 +67,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     
     Route::get('/price/list', [MasterController::class, 'pricelist']);
     
-    Route::get('/library/permissions', [MasterController::class, 'libraryPermissions']);
+    Route::post('/library/permissions', [MasterController::class, 'libraryPermissions']);
     Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
-    Route::get('/library/user/edit/{id}',[MasterController::class,'editLibraryUser']);
+    Route::post('/library/user/edit',[MasterController::class,'editLibraryUser']);
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
     Route::delete('/library/user/{id}', [MasterController::class, 'deleteLibraryUser']);
