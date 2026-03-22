@@ -418,7 +418,7 @@ span.close-modal {
                             @endif
                             @endif
                         </div>
-                        @if($customer->type=='qr_seat_book')
+                        @if($customer->type=='qr_seat_book' || $customer->type=='demo-bookings' )
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
 
@@ -518,9 +518,18 @@ span.close-modal {
                             </div>
                             @endif
                             
+                            <div class="col-lg-6">
+                                <label for="address">ID Proof No.</label>
+                                <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." value="{{ old('id_proof_number') ?? $customer->id_proof_number ?? '' }}">
+                                
+                                @error('id_proof_number')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            
                             {{-- ================= ADDRESS ================= --}}
                             @if(!in_array('32', toggleHideField()))
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label for="address">Address</label>
                                 <textarea class="form-control"
                                         name="address"

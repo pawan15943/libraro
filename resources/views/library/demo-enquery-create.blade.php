@@ -94,6 +94,13 @@
             opacity: .5;
         }
 
+        .py-4 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+        font-size: 1rem;
+        color: #00677c ! IMPORTANT;
+    }
+
     </style>
  <!-- Cropper Modal -->
 <div class="cropper-modal" id="cropperModal">
@@ -126,8 +133,8 @@
             @endif
               
         <form action="{{ route('demo-users.store') }}" method="POST" enctype="multipart/form-data">
-            <div class="row justify-content-center">
-                <div class="col-lg-7">
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8">
                     <div class="online-booking bg-white p-4 rounded-4">
                         
                         <h4 class="mb-4 text-center">Daily Inquiry</h4>
@@ -163,31 +170,33 @@
                                 @error('seat_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label>Name <span>*</span></label>
                                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
                                 @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            @if(!in_array('1', toggleHideField()))
-                            <div class="col-lg-12">
-                                <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
-                                <span class="text-danger" id="email-error"></span>
-                            </div>
-                            @endif
                             <div class="col-lg-6">
                                 <label>Mobile (WhatsApp No)<span>*</span></label>
                                 <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
                                 @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            @if(!in_array('2', toggleHideField()))
+                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
-                                <label for="">DOB (Optional)</label>
+                                <label for="">DOB (optional)</label>
                                 <input type="date" class="form-control dob" value="{{ old('dob') }}" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
                             </div>
                             @endif
-                          
+                            @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
+                                <label for="">Email Id (optional)</label>
+                                <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
+                                <span class="text-danger" id="email-error"></span>
+                            </div>
+                            @endif
+                            
+                           
+                          
+                            <div class="col-lg-4">
                                 <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id4" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
                                     <option value="">Choose</option>
@@ -200,7 +209,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Type / Shift <span>*</span></label>
                                 <select id="temp_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                                     <option value="">Choose</option>
@@ -208,14 +217,9 @@
                                 @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
-                            <div class="col-lg-6">
-                                <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
-                                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                <span id="chargeable_day_book" class="text-info"></span>
-                            </div>
+                            
 
-                            <div class="col-lg-6">
+                            <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
                                <input type="date"
                                     class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
@@ -225,18 +229,14 @@
                                 @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             
-                            @if(!in_array('8', toggleHideField()))
-                            <div class="col-lg-12">
-                                <label class="form-label">Upload Profile Photo</label>
-                                <input
-                                    type="file"
-                                    class="form-control image-cropper"
-                                    name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
-                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                            <div class="col-lg-6">
+                                <label for="">Final Payble Amount (INR)<span>*</span></label>
+                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
+                                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <span id="chargeable_day_book" class="text-info"></span>
                             </div>
-                            @endif
-                            <div class="col-lg-12">
-                                <label for="">Payment Mode</label>
+                            <div class="col-lg-6">
+                                <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
                                     <option value="paylater" {{ old('payment_mode') == 'paylater' ? 'selected' : '' }}>Pay Later</option>
@@ -248,8 +248,90 @@
                                 </div>
                                 @enderror
                             </div>
+                        </div>
+                        
+
+                            @if(!in_array('7', toggleHideField()))
+                                <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i><h4>
+
+                                <div class="qr_idProofFields" style="display: none;">
+                                    <div class="row g-3">
+                                        @if(!in_array('8', toggleHideField()))
+                                            <div class="col-lg-12">
+                                                <label>Upload Profile Photo (optional)</label>
+                                                <input
+                                                    type="file"
+                                                    class="form-control image-cropper"
+                                                    name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                                            </div>
+                                        @endif
+                                    
+                            
+                                        {{-- ================= ID PROOF ================= --}}
+                                        @if(!in_array('5', toggleHideField()))
+                                        <div class="col-lg-4">
+                                            <label>Id Proof Received</label>
+                                            <select class="form-select" name="id_proof_name">
+                                                <option value="">Select Id Proof</option>
+                                                <option value="1"
+                                                    {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
+                                                    Aadhar
+                                                </option>
+                                                <option value="2"
+                                                    {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
+                                                    Driving License
+                                                </option>
+                                                <option value="3"
+                                                    {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
+                                                    Other
+                                                </option>
+                                            </select>
+                                            <span class="text-danger">Uploading ID proof is optional do it later.</span>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label for="address">ID Proof No.</label>
+                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." >
+
+                                           
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label for="id_proof_file">Upload Scan Copy of Proof</label>
+                                            
+
+                                            <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                                            <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
+                                            @error('id_proof_file')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror
+                                            
+                                        </div>
+                                         
+                                        
+                                        @endif
+                                        
+                                        {{-- ================= ADDRESS ================= --}}
+                                        @if(!in_array('32', toggleHideField()))
+                                        <div class="col-lg-12">
+                                            <label for="address">Address</label>
+                                            <textarea class="form-control"
+                                                    name="address"
+                                                    rows="3"
+                                                    placeholder="Enter address">{{ old('address') ??  '' }}</textarea>
+                                        </div>
+                                        @endif
+
+                                    </div>
+                                </div>
+
+                            @endif
+
+                        
+                        <div class="row mt-4">
                             <div class="col-lg-12">
-                                <button type="submit" class="btn btn-primary button">Next <i class="fa fa-long-arrow-right ms-2"></i></button>
+                                <button type="submit" class="btn btn-primary button">Submit</button>
                             </div>
                         </div>
                     </div>
@@ -258,10 +340,23 @@
         </form>
    
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
-    
+    $(document).ready(function () {
+
+        // Plan Addons Toggle
+        $(document).on('click', '.qr_addonToggleIcon', function () {
+            $('.qr_lockerFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+        // Other Optional Fields Toggle
+        $(document).on('click', '.qr_toggleIcon', function () {
+            $('.qr_idProofFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+    });
     $(document).ready(function() {
          let oldPlanTypeId = "{{ old('plan_type_id') }}";
         function loadPlanTypes() {
