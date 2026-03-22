@@ -512,6 +512,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     SEAT BOOK
                                     @elseif($value->type=='qr_renew')
                                     RENEW SEAT
+                                    @elseif($value->type=='demo-bookings')
+                                    Demo Bookings
                                     @else
                                         -
                                     @endif

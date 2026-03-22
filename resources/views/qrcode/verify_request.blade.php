@@ -428,7 +428,7 @@ span.close-modal {
                             @endif
                             @endif
                         </div>
-                        @if($customer->type=='qr_seat_book')
+                        @if($customer->type=='qr_seat_book' || $customer->type=='demo-bookings' )
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
 

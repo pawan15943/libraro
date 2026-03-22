@@ -20,7 +20,7 @@ class DemoUserController extends Controller
 
     public function index()
     {
-         $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->get();
+         $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->where('type','demo-bookings')->get();
         return view('library.demo-enquery',compact('qrbookings'));
         
     }
@@ -70,29 +70,34 @@ class DemoUserController extends Controller
 
      public function store(Request $request)
     {
+        
        
-        try {
           
-            $branch = Branch::where('id', getCurrentBranch())->firstOrFail();
+        $branch = Branch::where('id', getCurrentBranch())->firstOrFail();
            
             // Build validation rules
-            $rules = [
+           $rules = [
                 'name'           => 'required|string|max:191',
-                'mobile'         => 'required|integer|digits_between:8,15',
-                'email'        => 'nullable',
-                'dob'        => 'nullable',
-                'profile_picture' => 'nullable',
-                'general_seat' => 'nullable|in:yes,no',
-    
-                'seat_no' => [
-                    'nullable',
-                    'required_if:general_seat,no'
-                ],
+                'mobile'         => 'required|digits_between:8,15',
+                'email'          => 'nullable|email',
+                'dob'            => 'nullable|date',
+
+                'profile_picture'=> 'nullable|file|mimes:webp,png,jpg,jpeg|max:2048',
+
+                'general_seat'   => 'nullable|in:yes,no',
+                'seat_no'        => 'required_if:general_seat,no',
+
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
+
                 'plan_start_date'=> 'required|date',
+
                 'payment_mode'   => 'required|in:online,offline,paylater',
+                'id_proof_name' => 'nullable|in:1,2,3',
+                'id_proof_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+                'id_proof_number'=> 'nullable|string|max:150',
+                'address'       => 'nullable|string|max:500',
             ];
             $messages = [
                 'name.required'            => 'Name is required.',
@@ -117,9 +122,11 @@ class DemoUserController extends Controller
                 'payment_mode.in'          => 'Invalid payment mode selected.',
             ];
             
-            
+          
 
             $validated = $request->validate($rules,$messages);
+         
+             
             $plan_id=$validated['plan_id'];
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
@@ -142,7 +149,18 @@ class DemoUserController extends Controller
                 $profile_picture = null;
             }
 
-          
+            $idProofFilePath = null;
+
+            if ($request->hasFile('id_proof_file')) {
+                $file = $request->file('id_proof_file');
+
+                $fileName = 'id_proof_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/id_proof'), $fileName);
+
+                $idProofFilePath = 'public/uploads/id_proof/' . $fileName;
+            }
+
+           try {
             $booking = Booking::create([
                 'name'            => $validated['name'],
                 'mobile' => encryptData($validated['mobile']),
@@ -166,24 +184,17 @@ class DemoUserController extends Controller
                 'transaction_id'  => null,
                 'type'            => $seat_type,
                 'profile_picture' => $profile_picture,
+                    // ✅ NEW FIELDS
+                'id_proof_name'   => $request->id_proof_name,
+                'id_proof_file'   => $idProofFilePath,
+                'id_proof_number'   => $request->id_proof_number,
+                'address'         => $request->address,
             ]);
 
             return redirect()
                     ->route('demo-users.index')
                     ->with('success', 'Booking successful! Please complete payment to confirm your seat.');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-          
-             Log::warning('VALIDATION EXCEPTION', [
-                'method' => request()->method(),
-                'url'    => request()->fullUrl(),
-                'errors' => $e->errors(),
-            ]);
-
-            return redirect()
-                ->route('demo-users.index')
-                ->withErrors($e->validator)
-                ->withInput();
         } catch (\Exception $e) {
            
              Log::error('BOOKING STORE CRASH', [

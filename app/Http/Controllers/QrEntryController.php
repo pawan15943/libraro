@@ -686,6 +686,7 @@ class QrEntryController extends Controller
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
       
+      
         return view('qrcode.verify_request', compact('customer','planType','plans','transaction','learner','filteredPlanTypes'));
     }
 
@@ -758,6 +759,7 @@ class QrEntryController extends Controller
             'locker_no.numeric' => 'Locker number must be numeric.',
             'locker_amount.required_if' => 'Locker amount is required when locker is selected.',
         ];
+       
         $validator = Validator::make($request->all(), $rules,$messages);
         if ($validator->fails()) {
             
@@ -983,6 +985,7 @@ class QrEntryController extends Controller
             }
                
             if($learnerId){
+            
                 $customer=Learner::find($learnerId);
                 $customer->seat_no=$seat_no;
                 $customer->hours=$hours;
@@ -997,7 +1000,7 @@ class QrEntryController extends Controller
                 $customer->save();
                
             }else{
-               
+             
                 $customer = Learner::create([
                  'seat_no' => $seat_no,
                 'name' => $request->input('name') ?? $bookingurl->name,

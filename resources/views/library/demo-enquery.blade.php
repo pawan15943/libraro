@@ -1,97 +1,166 @@
 @extends('layouts.library')
 
 @section('content')
+<style>
+    ul.actions-icons.d-flex {
+        justify-content: flex-start;
+    }
+
+    ul.actions-icons.d-flex li+li {
+        margin-left: 1.3rem;
+    }
+
+    .revenue-info ul {
+        align-items: center;
+    }
+
+    p.uppercase {
+        text-transform: uppercase;
+    }
+</style>
 
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Demo Bookings</h4>
-        <a href="{{ route('demo-users.create') }}" class="btn btn-primary button w-25"> + Add Demo User</a>
+
+@if($qrbookings?->count() > 0)
+    <div class="heading-list justify-content-end mb-4">
+        <a href="{{ route('demo-users.create') }}" class="btn btn-primary export m-0">
+            <i class="fa-solid fa-plus "></i> Add Inquiry
+        </a>
     </div>
-
-        <div class="table-responsive">
-
+    <div class="row g-2 mb-4">
         
-            <table class="table text-center datatable border-bottom dataTable no-footer" id="datatable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Mobile</th>
-                        <th>Plan Info</th>
-                        <th>Payment Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                     @if($qrbookings?->count() > 0)
-                        @php
-                        $x = 1;
-                        @endphp
-                    @foreach($qrbookings as $key => $value)
+        @foreach($qrbookings as $key => $value)
+        <div class="col-lg-12">
+            <div class="revenue-info">
+                <ul>
 
-                    <tr>
-                        <td>
-                            {{$key+1}}
-                        </td>
-                        <td>{{$value->name}}<br>{{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</td>
-                        <td>{{$value->mobile ? '+91-'.decryptData($value->mobile) : ''}}</td>
-                        <td>{{ $value->planType->name ?? 'N/A' }} | {{ number_format($value->total_amount ?? 0, 0) }} <br> {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
+                    {{-- Profile Image --}}
+                    <li style="width: 8%;">
+                        <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
+                    </li>
 
-                        @if($value->payment_screenshot)
-                        <td>
-                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success text-decoration-none">
+                    {{-- Seat + Plan --}}
+                    <li>
+                        <span>Seat No</span>
+                        <p class="uppercase">
+                            {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}
+                            : {{ $value->planType->name ?? 'N/A' }}
+                        </p>
+                    </li>
+
+                    {{-- Name --}}
+                    <li>
+                        <span>Name</span>
+                        <p class="uppercase">{{ $value->name }}</p>
+                    </li>
+
+                    {{-- Mobile --}}
+                    <li>
+                        <span>Mobile</span>
+                        <p>
+                            {{ $value->mobile ? '+91-'.decryptData($value->mobile) : '-' }}
+                        </p>
+                    </li>
+
+                    {{-- Plan Info --}}
+                    <li>
+                        <span>Plan Price</span>
+                        <p>
+                            ₹{{ number_format($value->total_amount ?? 0, 0) }}
+                            @if($value->payment_screenshot)
+                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="text-success">
                                 Paid
                             </a>
-                        </td>
-                        @else
-                        <td>
-                            <span class="badge bg-danger">Unpaid</span>
-                        </td>
-                        @endif
+                            @else
+                            <span class="text-danger">Unpaid</span>
+                            @endif
+                        </p>
+                    </li>
+                    {{-- Plan Info --}}
+                    <li>
+                        <span>Start Date</span>
+                        <p>
+                            {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}
 
-                        <td class="text-center">
-                            <ul class="actions-icons justify-content-center">
-                               
-                                @if( $value->payment_screenshot && $value->payment_mode=='online' )
+                        </p>
+                    </li>
+
+                
+
+                    {{-- Actions --}}
+                    <li>
+                        <p>
+                            <ul class="actions-icons d-flex">
+
+                                {{-- Approve --}}
+                                @if($value->payment_screenshot && $value->payment_mode=='online')
                                 <li>
-                                    <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                    <form action="{{route('booking.details.approve')}}" method="POST" class="approve-form">
                                         @csrf
                                         <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                        <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
-                                        <button type="submit" class="btn btn-success noLoader" ><i class="fa fa-check"></i></button>
+                                        <input type="hidden" name="direct_validate" value="1">
+                                        <button type="submit" class="btn btn-success btn-sm noLoader">
+                                            <i class="fa fa-check"></i>
+                                        </button>
                                     </form>
-
                                 </li>
                                 @endif
-                               
-                                <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
+
+                                {{-- View --}}
                                 <li>
-                                    <a href="javascript:void(0)"
-                                        class="delete-booking"
-                                        data-id="{{ $value->id }}">
+                                    <a href="{{ route('booking.details', $value->id) }}">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                </li>
+
+                                {{-- Delete --}}
+                                <li>
+                                    <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}">
                                         <i class="fa fa-trash"></i>
                                     </a>
                                 </li>
+
+                                {{-- WhatsApp --}}
                                 <li>
-                                    <a href="javascript:void(0)"
-                                        class="delete-booking"
-                                        data-id="{{ $value->id }}">
+                                    <a href="javascript:void(0)">
                                         <i class="fab fa-whatsapp"></i>
                                     </a>
                                 </li>
+
                             </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                    @else
-                    <tr>
-                        <th colspan="6" class="text-center" style="height: 230px;">No Booking Found yet</th>
-                    </tr>
-                    @endif
-                </tbody>
-            </table>
-      </div>
+                        </p>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+        @endforeach
+    </div>
+@else
+<div class="no-data-found">
+    <script
+        src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+        type="module"></script>
+
+    <dotlottie-wc
+        src="https://lottie.host/5d973bf9-2f1d-4dd5-925f-86da95dbd7b1/t7dXaWIroC.lottie"
+        style="width: 200px;height: 200px"
+        autoplay
+        loop></dotlottie-wc>
+    <h4>You haven’t added any Demo Inquiry yet.</h4>
+    <!-- Masters -->
+    @can('has-permission','Add Exam Master')
+    <div class="heading-list justify-content-end mb-1">
+        <a href="{{ route('demo-users.create') }}" class="btn btn-primary export m-0">
+            <i class="fa-solid fa-plus "></i> Add Inquiry
+        </a>
+    </div>
+    @else
+    <span class="text-danger">You don't have Permission to add Exams</span>
+    @endcan
+    
+</div>
+@endif
 
 
 @endsection
