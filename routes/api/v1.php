@@ -32,7 +32,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
     Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
 
-    Route::post('branch/status/{id}', [MasterController::class, 'branchStatus']);
+    Route::post('branch/status', [MasterController::class, 'branchStatus']);
     Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     

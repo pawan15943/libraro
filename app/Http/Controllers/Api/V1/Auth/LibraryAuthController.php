@@ -1027,8 +1027,21 @@ class LibraryAuthController extends Controller
             'description'     => 'nullable|string',
 
             'library_category'=> 'nullable|string|in:public,private',
-             'working_days'   => 'nullable|array',
-            'working_days.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+             'working_days' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $validDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+                    $days = array_map('trim', explode(',', $value));
+
+                    foreach ($days as $day) {
+                        if (!in_array($day, $validDays)) {
+                            $fail("Invalid day: $day");
+                        }
+                    }
+                }
+            ],
 
             'fixed_billing_date' => 'nullable|integer|min:1|max:31',
             'features'   => 'nullable|array',
@@ -1042,10 +1055,9 @@ class LibraryAuthController extends Controller
         $validated = $validator->validated();
                 // working_days fix
        // working_days
-      if (array_key_exists('working_days', $validated)) {
-            $validated['working_days'] = !empty($validated['working_days'])
-                ? implode(', ', $validated['working_days'])
-                : null;
+        if (!empty($validated['working_days'])) {
+            $days = array_map('trim', explode(',', $validated['working_days']));
+            $validated['working_days'] = implode(', ', $days);
         }
 
        
@@ -1200,14 +1212,28 @@ class LibraryAuthController extends Controller
       $library = auth('library_api')->user();
        $libraryId = authLibraryId();
       $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
-        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id')
+        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id','library_images')
         ->get() 
         ->map(function ($branch) {
+            // ✅ Decode JSON images
+            $images = [];
+            if (!empty($branch->library_images)) {
+                $decodedImages = is_array($branch->library_images) 
+                    ? $branch->library_images 
+                    : json_decode($branch->library_images, true);
+
+                if (is_array($decodedImages)) {
+                    $images = array_map(function ($img) {
+                        return asset('public/' . $img);
+                    }, $decodedImages);
+                }
+            }
 
             return [
                 'id' => $branch->id,
                 'uuid'=>$branch->uuid ?? '',
                 'name' => $branch->name,
+                'display_name' => $branch->display_name ?? '',
                 'mobile' => $branch->mobile,
                 'email' => $branch->email,
                 'address' => $branch->library_address ?? '',
@@ -1215,8 +1241,9 @@ class LibraryAuthController extends Controller
                 'city' => $branch->city->city_name ?? '',
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
-               'library_logo' => $branch->library_logo ? asset('public/' . $branch->library_logo) : asset('public/img/user.png'),
                 
+                'library_logo' => $branch->library_logo ? asset('public/' . $branch->library_logo) : asset('public/img/user.png'),
+                'library_images' => $images,
                 // 🔥 main logic
                 'can_delete' => $branch->learners_count == 0 ? true : false
             ];
@@ -1229,7 +1256,7 @@ class LibraryAuthController extends Controller
         ]);
    }
 
-   public function branchDetailEdit(Request $request)
+    public function branchDetailEdit(Request $request)
     {
         $request->validate([
             'branch_id' => 'required|exists:branches,id'
@@ -1257,66 +1284,69 @@ class LibraryAuthController extends Controller
             'branch_id'=>$branch->id,
             'branch_uuid'=>$branch->uuid,
 
-    /* ================= BASIC ================= */
-    'branch_detail' => [
-        'branch_name'   => $branch->name ?? '',
-        'display_name'  => $branch->display_name ?? '',
-        'email'         => $branch->email ?? '',
-        'contact_number'=> $branch->mobile ?? '',
-        'founded_date'  => $branch->founder_day ?? '',
-        'upi_id'        => $branch->upi_id ?? '',
+        
+            'branch_name'   => $branch->name ?? '',
+            'display_name'  => $branch->display_name ?? '',
+            'email'         => $branch->email ?? '',
+            'contact_number'=> $branch->mobile ?? '',
+            'founded_date'  => $branch->founder_day ?? '',
+            'upi_id'        => $branch->upi_id ?? '',
 
-        'library_category' => $branch->library_category ?? '',
+            'library_category' => $branch->library_category ?? '',
 
-        'working_days' => !empty($branch->working_days)
-            ? explode(', ', $branch->working_days)
-            : [],
+            'working_days' => $branch->working_days ?? null,
 
-        'library_address' => $branch->library_address ?? '',
-        'library_zip'     => $branch->library_zip ?? '',
+            'library_address' => $branch->library_address ?? '',
+            'library_zip'     => $branch->library_zip ?? '',
 
-        'state_id' => $branch->state_id ?? null,
-        'city_id'  => $branch->city_id ?? null,
+            'state_id' => $branch->state_id ?? null,
+            'city_id'  => $branch->city_id ?? null,
 
-        'google_map' => $branch->google_map ?? '',
-        'description'=> $branch->description ?? '',
+            'google_map' => $branch->google_map ?? '',
+            'description'=> $branch->description ?? '',
 
-        'latitude'  => $branch->latitude ?? '',
-        'longitude' => $branch->longitude ?? '',
+            'latitude'  => $branch->latitude ?? '',
+            'longitude' => $branch->longitude ?? '',
 
-        'fixed_billing_date' => $branch->fixed_billing_date ?? null,
+            'fixed_billing_date' => $branch->fixed_billing_date ?? null,
 
-        // ✅ keep only ONE logo here
-        'library_logo' => !empty($branch->library_logo)
-            ? asset('storage/'.$branch->library_logo)
-            : asset('public/img/user.png'),
-    ],
+            // ✅ keep only ONE logo here
+            'library_logo' => !empty($branch->library_logo)
+                ? asset('storage/'.$branch->library_logo)
+                : asset('public/img/user.png'),
 
-    /* ================= MASTER ================= */
-    'branch_master' => [
-        'total_seats'      => $hour->seats ?? 0,
-        'operating_hours'  => $hour->hour ?? 0,
-        'locker_amount'    => $branch->locker_amount ?? 0,
-        'extend_days'      => $branch->extend_days ?? 0,
-        'token_money'      => $branch->token_money ?? 0,
-    ],
+                
+            /* ================= EXTRA ================= */
+            'state_name' => optional($branch->state)->state_name ?? '',
+            'city_name'  => optional($branch->city)->city_name ?? '',
+              
 
-    /* ================= FEATURES ================= */
-    'features' => is_array($branch->features)
-        ? $branch->features
-        : (json_decode($branch->features, true) ?? []),
+                /* ================= MASTER ================= */
+                // 'branch_master' => [
+                //     'total_seats'      => $hour->seats ?? 0,
+                //     'operating_hours'  => $hour->hour ?? 0,
+                //     'locker_amount'    => $branch->locker_amount ?? 0,
+                //     'extend_days'      => $branch->extend_days ?? 0,
+                //     'token_money'      => $branch->token_money ?? 0,
+                // ],
 
-    /* ================= IMAGES ================= */
-    'library_images' => !empty($branch->library_images)
-        ? collect(json_decode($branch->library_images, true) ?? [])
-            ->map(fn($img) => asset('storage/'.$img))
-            ->values()
-        : [],
+                /* ================= FEATURES ================= */
+                'features' => is_array($branch->features)
+                    ? $branch->features
+                    : (json_decode($branch->features, true) ?? []),
 
-    /* ================= EXTRA ================= */
-    'state_name' => optional($branch->state)->state_name ?? '',
-    'city_name'  => optional($branch->city)->city_name ?? '',
-]
+                /* ================= IMAGES ================= */
+                'library_images' => !empty($branch->library_images)
+                    ? collect(
+                        is_array($branch->library_images)
+                            ? $branch->library_images
+                            : json_decode($branch->library_images, true)
+                    )
+                    ->map(fn($img) => asset('storage/'.$img))
+                    ->values()
+                    : [],
+
+            ]
         ]);
     }
 

@@ -1188,17 +1188,22 @@ class MasterController extends Controller
 
     
 
-   public function branchStatus($id)
-    {
-        $branch = Branch::findOrFail($id);
-        $branch->status = !$branch->status;
-        $branch->save();
+  public function branchStatus(Request $request)
+{
+    $request->validate([
+        'branch_id' => 'required|exists:branches,id'
+    ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Status updated'
-        ]);
-    }
+    $branch = Branch::findOrFail($request->branch_id);
+
+    $branch->status = !$branch->status;
+    $branch->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Status updated successfully'
+    ]);
+}
 
     public function branchDestroy($id)
     {
