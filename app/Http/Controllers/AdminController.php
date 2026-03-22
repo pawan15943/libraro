@@ -34,7 +34,7 @@ class AdminController extends Controller
                 'libraries.status', 
                 'libraries.library_name', 
                 'libraries.library_mobile', 
-                'libraries.email'
+                'libraries.email','libraries.email_otp'
             )->orderByDesc('libraries.id');
     
           
