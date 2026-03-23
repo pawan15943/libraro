@@ -20,6 +20,9 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::post('library/reset-password', [LibraryAuthController::class, 'resetPassword']);
     Route::post('library/resend-otp', [LibraryAuthController::class, 'resendEmailOtp']);
    
+
+    Route::get('/states', [MasterController::class, 'getStates']);
+    Route::get('/cities/{state_id}', [MasterController::class, 'getCities']);
 });
 
 Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(function () {

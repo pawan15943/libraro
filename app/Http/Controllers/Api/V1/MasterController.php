@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\City;
 use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\LearnerDetail;
@@ -12,6 +13,7 @@ use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Scopes\LibraryScope;
+use App\Models\State;
 use App\Models\Subscription;
 use App\Services\PlanService;
 use Illuminate\Http\Request;
@@ -23,6 +25,59 @@ use Illuminate\Support\Facades\Storage;
 
 class MasterController extends Controller
 {
+    // ✅ Get all states
+    public function getStates()
+    {
+        $states = State::select('id', 'state_name')
+            ->orderBy('state_name', 'asc')
+            ->get();
+
+        if ($states->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No states found',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'States fetched successfully',
+            'data' => $states
+        ]);
+    }
+
+    // ✅ Get cities by state_id
+    public function getCities($state_id)
+    {
+        // ✅ Validate state_id exists
+        if (!is_numeric($state_id) || $state_id <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid state id'
+            ], 400);
+        }
+
+        $stateExists = State::where('id', $state_id)->exists();
+
+        if (!$stateExists) {
+            return response()->json([
+                'status' => false,
+                'message' => 'State not found'
+            ], 404);
+        }
+
+        $cities = City::where('state_id', $state_id)
+            ->select('id', 'city_name')
+            ->orderBy('city_name', 'asc')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cities fetched successfully',
+            'data' => $cities
+        ]);
+    }
     public function getStaticMasters()
     {
         /*
