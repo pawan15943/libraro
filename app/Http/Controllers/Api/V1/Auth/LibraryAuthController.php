@@ -954,6 +954,7 @@ class LibraryAuthController extends Controller
             $normalized['hour']          = $master['operating_hours'] ?? null;
             $normalized['locker_amount'] = $master['locker_amount'] ?? null;
             $normalized['extend_days']   = $master['extend_days'] ?? null;
+            $normalized['token_money']   = $master['token_money'] ?? null;
 
             /* ================= PLAN ================= */
             if ($request->has('plan')) {
@@ -1010,7 +1011,8 @@ class LibraryAuthController extends Controller
             'name'        => 'required|string|max:255',
             'email'       => 'required|email',
             'mobile'      => 'required|digits:10',
-            'locker_amount' => 'required',
+            'locker_amount' => 'required|integer',
+            'token_money' => 'nullable|integer',
             'extend_days' => 'required',
             'hour'        => 'required',
             'seats'       => 'required',

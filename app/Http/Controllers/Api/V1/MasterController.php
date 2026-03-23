@@ -86,7 +86,13 @@ class MasterController extends Controller
             ['value' => '28', 'label' => '28 Days'],
             ['value' => '', 'label' => 'Caleder wise'],
         ];
-         $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get();
+         $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get() 
+         ->map(function ($item) {
+                $item->image = $item->image 
+                    ? url('public/'.$item->image) 
+                    : null;
+                return $item;
+            });
          $exams=DB::table('exams')->whereNull('deleted_at')->select('id','name',)->get();
          $expenses=DB::table('expenses')->whereNull('deleted_at')->select('id','name',)->get();
          $libraryUserRoles=Role::where('guard_name','library_user')->select('name','guard_name')->get();
