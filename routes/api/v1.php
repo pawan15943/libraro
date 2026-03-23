@@ -73,6 +73,10 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
     Route::delete('/library/user/{id}', [MasterController::class, 'deleteLibraryUser']);
+
+    Route::post('upload/temp-images', [LibraryController::class, 'uploadTempImages']);
+
+
     Route::prefix('library/learners')->group(function () {
 
         Route::post('/seat-book', [LearnerController::class,'store']);

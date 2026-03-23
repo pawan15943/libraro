@@ -17,12 +17,14 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class LibraryConfigurationService
 {
    
     public function configure($request,array $validated,int $libraryId,$existingBranch,int $branchCount,$useTransaction = true)
     {
+        
        if ($useTransaction) DB::beginTransaction();
 
         try {
@@ -31,47 +33,145 @@ class LibraryConfigurationService
            HANDLE LOGO UPLOAD
             ======================= */
            // Remove raw uploaded file from validated
-            unset($validated['library_logo']);
-
-            if ($request->hasFile('library_logo')) {
-                $validated['library_logo'] = $request->file('library_logo')
-                    ->store('uploads/logo', 'public');
-            }
-
-            /* ======================
-            HANDLE LIBRARY IMAGES
-            ======================= */
            
 
-           if ($request->hasFile('library_images')) {
+            // if ($request->hasFile('library_logo')) {
+            //     $validated['library_logo'] = $request->file('library_logo')
+            //         ->store('uploads/logo', 'public');
+            // }
 
-                $images = [];
+           
 
-                // keep old images in edit mode
-                if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+            //  if (isset($validated['library_logo']) && $validated['library_logo'] instanceof \Illuminate\Http\UploadedFile) {
+            //     unset($validated['library_logo']);
+            // }
+            /* ======================
+            HANDLE LOGO (WEB + APP)
+            ====================== */
 
-                    $existingImages = $existingBranch->library_images;
+            $logoPath = $existingBranch->library_logo ?? null;
 
+            /* ========= CASE 1: WEB ========= */
+            if ($request->hasFile('library_logo')) {
 
-                    $images = is_array($existingImages) ? $existingImages : json_decode($existingImages ?? '[]', true);
+                $file = $request->file('library_logo');
+
+                $fileName = "library_logo_" . time() . '.' . $file->getClientOriginalExtension();
+
+                // your old logic (unchanged)
+                $file->move(public_path('uploads'), $fileName);
+
+                $logoPath = 'uploads/' . $fileName;
+            }
+            
+
+            /* ========= CASE 2: APP ========= */
+            elseif (!empty($validated['library_logo']) && is_string($validated['library_logo'])) {
+               
+                $tempPath = $validated['library_logo']; // temp/xxx.png
+
+                if (Storage::disk('public')->exists($tempPath)) {
+                  
+
+                    $fileName = "library_logo_" . time() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+
+                    $newPath = 'uploads/logo/' . $fileName;
+
+                    Storage::disk('public')->move($tempPath, $newPath);
+
+                    $logoPath = $newPath;
                 }
+               
+            }
+            
+
+            /* ========= FINAL ========= */
+            $validated['library_logo'] = $logoPath;
+          
+
+           /* ======================
+            HANDLE LIBRARY IMAGES (WEB + APP)
+            ====================== */
+
+            $images = [];
+
+            /* ========= KEEP OLD (UPDATE CASE) ========= */
+            if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+
+                $images = is_array($existingBranch->library_images)
+                    ? $existingBranch->library_images
+                    : json_decode($existingBranch->library_images ?? '[]', true);
+            }
+
+            /* ========= CASE 1: WEB ========= */
+            if ($request->hasFile('library_images')) {
 
                 foreach ($request->file('library_images') as $image) {
-                    $images[] = $image->store('uploads/library_images', 'public');
-                }
 
-                $validated['library_images'] = json_encode($images);
+                    $fileName = 'img_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-            } else {
+                    $path = $image->storeAs('uploads/library_images', $fileName, 'public');
 
-                if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
-                    $validated['library_images'] = is_array($existingBranch->library_images) ? json_encode($existingBranch->library_images) : $existingBranch->library_images;
-                } else {
-                    $validated['library_images'] = null;
+                    $images[] = $path;
                 }
             }
 
-            
+            /* ========= CASE 2: APP ========= */
+            elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
+
+                foreach ($validated['library_images'] as $tempPath) {
+
+                    // ensure correct path
+                    if (!str_starts_with($tempPath, 'temp/')) {
+                        $tempPath = 'temp/' . $tempPath;
+                    }
+
+                    if (Storage::disk('public')->exists($tempPath)) {
+
+                        $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+
+                        $newPath = 'uploads/library_images/' . $fileName;
+
+                        Storage::disk('public')->move($tempPath, $newPath);
+
+                        $images[] = $newPath;
+                    }
+                }
+            }
+
+            /* ========= FINAL ========= */
+            $validated['library_images'] = !empty($images) ? $images : null;
+           
+
+            // if ($request->hasFile('library_images')) {
+
+            //     $images = [];
+
+            //     // keep old images in edit mode
+            //     if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+
+            //         $existingImages = $existingBranch->library_images;
+
+
+            //         $images = is_array($existingImages) ? $existingImages : json_decode($existingImages ?? '[]', true);
+            //     }
+
+            //     foreach ($request->file('library_images') as $image) {
+            //         $images[] = $image->store('uploads/library_images', 'public');
+            //     }
+
+            //     $validated['library_images'] = json_encode($images);
+
+            // } else {
+
+            //     if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
+            //         $validated['library_images'] = is_array($existingBranch->library_images) ? json_encode($existingBranch->library_images) : $existingBranch->library_images;
+            //     } else {
+            //         $validated['library_images'] = null;
+            //     }
+            // }
+
+
            $validated['library_id'] = $libraryId;
            $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
 
@@ -130,9 +230,7 @@ class LibraryConfigurationService
                 );
             }
 
-            if (isset($validated['library_logo']) && $validated['library_logo'] instanceof \Illuminate\Http\UploadedFile) {
-                unset($validated['library_logo']);
-            }
+           
 
             /* =========================
             CREATE BRANCH
@@ -144,7 +242,7 @@ class LibraryConfigurationService
             ])->toArray();
 
             $branch = $existingBranch ?? new Branch();
-           
+       
             // $branch->fill($branchData);
             foreach ($branchData as $key => $value) {
                 if (!is_null($value)) {
@@ -170,12 +268,20 @@ class LibraryConfigurationService
                 $branch->slug = $slug;
             }
 
+            // ✅ DELETE OLD FIRST
+            if ($existingBranch && $existingBranch->library_logo && $logoPath !== $existingBranch->library_logo) {
+
+                if (!str_contains($existingBranch->library_logo, 'uploads/')) {
+                    Storage::disk('public')->delete($existingBranch->library_logo);
+                }
+            }
+
+            // ✅ THEN ASSIGN NEW
             if (!empty($validated['library_logo'])) {
-              
                 $branch->library_logo = $validated['library_logo'];
             }
             
-   
+            
 
             // if (!empty($validated['features'])) {
 

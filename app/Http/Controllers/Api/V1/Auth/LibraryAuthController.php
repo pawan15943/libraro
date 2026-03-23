@@ -26,6 +26,8 @@ use App\Events\LibraryRegistered;
 use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\TempOrder;
+use Illuminate\Support\Facades\Storage;
+
 
 class LibraryAuthController extends Controller
 {
@@ -920,6 +922,7 @@ class LibraryAuthController extends Controller
             $normalized['mobile']       = $detail['contact_number'] ?? null;
             $normalized['founder_day']  = $detail['founded_date'] ?? null;
             $normalized['upi_id']       = $detail['upi_id'] ?? null;
+            $normalized['library_logo']       = $detail['library_logo'] ?? null;
 
             /* ================= NEW FIELDS (ADD THIS) ================= */
             $normalized['library_category'] = $detail['library_category'] ?? null;
@@ -942,8 +945,8 @@ class LibraryAuthController extends Controller
             /* ================= FEATURES (IMPORTANT) ================= */
             $normalized['features'] = is_array($request->features) ? $request->features : [];
             /* ================= LIBRARY IMAGES ================= */
-            $normalized['library_images'] = $request->file('library_images') ?? [];
-
+            
+            $normalized['library_images'] =$detail['library_images'] ?? null;
             /* ================= MASTER ================= */
             $master = $request->branch_master ?? [];
 
@@ -1046,14 +1049,56 @@ class LibraryAuthController extends Controller
             'fixed_billing_date' => 'nullable|integer|min:1|max:31',
             'features'   => 'nullable|array',
             'features.*' => 'integer',
-            'library_images'   => 'nullable|array|max:4',
-            'library_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            // 'library_images'   => 'nullable|array|max:4',
+            // 'library_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'library_logo'=>'nullable|string',
+            'library_images' => 'nullable|array|max:4',
+            'library_images.*' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+
+                    // ✅ WEB (file)
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+
+                        $ext = strtolower($value->getClientOriginalExtension());
+
+                        if (!in_array($ext, ['jpg','jpeg','png','webp'])) {
+                            $fail('Only jpg, jpeg, png, webp allowed.');
+                        }
+
+                        if ($value->getSize() > 2048 * 1024) {
+                            $fail('File size must be less than 2MB.');
+                        }
+                    }
+
+                    // ✅ APP (temp path)
+                    elseif (is_string($value)) {
+
+                        // check format
+                        if (!str_contains($value, 'temp/')) {
+                            $fail('Invalid temp image path.');
+                            return;
+                        }
+
+                        // check existence
+                        if (!Storage::disk('public')->exists($value)) {
+                            $fail('Temp image not found: ' . $value);
+                        }
+                    }
+
+                    // ❌ invalid
+                    else {
+                        $fail('Invalid image format.');
+                    }
+                }
+            ],
         ];
 
         $validator = Validator::make($request->all(), $rules);
+       
         // ✅ FIRST get validated data
         $validated = $validator->validated();
-                // working_days fix
+
        // working_days
         if (!empty($validated['working_days'])) {
             $days = array_map('trim', explode(',', $validated['working_days']));
@@ -1133,7 +1178,7 @@ class LibraryAuthController extends Controller
             ], 422);
         }
         $validated = $validator->validated();
-        $validated['library_images'] = $request->file('library_images') ?? null;
+        // $validated['library_images'] = $request->file('library_images') ?? null;
         $validated['features'] = $validated['features'] ?? [];
         $validated['google_map'] = $validated['google_map'] ?? null;
 

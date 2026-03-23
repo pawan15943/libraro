@@ -16,6 +16,8 @@ use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class LibraryController extends Controller
 {
@@ -216,6 +218,36 @@ class LibraryController extends Controller
             'status' => true,
             'code' => 200,
             'data' => $data
+        ]);
+    }
+
+    public function uploadTempImages(Request $request)
+    {
+        $request->validate([
+            'files' => 'required|array',
+            'files.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048'
+        ]);
+
+        $uploadedFiles = [];
+
+        foreach ($request->file('files') as $file) {
+
+            // Unique name generate
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+            // Store in temp folder
+            $path = $file->storeAs('temp', $fileName, 'public');
+
+            $uploadedFiles[] = [
+                'temp_path' => $path, // use this in next API
+                'url' => asset('storage/' . $path)
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Files uploaded successfully',
+            'files' => $uploadedFiles
         ]);
     }
        

@@ -19,6 +19,7 @@ use DB;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Storage;
 
 class MasterController extends Controller
 {
@@ -1188,26 +1189,82 @@ class MasterController extends Controller
 
     
 
-  public function branchStatus(Request $request)
-{
-    $request->validate([
-        'branch_id' => 'required|exists:branches,id'
-    ]);
+    public function branchStatus(Request $request)
+    {
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id'
+        ]);
 
-    $branch = Branch::findOrFail($request->branch_id);
+        $branch = Branch::findOrFail($request->branch_id);
 
-    $branch->status = !$branch->status;
-    $branch->save();
+        $branch->status = !$branch->status;
+        $branch->save();
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Status updated successfully'
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'message' => 'Status updated successfully'
+        ]);
+    }
 
     public function branchDestroy($id)
     {
-        Branch::findOrFail($id)->delete();
+        $branch = Branch::find($id);
+        if (!$branch) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch not found'
+            ]);
+        }
+
+        // ✅ Check learners exist
+        $hasLearners = LearnerDetail::withoutGlobalScopes()->where('branch_id', $id)->exists();
+
+        if ($hasLearners) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete branch. Learners are assigned.'
+            ]);
+        }
+
+        // ✅ Check shifts / plan types
+        $hasShifts = PlanType::withoutGlobalScopes()->where('branch_id', $id)->exists();
+
+        if ($hasShifts) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete branch. Shifts are configured.'
+            ]);
+        }
+
+        // ✅ Check hours
+        $hasHours =Hour::withoutGlobalScopes()->where('branch_id', $id)->exists();
+
+        if ($hasHours) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete branch. Hours data exists.'
+            ]);
+        }
+
+        // ✅ OPTIONAL: delete images from storage
+        if (!empty($branch->library_images)) {
+
+            $images = is_array($branch->library_images)
+                ? $branch->library_images
+                : json_decode($branch->library_images, true);
+
+            foreach ($images as $img) {
+                Storage::disk('public')->delete($img);
+            }
+        }
+
+        // ✅ delete logo
+        if (!empty($branch->library_logo) && !str_contains($branch->library_logo, 'uploads/')) {
+            Storage::disk('public')->delete($branch->library_logo);
+        }
+
+        // ✅ finally delete branch
+        $branch->delete();
 
         return response()->json([
             'status' => true,
