@@ -34,9 +34,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
     Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
     Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
-
+    Route::post('library/shift/configure/price', [LibraryAuthController::class, 'getConfigurePrice']);
     Route::post('branch/status', [MasterController::class, 'branchStatus']);
-    Route::delete('branch/delete/{id}', [MasterController::class, 'branchDestroy']);
+   Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     
 

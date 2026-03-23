@@ -1281,8 +1281,10 @@ class MasterController extends Controller
         ]);
     }
 
-    public function branchDestroy($id)
+    public function branchDestroy(Request $request)
     {
+        $id = $request->id;
+
         $branch = Branch::find($id);
         if (!$branch) {
             return response()->json([
