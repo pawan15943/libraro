@@ -925,7 +925,7 @@ class LibraryAuthController extends Controller
             $normalized['library_logo']       = $detail['library_logo'] ?? null;
 
             /* ================= NEW FIELDS (ADD THIS) ================= */
-            $normalized['library_category'] = $detail['library_category'] ?? null;
+            $normalized['library_category'] =  strtolower($detail['library_category']) ?? null;
              $normalized['working_days'] = $detail['working_days'] ?? null;
 
             $normalized['library_address']  = $detail['library_address'] ?? null;
@@ -1354,6 +1354,7 @@ class LibraryAuthController extends Controller
 
             'latitude'  => $branch->latitude ?? '',
             'longitude' => $branch->longitude ?? '',
+            'token_money' => $branch->token_money ?? '',
 
             'fixed_billing_date' => $branch->fixed_billing_date ?? null,
 

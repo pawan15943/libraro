@@ -22,7 +22,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
    
 
     Route::get('/states', [MasterController::class, 'getStates']);
-    Route::get('/cities/{state_id}', [MasterController::class, 'getCities']);
+    Route::get('/cities', [MasterController::class, 'getCities']);
 });
 
 Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(function () {

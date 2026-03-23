@@ -23,6 +23,8 @@ use Carbon\Carbon;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Facades\Validator;
+
 class MasterController extends Controller
 {
     // ✅ Get all states
@@ -48,9 +50,21 @@ class MasterController extends Controller
     }
 
     // ✅ Get cities by state_id
-    public function getCities($state_id)
+    public function getCities(Request $request)
     {
         // ✅ Validate state_id exists
+            $validator = Validator::make($request->all(), [
+                'id' => 'required|integer|exists:states,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ]);
+            }
+            $state_id=$request->id;
         if (!is_numeric($state_id) || $state_id <= 0) {
             return response()->json([
                 'status' => false,
