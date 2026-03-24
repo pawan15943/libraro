@@ -25,6 +25,7 @@ class LibraryConfigurationService
     public function configure($request,array $validated,int $libraryId,$existingBranch,int $branchCount,$useTransaction = true)
     {
         
+        
        if ($useTransaction) DB::beginTransaction();
 
         try {
@@ -51,6 +52,14 @@ class LibraryConfigurationService
 
             $logoPath = $existingBranch->library_logo ?? null;
 
+              // ✅ DELETE OLD FIRST
+            if ($existingBranch && $existingBranch->library_logo && $logoPath !== $existingBranch->library_logo) {
+
+                if (!str_contains($existingBranch->library_logo, 'uploads/')) {
+                    Storage::disk('public')->delete($existingBranch->library_logo);
+                }
+            }
+
             /* ========= CASE 1: WEB ========= */
             if ($request->hasFile('library_logo')) {
 
@@ -67,8 +76,21 @@ class LibraryConfigurationService
 
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_logo']) && is_string($validated['library_logo'])) {
+                 // ✅ STEP 1: convert URL → path
+                    $tempPath = parse_url($validated['library_logo'], PHP_URL_PATH); 
+                    // /storage/temp/abc.png
+
+                    // ✅ STEP 2: remove /storage/
+                    $tempPath = str_replace('/storage/', '', $tempPath); 
+                    // temp/abc.png
+
+                    // safety fallback
+                    if (!str_starts_with($tempPath, 'temp/')) {
+                        $tempPath = 'temp/' . basename($tempPath);
+                    }
+
                
-                $tempPath = $validated['library_logo']; // temp/xxx.png
+                // $tempPath = $validated['library_logo']; 
 
                 if (Storage::disk('public')->exists($tempPath)) {
                   
@@ -119,13 +141,22 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
 
-                foreach ($validated['library_images'] as $tempPath) {
+                foreach ($validated['library_images'] as $fileUrl) {
 
-                    // ensure correct path
+                    // ✅ STEP 1: convert URL → path
+                    $tempPath = parse_url($fileUrl, PHP_URL_PATH); 
+                    // /storage/temp/abc.png
+
+                    // ✅ STEP 2: remove /storage/
+                    $tempPath = str_replace('/storage/', '', $tempPath); 
+                    // temp/abc.png
+
+                    // safety fallback
                     if (!str_starts_with($tempPath, 'temp/')) {
-                        $tempPath = 'temp/' . $tempPath;
+                        $tempPath = 'temp/' . basename($tempPath);
                     }
 
+                    // ✅ STEP 3: check file
                     if (Storage::disk('public')->exists($tempPath)) {
 
                         $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
@@ -230,7 +261,7 @@ class LibraryConfigurationService
                 );
             }
 
-           
+            
 
             /* =========================
             CREATE BRANCH
@@ -249,6 +280,7 @@ class LibraryConfigurationService
                     $branch->$key = $value;
                 }
             }
+           
             $branch->library_id = $libraryId;
             if (!$existingBranch) {
 
@@ -268,13 +300,7 @@ class LibraryConfigurationService
                 $branch->slug = $slug;
             }
 
-            // ✅ DELETE OLD FIRST
-            if ($existingBranch && $existingBranch->library_logo && $logoPath !== $existingBranch->library_logo) {
-
-                if (!str_contains($existingBranch->library_logo, 'uploads/')) {
-                    Storage::disk('public')->delete($existingBranch->library_logo);
-                }
-            }
+          
 
             // ✅ THEN ASSIGN NEW
             if (!empty($validated['library_logo'])) {
@@ -325,6 +351,7 @@ class LibraryConfigurationService
                     'seats' => $seats,
                 ]
             );
+            
 
             /* =========================
             PLANS
@@ -372,6 +399,7 @@ class LibraryConfigurationService
                     ->whereNotIn('name', $incomingPlanNames)
                     ->delete();
             }
+           
 
             /* =========================
             FLOORS

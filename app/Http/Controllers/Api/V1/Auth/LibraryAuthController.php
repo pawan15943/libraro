@@ -27,6 +27,8 @@ use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\TempOrder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+
 
 
 class LibraryAuthController extends Controller
@@ -925,7 +927,9 @@ class LibraryAuthController extends Controller
             $normalized['library_logo']       = $detail['library_logo'] ?? null;
 
             /* ================= NEW FIELDS (ADD THIS) ================= */
-            $normalized['library_category'] =  strtolower($detail['library_category']) ?? null;
+            $normalized['library_category'] = isset($detail['library_category']) 
+            ? strtolower($detail['library_category']) 
+            : null;
              $normalized['working_days'] = $detail['working_days'] ?? null;
 
             $normalized['library_address']  = $detail['library_address'] ?? null;
@@ -1059,7 +1063,7 @@ class LibraryAuthController extends Controller
                 'nullable',
                 function ($attribute, $value, $fail) {
 
-                    // ✅ WEB (file)
+                    // ✅ CASE 1: WEB (file)
                     if ($value instanceof \Illuminate\Http\UploadedFile) {
 
                         $ext = strtolower($value->getClientOriginalExtension());
@@ -1073,22 +1077,36 @@ class LibraryAuthController extends Controller
                         }
                     }
 
-                    // ✅ APP (temp path)
+                    // ✅ CASE 2: APP (URL or temp path)
                     elseif (is_string($value)) {
 
-                        // check format
-                        if (!str_contains($value, 'temp/')) {
+                        if (filter_var($value, FILTER_VALIDATE_URL)) {
+
+                            $path = parse_url($value, PHP_URL_PATH);
+
+                            $pos = strpos($path, 'temp/');
+
+                            if ($pos !== false) {
+                                $path = substr($path, $pos);
+                            }
+                        } else {
+                            $path = $value;
+                        }
+
+                       
+
+                        // validate
+                        if (!str_starts_with($path, 'temp/')) {
                             $fail('Invalid temp image path.');
                             return;
                         }
 
-                        // check existence
-                        if (!Storage::disk('public')->exists($value)) {
-                            $fail('Temp image not found: ' . $value);
+                        if (!Storage::disk('public')->exists($path)) {
+                            $fail('Temp image not found: ' . $path);
                         }
                     }
 
-                    // ❌ invalid
+                    // ❌ invalid type
                     else {
                         $fail('Invalid image format.');
                     }
@@ -1113,7 +1131,7 @@ class LibraryAuthController extends Controller
         ? ($validated['plans'] ?? []) 
         : null;
 
-        $slug = Str::slug($request->name.'-'.$libraryId);
+        $slug = Str::slug($validated['name'].'-'.$libraryId);
    
         if($branchId){
               $existingBranch = Branch::where('library_id', $libraryId)->where('id', $branchId) ->first();
@@ -1185,7 +1203,7 @@ class LibraryAuthController extends Controller
         $validated['google_map'] = $validated['google_map'] ?? null;
 
         /* ================= CALL GLOBAL SERVICE ================= */
-      
+     
         DB::beginTransaction();
         try {
             $response = $service->configure($request, $validated, $libraryId, $existingBranch, $branchCount,false);
@@ -1401,6 +1419,121 @@ class LibraryAuthController extends Controller
             ]
         ]);
     }
+//     public function branchDetailEdit(Request $request)
+// {
+//     // ✅ Validation
+//     $request->validate([
+//         'branch_id' => 'required|exists:branches,id'
+//     ]);
+
+//     $libraryId = authLibraryId();
+//     $branchId  = $request->branch_id;
+
+//     // ✅ Cache (optional but recommended 🔥)
+//     $cacheKey = "branch_detail_{$branchId}_{$libraryId}";
+
+//     $data = Cache::remember($cacheKey, 60, function () use ($branchId, $libraryId) {
+
+//         // ✅ Single optimized query (JOIN)
+//         $branch = DB::table('branches')
+//             ->leftJoin('hour', 'hour.branch_id', '=', 'branches.id')
+//             ->leftJoin('states', 'states.id', '=', 'branches.state_id')
+//             ->leftJoin('cities', 'cities.id', '=', 'branches.city_id')
+//             ->where('branches.id', $branchId)
+//             ->where('branches.library_id', $libraryId)
+//             ->select(
+//                 'branches.*',
+//                 'hour.seats as total_seats',
+//                 'hour.hour as operating_hours',
+//                 'states.state_name',
+//                 'cities.city_name'
+//             )
+//             ->first();
+
+//         if (!$branch) {
+//             return null;
+//         }
+
+//         // ✅ Features optimize
+//         $features = is_array($branch->features)
+//             ? $branch->features
+//             : json_decode($branch->features, true);
+
+//         $features = $features ?? [];
+
+//         // ✅ Images optimize
+//         $images = [];
+//         if (!empty($branch->library_images)) {
+//             $decoded = is_array($branch->library_images)
+//                 ? $branch->library_images
+//                 : json_decode($branch->library_images, true);
+
+//             if (is_array($decoded)) {
+//                 foreach ($decoded as $img) {
+//                     $images[] = asset('storage/' . $img);
+//                 }
+//             }
+//         }
+
+//         return [
+//             'branch_id' => $branch->id,
+//             'branch_uuid' => $branch->uuid,
+
+//             'branch_name' => $branch->name ?? '',
+//             'display_name' => $branch->display_name ?? '',
+//             'email' => $branch->email ?? '',
+//             'contact_number' => $branch->mobile ?? '',
+//             'founded_date' => $branch->founder_day ?? '',
+//             'upi_id' => $branch->upi_id ?? '',
+
+//             'library_category' => $branch->library_category ?? '',
+//             'working_days' => $branch->working_days ?? null,
+
+//             'library_address' => $branch->library_address ?? '',
+//             'library_zip' => $branch->library_zip ?? '',
+
+//             'state_id' => $branch->state_id,
+//             'city_id' => $branch->city_id,
+
+//             'google_map' => $branch->google_map ?? '',
+//             'description' => $branch->description ?? '',
+
+//             'latitude' => $branch->latitude ?? '',
+//             'longitude' => $branch->longitude ?? '',
+
+//             'token_money' => $branch->token_money ?? '',
+//             'total_seats' => $branch->total_seats ?? 0,
+//             'operating_hours' => $branch->operating_hours ?? 0,
+//             'locker_amount' => $branch->locker_amount ?? 0,
+//             'extend_days' => $branch->extend_days ?? 0,
+
+//             'fixed_billing_date' => $branch->fixed_billing_date ?? null,
+
+//             'library_logo' => !empty($branch->library_logo)
+//                 ? asset('storage/' . $branch->library_logo)
+//                 : asset('public/img/user.png'),
+
+//             'state_name' => $branch->state_name ?? '',
+//             'city_name' => $branch->city_name ?? '',
+
+//             'features' => $features,
+//             'library_images' => $images,
+//         ];
+//     });
+
+//     // ✅ Not found
+//     if (!$data) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Branch not found for this library'
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => $data
+//     ]);
+// }
 
     public function getConfigurePrice(Request $request)
     {
