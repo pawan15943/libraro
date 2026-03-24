@@ -1355,6 +1355,10 @@ class LibraryAuthController extends Controller
             'latitude'  => $branch->latitude ?? '',
             'longitude' => $branch->longitude ?? '',
             'token_money' => $branch->token_money ?? '',
+            'total_seats'      => $hour->seats ?? 0,
+            'operating_hours'  => $hour->hour ?? 0,
+            'locker_amount'    => $branch->locker_amount ?? 0,
+            'extend_days'      => $branch->extend_days ?? 0,
 
             'fixed_billing_date' => $branch->fixed_billing_date ?? null,
 
@@ -1435,6 +1439,7 @@ class LibraryAuthController extends Controller
         
         $planId=$plan->id;
         // ✅ Format response
+        $hour=Hour::withoutGlobalScopes()->where('branch_id', $request->branch_id)->value('hour');
         $data = $planType->map(function ($item,$planId) {
              $price = PlanPrice::where('plan_id', $planId)
         ->where('plan_type_id', $item->id)
@@ -1453,7 +1458,11 @@ class LibraryAuthController extends Controller
 
         return response()->json([
             'status' => true,
-            'data'   => $data
+            'data'=>[
+                'shifts'=>$data,
+                'operating_hours'=>$hour ?? 0
+            ]
+            
         ]);
     }
 
