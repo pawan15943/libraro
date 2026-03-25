@@ -78,11 +78,11 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_logo']) && is_string($validated['library_logo'])) {
 
-                $validated['library_logo'] = $this->moveTempFileToPublic($validated['library_logo'],'logo','uploads/logo'); 
+                $logoPath = $this->moveTempFileToPublic($validated['library_logo'],'logo','uploads/logo'); 
                
             }
-            
 
+          
             /* ========= FINAL ========= */
             $validated['library_logo'] = $logoPath;
           
