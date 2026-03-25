@@ -1382,7 +1382,7 @@ class LibraryAuthController extends Controller
 
             // ✅ keep only ONE logo here
             'library_logo' => !empty($branch->library_logo)
-                ? asset('storage/'.$branch->library_logo)
+                ? asset('public/'.$branch->library_logo)
                 : asset('public/img/user.png'),
 
                 

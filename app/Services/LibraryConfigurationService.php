@@ -117,46 +117,7 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
 
-                foreach ($validated['library_images'] as $fileUrl) {
-
-                    // ✅ STEP 1: URL → path
-                    $path = parse_url($fileUrl, PHP_URL_PATH);
-                    // /libraryProject/storage/temp/abc.png
-
-                    // ✅ STEP 2: extract only temp/...
-                    $pos = strpos($path, 'temp/');
-
-                    if ($pos === false) {
-                        continue; // invalid
-                    }
-
-                    $tempPath = substr($path, $pos); // temp/abc.png
-
-                    // ✅ STEP 3: source path (storage)
-                    $sourcePath = storage_path('app/public/' . $tempPath);
-
-                    if (File::exists($sourcePath)) {
-
-                        // ✅ STEP 4: generate new filename
-                        $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
-
-                        // ✅ STEP 5: destination folder (public)
-                        $destinationFolder = public_path('uploads/library_images');
-
-                        if (!File::exists($destinationFolder)) {
-                            File::makeDirectory($destinationFolder, 0777, true);
-                        }
-
-                        // full destination path
-                        $destinationPath = $destinationFolder . '/' . $fileName;
-
-                        // ✅ STEP 6: move file
-                        File::move($sourcePath, $destinationPath);
-
-                        // ✅ STEP 7: store DB path
-                        $images[] = 'uploads/library_images/' . $fileName;
-                    }
-                }
+               $images= $validated['library_images'] = $this->moveTempFileToPublic( $validated['library_images'],'img','uploads/library_images');
             }
 
             /* ========= FINAL ========= */
