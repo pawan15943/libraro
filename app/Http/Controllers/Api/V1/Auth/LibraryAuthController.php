@@ -1080,29 +1080,34 @@ class LibraryAuthController extends Controller
                     // ✅ CASE 2: APP (URL or temp path)
                     elseif (is_string($value)) {
 
+                        $path = $value;
+
+                        // ✅ if URL → extract path
                         if (filter_var($value, FILTER_VALIDATE_URL)) {
-
                             $path = parse_url($value, PHP_URL_PATH);
-
-                            $pos = strpos($path, 'temp/');
-
-                            if ($pos !== false) {
-                                $path = substr($path, $pos);
-                            }
-                        } else {
-                            $path = $value;
                         }
 
-                       
+                        // 🔥 CASE 1: TEMP IMAGE
+                        if (str_contains($path, 'temp/')) {
 
-                        // validate
-                        if (!str_starts_with($path, 'temp/')) {
-                            $fail('Invalid temp image path.');
+                            $pos = strpos($path, 'temp/');
+                            $tempPath = substr($path, $pos);
+
+                            if (!Storage::disk('public')->exists($tempPath)) {
+                                $fail('Temp image not found.');
+                            }
+                        }
+
+                        // 🔥 CASE 2: PERMANENT IMAGE (uploads)
+                        elseif (str_contains($path, 'uploads/')) {
+
+                            // ✅ just allow (no fail)
                             return;
                         }
 
-                        if (!Storage::disk('public')->exists($path)) {
-                            $fail('Temp image not found: ' . $path);
+                        // ❌ INVALID
+                        else {
+                            $fail('Invalid image path.');
                         }
                     }
 
@@ -1585,7 +1590,7 @@ class LibraryAuthController extends Controller
                 'start_time' => $item->start_time,
                 'end_time'   => $item->end_time,
                 'slot_hours' => $item->slot_hours,    
-                'price' => $price ?? 0,    
+               'price' => (string) ($price ?? 0),   
             ];
         });
 

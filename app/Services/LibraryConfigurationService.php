@@ -724,35 +724,48 @@ class LibraryConfigurationService
 
             /* ========= CASE 2: URL (APP) ========= */
             elseif (is_string($file)) {
+                 if (str_contains($file, '/temp/')) {
+                    // EXACT SAME AS YOUR WORKING CODE
+                    $path = parse_url($file, PHP_URL_PATH);
 
-                // EXACT SAME AS YOUR WORKING CODE
-                $path = parse_url($file, PHP_URL_PATH);
+                    $pos = strpos($path, 'temp/');
 
-                $pos = strpos($path, 'temp/');
-
-                if ($pos === false) {
-                    continue;
-                }
-
-                $tempPath = substr($path, $pos); // temp/abc.png
-
-                $sourcePath = storage_path('app/public/' . $tempPath);
-
-                if (File::exists($sourcePath)) {
-
-                    $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
-
-                    $destinationFolder = public_path($folder);
-
-                    if (!File::exists($destinationFolder)) {
-                        File::makeDirectory($destinationFolder, 0777, true);
+                    if ($pos === false) {
+                        continue;
                     }
 
-                    $destinationPath = $destinationFolder . '/' . $fileName;
+                    $tempPath = substr($path, $pos); // temp/abc.png
 
-                    File::move($sourcePath, $destinationPath);
+                    $sourcePath = storage_path('app/public/' . $tempPath);
 
-                    $results[] = $folder . '/' . $fileName;
+                    if (File::exists($sourcePath)) {
+
+                        $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+
+                        $destinationFolder = public_path($folder);
+
+                        if (!File::exists($destinationFolder)) {
+                            File::makeDirectory($destinationFolder, 0777, true);
+                        }
+
+                        $destinationPath = $destinationFolder . '/' . $fileName;
+
+                        File::move($sourcePath, $destinationPath);
+
+                        $results[] = $folder . '/' . $fileName;
+                    }
+                 }
+
+                    // 🔥 CASE B: ALREADY PERMANENT → KEEP SAME
+                elseif (str_contains($file, '/uploads/')) {
+
+                    $path = parse_url($file, PHP_URL_PATH);
+
+                    $pos = strpos($path, 'uploads/');
+
+                    if ($pos !== false) {
+                        $results[] = substr($path, $pos); // uploads/xxx.png
+                    }
                 }
             }
         }
