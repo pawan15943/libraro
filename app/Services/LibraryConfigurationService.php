@@ -77,33 +77,8 @@ class LibraryConfigurationService
 
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_logo']) && is_string($validated['library_logo'])) {
-                 // ✅ STEP 1: convert URL → path
-                    $tempPath = parse_url($validated['library_logo'], PHP_URL_PATH); 
-                    // /storage/temp/abc.png
 
-                    // ✅ STEP 2: remove /storage/
-                    $tempPath = str_replace('/storage/', '', $tempPath); 
-                    // temp/abc.png
-
-                    // safety fallback
-                    if (!str_starts_with($tempPath, 'temp/')) {
-                        $tempPath = 'temp/' . basename($tempPath);
-                    }
-
-               
-                // $tempPath = $validated['library_logo']; 
-
-                if (Storage::disk('public')->exists($tempPath)) {
-                  
-
-                    $fileName = "library_logo_" . time() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
-
-                    $newPath = 'uploads/logo/' . $fileName;
-
-                    Storage::disk('public')->move($tempPath, $newPath);
-
-                    $logoPath = $newPath;
-                }
+                $validated['library_logo'] = $this->moveTempFileToPublic($validated['library_logo'],'logo','uploads/logo'); 
                
             }
             
@@ -142,47 +117,47 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
 
-    foreach ($validated['library_images'] as $fileUrl) {
+                foreach ($validated['library_images'] as $fileUrl) {
 
-        // ✅ STEP 1: URL → path
-        $path = parse_url($fileUrl, PHP_URL_PATH);
-        // /libraryProject/storage/temp/abc.png
+                    // ✅ STEP 1: URL → path
+                    $path = parse_url($fileUrl, PHP_URL_PATH);
+                    // /libraryProject/storage/temp/abc.png
 
-        // ✅ STEP 2: extract only temp/...
-        $pos = strpos($path, 'temp/');
+                    // ✅ STEP 2: extract only temp/...
+                    $pos = strpos($path, 'temp/');
 
-        if ($pos === false) {
-            continue; // invalid
-        }
+                    if ($pos === false) {
+                        continue; // invalid
+                    }
 
-        $tempPath = substr($path, $pos); // temp/abc.png
+                    $tempPath = substr($path, $pos); // temp/abc.png
 
-        // ✅ STEP 3: source path (storage)
-        $sourcePath = storage_path('app/public/' . $tempPath);
+                    // ✅ STEP 3: source path (storage)
+                    $sourcePath = storage_path('app/public/' . $tempPath);
 
-        if (File::exists($sourcePath)) {
+                    if (File::exists($sourcePath)) {
 
-            // ✅ STEP 4: generate new filename
-            $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+                        // ✅ STEP 4: generate new filename
+                        $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
 
-            // ✅ STEP 5: destination folder (public)
-            $destinationFolder = public_path('uploads/library_images');
+                        // ✅ STEP 5: destination folder (public)
+                        $destinationFolder = public_path('uploads/library_images');
 
-            if (!File::exists($destinationFolder)) {
-                File::makeDirectory($destinationFolder, 0777, true);
+                        if (!File::exists($destinationFolder)) {
+                            File::makeDirectory($destinationFolder, 0777, true);
+                        }
+
+                        // full destination path
+                        $destinationPath = $destinationFolder . '/' . $fileName;
+
+                        // ✅ STEP 6: move file
+                        File::move($sourcePath, $destinationPath);
+
+                        // ✅ STEP 7: store DB path
+                        $images[] = 'uploads/library_images/' . $fileName;
+                    }
+                }
             }
-
-            // full destination path
-            $destinationPath = $destinationFolder . '/' . $fileName;
-
-            // ✅ STEP 6: move file
-            File::move($sourcePath, $destinationPath);
-
-            // ✅ STEP 7: store DB path
-            $images[] = 'uploads/library_images/' . $fileName;
-        }
-    }
-}
 
             /* ========= FINAL ========= */
             $validated['library_images'] = !empty($images) ? $images : null;
@@ -760,5 +735,70 @@ class LibraryConfigurationService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    function moveTempFileToPublic($fileInput, $filePrefix = 'file', $folder = 'uploads/common')
+    {
+        $results = [];
+
+        // normalize to array
+        $files = is_array($fileInput) ? $fileInput : [$fileInput];
+
+        foreach ($files as $file) {
+
+            /* ========= CASE 1: FILE (WEB) ========= */
+            if ($file instanceof \Illuminate\Http\UploadedFile) {
+
+                $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                $destinationFolder = public_path($folder);
+
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+
+                $file->move($destinationFolder, $fileName);
+
+                $results[] = $folder . '/' . $fileName;
+            }
+
+            /* ========= CASE 2: URL (APP) ========= */
+            elseif (is_string($file)) {
+
+                $path = parse_url($file, PHP_URL_PATH);
+
+                $pos = strpos($path, 'temp/');
+
+                if ($pos === false) continue;
+
+                $tempPath = substr($path, $pos);
+
+                $sourcePath = storage_path('app/public/' . $tempPath);
+
+                if (File::exists($sourcePath)) {
+
+                    $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+
+                    $destinationFolder = public_path($folder);
+
+                    if (!File::exists($destinationFolder)) {
+                        File::makeDirectory($destinationFolder, 0777, true);
+                    }
+
+                    $destinationPath = $destinationFolder . '/' . $fileName;
+
+                    File::move($sourcePath, $destinationPath);
+
+                    $results[] = $folder . '/' . $fileName;
+                }
+            }
+        }
+
+        // ✅ return single or array automatically
+        if (!is_array($fileInput)) {
+            return $results[0] ?? null;
+        }
+
+        return $results;
     }
 }
