@@ -520,12 +520,17 @@ private function processAttendance($learnerId, $branchId, $source)
         ->first();
 
     if (!$learnerDetail || $learnerDetail->status != 1) {
-
+         
         $detail = LearnerDetail::withTrashed()
             ->where('learner_id', $learnerId)
             ->orderBy('plan_end_date', 'DESC')
             ->first();
-
+         \Log::info('processAttendance', [
+                'detail' => $detail->id,
+                'branchdetail'=>$learnerDetail->branch_id,
+                'branch'=> $branchId
+               
+            ]);
         if ($detail) {
             $operation = DB::table('learner_operations_log')
                 ->where('learner_detail_id', $detail->id)
@@ -579,6 +584,13 @@ private function processAttendance($learnerId, $branchId, $source)
         : $endDate;
 
     $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+      \Log::info('Process', [
+                
+                'diffExtendDay' => $diffExtendDay,
+                'diffInDays'=>$diffInDays ,
+                'request-diffExtendDay'=>$diffExtendDay < 0
+            ]);
 
     if ($diffExtendDay < 0) {
         return [
