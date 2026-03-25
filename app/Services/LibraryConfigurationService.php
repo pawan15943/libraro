@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class LibraryConfigurationService
 {
@@ -141,34 +142,47 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
 
-                foreach ($validated['library_images'] as $fileUrl) {
+    foreach ($validated['library_images'] as $fileUrl) {
 
-                    // ✅ STEP 1: convert URL → path
-                    $tempPath = parse_url($fileUrl, PHP_URL_PATH); 
-                    // /storage/temp/abc.png
+        // ✅ STEP 1: URL → path
+        $path = parse_url($fileUrl, PHP_URL_PATH);
+        // /libraryProject/storage/temp/abc.png
 
-                    // ✅ STEP 2: remove /storage/
-                    $tempPath = str_replace('/storage/', '', $tempPath); 
-                    // temp/abc.png
+        // ✅ STEP 2: extract only temp/...
+        $pos = strpos($path, 'temp/');
 
-                    // safety fallback
-                    if (!str_starts_with($tempPath, 'temp/')) {
-                        $tempPath = 'temp/' . basename($tempPath);
-                    }
+        if ($pos === false) {
+            continue; // invalid
+        }
 
-                    // ✅ STEP 3: check file
-                    if (Storage::disk('public')->exists($tempPath)) {
+        $tempPath = substr($path, $pos); // temp/abc.png
 
-                        $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
+        // ✅ STEP 3: source path (storage)
+        $sourcePath = storage_path('app/public/' . $tempPath);
 
-                        $newPath = 'uploads/library_images/' . $fileName;
+        if (File::exists($sourcePath)) {
 
-                        Storage::disk('public')->move($tempPath, $newPath);
+            // ✅ STEP 4: generate new filename
+            $fileName = 'img_' . time() . '_' . uniqid() . '.' . pathinfo($tempPath, PATHINFO_EXTENSION);
 
-                        $images[] = $newPath;
-                    }
-                }
+            // ✅ STEP 5: destination folder (public)
+            $destinationFolder = public_path('uploads/library_images');
+
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
             }
+
+            // full destination path
+            $destinationPath = $destinationFolder . '/' . $fileName;
+
+            // ✅ STEP 6: move file
+            File::move($sourcePath, $destinationPath);
+
+            // ✅ STEP 7: store DB path
+            $images[] = 'uploads/library_images/' . $fileName;
+        }
+    }
+}
 
             /* ========= FINAL ========= */
             $validated['library_images'] = !empty($images) ? $images : null;

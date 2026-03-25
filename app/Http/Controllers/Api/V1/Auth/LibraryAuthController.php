@@ -1412,7 +1412,7 @@ class LibraryAuthController extends Controller
                             ? $branch->library_images
                             : json_decode($branch->library_images, true)
                     )
-                    ->map(fn($img) => asset('storage/'.$img))
+                    ->map(fn($img) => asset('public/'.$img))
                     ->values()
                     : [],
 
