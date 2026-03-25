@@ -737,11 +737,10 @@ class LibraryConfigurationService
         }
     }
 
-    function moveTempFileToPublic($fileInput, $filePrefix = 'file', $folder = 'uploads/common')
+   function moveTempFileToPublic($fileInput, $filePrefix = 'file', $folder = 'uploads/common')
     {
         $results = [];
 
-        // normalize to array
         $files = is_array($fileInput) ? $fileInput : [$fileInput];
 
         foreach ($files as $file) {
@@ -765,13 +764,16 @@ class LibraryConfigurationService
             /* ========= CASE 2: URL (APP) ========= */
             elseif (is_string($file)) {
 
+                // EXACT SAME AS YOUR WORKING CODE
                 $path = parse_url($file, PHP_URL_PATH);
 
                 $pos = strpos($path, 'temp/');
 
-                if ($pos === false) continue;
+                if ($pos === false) {
+                    continue;
+                }
 
-                $tempPath = substr($path, $pos);
+                $tempPath = substr($path, $pos); // temp/abc.png
 
                 $sourcePath = storage_path('app/public/' . $tempPath);
 
@@ -794,11 +796,7 @@ class LibraryConfigurationService
             }
         }
 
-        // ✅ return single or array automatically
-        if (!is_array($fileInput)) {
-            return $results[0] ?? null;
-        }
-
-        return $results;
+        // return same type
+        return is_array($fileInput) ? $results : ($results[0] ?? null);
     }
 }
