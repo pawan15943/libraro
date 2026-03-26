@@ -93,13 +93,7 @@ class LibraryConfigurationService
 
             $images = [];
 
-            /* ========= KEEP OLD (UPDATE CASE) ========= */
-            if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
-
-                $images = is_array($existingBranch->library_images)
-                    ? $existingBranch->library_images
-                    : json_decode($existingBranch->library_images ?? '[]', true);
-            }
+           
 
             /* ========= CASE 1: WEB ========= */
             if ($request->hasFile('library_images')) {
@@ -257,7 +251,9 @@ class LibraryConfigurationService
                 $branch->library_logo = $validated['library_logo'];
             }
             
-            
+            if (array_key_exists('library_images', $validated)) {
+                $branch->library_images = $validated['library_images'];
+            }
 
             // if (!empty($validated['features'])) {
 

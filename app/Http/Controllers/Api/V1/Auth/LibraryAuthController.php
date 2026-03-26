@@ -1424,6 +1424,71 @@ class LibraryAuthController extends Controller
             ]
         ]);
     }
+
+     public function getConfigurePrice(Request $request)
+    {
+        // ✅ Validation
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id'
+        ]);
+
+            $libraryId = authLibraryId();
+            $branch = Branch::where('id', $request->branch_id)
+                ->where('library_id', authLibraryId())
+                ->with(['state','city'])
+                ->first();
+
+            if (!$branch) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Branch not found for this library'
+                ], 404);
+            }
+
+            $plan = Plan::where('library_id', $libraryId)
+            ->where('plan_id', 1)
+            ->where('type', 'MONTH')->select('id','name')
+            ->first();
+
+            if (!$plan) {
+                throw new \Exception('Ops, System not found any plan to proceed for shifts.');
+            }
+
+        // ✅ Fetch data by branch_id
+        $planType =PlanType::withoutGlobalScopes()
+            ->where('branch_id', $request->branch_id)
+            ->whereNull('deleted_at')
+            ->get();
+       
+        $planId=$plan->id;
+        // ✅ Format response
+        $hour=Hour::withoutGlobalScopes()->where('branch_id', $request->branch_id)->value('hour');
+        $data = $planType->map(function ($item,$planId) {
+             $price = PlanPrice::where('plan_id', $planId)
+        ->where('plan_type_id', $item->id)
+        ->value('price');
+            return [
+                'id'         => $item->id,
+                'custom_plan_type'  => $item->day_type_id == 0 ? $item->name  : '',  
+                'plan_type_name'=> $item->name  ?? '',
+                'day_type_id'=> $item->day_type_id ?? '',
+                'start_time' => $item->start_time ?? '',
+                'end_time'   => $item->end_time ?? '',
+                'slot_hours' => $item->slot_hours ?? '',    
+               'price' => (string) ($price ?? 0),   
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data'=>[
+                'shifts'=>$data,
+                'operating_hours'=>$hour ?? 0
+            ]
+            
+        ]);
+    }
+
 //     public function branchDetailEdit(Request $request)
 // {
 //     // ✅ Validation
@@ -1540,69 +1605,7 @@ class LibraryAuthController extends Controller
 //     ]);
 // }
 
-    public function getConfigurePrice(Request $request)
-    {
-        // ✅ Validation
-        $request->validate([
-            'branch_id' => 'required|exists:plan_types,branch_id'
-        ]);
-
-            $libraryId = authLibraryId();
-            $branch = Branch::where('id', $request->branch_id)
-                ->where('library_id', authLibraryId())
-                ->with(['state','city'])
-                ->first();
-
-            if (!$branch) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Branch not found for this library'
-                ], 404);
-            }
-
-            $plan = Plan::where('library_id', $libraryId)
-            ->where('plan_id', 1)
-            ->where('type', 'MONTH')->select('id','name')
-            ->first();
-
-            if (!$plan) {
-                throw new \Exception('Ops, System not found any plan to proceed for shifts.');
-            }
-
-        // ✅ Fetch data by branch_id
-        $planType =PlanType::withoutGlobalScopes()
-            ->where('branch_id', $request->branch_id)
-            ->whereNull('deleted_at')
-            ->get();
-        
-        $planId=$plan->id;
-        // ✅ Format response
-        $hour=Hour::withoutGlobalScopes()->where('branch_id', $request->branch_id)->value('hour');
-        $data = $planType->map(function ($item,$planId) {
-             $price = PlanPrice::where('plan_id', $planId)
-        ->where('plan_type_id', $item->id)
-        ->value('price');
-            return [
-                'id'         => $item->id,
-                'custom_plan_type'  => $item->day_type_id == 0 ? $item->name  : '',  
-                'plan_type_name'=> $item->name  ?? '',
-                'day_type_id'=> $item->day_type_id,
-                'start_time' => $item->start_time,
-                'end_time'   => $item->end_time,
-                'slot_hours' => $item->slot_hours,    
-               'price' => (string) ($price ?? 0),   
-            ];
-        });
-
-        return response()->json([
-            'status' => true,
-            'data'=>[
-                'shifts'=>$data,
-                'operating_hours'=>$hour ?? 0
-            ]
-            
-        ]);
-    }
+   
 
     // public function branchShiftConfigure(Request $request){
     //     $branchId  =$request->branch_id;
