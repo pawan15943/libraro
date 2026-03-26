@@ -7,11 +7,14 @@ use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
 
 
+
+
 Route::middleware(['device.check'])->group(function () {
 Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
     Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
     Route::get('master/static-data', [MasterController::class, 'getStaticMasters']);
+    
      // Library login
     Route::post('library/login', [LibraryAuthController::class, 'login']);
     Route::post('library/register', [LibraryAuthController::class, 'register']);
@@ -23,6 +26,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
     Route::get('/states', [MasterController::class, 'getStates']);
     Route::get('/cities', [MasterController::class, 'getCities']);
+    
 });
 
 Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(function () {
@@ -74,6 +78,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
     Route::post('/library/user/edit',[MasterController::class,'editLibraryUser']);
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
+    Route::get('library_user/roles', [MasterController::class, 'rolesList']);
     Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
     Route::delete('/library/user/{id}', [MasterController::class, 'deleteLibraryUser']);
 

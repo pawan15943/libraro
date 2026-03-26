@@ -24,6 +24,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Validator;
+use App\Services\LibraryConfigurationService;
 
 class MasterController extends Controller
 {
@@ -1024,7 +1025,7 @@ class MasterController extends Controller
 
             'role_id' => 'required|int|exists:roles,id',
 
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
+            'library_user_image' => 'nullable|string',
         ],[
             'branch.required' => 'Please select at least one branch.',
             'branch.min' => 'Please select at least one branch.',
@@ -1070,13 +1071,14 @@ class MasterController extends Controller
             }
 
             /* Profile picture */
+            if (!empty($validated['library_user_image']) && is_string($validated['library_user_image'])) {
 
-            if ($request->hasFile('profile_picture')) {
-
-                $data['profile_picture'] = $request
-                    ->file('profile_picture')
-                    ->store('user_profile_picture','public');
+                $service = new LibraryConfigurationService();
+                $profilePath  =$service->moveTempFileToPublic($validated['library_user_image'],'user_profile_picture','uploads/user_profile_picture'); 
+                $data['profile_picture']=$profilePath ;
             }
+
+        
 
           
 
@@ -1105,12 +1107,12 @@ class MasterController extends Controller
             return response()->json([
                 'status'=>true,
                 'message'=>'Library user saved successfully.',
-                'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'mobile' => $user->mobile,
-                ]
+                // 'data' => [
+                //     'id' => $user->id,
+                //     'name' => $user->name,
+                //     'email' => $user->email,
+                //     'mobile' => $user->mobile,
+                // ]
             ]);
 
         } catch (\Exception $e) {
@@ -1347,6 +1349,41 @@ class MasterController extends Controller
             'status' => true,
             'message' => 'Deleted successfully'
         ]);
+    }
+
+   public function rolesList(Request $request)
+    {
+        try {
+
+            // ✅ Execute query
+            $roles = DB::table('roles')
+                ->select('id', 'name', 'guard_name')
+                ->orderBy('id', 'DESC')
+                ->get();
+
+            // ✅ Format response
+            $data = $roles->map(function ($role) {
+                return [
+                    'id'         => $role->id,
+                    'name'       => $role->name,
+                    'guard_name' => $role->guard_name,
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Roles fetched successfully',
+                'data' => [
+                    'roles' => $data
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
     
 }

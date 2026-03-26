@@ -1425,69 +1425,95 @@ class LibraryAuthController extends Controller
         ]);
     }
 
-     public function getConfigurePrice(Request $request)
-    {
-        // ✅ Validation
-        $request->validate([
-            'branch_id' => 'required|exists:branches,id'
-        ]);
+    public function getConfigurePrice(Request $request)
+{
+    $request->validate([
+        'branch_id' => 'required|exists:branches,id'
+    ]);
 
-            $libraryId = authLibraryId();
-            $branch = Branch::where('id', $request->branch_id)
-                ->where('library_id', authLibraryId())
-                ->with(['state','city'])
-                ->first();
+    $libraryId = authLibraryId();
+    $branchId = $request->branch_id;
 
-            if (!$branch) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Branch not found for this library'
-                ], 404);
-            }
+    // ✅ Cache key
+    $cacheKey = "configure_price_{$libraryId}_{$branchId}";
 
-            $plan = Plan::where('library_id', $libraryId)
+    return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($libraryId, $branchId) {
+
+        // ✅ Single branch check (light query)
+        $branchExists = Branch::where('id', $branchId)
+            ->where('library_id', $libraryId)
+            ->exists();
+
+        if (!$branchExists) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch not found for this library'
+            ], 404);
+        }
+
+        // ✅ Plan (minimal select)
+        $plan = Plan::where('library_id', $libraryId)
             ->where('plan_id', 1)
-            ->where('type', 'MONTH')->select('id','name')
+            ->where('type', 'MONTH')
+            ->select('id')
             ->first();
 
-            if (!$plan) {
-                throw new \Exception('Ops, System not found any plan to proceed for shifts.');
-            }
+        if (!$plan) {
+            throw new \Exception('No plan found');
+        }
 
-        // ✅ Fetch data by branch_id
-        $planType =PlanType::withoutGlobalScopes()
-            ->where('branch_id', $request->branch_id)
+        $planId = $plan->id;
+
+        // ✅ Plan type mapping
+        $planTypes = [
+            1 => 'Full Day',
+            2 => 'First Half',
+            3 => 'Second Half',
+            8 => 'All Day',
+            9 => 'Full Night',
+            0 => 'Custom',
+            10 => 'Reserved',
+            11 => 'VIP',
+        ];
+
+        // ✅ Fetch everything in minimal queries
+        $planTypesData = DB::table('plan_types')
+            ->where('branch_id', $branchId)
             ->whereNull('deleted_at')
+            ->select('id', 'name', 'day_type_id', 'start_time', 'end_time', 'slot_hours')
             ->get();
-       
-        $planId=$plan->id;
-        // ✅ Format response
-        $hour=Hour::withoutGlobalScopes()->where('branch_id', $request->branch_id)->value('hour');
-        $data = $planType->map(function ($item,$planId) {
-             $price = PlanPrice::where('plan_id', $planId)
-        ->where('plan_type_id', $item->id)
-        ->value('price');
+
+        $prices = DB::table('plan_prices')
+            ->where('plan_id', $planId)
+            ->pluck('price', 'plan_type_id');
+
+        $hour = DB::table('hour')
+            ->where('branch_id', $branchId)
+            ->value('hour');
+
+        // ✅ Format (no extra queries)
+        $data = $planTypesData->map(function ($item) use ($planTypes, $prices) {
             return [
-                'id'         => $item->id,
-                'custom_plan_type'  => $item->day_type_id == 0 ? $item->name  : '',  
-                'plan_type_name'=> $item->name  ?? '',
-                'day_type_id'=> $item->day_type_id ?? '',
-                'start_time' => $item->start_time ?? '',
-                'end_time'   => $item->end_time ?? '',
-                'slot_hours' => $item->slot_hours ?? '',    
-               'price' => (string) ($price ?? 0),   
+                'id'               => $item->id,
+                'custom_plan_type' => $item->name ?? '',
+                'plan_type_name'   => $planTypes[$item->day_type_id] ?? '',
+                'day_type_id'      => $item->day_type_id ?? '',
+                'start_time'       => $item->start_time ?? '',
+                'end_time'         => $item->end_time ?? '',
+                'slot_hours'       => $item->slot_hours ?? '',
+                'price'            => (string) ($prices[$item->id] ?? 0),
             ];
         });
 
-        return response()->json([
+        return [
             'status' => true,
-            'data'=>[
-                'shifts'=>$data,
-                'operating_hours'=>$hour ?? 0
+            'data' => [
+                'shifts' => $data,
+                'operating_hours' => $hour ?? 0
             ]
-            
-        ]);
-    }
+        ];
+    });
+}
 
 //     public function branchDetailEdit(Request $request)
 // {
