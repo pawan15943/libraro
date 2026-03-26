@@ -1356,7 +1356,7 @@ class MasterController extends Controller
         try {
 
             // ✅ Execute query
-            $roles = DB::table('roles')
+            $roles = DB::table('roles')->where('guard_name','library_user')
                 ->select('id', 'name', 'guard_name')
                 ->orderBy('id', 'DESC')
                 ->get();
