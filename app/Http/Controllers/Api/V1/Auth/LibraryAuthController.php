@@ -1282,7 +1282,7 @@ class LibraryAuthController extends Controller
       $library = auth('library_api')->user();
        $libraryId = authLibraryId();
       $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
-        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id','library_images')
+        ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id','library_images','library_logo')
         ->get() 
         ->map(function ($branch) {
             // ✅ Decode JSON images
@@ -1312,7 +1312,7 @@ class LibraryAuthController extends Controller
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
                 
-                'library_logo' => $branch->library_logo ? asset('public/' . $branch->library_logo) : asset('public/img/user.png'),
+                'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : asset('public/img/user.png'),
                 'library_images' => $images,
                 // 🔥 main logic
                 'can_delete' => $branch->learners_count == 0 ? true : false
