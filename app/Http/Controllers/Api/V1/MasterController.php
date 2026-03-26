@@ -1003,7 +1003,7 @@ class MasterController extends Controller
             Rule::exists('library_users', 'id')->where(function ($q) use ($libraryId) {
                 $q->where('library_id', $libraryId);
             })
-],
+        ],
 
             'name' => 'required|string|max:255',
 
@@ -1036,16 +1036,20 @@ class MasterController extends Controller
             'branch.min' => 'Please select at least one branch.',
         ]);
 
-        if($request->id){
+        $user = null;
 
-            $userCheck = LibraryUser::where('id',$request->id)
-                ->where('library_id',$libraryId)
-                ->exists();
+        if (!empty($request->id)) {
 
-            if(!$userCheck){
-                throw new \Exception('User not found');
+            $user = LibraryUser::where('id', $request->id)
+                ->where('library_id', $libraryId)
+                ->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid user for this library'
+                ], 404);
             }
-
         }
 
        
@@ -1142,7 +1146,7 @@ class MasterController extends Controller
 
         $user = LibraryUser::where('id', $request->library_user_id)
             ->where('library_id', $libraryId)
-            ->select( 'id','name','email','mobile','branch_id')
+            ->select( 'id','name','email','mobile','branch_id','profile_picture')
             ->first();
           
         if (!$user) {
@@ -1169,6 +1173,7 @@ class MasterController extends Controller
                 'mobile' => $user->mobile,
                 'role_id' => $role->id ?? null,
                 'branch_ids' => $user->branch_id,
+                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
                 //optional
                 'role' => $role,
                 'branch'=>$branch
@@ -1183,7 +1188,7 @@ class MasterController extends Controller
         $users = LibraryUser::where('library_id', $libraryId)
             ->with('roles:id,name')
             ->select('id',
-                'name','email','mobile','branch_id','status'
+                'name','email','mobile','branch_id','status','profile_picture'
             )
             ->latest()
             ->get();
@@ -1199,11 +1204,12 @@ class MasterController extends Controller
             return [
                 'id' => $user->id,
                 'name' => $user->name,
-                'mobile' => $user->mobile,
-                'email' => $user->email,
+                'mobile' => $user->mobile ?? '',
+                'email' => $user->email ?? '',
                 'role' => optional($user->roles->first())->name,
                 'branches' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
+                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : asset('public/img/user.png'),
             ];
         });
 
