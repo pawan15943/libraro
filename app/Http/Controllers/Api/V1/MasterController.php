@@ -998,7 +998,12 @@ class MasterController extends Controller
     
 
         $validated = $request->validate([
-            'id' => 'nullable|exists:library_users,id',
+           'id' => [
+            'nullable',
+            Rule::exists('library_users', 'id')->where(function ($q) use ($libraryId) {
+                $q->where('library_id', $libraryId);
+            })
+],
 
             'name' => 'required|string|max:255',
 
