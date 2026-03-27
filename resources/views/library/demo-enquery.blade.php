@@ -36,7 +36,13 @@
 
                     {{-- Profile Image --}}
                     <li style="width: 8%;">
-                        <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
+                        @if($value->profile_picture)
+                            <img src="{{ asset($value->profile_picture) }}" alt="profile" class="profile-learner">
+
+                        @else
+                            <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile" class="profile-learner">
+  
+                        @endif
                     </li>
 
                     {{-- Seat + Plan --}}
@@ -122,7 +128,8 @@
 
                                 {{-- WhatsApp --}}
                                 <li>
-                                    <a href="javascript:void(0)">
+                                    <a href="https://wa.me/+91{{decryptData($value->mobile) }}?text=Your%20demo%20plan%20is%20about%20to%20expire.%20Please%20book%20your%20monthly%20seat%20to%20experience%20the%20Library.%0A%0A-%20Team%20XYZ%20Library" target="_blank">
+                                   
                                         <i class="fab fa-whatsapp"></i>
                                     </a>
                                 </li>
@@ -162,5 +169,49 @@
 </div>
 @endif
 
+
+<script>
+        $(document).on('click', '.delete-booking', function(e) {
+      
+            e.preventDefault();
+            let bookingId = $(this).data('id');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This booking will be permanently deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('booking') }}/" + bookingId,
+                        type: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                        },
+                        success: function(response) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Booking has been deleted.',
+                                'success'
+                            ).then(() => {
+                                location.reload(); // refresh page after delete
+                            });
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong. Please try again.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 
 @endsection

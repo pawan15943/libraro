@@ -145,7 +145,7 @@
 
                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No?</label>
-                                <select name="general_seat" id="general_seat" class="form-select @error('general_seat') is-invalid @enderror">
+                                <select name="general_seat" id="general_seat2" class="form-select @error('general_seat') is-invalid @enderror">
                                     <option value="yes" {{ old('general_seat') == 'yes' ? 'selected' : '' }}>
                                         No
                                     </option>
@@ -159,7 +159,7 @@
 
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id">
+                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id2">
                                     <option value="">Choose Seat No</option>
                                  
                                     @foreach($newAvailableSeat  as $key => $value)
@@ -276,11 +276,19 @@
                                                 <option value="">Select Id Proof</option>
                                                 <option value="1"
                                                     {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
-                                                    Aadhar
+                                                    Aadhar Card
                                                 </option>
                                                 <option value="2"
                                                     {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
                                                     Driving License
+                                                </option>
+                                                <option value="4"
+                                                    {{ (old('id_proof_name') ?? '') == '4' ? 'selected' : '' }}>
+                                                    Pan Card
+                                                </option>
+                                                <option value="5"
+                                                    {{ (old('id_proof_name') ?? '') == '5' ? 'selected' : '' }}>
+                                                   Voter Id
                                                 </option>
                                                 <option value="3"
                                                     {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
@@ -291,7 +299,7 @@
                                         </div>
                                         <div class="col-lg-4">
                                             <label for="address">ID Proof No.</label>
-                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." >
+                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">
 
                                            
                                         </div>
@@ -360,17 +368,17 @@
     $(document).ready(function() {
          let oldPlanTypeId = "{{ old('plan_type_id') }}";
         function loadPlanTypes() {
-            const generalSeat = $('#general_seat').val();
-            const seatId = $('#seat_id').val();
+            const generalSeat = $('#general_seat2').val();
+            const seatId = $('#seat_id2').val();
             const branch_id = $('#branch_id').val();
             console.log("branchwith", branch_id);
             if (generalSeat === 'yes') {
                 // General seat → no seat-wise filter
-                $('#seat_id').prop('disabled', true).val('');
+                $('#seat_id2').prop('disabled', true).val('');
                 getTypeSeatwise('', branch_id); // show general plan types
             } else if (generalSeat === 'no') {
                 // Specific seat → enable seat selection
-                $('#seat_id').prop('disabled', false);
+                $('#seat_id2').prop('disabled', false);
 
                 if (seatId) {
                     // If seat already selected
@@ -381,14 +389,14 @@
                 }
             } else {
                 // Empty / default selection
-                $('#seat_id').prop('disabled', true).val('');
+                $('#seat_id2').prop('disabled', true).val('');
                 $('#temp_plan_type_id').html('<option value="">Choose</option>');
             }
         }
         loadPlanTypes();
 
         // On change of general seat
-        $('#general_seat').on('change', function() {
+        $('#general_seat2').on('change', function() {
             loadPlanTypes();
         });
 
@@ -510,8 +518,8 @@
 
         }
 
-        $('#seat_id').on('change', function() {
-            const generalSeat = $('#general_seat').val();
+        $('#seat_id2').on('change', function() {
+            const generalSeat = $('#general_seat2').val();
             if (generalSeat === 'no') {
                 const seatId = $(this).val();
                 const branch_id = $('#branch_id').val();
