@@ -1095,7 +1095,7 @@ class MasterController extends Controller
             ],200);
         }
         $branchIds = $user->branch_id ?? [];
-        
+
          $branches = Branch::whereIn('id', $branchIds)
         ->pluck('name','id')
         ->map(function ($name, $id) {
@@ -1106,12 +1106,10 @@ class MasterController extends Controller
         })
         ->values();
 
-        // Branch ids (stored as json)
-       $branch = Branch::whereIn('id',$user->branch_id)->select('id','name')->get();
 
         // User role
-        $role = $user->roles()->select('id','name')->first();
-
+        $role = $user->roles()->first();
+          
 
         return response()->json([
             'status' => true,
@@ -1122,15 +1120,12 @@ class MasterController extends Controller
                 'email' => $user->email,
                 'mobile' => $user->mobile,
                  'role' => $role->name ?? '',
-                'role_id' => $role->id ?? null,
+                'role_id' => $role->id ?? '',
                  'branches' => $branches,
-                'branch_ids' => $branchIds,
-                'can_delete' => $role && $role->name !== 'super_admin',
+                'can_delete' =>true,
                 'status' => $user->status ? 'Active' : 'Inactive',
                 'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
-                //optional
-                'role' => $role,
-                'branch'=>$branch
+               
             ]
         ]);
     }
