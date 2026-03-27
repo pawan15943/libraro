@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Validator;
 use App\Services\LibraryConfigurationService;
+use Illuminate\Support\Facades\File;
 
 class MasterController extends Controller
 {
@@ -995,52 +996,41 @@ class MasterController extends Controller
     public function saveLibraryUser(Request $request)
     {
         $libraryId = auth('library_api')->id();
-    
 
         $validated = $request->validate([
-           'id' => [
-            'nullable',
-            Rule::exists('library_users', 'id')->where(function ($q) use ($libraryId) {
-                $q->where('library_id', $libraryId);
-            })
-        ],
-
+            'id' => [
+                'nullable',
+                Rule::exists('library_users', 'id')->where(fn($q) => 
+                    $q->where('library_id', $libraryId)
+                )
+            ],
             'name' => 'required|string|max:255',
-
             'email' => [
-                'required',
-                'email',
+                'required','email',
                 Rule::unique('library_users','email')->ignore($request->id)
             ],
-
-            'password' => $request->id
-                ? 'nullable|min:6'
-                : 'required|min:6',
-
+            'password' => $request->id ? 'nullable|min:6' : 'required|min:6',
             'mobile' => 'required|digits:10',
 
             'branch' => 'required|array|min:1',
-
             'branch.*' => [
                 'integer',
-                Rule::exists('branches','id')->where(function($q) use ($libraryId){
-                    $q->where('library_id',$libraryId);
-                })
+                Rule::exists('branches','id')->where(fn($q) => 
+                    $q->where('library_id',$libraryId)
+                )
             ],
 
             'role_id' => 'required|int|exists:roles,id',
-
             'library_user_image' => 'nullable|string',
         ],[
             'branch.required' => 'Please select at least one branch.',
             'branch.min' => 'Please select at least one branch.',
         ]);
 
+        // ✅ Find user if update
         $user = null;
-
-        if (!empty($request->id)) {
-
-            $user = LibraryUser::where('id', $request->id)
+        if (!empty($validated['id'])) {
+            $user = LibraryUser::where('id', $validated['id'])
                 ->where('library_id', $libraryId)
                 ->first();
 
@@ -1052,76 +1042,84 @@ class MasterController extends Controller
             }
         }
 
-       
         DB::beginTransaction();
 
         try {
 
+            /* ======================
+            BASIC DATA
+            ====================== */
             $data = [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'mobile' => $validated['mobile'],
                 'library_id' => $libraryId,
-                'branch_id' => $validated['branch']
+                'branch_id' => array_map('strval', $validated['branch']),
             ];
 
-            if ($request->filled('branch')) {
-
-                // convert values to string so DB stores ["32","33"]
-                $data['branch_id'] = array_map('strval', $request->branch);
-
-            }
-
-            /* Password */
-
-            if(!empty($validated['password'])){
+            /* ======================
+            PASSWORD
+            ====================== */
+            if (!empty($validated['password'])) {
                 $data['password'] = bcrypt($validated['password']);
                 $data['original_password'] = $validated['password'];
             }
 
-            /* Profile picture */
-            if (!empty($validated['library_user_image']) && is_string($validated['library_user_image'])) {
+           /* ======================
+            IMAGE HANDLING (DIRECT DEBUG VERSION)
+            ====================== */
 
+                $profilePath = null;
+
+            if (!empty($validated['library_user_image'])) {
+
+                 $input = $validated['library_user_image'];
                 $service = new LibraryConfigurationService();
-                $profilePath  =$service->moveTempFileToPublic($validated['library_user_image'],'user_profile_picture','uploads/user_profile_picture'); 
-                $data['profile_picture']=$profilePath ;
+
+                $profilePath = $service->moveTempFileToPublic(
+                    $input,
+                    'user_profile_picture',
+                    'uploads/user_profile_picture'
+                );
+
+
             }
 
-        
+            // ✅ ONLY set if not null
+            if (!empty($profilePath)) {
+                $data['profile_picture'] = $profilePath;
+            }
+            if ($user) {
+                $user->update($data);
+            } else {
+                $user = LibraryUser::create($data);
+            }
 
-          
-
-            /* Create or Update */
-
-            $user = LibraryUser::updateOrCreate(
-                ['id'=>$validated['id'] ?? null],
-                $data
-            );
-
-            if(!$user){
+            if (!$user) {
                 throw new \Exception('User creation failed');
             }
 
-            /* Assign Role */
-            $role = Role::where('id', $request->role_id)
+            /* ======================
+            ASSIGN ROLE
+            ====================== */
+            $role = Role::where('id', $validated['role_id'])
                 ->where('guard_name', 'library_user')
                 ->firstOrFail();
-              
 
             $user->syncRoles([$role->name]);
-
 
             DB::commit();
 
             return response()->json([
-                'status'=>true,
-                'message'=>'Library user saved successfully.',
-                // 'data' => [
-                //     'id' => $user->id,
-                //     'name' => $user->name,
-                //     'email' => $user->email,
-                //     'mobile' => $user->mobile,
-                // ]
+                'status' => true,
+                'message' => 'Library user saved successfully.',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'mobile' => $user->mobile,
+                    'profile_picture' => $user->profile_picture
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -1129,9 +1127,9 @@ class MasterController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'status'=>false,
-                'message'=>$e->getMessage()
-            ],500);
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 

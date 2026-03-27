@@ -721,16 +721,29 @@ class LibraryConfigurationService
             /* ========= CASE 2: URL (APP) ========= */
             elseif (is_string($file)) {
                  if (str_contains($file, '/temp/')) {
-                    // EXACT SAME AS YOUR WORKING CODE
+                    // // EXACT SAME AS YOUR WORKING CODE
+                    // $path = parse_url($file, PHP_URL_PATH);
+
+                    // $pos = strpos($path, 'temp/');
+
+                    // if ($pos === false) {
+                    //     continue;
+                    // }
+
+                    // $tempPath = substr($path, $pos); // temp/abc.png
                     $path = parse_url($file, PHP_URL_PATH);
 
-                    $pos = strpos($path, 'temp/');
-
-                    if ($pos === false) {
-                        continue;
+                    // ✅ normalize path first
+                    if (str_contains($path, '/storage/')) {
+                        $path = substr($path, strpos($path, '/storage/') + 9);
                     }
 
-                    $tempPath = substr($path, $pos); // temp/abc.png
+                    // now must be temp/xxx.png
+                    if (!str_starts_with($path, 'temp/')) {
+                        return null;
+                    }
+
+                    $tempPath = $path;
 
                     $sourcePath = storage_path('app/public/' . $tempPath);
 
