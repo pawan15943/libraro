@@ -932,66 +932,7 @@ class MasterController extends Controller
         ]);
     }
 
-   public function libraryPermissions(Request $request)
-    {
-        $library = auth('library_api')->user();
-
-        $subscription = Subscription::find($library->library_type);
-
-        $result = [];
-
-        // ✅ get user permissions (if user_id passed)
-        $userPermissionIds = [];
-
-        if (!empty($request->library_user_id)) {
-
-            $user = LibraryUser::find($request->library_user_id);
-
-            if ($user) {
-                // assuming spatie
-                $userPermissionIds = $user->getAllPermissions()->pluck('id')->toArray();
-            }
-        }
-
-        if ($subscription) {
-
-            $permissions = $subscription->permissions()
-                ->leftJoin('permission_categories', 'permission_categories.id', '=', 'permissions.permission_category_id')
-                ->select(
-                    'permissions.id',
-                    'permissions.name',
-                    'permission_categories.name as category_name'
-                )
-                ->get();
-
-            $grouped = $permissions->groupBy('category_name');
-
-            $result = $grouped->map(function ($items, $category) use ($userPermissionIds) {
-
-                return [
-                    'category' => $category,
-                    'display_name' => ucfirst($category) . ' Permissions',
-                    'permissions' => $items->map(function ($permission) use ($userPermissionIds) {
-
-                        return [
-                            'id' => $permission->id,
-                            'name' => $permission->name,
-
-                            // ✅ MAIN LOGIC
-                            'is_selected' => in_array($permission->id, $userPermissionIds)
-                        ];
-                    })->values()
-                ];
-
-            })->values();
-        }
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Permissions fetched successfully',
-            'data'    => $result
-        ]);
-    }
+  
 
     public function saveLibraryUser(Request $request)
     {
@@ -1113,13 +1054,13 @@ class MasterController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Library user saved successfully.',
-                'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'mobile' => $user->mobile,
-                    'profile_picture' => $user->profile_picture
-                ]
+                // 'data' => [
+                //     'id' => $user->id,
+                //     'name' => $user->name,
+                //     'email' => $user->email,
+                //     'mobile' => $user->mobile,
+                //     'profile_picture' => $user->profile_picture
+                // ]
             ]);
 
         } catch (\Exception $e) {
@@ -1153,6 +1094,17 @@ class MasterController extends Controller
                 'message' => 'User not found'
             ],200);
         }
+        $branchIds = $user->branch_id ?? [];
+        
+         $branches = Branch::whereIn('id', $branchIds)
+        ->pluck('name','id')
+        ->map(function ($name, $id) {
+            return [
+                'id' => $id,
+                'name' => $name
+            ];
+        })
+        ->values();
 
         // Branch ids (stored as json)
        $branch = Branch::whereIn('id',$user->branch_id)->select('id','name')->get();
@@ -1169,8 +1121,12 @@ class MasterController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'mobile' => $user->mobile,
+                 'role' => $role->name ?? '',
                 'role_id' => $role->id ?? null,
-                'branch_ids' => $user->branch_id,
+                 'branches' => $branches,
+                'branch_ids' => $branchIds,
+                'can_delete' => $role && $role->name !== 'super_admin',
+                'status' => $user->status ? 'Active' : 'Inactive',
                 'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
                 //optional
                 'role' => $role,
@@ -1196,17 +1152,27 @@ class MasterController extends Controller
             // Branch names
             $branchIds = $user->branch_id ?? [];
 
-            $branches = Branch::whereIn('id', $branchIds)
-                ->pluck('name');
+             $branches = Branch::whereIn('id', $branchIds)
+                ->pluck('name', 'id')
+                ->map(function ($name, $id) {
+                    return [
+                        'id' => $id,
+                        'name' => $name
+                    ];
+                })
+                ->values();
+            $role = $user->roles->first();
 
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'mobile' => $user->mobile ?? '',
                 'email' => $user->email ?? '',
-                'role' => optional($user->roles->first())->name,
+                'role' => $role->name ?? '',
+                'role_id' => $role->id ?? '',
                 'branches' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
+                'can_delete'=>true,
                 'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : asset('public/img/user.png'),
             ];
         });
@@ -1215,6 +1181,67 @@ class MasterController extends Controller
             'status' => true,
             'message' => 'User list fetched successfully',
             'data' => $users
+        ]);
+    }
+
+     public function libraryPermissions(Request $request)
+    {
+        $library = auth('library_api')->user();
+
+        $subscription = Subscription::find($library->library_type);
+
+        $result = [];
+
+        // ✅ get user permissions (if user_id passed)
+        $userPermissionIds = [];
+
+        if (!empty($request->library_user_id)) {
+
+            $user = LibraryUser::find($request->library_user_id);
+
+            if ($user) {
+                // assuming spatie
+                $userPermissionIds = $user->getAllPermissions()->pluck('id')->toArray();
+            }
+        }
+
+        if ($subscription) {
+
+            $permissions = $subscription->permissions()
+                ->leftJoin('permission_categories', 'permission_categories.id', '=', 'permissions.permission_category_id')
+                ->select(
+                    'permissions.id',
+                    'permissions.name',
+                    'permission_categories.name as category_name'
+                )
+                ->get();
+
+            $grouped = $permissions->groupBy('category_name');
+
+            $result = $grouped->map(function ($items, $category) use ($userPermissionIds) {
+
+                return [
+                    'category' => $category,
+                    'display_name' => ucfirst($category) . ' Permissions',
+                    'permissions' => $items->map(function ($permission) use ($userPermissionIds) {
+
+                        return [
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+
+                            // ✅ MAIN LOGIC
+                            'is_selected' => in_array($permission->id, $userPermissionIds)
+                        ];
+                    })->values()
+                ];
+
+            })->values();
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Permissions fetched successfully',
+            'data'    => $result
         ]);
     }
 
