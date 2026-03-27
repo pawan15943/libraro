@@ -74,13 +74,13 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     
     Route::get('/price/list', [MasterController::class, 'pricelist']);
     
-    Route::post('/library/permissions', [MasterController::class, 'libraryPermissions']);
-    Route::post('/library/user',[MasterController::class,'saveLibraryUser']);
-    Route::post('/library/user/edit',[MasterController::class,'editLibraryUser']);
+    Route::post('/library/user/permissions', [MasterController::class, 'libraryPermissions']);
+    Route::post('/library/user/add',[MasterController::class,'saveLibraryUser']);
+    Route::post('/library/user/detail',[MasterController::class,'editLibraryUser']);
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
     Route::get('library_user/roles', [MasterController::class, 'rolesList']);
-    Route::post('/library/user/permissions',[MasterController::class,'assignPermissions']);
-    Route::delete('/library/user/{id}', [MasterController::class, 'deleteLibraryUser']);
+    Route::post('/library/user/permissions/update',[MasterController::class,'assignPermissions']);
+    Route::delete('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
 
     Route::post('upload/temp-images', [LibraryController::class, 'uploadTempImages']);
 

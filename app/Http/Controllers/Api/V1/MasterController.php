@@ -1250,26 +1250,50 @@ class MasterController extends Controller
         ]);
     }
 
-    public function deleteLibraryUser($id)
+    public function deleteLibraryUser(Request $request)
     {
         $libraryId = auth('library_api')->id();
 
-        $user = LibraryUser::where('id',$id)
-            ->where('library_id',$libraryId)
+        // ✅ Validate input
+        $validated = $request->validate([
+            'id' => [
+                'required',
+                Rule::exists('library_users', 'id')->where(fn($q) =>
+                    $q->where('library_id', $libraryId)
+                )
+            ]
+        ]);
+
+        // ✅ Fetch user
+        $user = LibraryUser::where('id', $validated['id'])
+            ->where('library_id', $libraryId)
             ->first();
 
-        if(!$user){
+        if (!$user) {
             return response()->json([
-                'status'=>false,
-                'message'=>'User not found'
-            ],404);
+                'status' => false,
+                'message' => 'User not found'
+            ], 404);
         }
 
+        /* ======================
+        DELETE PROFILE IMAGE (OPTIONAL 🔥)
+        ====================== */
+        if (!empty($user->profile_picture)) {
+
+            $imagePath = public_path($user->profile_picture);
+
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
+        }
+
+        // ✅ Delete user
         $user->delete();
 
         return response()->json([
-            'status'=>true,
-            'message'=>'User deleted successfully'
+            'status' => true,
+            'message' => 'User deleted successfully'
         ]);
     }
 
