@@ -905,12 +905,16 @@ class MasterController extends Controller
     }
 
     public function planTypelist(Request $request){
+          $libraryId = auth('library_api')->id();
          $validated = $request->validate([
-           
-            'branch_id' => 'required|exists:branches,id',
-           
+            'branch_id' => [
+                'required',
+                Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
+                    $q->where('library_id', $libraryId);
+                })
+            ],
         ]);
-        $libraryId = auth('library_api')->id();
+      
         $branchId = $validated['branch_id'];
         $existsbrnach=Branch::where('id',$branchId)->where('library_id',$libraryId)->exists();
         if(!$existsbrnach){
