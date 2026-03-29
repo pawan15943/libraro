@@ -313,13 +313,30 @@ if($customer->locker_no){
                         @endif
 
                         @if(!in_array('5', toggleHideField()))
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="">ID Proof Name(Optional)</label>
                             <select  class="form-select @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
                                 <option value="">Select Id Proof</option>
-                                <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>Aadhar Card</option>
-                                <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>Driving License</option>
-                                <option value="3" {{ old('id_proof_name', $customer->id_proof_name) == 3 ? 'selected' : '' }}>Other</option>
+                               
+                                <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>
+                                    Aadhar Card
+                                </option>
+
+                                <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>
+                                    Driving License
+                                </option>
+
+                                <option value="4" {{ old('id_proof_name', $customer->id_proof_name) == 4 ? 'selected' : '' }}>
+                                    Pan Card
+                                </option>
+
+                                <option value="5" {{ old('id_proof_name', $customer->id_proof_name) == 5 ? 'selected' : '' }}>
+                                    Voter Id
+                                </option>
+
+                                <option value="3" {{ old('id_proof_name', $customer->id_proof_name) == 3 ? 'selected' : '' }}>
+                                    Other
+                                </option>
                             </select>
                             @error('id_proof_name')
                             <span class="invalid-feedback" role="alert">
@@ -327,8 +344,12 @@ if($customer->locker_no){
                             </span>
                             @enderror
                         </div>
+                         <div class="col-lg-4">
+                            <label for="address">ID Proof No.</label>
+                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number) }}">
+                        </div>
 
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="">Upload Scan Copy of Proof (Optional)</label>
                             <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
                             <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">

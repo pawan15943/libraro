@@ -530,6 +530,7 @@ class LearnerController extends Controller
     $learner->address = $request->input('address',$learner->address);
     $learner->remark = $request->input('remark',$learner->remark);
     $learner->id_proof_name = $request->input('id_proof_name',$learner->id_proof_name);
+    $learner->id_proof_number = $request->input('id_proof_number',$learner->id_proof_number);
 
     $learner->save();
 
@@ -1632,6 +1633,7 @@ class LearnerController extends Controller
     public function fetchCustomerData($customerId = null, $isRenew = false, $status, $detailStatus, $filters = [], $perPage = 10, $paginate = true)
     {
 
+
         $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
@@ -1645,6 +1647,7 @@ class LearnerController extends Controller
                 ->where('learners.library_id', getLibraryId())
                 ->where('learner_detail.library_id', getLibraryId());
         }
+       
 
         $query->select(
             'plan_types.name as plan_type_name',
@@ -2010,6 +2013,7 @@ class LearnerController extends Controller
     }
     public function learnerList(Request $request)
     {
+        
 
         $filters = [
             'plan_id' => $request->get('plan_id'),

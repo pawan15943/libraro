@@ -249,7 +249,7 @@
 
 
                                 @if(!in_array('5', toggleHideField()))
-                                <div class="col-lg-6">
+                                <div class="col-lg-4">
                                     <label for="">ID Proof Name(Optional)</label>
                                     <select id="id_proof_name" class="form-select" name="id_proof_name">
                                         <option value="">Select Id Proof</option>
@@ -259,8 +259,12 @@
                                     </select>
                                     <span class="text-danger">Uploading ID proof is optional do it later.</span>
                                 </div>
-
-                                <div class="col-lg-6">
+                                
+                                <div class="col-lg-4">
+                                    <label for="address">ID Proof No.</label>
+                                    <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">  
+                                </div>
+                                <div class="col-lg-4">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
                                     <input type="file" class="form-control image-cropper id_proof_file" name="id_proof_file" autocomplete="off">
                                     <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
@@ -273,6 +277,7 @@
                                         <iframe id="pdfPreview" style="display: none;" frameborder="0"></iframe>
                                     </div> -->
                                 </div>
+                               
                                 @endif
 
 

@@ -196,7 +196,7 @@
                             
                            
                           
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <label for="">Plan <span>*</span></label>
                                 <select name="plan_id" id="plan_id4" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
                                     <option value="">Choose</option>
@@ -209,7 +209,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <label for="">Plan Type / Shift <span>*</span></label>
                                 <select id="temp_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                                     <option value="">Choose</option>
@@ -219,7 +219,7 @@
 
                             
 
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <label for="">Plan Starts On <span>*</span></label>
                                <input type="date"
                                     class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
@@ -235,6 +235,16 @@
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 <span id="chargeable_day_book" class="text-info"></span>
                             </div>
+                             @if(!in_array('8', toggleHideField()))
+                                <div class="col-lg-6">
+                                    <label>Upload Profile Photo (optional)</label>
+                                    <input
+                                        type="file"
+                                        class="form-control image-cropper"
+                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                    <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                                </div>
+                            @endif
                             <div class="col-lg-6">
                                 <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
@@ -256,16 +266,7 @@
 
                                 <div class="qr_idProofFields" style="display: none;">
                                     <div class="row g-3">
-                                        @if(!in_array('8', toggleHideField()))
-                                            <div class="col-lg-12">
-                                                <label>Upload Profile Photo (optional)</label>
-                                                <input
-                                                    type="file"
-                                                    class="form-control image-cropper"
-                                                    name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
-                                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
-                                            </div>
-                                        @endif
+                                       
                                     
                             
                                         {{-- ================= ID PROOF ================= --}}
