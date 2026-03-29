@@ -713,7 +713,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=PlanType::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
+        $plan=PlanType::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id')->first();
           if (!$plan) {
                 return response()->json([
                     'status'  => false,
@@ -887,8 +887,13 @@ class MasterController extends Controller
 
                 $planType = PlanType::where('id',$request->id)
                     ->where('branch_id',$branchId)
-                    ->firstOrFail();
-
+                    ->first();
+                if (!$planType) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Plan Type not found for this branch'
+                    ], 200);
+                }
                 $planType->update($data);
 
                 $message = "Shift updated successfully";
