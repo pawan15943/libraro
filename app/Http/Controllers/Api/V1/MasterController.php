@@ -510,7 +510,7 @@ class MasterController extends Controller
         $libraryId = auth('library_api')->id();
         
         $validated = $request->validate([
-            'plan_id' => [
+            'id' => [
                 'required',
                 Rule::exists('plans','id')->where(function($q) use ($libraryId){
                     $q->where('library_id',$libraryId);
@@ -519,7 +519,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=Plan::where('id',$validated['plan_id'])->select('id','name','monthdays','type')->first();
+        $plan=Plan::where('id',$validated['id'])->select('id','name','monthdays','type')->first();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
@@ -598,7 +598,6 @@ class MasterController extends Controller
             return response()->json([
                 'status' => true,
                 'message'=> $message,
-                'data'   => $plan
             ]);
 
         }catch(\Exception $e){
