@@ -396,7 +396,7 @@ class MasterController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => $message,
-                'data'    => $floor
+                // 'data'    => $floor
             ]);
 
         } catch (\Exception $e) {
@@ -419,7 +419,7 @@ class MasterController extends Controller
 
         $floors=Floor::where('branch_id',$request->branch_id)->select('name','floor_no','from_seat','to_seat','total_seats')->get();
         
-        $totalSeats =  Hour::where('branch_id',$request->branch_id)->value('seats') ?? 0;
+        $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$request->branch_id)->value('seats') ?? 0;
         
         return response()->json([
             'status'  => true,
