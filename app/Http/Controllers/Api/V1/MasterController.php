@@ -885,7 +885,7 @@ class MasterController extends Controller
 
             if ($request->id) {
 
-                $planType = PlanType::where('id',$request->id)
+                $planType = PlanType::withoutGlobalScopes()->where('id',$request->id)
                     ->where('branch_id',$branchId)
                     ->first();
                 if (!$planType) {
