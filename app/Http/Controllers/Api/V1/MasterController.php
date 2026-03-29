@@ -417,7 +417,7 @@ class MasterController extends Controller
            
         ]);
 
-        $floors=Floor::where('branch_id',$request->branch_id)->select('name','floor_no','from_seat','to_seat','total_seats')->get();
+        $floors=Floor::where('branch_id',$request->branch_id)->select('id','name','floor_no','from_seat','to_seat','total_seats')->get();
         
         $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$request->branch_id)->value('seats') ?? 0;
         
