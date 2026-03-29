@@ -358,7 +358,7 @@ class MasterController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Adding or updating this floor exceeds the total allowed seats for this branch. Maximum allowed: '.$grand_branch_total
-                ],422);
+                ],200);
             }
 
             /* ==============================
