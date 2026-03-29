@@ -955,7 +955,7 @@ class MasterController extends Controller
         ]);
 
         // ✅ Get PlanType (including soft deleted)
-        $planType = PlanType::withTrashed()
+        $planType = PlanType::withoutGlobalScopes()->withTrashed()
             ->where('id', $request->id)
             ->where('library_id', authLibraryId())
             ->first();
@@ -992,7 +992,7 @@ class MasterController extends Controller
             ]);
 
             // ✅ Get PlanType
-            $planType = PlanType::where('id', $request->id)
+            $planType = PlanType::withoutGlobalScopes()->where('id', $request->id)
                 ->where('library_id', authLibraryId()) // remove if not needed
                 ->first();
 
