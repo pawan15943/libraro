@@ -6602,7 +6602,7 @@ ul.reacentActivity li {
         --bs-gutter-y: 1rem !important;
     }
 
-    .revenue-info ul li:first-child {
+    .revenue-info >ul>li:first-child {
         width: 100% !important;
     }
 

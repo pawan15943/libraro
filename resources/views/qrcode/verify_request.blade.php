@@ -480,8 +480,8 @@ span.close-modal {
                             @endif
                             {{-- ================= ID PROOF ================= --}}
                             @if(!in_array('5', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label>Id Proof Received</label>
+                            <div class="col-lg-4">
+                                <label>ID Proof Name(Optional)</label>
                                 <select class="form-select" name="id_proof_name">
                                     <option value="">Select Id Proof</option>
                                     <option value="1"
@@ -499,8 +499,14 @@ span.close-modal {
                                 </select>
                                 <span class="text-danger">Uploading ID proof is optional do it later.</span>
                             </div>
-
-                            <div class="col-lg-6">
+                               <div class="col-lg-4">
+                                <label for="address">ID Proof No.</label>
+                                <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." value="{{ old('id_proof_number') ?? $customer->id_proof_number ?? '' }}">
+                                @error('id_proof_number')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4">
                                 <label for="id_proof_file">Upload Scan Copy of Proof</label>
                                 
 
@@ -518,18 +524,11 @@ span.close-modal {
                             </div>
                             @endif
                             
-                            <div class="col-lg-6">
-                                <label for="address">ID Proof No.</label>
-                                <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." value="{{ old('id_proof_number') ?? $customer->id_proof_number ?? '' }}">
-                                
-                                @error('id_proof_number')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
-                            </div>
+                         
                             
                             {{-- ================= ADDRESS ================= --}}
                             @if(!in_array('32', toggleHideField()))
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <label for="address">Address</label>
                                 <textarea class="form-control"
                                         name="address"

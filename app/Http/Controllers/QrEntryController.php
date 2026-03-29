@@ -390,6 +390,10 @@ class QrEntryController extends Controller
                 'plan_price_id'  => 'required',
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
+                 'id_proof_name' => 'nullable|in:1,2,3',
+                'id_proof_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
+                'id_proof_number'=> 'nullable|string|max:150',
+                'address'       => 'nullable|string|max:500',
             ];
             $messages = [
                 'name.required'            => 'Name is required.',
@@ -519,6 +523,17 @@ class QrEntryController extends Controller
                 $profile_picture = null;
             }
 
+            $idProofFilePath = null;
+
+            if ($request->hasFile('id_proof_file')) {
+                $file = $request->file('id_proof_file');
+
+                $fileName = 'id_proof_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/id_proof'), $fileName);
+
+                $idProofFilePath = 'public/uploads/id_proof/' . $fileName;
+            }
+
           
             $booking = Booking::create([
                 'name'            => $validated['name'],
@@ -543,6 +558,10 @@ class QrEntryController extends Controller
                 'transaction_id'  => $transactions ? $transactions->id : null,
                 'type'            => $seat_type,
                 'profile_picture' => $profile_picture,
+                 'id_proof_name'   => $request->id_proof_name,
+                'id_proof_file'   => $idProofFilePath,
+                'id_proof_number'   => $request->id_proof_number,
+                 'address'         => $request->address,
             ]);
 
             Log::info('Booking created successfully', ['booking_id' => $booking->id]);
@@ -1002,6 +1021,7 @@ class QrEntryController extends Controller
                 'dob' => $request->input('dob'),
                 'id_proof_name' => $request->input('id_proof_name'),
                 'id_proof_file' => $id_proof_file,
+                'id_proof_number'=>$request->input('id_proof_number') ?? $bookingurl->id_proof_number,
                 'hours' => $hours,
                 'status' => $status,
                 'library_id' => getLibraryId(),

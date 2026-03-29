@@ -222,6 +222,7 @@ class LearnerController extends Controller
             'payment_mode'     => 'required',
             'plan_start_date'  => 'required|date',
             'paid_amount'      => 'required',
+            'id_proof_number'  =>'nullable'
 
         ];
 
@@ -335,7 +336,8 @@ class LearnerController extends Controller
                 'profile_picture' => $profile_picture,
                 'address' => $request->input('address'),
                 'locker_no' => $request->input('locker_no') ?? null,
-                'sended_message_type' => $request->input('sended_message_type') ?? 'no'
+                'sended_message_type' => $request->input('sended_message_type') ?? 'no',
+                 'id_proof_number' => $request->input('id_proof_number') ?? null,
             ]);
 
             $learner_detail = LearnerDetail::create([
@@ -2240,6 +2242,7 @@ class LearnerController extends Controller
     public function fetchCustomerData($customerId = null, $isRenew = false, $status, $detailStatus, $filters = [], $perPage = 10, $paginate = true)
     {
 
+
         $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
@@ -2253,6 +2256,7 @@ class LearnerController extends Controller
                 ->where('learners.library_id', getLibraryId())
                 ->where('learner_detail.library_id', getLibraryId());
         }
+       
 
         $query->select(
             'plan_types.name as plan_type_name',
@@ -2618,6 +2622,7 @@ class LearnerController extends Controller
     }
     public function learnerList(Request $request)
     {
+        
 
         $filters = [
             'plan_id' => $request->get('plan_id'),

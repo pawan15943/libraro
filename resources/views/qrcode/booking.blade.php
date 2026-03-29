@@ -8,7 +8,11 @@
     footer {
         display: none;
     }
-
+h4.py-4.m-0 {
+    font-size: 1.2rem;
+    color: #006d83;
+    font-weight: 600;
+}
     .online-qr-booking {
         display: flex;
         justify-content: center;
@@ -165,23 +169,24 @@
                                 @error('seat_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label>Name <span>*</span></label>
                                 <input type="text" name="name" value="{{ old('name') }}" class="form-control char-only @error('name') is-invalid @enderror">
                                 @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            @if(!in_array('1', toggleHideField()))
-                            <div class="col-lg-12">
-                                <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
-                                <span class="text-danger" id="email-error"></span>
-                            </div>
-                            @endif
                             <div class="col-lg-6">
                                 <label>Mobile (WhatsApp No)<span>*</span></label>
                                 <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
                                 @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
+                            @if(!in_array('1', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="">Email Id (Optional)</label>
+                                <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
+                                <span class="text-danger" id="email-error"></span>
+                            </div>
+                            @endif
+                            
                             @if(!in_array('2', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">DOB (Optional)</label>
@@ -228,7 +233,7 @@
                             </div>
                             
                             @if(!in_array('8', toggleHideField()))
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label class="form-label">Upload Profile Photo</label>
                                 <input
                                     type="file"
@@ -237,7 +242,7 @@
                                 <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
                             </div>
                             @endif
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <label for="">Payment Mode</label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
@@ -251,6 +256,78 @@
                                 </div>
                                 @enderror
                             </div>
+                            
+                            <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i><h4>
+
+                            <div class="qr_idProofFields" style="display: none;">
+                                <div class="row g-3">
+                                    
+                                       
+                                
+                                
+                        
+                                    {{-- ================= ID PROOF ================= --}}
+                                    
+                                    <div class="col-lg-4">
+                                        <label>Id Proof Received</label>
+                                        <select class="form-select" name="id_proof_name">
+                                            <option value="">Select Id Proof</option>
+                                            <option value="1"
+                                                {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
+                                                Aadhar Card
+                                            </option>
+                                            <option value="2"
+                                                {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
+                                                Driving License
+                                            </option>
+                                            <option value="4"
+                                                {{ (old('id_proof_name') ?? '') == '4' ? 'selected' : '' }}>
+                                                Pan Card
+                                            </option>
+                                            <option value="5"
+                                                {{ (old('id_proof_name') ?? '') == '5' ? 'selected' : '' }}>
+                                                Voter Id
+                                            </option>
+                                            <option value="3"
+                                                {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
+                                                Other
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label for="id_proof_number">ID Proof No.</label>
+                                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">
+
+                                        
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label for="id_proof_file">Upload Scan Copy of Proof</label>
+                                        
+
+                                        <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                                        <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
+                                        @error('id_proof_file')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                        
+                                    </div>
+                                    
+                                    {{-- ================= ADDRESS ================= --}}
+                                    <div class="col-lg-12">
+                                        <label for="    ">Address</label>
+                                        <textarea class="form-control"
+                                                name="address"
+                                                rows="3"
+                                                placeholder="Enter address">{{ old('address') ??  '' }}</textarea>
+                                    </div>
+                                    
+
+                                </div>
+                            </div>
+
+                            
                             <div class="col-lg-12">
                                 <button type="submit" class="btn btn-primary button">Next <i class="fa fa-long-arrow-right ms-2"></i></button>
                             </div>
@@ -539,6 +616,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+
+$(document).ready(function () {
+
+        // Plan Addons Toggle
+        $(document).on('click', '.qr_addonToggleIcon', function () {
+            $('.qr_lockerFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+        // Other Optional Fields Toggle
+        $(document).on('click', '.qr_toggleIcon', function () {
+            $('.qr_idProofFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+    });
 </script>
 
 
