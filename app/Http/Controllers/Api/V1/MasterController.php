@@ -713,7 +713,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=PlanType::where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
+        $plan=PlanType::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
           if (!$plan) {
                 return response()->json([
                     'status'  => false,
