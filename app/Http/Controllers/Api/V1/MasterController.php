@@ -1113,11 +1113,17 @@ class MasterController extends Controller
     }
     public function pricelist(Request $request)
     {
+        
+        $libraryId = auth('library_api')->id();
         $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
+            'branch_id' => [
+                'required',
+                Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
+                    $q->where('library_id', $libraryId);
+                })
+            ],
         ]);
 
-        $libraryId = auth('library_api')->id();
         $branchId  = $validated['branch_id'];
 
         /* Check branch belongs to library */
