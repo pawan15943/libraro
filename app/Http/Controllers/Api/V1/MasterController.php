@@ -519,7 +519,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=Plan::where('id',$validated['id'])->select('id','name','monthdays','type')->first();
+        $plan=Plan::where('id',$validated['id'])->select('id','name','monthdays','type')->firstOrFail();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
@@ -705,11 +705,11 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=PlanType::where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
+        $plan=PlanType::where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->firstOrFail();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan Type fetch successfully",
-                'data'    => $plan ?? ''
+                'data'    => $plan 
             ]);
 
     }
