@@ -417,12 +417,93 @@ class MasterController extends Controller
            
         ]);
 
-        $floor=Floor::where('branch_id',$request->branch_id)->select('name','floor_no','from_seat','to_seat','total_seats')->get();
-         return response()->json([
-                'status'  => true,
-                'message' =>"Floor fetch successfully",
-                'data'    => $floor
+        $floors=Floor::where('branch_id',$request->branch_id)->select('name','floor_no','from_seat','to_seat','total_seats')->get();
+        
+        $totalSeats =  Hour::where('branch_id',$request->branch_id)->value('seats') ?? 0;
+        
+        return response()->json([
+            'status'  => true,
+            'message' => "Floor fetch successfully",
+            'data'    => [
+                'total_seats' => $totalSeats,
+                'floors'      => $floors
+            ]
+        ]);
+    }
+    public function floorDetail(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:floors,id',
+        ]);
+
+        $floor = Floor::where('id', $request->id)
+            ->select('id','name','floor_no','from_seat','to_seat','total_seats')
+            ->first();
+
+        if (!$floor) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Floor not found'
+            ], 200);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Floor detail fetched successfully',
+            'data'    => $floor
+        ]);
+    }
+    public function deleteFloor(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:floors,id',
+        ]);
+
+        $deleted = Floor::where('id', $request->id)
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Floor not found'
             ]);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Floor deleted successfully'
+        ]);
+    }
+    public function floorStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:floors,id',
+        ]);
+
+        $floor = Floor::withTrashed()
+            ->where('id', $request->id)
+            ->first();
+
+        if (!$floor) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Floor not found'
+            ], 200);
+        }
+
+        // ✅ Toggle
+        if (!$floor->trashed()) {
+            $floor->delete();
+            $message = 'Floor deactivated successfully';
+        } else {
+            $floor->restore();
+            $message = 'Floor activated successfully';
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => $message
+        ]);
     }
 
     public function planEdit(Request $request){
@@ -543,11 +624,80 @@ class MasterController extends Controller
             ]);
     }
 
+    public function deletePlan(Request $request)
+    {
+        try {
+            // ✅ Validation
+            $request->validate([
+                'id' => 'required|exists:plans,id'
+            ]);
+
+            // ✅ Get plan (optional: filter by library_id if needed)
+            $plan = Plan::where('id', $request->id)
+                        ->where('library_id', authLibraryId()) 
+                        ->first();
+
+            if (!$plan) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Plan not found'
+                ],200);
+            }
+
+            // ✅ Delete Plan
+            $plan->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Plan deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function planStatus(Request $request)
+    {
+        $request->validate([
+            'id'     => 'required|exists:plans,id',
+            // 'status' => 'required|in:active,inactive'
+        ]);
+
+        $plan = Plan::withTrashed()
+            ->where('id', $request->id)
+            ->where('library_id', authLibraryId())
+            ->first();
+
+        if (!$plan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan not found'
+            ],200);
+        }
+        if (!$plan->trashed()) {
+             $plan->delete();
+           
+        }else{
+            $plan->restore();
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Status updated successfully'
+        ]);
+    }
+
     public function planTypeEdit(Request $request){
         $libraryId = auth('library_api')->id();
         
         $validated = $request->validate([
-            'plantype_id' => [
+            'id' => [
                 'required',
                 Rule::exists('plan_types','id')->where(function($q) use ($libraryId){
                     $q->where('library_id',$libraryId);
@@ -556,7 +706,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=PlanType::where('id',$validated['plantype_id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
+        $plan=PlanType::where('id',$validated['id'])->select('id','name','start_time','end_time','slot_hours','day_type_id','image')->first();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan Type fetch successfully",
@@ -775,12 +925,84 @@ class MasterController extends Controller
                 'data'    => $types
             ]);
     }
+    public function planTypeStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:plan_types,id',
+        ]);
+
+        // ✅ Get PlanType (including soft deleted)
+        $planType = PlanType::withTrashed()
+            ->where('id', $request->id)
+            ->where('library_id', authLibraryId())
+            ->first();
+
+        if (!$planType) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan Type not found'
+            ], 200);
+        }
+
+        // ✅ Toggle Logic
+        if (!$planType->trashed()) {
+            // Deactivate (Soft Delete)
+            $planType->delete();
+            $message = 'Plan Type deactivated successfully';
+        } else {
+            // Activate (Restore)
+            $planType->restore();
+            $message = 'Plan Type activated successfully';
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => $message
+        ]);
+    }
+    public function deletePlanType(Request $request)
+    {
+        try {
+            // ✅ Correct Validation (plan_types table)
+            $request->validate([
+                'id' => 'required|exists:plan_types,id'
+            ]);
+
+            // ✅ Get PlanType
+            $planType = PlanType::where('id', $request->id)
+                ->where('library_id', authLibraryId()) // remove if not needed
+                ->first();
+
+            if (!$planType) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Plan Type not found'
+                ], 200);
+            }
+
+            // ✅ Delete PlanType
+            $planType->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Plan Type deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function planPriceEdit(Request $request){
         $libraryId = auth('library_api')->id();
         
         $validated = $request->validate([
-            'planprice_id' => [
+            'id' => [
                 'required',
                 Rule::exists('plan_prices','id')->where(function($q) use ($libraryId){
                     $q->where('library_id',$libraryId);
@@ -791,7 +1013,7 @@ class MasterController extends Controller
 
         $price=PlanPrice::withoutGlobalScopes()->join('plans', 'plans.id', '=', 'plan_prices.plan_id')
             ->join('plan_types', 'plan_types.id', '=', 'plan_prices.plan_type_id')
-            ->where('plan_prices.id',$validated['planprice_id'])
+            ->where('plan_prices.id',$validated['id'])
             ->select(
                 'plan_prices.id',
                 'plan_prices.price',
@@ -931,8 +1153,61 @@ class MasterController extends Controller
             'data'    => $price
         ]);
     }
+    public function deletePlanPrice(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:plan_prices,id',
+        ]);
 
-  
+        $deleted = PlanPrice::where('id', $request->id)
+            ->where('library_id', authLibraryId()) // remove if not needed
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan Price not found'
+            ]);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Plan Price deleted successfully'
+        ]);
+    }
+
+    public function planPriceStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:plan_prices,id',
+        ]);
+
+        $planPrice = PlanPrice::withTrashed()
+            ->where('id', $request->id)
+            ->where('library_id', authLibraryId())
+            ->first();
+
+        if (!$planPrice) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan Price not found'
+            ], 200);
+        }
+
+        // ✅ Toggle
+        if (!$planPrice->trashed()) {
+            $planPrice->delete();
+            $message = 'Plan Price deactivated successfully';
+        } else {
+            $planPrice->restore();
+            $message = 'Plan Price activated successfully';
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => $message
+        ]);
+    }
 
     public function saveLibraryUser(Request $request)
     {
@@ -1319,6 +1594,45 @@ class MasterController extends Controller
         ]);
     }
 
+    public function libraryUserStatus(Request $request)
+    {
+        $libraryId = auth('library_api')->id();
+
+        // ✅ Validation
+        $validated = $request->validate([
+            'id' => [
+                'required',
+                Rule::exists('library_users', 'id')->where(fn($q) =>
+                    $q->where('library_id', $libraryId)
+                )
+            ]
+        ]);
+
+        // ✅ Get User
+        $user = LibraryUser::where('id', $validated['id'])
+            ->where('library_id', $libraryId)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // ✅ Toggle Status (assuming 1 = active, 0 = inactive)
+        $user->status = $user->status == 1 ? 0 : 1;
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => $user->status ? 'User activated successfully' : 'User deactivated successfully',
+            'data'    => [
+                'id'     => $user->id,
+                'status' => $user->status
+            ]
+        ]);
+    }
     
 
     public function branchStatus(Request $request)
@@ -1340,6 +1654,7 @@ class MasterController extends Controller
 
     public function branchDestroy(Request $request)
     {
+       
         $id = $request->id;
 
         $branch = Branch::find($id);
@@ -1406,7 +1721,7 @@ class MasterController extends Controller
         ]);
     }
 
-   public function rolesList(Request $request)
+    public function rolesList(Request $request)
     {
         try {
 
@@ -1440,5 +1755,8 @@ class MasterController extends Controller
             ], 500);
         }
     }
+
+    
+    
     
 }

@@ -40,7 +40,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
     Route::post('library/shift/configure/price', [LibraryAuthController::class, 'getConfigurePrice']);
     Route::post('branch/status', [MasterController::class, 'branchStatus']);
-   Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
+    Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     
 
@@ -62,17 +62,28 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
    
 
     Route::post('/floor/store', [MasterController::class, 'floorStore']);
-    Route::get('/floor/list', [MasterController::class, 'floorlist']);
+    Route::post('/floor/list', [MasterController::class, 'floorlist']);
+    Route::post('/floor/detail', [MasterController::class, 'floorDetail']);
+    Route::post('/floor/delete', [MasterController::class, 'deleteFloor']);
+    Route::post('/floor/status', [MasterController::class, 'floorStatus']);
+
     Route::post('/plan/store',[MasterController::class,'planStore']);
-    Route::get('/plan/edit',[MasterController::class,'planEdit']);
-    Route::get('/plan/list', [MasterController::class, 'planlist']);
-    Route::get('/plantype/edit',[MasterController::class,'planTypeEdit']);
-    Route::post('/plantype/store',[MasterController::class,'plantypeStore']);
-    Route::get('/plantype/list', [MasterController::class, 'planTypelist']);
-    Route::get('/planprice/edit',[MasterController::class,'planPriceEdit']);
-    Route::post('/price/store',[MasterController::class,'priceStore']);
+    Route::post('/plan/detail',[MasterController::class,'planEdit']);
+    Route::post('/plan/list', [MasterController::class, 'planlist']);
+    Route::post('/plan/delete',[MasterController::class,'deletePlan']);
+    Route::post('/plan/status',[MasterController::class,'planStatus']);
     
-    Route::get('/price/list', [MasterController::class, 'pricelist']);
+    Route::post('/plantype/detail',[MasterController::class,'planTypeEdit']);
+    Route::post('/plantype/store',[MasterController::class,'plantypeStore']);
+    Route::post('/plantype/list', [MasterController::class, 'planTypelist']);
+    Route::post('/plantype/delete',[MasterController::class,'deletePlanType']);
+    Route::post('/plantype/status',[MasterController::class,'planTypeStatus']);
+
+    Route::post('/planprice/detail',[MasterController::class,'planPriceEdit']);
+    Route::post('/planprice/store',[MasterController::class,'priceStore']);
+    Route::post('/planprice/list', [MasterController::class, 'pricelist']);
+    Route::post('/planprice/delete', [MasterController::class, 'deletePlanPrice']);
+    Route::post('/planprice/status', [MasterController::class, 'planPriceStatus']);
     
     Route::post('/library/user/permissions', [MasterController::class, 'libraryPermissions']);
     Route::post('/library/user/add',[MasterController::class,'saveLibraryUser']);
@@ -80,7 +91,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
     Route::get('library_user/roles', [MasterController::class, 'rolesList']);
     Route::post('/library/user/permissions/update',[MasterController::class,'assignPermissions']);
-    Route::delete('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
+    Route::post('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
+    Route::post('/library/user/status', [MasterController::class, 'libraryUserStatus']);
+
 
     Route::post('upload/temp-images', [LibraryController::class, 'uploadTempImages']);
 

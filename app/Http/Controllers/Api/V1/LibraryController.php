@@ -32,7 +32,8 @@ class LibraryController extends Controller
       $libraryId = authLibraryId();
 
       // Library detail
-      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile')->findOrFail($libraryId);
+      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch',
+        'library_logo')->findOrFail($libraryId);
 
       // Branches
       $branches = Branch::where('library_id', $libraryId)
@@ -43,6 +44,10 @@ class LibraryController extends Controller
          ->where('status', 1)->where('upi_id','!=',null)
          ->select('upi_id')
          ->first();
+     // ✅ Selected Branch Detail
+    $selectedBranch = Branch::where('id', $library->current_branch)
+        ->select('id', 'name')
+        ->first();
 
       // Active plan with subscription name
       $activePlan = LibraryTransaction::where('library_transactions.library_id', $libraryId)
@@ -96,6 +101,16 @@ class LibraryController extends Controller
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
+                // ✅ Image
+                'library_image'  => !empty($library->library_logo)
+                    ? asset($library->library_logo)
+                    : '',
+
+                // ✅ Selected Branch
+                'selected_branch' => [
+                    'id'   => $selectedBranch->id ?? null,
+                    'name' => $selectedBranch->name ?? ''
+                ],
               
          ]
       ]);
