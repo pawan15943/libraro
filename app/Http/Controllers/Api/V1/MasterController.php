@@ -1272,7 +1272,7 @@ class MasterController extends Controller
 
         $branchId = $validated['branch_id'];
 
-        // ❌ remove duplicate branch check (already validated)
+       
 
         // ✅ Fetch plan prices (include deleted_at)
         $price = PlanPrice::withoutGlobalScopes()
@@ -1305,12 +1305,13 @@ class MasterController extends Controller
     }
     public function deletePlanPrice(Request $request)
     {
+         $libraryId = auth('library_api')->id();
         $request->validate([
             'id' => 'required|exists:plan_prices,id',
         ]);
 
-        $deleted = PlanPrice::where('id', $request->id)
-            ->where('library_id', authLibraryId()) // remove if not needed
+        $deleted = PlanPrice::withoutGlobalScopes()->where('id', $request->id)
+            ->where('library_id', $libraryId) // remove if not needed
             ->delete();
 
         if (!$deleted) {
