@@ -631,50 +631,46 @@ class MasterController extends Controller
             ]);
     }
 
-    public function deletePlan(Request $request)
-    {
-        try {
-          
-            $libraryId = auth('library_api')->id();
-            $validated = $request->validate([
-                'id' => [
-                    'required',
-                    Rule::exists('plans','id')->where(function($q) use ($libraryId){
-                        $q->where('library_id',$libraryId);
-                    })
-                ],
-            
-            ]);
+   public function deletePlan(Request $request)
+{
+    try {
 
-            // ✅ Get plan (optional: filter by library_id if needed)
-            $plan = Plan::withoutGlobalScopes()->where('id', $validated['id'])
-                        ->where('library_id', $libraryId) 
-                        ->first();
+        $libraryId = auth('library_api')->id();
 
-            if (!$plan) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Plan not found'
-                ],200);
-            }
+        // ✅ Simple validation
+        $validated = $request->validate([
+            'id' => 'required|exists:plans,id',
+        ]);
 
-            // ✅ Delete Plan
-            $plan->delete();
+        // ✅ Check ownership
+        $plan = Plan::withoutGlobalScopes()
+                    ->where('id', $validated['id'])
+                    ->where('library_id', $libraryId)
+                    ->first();
 
-            return response()->json([
-                'status'  => true,
-                'message' => 'Plan deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
-
+        if (!$plan) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Something went wrong',
-                'error'   => $e->getMessage()
-            ], 500);
+                'message' => 'Plan not found or not authorized'
+            ], 200);
         }
+
+        $plan->delete();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Plan deleted successfully'
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Something went wrong',
+            'error'   => $e->getMessage()
+        ], 500);
     }
+}
 
     public function planStatus(Request $request)
     {
