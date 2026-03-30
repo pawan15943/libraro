@@ -959,11 +959,14 @@ class MasterController extends Controller
             throw new \Exception('Branch Not exists');
         }
 
-        $types=PlanType::withoutGlobalScopes()->where('branch_id',$request->branch_id)->select('id','name','start_time','end_time','slot_hours','day_type_id')->get();
+        $types=PlanType::withoutGlobalScopes()->where('branch_id',$branchId)->select('id','name','start_time','end_time','slot_hours','day_type_id')->get();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan Type fetch successfully",
-                'data'    => $types
+                'data'    => [
+                    'planTypes'=>$types,
+                    'operatingHour'=>operatingHour($branchId)
+                ]
             ]);
     }
     public function planTypeStatus(Request $request)
