@@ -942,9 +942,11 @@ class MasterController extends Controller
         }
     }
 
-    public function planTypelist(Request $request){
-          $libraryId = auth('library_api')->id();
-         $validated = $request->validate([
+    public function planTypelist(Request $request)
+    {
+        $libraryId = auth('library_api')->id();
+
+        $validated = $request->validate([
             'branch_id' => [
                 'required',
                 Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
@@ -952,22 +954,23 @@ class MasterController extends Controller
                 })
             ],
         ]);
-      
-        $branchId = $validated['branch_id'];
-        $existsbrnach=Branch::where('id',$branchId)->where('library_id',$libraryId)->exists();
-        if(!$existsbrnach){
-            throw new \Exception('Branch Not exists');
-        }
 
-        $types=PlanType::withoutGlobalScopes()->where('branch_id',$branchId)->select('id','name','start_time','end_time','slot_hours','day_type_id')->get();
-         return response()->json([
-                'status'  => true,
-                'message' =>"Plan Type fetch successfully",
-                'data'    => [
-                    'planTypes'=>$types,
-                    'operatingHour'=>operatingHour($branchId)
-                ]
-            ]);
+        $branchId = $validated['branch_id'];
+
+        // ✅ Fetch Plan Types
+        $types = PlanType::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->select('id','name','start_time','end_time','slot_hours','day_type_id')
+            ->get();
+
+        return response()->json([
+            'status'  => true,
+            'message' => "Plan Type fetch successfully",
+            'data'    => [
+                'operatingHour' => operatingHour($branchId), // ✅ global helper
+                'planTypes'     => $types
+            ]
+        ]);
     }
     public function planTypeStatus(Request $request)
     {
