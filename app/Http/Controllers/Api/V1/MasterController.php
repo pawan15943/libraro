@@ -675,33 +675,46 @@ class MasterController extends Controller
 
    public function deletePlan(Request $request)
     {
+        $libraryId = auth('library_api')->id();
+
+        // ✅ Validation
+        $validated = $request->validate([
+            'id' => 'required|exists:plans,id',
+        ]);
+
+        // ✅ Check ownership
+        $plan = Plan::withoutGlobalScopes()
+            ->where('id', $validated['id'])
+            ->where('library_id', $libraryId)
+            ->first();
+
+        if (!$plan) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Plan not found or not authorized'
+            ], 200);
+        }
+
         try {
 
-            $libraryId = auth('library_api')->id();
+            // ✅ Check learner usage (FAST)
+            $hasLearner = LearnerDetail::where('plan_id', $plan->id)->exists();
 
-            // ✅ Simple validation
-            $validated = $request->validate([
-                'id' => 'required|exists:plans,id',
-            ]);
+            if ($hasLearner) {
+            
+                $plan->delete();
 
-            // ✅ Check ownership
-            $plan = Plan::withoutGlobalScopes()
-                        ->where('id', $validated['id'])
-                        ->where('library_id', $libraryId)
-                        ->first();
+                $message = 'Plan in use, moved to inactive (soft deleted)';
+            } else {
+            
+                $plan->forceDelete();
 
-            if (!$plan) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Plan not found or not authorized'
-                ], 200);
+                $message = 'Plan permanently deleted';
             }
-
-            $plan->delete();
 
             return response()->json([
                 'status'  => true,
-                'message' => 'Plan deleted successfully'
+                'message' => $message
             ]);
 
         } catch (\Exception $e) {
@@ -1066,15 +1079,18 @@ class MasterController extends Controller
     public function deletePlanType(Request $request)
     {
         try {
-            // ✅ Correct Validation (plan_types table)
+
+            $libraryId = authLibraryId();
+
+            // ✅ Validation
             $request->validate([
                 'id' => 'required|exists:plan_types,id'
             ]);
 
-
-            // ✅ Get PlanType
-            $planType = PlanType::withoutGlobalScopes()->where('id', $request->id)
-                ->where('library_id', authLibraryId()) // remove if not needed
+            // ✅ Fetch PlanType
+            $planType = PlanType::withoutGlobalScopes()
+                ->where('id', $request->id)
+                ->where('library_id', $libraryId)
                 ->first();
 
             if (!$planType) {
@@ -1084,12 +1100,22 @@ class MasterController extends Controller
                 ], 200);
             }
 
-            // ✅ Delete PlanType
-            $planType->delete();
+            // ✅ Check usage (FAST)
+            $hasLearner = \App\Models\LearnerDetail::where('plan_type_id', $planType->id)->exists();
+
+            if ($hasLearner) {
+                // ❌ In use → Soft delete
+                $planType->delete();
+                $message = 'Plan Type in use, moved to inactive (soft deleted)';
+            } else {
+                // ✅ Not used → Permanent delete
+                $planType->forceDelete();
+                $message = 'Plan Type permanently deleted';
+            }
 
             return response()->json([
                 'status'  => true,
-                'message' => 'Plan Type deleted successfully'
+                'message' => $message
             ]);
 
         } catch (\Exception $e) {
@@ -1102,7 +1128,8 @@ class MasterController extends Controller
         }
     }
 
-    public function planPriceEdit(Request $request){
+    public function planPriceEdit(Request $request)
+    {
         $libraryId = auth('library_api')->id();
         
         $validated = $request->validate([
@@ -1112,27 +1139,41 @@ class MasterController extends Controller
                     $q->where('library_id',$libraryId);
                 })
             ],
-           
         ]);
 
-        $price=PlanPrice::withoutGlobalScopes()->join('plans', 'plans.id', '=', 'plan_prices.plan_id')
+        // ✅ Single query (optimized)
+        $price = PlanPrice::withoutGlobalScopes()
+            ->join('plans', 'plans.id', '=', 'plan_prices.plan_id')
             ->join('plan_types', 'plan_types.id', '=', 'plan_prices.plan_type_id')
-            ->where('plan_prices.id',$validated['id'])
+            ->where('plan_prices.id', $validated['id'])
             ->select(
                 'plan_prices.id',
                 'plan_prices.price',
+                'plan_prices.deleted_at', // ✅ required
                 'plans.id as plan_id',
                 'plans.name as plan_name',
                 'plan_types.id as plan_type_id',
                 'plan_types.name as plan_type_name'
             )
-            ->orderBy('plans.id')->first();
-            return response()->json([
-                'status'  => true,
-                  'message' => "Price fetch successfully",
-                'data'    => $price
-            ]);
+            ->first();
 
+        if (!$price) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Price not found',
+                'data'    => []
+            ], 200);
+        }
+
+        // ✅ Add fields (no extra query)
+        $price->can_delete = true;
+        $price->status     = $price->deleted_at ? 'Inactive' : 'Active';
+
+        return response()->json([
+            'status'  => true,
+            'message' => "Price fetch successfully",
+            'data'    => $price
+        ]);
     }
 
     public function priceStore(Request $request)
@@ -1218,8 +1259,8 @@ class MasterController extends Controller
     }
     public function pricelist(Request $request)
     {
-        
         $libraryId = auth('library_api')->id();
+
         $validated = $request->validate([
             'branch_id' => [
                 'required',
@@ -1229,19 +1270,11 @@ class MasterController extends Controller
             ],
         ]);
 
-        $branchId  = $validated['branch_id'];
+        $branchId = $validated['branch_id'];
 
-        /* Check branch belongs to library */
+        // ❌ remove duplicate branch check (already validated)
 
-        $existsBranch = Branch::where('id', $branchId)
-            ->where('library_id', $libraryId)
-            ->exists();
-
-        if (!$existsBranch) {
-            throw new \Exception('Branch not exists');
-        }
-
-        /* Fetch plan prices */
+        // ✅ Fetch plan prices (include deleted_at)
         $price = PlanPrice::withoutGlobalScopes()
             ->join('plans', 'plans.id', '=', 'plan_prices.plan_id')
             ->join('plan_types', 'plan_types.id', '=', 'plan_prices.plan_type_id')
@@ -1249,6 +1282,7 @@ class MasterController extends Controller
             ->select(
                 'plan_prices.id',
                 'plan_prices.price',
+                'plan_prices.deleted_at',
                 'plans.id as plan_id',
                 'plans.name as plan_name',
                 'plan_types.id as plan_type_id',
@@ -1256,6 +1290,12 @@ class MasterController extends Controller
             )
             ->orderBy('plans.id')
             ->get();
+
+        // ✅ Fast loop (no extra queries)
+        foreach ($price as $row) {
+            $row->can_delete = true;
+            $row->status     = $row->deleted_at ? 'Inactive' : 'Active';
+        }
 
         return response()->json([
             'status'  => true,
