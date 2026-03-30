@@ -942,110 +942,56 @@ class MasterController extends Controller
         }
     }
 
-    // public function planTypelist(Request $request)
-    // {
-    //     $libraryId = auth('library_api')->id();
-
-    //     $validated = $request->validate([
-    //         'branch_id' => [
-    //             'required',
-    //             Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
-    //                 $q->where('library_id', $libraryId);
-    //             })
-    //         ],
-    //     ]);
-
-    //     $branchId = $validated['branch_id'];
-
-    //     // ✅ Query 1: Fetch plan types
-    //     $types = PlanType::withoutGlobalScopes()
-    //         ->where('branch_id', $branchId)
-    //         ->select(
-    //             'id',
-    //             'name',
-    //             'start_time',
-    //             'end_time',
-    //             'slot_hours',
-    //             'day_type_id',
-    //             'deleted_at'
-    //         )
-    //         ->get();
-
-    //     // ✅ Query 2: Get used plan_type_ids
-    //     $planTypeIds = $types->pluck('id')->toArray();
-
-    //     $usedPlanTypes = LearnerDetail::whereIn('plan_type_id', $planTypeIds)
-    //         ->pluck('plan_type_id')
-    //         ->flip(); // 🔥 O(1) lookup
-
-    //     // ✅ Fast loop (no map, no extra memory)
-    //     foreach ($types as $type) {
-
-    //         $type->can_delete = !isset($usedPlanTypes[$type->id]); // ⚡ fast lookup
-    //         $type->status     = $type->deleted_at ? 'Inactive' : 'Active';
-    //     }
-
-    //     return response()->json([
-    //         'status'  => true,
-    //         'message' => "Plan Type fetch successfully",
-    //         'data'    => [
-    //             'operatingHour' => operatingHour($branchId),
-    //             'planTypes'     => $types
-    //         ]
-    //     ]);
-    // }
     public function planTypelist(Request $request)
-{
-    $libraryId = auth('library_api')->id();
+    {
+        $libraryId = auth('library_api')->id();
 
-    $validated = $request->validate([
-        'branch_id' => [
-            'required',
-            Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
-                $q->where('library_id', $libraryId);
-            })
-        ],
-    ]);
+        $validated = $request->validate([
+            'branch_id' => [
+                'required',
+                Rule::exists('branches', 'id')->where(function ($q) use ($libraryId) {
+                    $q->where('library_id', $libraryId);
+                })
+            ],
+        ]);
 
-    $branchId = $validated['branch_id'];
+        $branchId = $validated['branch_id'];
 
-    // ✅ Query 1: Fetch plan types
-    $types = PlanType::withoutGlobalScopes()
+        // ✅ Fetch Plan Types
+     
+        $types = PlanType::withoutGlobalScopes()
         ->where('branch_id', $branchId)
-        ->select(
-            'id',
-            'name',
-            'start_time',
-            'end_time',
-            'slot_hours',
-            'day_type_id',
-            'deleted_at'
-        )
-        ->get();
+        ->select('id','name','start_time','end_time','slot_hours','day_type_id','deleted_at')
+        ->get()
+        ->map(function ($type) {
 
-    // ✅ Query 2: Get used plan_type_ids
-    $planTypeIds = $types->pluck('id')->toArray();
+            // ✅ Check if any learner/customer exists for this plan type
+            $hasUser = LearnerDetail::where('plan_type_id', $type->id)->exists(); 
+            // 👉 change User to your actual table (customers/students)
 
-    $usedPlanTypes = LearnerDetail::whereIn('plan_type_id', $planTypeIds)
-        ->pluck('plan_type_id')
-        ->flip(); // 🔥 O(1) lookup
+            return [
+                'id'          => $type->id,
+                'name'        => $type->name,
+                'start_time'  => $type->start_time,
+                'end_time'    => $type->end_time,
+                'slot_hours'  => $type->slot_hours,
+                'day_type_id' => $type->day_type_id,
 
-    // ✅ Fast loop (no map, no extra memory)
-    foreach ($types as $type) {
+                // ✅ New fields
+                'can_delete'  => !$hasUser,
+                'status'      => $type->deleted_at ? 'Inactive' : 'Active',
+            ];
+        });
 
-        $type->can_delete = !isset($usedPlanTypes[$type->id]); // ⚡ fast lookup
-        $type->status     = $type->deleted_at ? 'Inactive' : 'Active';
+        return response()->json([
+            'status'  => true,
+            'message' => "Plan Type fetch successfully",
+            'data'    => [
+                'operatingHour' => operatingHour($branchId), // ✅ global helper
+                'planTypes'     => $types
+            ]
+        ]);
     }
-
-    return response()->json([
-        'status'  => true,
-        'message' => "Plan Type fetch successfully",
-        'data'    => [
-            'operatingHour' => operatingHour($branchId),
-            'planTypes'     => $types
-        ]
-    ]);
-}
     public function planTypeStatus(Request $request)
     {
         $request->validate([
