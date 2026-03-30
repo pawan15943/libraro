@@ -1312,7 +1312,7 @@ class MasterController extends Controller
 
         $deleted = PlanPrice::withoutGlobalScopes()->where('id', $request->id)
             ->where('library_id', $libraryId) // remove if not needed
-            ->delete();
+            ->forceDelete();
 
         if (!$deleted) {
             return response()->json([
@@ -1329,13 +1329,14 @@ class MasterController extends Controller
 
     public function planPriceStatus(Request $request)
     {
+         $libraryId = auth('library_api')->id();
         $request->validate([
             'id' => 'required|exists:plan_prices,id',
         ]);
 
         $planPrice = PlanPrice::withTrashed()
             ->where('id', $request->id)
-            ->where('library_id', authLibraryId())
+            ->where('library_id', $libraryId)
             ->first();
 
         if (!$planPrice) {
