@@ -421,6 +421,10 @@ class MasterController extends Controller
         
         $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$request->branch_id)->value('seats') ?? 0;
         
+        foreach ($floors as $floor) {
+            $floor->can_delete = true; // always true
+            $floor->status     = $floor->deleted_at ? 'Inactive' : 'Active';
+        }
         return response()->json([
             'status'  => true,
             'message' => "Floor fetch successfully",
@@ -437,7 +441,7 @@ class MasterController extends Controller
         ]);
 
         $floor = Floor::where('id', $request->id)
-            ->select('id','name','floor_no','from_seat','to_seat','total_seats')
+            ->select('id','name','floor_no','from_seat','to_seat','total_seats','deleted_at')
             ->first();
 
         if (!$floor) {
@@ -446,6 +450,8 @@ class MasterController extends Controller
                 'message' => 'Floor not found'
             ], 200);
         }
+        $floor->can_delete = true;
+        $floor->status     = $floor->deleted_at ? 'Inactive' : 'Active';
 
         return response()->json([
             'status'  => true,
@@ -531,7 +537,11 @@ class MasterController extends Controller
         
         // ✅ Convert null to empty string
         $plan->monthdays = $plan->monthdays ?? "";
+          
+         $hasUser = LearnerDetail::where('plan_id', $plan->id)->exists();
 
+        $plan->can_delete = !$hasUser;
+        $plan->status     = $plan->deleted_at ? 'Inactive' : 'Active';`
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
@@ -625,24 +635,42 @@ class MasterController extends Controller
         }
     }
 
-    public function planlist(Request $request){
+    public function planlist(Request $request)
+    {
         $libraryId = auth('library_api')->id();
-         
+
+        // ✅ Query 1: Fetch plans (optimized with COALESCE)
         $plans = Plan::withoutGlobalScopes()
             ->where('library_id', $libraryId)
-            ->select('id', 'name', 'monthdays', 'type', 'plan_id as no_monthdays')
-            ->get()
-            ->map(function ($plan) {
-                $plan->monthdays = $plan->monthdays ?? "";
-                return $plan;
-            });
+            ->select(
+                'id',
+                'name',
+                DB::raw('COALESCE(monthdays, "") as monthdays'),
+                'type',
+                'plan_id as no_monthdays',
+                'deleted_at'
+            )
+            ->get();
 
+        // ✅ Query 2: Get used plan_ids (avoid N+1)
+        $planIds = $plans->pluck('id')->toArray();
 
-            return response()->json([
-                'status'  => true,
-                'message' =>"Plan fetch successfully",
-                'data'    => $plans
-            ]);
+        $usedPlans = LearnerDetail::whereIn('plan_id', $planIds)
+            ->pluck('plan_id')
+            ->flip(); // ⚡ O(1) lookup
+
+        // ✅ Fast loop (better than map)
+        foreach ($plans as $plan) {
+
+            $plan->can_delete = !isset($usedPlans[$plan->id]); // ⚡ fast
+            $plan->status     = $plan->deleted_at ? 'Inactive' : 'Active';
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => "Plan fetch successfully",
+            'data'    => $plans
+        ]);
     }
 
    public function deletePlan(Request $request)
@@ -739,6 +767,12 @@ class MasterController extends Controller
                     'data'    => []
                 ], 200); // or 404 if you prefer
             }
+            // ✅ Single fast query (no N+1 issue here)
+        $hasUser = LearnerDetail::where('plan_type_id', $plan->id)->exists();
+
+        // ✅ Add fields
+        $plan->can_delete = !$hasUser;
+        $plan->status     = $plan->deleted_at ? 'Inactive' : 'Active';
         return response()->json([
                 'status'  => true,
                 'message' =>"Plan Type fetch successfully",
@@ -957,37 +991,39 @@ class MasterController extends Controller
 
         $branchId = $validated['branch_id'];
 
-        // ✅ Fetch Plan Types
-     
+        // ✅ Query 1: Fetch plan types
         $types = PlanType::withoutGlobalScopes()
-        ->where('branch_id', $branchId)
-        ->select('id','name','start_time','end_time','slot_hours','day_type_id','deleted_at')
-        ->get()
-        ->map(function ($type) {
+            ->where('branch_id', $branchId)
+            ->select(
+                'id',
+                'name',
+                'start_time',
+                'end_time',
+                'slot_hours',
+                'day_type_id',
+                'deleted_at'
+            )
+            ->get();
 
-            // ✅ Check if any learner/customer exists for this plan type
-            $hasUser = LearnerDetail::where('plan_type_id', $type->id)->exists(); 
-            // 👉 change User to your actual table (customers/students)
+        // ✅ Query 2: Get used plan_type_ids
+        $planTypeIds = $types->pluck('id')->toArray();
 
-            return [
-                'id'          => $type->id,
-                'name'        => $type->name,
-                'start_time'  => $type->start_time,
-                'end_time'    => $type->end_time,
-                'slot_hours'  => $type->slot_hours,
-                'day_type_id' => $type->day_type_id,
+        $usedPlanTypes = LearnerDetail::whereIn('plan_type_id', $planTypeIds)
+            ->pluck('plan_type_id')
+            ->flip(); // 🔥 O(1) lookup
 
-                // ✅ New fields
-                'can_delete'  => !$hasUser,
-                'status'      => $type->deleted_at ? 'Inactive' : 'Active',
-            ];
-        });
+        // ✅ Fast loop (no map, no extra memory)
+        foreach ($types as $type) {
+
+            $type->can_delete = !isset($usedPlanTypes[$type->id]); // ⚡ fast lookup
+            $type->status     = $type->deleted_at ? 'Inactive' : 'Active';
+        }
 
         return response()->json([
             'status'  => true,
             'message' => "Plan Type fetch successfully",
             'data'    => [
-                'operatingHour' => operatingHour($branchId), // ✅ global helper
+                'operatingHour' => operatingHour($branchId),
                 'planTypes'     => $types
             ]
         ]);
