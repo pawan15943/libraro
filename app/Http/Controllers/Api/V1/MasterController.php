@@ -623,7 +623,7 @@ class MasterController extends Controller
         $libraryId = auth('library_api')->id();
          
 
-        $plan=Plan::withoutGlobalScopes()->where('library_id',$request->library_id)->select('id','name','monthdays','type')->get();
+        $plan=Plan::withoutGlobalScopes()->where('library_id',$libraryId)->select('id','name','monthdays','type')->get();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
