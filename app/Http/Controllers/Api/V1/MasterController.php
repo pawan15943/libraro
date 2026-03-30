@@ -519,7 +519,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=Plan::where('id',$validated['id'])->select('id','name','monthdays','type')->first();
+        $plan=Plan::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','monthdays','type')->first();
 
             if (!$plan) {
                 return response()->json([
@@ -623,7 +623,7 @@ class MasterController extends Controller
         $libraryId = auth('library_api')->id();
          
 
-        $plan=Plan::where('library_id',$request->library_id)->select('id','name','monthdays','type')->get();
+        $plan=Plan::withoutGlobalScopes()->where('library_id',$request->library_id)->select('id','name','monthdays','type')->get();
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
@@ -640,7 +640,7 @@ class MasterController extends Controller
             ]);
 
             // ✅ Get plan (optional: filter by library_id if needed)
-            $plan = Plan::where('id', $request->id)
+            $plan = Plan::withoutGlobalScopes()->where('id', $request->id)
                         ->where('library_id', authLibraryId()) 
                         ->first();
 
@@ -676,7 +676,7 @@ class MasterController extends Controller
             // 'status' => 'required|in:active,inactive'
         ]);
 
-        $plan = Plan::withTrashed()
+        $plan = Plan::withoutGlobalScopes()->withTrashed()
             ->where('id', $request->id)
             ->where('library_id', authLibraryId())
             ->first();
