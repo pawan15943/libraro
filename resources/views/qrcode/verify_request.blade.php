@@ -429,151 +429,138 @@ span.close-modal {
                             @endif
                         </div>
                         @if($customer->type=='qr_seat_book' || $customer->type=='demo-bookings' )
-                        @if(!in_array('7', toggleHideField()))
-                        <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
+                            @if(!in_array('7', toggleHideField()))
+                                <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
 
-                       <div class="qr_idProofFields" style="display: none;">
-                            <div class="row g-3">
-                                @if(!in_array('8', toggleHideField()))
-                            
-                                <div class="col-lg-6">
-                                    <label for="profile_picture">Upload Profile Photo</label>
-                                    <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
-                                        autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
-                                    <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
-
-
-                                    @error('profile_picture')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                    @if($customer->profile_picture)
-                                        <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
+                                <div class="qr_idProofFields" style="display: none;">
+                                        <div class="row g-3">
+                                            @if(!in_array('8', toggleHideField()))
                                         
-                                    @endif
+                                            <div class="col-lg-6">
+                                                <label for="profile_picture">Upload Profile Photo</label>
+                                                <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
+                                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
+                                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+
+
+                                                @error('profile_picture')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                                @if($customer->profile_picture)
+                                                    <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
+                                                    
+                                                @endif
+                                            </div>
+                                            @endif
+                                            {{-- ================= ALTERNATE MOBILE ================= --}}
+                                            @if(!in_array('30', toggleHideField()))
+                                            <div class="col-lg-6">
+                                                <label for="alternate_mobile">Alternate Mobile No.</label>
+                                                <input type="text"
+                                                    class="form-control digit-only"
+                                                    name="alternate_mobile"
+                                                    maxlength="10"
+                                                    minlength="10"
+                                                    placeholder="Enter Alternate Mobile No."
+                                                    value="{{ old('alternate_mobile') ?? $customer->alternate_mobile ?? '' }}">
+                                            </div>
+                                            @endif
+                                            @if(!in_array('29', toggleHideField()))
+                                            <div class="col-lg-6 ">
+                                                <label for="father_name">Father Name</label>
+                                                <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name" value="{{old('father_name')}}">
+                                            </div>
+                                            @endif
+                                            {{-- ================= PREPARE FOR ================= --}}
+                                            @if(!in_array('4', toggleHideField()))
+                                            <div class="col-lg-6">
+                                                <label for="prepareFor">Prepare For</label>
+                                                <select name="exam_id" class="form-select">
+                                                    <option value="">Learner is Prepare For Exam</option>
+                                                    @foreach($exams as $value)
+                                                        <option value="{{ $value->id }}"
+                                                            {{ (old('exam_id') ?? $customer->exam_id ?? '') == $value->id ? 'selected' : '' }}>
+                                                            {{ $value->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            @endif
+                                            
+                                            {{-- ================= ID PROOF ================= --}}
+                                            @if(!in_array('5', toggleHideField()))
+                                            <div class="col-lg-4">
+                                                <label>ID Proof Name(Optional)</label>
+                                                <select class="form-select" name="id_proof_name">
+                                                    <option value="">Select Id Proof</option>
+                                                    <option value="1"
+                                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '1' ? 'selected' : '' }}>
+                                                        Aadhar
+                                                    </option>
+                                                    <option value="2"
+                                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '2' ? 'selected' : '' }}>
+                                                        Driving License
+                                                    </option>
+                                                    <option value="3"
+                                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '3' ? 'selected' : '' }}>
+                                                        Other
+                                                    </option>
+                                                </select>
+                                                <span class="text-danger">Uploading ID proof is optional do it later.</span>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <label for="address">ID Proof No.</label>
+                                                <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." value="{{ old('id_proof_number') ?? $customer->id_proof_number ?? '' }}">
+                                                @error('id_proof_number')
+                                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                                @enderror
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <label for="id_proof_file">Upload Scan Copy of Proof</label>
+                                            
+
+                                                <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                                                <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
+                                                @error('id_proof_file')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                                @if($customer->id_proof_file)
+                                                <a href="{{ asset($customer->id_proof_file) }}" class="view-image">View</a>
+
+                                                @endif
+                                            </div>
+                                            @endif
+                                            
+                                            {{-- ================= ADDRESS ================= --}}
+                                            @if(!in_array('32', toggleHideField()))
+                                            <div class="col-lg-12">
+                                                <label for="address">Address</label>
+                                                <textarea class="form-control"
+                                                        name="address"
+                                                        rows="3"
+                                                        placeholder="Enter address">{{ old('address') ?? $customer->address ?? '' }}</textarea>
+                                            </div>
+                                            @endif
+
+                                            {{-- ================= REMARK ================= --}}
+                                            @if(!in_array('31', toggleHideField()))
+                                            <div class="col-lg-12">
+                                                <label for="remark">Remark</label>
+                                                <textarea class="form-control"
+                                                        name="remark"
+                                                        rows="3"
+                                                        placeholder="Enter Remark">{{ old('remark') ?? $customer->remark ?? '' }}</textarea>
+                                            </div>
+                                            @endif
+
+                                        </div>
                                 </div>
-                                @endif
-                                {{-- ================= ALTERNATE MOBILE ================= --}}
-                                @if(!in_array('30', toggleHideField()))
-                                <div class="col-lg-6">
-                                    <label for="alternate_mobile">Alternate Mobile No.</label>
-                                    <input type="text"
-                                        class="form-control digit-only"
-                                        name="alternate_mobile"
-                                        maxlength="10"
-                                        minlength="10"
-                                        placeholder="Enter Alternate Mobile No."
-                                        value="{{ old('alternate_mobile') ?? $customer->alternate_mobile ?? '' }}">
-                                </div>
-                                @endif
-                                @if(!in_array('29', toggleHideField()))
-                                <div class="col-lg-6 ">
-                                    <label for="father_name">Father Name</label>
-                                    <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name" value="{{old('father_name')}}">
-                                </div>
-                                @endif
-                                {{-- ================= PREPARE FOR ================= --}}
-                                @if(!in_array('4', toggleHideField()))
-                                <div class="col-lg-6">
-                                    <label for="prepareFor">Prepare For</label>
-                                    <select name="exam_id" class="form-select">
-                                        <option value="">Learner is Prepare For Exam</option>
-                                        @foreach($exams as $value)
-                                            <option value="{{ $value->id }}"
-                                                {{ (old('exam_id') ?? $customer->exam_id ?? '') == $value->id ? 'selected' : '' }}>
-                                                {{ $value->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @endif
-                                {{-- ================= ID PROOF ================= --}}
-                                @if(!in_array('5', toggleHideField()))
-                                <div class="col-lg-6">
-                                    <label>Id Proof Received</label>
-                                    <select class="form-select" name="id_proof_name">
-                                        <option value="">Select Id Proof</option>
-                                        <option value="1"
-                                            {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '1' ? 'selected' : '' }}>
-                                            Aadhar
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+
                             @endif
-                            {{-- ================= ID PROOF ================= --}}
-                            @if(!in_array('5', toggleHideField()))
-                            <div class="col-lg-4">
-                                <label>ID Proof Name(Optional)</label>
-                                <select class="form-select" name="id_proof_name">
-                                    <option value="">Select Id Proof</option>
-                                    <option value="1"
-                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '1' ? 'selected' : '' }}>
-                                        Aadhar
-                                    </option>
-                                    <option value="2"
-                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '2' ? 'selected' : '' }}>
-                                        Driving License
-                                    </option>
-                                    <option value="3"
-                                        {{ (old('id_proof_name') ?? $customer->id_proof_name ?? '') == '3' ? 'selected' : '' }}>
-                                        Other
-                                    </option>
-                                </select>
-                                <span class="text-danger">Uploading ID proof is optional do it later.</span>
-                            </div>
-                               <div class="col-lg-4">
-                                <label for="address">ID Proof No.</label>
-                                <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." value="{{ old('id_proof_number') ?? $customer->id_proof_number ?? '' }}">
-                                @error('id_proof_number')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
-                            </div>
-                            <div class="col-lg-4">
-                                <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                
-
-                                    <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
-                                    <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
-                                    @error('id_proof_file')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                    @if($customer->id_proof_file)
-                                    <a href="{{ asset($customer->id_proof_file) }}" class="view-image">View</a>
-
-                                    @endif
-                                </div>
-                                @endif
-                                
-                                {{-- ================= ADDRESS ================= --}}
-                                @if(!in_array('32', toggleHideField()))
-                                <div class="col-lg-12">
-                                    <label for="address">Address</label>
-                                    <textarea class="form-control"
-                                            name="address"
-                                            rows="3"
-                                            placeholder="Enter address">{{ old('address') ?? $customer->address ?? '' }}</textarea>
-                                </div>
-                                @endif
-
-                                {{-- ================= REMARK ================= --}}
-                                @if(!in_array('31', toggleHideField()))
-                                <div class="col-lg-12">
-                                    <label for="remark">Remark</label>
-                                    <textarea class="form-control"
-                                            name="remark"
-                                            rows="3"
-                                            placeholder="Enter Remark">{{ old('remark') ?? $customer->remark ?? '' }}</textarea>
-                                </div>
-                                @endif
-
-                            </div>
-                       </div>
-
-                        @endif
                         @endif
 
                         <div class="row mt-4">
