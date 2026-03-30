@@ -553,14 +553,15 @@ class MasterController extends Controller
             ],
 
             'type' => 'required|in:MONTH,YEAR,DAY,WEEK',
-
             'no_monthdays' => [
                 'required',
                 'integer',
                 'min:1',
-                Rule::unique('plans')
-                    ->where('library_id',$libraryId)
-                    ->where('type',$request->type)
+                Rule::unique('plans', 'plan_id') // ✅ FIX HERE
+                    ->where(function ($query) use ($libraryId, $request) {
+                        return $query->where('library_id', $libraryId)
+                                    ->where('type', $request->type);
+                    })
                     ->ignore($request->id)
             ],
 
