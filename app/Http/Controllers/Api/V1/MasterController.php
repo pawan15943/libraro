@@ -634,14 +634,21 @@ class MasterController extends Controller
     public function deletePlan(Request $request)
     {
         try {
-            // ✅ Validation
-            $request->validate([
-                'id' => 'required|exists:plans,id'
+          
+            $libraryId = auth('library_api')->id();
+            $validated = $request->validate([
+                'id' => [
+                    'required',
+                    Rule::exists('plans','id')->where(function($q) use ($libraryId){
+                        $q->where('library_id',$libraryId);
+                    })
+                ],
+            
             ]);
 
             // ✅ Get plan (optional: filter by library_id if needed)
-            $plan = Plan::withoutGlobalScopes()->where('id', $request->id)
-                        ->where('library_id', authLibraryId()) 
+            $plan = Plan::withoutGlobalScopes()->where('id', $validated['id'])
+                        ->where('library_id', $libraryId) 
                         ->first();
 
             if (!$plan) {
@@ -671,6 +678,7 @@ class MasterController extends Controller
 
     public function planStatus(Request $request)
     {
+        $libraryId = auth('library_api')->id();
         $request->validate([
             'id'     => 'required|exists:plans,id',
             // 'status' => 'required|in:active,inactive'
@@ -678,7 +686,7 @@ class MasterController extends Controller
 
         $plan = Plan::withoutGlobalScopes()->withTrashed()
             ->where('id', $request->id)
-            ->where('library_id', authLibraryId())
+            ->where('library_id', $libraryId)
             ->first();
 
         if (!$plan) {
