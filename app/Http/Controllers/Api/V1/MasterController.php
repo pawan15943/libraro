@@ -535,13 +535,13 @@ class MasterController extends Controller
                 ], 200); // or 404 if you prefer
             }
         
-        // ✅ Convert null to empty string
+       
         $plan->monthdays = $plan->monthdays ?? "";
           
          $hasUser = LearnerDetail::where('plan_id', $plan->id)->exists();
 
         $plan->can_delete = !$hasUser;
-        $plan->status     = $plan->deleted_at ? 'Inactive' : 'Active';`
+        $plan->status     = $plan->deleted_at ? 'Inactive' : 'Active';
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
