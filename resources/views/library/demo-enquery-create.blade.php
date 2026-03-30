@@ -300,7 +300,7 @@
                                         </div>
                                         <div class="col-lg-4">
                                             <label for="address">ID Proof No.</label>
-                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">
+                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number ?? '') }}">
 
                                            
                                         </div>
@@ -309,7 +309,8 @@
                                             
 
                                             <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
-                                            <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
+                                           
+                                            <img class="preview-img one"  data-src="{{ isset($customer->id_proof_file) ? asset('storage/'.$customer->id_proof_file) : '' }}" style="display:none; max-width:250px; margin-top:1rem;">
                                             @error('id_proof_file')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -639,6 +640,18 @@ document.addEventListener("DOMContentLoaded", function () {
         cropper = null;
         activeInput = null;
         activePreview = null;
+    });
+
+    document.querySelectorAll(".image-cropper").forEach(input => {
+
+        const preview = input.closest('.col-lg-4').querySelector('.preview-img');
+
+        // ✅ If edit mode (existing image)
+        if (preview && preview.getAttribute('data-src')) {
+            preview.src = preview.getAttribute('data-src');
+            preview.style.display = 'block';
+        }
+
     });
 
 });

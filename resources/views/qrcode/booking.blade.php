@@ -296,7 +296,7 @@ h4.py-4.m-0 {
                                     </div>
                                     <div class="col-lg-4">
                                         <label for="id_proof_number">ID Proof No.</label>
-                                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">
+                                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number ?? '') }}">
 
                                         
                                     </div>
