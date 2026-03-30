@@ -519,7 +519,7 @@ class MasterController extends Controller
            
         ]);
 
-        $plan=Plan::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','monthdays','type')->first();
+        $plan=Plan::withoutGlobalScopes()->where('id',$validated['id'])->select('id','name','monthdays','type','plan_id as no_monthdays')->first();
 
             if (!$plan) {
                 return response()->json([
@@ -528,6 +528,10 @@ class MasterController extends Controller
                     'data'    => []
                 ], 200); // or 404 if you prefer
             }
+        
+        // ✅ Convert null to empty string
+        $plan->monthdays = $plan->monthdays ?? "";
+
          return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
@@ -550,7 +554,7 @@ class MasterController extends Controller
 
             'type' => 'required|in:MONTH,YEAR,DAY,WEEK',
 
-            'plan_id' => [
+            'no_monthdays' => [
                 'required',
                 'integer',
                 'min:1',
@@ -570,12 +574,12 @@ class MasterController extends Controller
             /* =========================
             PLAN NAME
             ========================= */
-
-            $name = $validated['plan_id'].' '.$validated['type'];
+            $plan_id= $validated['no_monthdays'] ;
+            $name = $plan_id.' '.$validated['type'];
 
             $data = [
                 'library_id' => $libraryId,
-                'plan_id'    => $validated['plan_id'],
+                'plan_id'    => $plan_id,
                 'type'       => $validated['type'],
                 'name'       => $name,
                 'monthdays'  => $validated['type'] == 'MONTH'
@@ -586,10 +590,11 @@ class MasterController extends Controller
             /* =========================
             CREATE / UPDATE
             ========================= */
+            
 
-            if($request->id){
+            if($validated['id']){
 
-                $plan = Plan::findOrFail($request->id);
+                $plan = Plan::findOrFail($validated['id']);
                 $plan->update($data);
 
                 $message = "Plan updated successfully";
@@ -622,55 +627,63 @@ class MasterController extends Controller
     public function planlist(Request $request){
         $libraryId = auth('library_api')->id();
          
+        $plans = Plan::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->select('id', 'name', 'monthdays', 'type', 'plan_id as no_monthdays')
+            ->get()
+            ->map(function ($plan) {
+                $plan->monthdays = $plan->monthdays ?? "";
+                return $plan;
+            });
 
-        $plan=Plan::withoutGlobalScopes()->where('library_id',$libraryId)->select('id','name','monthdays','type')->get();
-         return response()->json([
+
+            return response()->json([
                 'status'  => true,
                 'message' =>"Plan fetch successfully",
-                'data'    => $plan
+                'data'    => $plans
             ]);
     }
 
    public function deletePlan(Request $request)
-{
-    try {
+    {
+        try {
 
-        $libraryId = auth('library_api')->id();
+            $libraryId = auth('library_api')->id();
 
-        // ✅ Simple validation
-        $validated = $request->validate([
-            'id' => 'required|exists:plans,id',
-        ]);
+            // ✅ Simple validation
+            $validated = $request->validate([
+                'id' => 'required|exists:plans,id',
+            ]);
 
-        // ✅ Check ownership
-        $plan = Plan::withoutGlobalScopes()
-                    ->where('id', $validated['id'])
-                    ->where('library_id', $libraryId)
-                    ->first();
+            // ✅ Check ownership
+            $plan = Plan::withoutGlobalScopes()
+                        ->where('id', $validated['id'])
+                        ->where('library_id', $libraryId)
+                        ->first();
 
-        if (!$plan) {
+            if (!$plan) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Plan not found or not authorized'
+                ], 200);
+            }
+
+            $plan->delete();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Plan deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
             return response()->json([
                 'status'  => false,
-                'message' => 'Plan not found or not authorized'
-            ], 200);
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage()
+            ], 500);
         }
-
-        $plan->delete();
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Plan deleted successfully'
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'status'  => false,
-            'message' => 'Something went wrong',
-            'error'   => $e->getMessage()
-        ], 500);
     }
-}
 
     public function planStatus(Request $request)
     {
