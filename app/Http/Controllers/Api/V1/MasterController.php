@@ -957,17 +957,39 @@ class MasterController extends Controller
 
         $branchId = $validated['branch_id'];
 
-        // ✅ Fetch Plan Types
+        // ✅ Query 1: Fetch plan types
         $types = PlanType::withoutGlobalScopes()
             ->where('branch_id', $branchId)
-            ->select('id','name','start_time','end_time','slot_hours','day_type_id')
+            ->select(
+                'id',
+                'name',
+                'start_time',
+                'end_time',
+                'slot_hours',
+                'day_type_id',
+                'deleted_at'
+            )
             ->get();
+
+        // ✅ Query 2: Get used plan_type_ids
+        $planTypeIds = $types->pluck('id')->toArray();
+
+        $usedPlanTypes = LearnerDetail::whereIn('plan_type_id', $planTypeIds)
+            ->pluck('plan_type_id')
+            ->flip(); // 🔥 O(1) lookup
+
+        // ✅ Fast loop (no map, no extra memory)
+        foreach ($types as $type) {
+
+            $type->can_delete = !isset($usedPlanTypes[$type->id]); // ⚡ fast lookup
+            $type->status     = $type->deleted_at ? 'Inactive' : 'Active';
+        }
 
         return response()->json([
             'status'  => true,
             'message' => "Plan Type fetch successfully",
             'data'    => [
-                'operatingHour' => operatingHour($branchId), // ✅ global helper
+                'operatingHour' => operatingHour($branchId),
                 'planTypes'     => $types
             ]
         ]);
@@ -1014,6 +1036,7 @@ class MasterController extends Controller
             $request->validate([
                 'id' => 'required|exists:plan_types,id'
             ]);
+
 
             // ✅ Get PlanType
             $planType = PlanType::withoutGlobalScopes()->where('id', $request->id)
