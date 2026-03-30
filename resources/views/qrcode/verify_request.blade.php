@@ -320,31 +320,31 @@ span.close-modal {
                         <div class="qr_lockerFields idProofFields1" style="display: none;">
                             <div class="row g-3">
                                 @if(!in_array('3', toggleHideField()))
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                    <label for="toggleFieldCheckbox11">Need a Locker ?</label>
-                                    <select name="locker" id="toggleFieldCheckbox11" class="form-control form-select @error('locker') is-invalid @enderror">
-                                        <option value="no" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'no' ? 'selected' : '' }}>No</option>
-                                        <option value="yes" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+                                    <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                                        <label for="toggleFieldCheckbox11">Need a Locker ?</label>
+                                        <select name="locker" id="toggleFieldCheckbox11" class="form-control form-select @error('locker') is-invalid @enderror">
+                                            <option value="no" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'no' ? 'selected' : '' }}>No</option>
+                                            <option value="yes" {{ old('locker', (($transaction?->locker_amount ?? 0) > 0 ? 'yes' : 'no')) == 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
 
-                                    </select>
-                                    @error('locker')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
-                                    <label for="locker_amount11">Locker Amount</label>
-                                    <input type="text" id="locker_amount11" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" value="{{ old('locker_amount', $transaction?->locker_amount ?? 0) }}" readonly>
-                                    @error('locker_amount')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
-                                    <label for="locker_no11">Locker No.</label>
-                                    <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no11" placeholder="Enter Locker No." value="{{ old('locker_no', ((optional($transaction)->locker_amount > 0) && !empty(optional($learner)->locker_no)) ? $learner->locker_no : '') }}">
+                                        </select>
+                                        @error('locker')
+                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                        <label for="locker_amount11">Locker Amount</label>
+                                        <input type="text" id="locker_amount11" name="locker_amount" class="form-control @error('locker_amount') is-invalid @enderror" value="{{ old('locker_amount', $transaction?->locker_amount ?? 0) }}" readonly>
+                                        @error('locker_amount')
+                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        @enderror </div>
+                                    <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                        <label for="locker_no11">Locker No.</label>
+                                        <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no11" placeholder="Enter Locker No." value="{{ old('locker_no', ((optional($transaction)->locker_amount > 0) && !empty(optional($learner)->locker_no)) ? $learner->locker_no : '') }}">
 
-                                    @error('locker_no')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
+                                        @error('locker_no')
+                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        @enderror
+                                    </div>
                                 @endif
                                 @if(!in_array('6', toggleHideField()))
                                 <div class="col-lg-6">
@@ -547,7 +547,6 @@ span.close-modal {
                                     @endif
                                 </div>
                                 @endif
-<<<<<<< HEAD
                                 
                                 {{-- ================= ADDRESS ================= --}}
                                 @if(!in_array('32', toggleHideField()))
@@ -559,23 +558,6 @@ span.close-modal {
                                             placeholder="Enter address">{{ old('address') ?? $customer->address ?? '' }}</textarea>
                                 </div>
                                 @endif
-=======
-                            </div>
-                            @endif
-                            
-                         
-                            
-                            {{-- ================= ADDRESS ================= --}}
-                            @if(!in_array('32', toggleHideField()))
-                            <div class="col-lg-12">
-                                <label for="address">Address</label>
-                                <textarea class="form-control"
-                                        name="address"
-                                        rows="3"
-                                        placeholder="Enter address">{{ old('address') ?? $customer->address ?? '' }}</textarea>
-                            </div>
-                            @endif
->>>>>>> 701b5bb67b956e94bb876c8985832969808eeac4
 
                                 {{-- ================= REMARK ================= --}}
                                 @if(!in_array('31', toggleHideField()))
