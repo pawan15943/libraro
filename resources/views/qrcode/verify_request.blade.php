@@ -420,7 +420,7 @@ span.close-modal {
                         </div>
                         @if($customer->type=='qr_seat_book' || $customer->type=='demo-bookings' )
                         @if(!in_array('7', toggleHideField()))
-                        <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i></h4>
+                        <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon2" style="cursor: pointer;"></i></h4>
 
                        <div class="qr_idProofFields" style="display: none;">
                         <div class="row g-3">
@@ -605,7 +605,7 @@ span.close-modal {
         });
 
         // Other Optional Fields Toggle
-        $(document).on('click', '.qr_toggleIcon', function () {
+        $(document).on('click', '.qr_toggleIcon2', function () {
             $('.qr_idProofFields').slideToggle(200);
             $(this).toggleClass('fa-plus fa-minus');
         });
