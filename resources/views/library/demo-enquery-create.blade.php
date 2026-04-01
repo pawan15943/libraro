@@ -1,104 +1,107 @@
-@extends('sitelayouts.layout')
+@extends('layouts.library')
 @section('content')
     <link
         href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"
         rel="stylesheet" />
-<style>
-    header,
-    footer {
-        display: none;
-    }
-h4.py-4.m-0 {
-    font-size: 1.2rem;
-    color: #006d83;
-    font-weight: 600;
-}
-    .online-qr-booking {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background: #efefff;
+    <style>
+        header,
+        footer {
+            display: none;
+        }
+
+        .online-qr-booking {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #efefff;
+            
+        }
+
+        .online-booking{
+            border: none !important;
+        }
+
+        .logo {
+            width: 180px;
+            padding: .5rem 0;
+            margin: 0 auto;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
         
+        /* Modal background */
+        .cropper-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.24);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1 !important;
+        }
+
+        /* Modal box */
+        .cropper-box {
+            background: #fff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* Cropper area */
+
+
+        .cropper-area {
+            width: 100%;
+            max-height: 300px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        /* Buttons */
+        .cropper-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .cropper-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #cancelCrop {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        .cropbtn {
+            background: navy;
+            color: #fff;
+        }
+
+        .cropper-modal {
+            background-color: #000000a3 !important;
+            opacity: .5;
+        }
+
+        .py-4 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+        font-size: 1rem;
+        color: #00677c ! IMPORTANT;
     }
 
-    .online-booking{
-        border: none !important;
-    }
-
-    .logo {
-        width: 180px;
-        padding: .5rem 0;
-        margin: 0 auto;
-        display: block;
-        margin-bottom: 1rem;
-    }
-
-    
-    /* Modal background */
-    .cropper-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.24);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        opacity: 1 !important;
-    }
-
-    /* Modal box */
-    .cropper-box {
-        background: #fff;
-        width: 90%;
-        max-width: 400px;
-        border-radius: 10px;
-        padding: 20px;
-        box-sizing: border-box;
-        text-align: center;
-    }
-
-    /* Cropper area */
-
-
-    .cropper-area {
-        width: 100%;
-        max-height: 300px;
-        overflow: hidden;
-        margin: 15px 0;
-    }
-
-    /* Buttons */
-    .cropper-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 10px;
-    }
-
-    .cropper-actions button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    #cancelCrop {
-        background: #e5e7eb;
-        color: #111;
-    }
-
-    .cropbtn {
-        background: navy;
-        color: #fff;
-    }
-
-    .cropper-modal {
-        background-color: #000000a3 !important;
-        opacity: .5;
-    }
-
-</style>
+    </style>
  <!-- Cropper Modal -->
 <div class="cropper-modal" id="cropperModal">
     <div class="cropper-box">
@@ -115,9 +118,7 @@ h4.py-4.m-0 {
     </div>
 </div>
  
-<section class="py-3 online-qr-booking">
 
-    <div class="container">
         <!-- resources/views/booking/form.blade.php -->
         
             @if (session('error'))
@@ -131,20 +132,20 @@ h4.py-4.m-0 {
             </div>
             @endif
               
-        <form action="{{ route('booking.store', $branch->uuid) }}" method="POST" enctype="multipart/form-data">
-            <div class="row justify-content-center">
-                <div class="col-lg-6">
-                    <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
-                    <div class="online-booking">
-                        <span class="steps">Step-1</span>
-                        <h4 class="mb-4 text-center">Enter Booking Details</h4>
+        <form action="{{ route('demo-users.store') }}" method="POST" enctype="multipart/form-data">
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8">
+                    <div class="online-booking bg-white p-4 rounded-4">
+                        
+                        <h4 class="mb-4 text-center">Daily Inquiry</h4>
                         <div class="row g-3">
                             @csrf
                             <input type="hidden" id="branch_id" value="{{$branch->id}}">
+                           
 
                             <div class="col-lg-6">
                                 <label for="general_seat">Assign Seat No?</label>
-                                <select name="general_seat" id="general_seat" class="form-select @error('general_seat') is-invalid @enderror">
+                                <select name="general_seat" id="general_seat2" class="form-select @error('general_seat') is-invalid @enderror">
                                     <option value="yes" {{ old('general_seat') == 'yes' ? 'selected' : '' }}>
                                         No
                                     </option>
@@ -158,7 +159,7 @@ h4.py-4.m-0 {
 
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id">
+                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id2">
                                     <option value="">Choose Seat No</option>
                                  
                                     @foreach($newAvailableSeat  as $key => $value)
@@ -179,24 +180,25 @@ h4.py-4.m-0 {
                                 <input type="text" name="mobile" value="{{ old('mobile') }}" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="8">
                                 @error('mobile') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
+                             @if(!in_array('2', toggleHideField()))
+                            <div class="col-lg-6">
+                                <label for="">DOB (optional)</label>
+                                <input type="date" class="form-control dob" value="{{ old('dob') }}" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
+                            </div>
+                            @endif
                             @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
-                                <label for="">Email Id (Optional)</label>
+                                <label for="">Email Id (optional)</label>
                                 <input type="text" class="form-control" name="email" value="{{ old('email') }}" id="email">
                                 <span class="text-danger" id="email-error"></span>
                             </div>
                             @endif
                             
-                            @if(!in_array('2', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="">DOB (Optional)</label>
-                                <input type="date" class="form-control dob" value="{{ old('dob') }}" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-10 years')); ?>">
-                            </div>
-                            @endif
+                           
                           
                             <div class="col-lg-6">
                                 <label for="">Plan <span>*</span></label>
-                                <select name="plan_id" id="plan_id3" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
+                                <select name="plan_id" id="plan_id4" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
                                     <option value="">Choose</option>
                                     @foreach($plans as $key => $value)
                                     <option value="{{ $value->id }}" {{ old('plan_id') == $value->id ? 'selected' : '' }}>{{$value->name}}</option>
@@ -209,18 +211,13 @@ h4.py-4.m-0 {
 
                             <div class="col-lg-6">
                                 <label for="">Plan Type / Shift <span>*</span></label>
-                                <select id="plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
+                                <select id="temp_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                                     <option value="">Choose</option>
                                 </select>
                                 @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
-                            <div class="col-lg-6">
-                                <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
-                                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                <span id="chargeable_day_book" class="text-info"></span>
-                            </div>
+                            
 
                             <div class="col-lg-6">
                                 <label for="">Plan Starts On <span>*</span></label>
@@ -232,22 +229,27 @@ h4.py-4.m-0 {
                                 @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             
-                            @if(!in_array('8', toggleHideField()))
                             <div class="col-lg-6">
-                                <label class="form-label">Upload Profile Photo</label>
-                                <input
-                                    type="file"
-                                    class="form-control image-cropper"
-                                    name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
-                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                                <label for="">Final Payble Amount (INR)<span>*</span></label>
+                                <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
+                                @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <span id="chargeable_day_book" class="text-info"></span>
                             </div>
+                             @if(!in_array('8', toggleHideField()))
+                                <div class="col-lg-6">
+                                    <label>Upload Profile Photo (optional)</label>
+                                    <input
+                                        type="file"
+                                        class="form-control image-cropper"
+                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                    <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                                </div>
                             @endif
                             <div class="col-lg-6">
-                                <label for="">Payment Mode</label>
+                                <label for="">Payment Mode <span>*</span></label>
                                 <select name="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
-                                    <option value="online" {{ old('payment_mode') == 'online' ? 'selected' : '' }}>Online</option>
-                                    <option value="offline" {{ old('payment_mode') == 'offline' ? 'selected' : '' }}>Offline (Pay at Branch)</option>
+                                    <option value="paylater" {{ old('payment_mode') == 'paylater' ? 'selected' : '' }}>Pay Later</option>
 
                                 </select>
                                 @error('payment_mode')
@@ -256,80 +258,90 @@ h4.py-4.m-0 {
                                 </div>
                                 @enderror
                             </div>
-                            
-                            <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i><h4>
-
-                            <div class="qr_idProofFields" style="display: none;">
-                                <div class="row g-3">
-                                    
-                                       
-                                
-                                
+                        </div>
                         
-                                    {{-- ================= ID PROOF ================= --}}
+
+                            @if(!in_array('7', toggleHideField()))
+                                <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon" style="cursor: pointer;"></i><h4>
+
+                                <div class="qr_idProofFields" style="display: none;">
+                                    <div class="row g-3">
+                                       
                                     
-                                    <div class="col-lg-4">
-                                        <label>Id Proof Received</label>
-                                        <select class="form-select" name="id_proof_name">
-                                            <option value="">Select Id Proof</option>
-                                            <option value="1"
-                                                {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
-                                                Aadhar Card
-                                            </option>
-                                            <option value="2"
-                                                {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
-                                                Driving License
-                                            </option>
-                                            <option value="4"
-                                                {{ (old('id_proof_name') ?? '') == '4' ? 'selected' : '' }}>
-                                                Pan Card
-                                            </option>
-                                            <option value="5"
-                                                {{ (old('id_proof_name') ?? '') == '5' ? 'selected' : '' }}>
-                                                Voter Id
-                                            </option>
-                                            <option value="3"
-                                                {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
-                                                Other
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <label for="id_proof_number">ID Proof No.</label>
-                                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number ?? '') }}">
-
-                                        
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                        
-
-                                        <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
-                                        <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
-                                        @error('id_proof_file')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                        
-                                    </div>
-                                    
-                                    {{-- ================= ADDRESS ================= --}}
-                                    <div class="col-lg-12">
-                                        <label for="    ">Address</label>
-                                        <textarea class="form-control"
-                                                name="address"
-                                                rows="3"
-                                                placeholder="Enter address">{{ old('address') ??  '' }}</textarea>
-                                    </div>
-                                    
-
-                                </div>
-                            </div>
-
                             
+                                        {{-- ================= ID PROOF ================= --}}
+                                        @if(!in_array('5', toggleHideField()))
+                                        <div class="col-lg-4">
+                                            <label>Id Proof Received</label>
+                                            <select class="form-select" name="id_proof_name">
+                                                <option value="">Select Id Proof</option>
+                                                <option value="1"
+                                                    {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
+                                                    Aadhar Card
+                                                </option>
+                                                <option value="2"
+                                                    {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
+                                                    Driving License
+                                                </option>
+                                                <option value="4"
+                                                    {{ (old('id_proof_name') ?? '') == '4' ? 'selected' : '' }}>
+                                                    Pan Card
+                                                </option>
+                                                <option value="5"
+                                                    {{ (old('id_proof_name') ?? '') == '5' ? 'selected' : '' }}>
+                                                   Voter Id
+                                                </option>
+                                                <option value="3"
+                                                    {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
+                                                    Other
+                                                </option>
+                                            </select>
+                                            <span class="text-danger">Uploading ID proof is optional do it later.</span>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label for="address">ID Proof No.</label>
+                                             <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number ?? '') }}">
+
+                                           
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label for="id_proof_file">Upload Scan Copy of Proof</label>
+                                            
+
+                                            <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                                           
+                                            <img class="preview-img one"  data-src="{{ isset($customer->id_proof_file) ? asset('storage/'.$customer->id_proof_file) : '' }}" style="display:none; max-width:250px; margin-top:1rem;">
+                                            @error('id_proof_file')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror
+                                            
+                                        </div>
+                                         
+                                        
+                                        @endif
+                                        
+                                        {{-- ================= ADDRESS ================= --}}
+                                        @if(!in_array('32', toggleHideField()))
+                                        <div class="col-lg-12">
+                                            <label for="address">Address</label>
+                                            <textarea class="form-control"
+                                                    name="address"
+                                                    rows="3"
+                                                    placeholder="Enter address">{{ old('address') ??  '' }}</textarea>
+                                        </div>
+                                        @endif
+
+                                    </div>
+                                </div>
+
+                            @endif
+
+                        
+                        <div class="row mt-4">
                             <div class="col-lg-12">
-                                <button type="submit" class="btn btn-primary button">Next <i class="fa fa-long-arrow-right ms-2"></i></button>
+                                <button type="submit" class="btn btn-primary button">Submit</button>
                             </div>
                         </div>
                     </div>
@@ -337,55 +349,69 @@ h4.py-4.m-0 {
              </div>
         </form>
    
-    </div>
 
-
-</section>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
-    
+    $(document).ready(function () {
+
+        // Plan Addons Toggle
+        $(document).on('click', '.qr_addonToggleIcon', function () {
+            $('.qr_lockerFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+        // Other Optional Fields Toggle
+        $(document).on('click', '.qr_toggleIcon', function () {
+            $('.qr_idProofFields').slideToggle(200);
+            $(this).toggleClass('fa-plus fa-minus');
+        });
+
+    });
     $(document).ready(function() {
          let oldPlanTypeId = "{{ old('plan_type_id') }}";
         function loadPlanTypes() {
-            const generalSeat = $('#general_seat').val();
-            const seatId = $('#seat_id').val();
+            const generalSeat = $('#general_seat2').val();
+            const seatId = $('#seat_id2').val();
             const branch_id = $('#branch_id').val();
             console.log("branchwith", branch_id);
             if (generalSeat === 'yes') {
                 // General seat → no seat-wise filter
-                $('#seat_id').prop('disabled', true).val('');
+                $('#seat_id2').prop('disabled', true).val('');
                 getTypeSeatwise('', branch_id); // show general plan types
             } else if (generalSeat === 'no') {
                 // Specific seat → enable seat selection
-                $('#seat_id').prop('disabled', false);
+                $('#seat_id2').prop('disabled', false);
 
                 if (seatId) {
                     // If seat already selected
                     getTypeSeatwise(seatId, branch_id); // show seat-wise plan types
                 } else {
                     // Seat not selected yet → clear plan type dropdown
-                    $('#plan_type_id').html('<option value="">Choose</option>');
+                    $('#temp_plan_type_id').html('<option value="">Choose</option>');
                 }
             } else {
                 // Empty / default selection
-                $('#seat_id').prop('disabled', true).val('');
-                $('#plan_type_id').html('<option value="">Choose</option>');
+                $('#seat_id2').prop('disabled', true).val('');
+                $('#temp_plan_type_id').html('<option value="">Choose</option>');
             }
         }
         loadPlanTypes();
 
         // On change of general seat
-        $('#general_seat').on('change', function() {
+        $('#general_seat2').on('change', function() {
             loadPlanTypes();
         });
 
-        $('#plan_id3, #plan_type_id').on('change', function() {
-            let plan_id = $('#plan_id3').val();
-            let plan_type_id = $('#plan_type_id').val();
+        $('#plan_id4, #temp_plan_type_id').on('change', function() {
+            let plan_id = $('#plan_id4').val();
+            let plan_type_id = $('#temp_plan_type_id').val();
             let branch_id = $('#branch_id').val();
             let plan_start_date = $('#plan_start_date').val();
-
+            console.log("plan_id",plan_id);
+            console.log("plan_type_id",plan_type_id);
+            console.log("branch_id",branch_id);
+            console.log("plan_start_date",plan_start_date);
+           
             if (plan_id && plan_type_id && branch_id && plan_start_date) {
                 $.ajax({
                     url: "{{ route('get.plan.price') }}"
@@ -398,6 +424,7 @@ h4.py-4.m-0 {
                         , plan_start_date: plan_start_date
                     }
                     , success: function(response) {
+                        console.log("heena price",response);
                         if (response.success) {
                             $('#plan_price').val(response.price);
                         } else {
@@ -427,7 +454,7 @@ h4.py-4.m-0 {
 
         function getTypeSeatwise(seatId, branchId) {
 
-            $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
+            $('#temp_plan_type_id').empty().append('<option value="">Choose Shift</option>');
             $.ajax({
                 url: '{{ route('getPlantypeSeatwise') }}'
                 , type: 'GET'
@@ -438,20 +465,20 @@ h4.py-4.m-0 {
                 , }
                 , dataType: 'json'
                 , success: function(html) {
-                    console.log(html);
+                    console.log('HEENAPLANTYPE',html);
                     if (html) {
                      if (html.length === 0) {
-                        $("#plan_type_id").empty().append(
+                        $("#temp_plan_type_id").empty().append(
                             '<option value="">No added plan type</option>'
                         );
                         return;
                     }
                     let selectedValue = oldPlanTypeId 
                         ? oldPlanTypeId 
-                        : $("#plan_type_id").find("option:selected").val();
+                        : $("#temp_plan_type_id").find("option:selected").val();
 
-                    $("#plan_type_id").empty();
-                    $("#plan_type_id").append('<option value="">Choose Shift</option>');
+                    $("#temp_plan_type_id").empty();
+                    $("#temp_plan_type_id").append('<option value="">Choose Shift</option>');
 
                     if (selectedValue) {
                         // find text from html response
@@ -462,7 +489,7 @@ h4.py-4.m-0 {
                             }
                         });
 
-                        $("#plan_type_id").append(
+                        $("#temp_plan_type_id").append(
                             '<option value="' + selectedValue + '" selected>' +
                             selectedText +
                             '</option>'
@@ -471,7 +498,7 @@ h4.py-4.m-0 {
 
                     $.each(html, function(index, planType) {
                         if (planType.id != selectedValue) {
-                            $("#plan_type_id").append(
+                            $("#temp_plan_type_id").append(
                                 '<option value="' + planType.id + '">' +
                                 planType.name +
                                 '</option>'
@@ -482,8 +509,8 @@ h4.py-4.m-0 {
                     // clear old value after first use
                     oldPlanTypeId = null;
                 }else {
-                        $("#plan_type_id").empty();
-                        $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                        $("#temp_plan_type_id").empty();
+                        $("#temp_plan_type_id").append('<option value="">Select Plan Type</option>');
                     }
                 }
                 , error: function(xhr, status, error) {
@@ -493,15 +520,15 @@ h4.py-4.m-0 {
 
         }
 
-        $('#seat_id').on('change', function() {
-            const generalSeat = $('#general_seat').val();
+        $('#seat_id2').on('change', function() {
+            const generalSeat = $('#general_seat2').val();
             if (generalSeat === 'no') {
                 const seatId = $(this).val();
                 const branch_id = $('#branch_id').val();
                 if (seatId) {
                     getTypeSeatwise(seatId, branch_id);
                 } else {
-                    $('#plan_type_id').html('<option value="">Choose</option>');
+                    $('#temp_plan_type_id').html('<option value="">Choose</option>');
                 }
             }
         });
@@ -615,24 +642,19 @@ document.addEventListener("DOMContentLoaded", function () {
         activePreview = null;
     });
 
-});
+    document.querySelectorAll(".image-cropper").forEach(input => {
 
+        const preview = input.closest('.col-lg-4').querySelector('.preview-img');
 
-$(document).ready(function () {
-
-        // Plan Addons Toggle
-        $(document).on('click', '.qr_addonToggleIcon', function () {
-            $('.qr_lockerFields').slideToggle(200);
-            $(this).toggleClass('fa-plus fa-minus');
-        });
-
-        // Other Optional Fields Toggle
-        $(document).on('click', '.qr_toggleIcon', function () {
-            $('.qr_idProofFields').slideToggle(200);
-            $(this).toggleClass('fa-plus fa-minus');
-        });
+        // ✅ If edit mode (existing image)
+        if (preview && preview.getAttribute('data-src')) {
+            preview.src = preview.getAttribute('data-src');
+            preview.style.display = 'block';
+        }
 
     });
+
+});
 </script>
 
 

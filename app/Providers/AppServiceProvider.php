@@ -425,6 +425,15 @@ class AppServiceProvider extends ServiceProvider
                         : $parameters
                 ]),
             ],
+             'demo-users.index' => [
+                'Dashboard' => route('library.home'),
+                'Daily Demo inquiries' => route('demo-users.index'),
+            ],
+             'demo-users.create' => [
+                'Dashboard' => route('library.home'),
+                'Daily Demo inquiries' => route('demo-users.index'),
+                'Add Demo inquiry' => route('demo-users.create'),
+            ],
 
 
             // Learner Bread crumb
@@ -573,6 +582,8 @@ class AppServiceProvider extends ServiceProvider
             'branch.configure.create' => 'Setup Branch & Floors',
             'library.configration' => 'Add Shifts',
             'booking.details' => 'Verify and Allot Seat',
+            'demo-users.index' => 'Daily Demo Inquiries',
+            'demo-users.create' => 'Add Demo Inquiry',
 
         ];
 

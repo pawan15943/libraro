@@ -1043,7 +1043,7 @@ ul.actionalbles li a:hover {
     background: #fff;
 }
 
-.revenue-info ul {
+.revenue-info>ul {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -1052,7 +1052,7 @@ ul.actionalbles li a:hover {
     align-items: flex-start;
 }
 
-.revenue-info ul li {
+.revenue-info>ul>li {
     width: calc(100% / 6 - 1rem);
     font-family: 'outfit', 'sans-sarif';
 }
@@ -1101,11 +1101,11 @@ ul.actionalbles li a:hover {
     }
 
 
-    .revenue-info ul li:first-child {
+    .revenue-info>ul>li:first-child {
         width: 100%;
     }
 
-    .revenue-info ul li {
+    .revenue-info>ul>li {
         width: calc(100% / 2 - 1rem);
     }
 
