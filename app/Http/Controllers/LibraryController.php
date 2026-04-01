@@ -297,6 +297,7 @@ class LibraryController extends Controller
        
         try {
             
+            
              $data = $this->razorpayPaymentCore((int) $subscriptionId,(int) $planMode,(int) $libraryId);
             
         
@@ -427,13 +428,21 @@ class LibraryController extends Controller
                 ->first();
 
             $start = Carbon::parse($last->end_date)->addDay();
-            $status = 0;
+          
         } else {
             $start = now();
-            $status = 1;
+          
         }
 
         $end = $start->copy()->addMonths($duration);
+
+       if ($start->copy()->startOfDay() <= now()->startOfDay()) {
+            $status = 1;
+        } else {
+            $status = 0;
+        }
+       
+     
 
         $transaction->update([
             'start_date'       => $start,
@@ -453,7 +462,14 @@ class LibraryController extends Controller
             if($status==1){
                 Library::where('id', $transaction->library_id)->update([
                     'library_type' => $transaction->subscription,
+                    'status'=>1
                 ]);
+                        // ✅ Deactivate all OTHER active transactions
+                LibraryTransaction::where('library_id', $transaction->library_id)
+                    ->where('id', '!=', $transaction->id) // exclude current
+                    ->where('status', 1)
+                    ->update(['status' => 0]);
+
             }
        
     }
@@ -591,7 +607,7 @@ class LibraryController extends Controller
         ->where('type', 'MONTH')
         ->first();
         $branch=getCurrentBranch();
-       $planTypes = [];
+        $planTypes = [];
 
         if ($branch && $plan) {
             $planTypes = PlanType::with(['price' => function ($q) use ($plan) {
@@ -603,344 +619,344 @@ class LibraryController extends Controller
       
         return view('register.library-confrigration',compact('operatingHour','planTypes'));
     }
-   public function configrationStore(Request $request)
-{
-    /* =========================
-       FILTER EMPTY ROWS
-    ========================= */
-    $planTypes = collect($request->plan_types ?? [])
-        ->filter(function ($row) {
-            return isset($row['day_type_id']) &&
-                   ($row['day_type_id'] !== '' ||
-                    !empty($row['start_time']) ||
-                    !empty($row['end_time']));
-        })
-        ->values()
-        ->toArray();
-
-    $request->merge(['plan_types' => $planTypes]);
-
-    /* =========================
-       VALIDATION
-    ========================= */
-    $validator = Validator::make($request->all(), [
-        'plan_types'                   => 'required|array|min:1',
-        'plan_types.*.day_type_id'     => 'required',
-        'plan_types.*.start_time'      => 'required|date_format:H:i',
-        'plan_types.*.end_time'        => 'required|date_format:H:i',
-        'plan_types.*.slot_hours'      => 'required|numeric|min:1',
-        'plan_types.*.price'           => 'required|numeric|min:0',
-        'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
-    ]);
-
-    $validator->after(function ($validator) use ($request) {
-        foreach ($request->plan_types as $index => $row) {
-            if (
-                isset($row['day_type_id']) &&
-                (int)$row['day_type_id'] === 0 &&
-                empty($row['custom_plan_type'])
-            ) {
-                $validator->errors()->add(
-                    "plan_types.$index.custom_plan_type",
-                    'Custom Plan Type Name is required'
-                );
-            }
-        }
-    });
-
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => false,
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    /* =========================
-       BRANCH CHECK
-    ========================= */
-    $branchCount = Branch::where('library_id', getLibraryId())->count();
-    if ($branchCount < 1) {
-        return response()->json([
-            'status' => false,
-            'message' => 'No configuration required in your branch'
-        ], 400);
-    }
-
-    $branch = Branch::where('id', getCurrentBranch())->first();
-
-    $plan = Plan::where('library_id', getLibraryId())
-        ->where('plan_id', 1)
-        ->where('type', 'MONTH')
-        ->first();
-
-    if (!$plan) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Ops, System not found any plan to proceed for shifts.'
-        ], 400);
-    }
-
-    $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
-
-    $existingPlanTypeCount = PlanType::where('branch_id', getCurrentBranch())->count();
-    $isFirstTimeSetup = $existingPlanTypeCount === 0;
-
-    DB::beginTransaction();
-
-    try {
-
+    public function configrationStore(Request $request)
+    {
         /* =========================
-           DELETE REMOVED SHIFTS
+        FILTER EMPTY ROWS
         ========================= */
-        $submittedIds = collect($request->plan_types)
-            ->pluck('plan_type_id')
-            ->filter()
+        $planTypes = collect($request->plan_types ?? [])
+            ->filter(function ($row) {
+                return isset($row['day_type_id']) &&
+                    ($row['day_type_id'] !== '' ||
+                        !empty($row['start_time']) ||
+                        !empty($row['end_time']));
+            })
+            ->values()
             ->toArray();
 
-        $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
+        $request->merge(['plan_types' => $planTypes]);
 
-        foreach ($existingShifts as $planType) {
+        /* =========================
+        VALIDATION
+        ========================= */
+        $validator = Validator::make($request->all(), [
+            'plan_types'                   => 'required|array|min:1',
+            'plan_types.*.day_type_id'     => 'required',
+            'plan_types.*.start_time'      => 'required|date_format:H:i',
+            'plan_types.*.end_time'        => 'required|date_format:H:i',
+            'plan_types.*.slot_hours'      => 'required|numeric|min:1',
+            'plan_types.*.price'           => 'required|numeric|min:0',
+            'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
+        ]);
 
-            if (!in_array($planType->id, $submittedIds)) {
-
-                $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
-
-                if ($exists) {
-                    throw new \Exception(
-                        "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
+        $validator->after(function ($validator) use ($request) {
+            foreach ($request->plan_types as $index => $row) {
+                if (
+                    isset($row['day_type_id']) &&
+                    (int)$row['day_type_id'] === 0 &&
+                    empty($row['custom_plan_type'])
+                ) {
+                    $validator->errors()->add(
+                        "plan_types.$index.custom_plan_type",
+                        'Custom Plan Type Name is required'
                     );
                 }
-
-                PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
-                $planType->forcedelete();
             }
+        });
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         /* =========================
-           GLOBAL SHIFT COVERAGE CHECK
+        BRANCH CHECK
         ========================= */
-        $coveredMinutes = [];
-
-        foreach ($request->plan_types as $row) {
-
-            $start = Carbon::parse($row['start_time']);
-            $end   = Carbon::parse($row['end_time']);
-
-            if ($end->lessThanOrEqualTo($start)) {
-                $end->addDay();
-            }
-
-            while ($start < $end) {
-                $coveredMinutes[$start->format('H:i')] = true;
-                $start->addMinute();
-            }
+        $branchCount = Branch::where('library_id', getLibraryId())->count();
+        if ($branchCount < 1) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No configuration required in your branch'
+            ], 400);
         }
 
-        $totalCoveredHours = count($coveredMinutes) / 60;
+        $branch = Branch::where('id', getCurrentBranch())->first();
 
-        if ($branchRecord->hour != 24 && $totalCoveredHours > $branchRecord->hour) {
-            throw new \Exception('Shift timing exceeds library hours.');
+        $plan = Plan::where('library_id', getLibraryId())
+            ->where('plan_id', 1)
+            ->where('type', 'MONTH')
+            ->first();
+
+        if (!$plan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ops, System not found any plan to proceed for shifts.'
+            ], 400);
         }
 
-        /* =========================
-           CREATE / UPDATE SHIFTS
-        ========================= */
-        $timePairs = [];
-        $isCreating = false;
-        $isUpdating = false;
+        $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
 
-        foreach ($request->plan_types as $row) {
+        $existingPlanTypeCount = PlanType::where('branch_id', getCurrentBranch())->count();
+        $isFirstTimeSetup = $existingPlanTypeCount === 0;
 
-            if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
-                throw new \Exception('Selected hours exceed the library’s available hours.');
+        DB::beginTransaction();
+
+        try {
+
+            /* =========================
+            DELETE REMOVED SHIFTS
+            ========================= */
+            $submittedIds = collect($request->plan_types)
+                ->pluck('plan_type_id')
+                ->filter()
+                ->toArray();
+
+            $existingShifts = PlanType::where('branch_id', getCurrentBranch())->get();
+
+            foreach ($existingShifts as $planType) {
+
+                if (!in_array($planType->id, $submittedIds)) {
+
+                    $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
+
+                    if ($exists) {
+                        throw new \Exception(
+                            "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
+                        );
+                    }
+
+                    PlanPrice::where('plan_type_id', $planType->id)->forcedelete();
+                    $planType->forcedelete();
+                }
             }
 
-            $start = Carbon::parse($row['start_time']);
-            $end   = Carbon::parse($row['end_time']);
+            /* =========================
+            GLOBAL SHIFT COVERAGE CHECK
+            ========================= */
+            $coveredMinutes = [];
 
-            if ($end->lessThanOrEqualTo($start)) {
-                $end->addDay();
+            foreach ($request->plan_types as $row) {
+
+                $start = Carbon::parse($row['start_time']);
+                $end   = Carbon::parse($row['end_time']);
+
+                if ($end->lessThanOrEqualTo($start)) {
+                    $end->addDay();
+                }
+
+                while ($start < $end) {
+                    $coveredMinutes[$start->format('H:i')] = true;
+                    $start->addMinute();
+                }
             }
 
-            $actualHours = $start->diffInHours($end);
+            $totalCoveredHours = count($coveredMinutes) / 60;
 
-            if ($row['slot_hours'] != $actualHours) {
-                throw new \Exception(
-                    "Slot hours must match shift time ({$actualHours} hours)."
-                );
+            if ($branchRecord->hour != 24 && $totalCoveredHours > $branchRecord->hour) {
+                throw new \Exception('Shift timing exceeds library hours.');
             }
-             /* Plan name logic */
-            $dayTypeId = (int) $row['day_type_id'];
 
-            /* Duplicate check inside request */
-            $pairKey = $row['start_time'] . '-' . $row['end_time'];
-            $rowId   = $row['plan_type_id'] ?? 'new';
-            if ($dayTypeId != 0) {
-                if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId && $dayTypeId!=0) {
+            /* =========================
+            CREATE / UPDATE SHIFTS
+            ========================= */
+            $timePairs = [];
+            $isCreating = false;
+            $isUpdating = false;
+
+            foreach ($request->plan_types as $row) {
+
+                if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
+                    throw new \Exception('Selected hours exceed the library’s available hours.');
+                }
+
+                $start = Carbon::parse($row['start_time']);
+                $end   = Carbon::parse($row['end_time']);
+
+                if ($end->lessThanOrEqualTo($start)) {
+                    $end->addDay();
+                }
+
+                $actualHours = $start->diffInHours($end);
+
+                if ($row['slot_hours'] != $actualHours) {
                     throw new \Exception(
-                        'Duplicate shift detected with same start and end time.'
+                        "Slot hours must match shift time ({$actualHours} hours)."
                     );
                 }
+                /* Plan name logic */
+                $dayTypeId = (int) $row['day_type_id'];
+
+                /* Duplicate check inside request */
+                $pairKey = $row['start_time'] . '-' . $row['end_time'];
+                $rowId   = $row['plan_type_id'] ?? 'new';
+                if ($dayTypeId != 0) {
+                    if (isset($timePairs[$pairKey]) && $timePairs[$pairKey] != $rowId && $dayTypeId!=0) {
+                        throw new \Exception(
+                            'Duplicate shift detected with same start and end time.'
+                        );
+                    }
+                
+
+                    $timePairs[$pairKey] = $rowId;
+                }
+
+                if($dayTypeId != 0)  {          
+                    /* Duplicate check in DB */
+                    $query = PlanType::where('branch_id', $branch->id)
+                        ->where('start_time', $row['start_time'])
+                        ->where('end_time', $row['end_time'])->where('day_type_id', '!=', 0);
+                    
+
+                    if (!empty($row['plan_type_id'])) {
+                        $query->where('id', '!=', $row['plan_type_id']);
+                    }
             
 
-                $timePairs[$pairKey] = $rowId;
-            }
+                    if ($query->exists()) {
+                        throw new \Exception('A shift with the same time range already exists.');
+                    }
 
-            if($dayTypeId != 0)  {          
-                /* Duplicate check in DB */
-                $query = PlanType::where('branch_id', $branch->id)
-                    ->where('start_time', $row['start_time'])
-                    ->where('end_time', $row['end_time'])->where('day_type_id', '!=', 0);
-                
+                }
+                if($dayTypeId != 0)  {          
+                    /* Duplicate check in DB */
+                    $query = PlanType::where('branch_id', $branch->id)->where('day_type_id', '!=', 0)->where('day_type_id', $dayTypeId);
+                    
 
+                    if (!empty($row['plan_type_id'])) {
+                        $query->where('id', '!=', $row['plan_type_id']);
+                    }
+            
+
+                    if ($query->exists()) {
+                        throw new \Exception('A shift with the same name already exists.');
+                    }
+
+                }
+
+                $planTypeName = match ($dayTypeId) {
+                    1 => 'Full Day',
+                    2 => 'First Half',
+                    3 => 'Second Half',
+                    8 => 'All Day',
+                    9 => 'Full Night',
+                    0 => $row['custom_plan_type'],
+                    default => 'Custom',
+                };
+
+                /* CREATE or UPDATE */
                 if (!empty($row['plan_type_id'])) {
-                    $query->where('id', '!=', $row['plan_type_id']);
-                }
-        
 
-                if ($query->exists()) {
-                    throw new \Exception('A shift with the same time range already exists.');
-                }
+                    $isUpdating = true;
 
-            }
-            if($dayTypeId != 0)  {          
-                /* Duplicate check in DB */
-                $query = PlanType::where('branch_id', $branch->id)->where('day_type_id', '!=', 0)->where('day_type_id', $dayTypeId);
-                
+                    $planType = PlanType::where('id', $row['plan_type_id'])
+                        ->where('branch_id', $branch->id)
+                        ->first();
 
-                if (!empty($row['plan_type_id'])) {
-                    $query->where('id', '!=', $row['plan_type_id']);
-                }
-        
+                    if (!$planType) {
+                        throw new \Exception('Invalid shift selected.');
+                    }
 
-                if ($query->exists()) {
-                    throw new \Exception('A shift with the same name already exists.');
-                }
+                    $planType->update([
+                        'library_id'  => getLibraryId(),
+                        'branch_id'   => $branch->id,
+                        'day_type_id' => $row['day_type_id'],
+                        'name'        => $planTypeName,
+                        'start_time'  => $row['start_time'],
+                        'end_time'    => $row['end_time'],
+                        'slot_hours'  => $row['slot_hours'],
+                        'image'       => 'public/img/booked.png',
+                    ]);
 
-            }
+                } else {
 
-            $planTypeName = match ($dayTypeId) {
-                1 => 'Full Day',
-                2 => 'First Half',
-                3 => 'Second Half',
-                8 => 'All Day',
-                9 => 'Full Night',
-                0 => $row['custom_plan_type'],
-                default => 'Custom',
-            };
+                    $isCreating = true;
 
-            /* CREATE or UPDATE */
-            if (!empty($row['plan_type_id'])) {
-
-                $isUpdating = true;
-
-                $planType = PlanType::where('id', $row['plan_type_id'])
-                    ->where('branch_id', $branch->id)
-                    ->first();
-
-                if (!$planType) {
-                    throw new \Exception('Invalid shift selected.');
-                }
-
-                $planType->update([
-                    'library_id'  => getLibraryId(),
-                    'branch_id'   => $branch->id,
-                    'day_type_id' => $row['day_type_id'],
-                    'name'        => $planTypeName,
-                    'start_time'  => $row['start_time'],
-                    'end_time'    => $row['end_time'],
-                    'slot_hours'  => $row['slot_hours'],
-                    'image'       => 'public/img/booked.png',
-                ]);
-
-            } else {
-
-                $isCreating = true;
-
-                $planType = PlanType::create([
-                    'library_id'  => getLibraryId(),
-                    'branch_id'   => $branch->id,
-                    'day_type_id' => $row['day_type_id'],
-                    'name'        => $planTypeName,
-                    'start_time'  => $row['start_time'],
-                    'end_time'    => $row['end_time'],
-                    'slot_hours'  => $row['slot_hours'],
-                    'image'       => 'public/img/booked.png',
-                ]);
-            }
-
-            /* Price */
-            if (!empty($row['plan_price_id'])) {
-                PlanPrice::where('id', $row['plan_price_id'])->update([
-                    'price'        => $row['price'],
-                    'plan_type_id' => $planType->id,
-                ]);
-            } else {
-                PlanPrice::create([
-                    'library_id'   => getLibraryId(),
-                    'branch_id'    => $branch->id,
-                    'plan_id'      => $plan->id,
-                    'plan_type_id' => $planType->id,
-                    'price'        => $row['price'],
-                ]);
-            }
-        }
-
-        /* =========================
-           LIBRARY CODE GENERATION
-        ========================= */
-        // library subscription update
-        $library = Library::where('id', getAuthenticatedUser()->id)->first();
-    
-        if (empty($library->library_no)) {
-            $libraryCode = generateLibraryCode();
-            $library->library_no = $libraryCode;
-            $library->status=1;
-            $library->save();
-            DB::commit();
-
-                try {
-                    \Log::info('sendSuccessfulEmail');
-                    $this->sendSuccessfulEmail($library);
-                } catch (\Throwable $e) {
-                    Log::error('Success email sending FAILED', [
-                        'library_id' => $library->id ?? null,
-                        'email'      => $library->email ?? null,
-                        'error'      => $e->getMessage(),
+                    $planType = PlanType::create([
+                        'library_id'  => getLibraryId(),
+                        'branch_id'   => $branch->id,
+                        'day_type_id' => $row['day_type_id'],
+                        'name'        => $planTypeName,
+                        'start_time'  => $row['start_time'],
+                        'end_time'    => $row['end_time'],
+                        'slot_hours'  => $row['slot_hours'],
+                        'image'       => 'public/img/booked.png',
                     ]);
                 }
 
+                /* Price */
+                if (!empty($row['plan_price_id'])) {
+                    PlanPrice::where('id', $row['plan_price_id'])->update([
+                        'price'        => $row['price'],
+                        'plan_type_id' => $planType->id,
+                    ]);
+                } else {
+                    PlanPrice::create([
+                        'library_id'   => getLibraryId(),
+                        'branch_id'    => $branch->id,
+                        'plan_id'      => $plan->id,
+                        'plan_type_id' => $planType->id,
+                        'price'        => $row['price'],
+                    ]);
+                }
+            }
+
+            /* =========================
+            LIBRARY CODE GENERATION
+            ========================= */
+            // library subscription update
+            $library = Library::where('id', getAuthenticatedUser()->id)->first();
+        
+            if (empty($library->library_no)) {
+                $libraryCode = generateLibraryCode();
+                $library->library_no = $libraryCode;
+                $library->status=1;
+                $library->save();
+                DB::commit();
+
+                    try {
+                        \Log::info('sendSuccessfulEmail');
+                        $this->sendSuccessfulEmail($library);
+                    } catch (\Throwable $e) {
+                        Log::error('Success email sending FAILED', [
+                            'library_id' => $library->id ?? null,
+                            'email'      => $library->email ?? null,
+                            'error'      => $e->getMessage(),
+                        ]);
+                    }
+
+            }
+
+            /* =========================
+            SETUP REDIRECT
+            ========================= */
+            $setup    = '';
+            $redirect = null;
+
+            if ($isFirstTimeSetup && $isCreating && !$isUpdating) {
+                $setup    = 'completed';
+                $redirect = route('library.home', ['setup' => $setup]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'   => true,
+                'redirect' => $redirect,
+                'message'  => 'Library shifts saved successfully.',
+                'setup'    => $setup
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
-
-        /* =========================
-           SETUP REDIRECT
-        ========================= */
-        $setup    = '';
-        $redirect = null;
-
-        if ($isFirstTimeSetup && $isCreating && !$isUpdating) {
-            $setup    = 'completed';
-            $redirect = route('library.home', ['setup' => $setup]);
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'status'   => true,
-            'redirect' => $redirect,
-            'message'  => 'Library shifts saved successfully.',
-            'setup'    => $setup
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return response()->json([
-            'status' => false,
-            'message' => $e->getMessage()
-        ], 400);
     }
-}
 
     public function profile()
     {

@@ -105,21 +105,7 @@ $user = getAuthenticatedUser();
                 @endif
 
 
-                @if(($librarydiffInDays <= 5 && !$is_renew && $is_expire))
                
-                    <script>
-                        window.onload = function() {
-                        if (!sessionStorage.getItem("planExpiryModalShown")) {
-                        setTimeout(function() {
-                        var modal = new bootstrap.Modal(document.getElementById('planExpiryModal'));
-                        modal.show();
-                        sessionStorage.setItem("planExpiryModalShown", "true");
-                        }, 1000);
-                        }
-                        };
-                    </script>
-                    <a href="{{ route('subscriptions.choosePlan') }}" type="button" class="btn btn-primary button">Renew your plan</a>
-                @endif
             @elseif(isset($upcomingdiffInDays) && $user && $is_renew )
                 @if($upcomingdiffInDays > 0)
                 <small class="text-danger ml-2"> <i class="fa fa-clock"></i>
@@ -127,6 +113,21 @@ $user = getAuthenticatedUser();
                 </small>
                 @endif
 
+            @endif
+             @if(($librarydiffInDays <= 5 && !$is_renew && $is_expire))
+               
+                <script>
+                    window.onload = function() {
+                    if (!sessionStorage.getItem("planExpiryModalShown")) {
+                    setTimeout(function() {
+                    var modal = new bootstrap.Modal(document.getElementById('planExpiryModal'));
+                    modal.show();
+                    sessionStorage.setItem("planExpiryModalShown", "true");
+                    }, 1000);
+                    }
+                    };
+                </script>
+                <a href="{{ route('subscriptions.choosePlan') }}" type="button" class="btn btn-primary button">Renew your plan</a>
             @endif
         </div>
 
