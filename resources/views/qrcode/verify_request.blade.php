@@ -422,7 +422,7 @@ span.close-modal {
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon2" style="cursor: pointer;"></i></h4>
 
-                       <div class="qr_idProofFields" style="display: none;">
+                       <div class="qr_idProofFields2" style="display: none;">
                         <div class="row g-3">
                              @if(!in_array('8', toggleHideField()))
                            
@@ -606,7 +606,7 @@ span.close-modal {
 
         // Other Optional Fields Toggle
         $(document).on('click', '.qr_toggleIcon2', function () {
-            $('.qr_idProofFields').slideToggle(200);
+            $('.qr_idProofFields2').slideToggle(200);
             $(this).toggleClass('fa-plus fa-minus');
         });
 
