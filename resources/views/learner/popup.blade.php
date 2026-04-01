@@ -242,10 +242,28 @@
                                 <div class="col-lg-4">
                                     <label for="">ID Proof Name(Optional)</label>
                                     <select id="id_proof_name" class="form-select" name="id_proof_name">
+                                        
                                         <option value="">Select Id Proof</option>
-                                        <option value="1">Aadhar</option>
-                                        <option value="2">Driving License</option>
-                                        <option value="3">Other</option>
+                                        <option value="1"
+                                            {{ (old('id_proof_name') ?? '') == '1' ? 'selected' : '' }}>
+                                            Aadhar Card
+                                        </option>
+                                        <option value="2"
+                                            {{ (old('id_proof_name') ?? '') == '2' ? 'selected' : '' }}>
+                                            Driving License
+                                        </option>
+                                        <option value="4"
+                                            {{ (old('id_proof_name') ?? '') == '4' ? 'selected' : '' }}>
+                                            Pan Card
+                                        </option>
+                                        <option value="5"
+                                            {{ (old('id_proof_name') ?? '') == '5' ? 'selected' : '' }}>
+                                            Voter Id
+                                        </option>
+                                        <option value="3"
+                                            {{ (old('id_proof_name') ?? '') == '3' ? 'selected' : '' }}>
+                                            Other
+                                        </option>
                                     </select>
                                     <span class="text-danger">Uploading ID proof is optional do it later.</span>
                                 </div>
