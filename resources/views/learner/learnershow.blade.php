@@ -120,17 +120,21 @@
                         <span>Id Proof</span>
                         <h4>
                             {{-- ID Proof Name --}}
-                            @if($customer->id_proof_name == 1)
-                            Aadhar
+                           @if($customer->id_proof_name == 1)
+                                Aadhar Card
                             @elseif($customer->id_proof_name == 2)
-                            Driving License
+                                Driving License
+                            @elseif($customer->id_proof_name == 4)
+                                Pan Card
+                            @elseif($customer->id_proof_name == 5)
+                                Voter Id
                             @elseif($customer->id_proof_name == 3)
-                            Other
+                                Other
                             @else
-                            Not Updated Yet
+                                Not Updated Yet
                             @endif
 
-
+                            ({{$customer->id_proof_number??''}})
 
                         </h4>
                         {{-- ID Proof File --}}
