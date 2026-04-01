@@ -8,6 +8,7 @@ use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\Library;
 use App\Models\LibraryTransaction;
+use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
@@ -265,7 +266,7 @@ class LibraryController extends Controller
         ]);
     }
 
-    public function switchBranch(Request $request)
+   public function switchBranch(Request $request)
     {
         $request->validate([
             'branch_id' => 'required|integer|min:1|exists:branches,id'
@@ -276,56 +277,29 @@ class LibraryController extends Controller
         try {
 
             $branchId = $request->branch_id;
+            $user = Auth::guard('library_api')->user();
 
-            // ✅ Get logged-in user (multi-guard safe)
-            if (Auth::guard('library_api')->check()) {
+            // ✅ Check branch belongs to same library
+            $libraryId = $user instanceof \App\Models\Library 
+                ? $user->id 
+                : $user->library_id;
 
-                $user = Auth::guard('library_api')->user();
+            $branch = Branch::where('id', $branchId)
+                ->where('library_id', $libraryId)
+                ->first();
 
-                // ✅ Optional: check branch belongs to library
-                $isValid = Branch::where('id', $branchId)
-                    ->where('library_id', $user->id)
-                    ->exists();
-
-                if (!$isValid) {
-                    return response()->json([
-                        'status'  => false,
-                        'message' => 'Invalid branch for this library'
-                    ], 403);
-                }
-
-              Library::where('id', $user->id)
-                    ->update(['current_branch' => $branchId]);
-
-            } 
-            // elseif (Auth::guard('library_user_api')->check()) {
-
-            //     $user = Auth::guard('library_user_api')->user();
-
-            //     // ✅ Optional: validate assigned branches
-            //     $isValid = DB::table('branch_user')
-            //         ->where('user_id', $user->id)
-            //         ->where('branch_id', $branchId)
-            //         ->exists();
-
-            //     if (!$isValid) {
-            //         return response()->json([
-            //             'status'  => false,
-            //             'message' => 'You are not assigned to this branch'
-            //         ], 403);
-            //     }
-
-            //     DB::table('library_users')
-            //         ->where('id', $user->id)
-            //         ->update(['current_branch' => $branchId]);
-
-            // } 
-            else {
-
+            if (!$branch) {
                 return response()->json([
                     'status'  => false,
-                    'message' => 'Unauthorized'
-                ], 401);
+                    'message' => 'Unauthorized branch access'
+                ], 403);
+            }
+
+            // ✅ Update current branch
+            if ($user instanceof \App\Models\Library) {
+                $user->update(['current_branch' => $branchId]);
+            } else {
+                $user->update(['current_branch' => $branchId]);
             }
 
             DB::commit();
@@ -344,7 +318,8 @@ class LibraryController extends Controller
 
             return response()->json([
                 'status'  => false,
-                'message' => $e->getMessage()
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage() // optional (remove in production)
             ], 500);
         }
     }
