@@ -94,6 +94,15 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
     Route::post('/library/user/status', [MasterController::class, 'libraryUserStatus']);
 
+    Route::get('exam/list', [MasterController::class, 'examlist']);
+    Route::post('exam/add', [MasterController::class, 'examstore']);
+    Route::post('exam/detail', [MasterController::class, 'examedit']);
+    Route::post('exam/delete', [MasterController::class, 'examdelete']);
+
+    Route::get('expence/list', [MasterController::class, 'expenseList']);
+    Route::post('expence/save', [MasterController::class, 'expenseStore']);
+    Route::post('expence/detail', [MasterController::class, 'expenseDetail']);
+    Route::post('expence/delete', [MasterController::class, 'expenseDelete']);
 
     Route::post('upload/temp-images', [LibraryController::class, 'uploadTempImages']);
 

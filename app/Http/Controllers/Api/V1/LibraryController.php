@@ -264,5 +264,89 @@ class LibraryController extends Controller
             'files' => $uploadedFiles
         ]);
     }
+
+    public function switchBranch(Request $request)
+    {
+        $request->validate([
+            'branch_id' => 'required|integer|min:1|exists:branches,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $branchId = $request->branch_id;
+
+            // ✅ Get logged-in user (multi-guard safe)
+            if (Auth::guard('library_api')->check()) {
+
+                $user = Auth::guard('library_api')->user();
+
+                // ✅ Optional: check branch belongs to library
+                $isValid = Branch::where('id', $branchId)
+                    ->where('library_id', $user->id)
+                    ->exists();
+
+                if (!$isValid) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Invalid branch for this library'
+                    ], 403);
+                }
+
+              Library::where('id', $user->id)
+                    ->update(['current_branch' => $branchId]);
+
+            } 
+            // elseif (Auth::guard('library_user_api')->check()) {
+
+            //     $user = Auth::guard('library_user_api')->user();
+
+            //     // ✅ Optional: validate assigned branches
+            //     $isValid = DB::table('branch_user')
+            //         ->where('user_id', $user->id)
+            //         ->where('branch_id', $branchId)
+            //         ->exists();
+
+            //     if (!$isValid) {
+            //         return response()->json([
+            //             'status'  => false,
+            //             'message' => 'You are not assigned to this branch'
+            //         ], 403);
+            //     }
+
+            //     DB::table('library_users')
+            //         ->where('id', $user->id)
+            //         ->update(['current_branch' => $branchId]);
+
+            // } 
+            else {
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Branch switched successfully',
+                'data'    => [
+                    'branch_id' => $branchId
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
        
 }

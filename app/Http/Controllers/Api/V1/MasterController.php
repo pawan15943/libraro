@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\City;
+use App\Models\Exam;
 use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\LearnerDetail;
@@ -673,7 +674,7 @@ class MasterController extends Controller
         ]);
     }
 
-   public function deletePlan(Request $request)
+    public function deletePlan(Request $request)
     {
         $libraryId = auth('library_api')->id();
 
@@ -759,6 +760,7 @@ class MasterController extends Controller
         ]);
     }
 
+  
     public function planTypeEdit(Request $request){
         $libraryId = auth('library_api')->id();
         
@@ -1908,7 +1910,364 @@ class MasterController extends Controller
         }
     }
 
+      public function examlist(Request $request)
+    {
+        $libraryId = auth('library_api')->id();
+
+        $exams = Exam::select('id','name','deleted_at')
+            ->get()
+            ->map(function ($exam) {
+
+                // ✅ Check if used in learners table
+                $isUsed =LearnerDetail::where('exam_id', $exam->id)->exists();
+
+                return [
+                    'id'         => $exam->id,
+                    'name'       => $exam->name,
+
+                    'status'     => is_null($exam->deleted_at) ? 'Active' : 'Inactive',
+
+                    'can_delete' => !$isUsed
+                ];
+            });
+
+        return response()->json([
+            'status'  => true,
+            'message' => "Exam fetch successfully",
+            'data'    => $exams
+        ]);
+    }
+    public function examStore(Request $request)
+    {
+        $libraryId = auth('library_api')->id(); // keep if needed, else remove
+
+        $validated = $request->validate([
+
+            'id' => [
+                'nullable',
+                Rule::exists('exams', 'id') // remove where if no library_id
+            ],
+
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('exams', 'name')
+                    ->where(function ($query) {
+                        return $query->whereNull('deleted_at'); // ✅ soft delete safe
+                    })
+                    ->ignore($request->id)
+            ],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            /* =========================
+            DATA PREPARE
+            ========================= */
+            $data = [
+                'name' => $validated['name'],
+            ];
+
+            /* =========================
+            CREATE / UPDATE
+            ========================= */
+
+            if (!empty($validated['id'])) {
+
+                $exam = Exam::findOrFail($validated['id']);
+                $exam->update($data);
+
+                $message = "Exam updated successfully";
+
+            } else {
+
+                // 🔥 Optional: restore if already soft deleted
+                $existing = Exam::withTrashed()
+                    ->where('name', $validated['name'])
+                    ->first();
+
+                if ($existing && $existing->trashed()) {
+                    $existing->restore();
+                    DB::commit();
+
+                    return response()->json([
+                        'status'  => true,
+                        'message' => 'Exam restored successfully',
+                        'data'    => $existing
+                    ]);
+                }
+
+                $exam = Exam::create($data);
+                $message = "Exam created successfully";
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => $message,
+                'data'    => $exam
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function examedit(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:exams,id'
+        ]);
+
+        $exam = Exam::select('id','name')
+            ->findOrFail($request->id);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Exam fetched successfully',
+            'data'    => $exam
+        ]);
+    }
+
+   public function examdelete(Request $request)
+    {
+        $libraryId = auth('library_api')->id(); // keep if needed
+
+        $validated = $request->validate([
+            'id' => [
+                'required',
+                Rule::exists('exams', 'id')
+                // 👉 add this only if exams are library आधारित
+                // ->where(fn($q) => $q->where('library_id', $libraryId))
+            ]
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $exam = Exam::findOrFail($validated['id']);
+
+            /* =========================
+            CHECK DEPENDENCY (Learners)
+            ========================= */
+            $isUsed = LearnerDetail::where('exam_id', $exam->id)->exists();
+
+            if ($isUsed) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Exam cannot be deleted, already assigned to learners'
+                ]);
+            }
+
+            /* =========================
+            SOFT DELETE
+            ========================= */
+            $exam->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Exam deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function expenseList(Request $request)
+    {
+        $data = DB::table('expenses as e')
+            ->leftJoin('monthly_expense as me', 'me.expense_id', '=', 'e.id')
+            ->select(
+                'e.id',
+                'e.name',
+                'e.deleted_at',
+                DB::raw('COUNT(me.id) as used_count')
+            )
+            ->groupBy('e.id', 'e.name', 'e.deleted_at')
+            ->get()
+            ->map(function ($item) {
+
+                return [
+                    'id'         => $item->id,
+                    'name'       => $item->name,
+                    'status'     => is_null($item->deleted_at) ? 'Active' : 'Inactive',
+                    'can_delete' => $item->used_count == 0
+                ];
+            });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Expense list fetched successfully',
+            'data'    => $data
+        ]);
+    }
     
-    
+
+    public function expenseStore(Request $request)
+    {
+        $validated = $request->validate([
+
+            'id' => [
+                'nullable',
+                Rule::exists('expenses', 'id') // ⚠️ confirm table
+            ],
+
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('expenses', 'name')
+                    ->where(fn($q) => $q->whereNull('deleted_at'))
+                    ->ignore($request->id)
+            ],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            $data = [
+                'name' => trim($validated['name'])
+            ];
+
+            /* =========================
+            CREATE / UPDATE
+            ========================= */
+
+            if (!empty($validated['id'])) {
+
+                $item = DB::table('expenses')
+                    ->where('id', $validated['id'])
+                    ->update($data);
+
+                $message = "Expense updated successfully";
+
+            } else {
+
+                // 🔥 restore if soft deleted
+                $existing = DB::table('expenses')
+                    ->where('name', $validated['name'])
+                    ->whereNotNull('deleted_at')
+                    ->first();
+
+                if ($existing) {
+
+                    DB::table('expenses')
+                        ->where('id', $existing->id)
+                        ->update(['deleted_at' => null]);
+
+                    DB::commit();
+
+                    return response()->json([
+                        'status'  => true,
+                        'message' => 'Expense restored successfully'
+                    ]);
+                }
+
+                DB::table('expenses')->insert($data);
+
+                $message = "Expense created successfully";
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => $message
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function expenseDetail(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:expenses,id'
+        ]);
+
+        $data = DB::table('expenses')
+            ->select('id','name')
+            ->where('id', $request->id)
+            ->first();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Expense detail fetched successfully',
+            'data'    => $data
+        ]);
+    }
+
+    public function expenseDelete(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:expenses,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            // ✅ check usage
+            $isUsed = DB::table('monthly_expense')
+                ->where('expense_id', $request->id)
+                ->exists();
+
+            if ($isUsed) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Expense cannot be deleted, already used'
+                ]);
+            }
+
+            // ✅ soft delete
+            DB::table('expenses')
+                ->where('id', $request->id)
+                ->update(['deleted_at' => now()]);
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Expense deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
     
 }
