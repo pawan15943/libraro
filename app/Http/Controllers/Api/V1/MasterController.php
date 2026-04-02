@@ -2009,7 +2009,6 @@ class MasterController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => $message,
-                'data'    => $exam
             ]);
 
         } catch (\Exception $e) {
