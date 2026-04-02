@@ -96,12 +96,12 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/library/user/status', [MasterController::class, 'libraryUserStatus']);
 
     Route::post('exam/list', [MasterController::class, 'examlist']);
-    Route::post('exam/add', [MasterController::class, 'examstore']);
+    Route::post('exam/store', [MasterController::class, 'examstore']);
     Route::post('exam/detail', [MasterController::class, 'examedit']);
     Route::post('exam/delete', [MasterController::class, 'examdelete']);
 
     Route::post('expence/list', [MasterController::class, 'expenseList']);
-    Route::post('expence/save', [MasterController::class, 'expenseStore']);
+    Route::post('expence/store', [MasterController::class, 'expenseStore']);
     Route::post('expence/detail', [MasterController::class, 'expenseDetail']);
     Route::post('expence/delete', [MasterController::class, 'expenseDelete']);
 
