@@ -598,7 +598,7 @@ class ReportController extends Controller
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
         $daymonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $learners = Learner::where('branch_id',getCurrentBranch())->get();
+        $learners = Learner::where('branch_id',getCurrentBranch())->where('status',1)->get();
 
        $attendanceRecords = Attendance::where('branch_id', getCurrentBranch())
         ->where('branch_id', getCurrentBranch())

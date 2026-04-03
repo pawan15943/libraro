@@ -4319,7 +4319,13 @@ class LearnerController extends Controller
 
     public function learnerTransactionActivity($data)
     {
-
+        if($data['payment_mode'] == 1){
+            $paymentmode='ONLINE';
+        }elseif($data['payment_mode'] == 2){
+            $paymentmode='OFFLINE';
+        }else{
+            $paymentmode='PAYLATER';
+        }
 
         LearnerTransactionActivity::create([
             'branch_id'      => getCurrentBranch(),
@@ -4328,7 +4334,7 @@ class LearnerController extends Controller
             'transaction_id' => transaction_id(),
             'particular'     => $data['particular'],
             'payment_type'   => $data['payment_type'],
-            'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
+            'payment_mode'   => $paymentmode,
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
         ]);
