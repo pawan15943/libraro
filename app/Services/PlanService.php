@@ -159,12 +159,12 @@ class PlanService
     $pendingAmount = $totalAmount - $paidAmount;
 
         return [
-            'price' => (float) $planPrice,
-            'locker_amount'   => (float)$lockerAmount,
-            'discount_amount' => (float)$discountAmount,
-            'total_amount'    => (float)$totalAmount,
-            'paid_amount'     => (float)$paidAmount,
-            'pending_amount'  => (float)$pendingAmount,
+            'price' => (string)  $planPrice,
+            'locker_amount'   => (string) $lockerAmount,
+            'discount_amount' => (string) $discountAmount,
+            'total_amount'    => (string) $totalAmount,
+            'paid_amount'     => (string) $paidAmount,
+            'pending_amount'  => (string) $pendingAmount,
             'fixed_billing'   => $hasFixedBilling
         ];
     }

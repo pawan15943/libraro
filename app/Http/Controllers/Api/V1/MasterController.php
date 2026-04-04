@@ -185,13 +185,13 @@ class MasterController extends Controller
     }
     public function plans(Request $request)
     {
-       
-        $request->validate([
-            'library_id' => 'required|exists:libraries,id'
+        $validated = $request->validate([
+            'library_id'       => 'required|exists:libraries,id',
+           
         ]);
-        $libraryId=$request->library_id;
-    
-
+      
+        $libraryId = $request->library_id;
+       
         $plans = Plan::where('library_id',$libraryId)
             ->get(['id', 'name']);
 
@@ -203,20 +203,16 @@ class MasterController extends Controller
     }
     public function getPlanTypeSeatWiseApi(Request $request, PlanService $service)
     {
-         
- 
+       
         $validated = $request->validate([
+            'branch_id'       => 'required|exists:branches,id',
             'seat_no' => 'nullable',
-            'branch_id' => 'required|exists:branches,id'
         ]);
        
-
-        $branchId = $request->branch_id; 
-        
-
+      
         $data = $service->getAvailablePlanTypes(
             $validated['seat_no'] ?? null,
-            $branchId
+            $validated['branch_id']
         );
 
         return response()->json([
@@ -248,11 +244,17 @@ class MasterController extends Controller
 
     public function getPriceApi(Request $request, PlanService $priceService)
     {
+        
         $validated = $request->validate([
             'plan_id'        => 'required|exists:plans,id',
-            'plan_type_id'   => 'required|exists:plan_types,id',
-            'plan_start_date'=> 'nullable|date',
+            'plan_type_id' => [
+                'required',
+                Rule::exists('plan_types', 'id')->where(function ($query) use ($request) {
+                    return $query->where('branch_id', $request->branch_id);
+                }),
+            ],
             'branch_id'      => 'required|exists:branches,id',
+            'plan_start_date'=> 'nullable|date',
 
             'locker_amount'  => 'nullable|numeric',
             'discount_type'  => 'nullable|in:percentage,amount',

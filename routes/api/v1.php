@@ -26,6 +26,11 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
     Route::get('/states', [MasterController::class, 'getStates']);
     Route::get('/cities', [MasterController::class, 'getCities']);
+
+    Route::post('plans', [MasterController::class, 'plans']);
+    Route::post('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
+    Route::post('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
+    Route::post('plan-price', [MasterController::class, 'getPriceApi']);
     
 });
 
@@ -45,10 +50,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     
 
 
-    Route::get('plans', [MasterController::class, 'plans']);
-    Route::get('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
-    Route::get('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
-    Route::get('plan-price', [MasterController::class, 'getPriceApi']);
+   
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
     Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
 

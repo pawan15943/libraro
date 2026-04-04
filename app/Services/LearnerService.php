@@ -767,7 +767,7 @@ class LearnerService
             return [
                 'success' => true,
                 'message' => 'Plan processed successfully',
-                'learner_detail_id' => $learner_detail->id
+                // 'learner_detail_id' => $learner_detail->id
             ];
         } catch (\Exception $e) {
             DB::rollBack();

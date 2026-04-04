@@ -58,6 +58,7 @@ class StoreLearnerRequest extends FormRequest
 
             'paid_amount' => 'required|numeric|min:0',
             'payment_mode' => 'required',
+             'locker_no' => 'nullable|numeric',
         ];
 
         if ($this->general_seat != 'yes') {
