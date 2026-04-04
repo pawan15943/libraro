@@ -518,8 +518,9 @@ private function processAttendance($learnerId, $branchId, $source)
     $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
         ->orderBy('plan_end_date', 'DESC')
         ->first();
+    $learner=Learner::where('id',$learnerId)->withTrashed()->select('status')->first();
 
-    if (!$learnerDetail || $learnerDetail->status != 1) {
+    if (!$learnerDetail || $learner->status != 1) {
          
         $detail = LearnerDetail::withTrashed()
             ->where('learner_id', $learnerId)

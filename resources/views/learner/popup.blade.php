@@ -253,9 +253,12 @@
                                     <label for="">ID Proof Name(Optional)</label>
                                     <select id="id_proof_name" class="form-select" name="id_proof_name">
                                         <option value="">Select Id Proof</option>
-                                        <option value="1">Aadhar</option>
+                                        <option value="1">Aadhar Card</option>
                                         <option value="2">Driving License</option>
+                                        <option value="4">Pan Card</option>
+                                        <option value="5">Voter Id</option>
                                         <option value="3">Other</option>
+                                        
                                     </select>
                                     <span class="text-danger">Uploading ID proof is optional do it later.</span>
                                 </div>

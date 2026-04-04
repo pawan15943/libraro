@@ -32,7 +32,7 @@ class LearnerOperationService
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
            
-           
+         
 
             /* Plan dates */
              if($dto->operation=='CHANGE PLAN'){
@@ -52,7 +52,7 @@ class LearnerOperationService
                 
              }
            
-           
+          
 
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
@@ -67,7 +67,7 @@ class LearnerOperationService
                 $seat=$lastDetail->seat_no;
             }
             
-             
+            
             
             /* Seat check */
            
@@ -279,7 +279,7 @@ class LearnerOperationService
             $status = $customer->status;
         }
        
-
+       
         if(Carbon::parse($lastDetail->plan_end_date) < $today && $endDate > $today && $is_paid == 1){
            
             $detailstatus = 1;
@@ -421,6 +421,7 @@ class LearnerOperationService
         if($dto->locker_no){
             $learner->locker_no = $dto->locker_no;
         }
+        
             // Optional profile fields
         if($dto->name){
             $learner->name = $dto->name;

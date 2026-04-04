@@ -534,6 +534,7 @@ class LibraryController extends Controller
        
         try {
             
+            
              $data = $this->razorpayPaymentCore((int) $subscriptionId,(int) $planMode,(int) $libraryId);
             
         
@@ -664,13 +665,21 @@ class LibraryController extends Controller
                 ->first();
 
             $start = Carbon::parse($last->end_date)->addDay();
-            $status = 0;
+          
         } else {
             $start = now();
-            $status = 1;
+          
         }
 
         $end = $start->copy()->addMonths($duration);
+
+       if ($start->copy()->startOfDay() <= now()->startOfDay()) {
+            $status = 1;
+        } else {
+            $status = 0;
+        }
+       
+     
 
         $transaction->update([
             'start_date'       => $start,
@@ -690,7 +699,14 @@ class LibraryController extends Controller
             if($status==1){
                 Library::where('id', $transaction->library_id)->update([
                     'library_type' => $transaction->subscription,
+                    'status'=>1
                 ]);
+                        // ✅ Deactivate all OTHER active transactions
+                LibraryTransaction::where('library_id', $transaction->library_id)
+                    ->where('id', '!=', $transaction->id) // exclude current
+                    ->where('status', 1)
+                    ->update(['status' => 0]);
+
             }
        
     }
@@ -828,7 +844,7 @@ class LibraryController extends Controller
         ->where('type', 'MONTH')
         ->first();
         $branch=getCurrentBranch();
-       $planTypes = [];
+        $planTypes = [];
 
         if ($branch && $plan) {
             $planTypes = PlanType::with(['price' => function ($q) use ($plan) {

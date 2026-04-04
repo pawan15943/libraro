@@ -43,12 +43,21 @@ class LearnerOperationDTO
 
         public string $operation ,
         public ?float $diffrence_amount,
+        // ✅ ADD THESE (VERY IMPORTANT)
+    public ?string $name = null,
+    public ?string $email = null,
+    public ?string $mobile = null,
+    public ?string $dob = null,
+    public ?string $father_name = null,
+    public ?string $address = null,
+    public ?string $remark = null,
 
     ) {}
 
 
     public static function fromRequest($request)
     {
+       
         return new self(
 
             learner_id:$request->user_id,
@@ -77,7 +86,15 @@ class LearnerOperationDTO
             branch_id:getCurrentBranch(),
             library_id:getLibraryId(),
 
-            operation:$request->payment_type ?? 'RENEW'
+            operation:$request->payment_type ?? 'RENEW',
+                // ✅ OPTIONAL FIELDS
+            name: $request->name ?? null,
+            email: $request->email ?? null,
+            mobile: $request->mobile ?? null,
+            dob: $request->dob ?? null,
+            father_name: $request->father_name ?? null,
+            address: $request->address ?? null,
+            remark: $request->remark ?? null,
 
         );
     }
