@@ -2306,7 +2306,7 @@ class MasterController extends Controller
 
             $newAvailableSeat->push(
                 $seatInfo ?? [
-                    'main' => $seatNo,
+                    'original_seat' => $seatNo,
                     'display' => (string) $seatNo,
                 ]
             );
