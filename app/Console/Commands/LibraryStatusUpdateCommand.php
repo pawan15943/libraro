@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\LibraryService;
 use Illuminate\Console\Command;
+use Log;
 
 class LibraryStatusUpdateCommand extends Command
 {
@@ -26,6 +27,7 @@ class LibraryStatusUpdateCommand extends Command
      */
     public function handle()
     {
+        \Log::info('Library Daily Status Cron Ran at: ' . now());
         $this->info('Library daily status update started.');
 
         app(LibraryService::class)->runDailyUpdate();
