@@ -2270,5 +2270,55 @@ class MasterController extends Controller
             ], 500);
         }
     }
+
+    public function getAvailableSeat(Request $request)
+{
+    $validated = $request->validate([
+        'branch_id' => 'required|exists:branches,id',
+    ]);
+
+    $branch_id = $validated['branch_id'];
+
+    $totalSeats = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch_id)
+        ->value('seats');
+
+    $totalHour = Hour::withoutGlobalScopes()
+        ->where('branch_id', $branch_id)
+        ->value('hour');
+
+    $usedSeats = LearnerDetail::withoutGlobalScopes()
+        ->select('seat_no', DB::raw('SUM(hour) as used_hours'))
+        ->where('branch_id', $branch_id)
+        ->whereNotNull('seat_no')
+        ->where('status', 1)
+        ->groupBy('seat_no')
+        ->pluck('used_hours', 'seat_no');
+
+    $allSeats = collect(generateSeatNumbers());
+    $newAvailableSeat = collect();
+
+    for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+        $usedHours = $usedSeats[$seatNo] ?? 0;
+
+        if ($usedHours < $totalHour) {
+            $seatInfo = $allSeats->firstWhere('main', $seatNo);
+
+            $newAvailableSeat->push(
+                $seatInfo ?? [
+                    'main' => $seatNo,
+                    'display' => (string) $seatNo,
+                ]
+            );
+        }
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Available seats fetched successfully',
+        'data' => $newAvailableSeat->values(),
+        
+    ]);
+}
     
 }

@@ -31,6 +31,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::post('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
     Route::post('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
     Route::post('plan-price', [MasterController::class, 'getPriceApi']);
+    Route::post('get-seat', [MasterController::class, 'getAvailableSeat']);
     
 });
 
