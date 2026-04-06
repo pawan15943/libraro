@@ -100,7 +100,9 @@ $user = getAuthenticatedUser();
                     </small>
                 @else
                     <small class="text-danger ml-2">
-                        <i class="fa fa-clock"></i> Plan expired {{ abs($diffInExtensionDays) }} day{{ abs($diffInExtensionDays) > 1 ? 's' : '' }} ago
+                        {{-- <i class="fa fa-clock"></i> Plan expired {{ abs($diffInExtensionDays) }} day{{ abs($diffInExtensionDays) > 1 ? 's' : '' }} ago --}}
+                        <i class="fa fa-clock"></i> Plan expired {{ abs($librarydiffInDays) }} day{{ abs($librarydiffInDays) > 1 ? 's' : '' }} ago
+
                     </small>
                 @endif
 
