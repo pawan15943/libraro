@@ -305,6 +305,7 @@ class LoadMenus
                     $diffInExtensionDays = null;
                     $inExtension_lib = false;
                 }
+              
 
                 $notificationSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
                     ->select('waba_template_id', 'text_template_id')

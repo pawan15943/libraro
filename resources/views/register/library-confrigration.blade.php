@@ -389,16 +389,24 @@ $(document).on('submit', '#configure', function(e) {
     $('.form-error').remove();
     $('.success-alert').remove();
 
-    // Remove completely empty rows
+   let hasValidRow = false;
+
     $('.plan-row-wrapper').each(function(){
         let dayType = $(this).find('.plan-type').val();
         let start = $(this).find('.start_time').val();
         let end = $(this).find('.end_time').val();
 
-        if(!dayType && !start && !end){
-            $(this).remove();
+        if(dayType || start || end){
+            hasValidRow = true;
         }
     });
+
+    if(!hasValidRow){
+        toastr.error('Please fill at least one shift');
+        
+        submitBtn.prop('disabled', false).html(originalText);
+        return false;
+    }
 
     // Reindex
     $('.plan-row-wrapper').each(function(index){

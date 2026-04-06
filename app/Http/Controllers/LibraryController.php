@@ -369,17 +369,30 @@ class LibraryController extends Controller
     {
         
         
-        $subscriptions = Subscription::with('permissions')->get();
+      
         $premiumSub=Subscription::orderBy('id','DESC')->first();
         $features=DB::table('subscription_plan_features')->where('feature_status',1)->get();
         $library=getLibrary();
+        
+        if($library->library_type){
+              $subscriptions = Subscription::where('id','>=',$library->library_type)->with('permissions')->get();
+        }else{
+              $subscriptions = Subscription::with('permissions')->get();
+        }
+
+        if($library->library_type==2 || $library->library_type==1){
+               $month=[2=>'1 YEARLY',5=>'2 YEARLY'];
+        }else{
+            $month=[1=>'1 MONTHLY',3=>'3 MONTHLY',4=>'6 MONTHLY',2=>'1 YEARLY',5=>'2 YEARLY'];
+        }
+       
       
          if($library->is_paid==1 && (Branch::where('library_id',$library->id)->count()==0)){
              $redirectUrl = $this->libraryService->checkLibraryStatus();
          
             return redirect($redirectUrl);
         }
-        return view('register.plan', compact('subscriptions','premiumSub','features'));
+        return view('register.plan', compact('subscriptions','premiumSub','features','month'));
     }
 
     // public function store(Request $request,RegisterLibrary $action)
@@ -597,20 +610,17 @@ class LibraryController extends Controller
 
         /* ---------------- TRANSACTION ---------------- */
 
-        $transaction = LibraryTransaction::updateOrCreate(
-            [
-                'library_id' => $libraryId,
-                'is_paid'    => 0,
-            ],
-            [
-                'subscription' => $subscriptionId,
+        $transaction = LibraryTransaction::create([
+            'library_id'  => $libraryId,
+           'subscription' => $subscriptionId,
                 'amount'       => $amount,
                 'paid_amount'  => $finalAmount,
                 'month'        => $month,
                 'gst'          => $gst,
                 'discount'     => $discount,
-            ]
-        );
+                'is_paid'    => 0,
+            
+        ]);
         /* ---------------- For Free Plan ---------------- */
         if ($finalAmount <= 0) {
             return [
@@ -693,21 +703,32 @@ class LibraryController extends Controller
 
         $this->handleReffrel($transaction, $status);
 
+                // ✅ Always mark paid
         Library::where('id', $transaction->library_id)
             ->update(['is_paid' => 1]);
 
-            if($status==1){
-                Library::where('id', $transaction->library_id)->update([
-                    'library_type' => $transaction->subscription,
-                    'status'=>1
-                ]);
-                        // ✅ Deactivate all OTHER active transactions
-                LibraryTransaction::where('library_id', $transaction->library_id)
-                    ->where('id', '!=', $transaction->id) // exclude current
-                    ->where('status', 1)
-                    ->update(['status' => 0]);
+        if ($status == 1) {
 
+            $hasBranch = Branch::where('library_id', $transaction->library_id)->exists();
+
+            $updateData = [
+                'library_type' => $transaction->subscription,
+            ];
+
+            // ✅ Only set status if branch exists
+            if ($hasBranch) {
+                $updateData['status'] = 1;
             }
+
+            // ✅ Single update query
+            Library::where('id', $transaction->library_id)->update($updateData);
+
+            // ✅ Deactivate all OTHER active transactions
+            LibraryTransaction::where('library_id', $transaction->library_id)
+                ->where('id', '!=', $transaction->id)
+                ->where('status', 1)
+                ->update(['status' => 0]);
+        }
        
     }
 
@@ -1262,6 +1283,7 @@ class LibraryController extends Controller
 
    public function configrationStore(Request $request,LibraryConfigurationService $shiftService)
     {
+        
         /* =========================
         FILTER EMPTY ROWS
         ========================= */
