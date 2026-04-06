@@ -191,8 +191,21 @@ class AdminController extends Controller
             if (!$library_tra || !$library_tra->end_date) {
                 return redirect()->back()->with('error', 'Please select the right payment.');
             }
-            $start_date = Carbon::parse($library_tra->end_date)->addDay()->format('Y-m-d');
-    
+           
+            if (LibraryTransaction::where('library_id', $library_tra->library_id)
+                ->where('status', 1)->exists()) {
+
+                $last = LibraryTransaction::where('library_id', $library_tra->library_id)
+                    ->where('status', 1)
+                    ->latest()
+                    ->first();
+
+                $start = Carbon::parse($last->end_date)->addDay();
+            
+            } else {
+                $start = now();
+            
+            }
             if ($request->month == 'monthly') {
                 $end_date = Carbon::parse($start_date)->addMonth()->format('Y-m-d');
                 $month = 1;
@@ -202,7 +215,11 @@ class AdminController extends Controller
             }
     
             // Set status based on start date
-            $status = ($start_date > date('Y-m-d')) ? 0 : 1;
+             if ($start->copy()->startOfDay() <= now()->startOfDay()) {
+                $status = 1;
+            } else {
+                $status = 0;
+            }
         }
     
         if ($request->payment == 'pre') {
