@@ -21,7 +21,7 @@
                     <div class="col-lg-6">
                         <div class="input-control">
                             <label for="name"> Branch Name <span>*</span></label>
-                            <input type="text" id="name" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $branch->name ?? '') }}" placeholder="Enter Branch name" {{ isset($branch) ? 'readonly' : '' }}>
+                            <input type="text" id="name" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $branch->name ?? optional(getLibrary())->library_name ?? '') }}" placeholder="Enter Branch name" {{ isset($branch) ? 'readonly' : '' }}>
                             @error('name')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -46,7 +46,7 @@
                     <!-- Branch Email -->
                     <div class="col-lg-6">
                         <label for="email">Email Id <span>*</span></label>
-                        <input type="email" id="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $branch->email ?? '') }}">
+                        <input type="email" id="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $branch->email ?? optional(getLibrary())->email ?? '') }}">
                         @error('email')
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
@@ -55,7 +55,7 @@
                     <!-- Branch Contact -->
                     <div class="col-lg-6">
                         <label for="mobile">Contact No (WhatsApp No.) <span>*</span></label>
-                        <input type="text" id="mobile" class="form-control digit-only @error('mobile') is-invalid @enderror" name="mobile" maxlength="10" value="{{ old('mobile', $branch->mobile ?? '') }}">
+                        <input type="text" id="mobile" class="form-control digit-only @error('mobile') is-invalid @enderror" name="mobile" maxlength="10" value="{{ old('mobile', $branch->mobile ?? optional(getLibrary())->library_mobile ?? '') }}">
                         @error('mobile')
                         <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
