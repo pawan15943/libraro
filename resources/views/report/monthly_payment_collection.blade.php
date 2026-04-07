@@ -117,14 +117,14 @@ $currentMonth = date('m');
                         </td>
                         @endif
 
-                        <td>{{ $row->seat_no ?? 'GEN' }}</td>
-                        <td class="uppercase text-start px-4">{{ $row->name ?? '' }}</td>
+                        <td>{{ $row->payment_type=='EXPENSE' ? 'EXPENSE' : ($row->seat_no ?? 'GEN') }}</td>
+                        <td class="uppercase text-start px-4">{{ $row->payment_type=='EXPENSE' ? $row->payment_type : ($row->name ? $row->name : '')}}</td>
                         <td class="text-left px-4 
                                 {{ $row->dr_cr == 'Cr' ? 'text-success' : 'text-danger' }}" style="text-align: end !important; font-weight:700;">
 
                             {{ $row->dr_cr == 'Cr' ? '+' : '-' }}{{ number_format($row->amount, 0) }}
                         </td>
-                        <td>{{ $row->payment_type }}</td>
+                        <td class="uppercase text-start px-4">{{ $row->payment_type=='EXPENSE' ? $row->particular : $row->payment_type }}</td>
                         <td>
                             <span class="{{ $row->dr_cr == 'Cr' ? 'text-success' : 'text-danger' }}">
                                 {{ $row->dr_cr == 'Cr' ? 'CREDIT' : 'DEBIT' }}

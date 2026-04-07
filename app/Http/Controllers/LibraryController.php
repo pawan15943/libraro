@@ -2096,9 +2096,9 @@ class LibraryController extends Controller
             $particular=$request->name ;
         }
         if($request->payment_mode==1){
-            $mode='UPI';
+            $mode='ONLINE';
         }elseif($request->payment_mode==2){
-             $mode='CASH';
+             $mode='OFFLINE';
         }else{
              $mode='OTHER';
         }
