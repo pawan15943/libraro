@@ -257,10 +257,35 @@ class MasterController extends Controller
             'plan_start_date'=> 'nullable|date',
 
             'locker_amount'  => 'nullable|numeric',
-            'discount_type'  => 'nullable|in:percentage,amount',
-            'discount_value' => 'nullable|numeric',
+            'discount_type' => 'nullable|in:percentage,amount|required_with:discount_value',
+
+            'discount_value' => [
+                'nullable',
+                'numeric',
+                'required_with:discount_type',
+                function ($attribute, $value, $fail) use ($request) {
+
+                    // Percentage validation
+                    if ($request->discount_type === 'percentage') {
+                        if ($value > 100) {
+                            $fail('Percentage cannot be more than 100.');
+                        }
+                        if ($value < 0) {
+                            $fail('Percentage cannot be negative.');
+                        }
+                    }
+
+                    // Amount validation
+                    if ($request->discount_type === 'amount') {
+                        if ($value < 0) {
+                            $fail('Discount amount cannot be negative.');
+                        }
+                    }
+                },
+            ],
             'paid_amount'    => 'nullable|numeric'
         ]);
+        
 
        $result = $priceService->calculatePrice(
             $validated['plan_id'],

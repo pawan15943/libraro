@@ -87,7 +87,12 @@ class PlanService
             $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
                 return !in_array($planType->id, $planTypesRemovals);
             })->map(function ($planType) {
-                return ['id' => $planType->id, 'name' => $planType->name];
+                return [
+                    'id'         => $planType->id,
+                    'name'       => $planType->name,
+                    'start_time' => $planType->start_time,
+                    'end_time'   => $planType->end_time,
+                ];
             })->values(); // Ensure the keys are reset to a continuous numerical index
         } else {
 
@@ -96,10 +101,10 @@ class PlanService
 
             if ($total_hour < 24) {
                 $filteredPlanTypes = PlanType::byBranch($branchId)->whereNotIn('day_type_id', [8, 9])
-                    ->select('id', 'name')
+                ->select('id', 'name', 'start_time', 'end_time')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::byBranch($branchId)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::byBranch($branchId) ->select('id', 'name', 'start_time', 'end_time')->get();
             }
         }
 

@@ -23,17 +23,13 @@ class LearnerController extends Controller
 
             $result = $service->processLearnerStore($processData);
 
-            if ($request->expectsJson()) {
-                return response()->json($result);
-            }
+            return response()->json([
+                'status'  => $result['success'],   
+              
+                'message' => $result['message'],
+              
+            ]);
 
-            if ($result['success']) {
-                return redirect()->route('learners')
-                    ->with('success',$result['message']);
-            }
-
-            return redirect()->back()
-                ->with('error',$result['message']);
 
         } catch (\Exception $e) {
 
@@ -43,7 +39,7 @@ class LearnerController extends Controller
             ]);
 
             return response()->json([
-                'success'=>false,
+                'status'=>false,
                 'message'=>'Something went wrong while creating learner!'
             ],500);
         }
@@ -55,14 +51,14 @@ class LearnerController extends Controller
             $data = $service->getLearnerDetails($id);
 
             return response()->json([
-                'success' => true,
+                'status' => true,
                 'data' => $data
             ]);
 
         } catch (\Exception $e) {
 
             return response()->json([
-                'success' => false,
+                'status' => false,
                 'message' => $e->getMessage()
             ], 404);
         }
@@ -79,14 +75,14 @@ class LearnerController extends Controller
             $data = $service->getLearnersList($filters);
 
             return response()->json([
-                'success' => true,
+                'status' => true,
                 'data' => $data
             ]);
 
         } catch (\Exception $e) {
 
             return response()->json([
-                'success' => false,
+                'status' => false,
                 'message' => $e->getMessage()
             ], 500);
         }

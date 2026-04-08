@@ -212,7 +212,7 @@ class StoreLearnerRequest extends FormRequest
 
         } elseif (!empty($this->profile_picture) && is_string($this->profile_picture)) {
             
-            $id_proof_file = $this->moveTempFileToPublic(
+            $profile_picture = $this->moveTempFileToPublic(
                 $this->profile_picture,
                 'profile_picture',
                 'uploade/profile_picture'
@@ -290,7 +290,7 @@ class StoreLearnerRequest extends FormRequest
         if (is_string($file)) {
 
             $path = parse_url($file, PHP_URL_PATH);
-            
+
             /* ===== TEMP FILE MOVE ===== */
             if (str_contains($file, '/temp/')) {
 
@@ -320,7 +320,7 @@ class StoreLearnerRequest extends FormRequest
 
                     return $folder . '/' . $fileName;
                 }
-                 return null;
+                
             }
 
             /* ===== ALREADY UPLOADED FILE ===== */
@@ -332,7 +332,6 @@ class StoreLearnerRequest extends FormRequest
                     return substr($path, $pos);
                 }
             }
-            return null;
         }
 
         return null;
