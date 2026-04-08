@@ -196,7 +196,7 @@
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
 $transaction = $value->latestTransaction;
-dd($transaction);
+
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
 

@@ -215,7 +215,7 @@
                                     <input
                                         type="file"
                                         class="form-control image-cropper"
-                                        name="profile_picture" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                        name="profile_picture_image" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
                                     <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
                                 </div>
                                 @endif
@@ -269,7 +269,7 @@
                                 </div>
                                 <div class="col-lg-4">
                                     <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof_file" autocomplete="off">
+                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof" autocomplete="off">
                                     <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
 
                                     <!-- <a href="javascript:;" id="viewButton" style="display: none;">

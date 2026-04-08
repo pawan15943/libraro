@@ -916,6 +916,7 @@ class LearnerService
            if ($data['payment_type']) {
                 $payment_type = $data['payment_type'];
             } 
+            
 
             /* ---------------------------------------------------------
             | 1. Find Learner
@@ -931,6 +932,7 @@ class LearnerService
             /* ---------------------------------------------------------
             | 8. Create Learner Detail
             ---------------------------------------------------------*/
+            
             $learner_detail = LearnerDetail::create([
                 'library_id' => $customer->library_id,
                 'branch_id' => $branchId,

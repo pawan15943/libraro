@@ -6,6 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\Learner;
 use App\Models\PlanType;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class StoreLearnerRequest extends FormRequest
 {
@@ -29,19 +31,24 @@ class StoreLearnerRequest extends FormRequest
 
             'name' => 'required',
             'mobile' => 'required|digits:10',
-
-            'id_proof_file' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
-            'profile_picture' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
-
-            'dob' => 'nullable|date',
+            'dob' => 'nullable|date_format:Y-m-d',
             'father_name' => 'nullable|string|max:255',
             'alternate_mobile' => 'nullable|digits:10',
             'address' => 'nullable|string|max:500',
             'remark' => 'nullable|string|max:1000',
 
+
+            "id_proof_name"=>'nullable',
+            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'id_proof_file' => 'nullable|string',
+            "id_proof_number"=>'nullable',
+            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'profile_picture' => 'nullable|string',
+
+            
+
             'exam_id' => 'nullable|exists:exams,id',
 
-            'plan_start_date' => 'required|date',
             'plan_id' => [
                 'required',
                 Rule::exists('plans', 'id')->where(function ($query) {
@@ -56,10 +63,47 @@ class StoreLearnerRequest extends FormRequest
             ],
             'plan_price_id' => 'required|numeric|min:0',
 
+            'plan_start_date' => 'required|date',
+            
+
             'paid_amount' => 'required|numeric|min:0',
-            'payment_mode' => 'required',
-            'discountType'=>'nullable',
-             'locker_no' => 'nullable|numeric',
+            'payment_mode' => 'required|in:1,2,3',
+            'discountType' => 'nullable|in:amount,percentage',
+            'discount_amount' => 'nullable|numeric|min:0',
+
+            'locker_amount' => [
+                'nullable',
+                'required_if:toggleFieldCheckbox,yes',
+                'numeric'
+            ],
+
+            'locker_no' => [
+                'nullable',
+                'required_if:toggleFieldCheckbox,yes',
+                'numeric'
+            ],
+            'sended_message_type'=>'nullable|in:whatsapp,text,both,no',
+
+            'no_expiry'=>'required|in:0,1',
+            'due_date' => [
+            'nullable',
+            'date',
+                function ($attribute, $value, $fail) {
+
+                    $planPrice = (float) $this->input('plan_price_id', 0);
+                    $paid = (float) $this->input('paid_amount', 0);
+                    $locker = (float) $this->input('locker_amount', 0);
+                    $discount = (float) $this->input('discount_amount', 0);
+
+                    $total = $planPrice + $locker - $discount;
+                    $pending = $total - $paid;
+
+                    if ($pending > 0 && empty($value)) {
+                        $fail('Due date is required if there is pending amount.');
+                    }
+                }
+            ],
+
         ];
 
         if ($this->general_seat != 'yes') {
@@ -116,32 +160,71 @@ class StoreLearnerRequest extends FormRequest
 
         $id_proof_file = null;
 
-        if ($this->hasFile('id_proof_file')) {
+        // if ($this->hasFile('id_proof_file')) {
+        //      $file = $this->file('id_proof_file');
+            
+        //     $name = "id_proof_file".time().$file->getClientOriginalName();
 
-            $file = $this->file('id_proof_file');
-            $name = "id_proof_file".time().$file->getClientOriginalName();
+        //     $file->move('public/uploade/', $name);
 
-            $file->move('public/uploade/', $name);
+        //     $id_proof_file = 'public/uploade/'.$name;
+        // }
 
-            $id_proof_file = 'public/uploade/'.$name;
+
+      
+
+        if ($this->hasFile('id_proof')) {
+  
+            $id_proof_file = $this->moveTempFileToPublic(
+                $this->file('id_proof'),
+                'id_proof_file',
+                'uploade/id_proof_file'
+            );
+
+        } elseif (!empty($this->id_proof_file) && is_string($this->id_proof_file)) {
+            
+            $id_proof_file = $this->moveTempFileToPublic(
+                $this->id_proof,
+                'id_proof_file',
+                'uploade/id_proof_file'
+            );
         }
+        
 
         $profile_picture = null;
 
-        if ($this->hasFile('profile_picture')) {
+        // if ($this->hasFile('profile_picture')) {
 
-            $file = $this->file('profile_picture');
-            $name = "profile_picture".time().$file->getClientOriginalName();
+        //     $file = $this->file('profile_picture');
+        //     $name = "profile_picture".time().$file->getClientOriginalName();
 
-            $file->move('public/uploade/', $name);
+        //     $file->move('public/uploade/', $name);
 
-            $profile_picture = 'public/uploade/'.$name;
+        //     $profile_picture = 'public/uploade/'.$name;
+        // }
+         if ($this->hasFile('profile_picture_image')) {
+  
+            $profile_picture = $this->moveTempFileToPublic(
+                $this->file('profile_picture_image'),
+                'profile_picture',
+                'uploade/profile_picture'
+            );
+
+        } elseif (!empty($this->profile_picture) && is_string($this->profile_picture)) {
+            
+            $id_proof_file = $this->moveTempFileToPublic(
+                $this->profile_picture,
+                'profile_picture',
+                'uploade/profile_picture'
+            );
         }
+
+        $seat_no = ($this->seat_no == 0) ? null : $this->seat_no;
 
         return [
 
             'learner_data'=>[
-                'seat_no'=>$this->seat_no,
+                'seat_no'=>$seat_no,
                 'name'=>$this->name,
                 'mobile'=>encryptData($this->mobile),
                 'email'=>$this->email ? encryptData($this->email) : null,
@@ -182,5 +265,76 @@ class StoreLearnerRequest extends FormRequest
             'library_id'=>getLibraryId(),
             'exam_id'=>$this->exam_id
         ];
+    }
+
+
+    function moveTempFileToPublic($file, $filePrefix = 'file', $folder)
+    {
+        /* ========= CASE 1: FILE (WEB) ========= */
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+
+            $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            $destinationFolder = public_path($folder);
+
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+
+            $file->move($destinationFolder, $fileName);
+
+            return $folder . '/' . $fileName;
+        }
+
+        /* ========= CASE 2: STRING (APP URL) ========= */
+        if (is_string($file)) {
+
+            $path = parse_url($file, PHP_URL_PATH);
+            
+            /* ===== TEMP FILE MOVE ===== */
+            if (str_contains($file, '/temp/')) {
+
+                if (str_contains($path, '/storage/')) {
+                    $path = substr($path, strpos($path, '/storage/') + 9);
+                }
+
+                if (!str_starts_with($path, 'temp/')) {
+                    return null;
+                }
+
+                $sourcePath = storage_path('app/public/' . $path);
+
+                if (File::exists($sourcePath)) {
+
+                    $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . pathinfo($path, PATHINFO_EXTENSION);
+
+                    $destinationFolder = public_path($folder);
+
+                    if (!File::exists($destinationFolder)) {
+                        File::makeDirectory($destinationFolder, 0777, true);
+                    }
+
+                    $destinationPath = $destinationFolder . '/' . $fileName;
+
+                    File::move($sourcePath, $destinationPath);
+
+                    return $folder . '/' . $fileName;
+                }
+                 return null;
+            }
+
+            /* ===== ALREADY UPLOADED FILE ===== */
+            if (str_contains($file, '/uploade/')) {
+
+                $pos = strpos($path, 'uploade/');
+
+                if ($pos !== false) {
+                    return substr($path, $pos);
+                }
+            }
+            return null;
+        }
+
+        return null;
     }
 }
