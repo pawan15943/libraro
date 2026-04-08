@@ -46,10 +46,19 @@ class Learner extends Authenticatable
     {
         return $this->hasMany(LearnerDetail::class);
     }
+     public function learnerDetail()
+    {
+        return $this->belongsTo(LearnerDetail::class, 'learner_detail_id');
+    }
 
     public function learnerTransactions()
     {
         return $this->hasMany(LearnerTransaction::class);
+    }
+     // 🔥 IMPORTANT (use this in UI)
+    public function latestTransaction()
+    {
+        return $this->hasOne(LearnerTransaction::class)->latestOfMany();
     }
 
     public function getEmailAttribute($value)

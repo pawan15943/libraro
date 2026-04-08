@@ -15,12 +15,14 @@ use App\Models\PlanType;
 use App\Models\Seat;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Log;
 
 
 class LearnerService
 {
     public function runDailyUpdate()
     {
+        \Log::info('Learner Daily Status Cron Ran');
         $today = Carbon::today()->format('Y-m-d');
 
         DB::transaction(function () use ($today) {
@@ -899,7 +901,7 @@ class LearnerService
             }
 
             if(($detailstatus == 0 || $status == 0) && $data['learner_data']['no_expiry']==1){
-                throw new \Exception('Your plan duration has completed. Please select a higher duration plan to continue using the non expired seat.');
+                throw new \Exception('You can only select a back date within your plan duration.');
             }
            
 

@@ -152,9 +152,7 @@ class LibraryConfigurationService
 
            $floorses = $validated['floors'] ?? [];
           
-           $plans = $request->has('plan') 
-            ? ($validated['plans'] ?? []) 
-            : null;
+           $plans = $validated['plans'] ?? null;
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];

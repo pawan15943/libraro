@@ -2,8 +2,41 @@
 @section('content')
 
 <!-- Content Header (Page header) -->
-
+<div class="modal fade" id="cf-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-bordered">
+            <tr>
+                <th>Sno.</th>
+                <th>Plan Price</th>
+                <th>Payment Type </th>
+                <th>Amt.</th>
+                <th>Receipt</th>
+            </tr>
+            <tr>
+                <td>1.</td>
+                <td>1100</td>
+                <td>Pay Later</td>
+                <td>1000</td>
+                <td><i class="fa fa-download"></i></td>
+            </tr>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
 @if ( $learners->total()==0)
+
+
 <div class="no-data-found">
     <script
         src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
@@ -35,7 +68,7 @@
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
 
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
- <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
+        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
         
         @can('has-permission', 'Export Library Seats')
         @if(!in_array('22', toggleHideField()))
@@ -162,7 +195,8 @@
 @php
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
-$transaction = learnerTransaction($value->id, $learner_detail_id);
+$transaction = $value->latestTransaction;
+dd($transaction);
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
 
@@ -482,9 +516,9 @@ $learner_id=$value->id;
                             @if(paylater($learner_detail_id) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount!=0)
                             <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    PayLater {{ rtrim(rtrim(number_format(   (totalPending($learner_id)), 2, '.', ''), '0'), '.') }}
+                                    PayLater  {{ rtrim(rtrim(number_format(   (totalPending($learner_id)), 2, '.', ''), '0'), '.') }}
                                 </span>
-                            </a>
+                            </a> &nbsp;<a href="javascript:;" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                             @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 

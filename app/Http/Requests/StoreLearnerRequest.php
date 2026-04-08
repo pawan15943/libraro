@@ -58,6 +58,7 @@ class StoreLearnerRequest extends FormRequest
 
             'paid_amount' => 'required|numeric|min:0',
             'payment_mode' => 'required',
+            'discountType'=>'nullable',
              'locker_no' => 'nullable|numeric',
         ];
 

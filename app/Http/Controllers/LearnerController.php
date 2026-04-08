@@ -1635,7 +1635,9 @@ class LearnerController extends Controller
     {
 
 
-        $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = Learner::withTrashed()->with([
+                'latestTransaction:id,pending_amount,total_amount,due_date,locker_amount'
+            ])->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
 
