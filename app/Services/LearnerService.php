@@ -1190,6 +1190,7 @@ class LearnerService
 
                 $q->where('learners.name','LIKE',"%{$search}%")
                 ->orWhere('learners.mobile','LIKE',"%{$encryptdata}%")
+                ->orWhere('learners.learner_no','LIKE',"%{$search}%")
                 ->orWhere('learner_detail.seat_no','LIKE',"%{$search}%")
                 ->orWhere('learners.email',$encryptdata);
 

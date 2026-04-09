@@ -195,7 +195,8 @@
 @php
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
-$transaction = $value->latestTransaction;
+// $transaction = $value->latestTransaction;
+$transaction = learnerTransaction($value->id, $learner_detail_id);
 
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
@@ -608,7 +609,6 @@ $learner_id=$value->id;
 
 <!-- /.content -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 
 <script>
     $(document).ready(function() {

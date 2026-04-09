@@ -114,7 +114,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::prefix('library/learners')->group(function () {
 
         Route::post('/seat-book', [LearnerController::class,'store']);
-        Route::get('/list', [LearnerController::class,'index']);
+        Route::post('/list', [LearnerController::class,'index']);
         Route::get('/{id}', [LearnerController::class,'show']);
         Route::put('/{id}', [LearnerController::class,'update']);
 
