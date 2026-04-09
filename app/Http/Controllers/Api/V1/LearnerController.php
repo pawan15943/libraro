@@ -67,6 +67,13 @@ class LearnerController extends Controller
     {
         try {
 
+            // map page_no to page
+            if ($request->has('page_no')) {
+                $request->merge([
+                    'page' => $request->page_no
+                ]);
+            }
+
             $filters = [
                 'search' => $request->search,
                 'status' => $request->status

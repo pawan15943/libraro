@@ -1204,6 +1204,9 @@ class LearnerService
         if (!empty($filters['status'])) {
 
             switch ($filters['status']) {
+                case 'deleted':
+                    $query->whereNotNull('learners.deleted_at');
+                break;
 
                 case 'active':
 
@@ -1326,7 +1329,9 @@ class LearnerService
                 'name'=>$learner->name,
                 'seat_no'=>$learner->seat_no ?? 'GEN',
 
-                'profile_picture'=>$learner->profile_picture ?? '',
+                'profile_picture' => $learner->profile_picture 
+                ? asset($learner->profile_picture) 
+                : '',
 
                 'plan'=>$learner->plan_name ?? '',
                 'plan_type'=>$learner->plan_type ?? '',
