@@ -1295,7 +1295,7 @@ class LearnerService
         FORMAT RESPONSE
         ------------------------------*/
 
-        $learners->getCollection()->transform(function($learner) use ($user){
+        $learners->getCollection()->transform(function($learner){
 
         $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
              $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
