@@ -1138,16 +1138,16 @@ class LearnerService
             ],
 
             'payment_information'=>[
-                'total_amount'=>$transaction->total_amount,
-                'paid_amount'=>$transaction->paid_amount,
-                'pending_amount'=>$transaction->pending_amount,
+                'total_amount'=>(string) $transaction->total_amount,
+                'paid_amount'=>(string) $transaction->paid_amount,
+                'pending_amount'=>(string) $transaction->pending_amount,
                 'paid_date'=>$transaction->paid_date ?? '',
                 'payment_mode'=>$detail->payment_mode,
-                 'locker_amount'=>$transaction->locker_amount,
+                 'locker_amount'=>(string) $transaction->locker_amount,
                 'discount'=>$transaction->discount_amount ?? '0',
-                'token_money'=>$transaction->token_money ?? '0',
-                'miscellaneous'=>$transaction->miscellaneous ?? '0',
-                'pending_refund'=>$transaction->refund ?? '0',
+                'token_money'=>(string) $transaction->token_money ?? '0',
+                'miscellaneous'=>(string) $transaction->miscellaneous ?? '0',
+                'pending_refund'=>(string) $transaction->refund ?? '0',
                 'due_date'=>$transaction->due_date ?? '',
                 'transaction'=>$transaction->transaction_id ?? '',
                
@@ -1167,15 +1167,15 @@ class LearnerService
             'all_transaction'=>$transaction_all->map(function($tx){
 
                 return [
-                    'total_amount'=>$tx->total_amount,
-                    'paid_amount'=>$tx->paid_amount,
-                    'pending_amount'=>$tx->pending_amount,
+                    'total_amount'=>(string) $tx->total_amount,
+                    'paid_amount'=>(string) $tx->paid_amount,
+                    'pending_amount'=>(string) $tx->pending_amount,
                     'paid_date'=>$tx->paid_date ?? '',
-                    'locker_amount'=>$tx->locker_amount,
+                    'locker_amount'=>(string) $tx->locker_amount,
                     'discount'=>$tx->discount_amount ?? '0',
-                    'token_money'=>$tx->token_money ?? '0',
-                    'miscellaneous'=>$tx->miscellaneous ?? '0',
-                    'pending_refund'=>$tx->refund ?? '0',
+                    'token_money'=>(string) $tx->token_money ?? '0',
+                    'miscellaneous'=>(string) $tx->miscellaneous ?? '0',
+                    'pending_refund'=>(string) $tx->refund ?? '0',
                     'due_date'=>$tx->due_date ?? '',
                     'transaction'=>$tx->transaction_id ?? '',
                 ];
