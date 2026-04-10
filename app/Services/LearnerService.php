@@ -16,6 +16,7 @@ use App\Models\Seat;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Log;
+use Auth;
 
 
 class LearnerService
@@ -1294,7 +1295,7 @@ class LearnerService
         FORMAT RESPONSE
         ------------------------------*/
 
-        $learners->getCollection()->transform(function($learner){
+        $learners->getCollection()->transform(function($learner) use ($user){
 
         $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
              $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
@@ -1319,7 +1320,7 @@ class LearnerService
                      $mainstatus=$planStatus['status'];
              }
              
-           
+            
 
 
             return [
@@ -1339,10 +1340,13 @@ class LearnerService
                 'plan_end_date'=>$learner->plan_end_date ?? '',
 
                 'days_left'=>$planStatus['diff_in_days'],
+                'extend_days_left'=>$planStatus['diff_extend_day'],
 
                 'status'=>$status,
-                'mainstatus'=>$mainstatus
-
+                'mainstatus'=>$mainstatus,
+                'payment'=>learnerTransactionStatus($learner->id),
+                
+               
             ];
 
         });
