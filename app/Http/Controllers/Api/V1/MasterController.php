@@ -156,7 +156,7 @@ class MasterController extends Controller
         $monthlyOptions = [
             ['value' => '30', 'label' => '30 Days'],
             ['value' => '28', 'label' => '28 Days'],
-            ['value' => '', 'label' => 'Caleder wise'],
+            ['value' => '', 'label' => 'Calendar wise'],
         ];
          $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get() 
          ->map(function ($item) {

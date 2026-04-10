@@ -44,9 +44,20 @@ class LearnerController extends Controller
             ],500);
         }
     }
-    public function show($id, LearnerService $service)
+  
+
+    public function show(Request $request, LearnerService $service)
     {
         try {
+
+            $id = $request->id; // or $request->input('id');
+
+            if (!$id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Learner id is required'
+                ], 400);
+            }
 
             $data = $service->getLearnerDetails($id);
 
@@ -83,7 +94,7 @@ class LearnerController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data' => $data
+                'data' => $data->items()
             ]);
 
         } catch (\Exception $e) {

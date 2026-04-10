@@ -254,8 +254,8 @@ if (!function_exists('learnerTransactionStatus')) {
 
         return [
             'status' => $status, // overdue | paylater | pending | paid
-            'amount' => $totalPending,
-            'due_date' => $dueDate,
+            'pending_amount' => $totalPending,
+            'due_date' => $dueDate ?? '',
             'pending_refund' => $totalRefund
         ];
     }

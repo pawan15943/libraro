@@ -1048,10 +1048,10 @@ class LearnerService
     public function getLearnerDetails($learnerId)
     {
 
+    
         $branchId = getCurrentBranch();
 
-        $learner = Learner::where('branch_id',$branchId)
-            ->find($learnerId);
+        $learner = Learner::find($learnerId);
 
         if(!$learner){
             throw new \Exception("Learner not found");
@@ -1062,31 +1062,61 @@ class LearnerService
             'planType'
         ])
         ->where('learner_id',$learnerId)
-        ->where('status',1)
         ->latest()
         ->first();
 
         $transaction = LearnerTransaction::where('learner_detail_id',$detail->id)
             ->latest()
             ->first();
-        $transaction_all= LearnerTransactionActivity::where('learner_id',$learnerId)->get();
+
+        $transaction_all=LearnerTransaction::where('learner_id',$learnerId)->get();
+
+        $transaction_all_activity= LearnerTransactionActivity::where('learner_id',$learnerId)->get();
+
         $all_detail=LearnerDetail::with([
             'plan',
             'planType'
         ])
         ->where('learner_id',$learnerId)->get();
 
+
+        $operation = optional(getLearnerOperation($detail->id))->operation;    
+        $planStatus =getPlanStatusDetails($detail->plan_end_date);
+        if($operation == 'closeSeat'){
+            $status='Closed';
+        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            $status='Deleted';
+        }else{
+            $status = strip_tags(
+                getUserStatusWithSpan($detail->plan_end_date,$learner->id)
+            );
+        }
+    
+        
+    
+        if($operation == 'closeSeat'){
+            $mainstatus='Closed';
+        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            $mainstatus='Deleted';
+        }else{
+            $mainstatus=$planStatus['status'];
+        }
+
+
+
         return [
 
             'personal_info'=>[
                 'learner_no'=>$learner->learner_no,
-                'seat_no'=>$learner->seat_no ,
+                'seat_no'=>$learner->seat_no?? 0,
                 'name'=>$learner->name,
-                'mobile'=>decryptData($learner->mobile),
-                'email'=>$learner->email ? decryptData($learner->email) : '',
-                'dob'=>$learner->dob,
-                'father_name'=>$learner->father_name,
-                'profile_picture'=>$learner->profile_picture,
+                'mobile'=>$learner->mobile,
+                'email'=>$learner->email ? $learner->email : '',
+                'dob'=>$learner->dob ?? '',
+                'father_name'=>$learner->father_name ?? '',
+                'profile_picture'=>$learner->profile_picture 
+                                ? asset($learner->profile_picture) 
+                                : '',
                
                
                 
@@ -1096,37 +1126,63 @@ class LearnerService
                 'plan'=>$detail->plan->name ?? '',
                 'plan_type'=>$detail->planType->name ?? '',
                 'price'=>$detail->plan_price_id,
-                'duration'=>$detail->plan->monthdays ?? '',
+                'monthdays'=>$detail->plan->monthdays ?? 'Calendar wise',
                 'start_date'=>$detail->plan_start_date,
                 'end_date'=>$detail->plan_end_date,
                 'start_time'=>$detail->planType->start_time ?? '',
                 'end_time'=>$detail->planType->end_time ?? '',
+                'status'=>$status,
+                'mainstatus'=>$mainstatus,
+                'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
+                'locker_no'=>$learner->locker_no ?? ''
             ],
 
             'payment_information'=>[
                 'total_amount'=>$transaction->total_amount,
                 'paid_amount'=>$transaction->paid_amount,
                 'pending_amount'=>$transaction->pending_amount,
-                'paid_date'=>$transaction->paid_date,
+                'paid_date'=>$transaction->paid_date ?? '',
                 'payment_mode'=>$detail->payment_mode,
                  'locker_amount'=>$transaction->locker_amount,
-                'discount'=>$transaction->discount_amount,
-                'token_money'=>$transaction->token_money,
-                'miscellaneous'=>$transaction->miscellaneous,
-                'pending_refund'=>$transaction->refund,
-                'due_date'=>$transaction->due_date,
+                'discount'=>$transaction->discount_amount ?? '0',
+                'token_money'=>$transaction->token_money ?? '0',
+                'miscellaneous'=>$transaction->miscellaneous ?? '0',
+                'pending_refund'=>$transaction->refund ?? '0',
+                'due_date'=>$transaction->due_date ?? '',
+                'transaction'=>$transaction->transaction_id ?? '',
                
             ],
 
             'other_details'=>[
-                'alternate_mobile'=>$learner->alternate_mobile,
+                'alternate_mobile'=>$learner->alternate_mobile ?? '',
                 'id_proof_name'=>$learner->id_proof_name,
-                'id_proof_image'=>$learner->id_proof_file,
-                'address'=>$learner->address,
-                'remark'=>$learner->remark,
+                'id_proof_image'=> $learner->id_proof_file 
+                                ? asset($learner->id_proof_file) 
+                                : '',
+               
+                'address'=>$learner->address ?? '',
+                'remark'=>$learner->remark ?? '',
             ],
 
-            'all_transaction'=>$transaction_all->map(function($txn){
+            'all_transaction'=>$transaction_all->map(function($tx){
+
+                return [
+                    'total_amount'=>$tx->total_amount,
+                    'paid_amount'=>$tx->paid_amount,
+                    'pending_amount'=>$tx->pending_amount,
+                    'paid_date'=>$tx->paid_date ?? '',
+                    'locker_amount'=>$tx->locker_amount,
+                    'discount'=>$tx->discount_amount ?? '0',
+                    'token_money'=>$tx->token_money ?? '0',
+                    'miscellaneous'=>$tx->miscellaneous ?? '0',
+                    'pending_refund'=>$tx->refund ?? '0',
+                    'due_date'=>$tx->due_date ?? '',
+                    'transaction'=>$tx->transaction_id ?? '',
+                ];
+
+            }),
+
+            'all_transaction_activity'=>$transaction_all_activity->map(function($txn){
 
                 return [
                     'transaction_id'=>$txn->transaction_id ?? '',
@@ -1263,6 +1319,17 @@ class LearnerService
 
                 break;
 
+                case 'pending_payment':
+
+                    $query->whereExists(function ($q) {
+                        $q->select(\DB::raw(1))
+                            ->from('learner_transactions')
+                            ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                            ->where('learner_transactions.pending_amount', '>', 0);
+                    });
+
+                break;
+
             }
         }
 
@@ -1275,6 +1342,7 @@ class LearnerService
             'learners.id',
             'learners.learner_no',
             'learners.name',
+            'learners.dob',
             'learners.profile_picture',
 
             'learner_detail.seat_no',
@@ -1298,27 +1366,28 @@ class LearnerService
         $learners->getCollection()->transform(function($learner){
 
         $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
-             $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
-             $planStatus =getPlanStatusDetails($learner->plan_end_date);
-            if($operation == 'closeSeat'){
-                     $status='Closed';
-             }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
-                    $status='Deleted';
-             }else{
-                     $status = strip_tags(
-                        getUserStatusWithSpan($learner->plan_end_date,$learner->id)
-                    );
-             }
-            
-             
-            
-             if($operation == 'closeSeat'){
-                     $mainstatus='Closed';
-             }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
-                    $mainstatus='Deleted';
-             }else{
-                     $mainstatus=$planStatus['status'];
-             }
+
+        $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
+        $planStatus =getPlanStatusDetails($learner->plan_end_date);
+        if($operation == 'closeSeat'){
+                $status='Closed';
+        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            $status='Deleted';
+        }else{
+                $status = strip_tags(
+                getUserStatusWithSpan($learner->plan_end_date,$learner->id)
+            );
+        }
+    
+        
+    
+        if($operation == 'closeSeat'){
+                $mainstatus='Closed';
+        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            $mainstatus='Deleted';
+        }else{
+                $mainstatus=$planStatus['status'];
+        }
              
             
 
@@ -1328,6 +1397,7 @@ class LearnerService
                 'id'=>$learner->id,
                 'learner_no'=>$learner->learner_no,
                 'name'=>$learner->name,
+                'dob'=>$learner->dob,
                 'seat_no'=>$learner->seat_no ?? 'GEN',
 
                 'profile_picture' => $learner->profile_picture 
