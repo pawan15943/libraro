@@ -1207,7 +1207,8 @@ class LearnerController extends Controller
 
         // ✅ Call reusable function
         $activityData = [
-            'learner_id'   => $tranDetail->learner_id,
+            'learner_id' => $tranDetail->learner_id,
+            'learner_transaction_id' => $tranDetail->id,
             'particular'   => 'Pay later',
             'payment_type' => 'SEAT ASSIGNMENT',
             'payment_mode' => $request->payment_mode,
@@ -3421,6 +3422,144 @@ class LearnerController extends Controller
         return response()->json($data);
     }
 
+    /**
+     * JSON for learner list modal: transaction summary rows + ledger activity.
+     */
+    public function learnerTransactionsModalData($learnerId)
+    {
+        $learnerId = (int) $learnerId;
+
+        $learnerExists = Learner::query()
+            ->where('id', $learnerId)
+            ->where('library_id', getLibraryId())
+            ->when(getCurrentBranch(), function ($q) {
+                $q->where('branch_id', getCurrentBranch());
+            })
+            ->exists();
+
+        if (!$learnerExists) {
+            return response()->json(['status' => false, 'message' => 'Learner not found.'], 404);
+        }
+
+        $allTransactions = LearnerTransaction::with(['learnerDetail:id,payment_mode'])
+            ->where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->get();
+
+        $pendingTransactions = $allTransactions->filter(function ($t) {
+            return (float) $t->pending_amount > 0;
+        })->values();
+
+        $hasPending = $pendingTransactions->isNotEmpty();
+        $transactions = $hasPending ? $pendingTransactions : $allTransactions->take(1)->values();
+
+        $txIds = $transactions->pluck('id')->all();
+        $latestActivityByTransactionId = collect();
+        if (!empty($txIds)) {
+            $latestActivityByTransactionId = LearnerTransactionActivity::where('learner_id', $learnerId)
+                ->whereIn('learner_transaction_id', $txIds)
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy('learner_transaction_id')
+                ->map(fn ($group) => $group->first());
+        }
+
+        $activities = LearnerTransactionActivity::where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->limit(200)
+            ->get();
+
+        $rows = $transactions->map(function ($t) use ($latestActivityByTransactionId) {
+            $total = (float) ($t->total_amount ?? 0);
+            $locker = (float) ($t->locker_amount ?? 0);
+            $token = (float) ($t->token_money ?? 0);
+            $misc = (float) ($t->miscellaneous ?? 0);
+            $discount = (float) ($t->discount_amount ?? 0);
+            $planPrice = max(0, $total - $locker - $token - $misc + $discount);
+
+            // Raw column order matches UI: locker_amount | miscellaneous | token_money
+            $fmt = static function ($v): string {
+                return number_format((float) ($v ?? 0), 2, '.', '');
+            };
+            $addonLabel = $fmt($t->locker_amount ?? 0) . ' | ' . $fmt($t->miscellaneous ?? 0) . ' | ' . $fmt($t->token_money ?? 0);
+
+            $paid = (float) ($t->paid_amount ?? 0);
+            $pending = (float) ($t->pending_amount ?? 0);
+            $paidDate = $t->paid_date ? Carbon::parse($t->paid_date)->format('j M Y') : '—';
+
+            $act = $latestActivityByTransactionId->get($t->id);
+            $modeSource = null;
+            if ($act && $act->payment_mode !== null && trim((string) $act->payment_mode) !== '') {
+                $modeSource = $act->payment_mode;
+            } elseif ($t->learnerDetail
+                && $t->learnerDetail->payment_mode !== null
+                && trim((string) $t->learnerDetail->payment_mode) !== '') {
+                $modeSource = $t->learnerDetail->payment_mode;
+            }
+            $paymentModeRaw = $this->displayPaymentModeLabel($modeSource);
+
+            $canReceipt = (int) ($t->is_paid ?? 0) === 1;
+
+            return [
+                'id' => $t->id,
+                'plan_price' => number_format($planPrice, 2, '.', ''),
+                'other_addon_label' => $addonLabel,
+                'discount_amount' => number_format($discount, 2, '.', ''),
+                'paid_amount' => number_format($paid, 2, '.', ''),
+                'pending_amount' => number_format($pending, 2, '.', ''),
+                'paid_date' => $paidDate,
+                'payment_mode' => $paymentModeRaw,
+                'receipt_url' => $canReceipt ? route('receipt.view', ['transactionId' => $t->id]) : null,
+            ];
+        })->values();
+
+        $activityRows = $activities->map(function ($a) {
+            $raw = $a->amount !== null ? (float) $a->amount : 0.0;
+            $formatted = number_format($raw, 2, '.', '');
+            $signed = ($a->dr_cr ?? '') === 'Cr' ? $formatted : '-' . $formatted;
+            $dateLabel = $a->date ? Carbon::parse($a->date)->format('j M Y') : '—';
+            $particular = trim((string) ($a->particular ?? ''));
+
+            return [
+                'particular' => $particular !== '' ? $particular : '—',
+                'payment_type' => ($a->payment_type !== null && $a->payment_type !== '') ? (string) $a->payment_type : '—',
+                'payment_mode' => $this->displayPaymentModeLabel($a->payment_mode),
+                'amount_display' => $signed,
+                'payment_date' => $dateLabel,
+                'dr_cr' => ($a->dr_cr !== null && $a->dr_cr !== '') ? (string) $a->dr_cr : '—',
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => true,
+            'has_pending' => $hasPending,
+            'transactions' => $rows,
+            'activities' => $activityRows,
+        ]);
+    }
+
+    /**
+     * learner_detail / legacy codes: 1 => ONLINE, 2 => OFFLINE, 3 => PAYLATER.
+     * Non-numeric values (e.g. activity enums) are returned as stored.
+     */
+    private function displayPaymentModeLabel($value): string
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return '—';
+        }
+
+        $s = trim((string) $value);
+        if (is_numeric($s)) {
+            return match ((int) $s) {
+                1 => 'ONLINE',
+                2 => 'OFFLINE',
+                3 => 'PAYLATER',
+                default => $s,
+            };
+        }
+
+        return $s;
+    }
 
     public function pendingPaymentStore(Request $request)
     {
@@ -3599,7 +3738,7 @@ class LearnerController extends Controller
 
     public function learnerTransactionActivity($data)
     {
-        if($data['payment_mode'] == 1){
+         if($data['payment_mode'] == 1){
             $paymentmode='ONLINE';
         }elseif($data['payment_mode'] == 2){
             $paymentmode='OFFLINE';
@@ -3607,7 +3746,7 @@ class LearnerController extends Controller
             $paymentmode='PAYLATER';
         }
 
-        LearnerTransactionActivity::create([
+        $payload = [
             'branch_id'      => getCurrentBranch(),
             'learner_id'     => $data['learner_id'],
             'date'           => now()->format('Y-m-d'),
@@ -3617,8 +3756,16 @@ class LearnerController extends Controller
             'payment_mode'   => $paymentmode,
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
-        ]);
+        ];
+
+        if (!empty($data['learner_transaction_id'])) {
+            $payload['learner_transaction_id'] = $data['learner_transaction_id'];
+        }
+
+        LearnerTransactionActivity::create($payload);
     }
+
+   
 
     // public function learnerTransactionAddUpdate($data)
     // {
@@ -3834,6 +3981,7 @@ class LearnerController extends Controller
         if ($pendingPaid > 0) {
             $activityData1 = [
                 'learner_id'   => $data['learner_id'],
+                'learner_transaction_id' => optional($pendingTransactions->first())->id,
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => 'PENDING',
                 'payment_mode' => $data['payment_mode'],
@@ -3847,6 +3995,7 @@ class LearnerController extends Controller
         if ($newPlanPaid >= 0) {
             $activityData2 = [
                 'learner_id'   => $data['learner_id'],
+                'learner_transaction_id' => $learnerTransaction->id,
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => $data['payment_type'],
                 'payment_mode' => $data['payment_mode'],
@@ -3920,6 +4069,7 @@ class LearnerController extends Controller
                 $activityData1 = [
                     'branchId'     => getCurrentBranch(),
                     'learner_id'   => $learnerId,
+                    'learner_transaction_id' => optional($pendingTransactions->first())->id,
                     'particular'   => $parti ?? 'Paid By Trans',
                     'payment_type' => $type,
                     'payment_mode' => $payment_mode,

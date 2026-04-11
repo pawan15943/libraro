@@ -2,34 +2,60 @@
 @section('content')
 
 <!-- Content Header (Page header) -->
-<div class="modal fade" id="cf-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+<div class="modal fade" id="cf-modal" tabindex="-1" aria-labelledby="cf-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+        <h1 class="modal-title fs-5" id="cf-modal-label">Transactions</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <table class="table table-bordered">
-            <tr>
-                <th>Sno.</th>
+        <p id="transactionPendingBadge" class="small text-muted mb-2 d-none"></p>
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
                 <th>Plan Price</th>
-                <th>Payment Type </th>
+                <th>Other Addon Cost <span class="fw-normal text-muted small">(Locker | miscellaneous | token)</span></th>
+                <th>Discount on Plan Price</th>
+                <th>Paid Amt</th>
+                <th>Pending Amt</th>
+                <th>Payment Date</th>
+                <th>Payment Mode</th>
+                <th>Download Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody">
+              <tr>
+                <td colspan="9" class="text-center text-muted">Open from a learner row to load data.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h6 class="mb-2">All activity for this learner</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Particular</th>
+                <th>Payment Type</th>
+                <th>Payment Mode</th>
                 <th>Amt.</th>
-                <th>Receipt</th>
-            </tr>
-            <tr>
-                <td>1.</td>
-                <td>1100</td>
-                <td>Pay Later</td>
-                <td>1000</td>
-                <td><i class="fa fa-download"></i></td>
-            </tr>
-        </table>
+                <th>Payment Date</th>
+                <th>Dr / Cr</th>
+              </tr>
+            </thead>
+            <tbody id="activityTableBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
       </div>
     </div>
   </div>
@@ -519,7 +545,7 @@ $learner_id=$value->id;
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
                                     PayLater  {{ rtrim(rtrim(number_format(   (totalPending($learner_id)), 2, '.', ''), '0'), '.') }}
                                 </span>
-                            </a> &nbsp;<a href="javascript:;" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            </a> &nbsp;<a href="javascript:;" class="open-transaction-modal" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                             @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
@@ -548,7 +574,7 @@ $learner_id=$value->id;
                                 </span>
 
                                 @endif
-                            </a>
+                            </a> &nbsp;<a href="javascript:;" class="open-transaction-modal" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                             @endif
                         </div>
                     </li>
@@ -623,6 +649,99 @@ $learner_id=$value->id;
             // Redirect to the URL without parameters
             window.history.replaceState({}, document.title, window.location.pathname);
         }
+    });
+
+    var learnerTransactionsDataBase = @json(url('library/learners/transactions-data'));
+
+    $(document).on('click', '.open-transaction-modal', function () {
+        var learnerId = $(this).data('learner_id');
+        var requestUrl = learnerTransactionsDataBase.replace(/\/+$/, '') + '/' + encodeURIComponent(learnerId);
+
+        $('#transactionPendingBadge').addClass('d-none').text('');
+        $('#transactionTableBody').html(
+            '<tr><td colspan="9" class="text-center">Loading...</td></tr>'
+        );
+        $('#activityTableBody').html(
+            '<tr><td colspan="6" class="text-center">Loading...</td></tr>'
+        );
+
+        $.ajax({
+            url: requestUrl,
+            type: 'GET',
+            success: function (res) {
+                if (!res.status) {
+                    $('#transactionTableBody').html(
+                        '<tr><td colspan="9" class="text-center text-danger">Unable to load transactions.</td></tr>'
+                    );
+                    $('#activityTableBody').html(
+                        '<tr><td colspan="6" class="text-center text-danger">—</td></tr>'
+                    );
+                    return;
+                }
+
+                var badgeText = '';
+                if (!res.transactions || res.transactions.length === 0) {
+                    badgeText = 'No transaction records for this learner.';
+                } else if (res.has_pending) {
+                    badgeText = 'Showing rows with pending balance.';
+                } else {
+                    badgeText = 'No pending balance — showing latest transaction summary.';
+                }
+                $('#transactionPendingBadge').removeClass('d-none').text(badgeText);
+
+                if (res.transactions && res.transactions.length > 0) {
+                    var rows = '';
+                    res.transactions.forEach(function (item, index) {
+                        var receiptCell = item.receipt_url
+                            ? '<a href="' + item.receipt_url + '" target="_blank" rel="noopener">Download</a>'
+                            : '<span class="text-muted">—</span>';
+                        rows += '<tr>' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td>' + (item.plan_price ?? '—') + '</td>' +
+                            '<td>' + (item.other_addon_label ?? '—') + '</td>' +
+                            '<td>' + (item.discount_amount ?? '—') + '</td>' +
+                            '<td>' + (item.paid_amount ?? '—') + '</td>' +
+                            '<td>' + (item.pending_amount ?? '—') + '</td>' +
+                            '<td>' + (item.paid_date ?? '—') + '</td>' +
+                            '<td>' + (item.payment_mode ?? '—') + '</td>' +
+                            '<td>' + receiptCell + '</td>' +
+                            '</tr>';
+                    });
+                    $('#transactionTableBody').html(rows);
+                } else {
+                    $('#transactionTableBody').html(
+                        '<tr><td colspan="9" class="text-center">No transactions found.</td></tr>'
+                    );
+                }
+
+                if (res.activities && res.activities.length > 0) {
+                    var aRows = '';
+                    res.activities.forEach(function (a) {
+                        aRows += '<tr>' +
+                            '<td>' + (a.particular ?? '—') + '</td>' +
+                            '<td>' + (a.payment_type ?? '—') + '</td>' +
+                            '<td>' + (a.payment_mode ?? '—') + '</td>' +
+                            '<td>' + (a.amount_display ?? '—') + '</td>' +
+                            '<td>' + (a.payment_date ?? '—') + '</td>' +
+                            '<td>' + (a.dr_cr ?? '—') + '</td>' +
+                            '</tr>';
+                    });
+                    $('#activityTableBody').html(aRows);
+                } else {
+                    $('#activityTableBody').html(
+                        '<tr><td colspan="6" class="text-center">No activity recorded.</td></tr>'
+                    );
+                }
+            },
+            error: function () {
+                $('#transactionTableBody').html(
+                    '<tr><td colspan="9" class="text-center text-danger">Failed to load. Please try again.</td></tr>'
+                );
+                $('#activityTableBody').html(
+                    '<tr><td colspan="6" class="text-center text-danger">—</td></tr>'
+                );
+            }
+        });
     });
 </script>
 

@@ -1342,6 +1342,7 @@ class LearnerService
             'learners.id',
             'learners.learner_no',
             'learners.name',
+            'learners.mobile',
             'learners.dob',
             'learners.profile_picture',
 
@@ -1388,16 +1389,27 @@ class LearnerService
         }else{
                 $mainstatus=$planStatus['status'];
         }
-             
-            
 
+            $birthStatus = false;
+            if (!empty($learner->dob)) {
+                try {
+                    $dob = \Carbon\Carbon::parse($learner->dob);
+                    $today = now();
+                    $birthStatus = (int) $dob->month === (int) $today->month
+                        && (int) $dob->day === (int) $today->day;
+                } catch (\Throwable $e) {
+                    $birthStatus = false;
+                }
+            }
 
             return [
 
                 'id'=>$learner->id,
                 'learner_no'=>$learner->learner_no,
                 'name'=>$learner->name,
+                'mobile'=>decryptData($learner->mobile),
                 'dob'=>$learner->dob,
+                'birth_status'=>$birthStatus,
                 'seat_no'=>$learner->seat_no ?? 'GEN',
 
                 'profile_picture' => $learner->profile_picture 
