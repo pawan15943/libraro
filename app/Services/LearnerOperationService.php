@@ -14,6 +14,7 @@ use App\Models\Plan;
 use App\Models\PlanType;
 use App\Models\Seat;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Carbon\Carbon;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
@@ -29,6 +30,7 @@ class LearnerOperationService
         DB::beginTransaction();
 
         try {
+           
 
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
@@ -40,7 +42,8 @@ class LearnerOperationService
                  $start_date = Carbon::parse($lastDetail->plan_start_date);
                  
              }elseif($dto->operation=='REACTIVE'){
-                $start_date =Carbon::now();
+                $start_date =$start_date = $dto->start_date
+                ? Carbon::parse($dto->start_date) : Carbon::now();
              } elseif($dto->operation == 'EDIT'){
                 $start_date = $dto->start_date
                     ? Carbon::parse($dto->start_date)
@@ -55,7 +58,7 @@ class LearnerOperationService
                 
              }
            
-          
+             
 
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
@@ -64,8 +67,9 @@ class LearnerOperationService
 
             $planType = PlanType::findOrFail($dto->plan_type_id);
             $hours = $planType->slot_hours;
-            if(in_array($dto->operation,['REACTIVE','EDIT'])){
-                $seat=$dto->seat_no;
+
+            if($dto->operation=='REACTIVE'){
+                $seat=$dto->seat_no;    
             }else{
                 $seat=$lastDetail->seat_no;
             }
@@ -101,6 +105,7 @@ class LearnerOperationService
                     }
                 }
             }
+          
 
             /* Billing */
 
@@ -112,7 +117,7 @@ class LearnerOperationService
             [$status,$detailstatus] = $this->calculateStatus($customer,$lastDetail,$start_date,$endDate,$billing['is_paid'],$dto->branch_id);
 
             /* Create / Update Detail */
-  
+ 
 
             if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
 
@@ -211,7 +216,7 @@ class LearnerOperationService
 
             
             // Handle difference amount (refund vs pending)
-            if ($diff_amount < 0) {
+            if ($diff_amount < 0 || $pending_amount <0) {
 
                 // refund case
                 $activityamount = abs($diff_amount);
@@ -336,6 +341,7 @@ class LearnerOperationService
             'learner_id',
             $dto->learner_id
         )->latest()->first();
+        
 
         $detail->update([
 
@@ -351,9 +357,11 @@ class LearnerOperationService
 
             'status'=>$detailstatus
         ]);
+       
         if($dto->operation == 'EDIT' && !$startDateBlocked){
             $detail->plan_start_date = $start_date;
             $detail->plan_end_date = $endDate;
+            $detail->save();
         }
 
         return $detail;
@@ -447,12 +455,16 @@ class LearnerOperationService
             try {
                 $learner->dob = \Carbon\Carbon::parse($dto->dob)->format('Y-m-d');
             } catch (\Exception $e) {
-                return back()->withErrors(['dob' => 'Invalid date format']);
+                throw new Exception('Invalid date format for dob.');
             }
         }
 
         if($dto->father_name){
             $learner->father_name = $dto->father_name;
+        }
+
+        if($dto->alternate_mobile){
+            $learner->alternate_mobile = $dto->alternate_mobile;
         }
 
         if($dto->address){
@@ -461,6 +473,44 @@ class LearnerOperationService
 
         if($dto->remark){
             $learner->remark = $dto->remark;
+        }
+
+        if ($dto->id_proof_name !== null) {
+            $learner->id_proof_name = $dto->id_proof_name;
+        }
+
+        if($dto->id_proof_number){
+            $learner->id_proof_number = $dto->id_proof_number;
+        }
+
+        if (! empty($dto->profile_picture)) {
+            $relPath = $this->moveTempFileToPublic(
+                $dto->profile_picture,
+                'profile_picture',
+                'uploade/profile_picture'
+            );
+            if ($relPath !== null) {
+                $learner->profile_picture = $relPath;
+            }
+        }
+
+        if (! empty($dto->id_proof_file)) {
+            $relPath = $this->moveTempFileToPublic(
+                $dto->id_proof_file,
+                'id_proof_file',
+                'uploade/id_proof_file'
+            );
+            if ($relPath !== null) {
+                $learner->id_proof_file = $relPath;
+            }
+        }
+
+        if ($dto->no_expiry !== null) {
+            $learner->no_expiry = $dto->no_expiry;
+        }
+
+        if ($dto->sended_message_type !== null) {
+            $learner->sended_message_type = $dto->sended_message_type;
         }
 
 
@@ -730,6 +780,61 @@ class LearnerOperationService
                 \Log::info('no text seond part RENEW');
             }
         }
+    }
+
+    /**
+     * Same contract as StoreLearnerRequest::moveTempFileToPublic:
+     * - UploadedFile: move into public/{folder}
+     * - string URL: if path contains /temp/, move from storage/app/public to public/{folder}; if already under /uploade/, return relative path
+     *
+     * @param  \Illuminate\Http\UploadedFile|string  $file
+     */
+    private function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade'): ?string
+    {
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+            $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
+            $destinationFolder = public_path($folder);
+            if (! File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+            $file->move($destinationFolder, $fileName);
+
+            return $folder.'/'.$fileName;
+        }
+
+        if (is_string($file)) {
+            $path = parse_url($file, PHP_URL_PATH);
+
+            if (str_contains($file, '/temp/')) {
+                if (str_contains((string) $path, '/storage/')) {
+                    $path = substr($path, strpos($path, '/storage/') + 9);
+                }
+                if (! str_starts_with((string) $path, 'temp/')) {
+                    return null;
+                }
+                $sourcePath = storage_path('app/public/'.$path);
+                if (File::exists($sourcePath)) {
+                    $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.pathinfo((string) $path, PATHINFO_EXTENSION);
+                    $destinationFolder = public_path($folder);
+                    if (! File::exists($destinationFolder)) {
+                        File::makeDirectory($destinationFolder, 0777, true);
+                    }
+                    $destinationPath = $destinationFolder.'/'.$fileName;
+                    File::move($sourcePath, $destinationPath);
+
+                    return $folder.'/'.$fileName;
+                }
+            }
+
+            if (str_contains($file, '/uploade/')) {
+                $pos = strpos((string) $path, 'uploade/');
+                if ($pos !== false) {
+                    return substr((string) $path, $pos);
+                }
+            }
+        }
+
+        return null;
     }
 
 }

@@ -51,6 +51,20 @@ class LearnerOperationDTO
     public ?string $father_name = null,
     public ?string $address = null,
     public ?string $remark = null,
+    public ?string $alternate_mobile = null,
+    /** Document type id: 1=Aadhar, 2=Driving License, 3=Other, 4=Pan, 5=Voter Id */
+    public ?int $id_proof_name = null,
+    public ?string $id_proof_number = null,
+
+    /** Uploaded file (e.g. profile_picture_image) or temp/storage URL string (profile_picture) */
+    public mixed $profile_picture = null,
+    /** Uploaded file (id_proof) or temp/storage URL string (id_proof_file) */
+    public mixed $id_proof_file = null,
+
+    /** 0 or 1 — matches learners.no_expiry (see seat-book / StoreLearnerRequest) */
+    public ?int $no_expiry = null,
+    /** whatsapp | text | both | no */
+    public ?string $sended_message_type = null,
 
     ) {}
 
@@ -95,6 +109,25 @@ class LearnerOperationDTO
             father_name: $request->father_name ?? null,
             address: $request->address ?? null,
             remark: $request->remark ?? null,
+            alternate_mobile: $request->alternate_mobile ?? null,
+            id_proof_name: $request->input('id_proof_name') !== null && $request->input('id_proof_name') !== ''
+                ? (int) $request->input('id_proof_name')
+                : null,
+            id_proof_number: $request->id_proof_number ?? null,
+
+            profile_picture: $request->hasFile('profile_picture_image')
+                ? $request->file('profile_picture_image')
+                : ($request->profile_picture ?? null),
+            id_proof_file: $request->hasFile('id_proof')
+                ? $request->file('id_proof')
+                : ($request->id_proof_file ?? null),
+
+            no_expiry: $request->input('no_expiry') !== null && $request->input('no_expiry') !== ''
+                ? (int) $request->input('no_expiry')
+                : null,
+            sended_message_type: $request->input('sended_message_type') !== null && $request->input('sended_message_type') !== ''
+                ? (string) $request->input('sended_message_type')
+                : null,
 
         );
     }

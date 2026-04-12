@@ -89,9 +89,20 @@ class LearnerOperationRequest extends FormRequest
                 'nullable',
                 'required_if:payment_type,CHANGE PLAN,EDIT'
             ],
-            'dob'=>'nullable|date'
+            'dob'=>'nullable|date',
 
+            'alternate_mobile' => 'nullable|digits:10',
+            // 1=Aadhar, 2=Driving License, 3=Other, 4=Pan Card, 5=Voter Id (same as learner forms)
+            'id_proof_name' => 'nullable|integer|in:1,2,3,4,5',
+            'id_proof_number' => 'nullable|string|max:255',
 
+            'profile_picture' => 'nullable|string',
+            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'id_proof_file' => 'nullable|string',
+
+            'no_expiry' => 'nullable|in:0,1',
+            'sended_message_type' => 'nullable|in:whatsapp,text,both,no',
 
         ];
     }
