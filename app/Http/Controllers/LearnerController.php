@@ -313,6 +313,8 @@ class LearnerController extends Controller
             return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
         }
 
+     
+
         $dto = LearnerOperationDTO::fromRequest($request);
        
        
@@ -446,6 +448,7 @@ class LearnerController extends Controller
       public function reactiveLearner(LearnerOperationRequest $request, LearnerOperationService $service)
     {
        
+  
         
         $dto = LearnerOperationDTO::fromRequest($request);
        
@@ -468,106 +471,108 @@ class LearnerController extends Controller
     }
 
     public function learnerUpdate(Request $request, $id = null)
-{
-    $validator = $this->validateCustomer($request);
+    {
 
-    if ($validator->fails()) {
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+
+        $validator = $this->validateCustomer($request);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
         }
-        return redirect()->back()->withErrors($validator)->withInput();
-    }
 
-    $user_id = $id ?: $request->input('user_id');
+        $user_id = $id ?: $request->input('user_id');
 
-    $learner = Learner::findOrFail($user_id);
+        $learner = Learner::findOrFail($user_id);
 
-    /*
-    |--------------------------------------------------------------------------
-    | File Upload
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | File Upload
+        |--------------------------------------------------------------------------
+        */
 
-    if ($request->hasFile('profile_picture')) {
+        if ($request->hasFile('profile_picture')) {
 
-        $request->validate([
-            'profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200'
-        ]);
+            $request->validate([
+                'profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200'
+            ]);
 
-        $file = $request->file('profile_picture');
+            $file = $request->file('profile_picture');
 
-        $name = "profile_picture_" . time() . $file->getClientOriginalName();
+            $name = "profile_picture_" . time() . $file->getClientOriginalName();
 
-        $file->move(public_path('uploade'), $name);
+            $file->move(public_path('uploade'), $name);
 
-        $learner->profile_picture = 'public/uploade/'.$name;
-    }
+            $learner->profile_picture = 'public/uploade/'.$name;
+        }
 
-    if ($request->hasFile('id_proof_file')) {
+        if ($request->hasFile('id_proof_file')) {
 
-        $file = $request->file('id_proof_file');
+            $file = $request->file('id_proof_file');
 
-        $name = "id_proof_" . time() . $file->getClientOriginalName();
+            $name = "id_proof_" . time() . $file->getClientOriginalName();
 
-        $file->move(public_path('uploads'), $name);
+            $file->move(public_path('uploads'), $name);
 
-        $learner->id_proof_file = 'public/uploads/'.$name;
-    }
+            $learner->id_proof_file = 'public/uploads/'.$name;
+        }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Profile Update
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Profile Update
+        |--------------------------------------------------------------------------
+        */
 
-    $learner->name = $request->input('name',$learner->name);
-    $learner->email = encryptData($request->input('email',$learner->email));
-    $learner->mobile = encryptData($request->input('mobile',$learner->mobile));
-    $learner->dob = $request->input('dob',$learner->dob);
-    $learner->father_name = $request->input('father_name',$learner->father_name);
-    $learner->alternate_mobile = $request->input('alternate_mobile',$learner->alternate_mobile);
-    $learner->address = $request->input('address',$learner->address);
-    $learner->remark = $request->input('remark',$learner->remark);
-    $learner->id_proof_name = $request->input('id_proof_name',$learner->id_proof_name);
-    $learner->id_proof_number = $request->input('id_proof_number',$learner->id_proof_number);
+        $learner->name = $request->input('name',$learner->name);
+        $learner->email = encryptData($request->input('email',$learner->email));
+        $learner->mobile = encryptData($request->input('mobile',$learner->mobile));
+        $learner->dob = $request->input('dob',$learner->dob);
+        $learner->father_name = $request->input('father_name',$learner->father_name);
+        $learner->alternate_mobile = $request->input('alternate_mobile',$learner->alternate_mobile);
+        $learner->address = $request->input('address',$learner->address);
+        $learner->remark = $request->input('remark',$learner->remark);
+        $learner->id_proof_name = $request->input('id_proof_name',$learner->id_proof_name);
+        $learner->id_proof_number = $request->input('id_proof_number',$learner->id_proof_number);
 
-    $learner->save();
+        $learner->save();
 
-    /*
-    |--------------------------------------------------------------------------
-    | Prepare DTO for EDIT operation
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Prepare DTO for EDIT operation
+        |--------------------------------------------------------------------------
+        */
 
-    $dto = LearnerOperationDTO::fromRequest($request);
+        $dto = LearnerOperationDTO::fromRequest($request);
 
-    $dto->operation = 'EDIT';
+        $dto->operation = 'EDIT';
 
-    /*
-    |--------------------------------------------------------------------------
-    | Call Global Operation Service
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Call Global Operation Service
+        |--------------------------------------------------------------------------
+        */
 
-    $result = app(LearnerOperationService::class)->process($dto);
+        $result = app(LearnerOperationService::class)->process($dto);
 
-    if(!$result['success']){
-        return redirect()->back()->with('error',$result['message']);
-    }
+        if(!$result['success']){
+            return redirect()->back()->with('error',$result['message']);
+        }
 
-    if(!empty($result['start_date_blocked'])){
+        if(!empty($result['start_date_blocked'])){
+            return redirect()
+                ->route('learners')
+                ->with('success','Learner updated successfully. Start date could not be updated due to seat availability.');
+        }
+
         return redirect()
             ->route('learners')
-            ->with('success','Learner updated successfully. Start date could not be updated due to seat availability.');
+            ->with('success','Learner updated successfully');
     }
-
-    return redirect()
-        ->route('learners')
-        ->with('success','Learner updated successfully');
-}
 
      //learner  update
     // public function learnerUpdate(Request $request, $id = null)

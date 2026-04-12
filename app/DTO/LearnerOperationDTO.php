@@ -15,7 +15,7 @@ class LearnerOperationDTO
 
         public int $plan_type_id,
 
-        public float $plan_price,
+        public ?float $plan_price,
 
         public ?int $seat_no,
 
@@ -37,9 +37,9 @@ class LearnerOperationDTO
 
         public ?string $paid_date,
 
-        public int $branch_id,
+        public ?int $branch_id,
 
-        public int $library_id,
+        public ?int $library_id,
 
         public string $operation ,
         public ?float $diffrence_amount,
@@ -60,7 +60,7 @@ class LearnerOperationDTO
        
         return new self(
 
-            learner_id:$request->user_id,
+            learner_id:$request->learner_id,
             plan_id:$request->plan_id,
             plan_type_id:$request->plan_type_id,
             plan_price:(float)$request->plan_price_id,

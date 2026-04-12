@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
+use App\Services\PlanService;
 use Exception;
 use Log;
 
@@ -32,12 +33,14 @@ class LearnerOperationService
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
            
-         
+        
 
             /* Plan dates */
              if($dto->operation=='CHANGE PLAN'){
                  $start_date = Carbon::parse($lastDetail->plan_start_date);
                  
+             }elseif($dto->operation=='REACTIVE'){
+                $start_date =Carbon::now();
              } elseif($dto->operation == 'EDIT'){
                 $start_date = $dto->start_date
                     ? Carbon::parse($dto->start_date)
@@ -101,7 +104,7 @@ class LearnerOperationService
 
             /* Billing */
 
-            $billing = $this->calculateBilling($dto,$customer);
+            $billing = $this->calculateBilling($dto,$customer,$start_date,app(PlanService::class));
           
 
             /* Status */
@@ -113,18 +116,18 @@ class LearnerOperationService
 
             if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
 
-                $detail = $this->createDetail($dto,$start_date,$endDate,$hours,$detailstatus,$billing['is_paid'],$lastDetail->join_date,$seat);
+                $detail = $this->createDetail($dto,$start_date,$endDate,$hours,$detailstatus,$billing['is_paid'],$lastDetail->join_date,$seat,$billing);
                
             }else{
                 
                
-                $detail = $this->updateDetail($dto,$start_date,$endDate,$hours,$detailstatus,$seat,$startDateBlocked);
+                $detail = $this->updateDetail($dto,$start_date,$endDate,$hours,$detailstatus,$seat,$startDateBlocked,$billing);
 
             }
 
             /* Transaction */
 
-            $this->createTransaction($dto,$detail,$billing,$start_date);
+            $this->createTransaction($dto,$detail,$billing,$start_date,app(PlanService::class));
 
             /* Update learner */
 
@@ -173,26 +176,24 @@ class LearnerOperationService
     }
 
 
-    private function calculateBilling($dto,$customer)
+    private function calculateBilling($dto,$customer,$start_date,PlanService $priceService)
     {
 
-        $planPrice = $dto->plan_price;
+        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$dto->locker_amount ?? 0,$dto->discount_type ?? null,$dto->discount_amount ?? 0,$dto->paid_amount ?? 0
+          
+        );
+     
+       
+        $planPrice =$dto->plan_price;
 
-        $locker = $dto->locker_amount ?? 0;
+        $locker = $result['locker_amount']  ?? 0;
 
-        $discount = 0;
+        $discount =$result['discount_amount'] ;
 
-        if($dto->discount_type=='amount'){
-            $discount = $dto->discount_amount;
-        }
-
-        if($dto->discount_type=='percentage'){
-            $discount =($planPrice+$locker)*$dto->discount_amount/100;
-        }
-
+       
         $effective = $planPrice+$locker-$discount;
 
-        if($dto->operation=='CHANGE PLAN'){
+        if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
             $learnerTransaction = LearnerTransaction::where('learner_id', $customer->id)->latest()->first();
         
              $old_price      = $learnerTransaction->paid_amount ?? 0;
@@ -228,8 +229,12 @@ class LearnerOperationService
 
 
         }else{
-            $pending = $effective-$dto->paid_amount;
+            $pending = $effective - $dto->paid_amount;
             $paid_amount=$dto->paid_amount;
+            if ($dto->payment_mode == 3) {
+                
+                $paid_amount    = 0;
+            }
             $activityamount=$paid_amount;
             $pending_refund=0;
              $dr_cr = 'Cr';
@@ -252,6 +257,7 @@ class LearnerOperationService
         $is_paid = in_array($dto->payment_mode,[1,2]) ? 1 : 0;
 
         return [
+            'price'=>$planPrice,
             'paid'=>$paid_amount,
             'total_amount'=>$effective,
             'pending'=>$pending,
@@ -280,11 +286,11 @@ class LearnerOperationService
         }
        
        
-        if(Carbon::parse($lastDetail->plan_end_date) < $today && $endDate > $today && $is_paid == 1){
+        if(Carbon::parse($lastDetail->plan_end_date) <= $today && $endDate > $today && $is_paid == 1){
            
             $detailstatus = 1;
 
-        }elseif($inextendDate > $today && $start_date <= $today){
+        }elseif($inextendDate >= $today && $start_date <= $today){
           
             $detailstatus = 1;
 
@@ -297,7 +303,7 @@ class LearnerOperationService
     }
 
 
-    private function createDetail($dto,$start_date,$endDate, $hours,$detailstatus,$is_paid,$join_date,$seat){
+    private function createDetail($dto,$start_date,$endDate, $hours,$detailstatus,$is_paid,$join_date,$seat,$billing){
 
         return LearnerDetail::create([
 
@@ -306,7 +312,7 @@ class LearnerOperationService
             'learner_id'=>$dto->learner_id,
             'plan_id'=>$dto->plan_id,
             'plan_type_id'=>$dto->plan_type_id,
-            'plan_price_id'=>$dto->plan_price,
+            'plan_price_id'=>$billing['price'],
             'plan_start_date'=>$start_date,
             'plan_end_date'=>$endDate,
             'hour'=>$hours,
@@ -323,7 +329,7 @@ class LearnerOperationService
         $dto,$start_date,
         $endDate,
         $hours,
-        $detailstatus,$seat,$startDateBlocked
+        $detailstatus,$seat,$startDateBlocked,$billing
     ){
 
         $detail = LearnerDetail::where(
@@ -335,7 +341,7 @@ class LearnerOperationService
 
             'plan_id'=>$dto->plan_id,
             'plan_type_id'=>$dto->plan_type_id,
-            'plan_price_id'=>$dto->plan_price,
+            'plan_price_id'=>$billing['price'],
 
             'seat_no'=>$seat,
        
@@ -435,8 +441,14 @@ class LearnerOperationService
             $learner->mobile = encryptData($dto->mobile);
         }
 
-        if($dto->dob){
-            $learner->dob = $dto->dob;
+  
+
+       if ($dto->dob) {
+            try {
+                $learner->dob = \Carbon\Carbon::parse($dto->dob)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return back()->withErrors(['dob' => 'Invalid date format']);
+            }
         }
 
         if($dto->father_name){
@@ -459,7 +471,7 @@ class LearnerOperationService
     public function createTransaction($dto,$detail,$billing,$start_date){
         $data=[
 
-            'planPrice' => $dto->plan_price,
+            'planPrice' => $billing['price'],
             'paid_amount' => $billing['paid'],
             'locker' => $billing['locker'],
             'discount' => $billing['discount'],
@@ -488,7 +500,7 @@ class LearnerOperationService
             'pending'=>$billing['pending'],
 
         ];
-        if($dto->operation=='CHANGE PLAN'){
+        if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
             return $this->learnerTransactionUpdate($data);
         }else{
             return $this->learnerTransactionAddUpdate($data);

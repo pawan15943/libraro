@@ -882,6 +882,7 @@ class LearnerService
             $extendDay = getExtendDays($branchId);
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
             $today = Carbon::today();
+           
 
             if($start_date<=$today){
                  $status = 1;
@@ -893,13 +894,14 @@ class LearnerService
             if ($endDate->gt($today) && $start_date <= $today && $is_paid == 1) {
                
                 $detailstatus = 1;
-            } elseif ($inextendDate > $today && $start_date <= $today) {
+            } elseif ($inextendDate >= $today && $start_date <= $today) {
                
                 $detailstatus = 1;
             } else {
                
                 $detailstatus = 0;
             }
+          
 
             if(($detailstatus == 0 || $status == 0) && $data['learner_data']['no_expiry']==1){
                 throw new \Exception('You can only select a back date within your plan duration.');
@@ -1134,7 +1136,9 @@ class LearnerService
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
-                'locker_no'=>$learner->locker_no ?? ''
+                'locker_no'=>$learner->locker_no ?? '',
+                'days_left'=>$planStatus['diff_in_days'],
+                'extend_days_left'=>$planStatus['diff_extend_day'],
             ],
 
             'payment_information'=>[
@@ -1159,6 +1163,7 @@ class LearnerService
                 'id_proof_image'=> $learner->id_proof_file 
                                 ? asset($learner->id_proof_file) 
                                 : '',
+                'id_proof_no'=>$learner->id_proof_number ?? '',
                
                 'address'=>$learner->address ?? '',
                 'remark'=>$learner->remark ?? '',

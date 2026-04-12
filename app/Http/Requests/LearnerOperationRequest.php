@@ -39,11 +39,12 @@ class LearnerOperationRequest extends FormRequest
 
             'plan_price_id' => 'required|numeric|min:0',
 
-            'paid_amount' => 'required|numeric|min:0',
+            'paid_amount' => 'required_unless:payment_type,CHANGE PLAN,EDIT|numeric|min:0',
 
             'payment_mode' => 'required',
 
-            'user_id' => 'required|exists:learners,id',
+            'user_id' => 'nullable|exists:learners,id',
+             'learner_id'=>'required|exists:learners,id',
 
             'discountType' => 'nullable|in:amount,percentage',
 
@@ -67,6 +68,7 @@ class LearnerOperationRequest extends FormRequest
 
                 }
             ],
+            'locker'=>'nullable|in:yes,no',
 
             'locker_no'=>[
                 'nullable',
@@ -78,15 +80,16 @@ class LearnerOperationRequest extends FormRequest
 
             'seat_no'=>'nullable|numeric',
             'learner_detail'=>'nullable',
-            'learner_id'=>'nullable',
+           
             'payment_type'=>'nullable',
             'previous_pending'=>'nullable|min:0',
             'pending_amount'=>'nullable',
             'due_date'=>'nullable',
             'diffrence_amount'=> [
                 'nullable',
-                'required_if:payment_type,CHANGE PLAN'
+                'required_if:payment_type,CHANGE PLAN,EDIT'
             ],
+            'dob'=>'nullable|date'
 
 
 

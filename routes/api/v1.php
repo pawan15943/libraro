@@ -116,8 +116,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/seat-book', [LearnerController::class,'store']);
         Route::post('/list', [LearnerController::class,'index']);
         Route::post('/detail', [LearnerController::class,'show']);
-        Route::put('/{id}', [LearnerController::class,'update']);
-
+       
         Route::post('/operation',[LearnerController::class,'process']);
 
     });

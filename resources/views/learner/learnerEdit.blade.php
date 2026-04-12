@@ -29,6 +29,7 @@ if($customer->locker_no){
             @method('PUT')
             <input id="edit_seat" type="hidden" name="seat_no" value="{{ old('seat_no', $customer->seat_no) }}">
             <input name="user_id" type="hidden" value="{{$customer->id}}">
+            <input name="learner_id" type="hidden" value="{{$customer->id}}">
             <input name="plan_id" type="hidden" value="{{$customer->plan_id}}" id="plan_id10">
             <input name="plan_type_id" type="hidden" value="{{$customer->plan_type_id}}" id="plan_type_id10">
             {{-- <input name="plan_price_id" type="hidden" value="{{$customer->plan_price_id}}" id="plan_price10"> --}}
