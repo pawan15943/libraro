@@ -1094,7 +1094,8 @@
         var payment_mode = $('#payment_mode').val();
         var id_proof_file = $('#id_proof_file').length ? $('#id_proof_file')[0].files[0] : null;
         var plan_price_value = parseFloat($('#plan_price_id').val()) || 0;
-        var paid_amount = parseFloat($('#paid_amount').val()) || 0;
+        var paidAmountRaw = ($('#paid_amount').val() || '').trim();
+        var paid_amount = paidAmountRaw === '' ? NaN : parseFloat(paidAmountRaw);
         var locker_amount = parseFloat($('#locker_amount_book').val()) || 0;
         var due_date = $('#due_date').val();
         var locker_no = $('#locker_no').val();
@@ -1128,7 +1129,7 @@
         }
 
         if (!plan_id) {
-            errors.plan_id = 'Plan is required.';
+            errors.plan_id3 = 'Plan is required.';
         }
 
         if (!plan_type_id) {
@@ -1143,18 +1144,16 @@
             errors.payment_mode = 'Payment Mode is required.';
         }
 
-       if (paid_amount === '' || paid_amount === null || paid_amount === undefined) {
-            errors.paid_amount = 'Paid amount is required.';
+        if (paidAmountRaw === '' || isNaN(paid_amount)) {
+            errors.paid_amount = 'Final Payable Amount is required.';
         }
 
-
-            
-        if(paid_amount > (plan_price_value +locker_amount- discount_amount)){
+        if (!errors.paid_amount && paid_amount > (plan_price_value + locker_amount - discount_amount)) {
             errors.paid_amount = 'Paid amount should not be greater than the total amount.';
         }
-        
-        if(!due_date && (paid_amount != (plan_price_value +locker_amount- discount_amount))){
-            errors.due_date ='Due Date is required.';
+
+        if (!errors.paid_amount && !due_date && (paid_amount != (plan_price_value + locker_amount - discount_amount))) {
+            errors.due_date = 'Due Date is required.';
         }
         
         // Remove previous errors
@@ -1711,15 +1710,19 @@
         var errors = {};
 
         if (!plan_id) {
-            errors.plan_id = 'Plan is required.';
+            // errors.plan_id = 'Plan is required.';
+            errors.plan_id2 = 'Plan is required.';
         }
 
         if (!plan_type_id) {
-            errors.plan_type_id = 'Plan Type is required.';
+            errors.plan_type_id_renew = 'Plan Type is required.';
+            // errors.plan_type_id = 'Plan Type is required.';
         }
 
         if (!plan_price_id) {
-            errors.plan_price_id = 'Price is required.';
+            errors.plan_price_id2 = 'Price is required.';
+            // errors.plan_price_id = 'Price is required.';
+
         }
 
         if (Object.keys(errors).length > 0) {
