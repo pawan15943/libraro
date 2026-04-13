@@ -1071,7 +1071,10 @@ class LearnerService
             ->latest()
             ->first();
 
-        $transaction_all=LearnerTransaction::where('learner_id',$learnerId)->get();
+        $transaction_all = LearnerTransaction::where('learner_id', $learnerId)
+            ->with('learnerDetail')
+            ->orderBy('id')
+            ->get();
 
         $transaction_all_activity= LearnerTransactionActivity::where('learner_id',$learnerId)->get();
 
@@ -1169,22 +1172,26 @@ class LearnerService
                 'remark'=>$learner->remark ?? '',
             ],
 
-            'all_transaction'=>$transaction_all->map(function($tx){
+            'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
+                $ld = $tx->learnerDetail;
 
                 return [
-                    'total_amount'=>(string) $tx->total_amount,
-                    'paid_amount'=>(string) $tx->paid_amount,
-                    'pending_amount'=>(string) $tx->pending_amount,
-                    'paid_date'=>$tx->paid_date ?? '',
-                    'locker_amount'=>(string) $tx->locker_amount,
-                    'discount'=>$tx->discount_amount ?? '0',
-                    'token_money'=>(string) $tx->token_money ?? '0',
-                    'miscellaneous'=>(string) $tx->miscellaneous ?? '0',
-                    'pending_refund'=>(string) $tx->refund ?? '0',
-                    'due_date'=>$tx->due_date ?? '',
-                    'transaction'=>$tx->transaction_id ?? '',
+                    'total_amount' => (string) $tx->total_amount,
+                    'paid_amount' => (string) $tx->paid_amount,
+                    'pending_amount' => (string) $tx->pending_amount,
+                    'paid_date' => $tx->paid_date ?? '',
+                    'locker_amount' => (string) $tx->locker_amount,
+                    'discount' => $tx->discount_amount ?? '0',
+                    'token_money' => (string) $tx->token_money ?? '0',
+                    'miscellaneous' => (string) $tx->miscellaneous ?? '0',
+                    'pending_refund' => (string) $tx->refund ?? '0',
+                    'due_date' => $tx->due_date ?? '',
+                    'transaction' => $tx->transaction_id ?? '',
+                    'seat_type' => $index === 0 ? 'BOOK SEAT' : 'RE-NEW SEAT',
+                    'plan_start_date' => $ld?->plan_start_date ?? '',
+                    'plan_end_date' => $ld?->plan_end_date ?? '',
+                    'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Paylater' : 'Success',
                 ];
-
             }),
 
             'all_transaction_activity'=>$transaction_all_activity->map(function($txn){

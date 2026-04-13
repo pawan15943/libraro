@@ -266,11 +266,11 @@
                             @endphp
                             <tr>
                                 <td>
-                                    {{$value->plan->name}} <br>
-                                    <small class="text-success">{{$value->planType->name}}</small>
+                                    {{$value->plan->name ?? ""}} <br>
+                                    <small class="text-success">{{$value->planType->name ?? ""}}</small>
                                 </td>
-                                <td>{{$value->plan_start_date}}</td>
-                                <td>{{$value->plan_end_date}}</td>
+                                <td>{{$value->plan_start_date ?? ''}}</td>
+                                <td>{{$value->plan_end_date ?? ''}}</td>
                                 <td>{{$transactionRenew->total_amount ?? 'NA'}}</td>
                                 <td>
                                     @if($value->payment_mode == 1) Online
