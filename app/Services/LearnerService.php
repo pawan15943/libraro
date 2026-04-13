@@ -1113,7 +1113,8 @@ class LearnerService
 
             'personal_info'=>[
                 'learner_no'=>$learner->learner_no,
-                'seat_no'=>$learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no) : "GEN",
+                'seat_no'=>$learner->seat_no ?? "GEN",
+                'seat_with_floor'=>$learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no) : "GEN",
                 'name'=>$learner->name,
                 'mobile'=>$learner->mobile,
                 'email'=>$learner->email ? $learner->email : '',
