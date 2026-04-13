@@ -2,6 +2,13 @@
 @section('content')
 
 <!-- Content Header (Page header) -->
+{{-- Large profile preview — keep display:flex for centering (jQuery fadeIn sets display:block and breaks layout) --}}
+<div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
+    <div class="image-modal-content">
+        <span class="close-modal" role="button" tabindex="0" aria-label="Close">&times;</span>
+        <img src="" id="modalImage" alt="Profile photo preview">
+    </div>
+</div>
 
 @if ( $learners->total()==0)
 <div class="no-data-found">
@@ -436,7 +443,15 @@ $learner_id=$value->id;
                 </ul>
             </div>
             <div class="seat-informarion">
-                <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+               
+                @if($value->profile_picture)
+                <a href="{{ asset('public/'.$value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                    <img src="{{ asset('public/'.$value->profile_picture) }}" alt="profile">
+                </a>
+                @else
+                <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile">
+                @endif
+
                 <div class="information">
                     <h4>{{$value->name}}
                         @if($operation == 'closeSeat')
@@ -588,6 +603,50 @@ $learner_id=$value->id;
         if (url.includes('?')) {
             // Redirect to the URL without parameters
             window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+
+function closeProfileImageModal() {
+        var $m = $('#imageViewModal');
+        $m.animate({ opacity: 0 }, 150, function () {
+            $m.css({ display: 'none', opacity: 1 });
+            $m.attr('aria-hidden', 'true');
+            $('#modalImage').attr('src', '');
+        });
+    }
+
+    function openProfileImageModal(imageUrl) {
+        var $m = $('#imageViewModal');
+        $('#modalImage').attr('src', imageUrl);
+        $m.attr('aria-hidden', 'false');
+        $m.css({ display: 'flex', opacity: 0 }).animate({ opacity: 1 }, 200);
+    }
+
+    // Profile photo: open large preview (extension may be before ?query)
+    $(document).on('click', 'a.view-image', function (e) {
+        var imageUrl = $(this).attr('href');
+        if (!imageUrl || !imageUrl.match(/\.(jpg|jpeg|png|webp)(\?|#|$)/i)) {
+            return;
+        }
+        e.preventDefault();
+        openProfileImageModal(imageUrl);
+    });
+
+    $('#imageViewModal .close-modal').on('click', function (e) {
+        e.stopPropagation();
+        closeProfileImageModal();
+    });
+
+    $('#imageViewModal').on('click', function (e) {
+        if ($(e.target).is(this)) {
+            closeProfileImageModal();
+        }
+    });
+
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && $('#imageViewModal').css('display') === 'flex') {
+            closeProfileImageModal();
         }
     });
 </script>
