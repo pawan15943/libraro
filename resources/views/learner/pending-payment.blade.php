@@ -2,9 +2,11 @@
 @section('content')
 
 @php
-
-$planDetails = getPlanStatusDetails($customer->plan_end_date);
-$class=$planDetails['class'];
+$planDetails = !empty($customer?->plan_end_date)
+    ? getPlanStatusDetails($customer->plan_end_date)
+    : ['status' => 'Active', 'class' => 'actives', 'diff_in_days' => 0, 'diff_extend_day' => 0, 'extend_days' => 0];
+$class = $planDetails['class'] ?? 'actives';
+$learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->id ?? $tran?->learner_id;
 @endphp
 
 <input id="plan_type_id" type="hidden" name="plan_type_id">
@@ -18,23 +20,23 @@ $class=$planDetails['class'];
                 <ul>
                     <li>
                         <span>Learner UID</span>
-                        <h4>{{ $customer->learner->learner_no }}</h4>
+                        <h4>{{ optional($customer?->learner)->learner_no ?? '—' }}</h4>
                     </li>
                     <li>
                         <span>Full Name</span>
-                        <h4>{{ $customer->learner->name }}</h4>
+                        <h4>{{ optional($customer?->learner)->name ?? '—' }}</h4>
                     </li>
                     <li>
                         <span>DOB</span>
-                        <h4>{{ $customer->learner->dob ? \Carbon\Carbon::parse($customer->learner->dob)->format('d F, Y') : 'DOB Not Available' }}</h4>
+                        <h4>@if(optional($customer?->learner)->dob){{ \Carbon\Carbon::parse(optional($customer?->learner)->dob)->format('d F, Y') }}@else DOB Not Available @endif</h4>
                     </li>
                     <li>
                         <span>Mobile</span>
-                        <h4>+91-{{ $customer->learner->mobile }}</h4>
+                        <h4>@if(optional($customer?->learner)->mobile)+91-{{ optional($customer?->learner)->mobile }}@else — @endif</h4>
                     </li>
                     <li>
                         <span>Email</span>
-                        <h4><a href="mailto:{{$customer->email}}" class="text-white"> {!! $customer->learner->email ? $customer->learner->email : 'Email ID Not Available' !!} </a></h4>
+                        <h4><a href="mailto:{{ optional($customer?->learner)->email ?? '' }}" class="text-white"> {!! optional($customer?->learner)->email ?: 'Email ID Not Available' !!} </a></h4>
                     </li>
                 </ul>
             </div>
@@ -56,7 +58,7 @@ $class=$planDetails['class'];
                                     @endif
 
                                 </label>
-                                <input type="date" class="form-control @error('due_date') is-invalid @enderror" id="due_date" value="{{$tran->due_date ?? 0}}" readonly>
+                                <input type="date" class="form-control @error('due_date') is-invalid @enderror" id="due_date" value="{{ $tran?->due_date ?? '' }}" readonly>
                                 @error('due_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -79,8 +81,8 @@ $class=$planDetails['class'];
                                     <strong>{{ $message }}</strong>
                                 </span>
                                 @enderror
-                                <input type="hidden" name="transaction_id" value="{{ $tran->id ?? '' }}">
-                                <input type="hidden" name="learner_id" value="{{ $tran->learner_id ?? '' }}">
+                                <input type="hidden" name="transaction_id" value="{{ $tran?->id ?? '' }}">
+                                <input type="hidden" name="learner_id" value="{{ $tran?->learner_id ?? '' }}">
                             </div>
                             <div class="col-lg-6 due-date-wrapper">
                                 <label for="">Next Due Date <span>*</span></label>
@@ -125,21 +127,29 @@ $class=$planDetails['class'];
 
         <div class="seat--info">
 
-            @if($customer->seat_no)
+            @if($customer?->seat_no)
             <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
             @else
             <span class="d-block ">General</span>
             @endif
+            @if(optional($customer?->planType)->image)
             <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{$class}}">
-            <p>{{ $customer->plan->name}}</p>
-            <button>Booked for <b>{{ $customer->planType->name}}</b></button>
-            {!! getUserStatusWithSpan($customer->plan_end_date,$customer->id) !!}
+            @else
+            <img src="{{ asset('public/img/booked.png') }}" alt="Seat" class="seat py-3 {{$class}}">
+            @endif
+            <p>{{ optional($customer?->plan)->name ?? '—' }}</p>
+            <button>Booked for <b>{{ optional($customer?->planType)->name ?? '—' }}</b></button>
+            @if($learnerIdForStatus && !empty($customer?->plan_end_date))
+                {!! getUserStatusWithSpan($customer->plan_end_date, $learnerIdForStatus) !!}
+            @else
+                <span class="text-muted fs-10 d-block">—</span>
+            @endif
         </div>
     </div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        handleFormChanges('pendingPayment', {{$customer->learner->id}} );
+        handleFormChanges('pendingPayment', @json(optional($customer?->learner)->id));
     });
         
     $(".due-date-wrapper #for_pending_due_date").prop("readonly", true);

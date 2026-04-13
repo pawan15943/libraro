@@ -3248,18 +3248,22 @@ class LearnerController extends Controller
     {
 
         $id = $request->id;
-        $tran = LearnerTransaction::where('id', $id) ->first();
-       $pendingPayment = LearnerTransaction::where('learner_id', $tran->learner_id)
-        ->whereNull('deleted_at')
-        ->sum('pending_amount');
+        $tran = LearnerTransaction::where('id', $id)->first();
+
+        if (!$tran) {
+            abort(404);
+        }
+
+        $pendingPayment = LearnerTransaction::where('learner_id', $tran->learner_id)
+            ->whereNull('deleted_at')
+            ->sum('pending_amount');
 
         $customer = LearnerDetail::where('id', $tran->learner_detail_id)
-            ->with('learner', 'plan', 'plantype')
+            ->with('learner', 'plan', 'planType')
             ->orderBy('id', 'DESC')
             ->first();
 
-
-        return view('learner.pending-payment', compact('customer', 'pendingPayment','tran'));
+        return view('learner.pending-payment', compact('customer', 'pendingPayment', 'tran'));
     }
 
     public function getTransactionDetail(Request $request)

@@ -131,14 +131,14 @@ $currentMonth = date('m');
                    
                     <tr>
                           
-                        <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN" }}</td>
-                        <td class="d-none export-plan-type">{{ $value->planType->name ?? '' }}</td>
-                        <td class="d-none export-name">{{ $value->learner->name ?? '' }}</td>
-                        <td class="d-none export-dob">{{ $value->learner->dob ?? '' }}</td>
-                        <td class="d-none export-email">{{ $value->learner->email ?? 'Email ID Not Available' }}</td>
-                        <td class="d-none export-mobile">{{ $value->learner->mobile ?? '' }}</td>
+                        <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo(optional($value->learner)->seat_no) ?? "GEN" }}</td>
+                        <td class="d-none export-plan-type">{{ optional($value->planType)->name ?? '' }}</td>
+                        <td class="d-none export-name">{{ optional($value->learner)->name ?? '' }}</td>
+                        <td class="d-none export-dob">{{ optional($value->learner)->dob ?? '' }}</td>
+                        <td class="d-none export-email">{{ optional($value->learner)->email ?? 'Email ID Not Available' }}</td>
+                        <td class="d-none export-mobile">{{ optional($value->learner)->mobile ?? '' }}</td>
                         <td class="d-none export-start-date">{{ $value->plan_start_date }}</td>
-                        <td class="d-none export-plan-name">{{ $value->plan->name ?? '' }}</td>
+                        <td class="d-none export-plan-name">{{ optional($value->plan)->name ?? '' }}</td>
                         <td class="d-none export-end-date">{{ $value->plan_end_date }}</td>
                         <td class="d-none export-expiry-status">
                          {!! getUserStatusDetails($value->plan_end_date) !!}
@@ -150,12 +150,12 @@ $currentMonth = date('m');
                         
 
 
-                        <td class="merged-display">{{getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN"}}<br>
-                            <small>{{$value->planType->name ?? ''}}</small>
+                        <td class="merged-display">{{ getSeatDisplayByMainNo(optional($value->learner)->seat_no) ?? "GEN" }}<br>
+                            <small>{{ optional($value->planType)->name ?? '' }}</small>
                         </td>
                         <td class="merged-display"><span class="uppercase truncate name" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->learner->name ?? ''}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>
-                            <br> <small>{{$value->learner->dob ?? ''}}</small>
+                                data-bs-title="{{ optional($value->learner)->name ?? '' }}" data-bs-placement="bottom">{{ optional($value->learner)->name ?? '' }}</span>
+                            <br> <small>{{ optional($value->learner)->dob ?? '' }}</small>
                         </td>
                         <td class="merged-display"><span class="truncate" >
                             @if($value->learner)
@@ -165,10 +165,10 @@ $currentMonth = date('m');
                             @endif
                             
                             </span> <br>
-                            <small> +91-{{$value->learner->mobile ?? ''}}</small>
+                            <small> +91-{{ optional($value->learner)->mobile ?? '' }}</small>
                         </td>
-                        <td class="merged-display">{{$value->plan_start_date}}<br>
-                            <small>{{$value->plan->name}}</small>
+                        <td class="merged-display">{{ $value->plan_start_date }}<br>
+                            <small>{{ optional($value->plan)->name ?? '' }}</small>
                         </td>
                        
                         <td class="merged-display">{{$value->plan_end_date}}<br>
