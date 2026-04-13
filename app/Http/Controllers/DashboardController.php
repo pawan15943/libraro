@@ -242,7 +242,7 @@ class DashboardController extends Controller
          
             $recent_activitys=DB::table('learner_operations_log')->where('branch_id',getCurrentBranch())->where('created_at', '>=', Carbon::now()->subDays(5))->get();
             if(getCurrentBranch()){
-                 $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->get();
+                 $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->where('type','!=','demo-bookings')->get();
           
                  $branch=Branch::where('id',getCurrentBranch())->first();
             }else{
