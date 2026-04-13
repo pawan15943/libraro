@@ -445,8 +445,8 @@ $learner_id=$value->id;
             <div class="seat-informarion">
                
                 @if($value->profile_picture)
-                <a href="{{ asset('public/'.$value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                    <img src="{{ asset('public/'.$value->profile_picture) }}" alt="profile">
+                <a href="{{ asset($value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                    <img src="{{ asset($value->profile_picture) }}" alt="profile">
                 </a>
                 @else
                 <img src="{{ asset('public/img/student_profile.jpeg') }}" alt="profile">
