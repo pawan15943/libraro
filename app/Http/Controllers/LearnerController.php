@@ -40,6 +40,7 @@ use App\Models\Category;
 use App\Services\LearnerOperationService;
 use App\Services\LibraryService;
 use App\Services\PlanService;
+use App\Services\SeatAvailabilityService;
 
 
 class LearnerController extends Controller
@@ -2465,106 +2466,15 @@ class LearnerController extends Controller
     }
 
    
-    public function getSeatStatus(Request $request)
+    public function getSeatStatus(Request $request, SeatAvailabilityService $seatAvailability)
     {
+        $code = $seatAvailability->getSwapSeatStatusCode(
+            $request->new_seat_id,
+            $request->user_id,
+            $request->plan_type_id
+        );
 
-        $count = $this->getLearnersByLibrary()
-            ->where('learner_detail.seat_no', $request->new_seat_id)
-            ->where('learners.status', 1)
-            ->where('learner_detail.status', 1)
-            ->where('learner_detail.plan_type_id', $request->plan_type_id)
-            ->count();
-
-        $customer = Learner::where('id', $request->user_id)
-            ->where('status', 1)
-            ->first();
-
-        $first_record = Hour::first();
-        $total_hour = $first_record ? $first_record->hour : null;
-
-        $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $request->new_seat_id)->where('status', 1)->sum('hours');
-        $new_seat_remaining = $total_hour - $total_cust_hour;
-
-
-        $bookings = $this->getLearnersByLibrary()
-            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->where('learner_detail.seat_no', $request->new_seat_id)
-            ->where('learners.status', 1)
-            ->where('learner_detail.status', 1)
-            ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-
-        $planType = PlanType::where('id', $request->plan_type_id)->first();
-
-        $status_array = [];
-
-        foreach ($bookings as $booking) {
-
-            if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
-                $status_array[] = 0;
-            } else {
-                $status_array[] = 1;
-            }
-        }
-
-        // for future booking
-        $futurebookings = $this->getLearnersByLibrary()
-            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->where('learner_detail.seat_no', $request->new_seat_id)
-            ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
-            ->get(['plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time']);
-        $customer_detail = LearnerDetail::where('learner_id', $request->user_id)->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time')->first();
-        $customerStartDate = Carbon::parse($customer_detail->plan_start_date)->toDateString();
-        $customerEndDate   = Carbon::parse($customer_detail->plan_end_date)->toDateString();
-        $customerStartTime = $customer_detail->start_time;
-        $customerEndTime   = $customer_detail->end_time;
-
-        // all future booking get
-
-        if ($customer->hours > $new_seat_remaining) {
-            $status = 0;
-        } elseif ($count == 1) {
-            $status = 0;
-        } elseif (in_array(0, $status_array)) {
-            $status = 0;
-        } elseif ($count == 0) {
-            $status = 1;
-        } else {
-            $status = 1;
-        }
-
-
-        foreach ($futurebookings as $fb) {
-
-            $futureStartDate = Carbon::parse($fb->plan_start_date)->toDateString();
-            $futureEndDate   = Carbon::parse($fb->plan_end_date)->toDateString();
-
-            $futureStartTime = $fb->start_time;
-            $futureEndTime   = $fb->end_time;
-
-            // 1. Date Overlap
-            $dateOverlap = (
-                ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
-                ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
-                ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
-            );
-
-            if (!$dateOverlap) continue;
-
-            // 2. Time Overlap
-            $timeOverlap = (
-                $futureStartTime < $customerEndTime &&
-                $futureEndTime > $customerStartTime
-            );
-
-            if ($timeOverlap) {
-                $status = 2; // Future booking clash
-                break;
-            }
-        }
-
-
-
-        return response()->json($status);
+        return response()->json($code);
     }
 
     public function destroy(Request $request, $id)

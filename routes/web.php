@@ -346,6 +346,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
   //condition base route
   Route::post('learner/renew/', [LearnerController::class, 'learnerRenew'])->name('learners.renew');
+  // Logic shared with API: App\Services\SeatAvailabilityService::getSwapSeatStatusCode
   Route::get('getSeatStatus', [LearnerController::class, 'getSeatStatus'])->name('getSeatStatus');
   Route::get('getPlanType', [LearnerController::class, 'getPlanType'])->name('gettypePlanwise');
   Route::get('getPlanTypeSeatWise', [LearnerController::class, 'getPlanTypeSeatWise'])->name('gettypeSeatwise');

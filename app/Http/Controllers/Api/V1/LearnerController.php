@@ -10,6 +10,7 @@ use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Http\Requests\LearnerOperationRequest;
 use App\Services\LearnerOperationService;
+use App\Services\SeatAvailabilityService;
 
 class LearnerController extends Controller
 {
@@ -116,5 +117,28 @@ class LearnerController extends Controller
             $service->process($dto)
         );
 
+    }
+
+    /**
+     * Swap-seat availability — same rules as web `getSeatStatus` via SeatAvailabilityService.
+     */
+    public function seatStatus(Request $request, SeatAvailabilityService $seatAvailability)
+    {
+        $validated = $request->validate([
+            'new_seat_id' => 'required',
+            'learner_id' => 'required',
+            'plan_type_id' => 'required',
+        ]);
+
+        $code = $seatAvailability->getSwapSeatStatusCode(
+            $validated['new_seat_id'],
+            $validated['learner_id'],
+            $validated['plan_type_id']
+        );
+
+        return response()->json([
+            'status' => true,
+            'code' => $code==1,
+        ]);
     }
 }
