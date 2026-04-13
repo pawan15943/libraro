@@ -1130,6 +1130,9 @@ class LearnerService
             'detail_info'=>[
                 'plan'=>$detail->plan->name ?? '',
                 'plan_type'=>$detail->planType->name ?? '',
+                'plan_id'=>$detail->plan->id ?? '',
+                'plan_type_id'=>$detail->planType->id ?? '',
+                
                 'price'=>$detail->plan_price_id,
                 'monthdays'=>$detail->plan->monthdays ?? 'Calendar wise',
                 'start_date'=>$detail->plan_start_date,
