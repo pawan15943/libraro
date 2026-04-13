@@ -10,6 +10,7 @@ use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Http\Requests\LearnerOperationRequest;
 use App\Services\LearnerOperationService;
+use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
 
 class LearnerController extends Controller
@@ -138,7 +139,32 @@ class LearnerController extends Controller
 
         return response()->json([
             'status' => true,
-            'code' => $code==1,
+            'code' => $code,
         ]);
+    }
+
+    /**
+     * Persist seat swap — same rules as web `learners.swap-seat` via LearnerSeatSwapService.
+     */
+    public function swapSeat(Request $request, LearnerSeatSwapService $swapService)
+    {
+        $validated = $request->validate([
+            'learner_id' => 'required',
+            'seat_id' => 'required',
+        ]);
+
+        try {
+            $swapService->swap($validated['learner_id'], $validated['seat_id']);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Seat swapped successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

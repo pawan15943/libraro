@@ -40,6 +40,7 @@ use App\Models\Category;
 use App\Services\LearnerOperationService;
 use App\Services\LibraryService;
 use App\Services\PlanService;
+use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
 
 
@@ -2395,73 +2396,14 @@ class LearnerController extends Controller
     }
     
 
-    public function swapSeat(Request $request)
+    public function swapSeat(Request $request, LearnerSeatSwapService $swapService)
     {
         try {
-            DB::transaction(function () use ($request) {
-
-                $customer = $this->getLearnersByLibrary()->where('learners.id', $request->learner_id)->select('learners.id as id', 'learners.*', 'learner_detail.plan_type_id', 'learner_detail.seat_no')->first();
-
-                $newSeatId = $request->seat_id;
-
-                $first_record = Hour::first();
-                $total_hour = $first_record ? $first_record->hour : null;
-
-                $newSeatNo = $request->seat_id;
-
-                $total_cust_hour = Learner::where('library_id', getLibraryId())->where('seat_no', $newSeatNo)->where('status', 1)->sum('hours');
-                $new_seat_remainig = $total_hour - $total_cust_hour;
-
-                if ($request->seat_id && ($customer->hours > $new_seat_remainig)) {
-                    throw new Exception('Not available according to your hours.');
-                } elseif (
-                    $this->getLearnersByLibrary()->where('learner_detail.seat_no', $newSeatNo)
-                    ->where('plan_type_id', $customer->plan_type_id)
-                    ->where('learners.status', 1)
-                    ->where('learner_detail.status', 1)
-                    ->count() > 0 && $request->seat_id
-                ) {
-                    throw new Exception('The new seat is not available for your plan type.');
-                } else {
-
-
-                    // Update the learner's seat_id and seat_no
-                    $data = Learner::findOrFail($request->learner_id);
-                    $data->seat_no = $newSeatNo;
-                    $data->save();
-                    $learner_detail = LearnerDetail::where('learner_id', $request->learner_id)->update([
-                        'seat_no' => $newSeatId,
-                    ]);
-                    try {
-                        $noti = new NotificationSentController;
-
-                        if (autowabaNotificationActive()) {
-                            \Log::info('autowabaNotificationActive');
-                            $noti->autoMessage($request->learner_id, 'waba', 'swapseat-waba');
-                        } else {
-                            \Log::info('nowaba seond part swap');
-                        }
-                        if (autotextNotificationActive()) {
-                            \Log::info('autotextNotificationActive');
-                            $noti->autoMessage($request->learner_id, 'text', 'swapseat-text');
-                        } else {
-                            \Log::info('no text seond part swap');
-                        }
-                    } catch (\Throwable $e) {
-                        // Log the error (won't break your main code)
-                        \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                            'exception' => $e
-                        ]);
-                    }
-                }
-            });
-
+            $swapService->swap($request->learner_id, $request->seat_id);
 
             return redirect()->route('learners')->with('success', 'Seat swapped successfully!');
         } catch (Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Seat swap failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Seat swap failed: '.$e->getMessage());
         }
     }
 

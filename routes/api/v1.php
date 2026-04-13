@@ -115,6 +115,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
         Route::post('/seat-book', [LearnerController::class,'store']);
         Route::match(['get', 'post'], '/seat-status', [LearnerController::class, 'seatStatus']);
+        Route::post('/swap-seat', [LearnerController::class, 'swapSeat']);
         Route::post('/list', [LearnerController::class,'index']);
         Route::post('/detail', [LearnerController::class,'show']);
        
