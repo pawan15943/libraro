@@ -888,7 +888,7 @@ class QrEntryController extends Controller
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
             }else{
-                $payment_mode = 0;
+                $payment_mode = 2;
             }
 
            

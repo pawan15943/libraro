@@ -137,12 +137,12 @@ $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->i
             @else
             <img src="{{ asset('public/img/booked.png') }}" alt="Seat" class="seat py-3 {{$class}}">
             @endif
-            <p>{{ optional($customer?->plan)->name ?? '—' }}</p>
+            <p>{{ optional($customer?->plan)->name ?? '' }}</p>
             <button>Booked for <b>{{ optional($customer?->planType)->name ?? '—' }}</b></button>
             @if($learnerIdForStatus && !empty($customer?->plan_end_date))
                 {!! getUserStatusWithSpan($customer->plan_end_date, $learnerIdForStatus) !!}
             @else
-                <span class="text-muted fs-10 d-block">—</span>
+                <span class="text-muted fs-10 d-block"></span>
             @endif
         </div>
     </div>

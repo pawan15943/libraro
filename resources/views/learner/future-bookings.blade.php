@@ -280,11 +280,11 @@
                                     @endcan
                                     @endif
 
-                                    @can('has-permission', 'Reactive Seat')
+                                    {{-- @can('has-permission', 'Reactive Seat')
                                     @if($value->status==0)
                                     <li><a href="{{route('learners.reactive',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Reactivate Learner"><i class="fa-solid fa-arrows-rotate"></i></a></li>
                                     @endif
-                                    @endcan
+                                    @endcan --}}
 
                                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                                     <!-- View Seat Info -->
