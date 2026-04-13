@@ -780,7 +780,7 @@ if (!function_exists('getUserStatusWithSpan')) {
         } elseif ($isfuture_booking) {
             return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
+            return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
             return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } elseif ($diffInDays == 0) {
