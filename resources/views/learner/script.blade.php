@@ -273,15 +273,15 @@
                 
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Total Amt.</label>
-                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly >
+                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund digit-only" value="${paybleRefund ?? ''}" readonly >
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount" maxlength="4" >
+                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount digit-only" maxlength="4" >
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund" maxlength="4" >
+                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund digit-only" maxlength="4" >
                     </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
