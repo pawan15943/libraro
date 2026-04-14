@@ -93,16 +93,16 @@
                             <td>
                             <span class="truncate"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ $learner->email ?? 'Email ID Not Available' }}"
+                                data-bs-title="{{ (isset($learner->email) && $learner->email) ? display_learner_email($learner->email) : 'Email ID Not Available' }}"
                                 data-bs-placement="bottom">
                                 @if(isset($learner->email) && $learner->email)
-                                     {{ $learner->email }}
+                                     {{ display_learner_email($learner->email) }}
                                 @else
                                     <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
                                 @endif
                             </span>
                             <br>
-                            <small>+91-{{ $data->mobile ?? ' ' }}</small>
+                            <small>+91-{{ ($data->mobile ?? '') !== '' ? display_learner_mobile($data->mobile) : ' ' }}</small>
                             </td>
                             <td>
                                 {{ $learner_detail->plan_start_date ?? 'N/A' }}<br>
@@ -140,16 +140,16 @@
                          <td>
                             <span class="truncate"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-title="{{ (isset($data->email) && $data->email) ? display_learner_email($data->email) : 'Email ID Not Available' }}"
                                 data-bs-placement="bottom">
                                 @if(isset($data->email) && $data->email)
-                                     {{ $data->email }}
+                                     {{ display_learner_email($data->email) }}
                                 @else
                                     <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
                                 @endif
                             </span>
                             <br>
-                            <small>+91-{{ $data->mobile ?? ' ' }}</small>
+                            <small>+91-{{ ($data->mobile ?? '') !== '' ? display_learner_mobile($data->mobile) : ' ' }}</small>
                         </td>
                         <td>
                             {{ $data->plan_start_date ?? 'N/A' }}<br>
@@ -197,16 +197,16 @@
                           <td>
                             <span class="truncate"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-title="{{ (isset($data->email) && $data->email) ? display_learner_email($data->email) : 'Email ID Not Available' }}"
                                 data-bs-placement="bottom">
                                 @if(isset($data->email) && $data->email)
-                                     {{ $data->email }}
+                                     {{ display_learner_email($data->email) }}
                                 @else
                                     <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
                                 @endif
                             </span>
                             <br>
-                            <small>+91-{{ $data->mobile ?? ' ' }}</small>
+                            <small>+91-{{ ($data->mobile ?? '') !== '' ? display_learner_mobile($data->mobile) : ' ' }}</small>
                         </td>
 
                             <td>
@@ -249,16 +249,16 @@
                             <td>
                             <span class="truncate"
                                 data-bs-toggle="tooltip"
-                                data-bs-title="{{ $data->email ?? 'Email ID Not Available' }}"
+                                data-bs-title="{{ (isset($data->email) && $data->email) ? display_learner_email($data->email) : 'Email ID Not Available' }}"
                                 data-bs-placement="bottom">
                                 @if(isset($data->email) && $data->email)
-                                     {{ $data->email }}
+                                     {{ display_learner_email($data->email) }}
                                 @else
                                     <i class="fa-solid fa-times text-danger"></i>Email ID Not Available
                                 @endif
                             </span>
                             <br>
-                            <small>+91-{{ $data->mobile ?? ' ' }}</small>
+                            <small>+91-{{ ($data->mobile ?? '') !== '' ? display_learner_mobile($data->mobile) : ' ' }}</small>
                             </td>
                             <td>
                                 {{ $data->plan_start_date ?? 'N/A' }}<br>

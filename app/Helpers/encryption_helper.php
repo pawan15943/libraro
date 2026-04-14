@@ -2065,5 +2065,5 @@ if (!function_exists('changeFormate')) {
     }
 }
 
-
+require_once __DIR__ . '/privacy_helper.php';
 

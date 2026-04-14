@@ -30,9 +30,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Gate;
 
 class MasterController extends Controller
 {
+    public const PERMISSION_MANAGE_FEATURE_TOGGLES = 'Manage Feature Toggles';
+
     public function stateWiseCity(Request $request)
     {
 
@@ -1147,8 +1150,11 @@ class MasterController extends Controller
         return view('master.menu');
     }
 
-    public function toggleFeature(){
-        $data=DB::table('toggle_features')->get();
+    public function toggleFeature()
+    {
+        Gate::authorize('has-permission', self::PERMISSION_MANAGE_FEATURE_TOGGLES);
+
+        $data = DB::table('toggle_features')->get();
         $branch = Branch::where('id', getCurrentBranch())->first();
         $hiddenFields = [];
 
@@ -1160,7 +1166,8 @@ class MasterController extends Controller
 
     public function updateHidefield(Request $request)
     {
-       
+        Gate::authorize('has-permission', self::PERMISSION_MANAGE_FEATURE_TOGGLES);
+
         $branch = Branch::where('id', getCurrentBranch())->first(); 
 
         if ($branch  ) {

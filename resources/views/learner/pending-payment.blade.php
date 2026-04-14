@@ -32,11 +32,11 @@ $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->i
                     </li>
                     <li>
                         <span>Mobile</span>
-                        <h4>@if(optional($customer?->learner)->mobile)+91-{{ optional($customer?->learner)->mobile }}@else — @endif</h4>
+                        <h4>@if(optional($customer?->learner)->mobile)+91-{{ display_learner_mobile(optional($customer?->learner)->mobile) }}@else — @endif</h4>
                     </li>
                     <li>
                         <span>Email</span>
-                        <h4><a href="mailto:{{ optional($customer?->learner)->email ?? '' }}" class="text-white"> {!! optional($customer?->learner)->email ?: 'Email ID Not Available' !!} </a></h4>
+                        <h4><a href="mailto:{{ optional($customer?->learner)->email ?? '' }}" class="text-white"> @if(optional($customer?->learner)->email) {{ display_learner_email(optional($customer?->learner)->email) }} @else Email ID Not Available @endif </a></h4>
                     </li>
                 </ul>
             </div>

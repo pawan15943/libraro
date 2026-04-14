@@ -13,7 +13,9 @@
 
 <div class="row mb-4">
     <div class="col-lg-12">
-       
+        <div class="alert alert-info small mb-3" role="alert">
+            Use the switches below to show or hide options across the library. Under <strong>Privacy</strong>, you can turn <strong>learner mobile &amp; email masking</strong> on or off for lists, history, search, and operation pages (full contact still appears on learner view/edit).
+        </div>
         <div class="table-responsive mt-4">
             @php
                 $groupedData = $data->groupBy('category');
@@ -64,29 +66,28 @@
             });
 
             $.ajax({
-                url: "{{ route('branch.update.hidefield') }}", // update this route
+                url: "{{ route('branch.update.hidefield') }}",
                 type: "POST",
                 data: {
                     _token: '{{ csrf_token() }}',
                     hidden_ids: selectedIds
                 },
                 success: function (response) {
-                       Swal.fire({
-                            icon: 'success',
-                            title: 'Changed!',
-                            text: response.message,
-                            confirmButtonText: 'OK'
-                        }).then(() => {
-                            location.reload();
-                        });
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Changed!',
+                        text: response.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
                 },
                 error: function () {
-                   
                     Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: 'Something went wrong. Please try again.'
-                        });
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Something went wrong. Please try again.'
+                    });
                 }
             });
         });

@@ -2047,13 +2047,51 @@ class LibraryController extends Controller
 
     public function expenceList(Request $request)
     {
-        // Get expense master list for dropdown
         $data = Expense::all();
+        $expences = $this->expenseListBaseQuery($request)->paginate(10);
+        $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
 
-        // Base query
+        return view('master.expense-list', compact('expences', 'data', 'showEmptyState'));
+    }
+
+    /**
+     * Full #expensePageDynamic HTML for AJAX (no full page load).
+     */
+    public function expenceListPage(Request $request)
+    {
+        $data = Expense::all();
+        $expences = $this->expenseListBaseQuery($request)->paginate(10);
+        $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
+
+        if ($showEmptyState) {
+            $html = view('master.partials.expense-list-empty-state', compact('data'))->render();
+        } else {
+            $html = view('master.partials.expense-list-non-empty-body', compact('expences', 'data'))->render();
+        }
+
+        return response()->json(['html' => $html]);
+    }
+
+    protected function expenseListShouldShowEmptyState(Request $request, $expences): bool
+    {
+        $hasFilters = $request->filled('expense') || $request->filled('from') || $request->filled('to');
+
+        return $expences->isEmpty() && ! $hasFilters;
+    }
+
+    public function expenceListFragment(Request $request)
+    {
+        $expences = $this->expenseListBaseQuery($request)->paginate(10);
+
+        return response()->json([
+            'html' => view('master.partials.expense-list-entries', compact('expences'))->render(),
+        ]);
+    }
+
+    protected function expenseListBaseQuery(Request $request)
+    {
         $query = LearnerTransactionActivity::where('payment_type', 'EXPENSE');
 
-        // Apply filters if present
         if ($request->filled('expense')) {
             $query->where('particular', $request->expense);
         }
@@ -2066,10 +2104,7 @@ class LibraryController extends Controller
             $query->whereDate('date', '<=', $request->to);
         }
 
-        // Paginate results
-        $expences = $query->orderBy('date', 'desc')->paginate(10);
-
-        return view('master.expense-list', compact('expences', 'data'));
+        return $query->orderBy('date', 'desc');
     }
 
     public function expenceStore(Request $request)
@@ -2136,27 +2171,33 @@ class LibraryController extends Controller
         ];
 
 
-        if ($request->id) {
-            // Update
-            $expense = LearnerTransactionActivity::findOrFail($request->id);
+        $expenseId = $request->input('id', $request->input('expense_id'));
+
+        if ($expenseId) {
+            $expense = LearnerTransactionActivity::findOrFail($expenseId);
             $expense->update($data);
             $message = 'Expense updated successfully';
         } else {
-            // Create
-            LearnerTransactionActivity::create($data);
+            $expense = LearnerTransactionActivity::create($data);
             $message = 'Expense created successfully';
         }
 
         return response()->json([
             'success' => true,
             'message' => $message,
-            
         ]);
     }
 
     public function expencedestroy($id)
     {
         LearnerTransactionActivity::findOrFail($id)->delete();
+
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense deleted successfully!',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Expense deleted successfully!');
     }

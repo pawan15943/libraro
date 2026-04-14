@@ -71,8 +71,8 @@ There is currently no history available for this General seat for any learners.<
                                 
 
                             </h4>
-                            <span>UID : <a href="{{route('learners.show',$learner_id)}}">{{$learner->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$learner->mobile}}">+91-{{$learner->mobile}}</a> </span>
-                            <span class="d-block">E: <a href="mailto:{{$learner->email}}"> {!! $learner->email ? $learner->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                            <span>UID : <a href="{{route('learners.show',$learner_id)}}">{{$learner->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$learner->mobile}}">+91-{{ display_learner_mobile($learner->mobile) }}</a> </span>
+                            <span class="d-block">E: <a href="mailto:{{$learner->email}}"> @if($learner->email) {{ display_learner_email($learner->email) }} @else <i class="fa-solid fa-times text-danger"></i> Email ID Not Available @endif </a></span>
                         </div>
                     </div>
                     <div class="plan-info">

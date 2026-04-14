@@ -44,4 +44,5 @@ return array(
     '0b47d6d4a00ca9112ba3953b49e7c9a4' => $vendorDir . '/yajra/laravel-datatables-oracle/src/helper.php',
     '509a859542a32ca97545fe9f518bd2a2' => $baseDir . '/app/Helpers/HelperService.php',
     '44ea89a824477050b2d0c45a6b9f36f9' => $baseDir . '/app/Helpers/encryption_helper.php',
+    'aa7e1d6bdfc2a1c71335602d95bb6cdc' => $baseDir . '/app/Helpers/privacy_helper.php',
 );

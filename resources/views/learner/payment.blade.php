@@ -53,11 +53,11 @@ $paymentType='SEAT ASSIGNMENT';
                     </li>
                     <li>
                         <span>Mobile</span>
-                        <h4>+91-{{ $customer->learner->mobile }}</h4>
+                        <h4>+91-{{ display_learner_mobile($customer->learner->mobile) }}</h4>
                     </li>
                     <li>
                         <span>Email</span>
-                        <h4><a href="mailto:{{$customer->learner->email}}" class="text-white"> {!! $customer->learner->email ? $customer->learner->email : 'Email ID Not Available' !!} </a></h4>
+                        <h4><a href="mailto:{{$customer->learner->email}}" class="text-white"> @if($customer->learner->email) {{ display_learner_email($customer->learner->email) }} @else Email ID Not Available @endif </a></h4>
                     </li>
                 </ul>
             </div>

@@ -524,8 +524,8 @@ $learner_id=$value->id;
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif
                     </h4>
-                    <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{$value->mobile}}</a> </span>
-                    <span class="d-block">E: <a href="mailto:{{$value->email}}"> {!! $value->email ? $value->email : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!} </a></span>
+                    <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{ display_learner_mobile($value->mobile) }}</a> </span>
+                    <span class="d-block">E: <a href="mailto:{{$value->email}}"> @if($value->email) {{ display_learner_email($value->email) }} @else <i class="fa-solid fa-times text-danger"></i> Email ID Not Available @endif </a></span>
                 </div>
             </div>
             <div class="plan-info">

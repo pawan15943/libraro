@@ -158,6 +158,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('/learner/expire/{id?}', [LearnerController::class, 'learnerExpire'])->name('learner.expire');
   Route::put('/learner/expire/update/{id?}', [LearnerController::class, 'editLearnerExpire'])->name('learner.expire.update');
   Route::get('/add/expense/list', [LibraryController::class, 'expenceList'])->name('add.expense.list');
+  Route::get('/add/expense/list/page', [LibraryController::class, 'expenceListPage'])->name('add.expense.list.page');
+  Route::get('/add/expense/list/fragment', [LibraryController::class, 'expenceListFragment'])->name('add.expense.list.fragment');
   Route::post('/add/expense/store', [LibraryController::class, 'expenceStore'])->name('daily.expense.store');
   Route::delete('/add/expense/{id}', [LibraryController::class, 'expencedestroy'])->name('add.expenses.destroy');
 

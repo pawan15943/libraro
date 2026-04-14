@@ -1,8 +1,6 @@
 @extends('layouts.library')
 @section('content')
 
-
-
 <!-- Modal -->
 <div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -16,7 +14,7 @@
                 <div class="modal-body">
                     <div class="row g-4">
 
-                        <input type="hidden" id="expense_id" name="expense_id">
+                        <input type="hidden" id="expense_id" name="expense_id" value="">
 
                         <div class="col-lg-12">
                             <label>Date <span>*</span></label>
@@ -55,218 +53,153 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary button">Add Expense</button>
+                    <button type="submit" class="btn btn-primary button noLoader">Add Expense</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-@if($expences->isEmpty())
-<div class="no-data-found">
-    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
-    <dotlottie-wc
-        src="https://lottie.host/5d973bf9-2f1d-4dd5-925f-86da95dbd7b1/t7dXaWIroC.lottie"
-        style="width: 200px;height: 200px"
-        autoplay
-        loop></dotlottie-wc>
-
-    @if(getCurrentBranch() != 0)
-        <h4>You haven’t added any expense records.</h4>
-        <span>Start by creating your first expense to manage it here.</span>
-        <a href="javascript:;" class="btn btn-primary export" data-bs-toggle="modal" data-bs-target="#expenseModal">
-            <i class="fa-solid fa-plus "></i> Add Expense
-        </a>
+<div id="expensePageDynamic">
+    @if($showEmptyState)
+        @include('master.partials.expense-list-empty-state')
     @else
-        <h4>To add expense, first select your Branch.</h4>
-        <span>Floors are branch-specific. Please choose a branch before adding expense. (Choose Branch in Header Dropdown)</span>
+        @include('master.partials.expense-list-non-empty-body', ['expences' => $expences, 'data' => $data])
     @endif
 </div>
-@else
-<!-- Expense -->
-<div class="row">
-    <div class="col-lg-12 text-end">
-        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
-
-        <a href="javascript:;" class="btn btn-primary export" data-bs-toggle="modal" data-bs-target="#expenseModal">
-            <i class="fa-solid fa-plus "></i> Add Expense
-        </a>
-    </div>
-</div>
-
-
-<div class="row mb-4" id="filterContainer">
-    <div class="col-lg-12">
-        <div class="filter p-3 bg-white mt-4">
-            <form method="GET" action="{{ route('add.expense.list') }}">
-                <div class="row g-2">
-                    <div class="col-lg-4">
-                        <label>Choose Expense Type</label>
-                        <select name="expense" class="form-control form-select">
-                            <option value="">All Types</option>
-                            @foreach($data as $expType)
-                            <option value="{{ $expType->name }}" {{ request('expense') == $expType->name ? 'selected' : '' }}>
-                                {{ $expType->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <label>From</label>
-                        <input type="date" name="from" class="form-control" value="{{ request('from') }}">
-                    </div>
-
-                    <div class="col-lg-4">
-                        <label>To</label>
-                        <input type="date" name="to" class="form-control" value="{{ request('to') }}">
-                    </div>
-
-
-                    <div class="col-lg-2">
-                        <input type="submit" class="btn btn-primary button" value="Search">
-                    </div>
-                    <div class="col-lg-1 align-self-end">
-                        <button type="button"
-                            id="clearFilter"
-                            class="btn btn-secondary button"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="bottom"
-                            data-bs-title="Clear Filter">
-                            Clear
-                        </button>
-                    </div>
-
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-12 ">
-        <p>
-            <b>{{ $expences->total() }} Records — showing {{ $expences->perPage() }} per page</b>
-        </p>
-    </div>
-</div>
-
-<div class="row g-2 mb-4">
-    @forelse($expences as $exp)
-    <div class="col-lg-12">
-        <div class="revenue-info">
-            <ul>
-                <li style="width: 5%;">
-                    <div class="icon">
-                        <i class="fa fa-long-arrow-left text-danger"></i>
-                    </div>
-                </li>
-                <li style="width: 20%;">
-                    <span>Expense Name</span>
-                    <p class="uppercase truncate">{{ $exp->particular }}</p>
-                </li>
-                <li>
-                    <span>Amount</span>
-                    <p>{{ number_format($exp->amount, 2) }}</p>
-                </li>
-                <li>
-                    <span>Payment Mode</span>
-                    <p>{{ $exp->payment_mode }}</p>
-                </li>
-                <li>
-                    <span>Paid On</span>
-                    <p>{{ \Carbon\Carbon::parse($exp->date)->format('d M, Y') }}</p>
-                </li>
-                {{-- <li>
-                    <span>Remark</span>
-                    <p>{{ $exp->remark ?? '-' }}</p>
-                </li> --}}
-                <li style="width:8%;">
-                    <span>Action</span>
-                    <p>
-                    <form id="delete-form-{{ $exp->id }}"
-                        action="{{ route('add.expenses.destroy', $exp->id) }}"
-                        method="POST"
-                        style="display: none;">
-                        @csrf
-                        @method('DELETE')
-                    </form>
-
-                    <a type="button" href="javascript:;"
-                        onclick="confirmDelete({{ $exp->id }})">
-                        Delete
-                    </a>
-
-                    </p>
-                </li>
-
-            </ul>
-        </div>
-    </div>
-
-    @empty
-
-    <div class="col-lg-12 text-center">
-        <p>No expense records found.</p>
-    </div>
-
-    @endforelse
-</div>
-
-{{-- Pagination --}}
-@if ($expences->lastPage() > 1)
-<ul class="paginations mt-4">
-    {{-- Prev --}}
-    <li>
-        <a href="{{ $expences->onFirstPage() ? '#' : $expences->previousPageUrl() }}" class="w-auto px-3 text-muted">Prev</a>
-    </li>
-
-    {{-- Page Numbers (shortened: 1 ... current ... last) --}}
-    @if ($expences->currentPage() > 3)
-    <li><a href="{{ $expences->url(1) }}">1</a></li>
-    <li><span>...</span></li>
-    @endif
-
-    @for ($i = max(1, $expences->currentPage() - 2); $i <= min($expences->lastPage(), $expences->currentPage() + 2); $i++)
-        <li>
-            <a href="{{ $expences->url($i) }}" class="{{ $expences->currentPage() == $i ? 'active' : '' }}">
-                {{ $i }}
-            </a>
-        </li>
-    @endfor
-
-    @if ($expences->currentPage() < $expences->lastPage() - 2)
-            <li><span>...</span></li>
-            <li><a href="{{ $expences->url($expences->lastPage()) }}">{{ $expences->lastPage() }}</a></li>
-    @endif
-
-    {{-- Next --}}
-    <li>
-        <a href="{{ $expences->hasMorePages() ? $expences->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
-    </li>
-</ul>
-@endif
-@endif
 
 <script>
     document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
 
-    $(document).on('submit', '#expenseForm', function(e) {
+    var expenseListPageUrl = "{{ route('add.expense.list') }}";
 
-        event.preventDefault();
+    function expenseGetFilterParams(extra) {
+        var data = {};
+        var $form = $('#expenseFilterForm');
+        if ($form.length) {
+            $.each($form.serializeArray(), function (_, field) {
+                data[field.name] = field.value;
+            });
+        }
+        var loc = new URL(window.location.href);
+        if (loc.searchParams.has('page')) {
+            data.page = loc.searchParams.get('page');
+        }
+        if (extra && typeof extra === 'object') {
+            $.extend(data, extra);
+        }
+        return data;
+    }
+
+    function expenseReplaceHistory(params) {
+        var u = new URL(expenseListPageUrl, window.location.origin);
+        u.search = '';
+        Object.keys(params || {}).forEach(function (k) {
+            var v = params[k];
+            if (v !== '' && v !== undefined && v !== null) {
+                u.searchParams.set(k, String(v));
+            }
+        });
+        if (!u.searchParams.get('page') || u.searchParams.get('page') === '1') {
+            u.searchParams.delete('page');
+        }
+        history.replaceState({}, '', u.pathname + u.search);
+    }
+
+    function refreshExpensePage(extra) {
+        var data = expenseGetFilterParams(extra);
+        $.get("{{ route('add.expense.list.page') }}", data)
+            .done(function (res) {
+                if (res && res.html) {
+                    $('#expensePageDynamic').html(res.html);
+                    expenseReplaceHistory(data);
+                }
+            })
+            .fail(function () {
+                toastr.error('Could not load expense list.');
+            });
+    }
+
+    function expenseFormSetSubmitLoading(isLoading) {
+        var $btn = $('#expenseForm button[type="submit"]');
+        if (!$btn.length) {
+            return;
+        }
+        if (isLoading) {
+            if ($btn.data('expenseBtnHtml') === undefined) {
+                $btn.data('expenseBtnHtml', $btn.html());
+            }
+            $btn.prop('disabled', true);
+            $btn.css({ 'pointer-events': 'none', opacity: '0.7' });
+            $btn.html(
+                $btn.data('expenseBtnHtml') +
+                ' <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+            );
+        } else {
+            var html = $btn.data('expenseBtnHtml');
+            if (html !== undefined) {
+                $btn.html(html);
+            }
+            $btn.prop('disabled', false);
+            $btn.css({ 'pointer-events': '', opacity: '' });
+        }
+    }
+
+    $(document).on('click', '#expensePageDynamic .expense-toolbar-filter-toggle', function (e) {
+        e.preventDefault();
+        $('#expensePageDynamic #filterContainer').toggle();
+    });
+
+    $(document).on('submit', '#expensePageDynamic #expenseFilterForm', function (e) {
+        e.preventDefault();
+        refreshExpensePage({ page: 1 });
+    });
+
+    $(document).on('click', '#expensePageDynamic #expenseClearFilter', function (e) {
+        e.preventDefault();
+        var $form = $('#expenseFilterForm');
+        if ($form.length) {
+            $form[0].reset();
+        }
+        refreshExpensePage({ page: 1, expense: '', from: '', to: '' });
+    });
+
+    $(document).on('click', '#expenseListAjaxWrapper .expense-page-link', function (e) {
+        var href = $(this).attr('href');
+        if (!href || href === '#') {
+            return;
+        }
+        e.preventDefault();
+        try {
+            var url = new URL(href, window.location.origin);
+            var params = Object.fromEntries(url.searchParams.entries());
+            refreshExpensePage(params);
+        } catch (err) {
+            window.location.href = href;
+        }
+    });
+
+    $(document).on('submit', '#expenseForm', function (e) {
+        e.preventDefault();
+        var $btn = $('#expenseForm button[type="submit"]');
+        if ($btn.data('expenseSubmitBusy')) {
+            return;
+        }
+        $btn.data('expenseSubmitBusy', true);
+        expenseFormSetSubmitLoading(true);
+
         var formData = $(this).serialize();
-        var formId = $(this).attr('id');
         var url = "{{ route('daily.expense.store') }}";
-
 
         $.ajax({
             url: url,
             method: "POST",
             data: formData,
-            success: function(response) {
-
-                // Clear old validation errors
+            complete: function () {
+                $btn.data('expenseSubmitBusy', false);
+                expenseFormSetSubmitLoading(false);
+            },
+            success: function (response) {
                 $(".is-invalid").removeClass("is-invalid");
                 $(".invalid-feedback").remove();
                 $("#error-message").hide().text('');
@@ -275,9 +208,12 @@
                 if (response.success) {
                     $('#expenseModal').modal('hide');
                     toastr.success(response.message);
-                    location.reload();
+                    $('#expenseForm')[0].reset();
+                    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+                    $('#expense_id').val('');
+                    refreshExpensePage(expenseGetFilterParams({ page: 1 }));
                 } else if (response.errors) {
-                    $.each(response.errors, function(key, value) {
+                    $.each(response.errors, function (key, value) {
                         var element = $("[name='" + key + "']");
                         element.addClass("is-invalid");
                         element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
@@ -286,25 +222,18 @@
                     $("#error-message").text(response.message).show();
                 }
             },
-            error: function(xhr) {
-                // Clear old validation errors
+            error: function (xhr) {
                 $(".is-invalid").removeClass("is-invalid");
                 $(".invalid-feedback").remove();
-                $("#error-message").hide().text('');
-                $("#success-message").hide().text('');
 
                 if (xhr.status === 422) {
                     var errors = xhr.responseJSON.errors;
-
-                    $.each(errors, function(key, value) {
-                        let field = $(`[name="${key}"]`);
-
-                        // Handle fields like name.0, name.1, etc.
+                    $.each(errors, function (key, value) {
+                        var field = $(`[name="${key}"]`);
                         if (key.includes('.')) {
-                            const [baseKey, index] = key.split('.');
-                            field = $(`[name="${baseKey}[]"]`).eq(index);
+                            const parts = key.split('.');
+                            field = $(`[name="${parts[0]}[]"]`).eq(parts[1]);
                         }
-
                         field.addClass('is-invalid');
                         field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
                     });
@@ -315,9 +244,8 @@
         });
     });
 
-    // Prefill modal for edit
-    $(document).on('click', '.editExpense', function() {
-        let expense = $(this).data('expense');
+    $(document).on('click', '.editExpense', function () {
+        var expense = $(this).data('expense');
         $('#expense_id').val(expense.id);
         $('[name="date"]').val(expense.date);
         $('[name="name"]').val(expense.name);
@@ -339,9 +267,24 @@
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById('delete-form-' + id).submit();
+                $.ajax({
+                    url: "{{ url('/add/expense') }}/" + id,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'DELETE'
+                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function () {
+                        toastr.success('Expense deleted successfully!');
+                        refreshExpensePage(expenseGetFilterParams());
+                    },
+                    error: function () {
+                        toastr.error('Could not delete expense.');
+                    }
+                });
             }
-        })
+        });
     }
 </script>
 @endsection
