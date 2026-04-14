@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\Exam;
 use App\Models\Floor;
 use App\Models\Hour;
+use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LibraryUser;
 use App\Models\Plan;
@@ -302,6 +303,43 @@ class MasterController extends Controller
             'status' => true,
             'data'   => $result
         ]);
+    }
+
+    public function getFilterPlantypeWithself(Request $request)
+    {
+         $validated = $request->validate([
+            'learner_id'       => 'required|exists:learners,id',
+           
+        ]);
+
+        try {
+            $learner = Learner::find($request->learner_id);
+
+            if (!$learner) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Learner not found'
+                ], 404);
+            }
+
+            if ($learner->seat_no) {
+                $filteredPlanTypes = filterPlantypeFromseat($learner->seat_no, $learner->id);
+            } else {
+                $filteredPlanTypes = PlanType::select('id', 'name')->get();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Plan types fetched successfully',
+                'data' => $filteredPlanTypes
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function floorStore(Request $request)

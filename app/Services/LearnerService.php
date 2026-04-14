@@ -1107,7 +1107,9 @@ class LearnerService
             $mainstatus=$planStatus['status'];
         }
 
+        $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
 
+        
 
         return [
 
@@ -1146,6 +1148,8 @@ class LearnerService
                 'locker_no'=>$learner->locker_no ?? '',
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
+                'plan_days' => getChargeableDays($detail->plan->id, $detail->plan_start_date, $branchId)['chargeable_days'] ?? 0,
+                'plantype_detail'=>$fetchPlanType ?? '',
             ],
 
             'payment_information'=>[
