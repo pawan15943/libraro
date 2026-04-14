@@ -847,7 +847,7 @@ if (!function_exists('getUserStatusWithSpan')) {
         } elseif ($isfuture_booking) {
             return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
+            return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
             return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } elseif ($diffInDays == 0) {
@@ -1121,7 +1121,7 @@ if (!function_exists('branchCountValidation')) {
         $library = Library::findOrFail(getLibraryId());
         $branch_count = Branch::where('library_id', getLibraryId())->count();
         $message = "You cannot add more branches. You already have $branch_count branches.";
-        $limits = [1 => 3, 2 => 5, 3 => 20]; // library_type => max branches
+        $limits = [1 => 1, 2 => 2, 3 => 4]; // library_type => max branches
         $maxAllowed = $limits[$library->library_type] ?? 0;
 
         return [

@@ -34,11 +34,14 @@
     <div class="col-lg-4 payment-mode">
         <label for="" class="m-auto d-block">Select Plan Mode <span>*</span></label>
         <select name="plan_mode" id="plan_mode" class="form-select">
-            <option value="1">1 MONTHLY</option>
+            {{-- <option value="1">1 MONTHLY</option>
             <option value="3">3 MONTHLY</option>
             <option value="4">6 MONTHLY</option>
             <option value="2">1 YEARLY </option>
-            <option value="5">2 YEARLY</option>
+            <option value="5">2 YEARLY</option> --}}
+            @foreach($month as $key => $value)
+                <option value="{{$key}}">{{$value}}</option>
+            @endforeach
            
         </select>
     </div>
