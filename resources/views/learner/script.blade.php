@@ -281,7 +281,7 @@
                     </div>
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund" maxlength="4" >
+                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund digit-only" maxlength="4" >
                     </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
