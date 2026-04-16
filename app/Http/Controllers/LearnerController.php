@@ -22,6 +22,7 @@ use App\Models\Floor;
 use App\Models\LearnerTransactionActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use Carbon\Carbon;
@@ -42,6 +43,7 @@ use App\Services\LibraryService;
 use App\Services\PlanService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
+use App\Support\LearnerShiftSupport;
 
 
 class LearnerController extends Controller
@@ -56,6 +58,9 @@ class LearnerController extends Controller
 
     protected function validateCustomer(Request $request, array $additionalRules = [])
     {
+        if ($request->has('plan_type_id') && ! is_array($request->plan_type_id)) {
+            $request->merge(['plan_type_id' => array_filter([$request->plan_type_id])]);
+        }
 
         $baseRules = [
 
@@ -78,7 +83,11 @@ class LearnerController extends Controller
             'exam_id' => 'nullable|exists:exams,id',
             'plan_start_date' => 'nullable|date',
             'plan_id' => 'required',
-            'plan_type_id' => 'required',
+            'plan_type_id' => 'required|array|min:1',
+            'plan_type_id.*' => [
+                'integer',
+                Rule::exists('plan_types', 'id')->where(fn ($q) => $q->where('branch_id', getCurrentBranch())),
+            ],
             'plan_price_id' => 'required|numeric|min:0',
 
             'discount_amount' => 'nullable|numeric|min:0',
@@ -386,7 +395,9 @@ class LearnerController extends Controller
             $locker_amt=0;
         }
 
-        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
+        $selected_plan_type_ids = \App\Support\LearnerShiftSupport::planTypeIdsForLearnerDetail($customer_detail);
+
+        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater','selected_plan_type_ids'));
     }
    
     //renew and learner  Upgrade
@@ -426,7 +437,22 @@ class LearnerController extends Controller
         $customer = $this->fetchCustomerData($customerId, false, $status = 0, $detailStatus = 0, $perPage = 10, $paginate = false);
 
         $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
-        
+
+        if ($customer_detail && $customer_detail->seat_no) {
+            $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
+        } else {
+            $filteredPlanTypes = PlanType::where('library_id', getLibraryId())->get()->map(function ($planType) {
+                return [
+                    'id' => $planType->id,
+                    'name' => $planType->name,
+                    'slot_hours' => (int) ($planType->slot_hours ?? 0),
+                ];
+            })->values();
+        }
+        $selected_plan_type_ids = $customer_detail
+            ? LearnerShiftSupport::planTypeIdsForLearnerDetail($customer_detail)
+            : [];
+
         $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
         $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
@@ -443,7 +469,18 @@ class LearnerController extends Controller
             return response()->json($customer);
         } else {
 
-            return view('learner.reactive', compact('customer', 'available_seat','hasLocker','discountAmount','selectedDiscountType','oneWeekLater','today','locker_amt'));
+            return view('learner.reactive', compact(
+                'customer',
+                'available_seat',
+                'hasLocker',
+                'discountAmount',
+                'selectedDiscountType',
+                'oneWeekLater',
+                'today',
+                'locker_amt',
+                'filteredPlanTypes',
+                'selected_plan_type_ids'
+            ));
         }
     }
 
@@ -508,9 +545,12 @@ class LearnerController extends Controller
 
             $name = "profile_picture_" . time() . $file->getClientOriginalName();
 
-            $file->move(public_path('uploade'), $name);
+            $this->storePublicUpload($file, public_path('uploade'), $name);
 
             $learner->profile_picture = 'public/uploade/'.$name;
+            // LearnerOperationService::moveTempFileToPublic would run again on the same upload; temp is already gone.
+            $request->files->remove('profile_picture');
+            $request->merge(['profile_picture' => $learner->profile_picture]);
         }
 
         if ($request->hasFile('id_proof_file')) {
@@ -519,9 +559,11 @@ class LearnerController extends Controller
 
             $name = "id_proof_" . time() . $file->getClientOriginalName();
 
-            $file->move(public_path('uploads'), $name);
+            $this->storePublicUpload($file, public_path('uploads'), $name);
 
             $learner->id_proof_file = 'public/uploads/'.$name;
+            $request->files->remove('id_proof_file');
+            $request->merge(['id_proof_file' => $learner->id_proof_file]);
         }
 
         /*
@@ -1535,93 +1577,96 @@ class LearnerController extends Controller
 
     public function getPlanType(Request $request)
     {
+        $seatNo = $request->input('seat_no');
 
-        $seatNo = $request->seat_no;
-
-
-        if ($request->learner_detail_id) {
-            $customer_plan = LearnerDetail::where('id', $request->learner_detail_id)
-                ->pluck('plan_type_id');
-            $selectedPlan = LearnerDetail::where('id', $request->learner_detail_id)
-                ->pluck('plan_id');
-        } else {
-            $customer_plan = LearnerDetail::where('seat_no', $seatNo)->where('learner_id', $request->user_id)
-                ->pluck('plan_type_id');
-            $selectedPlan = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $seatNo)->where('learners.id', $request->user_id)
-                ->pluck('plan_id');
+        $detail = null;
+        if ($request->filled('learner_detail_id')) {
+            $detail = LearnerDetail::where('id', $request->learner_detail_id)->first();
+        } elseif ($request->filled('user_id')) {
+            $q = LearnerDetail::where('learner_id', $request->user_id);
+            if ($request->filled('seat_no') && $seatNo !== '' && $seatNo !== null) {
+                $q->where('seat_no', $seatNo);
+            } else {
+                $q->whereNull('seat_no');
+            }
+            $detail = $q->orderByDesc('id')->first();
         }
 
-
-        // Step 1: Retrieve the plan_type_ids from learners for the given seat
-        $filteredPlanTypes = PlanType::where('id', $customer_plan)->pluck('name', 'id');
-
-        $planTypesRemovals = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $seatNo)
-            ->pluck('plan_type_id')
-            ->toArray();
-
-
-        // Step 2: Retrieve all plan_types as an associative array
-        $planTypes = PlanType::pluck('name', 'id');
-
-
-
-        // Step 3: Filter out the plan_types that match the retrieved plan_type_ids
-        if (!$planTypesRemovals) {
-            $filteredPlanTypes = $planTypes->reject(function ($name, $id) use ($planTypesRemovals) {
-                return in_array($id, $planTypesRemovals);
-            });
+        if (! $detail) {
+            return response()->json([[], [], null, null, null, 0, ['chargeable_days' => 0, 'fixedBillingDate' => false], 0]);
         }
 
-
-        $selectedPlanName = Plan::where('id', $selectedPlan)->pluck('name', 'id');
-
-        // Return the filtered plan types as JSON
-        $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('learner_id', 'plan_id', 'plan_type_id', 'plan_price_id','plan_end_date')->first();
-        $transaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->select('total_amount', 'locker_amount', 'discount_amount', 'paid_amount')->first();
-        $learner = Learner::where('id', $selectedbothId->learner_id)->select('locker_no')->first();
-
-        $branch = Branch::select('fixed_billing_date')
-        ->where('id', getCurrentBranch())
-        ->first();
-
-        $hasFixedBilling = Branch::where('id', getCurrentBranch())
-            ->whereNotNull('fixed_billing_date')
-            ->exists();
-
-        $fixedBillingDate = $branch?->fixed_billing_date;
-        $start_date = \Carbon\Carbon::parse($selectedbothId->plan_end_date)->addDay()->format('Y-m-d');
-       
-        if ($hasFixedBilling ) {
-
-            $PlanpPrice = getBillingCyclePrice($selectedbothId->plan_id,$selectedbothId->plan_type_id,$start_date);
-
-        }else {
-
-            $PlanpPrice = getPlanPrice($selectedbothId->plan_id,$selectedbothId->plan_type_id);
-
+        $learnerPlanTypeIds = LearnerShiftSupport::planTypeIdsForLearnerDetail($detail);
+        if ($learnerPlanTypeIds === [] && $detail->plan_type_id) {
+            $learnerPlanTypeIds = [(int) $detail->plan_type_id];
         }
-        $days=getChargeableDays($selectedbothId->plan_id, $start_date, getCurrentBranch());
-        $previous_pending = LearnerTransaction::where(
-        'learner_id',
-        optional($selectedbothId)->learner_id
-        )->sum('pending_amount') ?? 0;
 
-        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days,$previous_pending]);
+        $byId = PlanType::whereIn('id', $learnerPlanTypeIds)->get()->keyBy('id');
+        $planTypeOptions = collect($learnerPlanTypeIds)->map(function ($id) use ($byId) {
+            $pt = $byId->get($id);
+            if (! $pt) {
+                return null;
+            }
+
+            return [
+                'id' => (int) $pt->id,
+                'name' => $pt->name,
+                'slot_hours' => (int) ($pt->slot_hours ?? 0),
+            ];
+        })->filter()->values();
+
+        $selectedPlanName = Plan::where('id', $detail->plan_id)->pluck('name', 'id');
+
+        $selectedbothId = LearnerDetail::where('id', $detail->id)
+            ->select('learner_id', 'plan_id', 'plan_type_id', 'plan_price_id', 'plan_end_date')
+            ->first();
+
+        $transaction = LearnerTransaction::where('learner_detail_id', $detail->id)
+            ->select('total_amount', 'locker_amount', 'discount_amount', 'paid_amount')
+            ->first();
+
+        $learner = Learner::where('id', $detail->learner_id)->select('locker_no')->first();
+
+        $start_date = Carbon::parse($detail->plan_end_date)->addDay()->format('Y-m-d');
+
+        $PlanpPrice = LearnerShiftSupport::combinedPlanPrice(
+            (int) $detail->plan_id,
+            $learnerPlanTypeIds,
+            $start_date,
+            getCurrentBranch()
+        );
+
+        $days = getChargeableDays($detail->plan_id, $start_date, getCurrentBranch());
+        $previous_pending = LearnerTransaction::where('learner_id', $detail->learner_id)->sum('pending_amount') ?? 0;
+
+        return response()->json([$planTypeOptions, $selectedPlanName, $selectedbothId, $transaction, $learner, $PlanpPrice, $days, $previous_pending]);
     }
     public function getPrice(Request $request, PlanService $priceService)
     {
-        if (!$request->plan_type_id || !$request->plan_id) {
+        if (! $request->plan_id) {
+            return response()->json(0);
+        }
+
+        $ids = \App\Support\LearnerShiftSupport::normalizePlanTypeIdsFromRequest($request);
+        if (empty($ids)) {
             return response()->json(0);
         }
 
         $branchId = getCurrentBranch();
 
-        $result = $priceService->calculatePrice(
-            $request->plan_id,
-            $request->plan_type_id,
-            $request->plan_start_date,
-            $branchId
-        );
+        $result = count($ids) === 1
+            ? $priceService->calculatePrice(
+                (int) $request->plan_id,
+                $ids[0],
+                $request->plan_start_date,
+                $branchId
+            )
+            : $priceService->calculateMultiShiftPrice(
+                (int) $request->plan_id,
+                $ids,
+                $request->plan_start_date,
+                $branchId
+            );
 
         return response()->json($result['price']);
     }
@@ -1755,9 +1800,9 @@ class LearnerController extends Controller
 
             // Handle renew cases
             if ($isRenew) {
-                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 1 as is_renew ,learner_detail.exam_id');
+                $query->selectRaw('learner_detail.id as learner_detail_id, learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 1 as is_renew ,learner_detail.exam_id');
             } else {
-                $query->selectRaw('learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 0 as is_renew ,learner_detail.exam_id');
+                $query->selectRaw('learner_detail.id as learner_detail_id, learner_detail.learner_id, learner_detail.plan_start_date, learner_detail.join_date, learner_detail.plan_end_date, learner_detail.plan_type_id, learner_detail.plan_id, learner_detail.plan_price_id, learner_detail.status, 0 as is_renew ,learner_detail.exam_id');
             }
 
             $customer = $query->firstOrFail();
@@ -1766,6 +1811,10 @@ class LearnerController extends Controller
                 // Format start and end time
                 $customer->start_time = Carbon::parse($customer->start_time)->format('g:i A');
                 $customer->end_time = Carbon::parse($customer->end_time)->format('g:i A');
+            }
+
+            if ($customer && ! empty($customer->learner_detail_id)) {
+                LearnerShiftSupport::mergeShiftLabelsIntoObject($customer, (int) $customer->learner_detail_id);
             }
 
             return $customer;
@@ -1793,9 +1842,12 @@ class LearnerController extends Controller
                 ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC');
         }
 
-        return $paginate
+        $result = $paginate
             ? $query->paginate($perPage)
             : $query->get();
+        LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($result);
+
+        return $result;
     }
 
     public function fetchLearnerData($customerId = null, $isRenew = false, $status, $detailStatus, $filters = [], $perPage = 5, $paginate = true)
@@ -1871,9 +1923,12 @@ class LearnerController extends Controller
             }
 
 
-            return $paginate
+            $result = $paginate
                 ? $query->paginate($perPage)
                 : $query->get();
+            LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($result);
+
+            return $result;
         }
     }
 
@@ -1977,7 +2032,7 @@ class LearnerController extends Controller
             $id_proof_file = $request->file('id_proof_file');
             $id_proof_fileNewName = "id_proof_file_" . time() . "_" . $id_proof_file->getClientOriginalName();
 
-            $id_proof_file->move(public_path('uploads'), $id_proof_fileNewName);
+            $this->storePublicUpload($id_proof_file, public_path('uploads'), $id_proof_fileNewName);
             $id_proof_filePath = 'uploads/' . $id_proof_fileNewName;
 
             $customer->id_proof_file = $id_proof_filePath;
@@ -2154,7 +2209,7 @@ class LearnerController extends Controller
         }
 
         $learnerHistory =   $query->paginate($perPage);
-
+        LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($learnerHistory);
 
 
         return view('learner.learnerHistory', compact('learnerHistory'));
@@ -2186,10 +2241,37 @@ class LearnerController extends Controller
             $locker_amt=0;
         }
 
+        $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'desc')->first();
+        if ($customer_detail && $customer_detail->seat_no) {
+            $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
+        } else {
+            $filteredPlanTypes = PlanType::where('library_id', getLibraryId())->get()->map(function ($planType) {
+                return [
+                    'id' => $planType->id,
+                    'name' => $planType->name,
+                    'slot_hours' => (int) ($planType->slot_hours ?? 0),
+                ];
+            })->values();
+        }
+        $selected_plan_type_ids = $customer_detail
+            ? LearnerShiftSupport::planTypeIdsForLearnerDetail($customer_detail)
+            : [];
+
         if ($request->expectsJson() || $request->has('id')) {
             return response()->json($customer);
         } else {
-            return view('learner.learnerEdit', compact('customer', 'available_seat','hasLocker','discountAmount','selectedDiscountType','oneWeekLater','today','locker_amt'));
+            return view('learner.learnerEdit', compact(
+                'customer',
+                'available_seat',
+                'hasLocker',
+                'discountAmount',
+                'selectedDiscountType',
+                'oneWeekLater',
+                'today',
+                'locker_amt',
+                'filteredPlanTypes',
+                'selected_plan_type_ids'
+            ));
         }
     }
     public function showLearner(Request $request, $id = null)
@@ -2628,7 +2710,9 @@ class LearnerController extends Controller
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
 
-        return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment', 'filteredPlanTypes'));
+        $selected_plan_type_ids = \App\Support\LearnerShiftSupport::planTypeIdsForLearnerDetail($customer_detail);
+
+        return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment', 'filteredPlanTypes', 'selected_plan_type_ids'));
     }
 
     public function learnerExpire(Request $request, $id = null)
@@ -2919,6 +3003,7 @@ class LearnerController extends Controller
                 ->with(['planType'])
                 ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'), 'attendances.in_time', 'attendances.out_time')
                 ->get();
+            LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($learners, 'id');
         } else {
             $learners = collect();
         }
@@ -3027,6 +3112,7 @@ class LearnerController extends Controller
         'learners.dob as dob',
         'learners.mobile',
         'learners.seat_no',
+        'learner_detail.id as learner_detail_id',
         'learner_detail.plan_start_date',
         'learner_detail.plan_end_date',
         'learners.library_id',
@@ -3038,6 +3124,8 @@ class LearnerController extends Controller
         'attendances.attendance',
         'attendances.date'
     )->get();
+
+    LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($learners);
 
     /* =========================
        COUNTS
@@ -3075,6 +3163,19 @@ class LearnerController extends Controller
 
         $data = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
 
+        if ($data !== null) {
+            $ld = LearnerDetail::withoutGlobalScopes()->find($data->id);
+            if ($ld !== null) {
+                $labels = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($ld);
+                if ($labels['subscription'] !== 'NA') {
+                    $data->plan_type_name = $labels['subscription'];
+                }
+                if ($labels['shift_timing'] !== '') {
+                    $data->shift_times_display = $labels['shift_timing'];
+                }
+            }
+        }
+
         $library_name = Branch::where('id', Auth::user()->branch_id)->select('name as library_name', 'features', 'library_id')->first();
         $library_no = Library::where('id', $library_name->library_id)->select("library_no")->first();
 
@@ -3105,6 +3206,18 @@ class LearnerController extends Controller
     {
         $dates = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->select('plan_start_date', 'plan_end_date')->get();
         $data = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
+        if ($data !== null) {
+            $ld = LearnerDetail::withoutGlobalScopes()->find($data->id);
+            if ($ld !== null) {
+                $labels = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($ld);
+                if ($labels['subscription'] !== 'NA') {
+                    $data->plan_type_name = $labels['subscription'];
+                }
+                if ($labels['shift_timing'] !== '') {
+                    $data->shift_times_display = $labels['shift_timing'];
+                }
+            }
+        }
         $my_attandance = Attendance::where('learner_id', Auth::user()->id)->get();
 
         if ($request->has('request_name') && !empty($request->request_name)) {
@@ -3547,7 +3660,7 @@ class LearnerController extends Controller
 
     public function learnerIdCard($id)
     {
-        $learner_detail = LearnerDetail::where('id', $id)->with(['learner','planType'])->first();
+        $learner_detail = LearnerDetail::where('id', $id)->with(['learner', 'planTypes'])->first();
         $branch = Branch::where('id', $learner_detail->branch_id)->with('city', 'state')->first();
         // $filename = 'qr_' . $learner_detail->learner_id . '.png';
         // Storage::put("public/qr/$filename", QrCode::format('png')->size(300)->generate($learner_detail->learner->learner_no));
@@ -3562,7 +3675,7 @@ class LearnerController extends Controller
             return back()->with('error', 'Please select at least one learner.');
         }
 
-        $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)->with(['learner'])->get();
+        $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)->with(['learner', 'planTypes', 'planType'])->get();
 
         $branch = Branch::where('id', getCurrentBranch())->with('city', 'state')->first();
         $print_type=$request->print_type;
@@ -4247,14 +4360,13 @@ class LearnerController extends Controller
         $tran = LearnerTransactionActivity::where('learner_id', $transaction->learner_id)
             ->value('transaction_id');
 
-        $start = date('h:i A', strtotime($learnerDetail->planType->start_time));
-        $end   = date('h:i A', strtotime($learnerDetail->planType->end_time));
-
-        $shift_timing = $start . ' to ' . $end;
+        $labels = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($learnerDetail);
+        $shift_timing = $labels['shift_timing'];
+        $subscriptionName = $labels['subscription'];
 
         $send_data = [
             'branch_logo'      => $branch_logo ?? '',
-            'subscription'     => $learnerDetail->planType->name ?? 'NA',
+            'subscription'     => $subscriptionName,
             'name'             => $user->name ?? 'NA',
             'email'            => $user->email ?? 'NA',
             'transactiondate'  => $transaction->paid_date ?? 'NA',
@@ -4280,5 +4392,37 @@ class LearnerController extends Controller
         $pdf = PDF::loadView('recieptPdf', $send_data);
 
         return $pdf->download(now()->timestamp . '_receipt.pdf');
+    }
+
+    /**
+     * Persist an uploaded file under a public directory.
+     * Cropper.js replaces the file input via DataTransfer; the temp file may not pass
+     * PHP's is_uploaded_file(), so Symfony UploadedFile::move() throws. Prefer move_uploaded_file,
+     * then copy from the temp path as a fallback.
+     */
+    private function storePublicUpload(UploadedFile $file, string $directory, string $name): void
+    {
+        $directory = rtrim($directory, DIRECTORY_SEPARATOR);
+        if (! is_dir($directory)) {
+            throw new \RuntimeException('Upload directory does not exist: '.$directory);
+        }
+        $targetPath = $directory.DIRECTORY_SEPARATOR.$name;
+        $tmpPath = $file->getRealPath();
+        if (! $tmpPath || ! is_readable($tmpPath)) {
+            throw new \Symfony\Component\HttpFoundation\File\Exception\FileException(
+                $file->getErrorMessage()
+            );
+        }
+        if (is_uploaded_file($tmpPath)) {
+            $file->move($directory, $name);
+
+            return;
+        }
+        if (! @copy($tmpPath, $targetPath)) {
+            throw new \RuntimeException(
+                sprintf('Could not save file to %s', $targetPath)
+            );
+        }
+        @unlink($tmpPath);
     }
 }

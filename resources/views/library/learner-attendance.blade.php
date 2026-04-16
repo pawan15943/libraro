@@ -78,6 +78,9 @@ $current_route = Route::currentRouteName();
                         <li>
                             <span>Seat No</span>
                             <p>{{$value->seat_no ?? 'G'}} : {{ $value->plan_type_name }}</p>
+                            @if(!empty($value->shift_times_display))
+                            <small class="text-muted d-block">{{ $value->shift_times_display }}</small>
+                            @endif
                         </li>
                         <li>
                             <span>Name</span>

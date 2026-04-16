@@ -25,7 +25,7 @@
 
 
 </div>
-<h4 class="py-4">My Attendance : {{$data->plan_type_name}} ({{ \Carbon\Carbon::parse($data->start_time)->format('h:i A') }} to {{ \Carbon\Carbon::parse($data->end_time)->format('h:i A') }})</h4>
+<h4 class="py-4">My Attendance @if($data): {{ $data->plan_type_name }} ({{ $data->shift_times_display ?? (\Carbon\Carbon::parse($data->start_time)->format('h:i A').' to '.\Carbon\Carbon::parse($data->end_time)->format('h:i A')) }}) @endif</h4>
 
 
 <div class="row mb-4">

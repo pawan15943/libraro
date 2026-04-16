@@ -65,8 +65,11 @@
                         <li>
                             <span>Seat No.</span>
                             <p>{{ $value->seat_no ?? 'G' }} :
-                                {{ $value->planType ?$value->planType->name : 'NA' }}
+                                {{ $value->plan_type_name ?? ($value->planType ? $value->planType->name : 'NA') }}
                             </p>
+                            @if(!empty($value->shift_times_display))
+                            <small class="text-muted d-block">{{ $value->shift_times_display }}</small>
+                            @endif
                         </li>
 
                         <!-- Name + DOB -->

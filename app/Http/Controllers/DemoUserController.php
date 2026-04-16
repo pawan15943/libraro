@@ -8,6 +8,7 @@ use App\Models\Hour;
 use App\Models\LearnerDetail;
 use App\Models\Plan;
 use App\Models\PlanType;
+use App\Support\LearnerShiftSupport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DB;
@@ -71,9 +72,11 @@ class DemoUserController extends Controller
      public function store(Request $request)
     {
         
-       
-          
         $branch = Branch::where('id', getCurrentBranch())->firstOrFail();
+
+        if ($request->has('plan_type_id') && ! is_array($request->plan_type_id)) {
+            $request->merge(['plan_type_id' => array_values(array_filter([(int) $request->plan_type_id]))]);
+        }
            
             // Build validation rules
            $rules = [
@@ -88,7 +91,8 @@ class DemoUserController extends Controller
                 'seat_no'        => 'required_if:general_seat,no',
 
                 'plan_id'        => 'required|integer|exists:plans,id',
-                'plan_type_id'   => 'required|integer|exists:plan_types,id',
+                'plan_type_id'   => 'required|array|min:1',
+                'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
 
                 'plan_start_date'=> 'required|date',
@@ -110,8 +114,8 @@ class DemoUserController extends Controller
                 'plan_id.required'         => 'Please select a plan.',
                 'plan_id.exists'           => 'Selected plan is invalid.',
 
-                'plan_type_id.required'    => 'Please select a plan type.',
-                'plan_type_id.exists'      => 'Selected plan type is invalid.',
+                'plan_type_id.required'    => 'Please select at least one shift.',
+                'plan_type_id.*.exists'    => 'Selected plan type is invalid.',
 
                 'plan_price_id.required'   => 'Plan price is required.',
 
@@ -125,8 +129,16 @@ class DemoUserController extends Controller
           
 
             $validated = $request->validate($rules,$messages);
-         
-             
+
+            $shiftIds = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($validated['plan_type_id']);
+
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($shiftIds, (int) $branch->id)) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['plan_type_id' => $msg])
+                    ->withInput();
+            }
+
             $plan_id=$validated['plan_id'];
             $start_date = Carbon::parse($validated['plan_start_date'])->addDay();
 
@@ -174,7 +186,7 @@ class DemoUserController extends Controller
                 'seat_no'         => $request->seat_no ?? null,
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
-                'plan_type_id'    => $validated['plan_type_id'],
+                'plan_type_id'    => $shiftIds[0] ?? null,
                 'plan_price_id'   => $validated['plan_price_id'],
                 'plan_start_date' => $validated['plan_start_date'],
                 'plan_end_date'   => $endDate,
@@ -190,6 +202,8 @@ class DemoUserController extends Controller
                 'id_proof_number'   => $request->id_proof_number,
                 'address'         => $request->address,
             ]);
+
+            LearnerShiftSupport::syncBookingPlanTypes($booking, $shiftIds);
 
             return redirect()
                     ->route('demo-users.index')

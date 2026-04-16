@@ -10,6 +10,7 @@ use App\Models\LearnerDetail;
 use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
 use App\Models\Library;
+use App\Support\LearnerShiftSupport;
 use App\Models\Plan;
 use App\Models\PlanType;
 use Illuminate\Http\Request;
@@ -152,47 +153,33 @@ class QrEntryController extends Controller
     }
    public function getPlanPrice(Request $request)
     {
-        // Validation
         $validated = $request->validate([
             'plan_id' => 'required|exists:plans,id',
-            'plan_type_id' => 'required|exists:plan_types,id',
+            'plan_type_id' => 'required',
             'branch_id' => 'required|exists:branches,id',
             'plan_start_date'=>'required'
         ]);
 
-        // Assign variables from request
         $plan_id = $validated['plan_id'];
-        $plan_type_id = $validated['plan_type_id'];
         $branch_id = $validated['branch_id'];
-
-        $start_date = Carbon::parse($request->plan_start_date);
-
-         // ✅ Check fixed billing
-        $hasFixedBilling = Branch::where('id', $branch_id)
-            ->whereNotNull('fixed_billing_date')
-            ->exists();
-        $branch = Branch::select('fixed_billing_date')
-        ->where('id', $branch_id)
-        ->first();
-        $fixedBillingDate = $branch?->fixed_billing_date;
-        // Call your helper function
-         if ($hasFixedBilling ) {
-            
-            $price = getBillingCyclePrice(
-                $plan_id,
-                $plan_type_id,
-                $start_date,$branch_id    
-            );
-
-        }else {
-    
-            $price = getPlanPrice($plan_id, $plan_type_id, $branch_id);
-
+        $ids = LearnerShiftSupport::normalizePlanTypeIdsFromRequest($request);
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'price' => 0], 422);
         }
 
-       
+        foreach ($ids as $ptId) {
+            if (! PlanType::withoutGlobalScopes()->where('id', $ptId)->exists()) {
+                return response()->json(['success' => false, 'price' => 0], 422);
+            }
+        }
 
-        // Return JSON response
+        $price = LearnerShiftSupport::combinedPlanPrice(
+            (int) $plan_id,
+            $ids,
+            $request->plan_start_date,
+            (int) $branch_id
+        );
+
         return response()->json([
             'success' => true,
             'price'   => $price ?? 0,
@@ -233,63 +220,80 @@ class QrEntryController extends Controller
     //     return ['error' => false];
     // }
     private function validateLearnerCustom(
-    $branch_id,
-    $plan_type_id,
-    $seat_no,
-    $library_id,$learnerId = null) {
-    $total_hour = Hour::withoutGlobalScopes()
-        ->where('branch_id', $branch_id)
-        ->value('hour') ?? 0;
-
-    if ($total_hour === 0) {
-        return ['error' => true, 'message' => 'Total available hours not set.'];
-    }
-
-    $hours = PlanType::where('id', $plan_type_id)->value('slot_hours') ?? 0;
-
-    // Same plan + seat conflict
-    if (
-        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-            ->where('learners.branch_id', $branch_id)
-            ->where('learners.seat_no', $seat_no)
-            ->where('learner_detail.plan_type_id', $plan_type_id)
-            ->where('learners.status', 1)
-            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
-            ->exists()
+        $branch_id,
+        $plan_type_id,
+        $seat_no,
+        $library_id,
+        $learnerId = null
     ) {
-        return ['error' => true, 'message' => 'This plan type seat is already booked'];
-    }
+        $total_hour = Hour::withoutGlobalScopes()
+            ->where('branch_id', $branch_id)
+            ->value('hour') ?? 0;
 
-    // Hour overflow
-    $usedHours =Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        if ($total_hour === 0) {
+            return ['error' => true, 'message' => 'Total available hours not set.'];
+        }
+
+        $ids = is_array($plan_type_id) ? $plan_type_id : [$plan_type_id];
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return ['error' => true, 'message' => 'Invalid plan type.'];
+        }
+
+        $hours = LearnerShiftSupport::sumSlotHours($ids);
+
+        foreach ($ids as $ptid) {
+            if (
+                Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                    ->where('learners.branch_id', $branch_id)
+                    ->where('learners.seat_no', $seat_no)
+                    ->where('learners.status', 1)
+                    ->where(function ($q) use ($ptid) {
+                        $q->where('learner_detail.plan_type_id', $ptid)
+                            ->orWhereExists(function ($sub) use ($ptid) {
+                                $sub->selectRaw('1')
+                                    ->from('learner_detail_plan_type as lpt')
+                                    ->whereColumn('lpt.learner_detail_id', 'learner_detail.id')
+                                    ->where('lpt.plan_type_id', $ptid);
+                            });
+                    })
+                    ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+                    ->exists()
+            ) {
+                return ['error' => true, 'message' => 'This plan type seat is already booked'];
+            }
+        }
+
+        $usedHours = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.branch_id', $branch_id)
             ->where('learners.seat_no', $seat_no)
             ->where('learner_detail.status', 1)
             ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
             ->sum('hours');
 
-    if (($usedHours + $hours) > $total_hour) {
-        return [
-            'error' => true,
-            'message' => 'This seat is already reserved for the full library hours.'
-        ];
-    }
-
-    // Future booking conflict
-    if (
-        Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-            ->where('learners.branch_id', $branch_id)
-            ->where('learners.seat_no', $seat_no)
-            ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
-            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
-            ->exists()
-    ) {
-        if (!$this->checkPlanTypeSeatWise($seat_no, $plan_type_id, $branch_id, $library_id)) {
-            return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+        if (($usedHours + $hours) > $total_hour) {
+            return [
+                'error' => true,
+                'message' => 'This seat is already reserved for the full library hours.',
+            ];
         }
-    }
 
-    return ['error' => false];
+        if (
+            Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+                ->where('learners.branch_id', $branch_id)
+                ->where('learners.seat_no', $seat_no)
+                ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+                ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+                ->exists()
+        ) {
+            foreach ($ids as $ptid) {
+                if (! $this->checkPlanTypeSeatWise($seat_no, $ptid, $branch_id, $library_id)) {
+                    return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+                }
+            }
+        }
+
+        return ['error' => false];
     }
 
      public function checkPlanTypeSeatWise($seatNo,$requestPlanType,$branch_id,$library_id)
@@ -372,6 +376,10 @@ class QrEntryController extends Controller
         try {
           
             $branch = Branch::where('uuid', $uuid)->firstOrFail();
+
+            if ($request->has('plan_type_id') && ! is_array($request->plan_type_id)) {
+                $request->merge(['plan_type_id' => array_filter([$request->plan_type_id])]);
+            }
            
             // Build validation rules
             $rules = [
@@ -387,7 +395,8 @@ class QrEntryController extends Controller
                     'required_if:general_seat,no'
                 ],
                 'plan_id'        => 'required|integer|exists:plans,id',
-                'plan_type_id'   => 'required|integer|exists:plan_types,id',
+                'plan_type_id'   => 'required|array|min:1',
+                'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
                 'plan_start_date'=> 'required|date',
                 'payment_mode'   => 'required|in:online,offline',
@@ -437,7 +446,7 @@ class QrEntryController extends Controller
                
                     
                 Log::info('STEP 5: Seat validation started learnerId',['learnerId'=>$learnerId]);
-                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no,$branch->library_id,$learnerId);
+                $validated_custom = $this->validateLearnerCustom($branch->id, $request->plan_type_id, $request->seat_no, $branch->library_id, $learnerId);
                 if ($validated_custom['error']) {
                     Log::warning('STEP 5 FAILED: Seat validation error', [
                         'message' => $validated_custom['message']
@@ -536,6 +545,16 @@ class QrEntryController extends Controller
                 $idProofFilePath = 'public/uploads/id_proof/' . $fileName;
             }
 
+            $shiftIds = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($validated['plan_type_id'] ?? []);
+            $primaryShift = $shiftIds[0] ?? null;
+
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($shiftIds, (int) $branch->id)) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['plan_type_id' => $msg])
+                    ->withInput();
+            }
+
           
             $booking = Booking::create([
                 'name'            => $validated['name'],
@@ -550,7 +569,7 @@ class QrEntryController extends Controller
                 'seat_no'         => $request->seat_no ?? null,
                 'branch_id'       => $branch->id,
                 'plan_id'         => $validated['plan_id'],
-                'plan_type_id'    => $validated['plan_type_id'],
+                'plan_type_id'    => $primaryShift,
                 'plan_price_id'   => $validated['plan_price_id'],
                 'plan_start_date' => $validated['plan_start_date'],
                 'plan_end_date'   => $endDate,
@@ -567,6 +586,8 @@ class QrEntryController extends Controller
             ]);
 
             Log::info('Booking created successfully', ['booking_id' => $booking->id]);
+
+            LearnerShiftSupport::syncBookingPlanTypes($booking, $shiftIds);
 
             if ($validated['payment_mode'] === 'online') {
                 return redirect()
@@ -808,7 +829,7 @@ class QrEntryController extends Controller
                 $planPrice= $bookingurl->plan_price_id;
                 $start_date = Carbon::parse($bookingurl->plan_start_date);
                 $plan_id = $bookingurl->plan_id;
-                $plan_type_id = $bookingurl->plan_type_id;
+                $plan_type_ids = LearnerShiftSupport::planTypeIdsForBooking($bookingurl);
                 $locker_no=null;
                 $total_amt=$bookingurl->plan_price_id;
                 $paid_amount=$bookingurl->plan_price_id;
@@ -846,16 +867,22 @@ class QrEntryController extends Controller
 
                 $start_date = $request->input('plan_start_date')? Carbon::parse($request->input('plan_start_date')) : Carbon::parse($bookingurl->plan_start_date);
                 $plan_id = $request->input('plan_id');
-                $plan_type_id = $request->input('plan_type_id');
+                $plan_type_ids = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($request->input('plan_type_id'));
                 $locker_no=$request->input('locker_no');
 
             }
-            
-           
-            $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
-          
-           
-            $hours = $planType->slot_hours;
+
+            $plan_type_id = $plan_type_ids[0] ?? null;
+            if (empty($plan_type_ids)) {
+                return redirect()->back()->with('error', 'At least one shift is required.')->withInput();
+            }
+
+            $hours = LearnerShiftSupport::sumSlotHours($plan_type_ids);
+
+            $branchIdCap = (int) ($bookingurl->branch_id ?? getCurrentBranch());
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($plan_type_ids, $branchIdCap)) {
+                return redirect()->back()->with('error', $msg)->withInput();
+            }
         
             $endDate=getEndDate($plan_id, $start_date);
             $extendDay = getExtendDays();
@@ -947,13 +974,13 @@ class QrEntryController extends Controller
 
             if (!empty($seat_no)) {
                
-                $check = checkAvailability(getCurrentBranch(),$seat_no,$learnerId ?? null,
-                    $plan_type_id,$plan_id,$start_date
-                );
-
-                // 🔴 STOP immediately if seat is not available
-                if ($check['error'] === true) {
-                   return redirect()->back()->with('error', $check['message'])->withInput();
+                foreach ($plan_type_ids as $ptId) {
+                    $check = checkAvailability(getCurrentBranch(),$seat_no,$learnerId ?? null,
+                        (int) $ptId,$plan_id,$start_date
+                    );
+                    if ($check['error'] === true) {
+                        return redirect()->back()->with('error', $check['message'])->withInput();
+                    }
                 }
             }
             // if($seat_no){
@@ -1063,6 +1090,8 @@ class QrEntryController extends Controller
                 'is_paid' =>1,
                 'status' => $detailStatus,
             ]);
+
+            LearnerShiftSupport::syncLearnerDetailPlanTypes($learner_detail, $plan_type_ids);
 
              $tran = [
                 'planPrice' => $planPrice,
@@ -1345,7 +1374,11 @@ class QrEntryController extends Controller
             $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
                 return !in_array($planType->id, $planTypesRemovals);
             })->map(function ($planType) {
-                return ['id' => $planType->id, 'name' => $planType->name];
+                return [
+                    'id' => $planType->id,
+                    'name' => $planType->name,
+                    'slot_hours' => (int) ($planType->slot_hours ?? 0),
+                ];
             })->values(); // Ensure the keys are reset to a continuous numerical index
         } else {
 
@@ -1354,10 +1387,26 @@ class QrEntryController extends Controller
 
             if ($total_hour < 24) {
                 $filteredPlanTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->whereNotIn('day_type_id', [8, 9])
-                    ->select('id', 'name')
-                    ->get();
+                    ->select('id', 'name', 'slot_hours')
+                    ->get()
+                    ->map(function ($planType) {
+                        return [
+                            'id' => $planType->id,
+                            'name' => $planType->name,
+                            'slot_hours' => (int) ($planType->slot_hours ?? 0),
+                        ];
+                    })->values();
             } else {
-                $filteredPlanTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)->select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branch_id)
+                    ->select('id', 'name', 'slot_hours')
+                    ->get()
+                    ->map(function ($planType) {
+                        return [
+                            'id' => $planType->id,
+                            'name' => $planType->name,
+                            'slot_hours' => (int) ($planType->slot_hours ?? 0),
+                        ];
+                    })->values();
             }
 
         }

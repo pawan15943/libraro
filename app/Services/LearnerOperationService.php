@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Services\PlanService;
+use App\Support\LearnerShiftSupport;
 use Exception;
 use Log;
 
@@ -63,10 +64,18 @@ class LearnerOperationService
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
 
-            /* Plan type hours */
+            /* Plan type hours (sum of all selected shifts) */
+            foreach ($dto->plan_type_ids as $ptId) {
+                PlanType::findOrFail($ptId);
+            }
+            $hours = LearnerShiftSupport::sumSlotHours($dto->plan_type_ids);
 
-            $planType = PlanType::findOrFail($dto->plan_type_id);
-            $hours = $planType->slot_hours;
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($dto->plan_type_ids, $dto->branch_id)) {
+                return [
+                    'success' => false,
+                    'message' => $msg,
+                ];
+            }
 
             if($dto->operation=='REACTIVE'){
                 $seat=$dto->seat_no;    
@@ -79,13 +88,24 @@ class LearnerOperationService
             /* Seat check */
            
             $startDateBlocked = false;
+            $seatCheck = ['error' => false];
             if($seat){
                
                  if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE','EDIT'])){
-                    $seatCheck = checkAvailability($dto->branch_id,$seat,$dto->learner_id,$dto->plan_type_id,$dto->plan_id,$start_date);
+                    foreach ($dto->plan_type_ids as $ptId) {
+                        $seatCheck = checkAvailability($dto->branch_id, $seat, $dto->learner_id, (int) $ptId, $dto->plan_id, $start_date);
+                        if ($seatCheck['error']) {
+                            break;
+                        }
+                    }
                  }
                  if($dto->operation=='CHANGE PLAN'){
-                    $seatCheck = checkSeatAvailability($seat,$dto->learner_id,$dto->plan_type_id,$start_date,$endDate);
+                    foreach ($dto->plan_type_ids as $ptId) {
+                        $seatCheck = checkSeatAvailability($seat, $dto->learner_id, (int) $ptId, $start_date, $endDate);
+                        if ($seatCheck['error']) {
+                            break;
+                        }
+                    }
                  }
 
                 if($seatCheck['error']){
@@ -129,6 +149,8 @@ class LearnerOperationService
                 $detail = $this->updateDetail($dto,$start_date,$endDate,$hours,$detailstatus,$seat,$startDateBlocked,$billing);
 
             }
+
+            LearnerShiftSupport::syncLearnerDetailPlanTypes($detail, $dto->plan_type_ids);
 
             /* Transaction */
 
@@ -184,9 +206,27 @@ class LearnerOperationService
     private function calculateBilling($dto,$customer,$start_date,PlanService $priceService)
     {
 
-        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$dto->locker_amount ?? 0,$dto->discount_type ?? null,$dto->discount_amount ?? 0,$dto->paid_amount ?? 0
-          
-        );
+        $result = count($dto->plan_type_ids) === 1
+            ? $priceService->calculatePrice(
+                $dto->plan_id,
+                $dto->plan_type_ids[0],
+                $start_date,
+                $dto->branch_id,
+                $dto->locker_amount ?? 0,
+                $dto->discount_type ?? null,
+                $dto->discount_amount ?? 0,
+                $dto->paid_amount ?? 0
+            )
+            : $priceService->calculateMultiShiftPrice(
+                $dto->plan_id,
+                $dto->plan_type_ids,
+                $start_date,
+                $dto->branch_id,
+                $dto->locker_amount ?? 0,
+                $dto->discount_type ?? null,
+                $dto->discount_amount ?? 0,
+                $dto->paid_amount ?? 0
+            );
      
        
         $planPrice =$dto->plan_price;
@@ -253,7 +293,7 @@ class LearnerOperationService
             }
         }
 
-        
+       
 
         if($pending>0 && empty($dto->due_date)){
             throw new Exception("Due date required");
@@ -316,7 +356,7 @@ class LearnerOperationService
             'branch_id'=>$dto->branch_id,
             'learner_id'=>$dto->learner_id,
             'plan_id'=>$dto->plan_id,
-            'plan_type_id'=>$dto->plan_type_id,
+            'plan_type_id'=>$dto->primaryPlanTypeId(),
             'plan_price_id'=>$billing['price'],
             'plan_start_date'=>$start_date,
             'plan_end_date'=>$endDate,
@@ -346,7 +386,7 @@ class LearnerOperationService
         $detail->update([
 
             'plan_id'=>$dto->plan_id,
-            'plan_type_id'=>$dto->plan_type_id,
+            'plan_type_id'=>$dto->primaryPlanTypeId(),
             'plan_price_id'=>$billing['price'],
 
             'seat_no'=>$seat,
@@ -391,8 +431,8 @@ class LearnerOperationService
             $detail->plan_id = $dto->plan_id;
         }
 
-        if($dto->plan_type_id){
-            $detail->plan_type_id = $dto->plan_type_id;
+        if (! empty($dto->plan_type_ids)) {
+            $detail->plan_type_id = $dto->primaryPlanTypeId();
         }
 
         if($dto->plan_price){
@@ -792,12 +832,29 @@ class LearnerOperationService
     private function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade'): ?string
     {
         if ($file instanceof \Illuminate\Http\UploadedFile) {
-            $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
+            $ext = $file->getClientOriginalExtension();
+            if ($ext === '') {
+                $ext = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION) ?: 'jpg';
+            }
+            $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.$ext;
             $destinationFolder = public_path($folder);
             if (! File::exists($destinationFolder)) {
                 File::makeDirectory($destinationFolder, 0777, true);
             }
-            $file->move($destinationFolder, $fileName);
+            $targetPath = $destinationFolder.DIRECTORY_SEPARATOR.$fileName;
+            $tmpPath = $file->getRealPath() ?: $file->getPathname();
+            if (! $tmpPath || ! is_readable($tmpPath)) {
+                return null;
+            }
+            // Cropper/DataTransfer uploads may not pass is_uploaded_file(); move() would throw.
+            if (is_uploaded_file($tmpPath)) {
+                $file->move($destinationFolder, $fileName);
+            } else {
+                if (! @copy($tmpPath, $targetPath)) {
+                    return null;
+                }
+                @unlink($tmpPath);
+            }
 
             return $folder.'/'.$fileName;
         }

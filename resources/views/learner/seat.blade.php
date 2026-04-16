@@ -98,6 +98,7 @@ $today = Carbon::today();
                                     <div class="seat">
                                         @php
                                             $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                                            \App\Support\LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($usersForSeat);
                                             $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
                                             ->where('status',1)
                                             ->whereDate('plan_start_date', '<=', $today)
@@ -268,6 +269,7 @@ $today = Carbon::today();
                                     <div class="seat">
                                         @php
                                         $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                                        \App\Support\LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($usersForSeat);
                                         $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
                                         ->where('status',1)
                                         ->whereDate('plan_start_date', '<=', $today)
@@ -430,6 +432,7 @@ $today = Carbon::today();
                     @if(countWithoutSeatNo() >0)
                     @php
                     $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                    \App\Support\LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($usersForSeat);
 
                     @endphp
                     @foreach($usersForSeat as $user)

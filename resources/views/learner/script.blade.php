@@ -434,9 +434,17 @@
     });
 
     // Get Plan Type seatwise at All Forms wherever is needed
-    function getTypeSeatwise(seatId) {
-        
-        $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
+    // $targetSelect: optional jQuery wrapped <select> (e.g. #plan_type_id10 on reactive page). Defaults to booking modal #plan_type_id.
+    function getTypeSeatwise(seatId, $targetSelect) {
+        var $sel = ($targetSelect && $targetSelect.length) ? $targetSelect : $('#plan_type_id');
+        if (!$sel.length) {
+            return;
+        }
+        var prevSelected = collectMultiSelectValues($sel).map(String);
+        if (typeof destroyShiftChoices === 'function') {
+            destroyShiftChoices($sel);
+        }
+        $sel.empty().append('<option value="" data-slot-hours="0">Choose Shift</option>');
         $.ajax({
             url: '{{ route('gettypeSeatwise') }}',
             type: 'GET',
@@ -446,31 +454,37 @@
             },
             dataType: 'json',
             success: function (html) {
-                
                 if (html) {
-                    
-                    let selectedOption = $("#plan_type_id").find("option:selected");
-
-                    $("#plan_type_id").empty();
-                    $("#plan_type_id").append('<option value="">Choose Shift</option>');
-
-                    if (selectedOption.val() !== "") {
-                        $("#plan_type_id").append('<option value="'+selectedOption.val()+'" selected>'+selectedOption.text()+'</option>');
-                    }
-
+                    $sel.empty();
+                    $sel.append('<option value="" data-slot-hours="0">Choose Shift</option>');
                     $.each(html, function(index, planType) {
-                        // Avoid adding the option that is already selected
-                        if (planType.id != selectedOption.val()) {
-                            $("#plan_type_id").append('<option value="'+planType.id+'">'+planType.name+'</option>');
-                        }
+                        var idStr = String(planType.id);
+                        var sel = prevSelected.indexOf(idStr) !== -1 ? ' selected' : '';
+                        var sh = planType.slot_hours != null ? planType.slot_hours : 0;
+                        $sel.append('<option value="'+planType.id+'" data-slot-hours="'+sh+'"'+sel+'>'+planType.name+'</option>');
                     });
                 } else {
-                    $("#plan_type_id").empty();
-                    $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                    $sel.empty();
+                    $sel.append('<option value="" data-slot-hours="0">Select Plan Type</option>');
                 }
+                if (typeof initShiftChoices === 'function') {
+                    initShiftChoices($sel);
+                }
+                if (typeof window.clearShiftHoursCapFeedback === 'function') {
+                    window.clearShiftHoursCapFeedback($sel);
+                }
+                setTimeout(function () {
+                    $sel.trigger('change');
+                }, 0);
             },
             error: function(xhr, status, error) {
                 console.error("AJAX error:", status, error); // Log any errors
+                if (typeof initShiftChoices === 'function') {
+                    initShiftChoices($sel);
+                }
+                setTimeout(function () {
+                    $sel.trigger('change');
+                }, 0);
             }
         });
         
@@ -559,9 +573,23 @@
         }
     }
 
+    function collectMultiSelectValues($sel) {
+        if (!$sel || !$sel.length) return [];
+        var el = $sel[0];
+        var v = $sel.val();
+        if (v === null || v === undefined) {
+            if (el && el.multiple && el.selectedOptions && el.selectedOptions.length) {
+                return $.map(el.selectedOptions, function (o) { return o.value; }).filter(Boolean);
+            }
+            return [];
+        }
+        return $.isArray(v) ? v.filter(Boolean) : (v ? [v] : []);
+    }
+
         // Get Plan Price at All Forms wherever is needed [booking form,]
     function getPlanPrice(plan_type_id, plan_id, start_date = null) {
-        if (!plan_type_id || !plan_id) return;
+        var ids = Array.isArray(plan_type_id) ? plan_type_id.filter(Boolean) : (plan_type_id ? [plan_type_id] : []);
+        if (!ids.length || !plan_id) return;
 
         // ✅ Auto-detect start date if not passed
         if (!start_date) {
@@ -572,7 +600,7 @@
 
         let data = {
             "_token": "{{ csrf_token() }}",
-            "plan_type_id": plan_type_id,
+            "plan_type_id": ids,
             "plan_id": plan_id
         };
 
@@ -581,8 +609,6 @@
             data.plan_start_date = start_date;
         }
 
-       
-        if (plan_type_id && plan_id) {
                 $.ajax({
                     url: '{{ route('getPricePlanwise') }}',
                     type: 'GET',
@@ -608,12 +634,6 @@
                     }
 
                 });
-        } else {
-            $("#plan_price_id").empty();
-            
-            $("#paid_amount").empty();
-        
-        }
     }
 
     function formatDate(dateString) {
@@ -657,14 +677,14 @@
 
     // change plan and upgrade
     function getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10){
-        
-        if (plan_type_id10 && plan_id10) {
+        var ids10 = Array.isArray(plan_type_id10) ? plan_type_id10.filter(Boolean) : (plan_type_id10 ? [plan_type_id10] : []);
+        if (ids10.length && plan_id10) {
                 $.ajax({
                     url: '{{ route('getPricePlanwise') }}',
                     type: 'GET',
                     data: {
                         "_token": "{{ csrf_token() }}",
-                        "plan_type_id": plan_type_id10,
+                        "plan_type_id": ids10,
                         "plan_id": plan_id10,
                         "plan_start_date": plan_start_date10,
                     },
@@ -813,6 +833,16 @@
     }
    
     $(document).ready(function() {
+        if (typeof initShiftChoicesAll === 'function') {
+            initShiftChoicesAll(document);
+        }
+        // Reactive page: plan types follow selected seat (same API as booking popup)
+        if ($('form#reactive').length && $('#new_seat_id2').length && $('#plan_type_id10').length) {
+            $('#new_seat_id2').on('change', function () {
+                getTypeSeatwise($(this).val() || '', $('#plan_type_id10'));
+            });
+            getTypeSeatwise($('#new_seat_id2').val() || '', $('#plan_type_id10'));
+        }
         const toggleHiddenFields = @json(toggleHideField());
          // Swap Seat Check Seat Booking Status On Swap Seat Page
         $('#new_seat_id').on('change', function(event) {
@@ -968,7 +998,8 @@
            
             var needLocker = $('#toggleFieldCheckbox2').val();
             var planId     = $('#plan_id3').val();
-             var planTypeID  = $('#plan_type_id').val(); // important
+            var planTypeIDs = collectMultiSelectValues($('#plan_type_id'));
+            var planTypeID  = planTypeIDs.length ? planTypeIDs[0] : null;
             
           
             if (needLocker === 'yes') {
@@ -999,8 +1030,10 @@
 
          // Oncahnge of Plantype get Plan Price and use at each form wherever is needed 
         $('#plan_type_id').on('change', function(event) {
-          
-            var plan_type_id = $(this).val();
+            if (typeof window.enforceShiftHoursCap === 'function') {
+                window.enforceShiftHoursCap($(this));
+            }
+            var plan_type_id = collectMultiSelectValues($(this));
             var plan_id = $('#plan_id').val();
             var change_plan_plan_id = $('#change_plan_plan_id').val();
             var plan_id2 = $('#plan_id2').val();
@@ -1008,7 +1041,7 @@
             var plan_id4 = $('#plan_id4').val();
            
           
-            if((plan_type_id && plan_id4)||(plan_type_id && plan_id)||(plan_type_id && plan_id2)||(plan_type_id && plan_id3)||(plan_type_id && change_plan_plan_id)){
+            if((plan_type_id.length && plan_id4)||(plan_type_id.length && plan_id)||(plan_type_id.length && plan_id2)||(plan_type_id.length && plan_id3)||(plan_type_id.length && change_plan_plan_id)){
              
                 getPlanPrice(plan_type_id,plan_id);
                 getPlanPrice(plan_type_id,plan_id2);
@@ -1023,7 +1056,7 @@
         $('#plan_start_date').on('change', function(event) {
           var plan_start_date = $(this).val();
           var plan_id = $('#plan_id3').val();
-          var plan_type_id = $('#plan_type_id').val();
+          var plan_type_id = collectMultiSelectValues($('#plan_type_id'));
           getPlanPrice(plan_type_id,plan_id,plan_start_date);
           addChargeableDays(plan_id,plan_start_date);
             
@@ -1088,7 +1121,7 @@
         var email = $('#email').val();
         var dob = $('#dob').val();
         var plan_id = $('#plan_id3').val();
-        var plan_type_id = $('#plan_type_id').val();
+        var plan_type_id = collectMultiSelectValues($('#plan_type_id'));
         var plan_start_date = $('#plan_start_date').val();
         var id_proof_name = $('#id_proof_name').val();
         var payment_mode = $('#payment_mode').val();
@@ -1132,8 +1165,8 @@
             errors.plan_id3 = 'Plan is required.';
         }
 
-        if (!plan_type_id) {
-            errors.plan_type_id = 'Plan Type is required.';
+        if (!plan_type_id || !plan_type_id.length) {
+            errors.plan_type_id = 'At least one shift is required.';
         }
 
         if (!plan_start_date) {
@@ -1247,7 +1280,7 @@
     $(document).ready(function() {
     
         const plan_id10 = $('#plan_id10').val();
-        const plan_type_id10 = $('#plan_type_id10').val();
+        const plan_type_id10 = collectMultiSelectValues($('#plan_type_id10'));
         var plan_start_date10=$('#start_date10').val();
         var payment_type_operation=$('#payment_type_operation').val();
         if(payment_type_operation =='REACTIVE' || payment_type_operation =='UPGRADE'){
@@ -1292,13 +1325,13 @@
     $('#plan_id10').on('change', function(event) {
         event.preventDefault();
         const plan_id10 = $(this).val();
-        const plan_type_id10 = $('#plan_type_id10').val();
+        const plan_type_id10 = collectMultiSelectValues($('#plan_type_id10'));
         var lockerCheck= $('#toggleFieldCheckbox10').val();
         var plan_start_date10=$('#start_date10').val();
         console.log('plan_id10',plan_id10);
         console.log('plan_type_id10',plan_type_id10);
         console.log('plan_start_date10',plan_start_date10);
-        if(plan_type_id10 && plan_id10){
+        if(plan_type_id10.length && plan_id10){
             getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
             calculatePaidAmount();
             if(lockerCheck== 'yes'){
@@ -1313,12 +1346,14 @@
     $('#plan_type_id10').on('change', function(event) {
         
         event.preventDefault();
-    
-        const plan_type_id10 = $(this).val();
+        if (typeof window.enforceShiftHoursCap === 'function') {
+            window.enforceShiftHoursCap($(this));
+        }
+        const plan_type_id10 = collectMultiSelectValues($(this));
         const plan_id10 = $('#plan_id10').val();
         var lockerCheck= $('#toggleFieldCheckbox10').val();
         var plan_start_date10=$('#start_date10').val();
-        if(plan_type_id10 && plan_id10){
+        if(plan_type_id10.length && plan_id10){
             getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
             calculatePaidAmount();
         if(lockerCheck== 'yes'){
@@ -1375,13 +1410,13 @@
         calculatePending($(this).val());  
     });
 
-    $('#start_date10').on('change', function(event) {
+       $('#start_date10').on('change', function(event) {
         var plan_start_date10 = $(this).val();
         var plan_id10 = $('#plan_id10').val();
-        var plan_type_id10 = $('#plan_type_id10').val();
+        var plan_type_id10 = collectMultiSelectValues($('#plan_type_id10'));
          var lockerCheck= $('#toggleFieldCheckbox10').val();
 
-         if(plan_type_id10 && plan_id10){
+         if(plan_type_id10.length && plan_id10){
             getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10);
             calculatePaidAmount();
             if(lockerCheck== 'yes'){
@@ -1415,14 +1450,25 @@
                 },
                 dataType: 'json',
                 success: function (html) {
-                   
+                    $('#plan_id2').prop('disabled', false);
+                    $('#plan_type_id_renew').prop('disabled', false);
+                    if (typeof destroyShiftChoices === 'function') {
+                        destroyShiftChoices($('#plan_type_id_renew'));
+                    }
                     $("#plan_type_id_renew").empty(); 
                     $("#plan_id2").empty(); 
 
                     if (html[0]) {
-                        $.each(html[0], function (key, value) {
-                            $("#plan_type_id_renew").append('<option value="' + key + '">' + value + '</option>');
-                        });
+                        if ($.isArray(html[0])) {
+                            $.each(html[0], function (i, pt) {
+                                var sh = pt.slot_hours != null ? pt.slot_hours : 0;
+                                $("#plan_type_id_renew").append('<option value="' + pt.id + '" data-slot-hours="' + sh + '" selected>' + pt.name + '</option>');
+                            });
+                        } else {
+                            $.each(html[0], function (key, value) {
+                                $("#plan_type_id_renew").append('<option value="' + key + '" data-slot-hours="0" selected>' + value + '</option>');
+                            });
+                        }
                     } else {
                         $("#plan_type_id_renew").append('<option value="">Choose</option>');
                     }
@@ -1432,6 +1478,9 @@
                             $.each(html[1], function (key, value) {
                             $("#plan_id2").append('<option value="' + key + '">' + value + '</option>');
                         });
+                    }
+                    if (html[2] && html[2].plan_id != null && html[2].plan_id !== '') {
+                        $('#plan_id2').val(String(html[2].plan_id));
                     }
 
                     if (html[5]){
@@ -1477,16 +1526,33 @@
                     }
 
                   
-                    
-                    popupautoCalculatePaidAmount(); 
+ popupautoCalculatePaidAmount(); 
+                    $('#plan_id2').prop('disabled', true);
+                    $('#plan_type_id_renew').prop('disabled', true);
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#plan_type_id_renew'));
+                    }
                 },
                 error: function (xhr, status, error) {
                     console.error("AJAX error:", status, error); // Log any errors
+                    $('#plan_id2').prop('disabled', true);
+                    $('#plan_type_id_renew').prop('disabled', true);
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#plan_type_id_renew'));
+                    }
                 }
             });
         } else {
+            if (typeof destroyShiftChoices === 'function') {
+                destroyShiftChoices($('#plan_type_id_renew'));
+            }
             $("#plan_type_id_renew").empty();
             $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
+            $('#plan_id2').prop('disabled', true);
+            $('#plan_type_id_renew').prop('disabled', true);
+            if (typeof initShiftChoices === 'function') {
+                initShiftChoices($('#plan_type_id_renew'));
+            }
         }
     }
     // Used in View Details Popup on Seat Assignment Page
@@ -1597,6 +1663,7 @@
         $('#update_plan_end_date').val(endOnDate);
         $('#update_seat_no').val(seat_no);
         $('#update_user_id').val(user_id);
+        $('#renew_learner_id').val(user_id);
         var seatDisplayMap = @json(
             collect(generateSeatNumbers())->mapWithKeys(function($seat) {
                 // If floor info exists, show "floor-seat (floor name)"
@@ -1676,6 +1743,7 @@
         $('#seatAllotmentModal3').modal('show');
         $('#update_seat_no').val(seat_no);
         $('#update_user_id').val(user_id);
+        $('#renew_learner_id').val(user_id);
         $('#update_plan_end_date').val(end_date);
             var seatDisplayMap = @json(
             collect(generateSeatNumbers())->mapWithKeys(function($seat) {
@@ -1702,10 +1770,9 @@
     $(document).on('submit', '#upgradeForm', function(event) {
        
         event.preventDefault();
-        var formData = new FormData(this);
         var user_id = $('#update_user_id').val();
         var plan_id = $('#plan_id2').val();
-        var plan_type_id = $('#plan_type_id_renew').val();
+        var plan_type_id = collectMultiSelectValues($('#plan_type_id_renew'));
         var plan_price_id = $('#plan_price_id2').val();
         var errors = {};
 
@@ -1714,8 +1781,8 @@
             errors.plan_id2 = 'Plan is required.';
         }
 
-        if (!plan_type_id) {
-            errors.plan_type_id_renew = 'Plan Type is required.';
+        if (!plan_type_id.length) {
+            errors.plan_type_id_renew = 'At least one shift is required.';
             // errors.plan_type_id = 'Plan Type is required.';
         }
 
@@ -1735,6 +1802,25 @@
                 inputField.after('<div class="invalid-feedback">' + value + '</div>');
             });
             return; 
+        }
+
+        var $planId2 = $('#plan_id2');
+        var $ptRenew = $('#plan_type_id_renew');
+        var ptNative = $ptRenew[0];
+        var ptChoices = ptNative && ptNative._shiftChoices ? ptNative._shiftChoices : null;
+
+        $planId2.prop('disabled', false);
+        $ptRenew.prop('disabled', false);
+        if (ptChoices && typeof ptChoices.enable === 'function') {
+            ptChoices.enable();
+        }
+
+        var formData = new FormData(this);
+
+        $planId2.prop('disabled', true);
+        $ptRenew.prop('disabled', true);
+        if (ptChoices && typeof ptChoices.disable === 'function') {
+            ptChoices.disable();
         }
 
         formData.append('_token', '{{ csrf_token() }}');
@@ -1870,13 +1956,23 @@
                     dataType: 'json',
                     success: function (html) {
                         console.log("renew",html);
+                        if (typeof destroyShiftChoices === 'function') {
+                            destroyShiftChoices($('#plan_type_id2'));
+                        }
                         $("#plan_type_id2").empty(); 
                         $("#plan_id2").empty(); 
 
                         if (html[0]) {
-                            $.each(html[0], function (key, value) {
-                                $("#plan_type_id2").append('<option value="' + key + '">' + value + '</option>');
-                            });
+                            if ($.isArray(html[0])) {
+                                $.each(html[0], function (i, pt) {
+                                    var sh = pt.slot_hours != null ? pt.slot_hours : 0;
+                                    $("#plan_type_id2").append('<option value="' + pt.id + '" data-slot-hours="' + sh + '">' + pt.name + '</option>');
+                                });
+                            } else {
+                                $.each(html[0], function (key, value) {
+                                    $("#plan_type_id2").append('<option value="' + key + '" data-slot-hours="0">' + value + '</option>');
+                                });
+                            }
                         } else {
                             $("#plan_type_id2").append('<option value="">Choose</option>');
                         }
@@ -1915,14 +2011,26 @@
                         }
                         
                         popupautoCalculatePaidAmount(); 
+                        if (typeof initShiftChoices === 'function') {
+                            initShiftChoices($('#plan_type_id2'));
+                        }
                     },
                     error: function (xhr, status, error) {
                         console.error("AJAX error:", status, error); // Log any errors
+                        if (typeof initShiftChoices === 'function') {
+                            initShiftChoices($('#plan_type_id2'));
+                        }
                     }
                 });
             } else {
+                if (typeof destroyShiftChoices === 'function') {
+                    destroyShiftChoices($('#plan_type_id2'));
+                }
                 $("#plan_type_id2").empty();
                 $("#plan_type_id2").append('<option value="">Choose Shift</option>');
+                if (typeof initShiftChoices === 'function') {
+                    initShiftChoices($('#plan_type_id2'));
+                }
             }
         }
 
@@ -1932,14 +2040,14 @@
 
           // Get Plan Price at All Forms wherever is needed
         function getPlanPrice2(plan_type_id,plan_id){
-          
-            if (plan_type_id && plan_id) {
+ var ids = Array.isArray(plan_type_id) ? plan_type_id.filter(Boolean) : (plan_type_id ? [plan_type_id] : []);
+            if (ids.length && plan_id) {
                     $.ajax({
                         url: '{{ route('getPricePlanwise') }}',
                         type: 'GET',
                         data: {
                             "_token": "{{ csrf_token() }}",
-                            "plan_type_id": plan_type_id,
+                            "plan_type_id": ids,
                             "plan_id": plan_id,
                         },
                         dataType: 'json',
@@ -1972,14 +2080,14 @@
 
            // Get Plan Price at Renew popup Forms wherever is needed
         function getPlanPriceRenew(plan_type_id,plan_id){
-          
-            if (plan_type_id && plan_id) {
+            var ids = Array.isArray(plan_type_id) ? plan_type_id.filter(Boolean) : (plan_type_id ? [plan_type_id] : []);
+            if (ids.length && plan_id) {
                     $.ajax({
                         url: '{{ route('getPricePlanwise') }}',
                         type: 'GET',
                         data: {
                             "_token": "{{ csrf_token() }}",
-                            "plan_type_id": plan_type_id,
+                            "plan_type_id": ids,
                             "plan_id": plan_id,
                         },
                         dataType: 'json',
@@ -2105,8 +2213,10 @@
        
         
         $('#plan_type_id2').on('change', function(event) {
-            
-            var plan_type_id = $(this).val();
+            if (typeof window.enforceShiftHoursCap === 'function') {
+                window.enforceShiftHoursCap($(this));
+            }
+            var plan_type_id = collectMultiSelectValues($(this));
             var plan_id = $('#plan_id').val();
             var change_plan_plan_id = $('#change_plan_plan_id').val();
             var plan_id2 = $('#plan_id2').val();
@@ -2114,7 +2224,7 @@
             var plan_id4 = $('#plan_id4').val();
            
           
-            if((plan_type_id && plan_id4)||(plan_type_id && plan_id)||(plan_type_id && plan_id2)||(plan_type_id && plan_id3)||(plan_type_id && change_plan_plan_id)){
+            if((plan_type_id.length && plan_id4)||(plan_type_id.length && plan_id)||(plan_type_id.length && plan_id2)||(plan_type_id.length && plan_id3)||(plan_type_id.length && change_plan_plan_id)){
              
                 getPlanPrice2(plan_type_id,plan_id);
                 getPlanPrice(plan_type_id,plan_id2);
@@ -2127,10 +2237,12 @@
            
         });
         $('#plan_type_id_renew').on('change', function(event) {
-            
-            var plan_type_id = $(this).val();
+            if (typeof window.enforceShiftHoursCap === 'function') {
+                window.enforceShiftHoursCap($(this));
+            }
+            var plan_type_id = collectMultiSelectValues($(this));
             var plan_id2 = $('#plan_id2').val();
-            if((plan_type_id && plan_id2)){
+            if((plan_type_id.length && plan_id2)){
                 getPlanPriceRenew(plan_type_id,plan_id2);
             }else{
                 $("#plan_price").val('');
@@ -2143,15 +2255,15 @@
         $('#plan_id,#plan_id2,#plan_id3').on('change', function(event) {
             event.preventDefault();
             var plan_id = $(this).val();
-            var plan_type_id = $('#plan_type_id').val();
-            var plan_type_id2 = $('#plan_type_id2').val();
+            var plan_type_id = collectMultiSelectValues($('#plan_type_id'));
+            var plan_type_id2 = collectMultiSelectValues($('#plan_type_id2'));
             var plan_start_date = $('#plan_start_date').val();
           
-            if(plan_type_id && plan_id){
+            if(plan_type_id.length && plan_id){
                 getPlanPrice(plan_type_id,plan_id);
                 
             }
-            if(plan_type_id2 && plan_id){
+            if(plan_type_id2.length && plan_id){
                 getPlanPrice(plan_type_id2,plan_id);
             }else{
                 $("#plan_price_id").val('');

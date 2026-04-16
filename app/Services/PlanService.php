@@ -88,10 +88,11 @@ class PlanService
                 return !in_array($planType->id, $planTypesRemovals);
             })->map(function ($planType) {
                 return [
-                    'id'         => $planType->id,
-                    'name'       => $planType->name,
-                    'start_time' => $planType->start_time,
-                    'end_time'   => $planType->end_time,
+                    'id'          => $planType->id,
+                    'name'        => $planType->name,
+                    'start_time'  => $planType->start_time,
+                    'end_time'    => $planType->end_time,
+                    'slot_hours'  => (int) ($planType->slot_hours ?? 0),
                 ];
             })->values(); // Ensure the keys are reset to a continuous numerical index
         } else {
@@ -101,10 +102,10 @@ class PlanService
 
             if ($total_hour < 24) {
                 $filteredPlanTypes = PlanType::byBranch($branchId)->whereNotIn('day_type_id', [8, 9])
-                ->select('id', 'name', 'start_time', 'end_time')
+                ->select('id', 'name', 'start_time', 'end_time', 'slot_hours')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::byBranch($branchId) ->select('id', 'name', 'start_time', 'end_time')->get();
+                $filteredPlanTypes = PlanType::byBranch($branchId)->select('id', 'name', 'start_time', 'end_time', 'slot_hours')->get();
             }
         }
 
@@ -171,6 +172,56 @@ class PlanService
             'paid_amount'     => (string) $paidAmount,
             'pending_amount'  => (string) $pendingAmount,
             'fixed_billing'   => $hasFixedBilling
+        ];
+    }
+
+    /**
+     * Same rules as calculatePrice, but base plan fee is the sum of per-shift prices.
+     *
+     * @param  list<int>  $planTypeIds
+     */
+    public function calculateMultiShiftPrice(
+        int $planId,
+        array $planTypeIds,
+        ?string $planStartDate,
+        ?int $branchId,
+        float $lockerAmount = 0,
+        ?string $discountType = null,
+        float $discountValue = 0,
+        float $paidAmount = 0
+    ): array {
+        $branch = Branch::select('fixed_billing_date')
+            ->where('id', $branchId)
+            ->first();
+
+        $hasFixedBilling = ! empty($branch?->fixed_billing_date);
+
+        $planPrice = \App\Support\LearnerShiftSupport::combinedPlanPrice(
+            $planId,
+            $planTypeIds,
+            $planStartDate ?? Carbon::today()->toDateString(),
+            $branchId
+        );
+
+        $discountAmount = 0;
+
+        if ($discountType === 'percentage') {
+            $discountAmount = (($planPrice + $lockerAmount) * $discountValue) / 100;
+        } elseif ($discountType === 'amount') {
+            $discountAmount = $discountValue;
+        }
+
+        $totalAmount = ($planPrice + $lockerAmount) - $discountAmount;
+        $pendingAmount = $totalAmount - $paidAmount;
+
+        return [
+            'price' => (string) $planPrice,
+            'locker_amount' => (string) $lockerAmount,
+            'discount_amount' => (string) $discountAmount,
+            'total_amount' => (string) $totalAmount,
+            'paid_amount' => (string) $paidAmount,
+            'pending_amount' => (string) $pendingAmount,
+            'fixed_billing' => $hasFixedBilling,
         ];
     }
 }

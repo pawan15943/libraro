@@ -182,7 +182,9 @@
                         <input type="hidden" name="dob" value="{{ $customer->dob }}">
                         <input type="hidden" name="seat_no" value="{{ $customer->seat_no }}">
                         <input type="hidden" name="plan_id" value="{{ $customer_detail->plan_id }}">
-                        <input type="hidden" name="plan_type_id" value="{{ $customer_detail->plan_type_id }}">
+                        @foreach(\App\Support\LearnerShiftSupport::planTypeIdsForLearnerDetail($customer_detail) as $renewPtId)
+                        <input type="hidden" name="plan_type_id[]" value="{{ $renewPtId }}">
+                        @endforeach
                         <input type="hidden" name="plan_price_id" value="{{ $customer_detail->plan_price_id }}">
                         <input type="hidden" name="plan_start_date" value="{{ \Carbon\Carbon::parse($customer_detail->plan_end_date)->addDay()->toDateString() }}">
                         <input type="hidden" name="payment_mode" value="online">

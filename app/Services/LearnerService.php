@@ -13,6 +13,7 @@ use App\Models\LearnerTransactionActivity;
 use App\Models\Plan;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Support\LearnerShiftSupport;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Log;
@@ -529,29 +530,45 @@ class LearnerService
             ---------------------------------------------------------*/
             $branchId=$data['branchId'];
             $plan_id = $data['plan_id'];
-            $plan_type_id = $data['plan_type_id'];
+            $plan_type_ids = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($data['plan_type_id'] ?? []);
+            if (empty($plan_type_ids)) {
+                return [
+                    'success' => false,
+                    'message' => 'At least one shift is required.',
+                ];
+            }
+            foreach ($plan_type_ids as $ptId) {
+                PlanType::findOrFail($ptId);
+            }
+            $plan_type_id = $plan_type_ids[0];
             $seat_no = $data['seat_no'];
             
             $start_date = Carbon::parse($data['start_date'] ?? $lastDetail->plan_end_date)->addDay();
 
             $endDate = getEndDate($plan_id, $start_date,$branchId);
             $learnerId=$customer->id;
-            $planType = PlanType::findOrFail($plan_type_id);
-            $hours = $planType->slot_hours;
-            
+            $hours = LearnerShiftSupport::sumSlotHours($plan_type_ids);
+
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($plan_type_ids, $branchId)) {
+                return [
+                    'success' => false,
+                    'message' => $msg,
+                ];
+            }
 
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
             
             if (!empty($data['seat_no'])) {
-                $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
-
-                if ($result['error']) {
-                    return [
-                        'success' => false,
-                        'message' => $result['message']
-                    ];
+                foreach ($plan_type_ids as $ptId) {
+                    $result = checkAvailability($branchId, $seat_no, $learnerId, (int) $ptId, $plan_id, $start_date);
+                    if ($result['error']) {
+                        return [
+                            'success' => false,
+                            'message' => $result['message'],
+                        ];
+                    }
                 }
             }
 
@@ -656,6 +673,8 @@ class LearnerService
                 'status' => $detailstatus,
                 'is_paid' => $is_paid,
             ]);
+
+            LearnerShiftSupport::syncLearnerDetailPlanTypes($learner_detail, $plan_type_ids);
 
             /* ---------------------------------------------------------
             | 9. Add Transaction AND Transaction Activity
@@ -796,48 +815,61 @@ class LearnerService
             ---------------------------------------------------------*/
             $branchId=$data['branchId'];
             $plan_id = $data['plan_id'];
-            $plan_type_id = $data['plan_type_id'];
+            $plan_type_ids = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($data['plan_type_id'] ?? []);
+            if (empty($plan_type_ids)) {
+                throw new \Exception('At least one shift is required.');
+            }
+            foreach ($plan_type_ids as $ptId) {
+                PlanType::findOrFail($ptId);
+            }
+            $plan_type_id = $plan_type_ids[0];
             $seat_no = $data['seat_no'];
             
             $start_date = Carbon::parse($data['start_date']);
 
             $endDate = getEndDate($plan_id, $start_date,$branchId);
             $learnerId=null;
-            $planType = PlanType::findOrFail($plan_type_id);
-            $hours = $planType->slot_hours;
-            
+            $hours = LearnerShiftSupport::sumSlotHours($plan_type_ids);
+
+            if ($msg = LearnerShiftSupport::slotHoursOverBranchCapMessage($plan_type_ids, $branchId)) {
+                throw new \Exception($msg);
+            }
 
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
              // future booking and non expired seat check
-            $exists_future = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
-                ->where('learner_detail.branch_id', $branchId)
-                ->where('learner_detail.seat_no', $seat_no)
-                ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
-                ->where(function ($query) use ($plan_type_id) {
-
-                    $query->whereExists(function ($sub) use ($plan_type_id) {
-
-                        $sub->select(\DB::raw(1))
-                            ->from('plan_types as new_pt')
-                            ->where('new_pt.id', $plan_type_id)
-                            ->whereRaw('existing_pt.start_time < new_pt.end_time')
-                            ->whereRaw('existing_pt.end_time > new_pt.start_time');
-                    });
-
-                })
-                ->exists();
+            $exists_future = false;
+            foreach ($plan_type_ids as $candidatePtId) {
+                $exists_future = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
+                    ->where('learner_detail.branch_id', $branchId)
+                    ->where('learner_detail.seat_no', $seat_no)
+                    ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+                    ->where(function ($query) use ($candidatePtId) {
+                        $query->whereExists(function ($sub) use ($candidatePtId) {
+                            $sub->select(\DB::raw(1))
+                                ->from('plan_types as new_pt')
+                                ->where('new_pt.id', $candidatePtId)
+                                ->whereRaw('existing_pt.start_time < new_pt.end_time')
+                                ->whereRaw('existing_pt.end_time > new_pt.start_time');
+                        });
+                    })
+                    ->exists();
+                if ($exists_future) {
+                    break;
+                }
+            }
 
             if ($exists_future && $data['learner_data']['no_expiry'] == 1) {
                 throw new \Exception('This seat already has a future booking that overlaps with the selected time.');
             }
             
            if (!empty($data['seat_no'])) {
-                $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
-
-                 if ($result['error']) {
-                    throw new \Exception($result['message']);
+                foreach ($plan_type_ids as $ptId) {
+                    $result = checkAvailability($branchId, $seat_no, $learnerId, (int) $ptId, $plan_id, $start_date);
+                    if ($result['error']) {
+                        throw new \Exception($result['message']);
+                    }
                 }
             }
 
@@ -953,6 +985,8 @@ class LearnerService
                 'is_paid' => $is_paid,
                 'exam_id'=>$data['exam_id'] ?? null,
             ]);
+
+            LearnerShiftSupport::syncLearnerDetailPlanTypes($learner_detail, $plan_type_ids);
 
             /* ---------------------------------------------------------
             | 9. Add Transaction AND Transaction Activity
@@ -1107,9 +1141,13 @@ class LearnerService
             $mainstatus=$planStatus['status'];
         }
 
-        $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
+        $labels = LearnerShiftSupport::receiptLabelsForLearnerDetail($detail);
+        $planTypeIds = LearnerShiftSupport::planTypeIdsForLearnerDetail($detail);
+        $primaryPlanTypeId = $planTypeIds[0] ?? null;
 
-        
+        $fetchPlanType = $primaryPlanTypeId
+            ? PlanType::where('id', $primaryPlanTypeId)->select('id', 'name', 'start_time', 'end_time')->first()
+            : null;
 
         return [
 
@@ -1132,10 +1170,12 @@ class LearnerService
 
             'detail_info'=>[
                 'plan'=>$detail->plan->name ?? '',
-                'plan_type'=>$detail->planType->name ?? '',
+                'plan_type'=>$labels['subscription'] !== 'NA' ? $labels['subscription'] : ($detail->planType->name ?? ''),
                 'plan_id'=>$detail->plan->id ?? '',
-                'plan_type_id'=>$detail->planType->id ?? '',
-                
+                'plan_type_id'=>$primaryPlanTypeId ?? ($detail->planType->id ?? ''),
+                'plan_type_ids'=>$planTypeIds,
+                'shift_timing'=>$labels['shift_timing'],
+
                 'price'=>$detail->plan_price_id,
                 'monthdays'=>$detail->plan->monthdays ?? 'Calendar wise',
                 'start_date'=>$detail->plan_start_date,
@@ -1214,18 +1254,20 @@ class LearnerService
                 ];
 
             }),
-            'all_detail'=>$all_detail->map(function($all_deatil){
+            'all_detail'=>$all_detail->map(function ($all_deatil) {
+                $pl = LearnerShiftSupport::receiptLabelsForLearnerDetail($all_deatil);
 
                 return [
                     'plan'=>$all_deatil->plan->name ?? '',
-                    'plan_type'=>$all_deatil->planType->name ?? '',
+                    'plan_type'=>$pl['subscription'] !== 'NA' ? $pl['subscription'] : ($all_deatil->planType->name ?? ''),
                     'price'=>$all_deatil->plan_price_id,
                     'duration'=>$all_deatil->plan->monthdays ?? '',
                     'start_date'=>$all_deatil->plan_start_date,
                     'end_date'=>$all_deatil->plan_end_date,
                     'start_time'=>$all_deatil->planType->start_time ?? '',
                     'end_time'=>$all_deatil->planType->end_time ?? '',
-                  
+                    'shift_timing'=>$pl['shift_timing'],
+
                 ];
 
             })

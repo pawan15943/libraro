@@ -23,4 +23,11 @@ class Booking extends Model
     {
         return $this->belongsTo(PlanType::class, 'plan_type_id');
     }
+
+    public function planTypes()
+    {
+        return $this->belongsToMany(PlanType::class, 'booking_plan_type', 'booking_id', 'plan_type_id')
+            ->withPivot('sort_order')
+            ->orderByPivot('sort_order');
+    }
 }

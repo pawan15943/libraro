@@ -278,11 +278,19 @@
     </style>
 </head>
 @php
-    $start = $learner_detail->planType->start_time ?? null;
-    $end   = $learner_detail->planType->end_time ?? null;
-
-    $startTime = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
-    $endTime   = $end ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
+    $shiftLines = [];
+    $planTypeCollection = $learner_detail->relationLoaded('planTypes') && $learner_detail->planTypes->isNotEmpty()
+        ? $learner_detail->planTypes
+        : collect($learner_detail->planType ? [$learner_detail->planType] : []);
+    foreach ($planTypeCollection as $pt) {
+        if (!$pt) continue;
+        $st = $pt->start_time ?? null;
+        $en = $pt->end_time ?? null;
+        $shiftLines[] = ($st ? \Carbon\Carbon::parse($st)->format('h:i A') : '')
+            . ' to '
+            . ($en ? \Carbon\Carbon::parse($en)->format('h:i A') : '');
+    }
+    $shiftDisplay = implode(' | ', array_filter($shiftLines));
 @endphp
 
 
@@ -335,7 +343,7 @@
 
                    <li class="w-100">
                         <span>Shift</span>
-                        <p class="m-0">{{ $startTime }} to {{ $endTime }}</p>
+                        <p class="m-0">{{ $shiftDisplay }}</p>
                     </li>
                 </ul>
                 <div class="barcode pe-1">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>

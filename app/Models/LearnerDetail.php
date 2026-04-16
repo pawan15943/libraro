@@ -34,6 +34,13 @@ class LearnerDetail extends Model
     {
         return $this->belongsTo(PlanType::class, 'plan_type_id');
     }
+
+    public function planTypes()
+    {
+        return $this->belongsToMany(PlanType::class, 'learner_detail_plan_type', 'learner_detail_id', 'plan_type_id')
+            ->withPivot('sort_order')
+            ->orderByPivot('sort_order');
+    }
     public function learner()
     {
         return $this->belongsTo(Learner::class)->withTrashed();

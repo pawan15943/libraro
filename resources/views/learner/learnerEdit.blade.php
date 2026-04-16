@@ -10,6 +10,10 @@ if($customer->locker_no){
 }else{
     $locker_read='readonly';
 }
+// Shifts are read-only on edit; hidden inputs submit all IDs (disabled <select> is not posted).
+$editShiftSubmitIds = is_array(old('plan_type_id'))
+    ? array_values(array_unique(array_map('intval', array_filter(old('plan_type_id')))))
+    : array_values(array_unique(array_map('intval', $selected_plan_type_ids ?? [])));
 @endphp
 
 
@@ -31,9 +35,13 @@ if($customer->locker_no){
             <input name="user_id" type="hidden" value="{{$customer->id}}">
             <input name="learner_id" type="hidden" value="{{$customer->id}}">
             <input name="plan_id" type="hidden" value="{{$customer->plan_id}}" id="plan_id10">
-            <input name="plan_type_id" type="hidden" value="{{$customer->plan_type_id}}" id="plan_type_id10">
             {{-- <input name="plan_price_id" type="hidden" value="{{$customer->plan_price_id}}" id="plan_price10"> --}}
             <input type="hidden" name="payment_type" value="EDIT" id="payment_type_operation">
+            @foreach($editShiftSubmitIds as $hid)
+                @if($hid > 0)
+                    <input type="hidden" name="plan_type_id[]" value="{{ $hid }}">
+                @endif
+            @endforeach
             {{-- <input name="plan_start_date" type="hidden" value="{{$customer->plan_start_date}}"> --}}
         
             <div class="library-operations mt-4">
@@ -97,11 +105,22 @@ if($customer->locker_no){
                             @enderror
                         </div>
                         <div class="col-lg-6">
-                            <label for="">Plan Type <span>*</span></label>
-                            <select class="form-select" name="plan_id" disabled>
-                                <option value="{{ $customer->plan_type_id }}" selected>{{ $customer->plan_type_name }}</option>
+                            <label for="">Plan Type / Shifts <span>*</span></label>
+                            <select id="plan_type_id10" class="form-control form-select choices shift-choices-multiple @error('plan_type_id') is-invalid @enderror" multiple disabled>
+                                @foreach($filteredPlanTypes as $planType)
+                                <option value="{{ $planType['id'] }}"
+                                    data-slot-hours="{{ (int) ($planType['slot_hours'] ?? 0) }}"
+                                    {{ in_array((int) $planType['id'], $selected_plan_type_ids ?? [], true) ? 'selected' : (is_array(old('plan_type_id')) && in_array((int) $planType['id'], array_map('intval', old('plan_type_id')), true) ? 'selected' : '') }}>
+                                    {{ $planType['name'] }}
+                                </option>
+                                @endforeach
                             </select>
-
+                            <small class="text-muted d-block mt-1">Shifts cannot be changed from this screen. Use change plan or upgrade if you need different shifts.</small>
+                            @error('plan_type_id')
+                            <span class="invalid-feedback d-block" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
                         </div>
                         <div class="col-lg-6">
                             <label for="plan_start_date">Plan Start Date</label>

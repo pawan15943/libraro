@@ -140,7 +140,10 @@
                         <h4 class="mb-4 text-center">Daily Inquiry</h4>
                         <div class="row g-3">
                             @csrf
-                            <input type="hidden" id="branch_id" value="{{$branch->id}}">
+                            @php
+                                $__demo_branch_max_h = (int) (\App\Models\Hour::withoutGlobalScopes()->where('branch_id', $branch->id)->value('hour') ?? 0);
+                            @endphp
+                            <input type="hidden" id="branch_id" value="{{ $branch->id }}" data-max-slot-hours="{{ $__demo_branch_max_h }}">
                            
 
                             <div class="col-lg-6">
@@ -211,9 +214,8 @@
 
                             <div class="col-lg-6">
                                 <label for="">Plan Type / Shift <span>*</span></label>
-                                <select id="temp_plan_type_id" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
-                                    <option value="">Choose</option>
-                                </select>
+                                <select id="temp_plan_type_id" class="form-select choices shift-choices-multiple @error('plan_type_id') is-invalid @enderror" name="plan_type_id[]" multiple></select>
+                                <small class="text-muted">Select one or more shifts.</small>
                                 @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
@@ -368,7 +370,14 @@
 
     });
     $(document).ready(function() {
-         let oldPlanTypeId = "{{ old('plan_type_id') }}";
+        var $demoBranchCap = $('#branch_id');
+        if ($demoBranchCap.length && $demoBranchCap.attr('data-max-slot-hours')) {
+            window.BRANCH_MAX_SLOT_HOURS = parseInt($demoBranchCap.attr('data-max-slot-hours'), 10) || 0;
+        }
+        let oldPlanTypeIds = @json(old('plan_type_id', []));
+        if (!Array.isArray(oldPlanTypeIds)) {
+            oldPlanTypeIds = oldPlanTypeIds ? [oldPlanTypeIds] : [];
+        }
         function loadPlanTypes() {
             const generalSeat = $('#general_seat2').val();
             const seatId = $('#seat_id2').val();
@@ -386,13 +395,23 @@
                     // If seat already selected
                     getTypeSeatwise(seatId, branch_id); // show seat-wise plan types
                 } else {
-                    // Seat not selected yet → clear plan type dropdown
-                    $('#temp_plan_type_id').html('<option value="">Choose</option>');
+                    if (typeof destroyShiftChoices === 'function') {
+                        destroyShiftChoices($('#temp_plan_type_id'));
+                    }
+                    $('#temp_plan_type_id').empty();
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#temp_plan_type_id'));
+                    }
                 }
             } else {
-                // Empty / default selection
                 $('#seat_id2').prop('disabled', true).val('');
-                $('#temp_plan_type_id').html('<option value="">Choose</option>');
+                if (typeof destroyShiftChoices === 'function') {
+                    destroyShiftChoices($('#temp_plan_type_id'));
+                }
+                $('#temp_plan_type_id').empty();
+                if (typeof initShiftChoices === 'function') {
+                    initShiftChoices($('#temp_plan_type_id'));
+                }
             }
         }
         loadPlanTypes();
@@ -402,9 +421,26 @@
             loadPlanTypes();
         });
 
+        function demoShiftIds() {
+            var $pt = $('#temp_plan_type_id');
+            if (typeof collectMultiSelectValues === 'function') {
+                return collectMultiSelectValues($pt);
+            }
+            var el = $pt[0];
+            if (el && el.multiple && el.selectedOptions && el.selectedOptions.length) {
+                return $.map(el.selectedOptions, function (o) { return o.value; }).filter(Boolean);
+            }
+            var v = $pt.val();
+            return $.isArray(v) ? v.filter(Boolean) : (v ? [v] : []);
+        }
+
         $('#plan_id4, #temp_plan_type_id').on('change', function() {
+            var $pt = $('#temp_plan_type_id');
+            if (this.id === 'temp_plan_type_id' && typeof window.enforceShiftHoursCap === 'function') {
+                window.enforceShiftHoursCap($pt);
+            }
             let plan_id = $('#plan_id4').val();
-            let plan_type_id = $('#temp_plan_type_id').val();
+            let plan_type_id = demoShiftIds();
             let branch_id = $('#branch_id').val();
             let plan_start_date = $('#plan_start_date').val();
             console.log("plan_id",plan_id);
@@ -412,10 +448,11 @@
             console.log("branch_id",branch_id);
             console.log("plan_start_date",plan_start_date);
            
-            if (plan_id && plan_type_id && branch_id && plan_start_date) {
+            if (plan_id && plan_type_id.length && branch_id && plan_start_date) {
                 $.ajax({
                     url: "{{ route('get.plan.price') }}"
                     , type: "POST"
+                    , traditional: true
                     , data: {
                         _token: "{{ csrf_token() }}"
                         , plan_id: plan_id
@@ -452,9 +489,15 @@
             }
         });
 
-        function getTypeSeatwise(seatId, branchId) {
+        $('#plan_start_date').on('change', function () {
+            $('#plan_id4').trigger('change');
+        });
 
-            $('#temp_plan_type_id').empty().append('<option value="">Choose Shift</option>');
+        function getTypeSeatwise(seatId, branchId) {
+            if (typeof destroyShiftChoices === 'function') {
+                destroyShiftChoices($('#temp_plan_type_id'));
+            }
+            $('#temp_plan_type_id').empty();
             $.ajax({
                 url: '{{ route('getPlantypeSeatwise') }}'
                 , type: 'GET'
@@ -466,55 +509,60 @@
                 , dataType: 'json'
                 , success: function(html) {
                     console.log('HEENAPLANTYPE',html);
+                    if (typeof window.clearShiftHoursCapFeedback === 'function') {
+                        window.clearShiftHoursCapFeedback($('#temp_plan_type_id'));
+                    }
                     if (html) {
                      if (html.length === 0) {
                         $("#temp_plan_type_id").empty().append(
                             '<option value="">No added plan type</option>'
                         );
+                        if (typeof initShiftChoices === 'function') {
+                            initShiftChoices($('#temp_plan_type_id'));
+                        }
+                        setTimeout(function () {
+                            $('#temp_plan_type_id').trigger('change');
+                        }, 0);
                         return;
                     }
-                    let selectedValue = oldPlanTypeId 
-                        ? oldPlanTypeId 
-                        : $("#temp_plan_type_id").find("option:selected").val();
 
                     $("#temp_plan_type_id").empty();
-                    $("#temp_plan_type_id").append('<option value="">Choose Shift</option>');
 
-                    if (selectedValue) {
-                        // find text from html response
-                        let selectedText = '';
-                        $.each(html, function(index, planType) {
-                            if (planType.id == selectedValue) {
-                                selectedText = planType.name;
-                            }
-                        });
-
+                    const oldSelected = oldPlanTypeIds.map(String);
+                    $.each(html, function(index, planType) {
+                        const idStr = String(planType.id);
+                        const sel = oldSelected.includes(idStr) ? ' selected' : '';
+                        const sh = planType.slot_hours != null ? planType.slot_hours : 0;
                         $("#temp_plan_type_id").append(
-                            '<option value="' + selectedValue + '" selected>' +
-                            selectedText +
+                            '<option value="' + planType.id + '" data-slot-hours="' + sh + '"' + sel + '>' +
+                            planType.name +
                             '</option>'
                         );
-                    }
-
-                    $.each(html, function(index, planType) {
-                        if (planType.id != selectedValue) {
-                            $("#temp_plan_type_id").append(
-                                '<option value="' + planType.id + '">' +
-                                planType.name +
-                                '</option>'
-                            );
-                        }
                     });
 
-                    // clear old value after first use
-                    oldPlanTypeId = null;
+                    oldPlanTypeIds = [];
                 }else {
                         $("#temp_plan_type_id").empty();
                         $("#temp_plan_type_id").append('<option value="">Select Plan Type</option>');
                     }
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#temp_plan_type_id'));
+                    }
+                    setTimeout(function () {
+                        $('#temp_plan_type_id').trigger('change');
+                    }, 0);
                 }
                 , error: function(xhr, status, error) {
                     console.error("AJAX error:", status, error); // Log any errors
+                    if (typeof window.clearShiftHoursCapFeedback === 'function') {
+                        window.clearShiftHoursCapFeedback($('#temp_plan_type_id'));
+                    }
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#temp_plan_type_id'));
+                    }
+                    setTimeout(function () {
+                        $('#temp_plan_type_id').trigger('change');
+                    }, 0);
                 }
             });
 
@@ -528,10 +576,23 @@
                 if (seatId) {
                     getTypeSeatwise(seatId, branch_id);
                 } else {
-                    $('#temp_plan_type_id').html('<option value="">Choose</option>');
+                    if (typeof destroyShiftChoices === 'function') {
+                        destroyShiftChoices($('#temp_plan_type_id'));
+                    }
+                    $('#temp_plan_type_id').empty();
+                    if (typeof initShiftChoices === 'function') {
+                        initShiftChoices($('#temp_plan_type_id'));
+                    }
+                    setTimeout(function () {
+                        $('#temp_plan_type_id').trigger('change');
+                    }, 0);
                 }
             }
         });
+
+        if (typeof initShiftChoices === 'function') {
+            initShiftChoices($('#temp_plan_type_id'));
+        }
 
     });
 

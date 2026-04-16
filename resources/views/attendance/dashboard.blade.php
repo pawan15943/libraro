@@ -82,16 +82,20 @@
                         <div class="col-6 mb-3">
                             <small>Plan Type / Shift</small>
                             <div>
-                                {{ $detail->planType->name ?? '-' }}
+                                {{ $detail->plan_types_display ?? ($detail->planType->name ?? '-') }}
                             </div>
                         </div>
                         <div class="col-12 mb-3">
                             <small>Shift Timing</small>
                             <div>
-                                @if($detail && $detail->planType)
+                                @if(!empty($detail->shift_times_display))
+                                    {{ $detail->shift_times_display }}
+                                @elseif($detail && $detail->planType)
                                 {{ \Carbon\Carbon::parse($detail->planType->start_time)->format('h:i A') }}
                                 to
                                 {{ \Carbon\Carbon::parse($detail->planType->end_time)->format('h:i A') }}
+                                @else
+                                    -
                                 @endif
                             </div>
                         </div>

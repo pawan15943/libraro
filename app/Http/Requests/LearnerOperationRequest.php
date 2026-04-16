@@ -15,6 +15,18 @@ class LearnerOperationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('plan_type_id') && ! is_array($this->plan_type_id)) {
+            $this->merge(['plan_type_id' => array_filter([$this->plan_type_id])]);
+        }
+
+        // Renew modal posts `user_id` (learner PK) but DTO/validation expect `learner_id`.
+        if (! $this->filled('learner_id') && $this->filled('user_id')) {
+            $this->merge(['learner_id' => $this->input('user_id')]);
+        }
+    }
+
     public function rules()
     {
         
@@ -30,11 +42,10 @@ class LearnerOperationRequest extends FormRequest
                 )
             ],
 
-            'plan_type_id' => [
-                'required',
-                Rule::exists('plan_types','id')->where(fn($q)=>
-                    $q->where('branch_id',getCurrentBranch())
-                )
+            'plan_type_id' => ['required', 'array', 'min:1'],
+            'plan_type_id.*' => [
+                'integer',
+                Rule::exists('plan_types', 'id')->where(fn ($q) => $q->where('branch_id', getCurrentBranch())),
             ],
 
             'plan_price_id' => 'required|numeric|min:0',

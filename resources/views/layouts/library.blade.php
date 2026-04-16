@@ -341,6 +341,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="{{ asset('public/js/shift-choices.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
@@ -550,6 +551,13 @@
             lastTouchEnd = now;
         }, false);
     </script>
+    @php
+        $__branch_max_slot_h = 0;
+        if (function_exists('getCurrentBranch') && getCurrentBranch()) {
+            $__branch_max_slot_h = (int) (\App\Models\Hour::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->value('hour') ?? 0);
+        }
+    @endphp
+    <script>window.BRANCH_MAX_SLOT_HOURS = {{ $__branch_max_slot_h }};</script>
     @include('learner.script')
     <script>
         document.addEventListener("DOMContentLoaded", function() {

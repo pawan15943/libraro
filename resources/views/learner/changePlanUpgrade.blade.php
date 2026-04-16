@@ -123,10 +123,11 @@ if(Route::currentRouteName() == 'learner.change.plan'){
 
                         <div class="col-lg-4">
                             <label>Plan Type <span>*</span></label>
-                            <select id="plan_type_id10" class="form-control form-select  @error('plan_type_id') is-invalid @enderror" name="plan_type_id" {{ Route::currentRouteName() == 'learner.renew.plan' ? 'readonly' : '' }}>
+                            <select id="plan_type_id10" class="form-control form-select choices shift-choices-multiple @error('plan_type_id') is-invalid @enderror" name="plan_type_id[]" multiple {{ Route::currentRouteName() == 'learner.renew.plan' ? 'readonly' : '' }}>
                                 @foreach($filteredPlanTypes as $planType)
                                 <option value="{{ $planType['id'] }}"
-                                    {{ ($customer->plan_type_id == $planType['id']) ? 'selected' : (old('plan_type_id') == $planType['id'] ? 'selected' : '') }}>
+                                    data-slot-hours="{{ (int) ($planType['slot_hours'] ?? 0) }}"
+                                    {{ in_array((int) $planType['id'], $selected_plan_type_ids ?? [], true) ? 'selected' : (is_array(old('plan_type_id')) && in_array((int) $planType['id'], array_map('intval', old('plan_type_id')), true) ? 'selected' : '') }}>
                                     {{ $planType['name'] }}
                                 </option>
                                 @endforeach

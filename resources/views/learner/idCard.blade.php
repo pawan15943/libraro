@@ -20,7 +20,7 @@
             <!-- Plan Info -->
             <div class="learner-plan-info mt-4">
                 <p class="m-0">{{$data->plan_type_name}} ({{$data->plan_name}})</p>
-                <p class="m-0">Shift [{{ \Carbon\Carbon::parse($data->start_time)->format('h:i A') }} to {{ \Carbon\Carbon::parse($data->end_time)->format('h:i A') }}]</p>
+                <p class="m-0">Shift [{{ $data->shift_times_display ?? (\Carbon\Carbon::parse($data->start_time)->format('h:i A').' to '.\Carbon\Carbon::parse($data->end_time)->format('h:i A')) }}]</p>
                 <p class="m-0">End Date : {{ \Carbon\Carbon::parse($data->plan_end_date)->format('M j, Y') }}</p>
             </div>
             <hr>

@@ -30,7 +30,6 @@ $locker_read='readonly';
 }
 $paymentType='SEAT ASSIGNMENT';
 @endphp
-<input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
@@ -65,6 +64,9 @@ $paymentType='SEAT ASSIGNMENT';
             <form action="{{$route}}" method="POST" enctype="multipart/form-data" id="{{$id}}" class="payment_page">
                 @csrf
                 @method('POST')
+                @foreach($selected_plan_type_ids as $ptid)
+                <input type="hidden" name="plan_type_id[]" value="{{ $ptid }}">
+                @endforeach
                 <div class="form-input mb-4">
                     <h4 class="inner-heading">Make Payment</h4>
                     <div class="tip"><i class="fa-solid fa-gem pe-1"></i> Note : Here we are displaying the active plan Payment information that has been completed. You can also make payment of Pay Later and Pending Amount.</div>
@@ -94,10 +96,11 @@ $paymentType='SEAT ASSIGNMENT';
 
                         <div class="col-lg-4">
                             <label>Plan Type <span>*</span></label>
-                            <select id="plan_type_id10" class="form-control form-select  @error('plan_type_id') is-invalid @enderror" name="plan_type_id" readonly>
+                            <select id="plan_type_id10" class="form-control form-select choices shift-choices-multiple @error('plan_type_id') is-invalid @enderror" multiple disabled>
                                 @foreach($filteredPlanTypes as $planType)
                                 <option value="{{ $planType['id'] }}"
-                                    {{ ($customer->plan_type_id == $planType['id']) ? 'selected' : (old('plan_type_id') == $planType['id'] ? 'selected' : '') }}>
+                                    data-slot-hours="{{ (int) ($planType['slot_hours'] ?? 0) }}"
+                                    {{ in_array($planType['id'], $selected_plan_type_ids, true) ? 'selected' : (is_array(old('plan_type_id')) && in_array($planType['id'], old('plan_type_id'), true) ? 'selected' : '') }}>
                                     {{ $planType['name'] }}
                                 </option>
                                 @endforeach
@@ -234,7 +237,7 @@ $paymentType='SEAT ASSIGNMENT';
             @endif
             <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{$class}}">
             <p>{{ $customer->plan->name}}</p>
-            <button>Booked for <b>{{ $customer->planType->name}}</b></button>
+            <button>Booked for <b>{{ $customer->plan_type_name ?? $customer->planType->name}}</b></button>
             {!! getUserStatusWithSpan($customer->plan_end_date,$customer->id) !!}
         </div>
     </div>

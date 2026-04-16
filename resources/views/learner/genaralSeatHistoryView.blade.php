@@ -83,7 +83,11 @@ There is currently no history available for this General seat for any learners.<
                             </li>
                             <li>
                                 <span>Plan Type</span>
-                                <p>{{$value->planType->name ?? ''}}</p>
+                                @php $_ghistL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($value); @endphp
+                                <p>{{ $_ghistL['subscription'] !== 'NA' ? $_ghistL['subscription'] : ($value->planType->name ?? '') }}</p>
+                                @if($_ghistL['shift_timing'] !== '')
+                                <p><small class="text-muted">{{ $_ghistL['shift_timing'] }}</small></p>
+                                @endif
                             </li>
                             <li>
                                 <span>Plan Start Date</span>

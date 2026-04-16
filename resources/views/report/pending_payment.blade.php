@@ -144,11 +144,12 @@ $transaction ='';
                     $inextendDate = $endDate->copy()->addDays($extendDay); // Preserving the original $endDate
                     $diffExtendDay= $today->diffInDays($inextendDate, false);
                     $transaction = learnerTransaction($value->learner_id, $value->id);
+                    $_pendL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($value);
                     @endphp
 
                     <tr>
                         <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN" }}</td>
-                        <td class="d-none export-plan-type">{{ $value->planType->name ?? '' }}</td>
+                        <td class="d-none export-plan-type">{{ $_pendL['subscription'] !== 'NA' ? $_pendL['subscription'] : ($value->planType->name ?? '') }}</td>
                         <td class="d-none export-name">{{ $value->learner->name ?? '' }}</td>
                         <td class="d-none export-email">{{ $value->learner->email ?? 'Email ID Not Available' }}</td>
                         <td class="d-none export-mobile">{{ $value->learner->mobile ?? '' }}</td>
@@ -165,7 +166,10 @@ $transaction ='';
                                  No
                             @endif</td>
                         <td class="merged-display">{{getSeatDisplayByMainNo($value->learner->seat_no) ?? 'GEN'}}<br>
-                            <small>{{$value->planType->name ?? ''}}</small>
+                            <small>{{ $_pendL['subscription'] !== 'NA' ? $_pendL['subscription'] : ($value->planType->name ?? '') }}</small>
+                            @if($_pendL['shift_timing'] !== '')
+                            <br><small class="text-muted">{{ $_pendL['shift_timing'] }}</small>
+                            @endif
                         </td>
                         <td class="merged-display"> <span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>

@@ -78,8 +78,8 @@
 
                             <div class="col-lg-4">
                                 <label for="">Plan Type / Shift <span>*</span></label>
-                                <select id="plan_type_id" class="form-select" name="plan_type_id">
-                                    <option value="">Choose</option>
+                                <select id="plan_type_id" class="form-select choices shift-choices-multiple" name="plan_type_id[]" multiple>
+                                    <option value="" data-slot-hours="0">Choose</option>
 
                                 </select>
                             </div>
@@ -360,11 +360,11 @@
                             <!-- Plan Info -->
                             <div class="col-lg-4">
                                 <label for="">Select Plan <span>*</span></label>
-                                <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)></select>
+                                <select id="plan_id2" class="form-control" name="plan_id" disabled></select>
                             </div>
                             <div class="col-lg-4">
                                 <label for="">Plan Type <span>*</span></label>
-                                <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)></select>
+                                <select id="plan_type_id_renew" class="form-control choices shift-choices-multiple" name="plan_type_id[]" multiple disabled></select>
                             </div>
                             <div class="col-lg-4">
                                 <label for="">Plan Price <span>*</span></label>
@@ -450,6 +450,7 @@
                             <div class="col-lg-4">
                                 <input type="hidden" class="form-control " name="seat_no" value="" id="update_seat_no">
                                 <input type="hidden" class="form-control " name="user_id" value="" id="update_user_id">
+                                <input type="hidden" name="learner_id" value="" id="renew_learner_id">
                                 <button type="submit" class="btn btn-primary btn-block button"  value="Renew Membership Now">Renew Plan</button>
                             </div>
                         </div>

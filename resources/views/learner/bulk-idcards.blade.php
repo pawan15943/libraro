@@ -286,11 +286,19 @@
             $signature = hash_hmac('sha256', $payload, config('app.key'));
 
             $qrData = base64_encode($payload . '|' . $signature);
-            $start = $learner_detail->planType->start_time ?? null;
-            $end   = $learner_detail->planType->end_time ?? null;
-
-            $startTime = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
-            $endTime   = $end ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
+            $shiftLines = [];
+            $pts = $learner_detail->relationLoaded('planTypes') && $learner_detail->planTypes->isNotEmpty()
+                ? $learner_detail->planTypes
+                : collect($learner_detail->planType ? [$learner_detail->planType] : []);
+            foreach ($pts as $pt) {
+                if (!$pt) continue;
+                $st = $pt->start_time ?? null;
+                $en = $pt->end_time ?? null;
+                $shiftLines[] = ($st ? \Carbon\Carbon::parse($st)->format('h:i A') : '')
+                    . ' to '
+                    . ($en ? \Carbon\Carbon::parse($en)->format('h:i A') : '');
+            }
+            $shiftDisplay = implode(' | ', array_filter($shiftLines));
            @endphp 
         
         <div class="card front" style="background: linear-gradient(180deg, #ffffff, #ebe6ff);">
@@ -338,7 +346,7 @@
 
                    <li class="w-100">
                         <span>Shift</span>
-                        <p class="m-0">{{ $startTime }} to {{ $endTime }}</p>
+                        <p class="m-0">{{ $shiftDisplay }}</p>
                     </li>
                 </ul>
                 <div class="barcode">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>

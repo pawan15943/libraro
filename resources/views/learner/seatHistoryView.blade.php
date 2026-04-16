@@ -88,7 +88,11 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
                     </li>
                     <li>
                         <span>Plan Type</span>
-                        <p>{{$value->planType->name ?? ''}}</p>
+                        @php $_histL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($value); @endphp
+                        <p>{{ $_histL['subscription'] !== 'NA' ? $_histL['subscription'] : ($value->planType->name ?? '') }}</p>
+                        @if($_histL['shift_timing'] !== '')
+                        <p><small class="text-muted">{{ $_histL['shift_timing'] }}</small></p>
+                        @endif
                     </li>
                     <li>
                         <span>Plan Start Date</span>

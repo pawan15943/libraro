@@ -2,18 +2,21 @@
 
 namespace App\DTO;
 
-use App\Enums\LearnerOperation;
+use App\Support\LearnerShiftSupport;
+use Illuminate\Http\Request;
 
 class LearnerOperationDTO
 {
-    // controller s serive m data clean formate m bhejan
+    /**
+     * @param  list<int>  $plan_type_ids
+     */
     public function __construct(
 
         public int $learner_id,
 
         public int $plan_id,
 
-        public int $plan_type_id,
+        public array $plan_type_ids,
 
         public ?float $plan_price,
 
@@ -41,7 +44,7 @@ class LearnerOperationDTO
 
         public ?int $library_id,
 
-        public string $operation ,
+        public string $operation,
         public ?float $diffrence_amount,
         // ✅ ADD THESE (VERY IMPORTANT)
     public ?string $name = null,
@@ -68,39 +71,45 @@ class LearnerOperationDTO
 
     ) {}
 
+    public function primaryPlanTypeId(): int
+    {
+        return (int) ($this->plan_type_ids[0] ?? 0);
+    }
 
     public static function fromRequest($request)
     {
-       
+        $planTypeIds = LearnerShiftSupport::normalizePlanTypeIdsFromRequest($request);
+
         return new self(
 
-            learner_id:$request->learner_id,
-            plan_id:$request->plan_id,
-            plan_type_id:$request->plan_type_id,
-            plan_price:(float)$request->plan_price_id,
+            learner_id: $request->learner_id,
+            plan_id: $request->plan_id,
+            plan_type_ids: $planTypeIds,
 
-            seat_no:$request->seat_no,
+            plan_price: (float) $request->plan_price_id,
 
-            paid_amount:(float)$request->paid_amount,
+            seat_no: $request->seat_no,
 
-            locker_amount:$request->locker_amount,
-            locker_no:$request->locker_no,
+            paid_amount: (float) $request->paid_amount,
 
-            discount_type:$request->discountType,
-            discount_amount:$request->discount_amount,
-            diffrence_amount:$request->diffrence_amount,
+            locker_amount: $request->locker_amount,
+            locker_no: $request->locker_no,
 
-            payment_mode:$request->payment_mode,
+            discount_type: $request->discountType,
+            discount_amount: $request->discount_amount,
+            diffrence_amount: $request->diffrence_amount,
 
-            start_date:$request->plan_start_date,
+            payment_mode: $request->payment_mode,
 
-            due_date:$request->due_date,
-            paid_date:$request->paid_date,
+            start_date: $request->plan_start_date,
 
-            branch_id:getCurrentBranch(),
-            library_id:getLibraryId(),
+            due_date: $request->due_date,
+            paid_date: $request->paid_date,
 
-            operation:$request->payment_type ?? 'RENEW',
+            branch_id: getCurrentBranch(),
+            library_id: getLibraryId(),
+
+            operation: $request->payment_type ?? 'RENEW',
                 // ✅ OPTIONAL FIELDS
             name: $request->name ?? null,
             email: $request->email ?? null,

@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Branch;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
+use App\Support\LearnerShiftSupport;
 use Illuminate\Support\Str;
 use Spatie\FlareClient\View;
 use Illuminate\Support\Facades\Cookie;
@@ -882,6 +883,7 @@ public function summary(Request $request, $learner)
             'learners.name',
             'learners.mobile',
             'learners.seat_no',
+            'learner_detail.id as learner_detail_id',
             'plan_types.name as plan_type_name',
             'attendances.in_time',
             'attendances.out_time',
@@ -889,6 +891,8 @@ public function summary(Request $request, $learner)
             'attendances.date'
         )
         ->get();
+
+    LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($attendance);
 
     /* ===============================
     2️⃣ COUNTS

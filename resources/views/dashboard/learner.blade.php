@@ -36,6 +36,11 @@
                 </label>
                 <div class="d-flex mt-2">
                     <ul class="plann-info">
+                        <li>Plan : <a href="javascript:;">{{ $learner->plan_name ?? '' }}</a></li>
+                        <li>Shifts : <a href="javascript:;">{{ $learner->plan_type_name ?? '' }}</a></li>
+                        @if(!empty($learner->shift_times_display))
+                        <li>Timing : <a href="javascript:;">{{ $learner->shift_times_display }}</a></li>
+                        @endif
                         <li>Plan End Date : <a href="javascript:;">{{ $learner->plan_end_date }}</a> </li>
                         <li>Plan Price : <a href="javascript:;"> {{ $learner->plan_price_id}} </a></li>
                         <li>Payment Status :  <a href="javascript:;"> {{$learner->is_paid ? 'Paid' : 'Unpaid'}} </a></li>

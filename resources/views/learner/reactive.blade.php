@@ -150,6 +150,7 @@ if($customer->locker_no){
 
                     <div class="row g-4">
 
+                        <input type="hidden" name="learner_id" value="{{ $customer->id }}">
                         <input id="user_id" type="hidden" name="user_id" value="{{$customer->id }}">
                         <input id="learner_detail" type="hidden" name="learner_detail" value="{{$customer->learner_detail_id }}">
                         <input type="hidden" name="payment_type" value="REACTIVE" id="payment_type_operation">
@@ -174,12 +175,12 @@ if($customer->locker_no){
                         </div>
                         <div class="col-lg-4">
                             <label for="">Plan Type <span>*</span></label>
-                            <select id="plan_type_id10" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
-                                <option value="">Select Plan Type</option>
-                                @foreach($planTypes as $planType)
-                                <option value="{{ $planType->id }}"
-                                    {{ old('plan_type_id',$customer->plan_type_id) == $planType->id ? 'selected' : '' }}>
-                                    {{ $planType->name }}
+                            <select id="plan_type_id10" class="form-control form-select choices shift-choices-multiple @error('plan_type_id') is-invalid @enderror" name="plan_type_id[]" multiple>
+                                @foreach($filteredPlanTypes as $planType)
+                                <option value="{{ $planType['id'] }}"
+                                    data-slot-hours="{{ (int) ($planType['slot_hours'] ?? 0) }}"
+                                    {{ in_array((int) $planType['id'], $selected_plan_type_ids ?? [], true) ? 'selected' : (is_array(old('plan_type_id')) && in_array((int) $planType['id'], array_map('intval', old('plan_type_id')), true) ? 'selected' : '') }}>
+                                    {{ $planType['name'] }}
                                 </option>
                                 @endforeach
                             </select>

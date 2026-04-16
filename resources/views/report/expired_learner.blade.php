@@ -105,11 +105,11 @@ $currentMonth = date('m');
 
                 <tbody>
                     @foreach($learners as $value)
-          
-                    <tr>
+                    @php $_exL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($value); @endphp
+ <tr>
                         
                         <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->learner->seat_no) ?? "GEN" }}</td>
-                        <td class="d-none export-plan-type">{{ $value->planType->name ?? '' }}</td>
+                        <td class="d-none export-plan-type">{{ $_exL['subscription'] !== 'NA' ? $_exL['subscription'] : ($value->planType->name ?? '') }}</td>
                         <td class="d-none export-name">{{ $value->learner->name ?? '' }}</td>
                         <td class="d-none export-email">{{ $value->learner->email ?? 'Email ID Not Available' }}</td>
                         <td class="d-none export-mobile">{{ $value->learner->mobile ?? '' }}</td>
@@ -122,7 +122,10 @@ $currentMonth = date('m');
 
 
                         <td class="merged-display">{{getSeatDisplayByMainNo($value->learner->seat_no) ?? 'GEN'}}<br>
-                            <small>{{$value->planType->name ?? ''}}</small>
+                            <small>{{ $_exL['subscription'] !== 'NA' ? $_exL['subscription'] : ($value->planType->name ?? '') }}</small>
+                            @if($_exL['shift_timing'] !== '')
+                            <br><small class="text-muted">{{ $_exL['shift_timing'] }}</small>
+                            @endif
                         </td>
                         <td class="merged-display"> <span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->learner->name}}" data-bs-placement="bottom">{{$value->learner->name ?? ''}}</span>

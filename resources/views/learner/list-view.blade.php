@@ -109,8 +109,14 @@
                                     <small>{{ $learner_detail->plan->name ?? 'N/A' }}</small>
                             </td>
                             <td>
+                                @php
+                                    $_ldLabels = isset($learner_detail) ? \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($learner_detail) : ['subscription' => 'NA', 'shift_timing' => ''];
+                                @endphp
                                 {{ $learner_detail->plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $learner_detail->planType->name ?? 'N/A' }}</small> 
+                                    <small>{{ $_ldLabels['subscription'] !== 'NA' ? $_ldLabels['subscription'] : ($learner_detail->planType->name ?? 'N/A') }}</small>
+                                    @if($_ldLabels['shift_timing'] !== '')
+                                    <br><small class="text-muted">{{ $_ldLabels['shift_timing'] }}</small>
+                                    @endif
                             </td>
                             <td>
                                   
@@ -156,8 +162,14 @@
                                 <small>{{ $data->plan->name ?? 'N/A' }}</small>
                         </td>
                         <td>
+                            @php
+                                $_dLabels = $data instanceof \App\Models\LearnerDetail ? \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($data) : ['subscription' => 'NA', 'shift_timing' => ''];
+                            @endphp
                             {{ $data->plan_end_date ?? 'N/A' }}<br>
-                                <small>{{ $data->planType->name ?? 'N/A' }}</small> 
+                                <small>{{ $_dLabels['subscription'] !== 'NA' ? $_dLabels['subscription'] : ($data->planType->name ?? 'N/A') }}</small>
+                                @if($_dLabels['shift_timing'] !== '')
+                                <br><small class="text-muted">{{ $_dLabels['shift_timing'] }}</small>
+                                @endif
                         </td>
                         <td>
                                 @php
@@ -214,8 +226,14 @@
                                     <small>{{ $plan->name ?? 'N/A' }}</small>
                             </td>
                             <td>
+                                @php
+                                    $_mxLabels = isset($learner_detail) ? \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($learner_detail) : ['subscription' => 'NA', 'shift_timing' => ''];
+                                @endphp
                                 {{ $data->max_plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $planType->name ?? 'N/A' }}</small> 
+                                    <small>{{ $_mxLabels['subscription'] !== 'NA' ? $_mxLabels['subscription'] : ($planType->name ?? 'N/A') }}</small>
+                                    @if($_mxLabels['shift_timing'] !== '')
+                                    <br><small class="text-muted">{{ $_mxLabels['shift_timing'] }}</small>
+                                    @endif
                             </td>
                             <td>
                                 @php
@@ -265,8 +283,14 @@
                                     <small>{{ $data->plan->name ?? 'N/A' }}</small>
                             </td>
                             <td>
+                                @php
+                                    $_d2Labels = $data instanceof \App\Models\LearnerDetail ? \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($data) : ['subscription' => 'NA', 'shift_timing' => ''];
+                                @endphp
                                 {{ $data->plan_end_date ?? 'N/A' }}<br>
-                                    <small>{{ $data->planType->name ?? 'N/A' }}</small> 
+                                    <small>{{ $_d2Labels['subscription'] !== 'NA' ? $_d2Labels['subscription'] : ($data->planType->name ?? 'N/A') }}</small>
+                                    @if($_d2Labels['shift_timing'] !== '')
+                                    <br><small class="text-muted">{{ $_d2Labels['shift_timing'] }}</small>
+                                    @endif
                             </td>
                             <td>
                                 @php

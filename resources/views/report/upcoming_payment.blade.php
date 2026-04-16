@@ -49,10 +49,10 @@ $currentMonth = date('m');
                 <tbody>
                     @foreach($learners as $value)
                     @foreach ($value->learnerDetails as $detail)
-          
-                    <tr>
+                    @php $_upcomingL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($detail); @endphp
+ <tr>
                         <td class="d-none export-seat-no">{{getSeatDisplayByMainNo($value->seat_no) ?? "GEN" }}</td>
-                        <td class="d-none export-plan-type">{{ $detail->planType->name ?? '' }}</td>
+                        <td class="d-none export-plan-type">{{ $_upcomingL['subscription'] !== 'NA' ? $_upcomingL['subscription'] : ($detail->planType->name ?? '') }}</td>
                         <td class="d-none export-name">{{ $value->name ?? '' }}</td>
                         <td class="d-none export-email">{{ $value->email ?? 'Email ID Not Available' }}</td>
                         <td class="d-none export-mobile">{{ $value->mobile ?? '' }}</td>
@@ -63,7 +63,10 @@ $currentMonth = date('m');
                          {!! getUserStatusDetails($detail->plan_end_date) !!}
                         </td>
                         <td class="merged-display">{{getSeatDisplayByMainNo($value->seat_no) ?? 'GEN'}}<br>
-                            <small>{{$detail->planType->name ?? ''}}</small>
+                            <small>{{ $_upcomingL['subscription'] !== 'NA' ? $_upcomingL['subscription'] : ($detail->planType->name ?? '') }}</small>
+                            @if($_upcomingL['shift_timing'] !== '')
+                            <br><small class="text-muted">{{ $_upcomingL['shift_timing'] }}</small>
+                            @endif
                         </td>
                         <td class="merged-display"><span class="uppercase truncate name" data-bs-toggle="tooltip"
                                 data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span>

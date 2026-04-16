@@ -70,6 +70,7 @@ class Controller extends BaseController
                 ->with(['plan', 'planType'])
                 ->first();
 
+            $rcpt = null;
             $transactionDate = $data->paid_date;
             $paymentMode = $learnerDeatail->payment_mode;
             $total_amount = $data->total_amount;
@@ -79,7 +80,8 @@ class Controller extends BaseController
                 $month = $learnerDeatail->plan ? $learnerDeatail->plan->plan_id : null; // Check if 
                 $start_date = $learnerDeatail->plan_start_date;
                 $end_date = $learnerDeatail->plan_end_date;
-                $subscription = $learnerDeatail->plantype ? $learnerDeatail->plantype->name : null;
+                $rcpt = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($learnerDeatail);
+                $subscription = $rcpt['subscription'];
             } else {
 
                 $month = null;
@@ -93,10 +95,7 @@ class Controller extends BaseController
             $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->where('libraries.id', $learnerDeatail->library_id)->select('libraries.library_name', 'libraries.email', 'libraries.library_mobile', 'branches.library_address')->first();
             $branch_logo = Branch::where('id', getCurrentBranch())->value('library_logo') ?? null;
             $branch_slug = Branch::where('id', getCurrentBranch())->value('slug') ?? null;
-            $start = date('h:i A', strtotime($learnerDeatail->planType->start_time));
-            $end   = date('h:i A', strtotime($learnerDeatail->planType->end_time));
-
-            $shift_timing = $start . ' to ' . $end;
+            $shift_timing = $rcpt['shift_timing'] ?? null;
 
 
         }

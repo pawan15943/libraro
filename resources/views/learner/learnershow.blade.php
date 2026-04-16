@@ -266,8 +266,12 @@
                             @endphp
                             <tr>
                                 <td>
+                                    @php $_rnL = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($value); @endphp
                                     {{$value->plan->name ?? ""}} <br>
-                                    <small class="text-success">{{$value->planType->name ?? ""}}</small>
+                                    <small class="text-success">{{ $_rnL['subscription'] !== 'NA' ? $_rnL['subscription'] : ($value->planType->name ?? '') }}</small>
+                                    @if($_rnL['shift_timing'] !== '')
+                                    <br><small class="text-muted">{{ $_rnL['shift_timing'] }}</small>
+                                    @endif
                                 </td>
                                 <td>{{$value->plan_start_date ?? ''}}</td>
                                 <td>{{$value->plan_end_date ?? ''}}</td>
@@ -338,7 +342,14 @@
                                 $transactionRenew=App\Models\LearnerTransaction::where('learner_detail_id',$firstDetail->id)->first();
 
                                 @endphp
-                                <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
+                                @php
+                                    $_seatHistLabels = \App\Support\LearnerShiftSupport::receiptLabelsForLearnerDetail($firstDetail);
+                                @endphp
+                                <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $_seatHistLabels['subscription'] !== 'NA' ? $_seatHistLabels['subscription'] : ($firstDetail->planType->name ?? 'N/A') }}</small>
+                                    @if($_seatHistLabels['shift_timing'] !== '')
+                                    <br><small class="text-muted">{{ $_seatHistLabels['shift_timing'] }}</small>
+                                    @endif
+                                </td>
                                 <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td>
                                 <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td>
                                 <td>

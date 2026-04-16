@@ -16,6 +16,7 @@ use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Support\LearnerShiftSupport;
 use Closure;
 use Illuminate\Support\Facades\View;
 use DB;
@@ -161,6 +162,18 @@ class LoadMenus
             //learner remainig days count
 
             $leraner=LearnerDetail::withoutGlobalScopes()->where('learner_id',getAuthenticatedUser()->id)->where('learner_detail.status',1)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plan_types.name as plan_type_name','plans.name as plan_name','plan_types.start_time','plan_types.end_time')->first();
+            if ($leraner !== null) {
+                $ldRow = LearnerDetail::withoutGlobalScopes()->find($leraner->id);
+                if ($ldRow !== null) {
+                    $labels = LearnerShiftSupport::receiptLabelsForLearnerDetail($ldRow);
+                    if ($labels['subscription'] !== 'NA') {
+                        $leraner->plan_type_name = $labels['subscription'];
+                    }
+                    if ($labels['shift_timing'] !== '') {
+                        $leraner->shift_times_display = $labels['shift_timing'];
+                    }
+                }
+            }
             $learner_current_library_extend=Hour::withoutGlobalScopes()->where('library_id',getAuthenticatedUser()->library_id)->first();
             if($leraner && $learner_current_library_extend){
                 $today = Carbon::today();
@@ -208,9 +221,17 @@ class LoadMenus
             $planTypes = PlanType::withTrashed()->get(); 
 
             foreach ($planTypes as $planType) {
-                // Count learners with active status assigned to this plan_type_id
+                // Active subscriptions that include this shift (legacy column or pivot)
                 $count = LearnerDetail::where('status', 1)
-                    ->where('plan_type_id', $planType->id)
+                    ->where(function ($q) use ($planType) {
+                        $q->where('plan_type_id', $planType->id)
+                            ->orWhereExists(function ($q2) use ($planType) {
+                                $q2->select(DB::raw(1))
+                                    ->from('learner_detail_plan_type')
+                                    ->whereColumn('learner_detail_plan_type.learner_detail_id', 'learner_detail.id')
+                                    ->where('learner_detail_plan_type.plan_type_id', $planType->id);
+                            });
+                    })
                     ->count();
 
                 // Generate abbreviation like FD, FH, SH, HS1, etc.

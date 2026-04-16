@@ -1600,7 +1600,11 @@ if (!function_exists('filterPlantypeFromseat')) {
         return  $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
             return !in_array($planType->id, $planTypesRemovals);
         })->map(function ($planType) {
-            return ['id' => $planType->id, 'name' => $planType->name];
+            return [
+                'id' => $planType->id,
+                'name' => $planType->name,
+                'slot_hours' => (int) ($planType->slot_hours ?? 0),
+            ];
         })->values();
     }
 }
@@ -1686,54 +1690,54 @@ if (!function_exists('checkSeatAvailability')) {
         }
        
 
-        // ACTIVE + FUTURE bookings (status ignored)
-        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        // ACTIVE + FUTURE bookings (status ignored), including multi-shift rows
+        $detailRows = LearnerDetail::query()
             ->where('learner_detail.branch_id', getCurrentBranch())
             ->where('learner_detail.seat_no', $seat_no)
             ->where(function ($q) use ($startDate, $endDate) {
                 $q->where('learner_detail.plan_start_date', '<=', $endDate)
                     ->where('learner_detail.plan_end_date', '>=', $startDate);
             })
-            // ✅ IGNORE expired plans
             ->whereDate('learner_detail.plan_end_date', '>=', Carbon::today())
             ->when($learnerId, function ($q) use ($learnerId) {
-                // Ignore own booking in edit mode
                 $q->where('learner_detail.learner_id', '!=', $learnerId);
             })
-            ->get([
-                'learner_detail.learner_id',
-                'plan_types.start_time',
-                'plan_types.end_time',
-                'plan_types.slot_hours',
-                'plan_types.day_type_id'
-            ]);
-          
+            ->get(['learner_detail.id', 'learner_detail.learner_id']);
 
-        // 1️⃣ All-day / Night block
-        if ($bookings->whereIn('day_type_id', [8, 9])->count() > 0) {
-            return [
-                'error' => true,
-                'message' => 'Seat already booked for full day or night'
-            ];
+        $hoursByLearner = [];
+
+        foreach ($detailRows as $detailRow) {
+            $ld = LearnerDetail::withoutGlobalScopes()->find($detailRow->id);
+            if (! $ld) {
+                continue;
+            }
+            $shiftIds = \App\Support\LearnerShiftSupport::planTypeIdsForLearnerDetail($ld);
+            $hoursByLearner[$ld->learner_id] = ($hoursByLearner[$ld->learner_id] ?? 0)
+                + \App\Support\LearnerShiftSupport::sumSlotHours($shiftIds);
+
+            foreach (\App\Support\LearnerShiftSupport::timeSegmentsForLearnerDetailId((int) $ld->id) as $seg) {
+                if (in_array($seg['day_type_id'], [8, 9], true)) {
+                    return [
+                        'error' => true,
+                        'message' => 'Seat already booked for full day or night',
+                    ];
+                }
+            }
         }
 
-        // 2️⃣ Hour capacity check
-        $alreadyBookedHours = $bookings
-            ->groupBy('learner_id')
-            ->map(fn($rows) => $rows->sum('slot_hours'))
-            ->sum();
-       
+        $alreadyBookedHours = array_sum($hoursByLearner);
 
-        // 3️⃣ Time overlap check
-        foreach ($bookings as $booking) {
-            if (
-                $startTime < $booking->end_time &&
-                $endTime > $booking->start_time
-            ) {
-                return [
-                    'error' => true,
-                    'message' => 'Time slot overlaps with existing booking'
-                ];
+        foreach ($detailRows as $detailRow) {
+            foreach (\App\Support\LearnerShiftSupport::timeSegmentsForLearnerDetailId((int) $detailRow->id) as $seg) {
+                if (
+                    $startTime < $seg['end'] &&
+                    $endTime > $seg['start']
+                ) {
+                    return [
+                        'error' => true,
+                        'message' => 'Time slot overlaps with existing booking',
+                    ];
+                }
             }
         }
 
@@ -1802,58 +1806,32 @@ if (!function_exists('checkAvailability')) {
        
         
 
-        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        $conflictDetailIds = LearnerDetail::query()
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
             ->where('learner_detail.plan_end_date', '>=', now())
             ->where(function ($q) use ($startDate, $endDate) {
                 $q->where('plan_start_date', '<=', $endDate)
-                  ->where('plan_end_date', '>=', $startDate);
+                    ->where('plan_end_date', '>=', $startDate);
             })
-            ->when($learnerId, fn ($q) =>
-                $q->where('learner_detail.learner_id', '!=', $learnerId)
-            )
-            ->get([
-                'plan_types.start_time',
-                'plan_types.end_time',
-                'plan_types.day_type_id'
-            ]);
+            ->when($learnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $learnerId))
+            ->pluck('id');
 
-       
-        
-        foreach ($bookings as $booking) {
-
-            $existingRanges = normalizeTimeRange(
-                $booking->start_time,
-                $booking->end_time
-            );
-
-            foreach ($requestedRanges as $req) {
-                foreach ($existingRanges as $exist) {
-                    if (
-                        $req['start'] < $exist['end'] &&
-                        $req['end'] > $exist['start']
-                    ) {
-                        // if(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                        // ->where('learner_detail.branch_id', $branchId)
-                        // ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', date('Y-m-d'))->exists()){
-                        //     return [
-                        //     'error' => true,
-                        //     'message' => 'This seat already have a future booking'
-                        //     ];
-                        // }else{
-                        //     return [
-                        //     'error' => true,
-                        //     'message' => 'Time slot overlaps with existing booking'
-                        //     ];
-                        // }
-
-                         return [
-                            'error' => true,
-                            'message' => 'Time slot overlaps with existing booking'
+        foreach ($conflictDetailIds as $detailId) {
+            $segments = \App\Support\LearnerShiftSupport::timeSegmentsForLearnerDetailId((int) $detailId);
+            foreach ($segments as $seg) {
+                $existingRanges = normalizeTimeRange($seg['start'], $seg['end']);
+                foreach ($requestedRanges as $req) {
+                    foreach ($existingRanges as $exist) {
+                        if (
+                            $req['start'] < $exist['end'] &&
+                            $req['end'] > $exist['start']
+                        ) {
+                            return [
+                                'error' => true,
+                                'message' => 'Time slot overlaps with existing booking',
                             ];
-                      
-                        
+                        }
                     }
                 }
             }
@@ -1955,6 +1933,9 @@ if (!function_exists('whatsappReceiptMessage')) {
         }
         
         $shortUrl   = makeTinyUrl($receiptUrl);
+        if (! empty($learner->learner_detail_id)) {
+            \App\Support\LearnerShiftSupport::mergeShiftLabelsIntoObject($learner, (int) $learner->learner_detail_id);
+        }
         return rawurlencode(
             "Dear {$learner->name},\n\n"
                 . "Welcome to " . getCurrentBranchName() . ". We are pleased to have you with us.\n\n"

@@ -1127,3 +1127,19 @@ ul.d-flex.inner i {
     margin-right: 1rem;
     justify-content: flex-end;
 }
+
+/* Multi-shift selects (Choices.js) */
+.choices.shift-choices-ui {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 0;
+}
+
+.choices.shift-choices-ui .choices__inner {
+    min-height: 2.75rem;
+    height: auto;
+}
+
+.choices.shift-choices-ui.is-invalid .choices__inner {
+    border-color: #dc3545;
+}

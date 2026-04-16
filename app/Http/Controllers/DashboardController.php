@@ -28,6 +28,7 @@ use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
 use App\Models\PlanType;
 use App\Models\Subscription;
+use App\Support\LearnerShiftSupport;
 use Log;
  use App\Models\Scopes\LibraryScope;
 
@@ -293,6 +294,7 @@ class DashboardController extends Controller
         $user=Auth::user();
        
         $learners = LearnerDetail::withoutGlobalScopes()->where('learner_id',$user->id)->leftJoin('plans','learner_detail.plan_id','=','plans.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->select('learner_detail.*','plans.name as plan_name','plan_types.name as plan_type_name')->get();
+        LearnerShiftSupport::applyBulkShiftLabelsToLearnerRows($learners, 'id');
        
        $library_name=Branch::where('id',Auth::user()->branch_id)->select('name as library_name','features')->first();
   

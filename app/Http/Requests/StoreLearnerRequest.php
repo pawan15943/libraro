@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\Learner;
 use App\Models\PlanType;
+use App\Support\LearnerShiftSupport;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
@@ -14,6 +15,13 @@ class StoreLearnerRequest extends FormRequest
     public function authorize()
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('plan_type_id') && ! is_array($this->plan_type_id)) {
+            $this->merge(['plan_type_id' => array_filter([$this->plan_type_id])]);
+        }
     }
 
     public function rules()
@@ -55,8 +63,9 @@ class StoreLearnerRequest extends FormRequest
                     $query->where('library_id', getLibraryId());
                 }),
             ],
-            'plan_type_id' => [
-                'required',
+            'plan_type_id' => ['required', 'array', 'min:1'],
+            'plan_type_id.*' => [
+                'integer',
                 Rule::exists('plan_types', 'id')->where(function ($query) {
                     $query->where('branch_id', getCurrentBranch());
                 }),
@@ -137,8 +146,11 @@ class StoreLearnerRequest extends FormRequest
     {
 
 
-        $day_type = PlanType::where('id',$this->plan_type_id)
-            ->select('day_type_id','slot_hours')
+        $planTypeIds = LearnerShiftSupport::normalizePlanTypeIdsFromMixed($this->plan_type_id);
+        $primaryPlanTypeId = (int) ($planTypeIds[0] ?? 0);
+
+        $day_type = PlanType::where('id', $primaryPlanTypeId)
+            ->select('day_type_id', 'slot_hours')
             ->first();
            
 
@@ -233,7 +245,7 @@ class StoreLearnerRequest extends FormRequest
                 'branch_id'=>getCurrentBranch(),
                 'password'=>bcrypt($this->mobile),
                 'learner_no'=>generateLearnerCode(),
-                'hours'=>$day_type->slot_hours,
+                'hours'=> LearnerShiftSupport::sumSlotHours($planTypeIds),
                 'status'=>0,
                 'locker_no'=>$this->locker_no,
                 'no_expiry'=>$no_expiry,
@@ -248,7 +260,7 @@ class StoreLearnerRequest extends FormRequest
             ],
 
             'plan_id'=>$this->plan_id,
-            'plan_type_id'=>$this->plan_type_id,
+            'plan_type_id'=> $planTypeIds,
             'plan_price'=>$this->plan_price_id,
             'payment_mode'=>$this->payment_mode,
             'paid_amount'=>$this->paid_amount,
