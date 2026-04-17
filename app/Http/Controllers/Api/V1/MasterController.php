@@ -325,7 +325,7 @@ class MasterController extends Controller
             if ($learner->seat_no) {
                 $filteredPlanTypes = filterPlantypeFromseat($learner->seat_no, $learner->id);
             } else {
-                $filteredPlanTypes = PlanType::select('id', 'name')->get();
+                $filteredPlanTypes = PlanType::select('id', 'name','start_time','end_time')->get();
             }
 
             return response()->json([

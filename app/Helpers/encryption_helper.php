@@ -1541,7 +1541,8 @@ if (!function_exists('filterPlantypeFromseat')) {
                 'learner_detail.plan_type_id',
                 'plan_types.start_time',
                 'plan_types.end_time',
-                'plan_types.slot_hours'
+                'plan_types.slot_hours',
+                
             ]);
 
         // Step 2: Retrieve all plan types
@@ -1600,7 +1601,12 @@ if (!function_exists('filterPlantypeFromseat')) {
         return  $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
             return !in_array($planType->id, $planTypesRemovals);
         })->map(function ($planType) {
-            return ['id' => $planType->id, 'name' => $planType->name];
+            return [
+                'id' => $planType->id, 
+                'name' => $planType->name,
+                'start_time' => $planType->start_time,
+                'end_time'   => $planType->end_time,
+                ];
         })->values();
     }
 }

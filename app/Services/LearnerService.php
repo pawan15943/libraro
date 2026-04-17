@@ -1365,12 +1365,14 @@ class LearnerService
             'learners.mobile',
             'learners.dob',
             'learners.profile_picture',
+            'learners.branch_id',
 
             'learner_detail.seat_no',
             'learner_detail.plan_start_date',
             'learner_detail.plan_end_date',
 
             'plans.name as plan_name',
+            'plans.id as plan_id',
             'plan_types.name as plan_type',
             'learner_detail.id as learner_detail_id',
             'learners.deleted_at'
@@ -1438,7 +1440,7 @@ class LearnerService
 
                 'plan'=>$learner->plan_name ?? '',
                 'plan_type'=>$learner->plan_type ?? '',
-
+                'plan_days' => getChargeableDays($learner->plan_id, $learner->plan_start_date, $learner->branch_id)['chargeable_days'] ?? 0,
                 'plan_end_date'=>$learner->plan_end_date ?? '',
 
                 'days_left'=>$planStatus['diff_in_days'],
