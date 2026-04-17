@@ -130,7 +130,7 @@ class RenewTransactionDeleteService
 
             LearnerTransactionActivity::withoutGlobalScopes()
                 ->where('learner_id', $tx->learner_id)
-                ->where('payment_type', 'RENEW')
+                ->whereIn('payment_type', ['RENEW','UPGRADE'])
                 ->whereNull('learner_transaction_id')
                 ->whereDate('created_at', $tx->created_at->toDateString())
                 ->whereRaw('ABS(amount - ?) < 0.01', [(float) $tx->paid_amount])
