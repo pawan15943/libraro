@@ -758,8 +758,9 @@ $learner_id=$value->id;
                 );
             }
         });
+    });
 
-function closeProfileImageModal() {
+    function closeProfileImageModal() {
         var $m = $('#imageViewModal');
         $m.animate({ opacity: 0 }, 150, function () {
             $m.css({ display: 'none', opacity: 1 });
