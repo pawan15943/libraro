@@ -370,6 +370,11 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Find a Learner' => route('learner.search'),
             ],
+            'create.renew.delete.index' => [
+                'Dashboard' => route('library.home'),
+                'Renew Delete' => route('create.renew.delete.index'),
+            ],
+           
             'notifications.subscription' => [
                 'Dashboard' => route('library.home'),
                 'Buy Message Subscription' => route('notifications.subscription'),
@@ -565,6 +570,8 @@ class AppServiceProvider extends ServiceProvider
             'expense.index' => 'Expense List',
             'exam.index' => 'Exams List',
             'learner.search' => 'Find a Learner',
+            'create.renew.delete.index' => 'Renew Delete',
+            'create.renew.delete.transaction' => 'Renew transaction',
             'hour.create' => 'Add Library Operating Hours',
             'extendDay.create' => 'Add Library Extend Period',
             'lockeramount.create' => 'Add Library Locker Amount',

@@ -4330,6 +4330,7 @@ class LearnerController extends Controller
         LearnerTransactionActivity::create([
             'branch_id'      => getCurrentBranch(),
             'learner_id'     => $data['learner_id'],
+            'learner_transaction_id' => $data['learner_transaction_id'] ?? null,
             'date'           => now()->format('Y-m-d'),
             'transaction_id' => transaction_id(),
             'particular'     => $data['particular'],
@@ -4373,6 +4374,7 @@ class LearnerController extends Controller
         // 2. Add to LearnerTransactionActivity
         $activityData = [
             'learner_id'   => $data['learner_id'],
+            'learner_transaction_id' => $learnerTransaction->id,
             'particular'   => $data['particular'] ? $data['particular'] :'Paid By Trans',
             'payment_type' => $data['payment_type'],
             'payment_mode' => $data['payment_mode'],

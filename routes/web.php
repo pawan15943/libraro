@@ -25,6 +25,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\QrEntryController;
+use App\Http\Controllers\RenewDeleteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
@@ -281,6 +282,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/generallearner/store', [LearnerController::class, 'generallearnerStore'])->name('genral.learners.store');
     Route::get('/list', [LearnerController::class, 'learnerList'])->name('learners');
     Route::get('/search', [LearnerController::class, 'learnerSearch'])->name('learner.search');
+    Route::get('/renew-delete', [RenewDeleteController::class, 'index'])->name('create.renew.delete.index');
+    Route::get('/renew-delete/{learner}/transaction', [RenewDeleteController::class, 'showTransaction'])->name('create.renew.delete.transaction');
+    Route::post('/renew-delete/transactions/{transaction}/delete', [RenewDeleteController::class, 'destroy'])->name('create.renew.delete.destroy');
     Route::get('/history/list', [LearnerController::class, 'learnerHistory'])->name('learnerHistory');
     Route::get('/booking-info/{id?}', [LearnerController::class, 'showLearner'])->name('learners.show');
     Route::get('/edit/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit');
