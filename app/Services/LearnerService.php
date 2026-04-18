@@ -1067,6 +1067,10 @@ class LearnerService
         ->latest()
         ->first();
 
+        if (!$detail) {
+            throw new \Exception("Learner detail not found");
+        }
+
         $transaction = LearnerTransaction::where('learner_detail_id',$detail->id)
             ->latest()
             ->first();
