@@ -1676,6 +1676,8 @@ class LibraryController extends Controller
             $mode='ONLINE';
         }elseif($request->payment_mode==2){
              $mode='OFFLINE';
+        }elseif($request->payment_mode==3){
+             $mode='PAYLATER';
         }else{
              $mode='OTHER';
         }

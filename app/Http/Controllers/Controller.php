@@ -1001,8 +1001,10 @@ class Controller extends BaseController
             $paymentmode='ONLINE';
         }elseif($data['payment_mode'] == 2){
             $paymentmode='OFFLINE';
-        }else{
+        }elseif($data['payment_mode'] == 3){
             $paymentmode='PAYLATER';
+        }else{
+            $paymentmode=$data['payment_mode'];
         }
         LearnerTransactionActivity::create([
             'branch_id'      => getCurrentBranch(),
