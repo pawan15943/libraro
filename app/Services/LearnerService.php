@@ -1182,6 +1182,8 @@ class LearnerService
                
                 'address'=>$learner->address ?? '',
                 'remark'=>$learner->remark ?? '',
+                'no_expiry'=>$learner->no_expiry ?? 0,
+                'sended_message_type'=>$learner->sended_message_type ?? 'no'
             ],
 
             'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
