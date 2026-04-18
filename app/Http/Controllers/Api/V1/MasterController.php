@@ -2359,6 +2359,7 @@ class MasterController extends Controller
         ->pluck('used_hours', 'seat_no');
 
     $allSeats = collect(generateSeatNumbers());
+  
     $newAvailableSeat = collect();
 
     for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
@@ -2375,6 +2376,7 @@ class MasterController extends Controller
             );
         }
     }
+    
 
     return response()->json([
         'status' => true,
