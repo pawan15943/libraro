@@ -12,6 +12,8 @@ use App\Http\Requests\LearnerOperationRequest;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
+use Illuminate\Http\JsonResponse;
+use InvalidArgumentException;
 
 class LearnerController extends Controller
 {

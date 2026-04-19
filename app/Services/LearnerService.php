@@ -1481,27 +1481,45 @@ class LearnerService
         return $learners;
     }
 
-  public function amountSatelment($learnerId)
-{
-    $total_overall = LearnerTransaction::where('learner_id', $learnerId)
-        ->selectRaw('
-            SUM(total_amount) as total_amount_sum,
-            SUM(paid_amount) as paid_amount_sum,
-            SUM(refund) as pending_refund_sum
-        ')
-        ->first();
+   public function amountSatelment($learnerId)
+    {
+        $total_overall = LearnerTransaction::where('learner_id', $learnerId)
+            ->selectRaw('
+                SUM(total_amount) as total_amount_sum,
+                SUM(paid_amount) as paid_amount_sum,
+                SUM(refund) as pending_refund_sum
+            ')
+            ->first();
 
-    $total  = $total_overall->total_amount_sum ?? 0;
-    $paid   = $total_overall->paid_amount_sum ?? 0;
-    $refund = $total_overall->pending_refund_sum ?? 0;
+        $total  = $total_overall->total_amount_sum ?? 0;
+        $paid   = $total_overall->paid_amount_sum ?? 0;
+        $refund = $total_overall->pending_refund_sum ?? 0;
 
-    $balance = $total - $paid - $refund;
+        $balance = $total - $paid - $refund;
 
-    return (object)[
-        'overall_total_amt'     => $total,
-        'paid_amount_sum'       => $paid,
-        'pending_sum'           => max($balance, 0),
-        'total_refund_pending'  => max(-$balance, 0),
-    ];
-}
+        return (object)[
+            'overall_total_amt'     => $total,
+            'paid_amount_sum'       => $paid,
+            'pending_sum'           => max($balance, 0),
+            'total_refund_pending'  => max(-$balance, 0),
+        ];
+    }
+
+
+    // public function learnerAmountSettlement($data){
+
+    // //refund ley is a pending refund which is pay to learner
+    //     if($data->pending_amount){
+    //             $pendings=LearnerTransaction::where('learner_id',$data->learner_id)->where('pending_amount','>',0)->get();
+    //             $pending_refund=LearnerTransaction::where('learner_id',$data->learner_id)->where('refund','>',0)->get();
+                
+    //             $pendigPay=$data->pending_amount;
+    //             if($pendings){
+    //                 foreach($pendings as $pending){
+
+    //                 }
+    //             }
+    //     }
+        
+    // }
 }
