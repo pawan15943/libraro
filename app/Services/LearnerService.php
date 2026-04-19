@@ -1432,11 +1432,13 @@ class LearnerService
         
     
         if($operation == 'closeSeat'){
-                $mainstatus='Closed';
+            $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
+        }elseif($planStatus['diff_extend_day'] < 0){
+            $mainstatus='Expired';
         }else{
-                $mainstatus=$planStatus['status'];
+            $mainstatus='Active';
         }
 
             $birthStatus = false;
@@ -1475,6 +1477,7 @@ class LearnerService
 
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'deleted_at'=>$learner->deleted_at ?? '',
                 'payment'=>learnerTransactionStatus($learner->id),
                 
                
