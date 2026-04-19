@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Http\Controllers\NotificationSentController;
 use App\Models\Branch;
 use App\Models\CustomerDetail;
+use App\Models\Exam;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
@@ -1113,6 +1114,11 @@ class LearnerService
 
         $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
 
+       $total_overall = $this->amountSatelment($learnerId);
+
+        if($detail->exam_id){
+            $exam=Exam::where('id',$detail->exam_id)->select('id','name')->first();
+        }
         
 
         return [
@@ -1183,7 +1189,16 @@ class LearnerService
                 'address'=>$learner->address ?? '',
                 'remark'=>$learner->remark ?? '',
                 'no_expiry'=>$learner->no_expiry ?? 0,
-                'sended_message_type'=>$learner->sended_message_type ?? 'no'
+                'sended_message_type'=>$learner->sended_message_type ?? 'no',
+                'exam_id'=>$detail->exam_id ?? '',
+                'exam_name'=>$exam->name ?? ''
+            ],
+
+            'setlment_amount' => [
+                'overall_total_amt'     => $total_overall->overall_total_amt,
+                'paid_amount_sum'       => $total_overall->paid_amount_sum,
+                'pending_sum'           => $total_overall->pending_sum,
+                'total_refund_pending'  => $total_overall->total_refund_pending,
             ],
 
             'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
@@ -1235,6 +1250,8 @@ class LearnerService
                 ];
 
             })
+
+          
 
         ];
     }
@@ -1463,4 +1480,28 @@ class LearnerService
 
         return $learners;
     }
+
+  public function amountSatelment($learnerId)
+{
+    $total_overall = LearnerTransaction::where('learner_id', $learnerId)
+        ->selectRaw('
+            SUM(total_amount) as total_amount_sum,
+            SUM(paid_amount) as paid_amount_sum,
+            SUM(refund) as pending_refund_sum
+        ')
+        ->first();
+
+    $total  = $total_overall->total_amount_sum ?? 0;
+    $paid   = $total_overall->paid_amount_sum ?? 0;
+    $refund = $total_overall->pending_refund_sum ?? 0;
+
+    $balance = $total - $paid - $refund;
+
+    return (object)[
+        'overall_total_amt'     => $total,
+        'paid_amount_sum'       => $paid,
+        'pending_sum'           => max($balance, 0),
+        'total_refund_pending'  => max(-$balance, 0),
+    ];
+}
 }
