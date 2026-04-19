@@ -1054,13 +1054,13 @@ class LearnerService
     
         $branchId = getCurrentBranch();
 
-        $learner = Learner::find($learnerId);
+        $learner = Learner::withTrashed()->find($learnerId);
 
         if(!$learner){
             throw new \Exception("Learner not found");
         }
 
-        $detail = LearnerDetail::with([
+        $detail = LearnerDetail::withTrashed()->with([
             'plan',
             'planType'
         ])
@@ -1072,11 +1072,11 @@ class LearnerService
             throw new \Exception("Learner detail not found");
         }
 
-        $transaction = LearnerTransaction::where('learner_detail_id',$detail->id)
+        $transaction = LearnerTransaction::withTrashed()->where('learner_detail_id',$detail->id)
             ->latest()
             ->first();
 
-        $transaction_all = LearnerTransaction::where('learner_id', $learnerId)
+        $transaction_all = LearnerTransaction::withTrashed()->where('learner_id', $learnerId)
             ->with('learnerDetail')
             ->orderBy('id')
             ->get();
@@ -1108,8 +1108,10 @@ class LearnerService
             $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
+        }elseif($planStatus['diff_extend_day'] < 0){
+            $mainstatus='Expired';
         }else{
-            $mainstatus=$planStatus['status'];
+            $mainstatus='Active';
         }
 
         $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
@@ -1154,12 +1156,14 @@ class LearnerService
                 'end_time'=>$detail->planType->end_time ?? '',
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'deleted_at'=>$learner->deleted_at ?? '',
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
                 'locker_no'=>$learner->locker_no ?? '',
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
                 'plan_days' => getChargeableDays($detail->plan->id, $detail->plan_start_date, $branchId)['chargeable_days'] ?? 0,
                 'plantype_detail'=>$fetchPlanType ?? '',
+               
             ],
 
             'payment_information'=>[
