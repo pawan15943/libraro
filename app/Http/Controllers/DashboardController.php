@@ -85,6 +85,10 @@ class DashboardController extends Controller
     {
    
             $user = getAuthenticatedUser();
+
+            if (! session()->has('branch_error')) {
+                session()->forget(['branch_switched', 'branch_switched_at']);
+            }
    
             //load menus status function call for status update
             // $middleware = app(LoadMenus::class);

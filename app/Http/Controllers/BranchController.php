@@ -41,7 +41,8 @@ class BranchController extends Controller
             ]);
         }
        
-    
+        session()->put('branch_switched', true);
+        session()->put('branch_switched_at', time());
 
         return back();
     }
