@@ -9,11 +9,12 @@ use Illuminate\Http\Request;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Http\Requests\LearnerOperationRequest;
+use App\Models\Hour;
+use App\Models\Learner;
+use App\Models\LearnerDetail;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
-use Illuminate\Http\JsonResponse;
-use InvalidArgumentException;
 
 class LearnerController extends Controller
 {
@@ -168,5 +169,73 @@ class LearnerController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Seats available to swap to for the learner’s plan type (same rules as `seatStatus`).
+     * Display strings match `generateSeatNumbers2`: with floor e.g. "Seat No - 3 (Ground Floor)", else "Seat No - 3".
+     */
+    public function getAvailableSeat(Request $request, SeatAvailabilityService $seatAvailability)
+    {
+        $validated = $request->validate([
+            'learner_id' => 'required',
+        ]);
+
+        $learner = Learner::query()
+            ->select('id', 'branch_id')
+            ->addSelect([
+                'plan_type_id' => LearnerDetail::query()
+                    ->select('plan_type_id')
+                    ->whereColumn('learner_id', 'learners.id')
+                    ->orderByDesc('id')
+                    ->limit(1),
+            ])
+            ->where('id', $validated['learner_id'])
+            ->first();
+
+        if (! $learner) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Learner not found',
+            ], 404);
+        }
+
+        if ($learner->plan_type_id === null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan type not found for this learner',
+            ], 422);
+        }
+
+        $totalSeats = (int) (Hour::withoutGlobalScopes()
+            ->where('branch_id', $learner->branch_id)
+            ->value('seats') ?? 0);
+
+        if ($totalSeats <= 0) {
+            return response()->json([
+                'status' => true,
+                'data' => [],
+            ]);
+        }
+
+        $codeMap = $seatAvailability->getSwapSeatStatusCodesMap(
+            (int) $learner->id,
+            (int) $learner->plan_type_id,
+            $totalSeats
+        );
+
+        $availableSeatNos = [];
+        foreach ($codeMap as $seatNo => $code) {
+            if ($code === 1) {
+                $availableSeatNos[] = (int) $seatNo;
+            }
+        }
+
+        $data = mapSeatNumbersToSwapDisplayList($availableSeatNos, (int) $learner->branch_id);
+
+        return response()->json([
+            'status' => true,
+            'data' => $data,
+        ]);
     }
 }

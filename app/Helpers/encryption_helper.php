@@ -1414,6 +1414,35 @@ if (!function_exists('generateSeatNumbers2')) {
     }
 }
 
+if (!function_exists('mapSeatNumbersToSwapDisplayList')) {
+    /**
+     * Build API payload items for main seat numbers (uses generateSeatNumbers2 display rules).
+     *
+     * @param  int[]  $mainSeatNos
+     * @return list<array{original_seat: int, display: string}>
+     */
+    function mapSeatNumbersToSwapDisplayList(array $mainSeatNos, int $branchId): array
+    {
+        if ($mainSeatNos === []) {
+            return [];
+        }
+
+        $byMain = collect(generateSeatNumbers2($branchId))->keyBy('main');
+        $out = [];
+
+        foreach ($mainSeatNos as $n) {
+            $n = (int) $n;
+            $info = $byMain->get($n);
+            $out[] = [
+                'original_seat' => $n,
+                'display' => $info['display'] ?? 'Seat No - ' . $n,
+            ];
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('getFloor')) {
     function getFloor()
     {

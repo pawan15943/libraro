@@ -2334,7 +2334,7 @@ class MasterController extends Controller
         }
     }
 
-    public function getAvailableSeat(Request $request)
+    public function getSeat(Request $request)
 {
     $validated = $request->validate([
         'branch_id' => 'required|exists:branches,id',

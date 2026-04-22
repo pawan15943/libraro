@@ -31,7 +31,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::post('shift-plan-types', [MasterController::class, 'getPlanTypeSeatWiseApi']);
     Route::post('chargeable-days', [MasterController::class, 'getChargeableDaysApi']);
     Route::post('plan-price', [MasterController::class, 'getPriceApi']);
-    Route::post('get-seat', [MasterController::class, 'getAvailableSeat']);
+    Route::post('get-seat', [MasterController::class, 'getSeat']);
     
 });
 
@@ -62,6 +62,10 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
     Route::post('library/branch/switch', [LibraryController::class, 'switchBranch']);
+
+    // Explicit path (avoids prefix nesting issues; same as api/v1/library/learners/available-seats)
+    Route::match(['get', 'post'], 'library/learners/available-seats', [LearnerController::class, 'getAvailableSeat'])
+        ->name('v1.library.learners.available-seats');
 
    
 

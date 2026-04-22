@@ -8,6 +8,8 @@ use App\Models\LearnerDetail;
 use App\Models\PlanType;
 use App\Traits\LearnerQueryTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Shared swap-seat / overlap checks for web and API (see web getSeatStatus).
@@ -24,7 +26,7 @@ class SeatAvailabilityService
      */
     public function getSwapSeatStatusCode($newSeatId, $userId, $planTypeId): int
     {
-        $count = $this->getLearnersByLibrary()
+        $count = (int) $this->getLearnersByLibrary()
             ->where('learner_detail.seat_no', $newSeatId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
@@ -39,14 +41,13 @@ class SeatAvailabilityService
             return 0;
         }
 
-        $first_record = Hour::first();
-        $total_hour = $first_record ? $first_record->hour : null;
+        $firstRecord = Hour::first();
+        $totalHour = $firstRecord ? $firstRecord->hour : null;
 
-        $total_cust_hour = Learner::where('library_id', getLibraryId())
+        $totalCustHour = (float) Learner::where('library_id', getLibraryId())
             ->where('seat_no', $newSeatId)
             ->where('status', 1)
             ->sum('hours');
-        $new_seat_remaining = $total_hour - $total_cust_hour;
 
         $bookings = $this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
@@ -61,41 +62,184 @@ class SeatAvailabilityService
             return 0;
         }
 
-        $status_array = [];
-
-        foreach ($bookings as $booking) {
-            if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
-                $status_array[] = 0;
-            } else {
-                $status_array[] = 1;
-            }
-        }
-
         $futurebookings = $this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $newSeatId)
             ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
             ->get(['plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time']);
 
-        $customer_detail = LearnerDetail::where('learner_id', $userId)
+        $customerDetail = LearnerDetail::query()
+            ->where('learner_id', $userId)
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->select('plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time')
             ->first();
 
-        if (! $customer_detail) {
+        if (! $customerDetail) {
             return 0;
         }
 
-        $customerStartDate = Carbon::parse($customer_detail->plan_start_date)->toDateString();
-        $customerEndDate = Carbon::parse($customer_detail->plan_end_date)->toDateString();
-        $customerStartTime = $customer_detail->start_time;
-        $customerEndTime = $customer_detail->end_time;
+        return $this->evaluateSwapSeatStatus(
+            $customer,
+            $planType,
+            $customerDetail,
+            $totalHour,
+            $count,
+            $totalCustHour,
+            $bookings,
+            $futurebookings
+        );
+    }
 
-        if ($customer->hours > $new_seat_remaining) {
+    /**
+     * Same rules as {@see getSwapSeatStatusCode} but with batched DB reads (O(1) queries vs O(seats)).
+     *
+     * @return array<int, int> seat number (1..$totalSeats) => status code
+     */
+    public function getSwapSeatStatusCodesMap(int $userId, int $planTypeId, int $totalSeats): array
+    {
+        if ($totalSeats < 1) {
+            return [];
+        }
+
+        $zeroMap = static function (int $n): array {
+            return array_fill(1, $n, 0);
+        };
+
+        $customer = Learner::where('id', $userId)
+            ->where('status', 1)
+            ->first();
+
+        if (! $customer) {
+            return $zeroMap($totalSeats);
+        }
+
+        $planType = PlanType::where('id', $planTypeId)->first();
+
+        if (! $planType) {
+            return $zeroMap($totalSeats);
+        }
+
+        $customerDetail = LearnerDetail::query()
+            ->where('learner_id', $userId)
+            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->select('plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time')
+            ->first();
+
+        if (! $customerDetail) {
+            return $zeroMap($totalSeats);
+        }
+
+        $firstRecord = Hour::first();
+        $totalHour = $firstRecord ? $firstRecord->hour : null;
+
+        $seatNos = range(1, $totalSeats);
+
+        $countBySeat = $this->getLearnersByLibrary()
+            ->whereIn('learner_detail.seat_no', $seatNos)
+            ->where('learner_detail.plan_type_id', $planTypeId)
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->selectRaw('learner_detail.seat_no as s, COUNT(*) as c')
+            ->groupBy('learner_detail.seat_no')
+            ->pluck('c', 's');
+        $countBySeat = $countBySeat->mapWithKeys(fn ($c, $s) => [(int) $s => (int) $c]);
+
+        $totalCustHoursBySeat = Learner::query()
+            ->where('library_id', getLibraryId())
+            ->whereIn('seat_no', $seatNos)
+            ->where('status', 1)
+            ->selectRaw('seat_no, SUM(hours) as h_sum')
+            ->groupBy('seat_no')
+            ->pluck('h_sum', 'seat_no');
+        $totalCustHoursBySeat = $totalCustHoursBySeat->mapWithKeys(fn ($h, $s) => [(int) $s => (float) $h]);
+
+        $allBookings = $this->getLearnersByLibrary()
+            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->whereIn('learner_detail.seat_no', $seatNos)
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->select(
+                'learner_detail.seat_no as batch_seat_no',
+                'learner_detail.plan_type_id',
+                'plan_types.start_time',
+                'plan_types.end_time',
+                'plan_types.slot_hours'
+            )
+            ->get();
+        $bookingsBySeat = $allBookings->groupBy(fn ($row) => (int) $row->batch_seat_no);
+
+        $allFuture = $this->getLearnersByLibrary()
+            ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->whereIn('learner_detail.seat_no', $seatNos)
+            ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+            ->select(
+                'learner_detail.seat_no as batch_seat_no',
+                'learner_detail.plan_start_date',
+                'learner_detail.plan_end_date',
+                'plan_types.start_time',
+                'plan_types.end_time'
+            )
+            ->get();
+        $futureBySeat = $allFuture->groupBy(fn ($row) => (int) $row->batch_seat_no);
+
+        $out = [];
+        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+            $count = (int) $countBySeat->get($seatNo, 0);
+            $totalCustHour = (float) $totalCustHoursBySeat->get($seatNo, 0.0);
+            $bookings = $bookingsBySeat->get($seatNo) ?? new Collection;
+            $future = $futureBySeat->get($seatNo) ?? new Collection;
+
+            $out[$seatNo] = $this->evaluateSwapSeatStatus(
+                $customer,
+                $planType,
+                $customerDetail,
+                $totalHour,
+                $count,
+                $totalCustHour,
+                $bookings,
+                $future
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  mixed  $totalHour
+     * @param  \Illuminate\Support\Collection<int, \stdClass>  $bookings
+     * @param  \Illuminate\Support\Collection<int, \stdClass>  $futurebookings
+     */
+    private function evaluateSwapSeatStatus(
+        Learner $customer,
+        PlanType $planType,
+        object $customerDetail,
+        $totalHour,
+        int $count,
+        float $totalCustHour,
+        Collection $bookings,
+        Collection $futurebookings
+    ): int {
+        $newSeatRemaining = $totalHour - $totalCustHour;
+
+        $statusArray = [];
+        foreach ($bookings as $booking) {
+            if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                $statusArray[] = 0;
+            } else {
+                $statusArray[] = 1;
+            }
+        }
+
+        $customerStartDate = Carbon::parse($customerDetail->plan_start_date)->toDateString();
+        $customerEndDate = Carbon::parse($customerDetail->plan_end_date)->toDateString();
+        $customerStartTime = $customerDetail->start_time;
+        $customerEndTime = $customerDetail->end_time;
+
+        if ($customer->hours > $newSeatRemaining) {
             $status = 0;
         } elseif ($count == 1) {
             $status = 0;
-        } elseif (in_array(0, $status_array)) {
+        } elseif (in_array(0, $statusArray)) {
             $status = 0;
         } elseif ($count == 0) {
             $status = 1;
