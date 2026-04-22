@@ -176,13 +176,7 @@ class LearnerController extends Controller
 
             $isRenewed = $hasFuturePlan && $hasPastPlan;
 
-            if ($planEndDateWithExtension->lte($today)) {
-                Learner::where('id', $customerdata->learner_id)
-                    ->where('status', '!=', 0)
-                    ->update(['status' => 0]);
-
-                $customerdata->update(['status' => 0]);
-            } elseif ($isRenewed) {
+            if ($isRenewed) {
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>', $futureCheckDate)
@@ -191,7 +185,14 @@ class LearnerController extends Controller
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('plan_end_date', '<', $today)
                     ->update(['status' => 0]);
-            } else {
+            }
+            elseif ($planEndDateWithExtension->lt($today)) {
+                Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 0)
+                    ->update(['status' => 0]);
+
+                $customerdata->update(['status' => 0]);
+            }  else {
                 Learner::where('id', $customerdata->learner_id)
                     ->where('status', '!=', 1)
                     ->update(['status' => 1]);
@@ -2067,7 +2068,14 @@ class LearnerController extends Controller
             'search'  => $request->get('search'),
         ];
 
-        $query = Learner::withTrashed()->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+       $latestDetail = LearnerDetail::selectRaw('MAX(id) as id, learner_id')
+            ->groupBy('learner_id');
+
+        $query = Learner::withTrashed()
+           ->leftJoinSub($latestDetail, 'latest', function ($join) {
+                    $join->on('learners.id', '=', 'latest.learner_id');
+                })
+            ->leftJoin('learner_detail', 'learner_detail.id', '=', 'latest.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.plan_start_date', '<=', date('Y-m-d'));
 

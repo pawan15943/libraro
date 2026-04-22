@@ -236,7 +236,22 @@
 
     </div>
 
-
+    @if(session('branch_error'))
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Branch Changed',
+            text: @json(session('branch_error')),
+            confirmButtonText: 'Go to Dashboard'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                window.location.href = @json(route('library.home'));
+            }
+        });
+    });
+    </script>
+    @endif
 
 
     @php

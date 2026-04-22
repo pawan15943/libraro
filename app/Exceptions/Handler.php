@@ -3,10 +3,11 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Auth\AuthenticationException;
-
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -33,17 +34,34 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
-        if ($exception instanceof AuthenticationException) {
+        if (
+            ! $request->expectsJson()
+            && ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException)
+            && $this->shouldRedirectAfterBranchSwitch()
+        ) {
+            session()->forget(['branch_switched', 'branch_switched_at']);
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthorized',
-                'code' => 401
-            ], 401);
-
+            return redirect()
+                ->route('library.home')
+                ->with('branch_error', 'Branch changed. Requested data not found.');
         }
 
         return parent::render($request, $exception);
+    }
+
+    /**
+     * Branch switch sets a short-lived session flag so the next missing record / 404
+     * can send the user home with a message instead of a bare error page.
+     */
+    private function shouldRedirectAfterBranchSwitch(): bool
+    {
+        if (! session()->get('branch_switched')) {
+            return false;
+        }
+
+        $at = (int) session()->get('branch_switched_at', 0);
+
+        return $at > 0 && (time() - $at) <= 120;
     }
 
 }
