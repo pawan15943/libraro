@@ -144,7 +144,7 @@ class LearnerOperationService
             DB::commit();
 
             return [
-                'success'=>true,
+                'status'=>true,
                 'start_date_blocked' => $startDateBlocked,
                 'message'=>'Operation completed'
             ];
@@ -154,7 +154,7 @@ class LearnerOperationService
             DB::rollBack();
 
             return [
-                'success'=>false,
+                'status'=>false,
                 'message'=>$e->getMessage()
             ];
         }
