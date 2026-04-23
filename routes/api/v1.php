@@ -64,8 +64,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/branch/switch', [LibraryController::class, 'switchBranch']);
 
     // Explicit path (avoids prefix nesting issues; same as api/v1/library/learners/available-seats)
-    Route::match(['get', 'post'], 'library/learners/available-seats', [LearnerController::class, 'getAvailableSeat'])
-        ->name('v1.library.learners.available-seats');
+   
 
    
 
@@ -126,10 +125,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/operation',[LearnerController::class,'process']);
         Route::post('/plan-types', [MasterController::class, 'getFilterPlantypeWithself']);
 
-        Route::post('/close', [LearnerController::class, 'close']);
-        Route::post('/delete', [LearnerController::class, 'delete']);
-        Route::post('/destroy', [LearnerController::class, 'destroy']);
+        Route::post('/lifecycle', [LearnerController::class, 'lifecycle']);
 
+         Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
     });
    
     

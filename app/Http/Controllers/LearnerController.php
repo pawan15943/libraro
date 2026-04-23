@@ -40,6 +40,7 @@ use App\Models\Category;
 use App\Services\LearnerOperationService;
 use App\Services\LibraryService;
 use App\Services\PlanService;
+use App\Services\LearnerLifecycleService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
 
@@ -49,8 +50,10 @@ class LearnerController extends Controller
     use LearnerQueryTrait;
     protected $learnerService;
 
-    public function __construct(LearnerService $learnerService)
-    {
+    public function __construct(
+        LearnerService $learnerService,
+        protected LearnerLifecycleService $learnerLifecycleService
+    ) {
         $this->learnerService = $learnerService;
     }
 
@@ -2436,21 +2439,11 @@ class LearnerController extends Controller
                 $customer = Learner::withTrashed()->findOrFail($id);
 
                 if ($request->permanent == '1') {
-
-                    // $detail = LearnerDetail::where('learner_id', $id)->select('plan_start_date')->first();
-                    // $threeDaysAfterStart = \Carbon\Carbon::parse($detail->plan_start_date)->addDays(3);
-                    if ($request->deleteAll == 1) {
-                        LearnerTransactionActivity::where('learner_id', $id)->forceDelete();
-                    } else {
-                        LearnerTransactionActivity::where('learner_id', $id)->update([
-                            'learner_id' => null
-                        ]);;
+                    $deleteAll = in_array($request->input('deleteAll'), [1, '1', true], true);
+                    $result = $this->learnerLifecycleService->permanentDelete((int) $id, $deleteAll);
+                    if (! $result['ok']) {
+                        throw new Exception($result['message']);
                     }
-
-                    LearnerFeedback::where('learner_id', $id)->forceDelete();
-                    DB::table('learner_operations_log')->where('learner_id', $id)->delete();
-                    DB::table('learner_request')->where('learner_id', $id)->delete();
-                    $customer->forceDelete();
                 } else {
 
                     $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->orderBy('id', 'DESC')->first();
@@ -3984,92 +3977,52 @@ class LearnerController extends Controller
 
     public function restore(Request $request)
     {
-        $learnerDetail = LearnerDetail::withTrashed()->find($request->learner_detail_id);
-
-        if (!$learnerDetail) {
+        if (! $request->filled('learner_detail_id') && ! $request->filled('learner_id')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Learner detail not found.',
-            ]);
+                'message' => 'learner_id or learner_detail_id is required.',
+            ], 422);
         }
 
-        // Check if plan is valid
-        if ($learnerDetail->plan_end_date && $learnerDetail->plan_end_date < now()->toDateString()) {
+        $detailId = $request->learner_detail_id ? (int) $request->learner_detail_id : null;
+        $learnerId = $request->learner_id ? (int) $request->learner_id : 0;
+
+        if ($detailId) {
+            $ld = LearnerDetail::withTrashed()->find($detailId);
+            if (! $ld) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Learner detail not found.',
+                ], 404);
+            }
+            if ($learnerId && (int) $ld->learner_id !== $learnerId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Learner detail does not match learner_id.',
+                ], 422);
+            }
+            $learnerId = (int) $ld->learner_id;
+        }
+
+        if (! $learnerId) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot restore learner. Plan has expired.',
-            ]);
+                'message' => 'learner_id is required when learner_detail_id is omitted.',
+            ], 422);
         }
 
-        // ✅ Restore learner_detail
-        $learnerDetail->restore();
-        $learnerDetail->status = 1;
-        $learnerDetail->save();
+        $result = $this->learnerLifecycleService->restore($learnerId, $detailId);
 
-        // ✅ Restore and update main learner (if exists)
-        if ($learnerDetail->learner_id) {
-            $learner = Learner::withTrashed()->find($learnerDetail->learner_id);
-
-            if ($learner) {
-                $learner->restore();
-                $learner->status = 1;
-                $learner->save();
-            }
-
-            // Restore related learner transactions
-            $refundExist = LearnerTransactionActivity::where('learner_id', $learnerDetail->learner_id)
-                ->where('payment_type', 'REFUND')
-                ->where('amount', '>', 0)
-                ->orderBy('id', 'DESC')
-                ->exists();
-
-            if ($refundExist) {
-
-                $refund = LearnerTransactionActivity::where('learner_id', $learnerDetail->learner_id)
-                    ->orderBy('id', 'DESC')
-                    ->first();
-
-                $data = [
-                    'learner_id'   => $learnerDetail->learner_id,
-                    'particular'   => 'Restore Seat',
-                    'payment_type' => 'RESTORE',
-                    'payment_mode' => 1,
-                    'amount'       => $refund->amount ?? 0,
-                    'dr_cr'        => 'Cr',
-                ];
-
-                $this->learnerTransactionActivity($data);
-            }
-
-
-            // Check refund column
-            $trans = LearnerTransaction::withTrashed()
-                ->where('learner_id', $learnerDetail->learner_id)
-                ->orderBy('id', 'DESC')
-                ->select('refund')
-                ->first();
-
-            if ($trans && $trans->refund > 0) {
-                LearnerTransaction::withTrashed()
-                    ->where('learner_id', $learnerDetail->learner_id)
-                    ->update(['refund' => null]);
-            }
-
-
-            // Restore soft deleted records
-            LearnerTransaction::withTrashed()
-                ->where('learner_id', $learnerDetail->learner_id)
-                ->restore();
-        } else {
-            // If no learner_id, you may use learner_detail_id in transactions (depends on your schema)
-            LearnerTransaction::withTrashed()
-                ->where('learner_detail_id', $learnerDetail->id)
-                ->restore();
+        if (! $result['ok']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 400);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Learner, learner details, and transactions restored successfully.',
+            'message' => $result['message'],
         ]);
     }
 
@@ -4168,55 +4121,46 @@ class LearnerController extends Controller
 
     public function freezeUnfreeze(Request $request)
     {
-
-        $detail = LearnerDetail::findOrFail($request->learnerDetail);
-
-        // If status = 0 → Freeze
-        if ($request->status == 0) {
-
-            if ($detail->status == 0) {
-                return response()->json(['status' => false, 'message' => 'Plan Expired']);
-            }
-
-            $detail->freeze_start_date = now();
-            $detail->save();
-            Learner::findOrFail($detail->learner_id)->update([
-                'frozen_status' => 1
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Plan frozen successfully!'
-            ]);
+        if (! $request->has('status') || ! in_array((int) $request->status, [0, 1], true)) {
+            return response()->json(['status' => false, 'message' => 'status 0 (freeze) or 1 (unfreeze) is required.']);
         }
 
-        // If status = 1 → Unfreeze
-        if ($request->status == 1) {
-
-            if ($detail->status == 0) {
-                return response()->json(['status' => false, 'message' => 'Plan Expired']);
-            }
-
-            $freezeStart = Carbon::parse($detail->freeze_start_date);
-            $frozenDays = $freezeStart->diffInDays(Carbon::today());
-
-            if ($frozenDays > 0) {
-                $detail->plan_end_date = Carbon::parse($detail->plan_end_date)->addDays($frozenDays);
-            }
-
-            $detail->freeze_start_date = null;
-            $detail->save();
-            Learner::findOrFail($detail->learner_id)->update([
-                'frozen_status' => 2 //unfreez status 2
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => "Plan unfrozen successfully! Frozen days added: $frozenDays"
-            ]);
+        $learnerId = (int) ($request->learner_id ?? 0);
+        $detailId = $request->learnerDetail ?? $request->learner_detail_id;
+        if ($detailId) {
+            $detailId = (int) $detailId;
+        } else {
+            $detailId = null;
         }
 
-        return response()->json(['status' => false, 'message' => 'Invalid operation']);
+        if (! $learnerId && ! $detailId) {
+            return response()->json(['status' => false, 'message' => 'learner_id or learnerDetail is required.'], 422);
+        }
+
+        if (! $learnerId && $detailId) {
+            $d = LearnerDetail::find($detailId);
+            if (! $d) {
+                return response()->json(['status' => false, 'message' => 'Learner detail not found.'], 404);
+            }
+            $learnerId = (int) $d->learner_id;
+        }
+
+        $freeze = (int) $request->status === 0;
+        $result = $this->learnerLifecycleService->freezeOrUnfreeze($learnerId, $freeze, $detailId);
+
+        if (! $result['ok']) {
+            return response()->json(['status' => false, 'message' => $result['message']]);
+        }
+
+        $payload = [
+            'status' => true,
+            'message' => $result['message'],
+        ];
+        if (array_key_exists('frozen_days', $result)) {
+            $payload['frozen_days'] = $result['frozen_days'];
+        }
+
+        return response()->json($payload);
     }
 
     public function viewReceipt($transactionId)

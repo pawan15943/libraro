@@ -82,13 +82,17 @@ class LibraryAuthController extends Controller
     public function register(Request $request,RegisterLibrary $action)
     {
        
-        //  smtp email check verify valid remaining
+        if (is_string($request->password)) {
+            $request->merge(['password' => trim($request->password)]);
+        }
+
         $validator = Validator::make($request->all(), [
             'library_name' => 'required|string|max:255',
             'email' => 'required|email|unique:libraries,email',
             'library_mobile' => 'required|digits:10',
-            'password' => 'required|min:6',
-            
+            'password' => ['required', 'string', 'min:6', "regex:/^[^\\s'\"]/u"],
+        ], [
+            'password.regex' => 'Password must not start with a space, single quote, or double quote.',
         ]);
 
         if ($validator->fails()) {

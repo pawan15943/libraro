@@ -17,9 +17,9 @@ class RegisterLibrary
         return DB::transaction(function () use ($data) {
 
           
-            $data['original_password'] = $data['password'];
-              
-            $data['password'] = bcrypt($data['password']);
+            $password = trim($data['password']);
+            $data['original_password'] = $password;
+            $data['password'] = bcrypt($password);
             
             $data['slug'] = Str::slug($data['library_name']) . '-' . Str::lower(Str::random(6));
 

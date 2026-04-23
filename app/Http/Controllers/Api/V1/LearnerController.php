@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLearnerRequest;
+use App\Services\LearnerLifecycleService;
 use App\Services\LearnerService;
 use Illuminate\Http\Request;
 use App\DTO\LearnerOperationDTO;
@@ -172,8 +173,8 @@ class LearnerController extends Controller
     }
 
     /**
-     * Seats available to swap to for the learner’s plan type (same rules as `seatStatus`).
-     * Display strings match `generateSeatNumbers2`: with floor e.g. "Seat No - 3 (Ground Floor)", else "Seat No - 3".
+     * Seats available to swap for the learner’s plan type (same rules as `seatStatus`).
+     * Each item is a full `generateSeatNumbers2` row: main, floor, floor_name, floor_no, display.
      */
     public function getAvailableSeat(Request $request, SeatAvailabilityService $seatAvailability)
     {
@@ -231,11 +232,48 @@ class LearnerController extends Controller
             }
         }
 
-        $data = mapSeatNumbersToSwapDisplayList($availableSeatNos, (int) $learner->branch_id);
+        $byMain = collect(generateSeatNumbers2((int) $learner->branch_id))->keyBy('main');
+        $data = collect($availableSeatNos)
+            ->map(fn (int $n) => $byMain->get($n))
+            ->filter()
+            ->values()
+            ->all();
 
         return response()->json([
             'status' => true,
             'data' => $data,
         ]);
+    }
+
+    /**
+     * Single entry: operation + learner_id (optional delete_all for permanent_delete).
+     * Operations: restore, permanent_delete, freeze, unfreeze
+     */
+    public function lifecycle(Request $request, LearnerLifecycleService $service)
+    {
+        $validated = $request->validate([
+            'operation'   => 'required|in:restore,permanent_delete,freeze,unfreeze',
+            'learner_id'  => 'required|integer|exists:learners,id',
+            'delete_all'  => 'nullable|boolean',
+        ]);
+
+        $result = $service->run(
+            $validated['operation'],
+            (int) $validated['learner_id'],
+            [
+                'delete_all' => $request->boolean('delete_all', true),
+            ]
+        );
+
+        $status = $result['ok'] ? 200 : 422;
+        $body = [
+            'status'  => $result['ok'],
+            'message' => $result['message'],
+        ];
+        if (array_key_exists('frozen_days', $result)) {
+            $body['frozen_days'] = $result['frozen_days'];
+        }
+
+        return response()->json($body, $status);
     }
 }

@@ -1405,7 +1405,8 @@ if (!function_exists('generateSeatNumbers2')) {
                 'main' => $mainSeatNo,
                 'floor' => null,
                 'floor_name' => null,
-                'display' => 'Seat No - ' . $mainSeatNo
+                'floor_no' => null,
+                'display' => 'Seat No - ' . $mainSeatNo,
             ];
             $mainSeatNo++;
         }
