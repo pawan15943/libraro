@@ -14,6 +14,7 @@ use App\Models\LearnerTransactionActivity;
 use App\Models\Plan;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Services\LearnerGiftDaysService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Log;
@@ -1163,6 +1164,7 @@ class LearnerService
                 'extend_days_left'=>$planStatus['diff_extend_day'],
                 'plan_days' => getChargeableDays($detail->plan->id, $detail->plan_start_date, $branchId)['chargeable_days'] ?? 0,
                 'plantype_detail'=>$fetchPlanType ?? '',
+                'total_gift_days' => app(LearnerGiftDaysService::class)->getTotalGiftDays((int) $learnerId),
                
             ],
 

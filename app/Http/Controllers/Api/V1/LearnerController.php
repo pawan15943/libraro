@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLearnerRequest;
+use App\Services\LearnerGiftDaysService;
 use App\Services\LearnerLifecycleService;
 use App\Services\LearnerService;
 use Illuminate\Http\Request;
@@ -242,6 +243,35 @@ class LearnerController extends Controller
         return response()->json([
             'status' => true,
             'data' => $data,
+        ]);
+    }
+
+    /**
+     * Assign or update total gift days (same rules as web assign-gift-days).
+     * Blocked when learner frozen_status is 1.
+     */
+    public function assignGiftDays(Request $request, LearnerGiftDaysService $giftDaysService)
+    {
+        $validated = $request->validate([
+            'learner_id' => 'required|integer',
+            'gift_days' => 'required|integer',
+        ]);
+
+        $result = $giftDaysService->assign(
+            (int) $validated['learner_id'],
+            (int) $validated['gift_days']
+        );
+
+        if (! $result['ok']) {
+            return response()->json([
+                'status' => false,
+                'message' => $result['message'],
+            ], $result['status_code'] ?? 422);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => $result['message'],
         ]);
     }
 

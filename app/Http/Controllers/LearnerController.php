@@ -40,6 +40,7 @@ use App\Models\Category;
 use App\Services\LearnerOperationService;
 use App\Services\LibraryService;
 use App\Services\PlanService;
+use App\Services\LearnerGiftDaysService;
 use App\Services\LearnerLifecycleService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
@@ -52,7 +53,8 @@ class LearnerController extends Controller
 
     public function __construct(
         LearnerService $learnerService,
-        protected LearnerLifecycleService $learnerLifecycleService
+        protected LearnerLifecycleService $learnerLifecycleService,
+        protected LearnerGiftDaysService $learnerGiftDaysService
     ) {
         $this->learnerService = $learnerService;
     }
@@ -4031,91 +4033,33 @@ class LearnerController extends Controller
     {
         $request->validate([
             'learner_id' => 'required|integer',
-            'gift_days' => 'required|integer'
+            'gift_days' => 'required|integer',
         ]);
 
-        // Fetch active learner
-        $student = LearnerDetail::where('learner_id', $request->learner_id)
-            ->where('status', 1)
-            ->latest()
-            ->firstOrFail();
+        $result = $this->learnerGiftDaysService->assign(
+            (int) $request->learner_id,
+            (int) $request->gift_days
+        );
 
-        $newGiftDays = (int)$request->gift_days;
-
-        // Fetch or create gift days entry
-        $gift = DB::table('learner_gift_days')
-            ->where('learner_id', $request->learner_id)
-            ->first();
-
-        if (!$gift) {
-            // Create first entry
-            DB::table('learner_gift_days')->insert([
-                'learner_id' => $request->learner_id,
-                'total_gift_days' => max($newGiftDays, 0), // no negative first time
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            // Update plan_end_date
-            if ($newGiftDays > 0) {
-                $student->plan_end_date = Carbon::parse($student->plan_end_date)->addDays($newGiftDays);
-                $student->save();
-            }
-
+        if (! $result['ok']) {
             return response()->json([
-                "status" => true,
-                "message" => $newGiftDays . " Gift Days added successfully"
-            ]);
+                'status' => false,
+                'message' => $result['message'],
+            ], $result['status_code'] ?? 422);
         }
 
-        // --- If record already exists ---
-        $oldTotal = $gift->total_gift_days;
-
-        if ($oldTotal > $newGiftDays) {
-            // in this new days lessthen to old so decrement that new days
-            $incrementDecrementDay = $oldTotal - $newGiftDays;
-            $increment = false;
-        } else {
-            // in this new days greater then to old so increment that new days
-            $incrementDecrementDay = $newGiftDays - $oldTotal;
-            $increment = true;
-        }
-
-
-
-        // Update gift table
-        DB::table('learner_gift_days')
-            ->where('learner_id', $request->learner_id)
-            ->update([
-                'total_gift_days' => $newGiftDays,
-                'updated_at' => now()
-            ]);
-
-        // Update plan_end_date
-        if ($increment == true) {
-            $student->plan_end_date = Carbon::parse($student->plan_end_date)->addDays($incrementDecrementDay);
-        } else {
-            $student->plan_end_date = Carbon::parse($student->plan_end_date)->subDays(abs($incrementDecrementDay));
-        }
-
-        $student->save();
-
-        // Response
         return response()->json([
-            "status" => true,
-            "message" => "Gift days updated successfully! Current Total: " . $newGiftDays
+            'status' => true,
+            'message' => $result['message'],
         ]);
     }
 
     public function getGiftDays(Request $request)
     {
-        $total = DB::table('learner_gift_days')
-            ->where('learner_id', $request->learner_id)
-            ->orderByDesc('id')
-            ->value('total_gift_days');
+        $total = $this->learnerGiftDaysService->getTotalGiftDays((int) $request->learner_id);
 
         return response()->json([
-            'total_gift_days' => $total ?? 0
+            'total_gift_days' => $total,
         ]);
     }
 

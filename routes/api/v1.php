@@ -121,6 +121,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/swap-seat', [LearnerController::class, 'swapSeat']);
         Route::post('/list', [LearnerController::class,'index']);
         Route::post('/detail', [LearnerController::class,'show']);
+        Route::post('/gift-days/assign', [LearnerController::class, 'assignGiftDays']);
        
         Route::post('/operation',[LearnerController::class,'process']);
         Route::post('/plan-types', [MasterController::class, 'getFilterPlantypeWithself']);
