@@ -2665,8 +2665,9 @@ class LearnerController extends Controller
             'search'  => $request->get('search'),
         ];
 
-       $latestDetail = LearnerDetail::selectRaw('MAX(id) as id, learner_id')
+       $latestDetail = LearnerDetail::withTrashed()->selectRaw('MAX(id) as id, learner_id')
             ->groupBy('learner_id');
+            
 
         $query = Learner::withTrashed()
            ->leftJoinSub($latestDetail, 'latest', function ($join) {
