@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
 use App\Http\Controllers\Api\V1\LearnerController;
 use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
+use App\Http\Controllers\ReceiptController;
 
 
 
@@ -55,6 +56,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
     Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
 
+    Route::post('receipt/link', [ReceiptController::class, 'link']);
 
     Route::get('library/detail', [LibraryController::class, 'getLibraryDetail']);
     

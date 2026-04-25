@@ -361,7 +361,7 @@
                             @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
-                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
                                 <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">

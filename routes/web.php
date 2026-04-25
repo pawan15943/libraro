@@ -25,6 +25,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\QrEntryController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RenewDeleteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SiteController;
@@ -75,6 +76,7 @@ Route::get('cityGetStateWise', [MasterController::class, 'stateWiseCity'])->name
 Route::get('library/create', [LibraryController::class, 'create'])->name('library.create');
 Route::post('library/store', [LibraryController::class, 'store'])->name('library.store');
 Route::post('/fee/generate-receipt', [Controller::class, 'generateReceipt'])->name('fee.generateReceipt');
+Route::post('/learner/receipt/download', [ReceiptController::class, 'learnerDownload'])->name('learner.receipt.download');
 Route::get('library-managment-software', [SiteController::class, 'libraryManagmentLandingPage'])->name('library.managment.software');
 Route::post('lead/store', [SiteController::class, 'leadstore'])->name('lead.store');
 Route::get('about-us', [SiteController::class, 'aboutUs'])->name('about-us');
@@ -124,6 +126,12 @@ Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
 Route::get('/receipt/{transactionId}', [LearnerController::class, 'viewReceipt'])->name('receipt.view');
+Route::get('/receipt/signed/{transactionId}', [LearnerController::class, 'viewReceipt'])
+    ->middleware('signed')
+    ->name('receipt.signed');
+Route::get('/receipt/mobile/signed/{transactionId}', [ReceiptController::class, 'mobile'])
+    ->middleware('signed')
+    ->name('receipt.mobile.signed');
 Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {

@@ -285,7 +285,7 @@
                                         @if($value->is_paid==1)
                                         <li>
 
-                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
                                                 <input type="hidden" name="learner_detail_id" value="{{ $value->id ?? 'NA'}}">
@@ -348,7 +348,7 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 <input type="hidden" name="learner_id" value="{{$learner->id}}">
                                                 <input type="hidden" name="learner_detail_id" value="{{ $firstDetail->id ?? 'NA'}}">
@@ -388,7 +388,7 @@
                                         @endcan
                                         @can('has-permission', 'Receipt Generation')
                                         <li>
-                                            <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
                                                 <input type="hidden" name="learner_detail_id" value="{{ $detail->id ?? 'NA'}}">

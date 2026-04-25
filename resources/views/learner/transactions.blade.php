@@ -57,7 +57,7 @@
                             <ul class="actionalbls">
                                 <li>
 
-                                    <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data">
+                                    <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
                                         <input type="hidden" id="custId" name="id" value="{{ $value->id }}">
                                         <input type="hidden" name="type" value="learner">
