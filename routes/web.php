@@ -16,8 +16,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DemoUserController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\LearnerController;
+use App\Http\Controllers\LearnerDeleteController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
 use App\Http\Controllers\LibraryUserController;
@@ -132,6 +134,12 @@ Route::get('/receipt/signed/{transactionId}', [LearnerController::class, 'viewRe
 Route::get('/receipt/mobile/signed/{transactionId}', [ReceiptController::class, 'mobile'])
     ->middleware('signed')
     ->name('receipt.mobile.signed');
+Route::get('/id-card/signed/pdf/{id}', [IdCardController::class, 'pdf'])
+    ->middleware('signed')
+    ->name('idCard.signed.pdf');
+Route::get('/id-card/signed/mobile/{id}', [IdCardController::class, 'mobile'])
+    ->middleware('signed')
+    ->name('idCard.signed.mobile');
 Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
@@ -310,6 +318,15 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/change/plan/{id?}', [LearnerController::class, 'getLearner'])->name('learner.change.plan');
     Route::post('/close', [LearnerController::class, 'userclose'])->name('learners.close');
     Route::delete('/{Learner}', [LearnerController::class, 'destroy'])->name('learners.destroy');
+    Route::get('/{Learner}/soft-delete-v2/details', [LearnerDeleteController::class, 'softDeleteV2Details'])->name('learners.soft.destroy.v2.details');
+    // Route::post('/{Learner}/soft-delete-v2', [LearnerController::class, 'softDeleteV2'])->name('learners.soft.destroy.v2');
+   
+
+      Route::post('/{Learner}/soft-delete-v2', [LearnerDeleteController::class, 'prepare'])->name('learners.soft.destroy.v2');
+      Route::post('/settlement/{id}', [LearnerDeleteController::class, 'settlement']);
+      Route::post('/execute/{id}', [LearnerDeleteController::class, 'delete']);
+
+
     Route::get('/reactive/{id?}', [LearnerController::class, 'reactiveUser'])->name('learners.reactive');
     Route::put('/reactive/{id?}', [LearnerController::class, 'reactiveLearner'])->name('learner.reactive.store');
     Route::get('/payment/{id?}', [LearnerController::class, 'makePayment'])->name('learner.payment');

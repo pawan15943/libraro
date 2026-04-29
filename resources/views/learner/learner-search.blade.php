@@ -184,6 +184,9 @@
                                         @can('has-permission', 'Delete Seat')
                                         <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                                         @endcan
+                                        @can('has-permission', 'Delete Seat')
+                                        <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="New Soft Delete Workflow" class="delete-customer-v2"><i class="fas fa-trash-can text-danger"></i></a></li>
+                                        @endcan
 
                                         
                                         {{-- @can('has-permission', 'Delete Seat')

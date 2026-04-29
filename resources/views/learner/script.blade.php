@@ -1,6 +1,350 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    // New soft delete workflow (V2) - 2 popup steps only.
+    $(document).on('click', '.delete-customer-v2', async function (e) {
+        e.preventDefault();
+
+        const learnerId = $(this).data('id');
+        const fallbackDetailId = parseInt($(this).data('learnerdetail'), 10) || null;
+        const postUrl = '{{ route("learners.soft.destroy.v2", ":id") }}'.replace(':id', learnerId);
+        const detailsUrl = '{{ route("learners.soft.destroy.v2.details", ":id") }}'.replace(':id', learnerId);
+
+        let detailsResponse = null;
+        try {
+            detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
+        } catch (xhr) {
+            Swal.fire('Error', xhr?.responseJSON?.error || 'Unable to load learner details.', 'error');
+            return;
+        }
+
+        const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
+        if (!detailRows.length) {
+            Swal.fire('Info', 'No active details found for this learner.', 'info');
+            return;
+        }
+
+        const detailsHtml = detailRows.map((row) => {
+            const total = parseFloat(row.paid_amount || 0);
+            const paid = parseFloat(row.paid_amount || 0);
+            const pending = parseFloat(row.pending_amount || 0);
+            const extra = parseFloat(row.extra_amount || 0);
+            const checked = detailRows.length > 1
+                ? 'checked'
+                : (fallbackDetailId && Number(row.id) === Number(fallbackDetailId) ? 'checked' : '');
+            return `
+                <tr>
+                    <td><input type="checkbox" class="v2DetailSelector" value="${row.id}" ${checked}></td>
+                    <td>${row.plan_name || ''}</td>
+                    <td>${row.plan_start_date || ''}</td>
+                    <td>${row.plan_end_date || ''}</td>
+                    <td>${total.toFixed(0)}</td>
+                    <td>${paid.toFixed(0)}</td>
+                    <td class="text-danger">${pending.toFixed(0)}</td>
+                    <td class="text-success">${extra.toFixed(0)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const step1 = await Swal.fire({
+            title: 'Step 1: Financial Summary & Action Selection',
+            width: 700,
+            html: `
+                <div class="text-start mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="v2FullLearnerDelete">
+                        <label class="form-check-label fw-semibold" for="v2FullLearnerDelete">Full learner delete</label>
+                    </div>
+                </div>
+                <div class="table-responsive text-start">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th></th><th>Plan</th><th>Start Date</th><th>End Date</th><th>Total</th><th>Paid</th><th>Pending</th><th>Extra</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detailsHtml}</tbody>
+                    </table>
+                </div>
+                <div class="row g-2 text-start mt-1">
+                    <div class="col-md-3"><div class="p-2 border rounded">Total: <b class="v2Total">0</b></div></div>
+                    <div class="col-md-3"><div class="p-2 border rounded">Paid: <b class="v2Paid">0</b></div></div>
+                    <div class="col-md-3"><div class="p-2 border rounded">Pending: <b class="v2Pending text-danger">0</b></div></div>
+                    <div class="col-md-3"><div class="p-2 border rounded">Extra: <b class="v2Extra text-success">0</b></div></div>
+                </div>
+                <div class="mt-2 text-start p-2 border rounded" style="background:#fff8f8;">
+                   
+                    <div>Net Amount: <b class="v2NetAmount">0</b></div>
+                </div>
+                <div class="mt-3 text-start">
+                    <label class="fw-semibold mb-2 d-block">Choose Action</label>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100" style="background:#f3fff7;">
+                                <div class="fw-semibold text-success mb-2">Extra Amount Available</div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="refund_pending_future" id="v2ActionRefundFuture">
+                                    <label class="form-check-label" for="v2ActionRefundFuture">Refund & Delete</label>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Refund Amount (₹)</label>
+                                    <input type="text" class="form-control form-control-sm v2Step1RefundAmount" placeholder="Enter refund amount">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Payment Mode</label>
+                                    <select class="form-control form-control-sm v2Step1PayMode">
+                                        <option value="">Select payment mode</option>
+                                        <option value="1">Online</option>
+                                        <option value="2">Offline</option>
+                                        <option value="3">Paylater</option>
+                                    </select>
+                                </div>
+                              
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="adjust" id="v2ActionDeleteWithoutRefund">
+                                    <label class="form-check-label" for="v2ActionDeleteWithoutRefund">Delete Without Refund</label>
+                                </div>
+                              
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100" style="background:#fff5f5;">
+                                <div class="fw-semibold text-danger mb-2">Pending Amount (You Need to Pay)</div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="pending_pay_future" id="v2ActionPendingFuture">
+                                    <label class="form-check-label" for="v2ActionPendingFuture">Pay Pending & Delete</label>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Pay Amount (₹)</label>
+                                    <input type="text" class="form-control form-control-sm v2Step1PayAmount" placeholder="Enter pay amount">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Payment Mode</label>
+                                    <select class="form-control form-control-sm v2Step1PayMode">
+                                        <option value="">Select payment mode</option>
+                                        <option value="1">Online</option>
+                                        <option value="2">Offline</option>
+                                        <option value="3">Paylater</option>
+                                    </select>
+                                </div>
+                               
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="pending_pay_future" id="v2ActionMarkDue">
+                                    <label class="form-check-label" for="v2ActionMarkDue">Delete Without Adjust (Mark as Due)</label>
+                                </div>
+                              
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100" style="background:#f4f7ff;">
+                                <div class="fw-semibold text-primary mb-2">No Pending, No Extra (Settled)</div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="adjust" id="v2ActionAdjust">
+                                    <label class="form-check-label" for="v2ActionAdjust">Delete Selected Details</label>
+                                </div>
+                              
+                                <div class="small text-muted">No Pending/Extra case: delete selected details directly.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+               
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Next',
+            didOpen: () => {
+                const popup = Swal.getPopup();
+                popup.style.setProperty('width', '700px', 'important');
+                popup.style.setProperty('max-width', '98vw', 'important');
+                popup.style.fontSize = '13px';
+                const toNumber = (value) => {
+                    if (value === null || value === undefined) {
+                        return 0;
+                    }
+                    const cleaned = String(value).replace(/,/g, '').trim();
+                    const parsed = parseFloat(cleaned);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                };
+
+                const recalc = () => {
+                    const ids = $(popup).find('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
+                    const selected = detailRows.filter(r => ids.includes(Number(r.id)));
+                    const sum = (k) => selected.reduce((a, b) => a + toNumber(b[k]), 0);
+                    const total = sum('paid_amount');
+                    const paid = sum('paid_amount');
+                    const pending = sum('pending_amount');
+                    const extra = sum('extra_amount');
+                    const net = pending - extra;    
+
+                    $(popup).find('.v2Total').text(total.toFixed(0));
+                    $(popup).find('.v2Paid').text(paid.toFixed(0));
+                    $(popup).find('.v2Pending').text(pending.toFixed(0));
+                    $(popup).find('.v2Extra').text(extra.toFixed(0));
+                    $(popup).find('.v2NetAmount').text(net.toFixed(0));
+                    const canRefundFuture = pending >= 0 && extra >= 0;
+                    const canPendingFuture = pending > 0;
+                    $(popup).find('#v2ActionRefundFuture').prop('disabled', !canRefundFuture);
+                    $(popup).find('#v2ActionPendingFuture').prop('disabled', !canPendingFuture);
+
+                    if (!canRefundFuture && $(popup).find('#v2ActionRefundFuture').is(':checked')) {
+                        $(popup).find('#v2ActionRefundFuture').prop('checked', false);
+                    }
+                    if (!canPendingFuture && $(popup).find('#v2ActionPendingFuture').is(':checked')) {
+                        $(popup).find('#v2ActionPendingFuture').prop('checked', false);
+                    }
+                };
+                $(popup).on('change', '.v2DetailSelector', recalc);
+                $(popup).on('change', '#v2FullLearnerDelete', function () {
+                    const checked = $(this).is(':checked');
+                    $(popup).find('.v2DetailSelector').prop('checked', checked);
+                    recalc();
+                });
+                $(popup).on('change', '.v2DetailSelector', function () {
+                    const totalRows = $(popup).find('.v2DetailSelector').length;
+                    const selectedRows = $(popup).find('.v2DetailSelector:checked').length;
+                    $(popup).find('#v2FullLearnerDelete').prop('checked', totalRows > 0 && totalRows === selectedRows);
+                });
+                recalc();
+            },
+            preConfirm: () => {
+                const selectedIds = $('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
+                if (!selectedIds.length) {
+                    Swal.showValidationMessage('Please select at least one detail.');
+                    return false;
+                }
+
+                const selected = detailRows.filter(r => selectedIds.includes(Number(r.id)));
+                const sum = (k) => selected.reduce((a, b) => a + (parseFloat(b[k] || 0)), 0);
+                let deleteType = 'multiple_details';
+                if (selectedIds.length === 1) {
+                    deleteType = 'single_detail';
+                } else if (selectedIds.length === detailRows.length) {
+                    deleteType = 'full_learner';
+                }
+                const selectedPreviewAction = $('.v2ActionPreview:checked').val() || null;
+                const refundAmountInput = parseFloat($('.v2Step1RefundAmount').val()) || 0;
+                const payAmountInput = parseFloat($('.v2Step1PayAmount').val()) || 0;
+                const paymentModeInput = $('.v2Step1PayMode').val() || '';
+                const fullLearnerDelete = $('#v2FullLearnerDelete').is(':checked');
+                return {
+                    deleteType,
+                    selectedIds,
+                    selectedPreviewAction,
+                    refundAmountInput,
+                    payAmountInput,
+                    paymentModeInput,
+                    fullLearnerDelete,
+                    totals: {
+                        pending: sum('pending_amount'),
+                        extra: sum('extra_amount')
+                    }
+                };
+            }
+        });
+
+        if (!step1.isConfirmed) {
+            return;
+        }
+
+        const selectedPending = Number(step1.value.totals.pending || 0);
+        const selectedExtra = Number(step1.value.totals.extra || 0);
+        const showRefundPendingFuture = (selectedPending > 0 && selectedExtra > 0) ;
+        const showPendingFuture = selectedPending > 0;
+
+        const step2 = await Swal.fire({
+            title: 'Step 2: Choose Settlement Option',
+            width: 820,
+            html: `
+                <div class="text-start">
+                    ${showRefundPendingFuture ? `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="refund_pending_future" id="v2RefundPendingFuture" ${step1.value.selectedPreviewAction === 'refund_pending_future' ? 'checked' : ''}>
+                        <label class="form-check-label text-danger" for="v2RefundPendingFuture">Pending refund pay in future</label>
+                    </div>` : ''}
+                    ${showPendingFuture ? `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="pending_pay_future" id="v2PendingPayFuture" ${step1.value.selectedPreviewAction === 'pending_pay_future' ? 'checked' : ''}>
+                        <label class="form-check-label text-danger" for="v2PendingPayFuture">Pending amount pay in future</label>
+                    </div>` : ''}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust" id="v2AdjustOption" ${(step1.value.selectedPreviewAction === 'adjust' || !step1.value.selectedPreviewAction) ? 'checked' : ''}>
+                        <label class="form-check-label" for="v2AdjustOption">Adjust</label>
+                    </div>
+                    <label>Remark (optional)</label>
+                    <input type="text" class="form-control v2Remark" placeholder="Enter remark">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Confirm & Delete',
+            confirmButtonColor: '#0d6efd',
+            didOpen: () => {
+                const popup = Swal.getPopup();
+                popup.style.fontSize = '14px';
+            },
+            preConfirm: () => {
+                const settlementMode = $('.v2SettlementOption:checked').val();
+                if (!settlementMode) {
+                    Swal.showValidationMessage('Please select one option.');
+                    return false;
+                }
+                return {
+                    settlementMode,
+                    remark: $('.v2Remark').val() || ''
+                };
+            }
+        });
+
+        if (!step2.isConfirmed) {
+            return;
+        }
+
+        let isRefund = 0;
+        let refundAmount = 0;
+        let pending = 0;
+        let extra = 0;
+        let payAmount = 0;
+        let paymentMode = step1.value.paymentModeInput || '';
+
+        refundAmount = step1.value.refundAmountInput > 0
+                ? step1.value.refundAmountInput
+                : 0;
+        if(refundAmount){
+            isRefund = 1;
+        }
+        
+        pending = Math.max(selectedPending, 0);
+        extra = Math.max(selectedExtra, 0);
+
+        payAmount = step1.value.payAmountInput > 0 ? step1.value.payAmountInput : 0;
+
+        const payload = {
+            delete_type: step1.value.deleteType,
+            learner_detail_id: step1.value.selectedIds[0] || null,
+            learner_detail_ids: step1.value.selectedIds,
+            full_learner_delete: step1.value.fullLearnerDelete ? 1 : 0,
+            settlement_mode: step2.value.settlementMode,
+            is_refund: isRefund,
+            refund_amount: refundAmount,
+            extra: extra,
+            pending: pending,
+            pay_amount: payAmount,
+            payment_mode: paymentMode,
+            remark: step2.value.remark
+        };
+
+        $.ajax({
+            url: postUrl,
+            type: 'POST',
+            data: $.extend({ _token: '{{ csrf_token() }}' }, payload),
+            success: function (response) {
+                Swal.fire('Success', response.message || 'Delete completed successfully.', 'success').then(() => location.reload());
+            },
+            error: function (xhr) {
+                Swal.fire('Error', xhr?.responseJSON?.error || 'Delete workflow failed.', 'error');
+            }
+        });
+    });
+
     // soft delete Learner 
     $(document).on('click', '.delete-customer', function () {
         var id = $(this).data('id');
