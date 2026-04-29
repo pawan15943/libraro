@@ -3153,7 +3153,8 @@ class LearnerController extends Controller
             'total_amount' => $request->input('plan_price_id'),
             'paid_amount' => $request->input('plan_price_id'),
             'pending_amount' => 0,
-            'paid_date' => $start_date->format('Y-m-d') ?? date('Y-m-d'),
+            // 'paid_date' => $start_date->format('Y-m-d') ?? date('Y-m-d'),
+            'paid_date' => date('Y-m-d'),
             'is_paid' => 1
         ]);
 
@@ -4356,13 +4357,14 @@ class LearnerController extends Controller
         $effectivePaid = $data['planPrice'] + $data['locker'] - $data['discount'];
         $pending_amount =  $effectivePaid - $data['paid_amount'];
 
-        if ($data['paid_date']) {
-            $transaction_date = $data['paid_date']->format('Y-m-d');
-        } elseif ($data['start_date']->format('Y-m-d')) {
-            $transaction_date = $data['start_date']->format('Y-m-d');
-        } else {
-            $transaction_date = date('Y-m-d');
-        }
+        // if ($data['paid_date']) {
+        //     $transaction_date = $data['paid_date']->format('Y-m-d');
+        // } elseif ($data['start_date']->format('Y-m-d')) {
+        //     $transaction_date = $data['start_date']->format('Y-m-d');
+        // } else {
+        //     $transaction_date = date('Y-m-d');
+        // }
+        $transaction_date = date('Y-m-d');
         $learnerTransaction = LearnerTransaction::create([
             'learner_id'        => $data['learner_id'],
             'library_id'        => getLibraryId(),
