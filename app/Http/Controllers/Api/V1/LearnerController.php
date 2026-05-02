@@ -118,10 +118,20 @@ class LearnerController extends Controller
 
          $dto = LearnerOperationDTO::fromRequest($request);
         
+        if($dto->operation == 'EDITLEARNER'){
+            $service->updateLearner($dto);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Learner updated successfully',
+            ]);
+            
+         }else{
+             return response()->json(
+                $service->process($dto)
+            );
+         }
        
-        return response()->json(
-            $service->process($dto)
-        );
 
     }
 

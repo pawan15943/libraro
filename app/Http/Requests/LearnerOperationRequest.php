@@ -18,30 +18,51 @@ class LearnerOperationRequest extends FormRequest
     public function rules()
     {
         
-       
+        $isEditLearner = $this->payment_type === 'EDITLEARNER';
         return [
 
             'plan_start_date' => 'nullable|date',
 
             'plan_id' => [
-                'required',
-                Rule::exists('plans','id')->where(fn($q)=>
-                    $q->where('library_id',getLibraryId())
+                'nullable',
+                Rule::requiredIf(fn () => !$isEditLearner),
+                Rule::exists('plans', 'id')->where(fn ($q) =>
+                    $q->where('library_id', getLibraryId())
                 )
             ],
 
+           // ✅ plan_type_id (NOT required for EDITLEARNER)
             'plan_type_id' => [
-                'required',
-                Rule::exists('plan_types','id')->where(fn($q)=>
-                    $q->where('branch_id',getCurrentBranch())
+                'nullable',
+                Rule::requiredIf(fn () => !$isEditLearner),
+                Rule::exists('plan_types', 'id')->where(fn ($q) =>
+                    $q->where('branch_id', getCurrentBranch())
                 )
             ],
 
-            'plan_price_id' => 'required|numeric|min:0',
+            // ✅ plan_price_id (NOT required for EDITLEARNER)
+            'plan_price_id' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                Rule::requiredIf(fn () => !$isEditLearner),
+            ],
 
-            'paid_amount' => 'required_unless:payment_type,CHANGE PLAN,EDIT|numeric|min:0',
+                // ✅ Paid Amount
+            'paid_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                Rule::requiredIf(fn () =>
+                    !in_array($this->payment_type, ['CHANGE PLAN', 'EDIT', 'EDITLEARNER'])
+                ),
+            ],
 
-            'payment_mode' => 'required',
+            // ✅ Payment Mode
+            'payment_mode' => [
+                'nullable',
+                Rule::requiredIf(fn () => !$isEditLearner),
+            ],
 
             'user_id' => 'nullable|exists:learners,id',
              'learner_id'=>'required|exists:learners,id',
@@ -85,10 +106,12 @@ class LearnerOperationRequest extends FormRequest
             'previous_pending'=>'nullable|min:0',
             'pending_amount'=>'nullable',
             'due_date'=>'nullable',
-            'diffrence_amount'=> [
-                'nullable',
-                'required_if:payment_type,CHANGE PLAN,EDIT'
-            ],
+             'diffrence_amount' => [
+                    'nullable',
+                    Rule::requiredIf(fn () =>
+                        in_array($this->payment_type, ['CHANGE PLAN', 'EDIT'])
+                    ),
+                ],
             'dob'=>'nullable|date',
 
             'alternate_mobile' => 'nullable|digits:10',

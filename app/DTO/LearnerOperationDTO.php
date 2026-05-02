@@ -11,9 +11,9 @@ class LearnerOperationDTO
 
         public int $learner_id,
 
-        public int $plan_id,
+        public ?int $plan_id,
 
-        public int $plan_type_id,
+        public ?int $plan_type_id,
 
         public ?float $plan_price,
 
@@ -23,13 +23,13 @@ class LearnerOperationDTO
 
         public ?int $locker_no,
 
-        public float $paid_amount,
+        public ?float $paid_amount,
 
         public ?string $discount_type,
 
         public ?float $discount_amount,
 
-        public int $payment_mode,
+        public ?int $payment_mode,
 
         public ?string $start_date,
 
@@ -71,26 +71,28 @@ class LearnerOperationDTO
 
     public static function fromRequest($request)
     {
+        $nullableInt = fn ($value) => $value !== null && $value !== '' ? (int) $value : null;
+        $nullableFloat = fn ($value) => $value !== null && $value !== '' ? (float) $value : null;
        
         return new self(
 
             learner_id:$request->learner_id,
-            plan_id:$request->plan_id,
-            plan_type_id:$request->plan_type_id,
-            plan_price:(float)$request->plan_price_id,
+            plan_id:$nullableInt($request->plan_id),
+            plan_type_id:$nullableInt($request->plan_type_id),
+            plan_price:$nullableFloat($request->plan_price_id),
 
-            seat_no:$request->seat_no,
+            seat_no:$nullableInt($request->seat_no),
 
-            paid_amount:(float)$request->paid_amount,
+            paid_amount:$nullableFloat($request->paid_amount),
 
-            locker_amount:$request->locker_amount,
-            locker_no:$request->locker_no,
+            locker_amount:$nullableFloat($request->locker_amount),
+            locker_no:$nullableInt($request->locker_no),
 
             discount_type:$request->discountType,
-            discount_amount:$request->discount_amount,
-            diffrence_amount:$request->diffrence_amount,
+            discount_amount:$nullableFloat($request->discount_amount),
+            diffrence_amount:$nullableFloat($request->diffrence_amount),
 
-            payment_mode:$request->payment_mode,
+            payment_mode:$nullableInt($request->payment_mode),
 
             start_date:$request->plan_start_date,
 

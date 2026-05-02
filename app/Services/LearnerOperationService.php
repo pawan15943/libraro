@@ -415,7 +415,7 @@ class LearnerOperationService
     }
 
 
-    private function updateLearner($dto,$detail,$status,$seat)
+    public function updateLearner($dto, $detail = null, $status = null, $seat = null)
     {
 
         $learner = Learner::findOrFail($dto->learner_id);
@@ -424,9 +424,19 @@ class LearnerOperationService
             $learner->restore();
         }
 
+        $detail ??= LearnerDetail::withTrashed()
+            ->where('learner_id', $dto->learner_id)
+            ->latest('id')
+            ->first();
+
+        $seat ??= $dto->seat_no ?? $detail?->seat_no ?? $learner->seat_no;
+        $status ??= $learner->status;
+
         $learner->seat_no = $seat;
 
-        $learner->hours = $detail->hour;
+        if ($detail) {
+            $learner->hours = $detail->hour;
+        }
 
         $learner->status = $status;
 
