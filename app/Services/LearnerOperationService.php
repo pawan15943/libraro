@@ -58,8 +58,7 @@ class LearnerOperationService
                 
              }
            
-             
-
+            
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
 
@@ -73,7 +72,6 @@ class LearnerOperationService
             }else{
                 $seat=$lastDetail->seat_no;
             }
-            
             
             
             /* Seat check */
