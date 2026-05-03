@@ -567,7 +567,7 @@ class LearnerController extends Controller
 
         $result = app(LearnerOperationService::class)->process($dto);
 
-        if(!$result['success']){
+        if($result['status']==false){
             return redirect()->back()->with('error',$result['message']);
         }
 

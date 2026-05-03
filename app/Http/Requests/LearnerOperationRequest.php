@@ -15,17 +15,52 @@ class LearnerOperationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        $data = [];
+
+        if ($this->exists('discountType')) {
+            $discountType = is_string($this->discountType) ? trim($this->discountType) : $this->discountType;
+            $data['discountType'] = $discountType === '' ? null : $discountType;
+        }
+
+        if ($this->exists('discount_amount')) {
+            $discountAmount = is_string($this->discount_amount) ? trim($this->discount_amount) : $this->discount_amount;
+            $data['discount_amount'] = $discountAmount === '' ? null : $discountAmount;
+        }
+
+        if ($this->exists('locker')) {
+            $locker = is_string($this->locker) ? trim($this->locker) : $this->locker;
+            $data['locker'] = $locker === '' ? null : $locker;
+        }
+
+        if ($this->exists('locker_no')) {
+            $lockerNo = is_string($this->locker_no) ? trim($this->locker_no) : $this->locker_no;
+            $data['locker_no'] = $lockerNo === '' ? null : $lockerNo;
+        }
+
+        if ($this->exists('locker_amount')) {
+            $lockerAmount = is_string($this->locker_amount) ? trim($this->locker_amount) : $this->locker_amount;
+            $data['locker_amount'] = $lockerAmount === '' ? null : $lockerAmount;
+        }
+
+        if ($data !== []) {
+            $this->merge($data);
+        }
+    }
+
     public function rules()
     {
         
         $isEditLearner = $this->payment_type === 'EDITLEARNER';
+        $isEditOperation = $this->payment_type === 'EDIT';
         return [
 
             'plan_start_date' => 'nullable|date',
 
             'plan_id' => [
                 'nullable',
-                Rule::requiredIf(fn () => !$isEditLearner),
+                Rule::requiredIf(fn () => !$isEditLearner && !$isEditOperation),
                 Rule::exists('plans', 'id')->where(fn ($q) =>
                     $q->where('library_id', getLibraryId())
                 )
@@ -34,7 +69,7 @@ class LearnerOperationRequest extends FormRequest
            // ✅ plan_type_id (NOT required for EDITLEARNER)
             'plan_type_id' => [
                 'nullable',
-                Rule::requiredIf(fn () => !$isEditLearner),
+                Rule::requiredIf(fn () => !$isEditLearner && !$isEditOperation),
                 Rule::exists('plan_types', 'id')->where(fn ($q) =>
                     $q->where('branch_id', getCurrentBranch())
                 )
@@ -45,7 +80,7 @@ class LearnerOperationRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0',
-                Rule::requiredIf(fn () => !$isEditLearner),
+                Rule::requiredIf(fn () => !$isEditLearner && !$isEditOperation),
             ],
 
                 // ✅ Paid Amount

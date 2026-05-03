@@ -66,6 +66,20 @@ class LearnerOperationDTO
     /** whatsapp | text | both | no */
     public ?string $sended_message_type = null,
 
+    /** yes | no from payload, used to know when locker is explicitly removed */
+    public ?string $locker = null,
+    /** True when locker key was sent in the payload */
+    public bool $locker_present = false,
+    /** True when locker_no key was sent in the payload, even if blank/null */
+    public bool $locker_no_present = false,
+    /** True when locker_amount key was sent in the payload, even if blank/null */
+    public bool $locker_amount_present = false,
+
+    /** True when discountType key was sent in the payload, even if blank/null */
+    public bool $discount_type_present = false,
+    /** True when discount_amount key was sent in the payload, even if blank/null */
+    public bool $discount_amount_present = false,
+
     ) {}
 
 
@@ -130,6 +144,12 @@ class LearnerOperationDTO
             sended_message_type: $request->input('sended_message_type') !== null && $request->input('sended_message_type') !== ''
                 ? (string) $request->input('sended_message_type')
                 : null,
+            locker: $request->locker ?? null,
+            locker_present: $request->exists('locker'),
+            locker_no_present: $request->exists('locker_no'),
+            locker_amount_present: $request->exists('locker_amount'),
+            discount_type_present: $request->exists('discountType'),
+            discount_amount_present: $request->exists('discount_amount'),
 
         );
     }

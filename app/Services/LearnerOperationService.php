@@ -34,6 +34,10 @@ class LearnerOperationService
 
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
+
+            if ($dto->operation == 'EDIT') {
+                $this->fillEditDefaults($dto, $lastDetail);
+            }
            
         
 
@@ -178,11 +182,20 @@ class LearnerOperationService
         return [$customer,$lastDetail];
     }
 
+    private function fillEditDefaults($dto, $lastDetail): void
+    {
+        $dto->plan_id ??= $lastDetail->plan_id;
+        $dto->plan_type_id ??= $lastDetail->plan_type_id;
+        $dto->plan_price ??= $lastDetail->plan_price_id;
+    }
+
 
     private function calculateBilling($dto,$customer,$start_date,PlanService $priceService)
     {
+        $lockerAmount = $this->resolveLockerInput($dto, $customer);
+        [$discountType, $discountAmount] = $this->resolveDiscountInput($dto, $customer);
 
-        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$dto->locker_amount ?? 0,$dto->discount_type ?? null,$dto->discount_amount ?? 0,$dto->paid_amount ?? 0
+        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$lockerAmount,$discountType,$discountAmount,$dto->paid_amount ?? 0
           
         );
      
@@ -204,6 +217,9 @@ class LearnerOperationService
              $old_pending_refund      = $learnerTransaction->refund ?? 0;
             $diff_amount= $dto->diffrence_amount;
             $paid_amount= $old_price + $diff_amount;
+            if ($diff_amount > 0 && $paid_amount > $effective) {
+                throw new Exception("Paid amount not valid");
+            }
             $pending_amount =$effective-$paid_amount;
              if ($dto->payment_mode == 3) {
                 $pending_amount = $paid_amount;
@@ -271,6 +287,39 @@ class LearnerOperationService
             'pending_refund'=>$pending_refund,
             'dr_cr'=>$dr_cr
         ];
+    }
+
+    private function resolveLockerInput($dto, $customer): float
+    {
+        $lockerKeysPresent = ($dto->locker_present ?? false)
+            || ($dto->locker_no_present ?? false)
+            || ($dto->locker_amount_present ?? false);
+
+        if (! $lockerKeysPresent && in_array($dto->operation, ['CHANGE PLAN', 'EDIT'])) {
+            return (float) (LearnerTransaction::where('learner_id', $customer->id)
+                ->latest()
+                ->value('locker_amount') ?? 0);
+        }
+
+        return (float) ($dto->locker_amount ?? 0);
+    }
+
+    private function resolveDiscountInput($dto, $customer): array
+    {
+        $discountKeysPresent = ($dto->discount_type_present ?? false)
+            || ($dto->discount_amount_present ?? false);
+
+        if (! $discountKeysPresent && in_array($dto->operation, ['CHANGE PLAN', 'EDIT'])) {
+            $oldDiscount = LearnerTransaction::where('learner_id', $customer->id)
+                ->latest()
+                ->value('discount_amount');
+
+            return ($oldDiscount ?? 0) > 0
+                ? ['amount', (float) $oldDiscount]
+                : [null, 0.0];
+        }
+
+        return [$dto->discount_type ?: null, $dto->discount_amount ?? 0.0];
     }
 
 
@@ -440,8 +489,8 @@ class LearnerOperationService
 
         $learner->status = $status;
 
-        if($dto->locker_no){
-            $learner->locker_no = $dto->locker_no;
+        if (($dto->locker_present ?? false) || ($dto->locker_no_present ?? false)) {
+            $learner->locker_no = $dto->locker === 'no' ? null : $dto->locker_no;
         }
         
             // Optional profile fields
