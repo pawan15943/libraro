@@ -374,17 +374,30 @@ class LearnerController extends Controller
      */
     public function lifecycle(Request $request, LearnerLifecycleService $service)
     {
+        if ($request->has('with_revenue')) {
+            $withRevenue = filter_var($request->input('with_revenue'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($withRevenue !== null) {
+                $request->merge([
+                    'with_revenue' => $withRevenue,
+                ]);
+            }
+        }
+
         $validated = $request->validate([
             'operation'   => 'required|in:restore,permanent_delete,freeze,unfreeze',
             'learner_id'  => 'required|integer|exists:learners,id',
-            'delete_all'  => 'nullable|boolean',
+            'with_revenue' => [
+                Rule::requiredIf($request->input('operation') === 'permanent_delete'),
+                'boolean',
+            ],
         ]);
 
         $result = $service->run(
             $validated['operation'],
             (int) $validated['learner_id'],
             [
-                'delete_all' => $request->boolean('delete_all', true),
+                'with_revenue' => $validated['with_revenue'] ?? true,
             ]
         );
 

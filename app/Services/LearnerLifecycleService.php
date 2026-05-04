@@ -15,14 +15,14 @@ use App\Http\Controllers\NotificationSentController;
 class LearnerLifecycleService
 {
     /**
-     * @param  array{delete_all?: bool, learner_detail_id?: int|null}  $options
+     * @param  array{with_revenue?: bool, learner_detail_id?: int|null}  $options
      * @return array{ok: bool, message: string}
      */
     public function run(string $operation, int $learnerId, array $options = []): array
     {
         return match ($operation) {
             'restore' => $this->restore($learnerId, $options['learner_detail_id'] ?? null),
-            'permanent_delete' => $this->permanentDelete($learnerId, (bool) ($options['delete_all'] ?? true)),
+            'permanent_delete' => $this->permanentDelete($learnerId, (bool) ($options['with_revenue'] ?? true)),
             'freeze' => $this->freezeOrUnfreeze($learnerId, true, $options['learner_detail_id'] ?? null),
             'unfreeze' => $this->freezeOrUnfreeze($learnerId, false, $options['learner_detail_id'] ?? null),
             default => ['ok' => false, 'message' => 'Invalid operation.'],
