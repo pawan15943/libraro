@@ -1157,6 +1157,7 @@ class LearnerService
                 'end_time'=>$detail->planType->end_time ?? '',
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
                 'locker_no'=>$learner->locker_no ?? '',

@@ -128,6 +128,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/gift-days/assign', [LearnerController::class, 'assignGiftDays']);
        
         Route::post('/operation',[LearnerController::class,'process']);
+        Route::post('/close-delete', [LearnerController::class, 'closeDelete']);
         Route::post('/plan-types', [MasterController::class, 'getFilterPlantypeWithself']);
 
         Route::post('/lifecycle', [LearnerController::class, 'lifecycle']);

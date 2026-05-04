@@ -10,6 +10,7 @@ use App\Models\LearnerTransactionActivity;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotificationSentController;
 
 class LearnerLifecycleService
 {
@@ -271,5 +272,207 @@ class LearnerLifecycleService
         }
 
         LearnerTransactionActivity::create($payload);
+    }
+
+    public function closedelete(array $validated): array
+    {
+        $learnerId = (int) $validated['learner_id'];
+        $operation = $validated['operation'];
+        $isRefund = (bool) ($validated['isRefund'] ?? false);
+        $transactionScope = $validated['transaction'] ?? 'all';
+
+        if (! $this->learnerBelongsToCurrentContext($learnerId)) {
+            return ['ok' => false, 'message' => 'Learner not found.'];
+        }
+
+        try {
+            return DB::transaction(function () use ($validated, $learnerId, $operation, $isRefund, $transactionScope) {
+                $this->settlmentCheck($learnerId, $operation, $operation === 'delete' ? $transactionScope : 'all');
+
+                $learner = Learner::where('id', $learnerId)->firstOrFail();
+                $detail = $this->latestActiveLearnerDetail($learnerId);
+
+                if (! $detail) {
+                    return ['ok' => false, 'message' => 'No active learner detail found.'];
+                }
+
+                if ((int) $detail->status === 0) {
+                    return ['ok' => false, 'message' => 'This seat is already closed.'];
+                }
+
+                if ($isRefund) {
+                    $refundAmount = (float) ($validated['refund_amount'] ?? 0);
+                    $pendingRefund = (float) ($validated['pendind_refund'] ?? 0);
+
+                    $this->refundSettle([
+                        'learner_id' => $learnerId,
+                        'refund_amount' => $refundAmount,
+                        'pendind_refund' => $pendingRefund,
+                        'transaction' => $operation === 'delete' ? $transactionScope : 'current',
+                    ]);
+
+                    $this->logTransactionActivity([
+                        'learner_id'   => $learnerId,
+                        'particular'   => 'Close Seat',
+                        'payment_type' => 'REFUND',
+                        'payment_mode' => $validated['payment_mode'],
+                        'amount'       => $refundAmount,
+                        'dr_cr'        => 'Dr',
+                    ]);
+                }
+
+                if (! empty($validated['remark'])) {
+                    $learner->remark = $validated['remark'];
+                }
+
+                if ($operation === 'delete') {
+                    $detail->delete();
+                    $this->softDeleteTransactions($learnerId, $transactionScope);
+                } else {
+                    $today = now()->format('Y-m-d');
+                    $update = [
+                        'plan_end_date' => $today,
+                        'status' => 0,
+                    ];
+
+                    if ($detail->plan_start_date > $today) {
+                        $update['plan_start_date'] = $today;
+                    }
+
+                    $detail->update($update);
+                }
+
+                $learner->status = 0;
+                $learner->save();
+
+                if ($operation === 'delete') {
+                    $learner->delete();
+                }
+
+                if ($operation === 'close') {
+                    $this->sendCloseNotification($learnerId);
+                }
+
+                return [
+                    'ok' => true,
+                    'message' => $operation === 'delete'
+                        ? 'Learner deleted successfully.'
+                        : 'Learner closed successfully.',
+                    'data' => [
+                        'learner_id' => $learnerId,
+                        'learner_detail_id' => (int) $detail->id,
+                    ],
+                ];
+            });
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    private function settlmentCheck($learnerId, $operation, string $transactionScope = 'all')
+    {
+        $txList = $this->transactionSelectionQuery((int) $learnerId, $transactionScope)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($txList->isEmpty()) {
+            throw new Exception("No transactions found");
+        }
+
+        $pending = $txList->sum('pending_amount');
+        $extra = $txList->sum('refund'); // advance/refund column
+        $netAmount = $pending - $extra;
+
+        if ($netAmount > 0) {
+            throw new Exception("This member has a pending amount({$netAmount}). Please settle it before {$operation}");
+        } elseif ($netAmount < 0) {
+            throw new Exception("This member has an extra amount(".abs($netAmount)."). Please settle it before {$operation}");
+        }
+    }
+
+    private function refundSettle($data)
+    {
+        $txList = $this->transactionSelectionQuery((int) $data['learner_id'], $data['transaction'] ?? 'current')
+            ->orderByDesc('id')
+            ->get();
+
+        if ($txList->isEmpty()) {
+            throw new Exception("No transactions found");
+        }
+
+        $refundAmount = (float) $data['refund_amount'];
+        $lastTransaction = LearnerTransaction::where('learner_id', (int) $data['learner_id'])
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $lastTransaction) {
+            throw new Exception("No transactions found");
+        }
+
+        if ($refundAmount > (float) $lastTransaction->paid_amount) {
+            throw new Exception("Refund amount cannot exceed last transaction paid amount");
+        }
+
+        $remainingRefund = $refundAmount;
+        foreach ($txList as $tx) {
+            if ($remainingRefund <= 0) {
+                break;
+            }
+
+            $deducted = min((float) $tx->paid_amount, $remainingRefund);
+            $tx->paid_amount = (float) $tx->paid_amount - $deducted;
+            $tx->refund = (float) ($data['pendind_refund'] ?? 0);
+            $tx->save();
+
+            $remainingRefund -= $deducted;
+        }
+    }
+
+    private function softDeleteTransactions(int $learnerId, string $transactionScope): void
+    {
+        $transactions = $this->transactionSelectionQuery($learnerId, $transactionScope)
+            ->orderByDesc('id')
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            throw new Exception("No transactions found");
+        }
+
+        foreach ($transactions as $transaction) {
+            $transaction->delete();
+        }
+    }
+
+    private function transactionSelectionQuery(int $learnerId, string $transactionScope)
+    {
+        $query = LearnerTransaction::where('learner_id', $learnerId)
+            ->whereNull('deleted_at');
+
+        if ($transactionScope === 'current') {
+            $latestId = (clone $query)->orderByDesc('id')->value('id');
+            $query->where('id', $latestId);
+        }
+
+        return $query;
+    }
+
+    private function sendCloseNotification(int $learnerId): void
+    {
+        try {
+            $noti = new NotificationSentController;
+
+            if (autowabaNotificationActive()) {
+                $noti->autoMessage($learnerId, 'waba', 'close-waba');
+            }
+
+            if (autotextNotificationActive()) {
+                $noti->autoMessage($learnerId, 'text', 'close-sms');
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Close notification sending failed: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
+        }
     }
 }
