@@ -1206,8 +1206,8 @@ class LearnerService
 
             'setlment_amount' => [
                 'overall_total_amt'     => $total_overall->overall_total_amt,
-                'paid_amount_sum'       => $total_overall->paid_amount_sum,
-                'pending_sum'           => $total_overall->pending_sum,
+                'overall_paid_amount'   => $total_overall->overall_paid_amount,
+                'overall_pending_sum'   => $total_overall->overall_pending_sum,
                 'total_refund_pending'  => $total_overall->total_refund_pending,
             ],
 
@@ -1513,10 +1513,10 @@ class LearnerService
         $balance = $total - $paid - $refund;
 
         return (object)[
-            'overall_total_amt'     => $total,
-            'paid_amount_sum'       => $paid,
-            'pending_sum'           => max($balance, 0),
-            'total_refund_pending'  => max(-$balance, 0),
+            'overall_total_amt'     => (string) $total,
+            'overall_paid_amount'   => (string) $paid,
+            'overall_pending_sum'   => (string) max($balance, 0),
+            'total_refund_pending'  => (string) max(-$balance, 0),
         ];
     }
 
