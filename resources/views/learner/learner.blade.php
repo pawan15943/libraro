@@ -459,7 +459,7 @@ $learner_id=$value->id;
                     @can('has-permission', 'Freez Days')
                     @if(!in_array('34', toggleHideField()))
                     <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" > 
-                         @if($value->frozen_status == 1)
+                        @if($value->frozen_status == 1)
                         <i class="fa-solid fa-pause" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Unfreeze Plan"></i>
                         @else
                         

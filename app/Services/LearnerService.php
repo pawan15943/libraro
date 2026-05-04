@@ -1078,7 +1078,10 @@ class LearnerService
             ->first();
 
         $transaction_all = LearnerTransaction::withTrashed()->where('learner_id', $learnerId)
-            ->with('learnerDetail')
+            ->with([
+                'learnerDetail.plan',
+                'learnerDetail.planType',
+            ])
             ->orderBy('id')
             ->get();
 
@@ -1212,20 +1215,22 @@ class LearnerService
                 $ld = $tx->learnerDetail;
 
                 return [
-                    'total_amount' => (string) $tx->total_amount,
-                    'paid_amount' => (string) $tx->paid_amount,
-                    'pending_amount' => (string) $tx->pending_amount,
+                    'total_amount' => (string) ($tx->total_amount ?? '0'),
+                    'paid_amount' => (string) ($tx->paid_amount ?? '0'),
+                    'pending_amount' => (string) ($tx->pending_amount ?? '0'),
                     'paid_date' => $tx->paid_date ?? '',
-                    'locker_amount' => (string) $tx->locker_amount,
+                    'locker_amount' => (string) ($tx->locker_amount ?? '0'),
                     'discount' => $tx->discount_amount ?? '0',
-                    'token_money' => (string) $tx->token_money ?? '0',
-                    'miscellaneous' => (string) $tx->miscellaneous ?? '0',
-                    'pending_refund' => (string) $tx->refund ?? '0',
+                    'token_money' => (string) ($tx->token_money ?? '0'),
+                    'miscellaneous' => (string) ($tx->miscellaneous ?? '0'),
+                    'pending_refund' => (string) ($tx->refund ?? '0'),
                     'due_date' => $tx->due_date ?? '',
                     'transaction' => $tx->transaction_id ?? '',
                     'seat_type' => $index === 0 ? 'BOOK SEAT' : 'RE-NEW SEAT',
                     'plan_start_date' => $ld?->plan_start_date ?? '',
                     'plan_end_date' => $ld?->plan_end_date ?? '',
+                    'plan' => $ld?->plan?->name ?? '',
+                    'plan_type' => $ld?->planType?->name ?? '',
                     'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Paylater' : 'Success',
                 ];
             }),
