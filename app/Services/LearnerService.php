@@ -1485,6 +1485,7 @@ class LearnerService
 
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'payment'=>learnerTransactionStatus($learner->id),
                 
