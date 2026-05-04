@@ -139,17 +139,23 @@ class LearnerController extends Controller
 
     public function closeDelete(Request $request, LearnerLifecycleService $service)
     {
-        $refundSelected = filter_var($request->input('isRefund'), FILTER_VALIDATE_BOOLEAN);
-        $request->merge([
-            'isRefund' => $refundSelected,
-        ]);
+        $refundSelected = null;
+        if ($request->has('isRefund')) {
+            $refundSelected = filter_var($request->input('isRefund'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($refundSelected !== null) {
+                $request->merge([
+                    'isRefund' => $refundSelected,
+                ]);
+            }
+        }
 
          $validator = Validator::make($request->all(), [
             'learner_id' => 'required|integer|exists:learners,id',
             'operation' => 'required|in:close,delete',
             'isRefund' => 'required|boolean',
-            'refund_amount' => [Rule::requiredIf($refundSelected), 'nullable', 'numeric', 'min:0'],
-            'payment_mode' => [Rule::requiredIf($refundSelected), 'nullable', 'in:1,2,3'],
+            'refund_amount' => [Rule::requiredIf($refundSelected === true), 'nullable', 'numeric', 'min:0'],
+            'payment_mode' => [Rule::requiredIf($refundSelected === true), 'nullable', 'in:1,2,3'],
             'pendind_refund' => 'nullable|numeric|min:0',
             'pending_refund' => 'nullable|numeric|min:0',
             'transaction' => [Rule::requiredIf($request->input('operation') === 'delete'), 'nullable', 'in:current,all'],
@@ -185,6 +191,8 @@ class LearnerController extends Controller
         }
 
         $validated = $validator->validated();
+        $validated['isRefund'] = $refundSelected;
+
         if (! isset($validated['pendind_refund']) && array_key_exists('pending_refund', $validated)) {
             $validated['pendind_refund'] = $validated['pending_refund'];
         }

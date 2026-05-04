@@ -313,7 +313,7 @@ class LearnerLifecycleService
 
                     $this->logTransactionActivity([
                         'learner_id'   => $learnerId,
-                        'particular'   => 'Close Seat',
+                        'particular'   => $operation === 'delete' ? 'Delete Seat' : 'Close Seat',
                         'payment_type' => 'REFUND',
                         'payment_mode' => $validated['payment_mode'],
                         'amount'       => $refundAmount,
@@ -326,8 +326,22 @@ class LearnerLifecycleService
                 }
 
                 if ($operation === 'delete') {
-                    $detail->delete();
+                    $deletedDetailIds = $this->softDeleteLearnerDetails($learnerId, $transactionScope, $detail);
                     $this->softDeleteTransactions($learnerId, $transactionScope);
+
+                    if ($transactionScope === 'all') {
+                        $this->logLearnerOperation($learnerId, null, 'deleteSeat', [
+                            'field_updated' => 'deleted_at',
+                            'old_value' => 'deleteSeat',
+                            'new_value' => now()->toISOString(),
+                        ]);
+                    } else {
+                        $this->logLearnerOperation($learnerId, (int) $deletedDetailIds[0], 'deleteSeat', [
+                            'field_updated' => 'deleted_at',
+                            'old_value' => 'deleteSeat',
+                            'new_value' => now()->toISOString(),
+                        ]);
+                    }
                 } else {
                     $today = now()->format('Y-m-d');
                     $update = [
@@ -340,6 +354,12 @@ class LearnerLifecycleService
                     }
 
                     $detail->update($update);
+
+                    $this->logLearnerOperation($learnerId, (int) $detail->id, 'closeSeat', [
+                        'field_updated' => 'status',
+                        'old_value' => '1',
+                        'new_value' => '0',
+                    ]);
                 }
 
                 $learner->status = 0;
@@ -427,6 +447,61 @@ class LearnerLifecycleService
 
             $remainingRefund -= $deducted;
         }
+    }
+
+    private function softDeleteLearnerDetails(int $learnerId, string $transactionScope, LearnerDetail $currentDetail): array
+    {
+        if ($transactionScope === 'current') {
+            $currentDetail->status = 0;
+            $currentDetail->save();
+            $detailId = (int) $currentDetail->id;
+            $currentDetail->delete();
+
+            return [$detailId];
+        }
+
+        $details = LearnerDetail::where('learner_id', $learnerId)
+            ->whereNull('learner_detail.deleted_at')
+            ->get();
+
+        if ($details->isEmpty()) {
+            throw new Exception("No active learner detail found");
+        }
+
+        $detailIds = [];
+        foreach ($details as $detail) {
+            $detail->status = 0;
+            $detail->save();
+            $detailIds[] = (int) $detail->id;
+            $detail->delete();
+        }
+
+        return $detailIds;
+    }
+
+    private function logLearnerOperation(int $learnerId, ?int $learnerDetailId, string $operation, array $changes): void
+    {
+        $createdAt = now();
+        while (DB::table('learner_operations_log')
+            ->where('learner_id', $learnerId)
+            ->where('operation', $operation)
+            ->where('created_at', $createdAt->format('Y-m-d H:i:s'))
+            ->exists()) {
+            $createdAt = $createdAt->copy()->addSecond();
+        }
+
+        DB::table('learner_operations_log')->insert([
+            'learner_id' => $learnerId,
+            'learner_detail_id' => $learnerDetailId,
+            'library_id' => getLibraryId(),
+            'field_updated' => $changes['field_updated'],
+            'old_value' => $changes['old_value'],
+            'new_value' => $changes['new_value'],
+            'updated_by' => getLibraryId(),
+            'operation' => $operation,
+            'branch_id' => getCurrentBranch(),
+            'created_at' => $createdAt,
+        ]);
     }
 
     private function softDeleteTransactions(int $learnerId, string $transactionScope): void
