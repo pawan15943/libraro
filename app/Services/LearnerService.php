@@ -1401,6 +1401,7 @@ class LearnerService
             'learners.dob',
             'learners.profile_picture',
             'learners.branch_id',
+            'learners.frozen_status',
 
             'learner_detail.seat_no',
             'learner_detail.plan_start_date',
@@ -1485,6 +1486,7 @@ class LearnerService
 
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'payment'=>learnerTransactionStatus($learner->id),
                 

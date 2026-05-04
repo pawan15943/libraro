@@ -217,7 +217,7 @@ class LearnerOperationService
              $old_pending_refund      = $learnerTransaction->refund ?? 0;
             $diff_amount= $dto->diffrence_amount;
             $paid_amount= $old_price + $diff_amount;
-            if ($diff_amount > 0 && $paid_amount > $effective) {
+            if ($diff_amount > $effective) {
                 throw new Exception("Paid amount not valid");
             }
             $pending_amount =$effective-$paid_amount;
