@@ -1504,13 +1504,15 @@ class LearnerService
             ->selectRaw('
                 SUM(total_amount) as total_amount_sum,
                 SUM(paid_amount) as paid_amount_sum,
-                SUM(refund) as pending_refund_sum
+                SUM(refund) as pending_refund_sum,
+                SUM(sattle_amount) as sattle_amount_sum
             ')
             ->first();
 
         $total  = $total_overall->total_amount_sum ?? 0;
         $paid   = $total_overall->paid_amount_sum ?? 0;
         $refund = $total_overall->pending_refund_sum ?? 0;
+        $sattle = $total_overall->sattle_amount_sum ?? 0;
 
         $balance = $total - $paid - $refund;
 
@@ -1519,24 +1521,347 @@ class LearnerService
             'overall_paid_amount'   => (string) $paid,
             'overall_pending_sum'   => (string) max($balance, 0),
             'total_refund_pending'  => (string) max(-$balance, 0),
+            'overall_sattle_amount' => (string) $sattle,
         ];
     }
 
 
-    // public function learnerAmountSettlement($data){
+    public function settlement($data)
+    {
+        return DB::transaction(function () use ($data) {
+            $learnerId = (int) $data->learner_id;
+            $pendingPay = (float) ($data->pending_amount ?? 0);
+            $refundPay = (float) ($data->refund_amount ?? 0);
+            $adjust = (bool) ($data->adjust ?? false);
 
-    // //refund ley is a pending refund which is pay to learner
-    //     if($data->pending_amount){
-    //             $pendings=LearnerTransaction::where('learner_id',$data->learner_id)->where('pending_amount','>',0)->get();
-    //             $pending_refund=LearnerTransaction::where('learner_id',$data->learner_id)->where('refund','>',0)->get();
-                
-    //             $pendigPay=$data->pending_amount;
-    //             if($pendings){
-    //                 foreach($pendings as $pending){
+            $transactions = LearnerTransaction::where('learner_id', $learnerId)
+                ->orderBy('id', 'asc')
+                ->get();
 
-    //                 }
-    //             }
-    //     }
-        
-    // }
+            if ($transactions->isEmpty()) {
+                throw new \Exception('No transactions found.');
+            }
+
+            if ($pendingPay > 0 && $refundPay > 0) {
+                throw new \Exception('Settle pending amount or refund amount one at a time.');
+            }
+
+            $summary = $this->amountSatelment($learnerId);
+            $overallPending = (float) $summary->overall_pending_sum;
+            $overallRefund = (float) $summary->total_refund_pending;
+
+            
+            if ($pendingPay > 0) {
+                if ($pendingPay > $overallPending) {
+                    throw new \Exception('Pending pay amount exceeds total pending amount.');
+                }
+
+                $this->adjustExtraAgainstPending($learnerId);
+                $transactions = LearnerTransaction::where('learner_id', $learnerId)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                $this->payPendingAmount($transactions, $pendingPay);
+                $this->logSettlementActivity($learnerId, 'PENDING', $pendingPay, $data->payment_mode ?? 1, 'Cr');
+
+                if ($adjust) {
+                    $this->adjustRemainingPending($learnerId);
+                } else {
+                    $this->moveRemainingPendingToLastTransaction($learnerId);
+                }
+            }
+
+            if ($refundPay > 0) {
+                if ($refundPay > $overallRefund) {
+                    throw new \Exception('Refund amount exceeds total extra/refund amount.');
+                }
+
+                $this->payRefundAmount($learnerId, $refundPay);
+                $this->logSettlementActivity($learnerId, 'REFUND', $refundPay, $data->payment_mode ?? 1, 'Dr');
+
+                if ($adjust) {
+                    $this->adjustRemainingRefund($learnerId);
+                } else {
+                    $this->moveRemainingRefundToLastTransaction($learnerId);
+                }
+            }
+
+            if ($pendingPay <= 0 && $refundPay <= 0 && $adjust) {
+                if ($overallPending > 0) {
+                    $this->adjustRemainingPending($learnerId);
+                } elseif ($overallRefund > 0) {
+                    $this->adjustRemainingRefund($learnerId);
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Settlement completed successfully.',
+                'settlement' => $this->amountSatelment($learnerId),
+            ];
+        });
+    }
+
+    private function adjustExtraAgainstPending(int $learnerId): void
+    {
+        $extraTransactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('refund', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($extraTransactions->isEmpty()) {
+            return;
+        }
+
+        $pendingTransactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('pending_amount', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($pendingTransactions->isEmpty()) {
+            return;
+        }
+
+        foreach ($extraTransactions as $extraTransaction) {
+            $remainingExtra = (float) $extraTransaction->refund;
+
+            foreach ($pendingTransactions as $pendingTransaction) {
+                if ($remainingExtra <= 0) {
+                    break;
+                }
+
+                $pendingTransaction->refresh();
+                $pending = (float) $pendingTransaction->pending_amount;
+
+                if ($pending <= 0) {
+                    continue;
+                }
+
+                $used = min($pending, $remainingExtra);
+                $newPending = $pending - $used;
+
+                $pendingTransaction->update([
+                    'paid_amount' => (float) $pendingTransaction->paid_amount + $used,
+                    'pending_amount' => $newPending,
+                    'is_paid' => $newPending == 0 ? 1 : 0,
+                    'paid_date' => now()->format('Y-m-d'),
+                ]);
+
+                $remainingExtra -= $used;
+            }
+
+            $extraTransaction->update([
+                'refund' => $remainingExtra,
+            ]);
+        }
+    }
+
+    private function payPendingAmount($transactions, float $amount): void
+    {
+        $remaining = $amount;
+
+        foreach ($transactions as $transaction) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $pending = (float) $transaction->pending_amount;
+            if ($pending <= 0) {
+                continue;
+            }
+
+            $paidNow = min($pending, $remaining);
+            $newPending = $pending - $paidNow;
+
+            $transaction->update([
+                'paid_amount' => (float) $transaction->paid_amount + $paidNow,
+                'pending_amount' => $newPending,
+                'is_paid' => $newPending == 0 ? 1 : 0,
+                'paid_date' => now()->format('Y-m-d'),
+            ]);
+
+            $remaining -= $paidNow;
+        }
+    }
+
+    private function adjustRemainingPending(int $learnerId): void
+    {
+        $transactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('pending_amount', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            $pending = (float) $transaction->pending_amount;
+
+            $transaction->update([
+                'sattle_amount' => (float) ($transaction->sattle_amount ?? 0) + $pending,
+                'pending_amount' => 0,
+                'is_paid' => 1,
+            ]);
+        }
+    }
+
+    private function moveRemainingPendingToLastTransaction(int $learnerId): void
+    {
+        $transactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('pending_amount', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return;
+        }
+
+        $remainingPending = (float) $transactions->sum('pending_amount');
+        $lastTransaction = LearnerTransaction::where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->first();
+
+        LearnerTransaction::where('learner_id', $learnerId)->update([
+            'pending_amount' => 0,
+            'is_paid' => 1,
+        ]);
+
+        $lastTransaction->update([
+            'pending_amount' => $remainingPending,
+            'is_paid' => $remainingPending > 0 ? 0 : 1,
+        ]);
+    }
+
+    private function payRefundAmount(int $learnerId, float $amount): void
+    {
+        $remaining = $amount;
+
+        $futureRefunds = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('refund', '>', 0)
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($futureRefunds as $transaction) {
+            if ($remaining <= 0) {
+                return;
+            }
+
+            $refund = (float) $transaction->refund;
+            $paidNow = min($refund, $remaining);
+
+            $transaction->update([
+                'refund' => $refund - $paidNow,
+            ]);
+
+            $remaining -= $paidNow;
+        }
+
+        $paidTransactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('paid_amount', '>', 0)
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($paidTransactions as $transaction) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $paid = (float) $transaction->paid_amount;
+            $deduct = min($paid, $remaining);
+
+            $transaction->update([
+                'paid_amount' => $paid - $deduct,
+            ]);
+
+            $remaining -= $deduct;
+        }
+    }
+
+    private function adjustRemainingRefund(int $learnerId): void
+    {
+        $remainingRefund = (float) $this->amountSatelment($learnerId)->total_refund_pending;
+        if ($remainingRefund <= 0) {
+            return;
+        }
+
+        $lastTransaction = LearnerTransaction::where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->first();
+
+        $lastTransaction->update([
+            'sattle_amount' => (float) ($lastTransaction->sattle_amount ?? 0) - $remainingRefund,
+        ]);
+
+        LearnerTransaction::where('learner_id', $learnerId)->update(['refund' => 0]);
+    }
+
+    private function moveRemainingRefundToLastTransaction(int $learnerId): void
+    {
+        $remainingRefund = (float) $this->amountSatelment($learnerId)->total_refund_pending;
+        if ($remainingRefund <= 0) {
+            return;
+        }
+
+        $lastTransaction = LearnerTransaction::where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->first();
+
+        $this->rebalancePaidAmountForFutureRefund($learnerId);
+        LearnerTransaction::where('learner_id', $learnerId)->update(['refund' => 0]);
+
+        $lastTransaction->refresh();
+        $lastTransaction->update([
+            'refund' => (float) $lastTransaction->refund + $remainingRefund,
+        ]);
+    }
+
+    private function rebalancePaidAmountForFutureRefund(int $learnerId): void
+    {
+        $totalAmount = (float) LearnerTransaction::where('learner_id', $learnerId)->sum('total_amount');
+        $paidAmount = (float) LearnerTransaction::where('learner_id', $learnerId)->sum('paid_amount');
+        $targetPaidAmount = $totalAmount;
+        $remaining = max($paidAmount - $targetPaidAmount, 0);
+
+        if ($remaining <= 0) {
+            return;
+        }
+
+        $transactions = LearnerTransaction::where('learner_id', $learnerId)
+            ->where('paid_amount', '>', 0)
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $paid = (float) $transaction->paid_amount;
+            $deduct = min($paid, $remaining);
+
+            $transaction->update([
+                'paid_amount' => $paid - $deduct,
+            ]);
+
+            $remaining -= $deduct;
+        }
+    }
+
+    private function logSettlementActivity(int $learnerId, string $paymentType, float $amount, $paymentMode, string $drCr): void
+    {
+        $mode = match ((int) $paymentMode) {
+            3 => 'PAYLATER',
+            2 => 'OFFLINE',
+            default => 'ONLINE',
+        };
+
+        LearnerTransactionActivity::create([
+            'branch_id' => getCurrentBranch(),
+            'learner_id' => $learnerId,
+            'date' => now()->format('Y-m-d'),
+            'transaction_id' => transaction_id(),
+            'particular' => 'SETTLEMENT',
+            'payment_type' => $paymentType,
+            'payment_mode' => $mode,
+            'amount' => $amount,
+            'dr_cr' => $drCr,
+        ]);
+    }
 }

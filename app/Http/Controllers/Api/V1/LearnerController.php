@@ -368,6 +368,49 @@ class LearnerController extends Controller
         ]);
     }
 
+    public function settlement(Request $request, LearnerService $service)
+    {
+        if ($request->has('adjust')) {
+            $adjust = filter_var($request->input('adjust'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($adjust !== null) {
+                $request->merge([
+                    'adjust' => $adjust,
+                ]);
+            }
+        }
+
+        $validated = $request->validate([
+            'learner_id' => 'required|integer|exists:learners,id',
+            'pending_amount' => 'nullable|numeric|min:0',
+            'refund_amount' => 'nullable|numeric|min:0',
+            'payment_mode' => 'required|in:1,2,3',
+            'adjust' => 'required|boolean',
+        ]);
+
+        if (($validated['pending_amount'] ?? 0) <= 0 && ($validated['refund_amount'] ?? 0) <= 0 && ! $validated['adjust']) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Pending amount or refund amount is required when adjust is false.',
+            ], 422);
+        }
+
+        try {
+            $result = $service->settlement((object) $validated);
+
+            return response()->json([
+                'status' => true,
+                'message' => $result['message'],
+                // 'data' => $result['settlement'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     /**
      * Single entry: operation + learner_id (optional delete_all for permanent_delete).
      * Operations: restore, permanent_delete, freeze, unfreeze

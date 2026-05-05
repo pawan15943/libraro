@@ -132,6 +132,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/plan-types', [MasterController::class, 'getFilterPlantypeWithself']);
 
         Route::post('/lifecycle', [LearnerController::class, 'lifecycle']);
+        Route::post('/settlement', [LearnerController::class, 'settlement']);
 
          Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
     });
