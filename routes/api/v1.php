@@ -150,7 +150,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
 
     Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
-    
+    Route::post('/attendance/manual', [AttendanceController::class, 'manualAttendance']);
 });
 
 });
