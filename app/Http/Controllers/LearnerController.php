@@ -2993,6 +2993,39 @@ class LearnerController extends Controller
         }
     }
 
+    //updated Code
+
+    //     public function updateAttendance(Request $request, AttendanceService $service)
+    // {
+    //     $request->validate([
+    //         'learner_id' => 'required|integer',
+    //         'attendance' => 'required|integer',
+    //         'date' => 'required|date',
+    //         'time' => 'required|in:in,out',
+    //     ]);
+
+    //     $service->manualAttendance(
+    //         $request->learner_id,
+    //         $request->attendance,
+    //         $request->date,
+    //         $request->time,
+    //         getLibraryId(),
+    //         getCurrentBranch()
+    //     );
+
+    //     $learner = Learner::where('id', $request->learner_id)
+    //         ->select('name')
+    //         ->first();
+
+    //     return response()->json([
+    //         $request->attendance == 1 ? 'present' : 'absent' => true,
+    //         'message' => 'Attendance of ' . $learner->name .
+    //             ($request->attendance == 1
+    //                 ? ' has been marked Present!'
+    //                 : ' has been marked Absent!')
+    //     ]);
+    // }
+
     public function getLearnerAttendence(Request $request)
     {
         // Dropdown data

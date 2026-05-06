@@ -522,5 +522,57 @@ public function logInsert(array $data): void
     }
 }
 
+public function manualAttendance(
+    $learnerId,
+    $attendance,
+    $date,
+    $time,
+    $libraryId,
+    $branchId
+)
+{
+    $currentTime = now();
+
+    $existingAttendance = Attendance::where('learner_id', $learnerId)
+        ->where('date', $date)
+        ->first();
+
+    if ($existingAttendance) {
+
+        if ($time == 'in') {
+            $existingAttendance->in_time = $currentTime;
+        }
+
+        if ($time == 'out') {
+            $existingAttendance->out_time = $currentTime;
+        }
+
+        $existingAttendance->attendance = $attendance;
+        $existingAttendance->save();
+
+    } else {
+
+        Attendance::create([
+            'learner_id' => $learnerId,
+            'attendance' => $attendance,
+            'date'       => $date,
+            'in_time'    => $time == 'in' ? $currentTime : null,
+            'out_time'   => $time == 'out' ? $currentTime : null,
+            'library_id' => $libraryId,
+            'branch_id'  => $branchId,
+        ]);
+    }
+
+    // ✅ Attendance Log
+    $this->logInsert([
+        'learner_id'     => $learnerId,
+        'branch_id'      => $branchId,
+        'punch_datetime' => $currentTime,
+        'source'         => 'MANUAL'
+    ]);
+
+    return true;
+}
+
 
 }

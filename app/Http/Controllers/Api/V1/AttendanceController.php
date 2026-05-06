@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\Learner;
 use Illuminate\Http\Request;
 use App\Services\AttendanceService;
@@ -19,6 +20,7 @@ class AttendanceController extends Controller
         return $service->attendanceLogs($request);
     }
 
+    // this function not perfact
     public function qrScanAttendance(Request $request)
     {
         
@@ -72,6 +74,7 @@ class AttendanceController extends Controller
 
         // ✅ Owner / staff
         $owner = auth()->user();
+       
 
         if (!$owner) {
             return response()->json([
@@ -80,7 +83,7 @@ class AttendanceController extends Controller
             ], 401);
         }
 
-        $branchId = $owner->branch_id;
+        $branchId = $owner->current_branch;
 
         // ✅ Decode learner QR
         $learnerNo = trim($request->qr);
@@ -101,6 +104,7 @@ class AttendanceController extends Controller
                 'message' => 'Wrong library QR'
             ], 403);
         }
+       
 
         // ✅ Duplicate protection
         $cacheKey = 'scan_' . $learner->id;
@@ -120,7 +124,7 @@ class AttendanceController extends Controller
         return response()->json($result, $result['code'] ?? 200);
     }
 
-    public function manualAttendance(Request $request, AttendanceService $service)
+public function manualAttendance(Request $request, AttendanceService $service)
 {
     $request->validate([
         'learner_id' => 'required|integer|exists:learners,id',
@@ -131,101 +135,48 @@ class AttendanceController extends Controller
 
     $owner = auth()->user();
 
-    if (!$owner) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => 'Unauthorized'
-        ], 401);
-    }
+    $branchId  = $owner->current_branch;
+    $libraryId = auth('library_api')->id();
+   
 
-    $branchId  = $owner->branch_id;
-    $libraryId = $owner->library_id;
-
-    $learnerId = $request->learner_id;
-    $attendance = $request->attendance;
-    $date = $request->date ?? today()->toDateString();
-    $currentTime = now();
-
-    $learner = Learner::where('id', $learnerId)
-        ->select('id', 'name', 'branch_id')
-        ->first();
+    $learner = Learner::find($request->learner_id);
 
     if (!$learner) {
         return response()->json([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Learner not found'
         ], 404);
     }
 
-    // ✅ Branch security
     if ($learner->branch_id != $branchId) {
         return response()->json([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Learner belongs to another branch'
         ], 403);
     }
 
-    $existingAttendance = Attendance::where('learner_id', $learnerId)
-        ->where('date', $date)
-        ->first();
-
     try {
 
-        DB::beginTransaction();
-
-        if ($existingAttendance) {
-
-            if ($request->time == 'in') {
-                $existingAttendance->in_time = $currentTime;
-            }
-
-            if ($request->time == 'out') {
-                $existingAttendance->out_time = $currentTime;
-            }
-
-            $existingAttendance->attendance = $attendance;
-            $existingAttendance->save();
-
-        } else {
-
-            Attendance::create([
-                'learner_id' => $learnerId,
-                'attendance' => $attendance,
-                'date'       => $date,
-                'in_time'    => $request->time == 'in' ? $currentTime : null,
-                'out_time'   => $request->time == 'out' ? $currentTime : null,
-                'library_id' => $libraryId,
-                'branch_id'  => $branchId,
-            ]);
-        }
-
-        // ✅ Attendance log
-        $service->logInsert([
-            'learner_id'     => $learnerId,
-            'branch_id'      => $branchId,
-            'punch_datetime' => $currentTime,
-            'source'         => 'MANUAL'
-        ]);
-
-        DB::commit();
+        $service->manualAttendance(
+            $request->learner_id,
+            $request->attendance,
+            $request->date ?? today()->toDateString(),
+            $request->time,
+            $libraryId,
+            $branchId
+        );
 
         return response()->json([
-            'status'  => 'success',
-            'message' => $attendance == 1
+            'status' => 'success',
+            'message' => $request->attendance == 1
                 ? 'Attendance marked Present'
                 : 'Attendance marked Absent'
         ]);
 
     } catch (\Throwable $e) {
 
-        DB::rollBack();
-
-        \Log::error('Manual Attendance Error', [
-            'error' => $e->getMessage()
-        ]);
-
         return response()->json([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Attendance not marked'
         ], 500);
     }
