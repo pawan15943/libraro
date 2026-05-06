@@ -50,8 +50,13 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('branch/status', [MasterController::class, 'branchStatus']);
     Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
-    
+    Route::post('library/expense/save', [LibraryController::class, 'expenseSave']); // add + update
+    Route::post('library/expense/list', [LibraryController::class, 'expenseList']); // list with filters
+    // 🔹 Message Template List
+    Route::post('library/templates/list', [LibraryController::class, 'templateList']);
 
+    // 🔹 Message Template Create/Update
+    Route::post('library/templates/update', [LibraryController::class, 'templateUpdate']);
 
    
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
@@ -133,6 +138,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
         Route::post('/lifecycle', [LearnerController::class, 'lifecycle']);
         Route::post('/settlement', [LearnerController::class, 'settlement']);
+        Route::post('/other-payment', [LearnerController::class, 'otherPaymentApi']);
 
          Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
     });

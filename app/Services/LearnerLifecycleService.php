@@ -550,4 +550,75 @@ class LearnerLifecycleService
             ]);
         }
     }
+
+     public function handleLearnerOtherPayment($request)
+    {
+        $transaction = LearnerTransaction::withTrashed()
+            ->where('learner_id', $request->learner_id)
+            ->first();
+
+        if (!$transaction) {
+            return [
+                'status' => false,
+                'message' => 'Learner transaction record not found.'
+            ];
+        }
+
+        // Payment Logic
+        if ($request->payment_type === 'token_money') {
+            $transaction->token_money = $request->fees;
+            $payment_type = 'TOKEN MONEY';
+            $dr_cr = 'Cr';
+
+        } elseif ($request->payment_type === 'miscellaneous') {
+            $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
+            $payment_type = 'MISCELLANEOUS';
+            $dr_cr = 'Cr';
+
+        } elseif ($request->payment_type === 'pending_refund') {
+            $transaction->refund = ($transaction->refund ?? 0) - $request->fees;
+            $payment_type = 'REFUND';
+            $dr_cr = 'Dr';
+        }
+
+        $transaction->save();
+
+        // Activity Log Data
+        $data = [
+            'learner_id'   => $request->learner_id,
+            'particular'   => 'Paid By Trans',
+            'payment_type' => $payment_type,
+            'payment_mode' => $request->payment_mode ?? 1,
+            'amount'       => $request->fees,
+            'dr_cr'        => $dr_cr,
+        ];
+
+      $this->logTransactionActivity($data);
+
+        // Refund Notification
+        if ($payment_type === 'REFUND') {
+            try {
+                $noti = new NotificationSentController;
+
+                if (autowabaNotificationActive()) {
+                    $noti->autoMessage($data['learner_id'], 'waba', 'refund-waba');
+                }
+
+                if (autotextNotificationActive()) {
+                    $noti->autoMessage($data['learner_id'], 'text', 'refund-sms');
+                }
+
+            } catch (\Throwable $e) {
+                Log::error('Notification failed: ' . $e->getMessage());
+            }
+        }
+
+        return [
+            'status' => true,
+            'payment_type' => $payment_type,
+            'message' => $payment_type === 'REFUND'
+                ? 'Refund Processed Successfully.'
+                : 'Payment successfully recorded.'
+        ];
+    }
 }

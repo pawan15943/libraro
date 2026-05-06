@@ -455,4 +455,19 @@ class LearnerController extends Controller
 
         return response()->json($body, $status);
     }
+
+    public function otherPaymentApi(Request $request, LearnerLifecycleService $service)
+    {
+         $validated = $request->validate([
+          'learner_id'    => 'required|exists:learner_transactions,learner_id',
+            'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
+            'fees'          => 'required|numeric|min:1',
+        ]);
+
+
+
+        $response = $service->handleLearnerOtherPayment($request);
+
+        return response()->json($response);
+    }
 }

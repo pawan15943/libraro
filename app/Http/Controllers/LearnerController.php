@@ -3474,78 +3474,27 @@ class LearnerController extends Controller
         return view('learner.other_payment', compact('customer', 'tokenMoney'));
     }
 
-    public function otherPaymentStore(Request $request)
+    public function otherPaymentStore(Request $request, LearnerLifecycleService $service)
     {
-
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
             'fees'          => 'required|numeric|min:1',
         ]);
 
-        try {
-            // Step 2: Find transaction record
-            $transaction = LearnerTransaction::withTrashed()->where('learner_id', $request->learner_id)->first();
+        $response = $service->handleLearnerOtherPayment($request);
 
-            if (!$transaction) {
-                return redirect()->back()->with('error', 'Learner transaction record not found.');
-            }
-
-            // Step 3: Update based on payment type
-            if ($request->payment_type === 'token_money') {
-                $transaction->token_money = $request->fees;
-                $payment_type = 'TOKEN MONEY';
-                $dr_cr = 'Cr';
-            } elseif ($request->payment_type === 'miscellaneous') {
-                $transaction->miscellaneous = ($transaction->miscellaneous ?? 0) + $request->fees;
-                $payment_type = 'MISCELLANEOUS';
-                $dr_cr = 'Cr';
-            } elseif ($request->payment_type === 'pending_refund') {
-                $transaction->refund = ($transaction->refund ?? 0) - $request->fees;
-                $payment_type = 'REFUND';
-                $dr_cr = 'Dr';
-            }
-
-            $transaction->save();
-            $data = [];
-            $data['learner_id'] = $request->learner_id;
-            $data['particular'] = 'Paid By Trans';
-            $data['payment_type'] = $payment_type;
-            $data['payment_mode'] = $request->payment_mode ?? 1;
-            $data['amount'] = $request->fees;
-            $data['dr_cr'] = $dr_cr;
-            $this->learnerTransactionActivity($data);
-            if ($payment_type == 'REFUND') {
-                try {
-                    $noti = new NotificationSentController;
-
-                    if (autowabaNotificationActive()) {
-                        \Log::info('autowabaNotificationActive');
-                        $noti->autoMessage($data['learner_id'], 'waba', 'refund-waba');
-                    }
-                    if (autotextNotificationActive()) {
-                        \Log::info('autotextNotificationActive');
-                        $noti->autoMessage($data['learner_id'], 'text', 'refund-sms');
-                    }
-                } catch (\Throwable $e) {
-                    // Log the error (won't break your main code)
-                    \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                        'exception' => $e
-                    ]);
-                }
-            }
-
-            if ($payment_type == 'REFUND') {
-                return redirect('library/learners/history/list')->with('success', 'Refund Processed Successfully.');
-            } else {
-                return redirect('library/learners/list')->with('success', 'Payment successfully recorded.');
-            }
-        } catch (\Exception $e) {
-
-            // Log the error if needed: Log::error($e->getMessage());
-            return redirect()->back()->with('error', 'An error occurred while processing payment.');
+        if (!$response['status']) {
+            return redirect()->back()->with('error', $response['message']);
         }
+
+        if ($response['payment_type'] === 'REFUND') {
+            return redirect('library/learners/history/list')
+                ->with('success', $response['message']);
+        }
+
+        return redirect('library/learners/list')
+            ->with('success', $response['message']);
     }
 
     public function learnerIdCard($id)
