@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\Api\V1\AttendanceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LibraryAuthController;
 use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
@@ -141,9 +143,13 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/other-payment', [LearnerController::class, 'otherPaymentApi']);
 
          Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
+         Route::post('/attendance/summary', [AttendanceController::class, 'summary']);
+         Route::post('/attendance/logs', [AttendanceController::class, 'logs']);
     });
    
-    
+    Route::post('/attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
+
+    Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
     
 });
 
