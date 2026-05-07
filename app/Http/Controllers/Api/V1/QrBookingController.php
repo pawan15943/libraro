@@ -101,30 +101,39 @@ class QrBookingController extends Controller
             ]);
     }
 
+    /** Direct verify and without direct verify in seat book and renew-
+     * if in qr-boking check first time booking or not.
+     * if first time then check that shift in start to end date have any other learner(active and future) or not
+     * no first time renew then check already have que any plan or not
+     * no first time then check renew/qr booking ana if not renew then error message show
+     * if renew then check that learner in our shift in start to end date have any other learner(active and future)(minus self)
+        
+    * */
+
     public function verify(Request $request, QrBookingService $qrService, LearnerService $service)
-{
-    $request->validate([
-        'booking_id' => 'required|exists:bookings,id',
-    ]);
-
-    try {
-
-        $result = $qrService->verifyBooking($request, $service);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => $result['message'],
-            'data' => $result
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
         ]);
 
-    } catch (\Throwable $e) {
+        try {
 
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ], 500);
+            $result = $qrService->verifyBooking($request, $service);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $result['message'],
+                'data' => $result
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     public function destroy(Request $request)
     {
