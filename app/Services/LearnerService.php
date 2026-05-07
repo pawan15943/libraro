@@ -362,6 +362,12 @@ class LearnerService
 
      public function learnerTransactionActivity($data)
     {
+        $paymentMode=$data['payment_mode'];
+        $mode = match ((int) $paymentMode) {
+            3 => 'PAYLATER',
+            2 => 'OFFLINE',
+            default => 'ONLINE',
+        };
 
 
         LearnerTransactionActivity::create([
@@ -371,7 +377,7 @@ class LearnerService
             'transaction_id' => transaction_id(),
             'particular'     => $data['particular'],
             'payment_type'   => $data['payment_type'],
-            'payment_mode'   => $data['payment_mode'] == 1 ? 'CASH' : 'OTHER',
+            'payment_mode'   => $mode,
             'amount'         => $data['amount'] ?? 0,
             'dr_cr'          => $data['dr_cr'],
         ]);

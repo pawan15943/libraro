@@ -150,7 +150,7 @@ class QrEntryController extends Controller
 
         return $result;
     }
-   public function getPlanPrice(Request $request)
+    public function getPlanPrice(Request $request)
     {
         // Validation
         $validated = $request->validate([
@@ -784,9 +784,7 @@ class QrEntryController extends Controller
             
             return redirect()->back()->withErrors($validator)->withInput();
         }
-        // if (!Auth::user()->can('has-permission', 'Renew Seat')) {
-        //     return redirect()->back()->with('error', 'You do not have permission to renew the seat.');
-        // }
+    
 
         }
    
@@ -862,7 +860,7 @@ class QrEntryController extends Controller
 
             $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
           
-           $alreadyActive = false;
+            $alreadyActive = false;
             $learnerId=$request->learner_id;
             if (!empty($learnerId)) {
                 $alreadyActive = LearnerDetail::where('learner_id', $learnerId)->where('status', 1)->exists();
@@ -956,13 +954,7 @@ class QrEntryController extends Controller
                    return redirect()->back()->with('error', $check['message'])->withInput();
                 }
             }
-            // if($seat_no){
-            //     $result = checkSeatAvailability($seat_no,$learnerId ?? null,$plan_type_id,$start_date,$endDate);
-            //      if ($result['error']) {
-            //         return redirect()->back()->with('error', $result['message'])->withInput();
-                
-            //     }
-            // }
+           
             if($request->previous_pending){
                 $reprevious_pending=$request->previous_pending;
             }else{
@@ -1064,7 +1056,7 @@ class QrEntryController extends Controller
                 'status' => $detailStatus,
             ]);
 
-             $tran = [
+            $tran = [
                 'planPrice' => $planPrice,
                 'paid_amount' => $paid_amount,
                 'locker' => $locker,
@@ -1081,38 +1073,14 @@ class QrEntryController extends Controller
                 'library_id'=>getLibraryId(),
                 'branchId'    =>getCurrentBranch(),
                 'transaction_date'=>$bookingurl->created_at->format('Y-m-d')
-        ];
+            ];
        
 
-        $result = $service->learnerTransactionAddUpdate($tran);
+            $result = $service->learnerTransactionAddUpdate($tran);
 
 
 
-            // if ($bookingurl->created_at) {
-            //     $transaction_date = $bookingurl->created_at;
-            // } else {
-            //     $transaction_date =null;
-            // }
-                   
-
-            //  $learnerTransaction = LearnerTransaction::create([
-            //     'learner_id'        => $customer->id,
-            //     'library_id'        => getLibraryId(),
-            //     'branch_id'         => getCurrentBranch(),
-            //     'learner_detail_id' => $learner_detail->id,
-            //     'total_amount'      => $total_amt,
-            //     'paid_amount'       => $paid_amount,
-            //     'pending_amount'    => $pending_amount,
-            //     'locker_amount'     => $locker ?? 0,
-            //     'discount_amount'   => $discount ?? 0,
-            //     'paid_date'         => $transaction_date,
-            //     'is_paid'           => $is_paid ?? 0,
-            //     'due_date'          => $request->due_date ?? null,
-            //     'refund'            => $pending_refund,
-            //     'transaction_id'    => transaction_id(),
-                
-            // ]);
-           
+       
             //learner Activity
             $data=[];
             $data['learner_id']=$customer->id;
@@ -1131,16 +1099,16 @@ class QrEntryController extends Controller
             ->where('id', '!=', $learner_detail->id) // important
             ->orderByDesc('plan_end_date')
             ->first();
-                if($detailStatus==1 && $bookingurl->type=='qr_renew' && $previousLearnerDetail){
-                    $previousLearnerDetail->status=0;
-                    $previousLearnerDetail->save();
-                }
+            if($detailStatus==1 && $bookingurl->type=='qr_renew' && $previousLearnerDetail){
+                $previousLearnerDetail->status=0;
+                $previousLearnerDetail->save();
+            }
 
-                if ($status == 1) {
-                   
-                    $learnerController->dataUpdate();
-                }
-                $bookingurl->delete();
+            if ($status == 1) {
+                
+                $learnerController->dataUpdate();
+            }
+            $bookingurl->delete();
 
             DB::commit();
 
