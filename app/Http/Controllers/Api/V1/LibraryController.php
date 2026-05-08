@@ -117,88 +117,6 @@ class LibraryController extends Controller
       ]);
    }
 
-   /*
-    |--------------------------------------------------------------------------
-    | Current Branch API
-    |--------------------------------------------------------------------------
-    */
-
-//   public function getCurrentBranchDetail()
-//    {
-//       $branchId  = getCurrentBranch();
-//       $libraryId = authLibraryId();
-
-//       // Branch details
-//       $branch = Branch::select(
-//          'name as branch_name',
-//          'founder_day as founded_date',
-//          'email',
-//          'mobile as contact_number',
-//          'upi_id',
-//          'extend_days',
-//          'locker_amount'
-//       )->where('id', $branchId)->first();
-
-//       // Branch master
-//       $branchMaster = Hour::where('branch_id', $branchId)
-//          ->select(
-//                'seats as total_seats',
-//                'hour as operating_hours'
-//          )->first();
-
-//       // Plans
-//       $plans = Plan::where('library_id', $libraryId)
-//          ->get();
-
-//       // Floors
-//       $floors = Floor::where('branch_id', $branchId)
-//          ->select(
-//                'floor_no',
-//                'name as floor_name',
-//                'from_seat',
-//                'to_seat',
-//                'total_seats'
-//          )->get();
-
-//       // Shifts
-//       $shifts = collect();
-
-//       if ($branchId) {
-//             // PlanPrice::leftJoin('plan_prices', 'plan_prices.plan_type_id', '=', 'plan_types.id')
-//          $shifts = PlanType::withoutGlobalScopes()
-//                ->where('branch_id', $branchId)
-//                ->select(
-//                   'name',
-//                   'day_type_id as type',
-//                   'name as custom_name',
-//                   'start_time',
-//                   'end_time',
-//                   'slot_hours as duration_hours',
-//                )
-//                ->get();
-//       }
-
-//       return response()->json([
-//          'status'  => true,
-//          'message' => 'Branch data fetched successfully',
-//          'data'    => [
-//                'branch_details' => $branch ?? [],
-
-//                'branch_master' => [
-//                   'total_seats'      => $branchMaster->total_seats ?? 0,
-//                   'operating_hours'  => $branchMaster->operating_hours ?? 0,
-//                   'extend_days'      => $branch->extend_days ?? 0,
-//                   'locker_amount'    => $branch->locker_amount ?? 0,
-//                ],
-
-//                'plan'   => $plans,
-//                'floors' => $floors,
-//                'shifts' => $shifts
-//          ]
-//       ]);
-//    }
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -215,16 +133,6 @@ class LibraryController extends Controller
 
         $libraryId = authLibraryId();
 
-      //   $library = auth('library_api')->user();
-
-      //   $branches = Branch::where('library_id', $library->id)
-      //    ->where('status', 1)
-      //    ->select('id', 'name')
-      //    ->get();
-
-        // 🔐 Security: ensure branch belongs to library
-      //   $branch =  $branches->pluck('id')->contains($library->current_branch)? $library->current_branch
-      //          : $branches->first()->id;
 
         $type = $validated['type'] ?? 'daily';
 
@@ -232,7 +140,6 @@ class LibraryController extends Controller
 
         return response()->json([
             'status' => true,
-            'code' => 200,
             'data' => $data
         ]);
     }
@@ -325,7 +232,7 @@ class LibraryController extends Controller
         }
     }
 
-   public function expenseList(Request $request)
+    public function expenseList(Request $request)
     {
         $libraryId = authLibraryId();
         $branchId  = getCurrentBranch();
@@ -356,187 +263,187 @@ class LibraryController extends Controller
 
     
 
-public function expenseSave(Request $request)
-{
-    
-    $validator =  $request->validate([
-        'id'         => 'nullable|exists:monthly_expense,id',
-        'expense_id' => 'required|integer|exists:expenses,id',
-        'amount'     => 'required|numeric|min:1',
-        'date'       => 'required|date',
-    ]);
+    public function expenseSave(Request $request)
+    {
+        
+        $validator =  $request->validate([
+            'id'         => 'nullable|exists:monthly_expense,id',
+            'expense_id' => 'required|integer|exists:expenses,id',
+            'amount'     => 'required|numeric|min:1',
+            'date'       => 'required|date',
+        ]);
 
-    
+        
 
-    try {
-        $libraryId = authLibraryId();
-        $branchId  = getCurrentBranch();
+        try {
+            $libraryId = authLibraryId();
+            $branchId  = getCurrentBranch();
 
-        $month = date('m', strtotime($request->date));
-        $year  = date('Y', strtotime($request->date));
+            $month = date('m', strtotime($request->date));
+            $year  = date('Y', strtotime($request->date));
 
-        if ($request->id) {
-              // 🔴 SECURITY CHECK
-            $exists = DB::table('monthly_expense')
-                ->where('id', $request->id)
-                ->where('library_id', $libraryId)
-                ->exists();
+            if ($request->id) {
+                // 🔴 SECURITY CHECK
+                $exists = DB::table('monthly_expense')
+                    ->where('id', $request->id)
+                    ->where('library_id', $libraryId)
+                    ->exists();
 
-            if (!$exists) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Expense does not belong to this library'
-                ], );
-            }
-            // 🔵 UPDATE
-            DB::table('monthly_expense')
-                ->where('id', $request->id)
-                ->update([
+                if (!$exists) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Expense does not belong to this library'
+                    ], );
+                }
+                // 🔵 UPDATE
+                DB::table('monthly_expense')
+                    ->where('id', $request->id)
+                    ->update([
+                        'expense_id' => $request->expense_id,
+                        'amount'     => $request->amount,
+                        'month'      => $month,
+                        'year'       => $year,
+                        'updated_at' => now(),
+                    ]);
+
+                $message = 'Expense updated';
+
+            } else {
+                // 🟢 INSERT
+                $id = DB::table('monthly_expense')->insertGetId([
+                    'library_id' => $libraryId,
+                    'branch_id'  => $branchId,
                     'expense_id' => $request->expense_id,
                     'amount'     => $request->amount,
                     'month'      => $month,
                     'year'       => $year,
+                    'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-            $message = 'Expense updated';
+                $message = 'Expense added';
+            }
 
-        } else {
-            // 🟢 INSERT
-            $id = DB::table('monthly_expense')->insertGetId([
-                'library_id' => $libraryId,
-                'branch_id'  => $branchId,
-                'expense_id' => $request->expense_id,
-                'amount'     => $request->amount,
-                'month'      => $month,
-                'year'       => $year,
-                'created_at' => now(),
-                'updated_at' => now(),
+            return response()->json([
+                'status'  => true,
+                'message' => $message
             ]);
 
-            $message = 'Expense added';
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong'
+            ], 500);
         }
-
-        return response()->json([
-            'status'  => true,
-            'message' => $message
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Something went wrong'
-        ], 500);
-    }
-}
-
-public function templateList(Request $request)
-{
-    $libraryId = authLibraryId();
-    $type      = $request->type; // text | waba | all
-
-    // ✅ Step 1: Get global templates + operation name
-    $globalQuery = DB::table('notification_templates as nt')
-        ->leftJoin('operations as o', 'o.id', '=', 'nt.operation_id')
-        ->where('nt.is_active', 1)
-        ->select(
-            'nt.operation_id',
-            'nt.type',
-            'nt.template_message',
-            'nt.template_code',
-            'o.name as operation_name' // 👈 ADD THIS
-        );
-
-    if ($type && $type != 'all') {
-        $globalQuery->where('nt.type', $type);
     }
 
-    $globalTemplates = $globalQuery->get();
-
-    // ✅ Step 2: Get custom templates
-    $customTemplates = DB::table('custom_notification_templates')
-        ->where('library_id', $libraryId)
-        ->get()
-        ->keyBy(function ($item) {
-            return $item->operation_id . '_' . $item->type;
-        });
-
-    // ✅ Step 3: Merge
-    $final = [];
-
-    foreach ($globalTemplates as $template) {
-
-        $key = $template->operation_id . '_' . $template->type;
-
-        $message = isset($customTemplates[$key])
-            ? $customTemplates[$key]->template_message
-            : $template->template_message;
-
-        $final[] = [
-            'operation_id'   => $template->operation_id,
-            'operation_name' => $template->operation_name, // 👈 RETURN THIS
-            'type'           => $template->type,
-            'template_code'  => $template->template_code,
-            'message'        => $message,
-        ];
-    }
-
-    return response()->json([
-        'status' => true,
-        'data'   => $final
-    ]);
-}
-
-public function templateUpdate(Request $request)
-{
-    
-    $request->validate([
-        'templates' => 'required|array|min:1',
-        'templates.*.operation_id' => 'required|integer|exists:operations,id',
-        'templates.*.type' => 'required|in:text,waba',
-        'templates.*.template_message' => 'required|string',
-    ]);
-
-    try {
+    public function templateList(Request $request)
+    {
         $libraryId = authLibraryId();
+        $type      = $request->type; // text | waba | all
 
-        DB::beginTransaction();
-
-        foreach ($request->templates as $item) {
-
-            DB::table('custom_notification_templates')->updateOrInsert(
-                [
-                    'library_id'   => $libraryId,
-                    'operation_id' => $item['operation_id'],
-                    'type'         => $item['type'],
-                ],
-                [
-                    'template_message' => $item['template_message'],
-                    'is_active'        => 1,
-                    'is_custom'        => 1,
-                    'updated_at'       => now(),
-                    'created_at'       => now(),
-                ]
+        // ✅ Step 1: Get global templates + operation name
+        $globalQuery = DB::table('notification_templates as nt')
+            ->leftJoin('operations as o', 'o.id', '=', 'nt.operation_id')
+            ->where('nt.is_active', 1)
+            ->select(
+                'nt.operation_id',
+                'nt.type',
+                'nt.template_message',
+                'nt.template_code',
+                'o.name as operation_name' // 👈 ADD THIS
             );
+
+        if ($type && $type != 'all') {
+            $globalQuery->where('nt.type', $type);
         }
 
-        DB::commit();
+        $globalTemplates = $globalQuery->get();
+
+        // ✅ Step 2: Get custom templates
+        $customTemplates = DB::table('custom_notification_templates')
+            ->where('library_id', $libraryId)
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->operation_id . '_' . $item->type;
+            });
+
+        // ✅ Step 3: Merge
+        $final = [];
+
+        foreach ($globalTemplates as $template) {
+
+            $key = $template->operation_id . '_' . $template->type;
+
+            $message = isset($customTemplates[$key])
+                ? $customTemplates[$key]->template_message
+                : $template->template_message;
+
+            $final[] = [
+                'operation_id'   => $template->operation_id,
+                'operation_name' => $template->operation_name, // 👈 RETURN THIS
+                'type'           => $template->type,
+                'template_code'  => $template->template_code,
+                'message'        => $message,
+            ];
+        }
 
         return response()->json([
-            'status'  => true,
-            'message' => 'Templates updated successfully'
+            'status' => true,
+            'data'   => $final
+        ]);
+    }
+
+    public function templateUpdate(Request $request)
+    {
+        
+        $request->validate([
+            'templates' => 'required|array|min:1',
+            'templates.*.operation_id' => 'required|integer|exists:operations,id',
+            'templates.*.type' => 'required|in:text,waba',
+            'templates.*.template_message' => 'required|string',
         ]);
 
-    } catch (\Exception $e) {
+        try {
+            $libraryId = authLibraryId();
 
-        DB::rollBack();
+            DB::beginTransaction();
 
-        \Log::error('Template Bulk Update Error: ' . $e->getMessage());
+            foreach ($request->templates as $item) {
 
-        return response()->json([
-            'status' => false,
-            'message' => 'Something went wrong'
-        ], 500);
-    }
-}      
+                DB::table('custom_notification_templates')->updateOrInsert(
+                    [
+                        'library_id'   => $libraryId,
+                        'operation_id' => $item['operation_id'],
+                        'type'         => $item['type'],
+                    ],
+                    [
+                        'template_message' => $item['template_message'],
+                        'is_active'        => 1,
+                        'is_custom'        => 1,
+                        'updated_at'       => now(),
+                        'created_at'       => now(),
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Templates updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            \Log::error('Template Bulk Update Error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong'
+            ], 500);
+        }
+    }      
 }
