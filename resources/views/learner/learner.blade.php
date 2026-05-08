@@ -523,6 +523,8 @@ $learner_id=$value->id;
                         <span class="extended">Closed</span>
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
+                        @elseif(has_non_expired($value->id))
+                         <span class="success">Non-Expired</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif

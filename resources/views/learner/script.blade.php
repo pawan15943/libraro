@@ -3051,11 +3051,6 @@
 </script>
 
 
-
-
-
-
-
 <script>
 // for Waba send all function
 function loadLearnerMobiles(learnerId,mobileId) {

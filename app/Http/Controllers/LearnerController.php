@@ -283,10 +283,11 @@ class LearnerController extends Controller
     public function learnerStore(StoreLearnerRequest $request, LearnerService $service)
     {
 
+
         try {
 
             $processData = $request->prepareData();
-          
+         
             $result = $service->processLearnerStore($processData);
 
             if ($request->expectsJson()) {

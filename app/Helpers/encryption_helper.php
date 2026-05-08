@@ -768,6 +768,8 @@ if (!function_exists('getUserStatusWithSpan')) {
 
         if (Learner::where('id', $learner_id)->where('frozen_status', 1)->exists()) {
             return '<span class="text-success">Frozen</span>';
+        }elseif (Learner::where('id', $learner_id)->where('no_expiry', 1)->where('status',1)->exists()) {
+            return '<span class="text-success">Non-Expired</span>';
         }elseif(has_vip($learner_id)){
             return '<span class="text-success">VIP</span>';
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
@@ -880,7 +882,7 @@ if (!function_exists('has_reserved')) {
 if (!function_exists('has_non_expired')) {
     function has_non_expired($learner_id)
     {
-               return Learner::where('id',$learner_id)->where('no_expiry',1)->exists();
+               return Learner::where('id',$learner_id)->where('no_expiry',1)->where('status',1)->exists();
     }
 }
 
