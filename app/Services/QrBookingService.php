@@ -11,11 +11,16 @@ use App\Http\Controllers\LearnerController;
 use Carbon\Carbon;
 use DB;
 use App\Services\LearnerService;
+use App\Services\LearnerOperationService;
 
 class QrBookingService
 {
    
+    protected $learnerOperationService;
 
+    public function __construct(LearnerOperationService $learnerOperationService) {
+        $this->learnerOperationService = $learnerOperationService;
+    }
     public function verifyBooking($request, $service)
     {
         DB::beginTransaction();
@@ -233,20 +238,42 @@ class QrBookingService
             }
             
             
-            if (($paid_amount > ($total_amt +$reprevious_pending)) || ($paid_amount == 0)) {
-                return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
-               
+            if (($paid_amount > ($total_amt + $reprevious_pending)) || ($paid_amount == 0)) {
+
+                throw new \Exception('Paid amount is not valid');
             }
+
             if (($pending_amount > 0) && (!$request->due_date)) {
-                return redirect()->back()->with('error', 'Due Date is required')->withInput();
-              
+
+                throw new \Exception('Due Date is required');
             }
 
             /*
             |--------------------------------------------------------------------------
             | CREATE / UPDATE LEARNER
             |--------------------------------------------------------------------------
+
             */
+            $relPathidproof = null;
+
+            $relPath_profile = null;
+             if (! empty($request->profile_picture)) {
+                $relPath_profile = $this->learnerOperationService->moveTempFileToPublic(
+                    $request->profile_picture,
+                    'profile_picture',
+                    'uploade/profile_picture'
+                );
+               
+            }
+
+            if (! empty($request->id_proof_file)) {
+                $relPathidproof = $this->learnerOperationService->moveTempFileToPublic(
+                    $request->id_proof_file,
+                    'id_proof_file',
+                    'uploade/id_proof_file'
+                );
+                
+            }
 
             if ($learnerId && $customerfind) {
 
@@ -267,7 +294,7 @@ class QrBookingService
                     'email' => $request->input('email') ? encryptData($request->input('email')) : null,
                     'dob' => $request->input('dob'),
                     'id_proof_name' => $request->input('id_proof_name'),
-                    'id_proof_file' => $id_proof_file,
+                    'id_proof_file' => $relPathidproof,
                     'id_proof_number'=>$request->input('id_proof_number') ?? $booking->id_proof_number,
                     'hours' => $hours,
                     'status' => $status,
@@ -278,7 +305,7 @@ class QrBookingService
                     'father_name' => $request->input('father_name'),
                     'alternate_mobile' => $request->input('alternate_mobile'),
                     'remark' => $request->input('remark'),
-                    'profile_picture'=>$profile_picture,
+                    'profile_picture'=>$relPath_profile,
                     'address' => $request->input('address'),
                     'locker_no'=>$locker_no ?? null ,
                     'sended_message_type'=>$request->input('sended_message_type') ?? 'no'
@@ -337,7 +364,6 @@ class QrBookingService
                 'due_date' => $request->due_date ?? null,
                 'particular' => $data['particular'] ?? 'System',
                 'library_id' => getLibraryId(),
-
                 'branchId' => getCurrentBranch(),
                 'transaction_date'=>$booking->created_at->format('Y-m-d')
             ];
@@ -364,7 +390,7 @@ class QrBookingService
             $data['dr_cr'] = 'Cr';
 
             $data['payment_type'] =$booking->type == 'qr_renew' ? 'RENEW' : 'SEAT ASSIGNMENT';
-
+            $data['branchId'] = getCurrentBranch();
            
             $service->learnerTransactionActivity($data);
 

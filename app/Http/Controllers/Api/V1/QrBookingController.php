@@ -121,9 +121,8 @@ class QrBookingController extends Controller
             $result = $qrService->verifyBooking($request, $service);
 
             return response()->json([
-                'status' => 'success',
+                'status' => 'true',
                 'message' => $result['message'],
-                'data' => $result
             ]);
 
         } catch (\Throwable $e) {

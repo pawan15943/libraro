@@ -846,7 +846,7 @@ class LearnerOperationService
      *
      * @param  \Illuminate\Http\UploadedFile|string  $file
      */
-    private function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade'): ?string
+    public function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade'): ?string
     {
         if ($file instanceof \Illuminate\Http\UploadedFile) {
             $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
