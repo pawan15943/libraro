@@ -140,6 +140,8 @@ class LearnerOperationService
 
             $this->updateLearner($dto,$detail,$status,$seat);
 
+            $this->logReactiveOperation($dto,$detail,$lastDetail,$seat);
+
             /*send reminder */
             $this->sendReminder($dto->operation,$dto->learner_id);
 
@@ -837,6 +839,26 @@ class LearnerOperationService
                 \Log::info('no text seond part RENEW');
             }
         }
+    }
+
+    private function logReactiveOperation($dto, $detail, $lastDetail, $seat): void
+    {
+        if ($dto->operation !== 'REACTIVE') {
+            return;
+        }
+
+        DB::table('learner_operations_log')->insert([
+            'learner_id' => $dto->learner_id,
+            'learner_detail_id' => $detail->id,
+            'library_id' => $dto->library_id,
+            'field_updated' => 'seat_no',
+            'old_value' => $lastDetail->seat_no,
+            'new_value' => $seat,
+            'updated_by' => $dto->library_id,
+            'branch_id' => $dto->branch_id,
+            'operation' => 'reactive',
+            'created_at' => now(),
+        ]);
     }
 
     /**

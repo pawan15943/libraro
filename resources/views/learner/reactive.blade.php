@@ -151,6 +151,7 @@ if($customer->locker_no){
                     <div class="row g-4">
 
                         <input id="user_id" type="hidden" name="user_id" value="{{$customer->id }}">
+                        <input type="hidden" name="learner_id" value="{{$customer->id }}">
                         <input id="learner_detail" type="hidden" name="learner_detail" value="{{$customer->learner_detail_id }}">
                         <input type="hidden" name="payment_type" value="REACTIVE" id="payment_type_operation">
                         <div class="col-lg-4">
