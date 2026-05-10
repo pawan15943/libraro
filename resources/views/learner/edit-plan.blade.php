@@ -245,6 +245,10 @@ if($customer->locker_no){
                             @enderror
                         </div>
 
+                        <div class="col-lg-3 mt-4">
+                            <button type="submit" class="btn btn-primary btn-block button">Update Plan</button>
+                        </div>
+
                     </div>
                     
                 </div>

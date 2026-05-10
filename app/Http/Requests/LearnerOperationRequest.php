@@ -149,7 +149,14 @@ class LearnerOperationRequest extends FormRequest
                 ],
             'dob'=>'nullable|date',
 
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|email',
+            'mobile' => 'nullable|digits:10',
+            'father_name' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'remark' => 'nullable|string|max:1000',
             'alternate_mobile' => 'nullable|digits:10',
+            'exam_id' => 'nullable|exists:exams,id',
             // 1=Aadhar, 2=Driving License, 3=Other, 4=Pan Card, 5=Voter Id (same as learner forms)
             'id_proof_name' => 'nullable|integer|in:1,2,3,4,5',
             'id_proof_number' => 'nullable|string|max:255',

@@ -33,7 +33,7 @@ if($customer->locker_no){
             <input name="plan_id" type="hidden" value="{{$customer->plan_id}}" id="plan_id10">
             <input name="plan_type_id" type="hidden" value="{{$customer->plan_type_id}}" id="plan_type_id10">
             {{-- <input name="plan_price_id" type="hidden" value="{{$customer->plan_price_id}}" id="plan_price10"> --}}
-            <input type="hidden" name="payment_type" value="EDIT" id="payment_type_operation">
+            <input type="hidden" name="payment_type" value="EDITLEARNER" id="payment_type_operation">
             {{-- <input name="plan_start_date" type="hidden" value="{{$customer->plan_start_date}}"> --}}
         
             <div class="library-operations mt-4">
@@ -87,12 +87,12 @@ if($customer->locker_no){
                         @if(!in_array('8', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="profile_picture">Upload Profile Photo</label>
-                                <input type="file" class="form-control image-cropper @error('profile_picture') is-invalid @enderror" name="profile_picture"   value="{{ old('profile_picture', $customer->profile_picture) }}"
+                                <input type="file" class="form-control image-cropper @error('profile_picture_image') is-invalid @enderror" name="profile_picture_image"   value="{{ old('profile_picture', $customer->profile_picture) }}"
                                     autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
                                 <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
 
 
-                                @error('profile_picture')
+                                @error('profile_picture_image')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
@@ -183,9 +183,9 @@ if($customer->locker_no){
 
                         <div class="col-lg-4">
                             <label for="">Upload Scan Copy of Proof (Optional)</label>
-                            <input type="file" class="form-control id_proof_file image-cropper @error('id_proof_file') is-invalid @enderror" name="id_proof_file" autocomplete="off">
+                            <input type="file" class="form-control id_proof_file image-cropper @error('id_proof') is-invalid @enderror" name="id_proof" autocomplete="off">
                             <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
-                            @error('id_proof_file')
+                            @error('id_proof')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>

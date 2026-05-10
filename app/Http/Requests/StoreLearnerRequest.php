@@ -283,7 +283,7 @@ class StoreLearnerRequest extends FormRequest
 
             $file->move($destinationFolder, $fileName);
 
-            return $folder . '/' . $fileName;
+            return 'public/'.$folder . '/' . $fileName;
         }
 
         /* ========= CASE 2: STRING (APP URL) ========= */

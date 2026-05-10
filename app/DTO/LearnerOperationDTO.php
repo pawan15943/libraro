@@ -55,6 +55,8 @@ class LearnerOperationDTO
     /** Document type id: 1=Aadhar, 2=Driving License, 3=Other, 4=Pan, 5=Voter Id */
     public ?int $id_proof_name = null,
     public ?string $id_proof_number = null,
+    public ?int $exam_id = null,
+    public bool $exam_id_present = false,
 
     /** Uploaded file (e.g. profile_picture_image) or temp/storage URL string (profile_picture) */
     public mixed $profile_picture = null,
@@ -130,6 +132,10 @@ class LearnerOperationDTO
                 ? (int) $request->input('id_proof_name')
                 : null,
             id_proof_number: $request->id_proof_number ?? null,
+            exam_id: $request->input('exam_id') !== null && $request->input('exam_id') !== ''
+                ? (int) $request->input('exam_id')
+                : null,
+            exam_id_present: $request->exists('exam_id'),
 
             profile_picture: $request->hasFile('profile_picture_image')
                 ? $request->file('profile_picture_image')

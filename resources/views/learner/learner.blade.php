@@ -480,6 +480,7 @@ $learner_id=$value->id;
                     @if(!in_array('17', toggleHideField()) && $value->frozen_status != 1)
                     
                     <li><a href="{{route('learners.edit',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
+                    <li><a href="{{route('learners.edit.plan',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Plan Details"><i class="fa-solid fa-calendar-days"></i></a></li>
                     @endif
                     @endcan
 

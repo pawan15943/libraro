@@ -308,6 +308,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/renew-delete/transactions/{transaction}/delete', [RenewDeleteController::class, 'destroy'])->name('create.renew.delete.destroy');
     Route::get('/history/list', [LearnerController::class, 'learnerHistory'])->name('learnerHistory');
     Route::get('/booking-info/{id?}', [LearnerController::class, 'showLearner'])->name('learners.show');
+    Route::get('/edit-plan/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit.plan');
     Route::get('/edit/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit');
     Route::put('/upgrade/update/{id?}', [LearnerController::class, 'userUpdate'])->name('learners.update.upgrade');
     Route::post('/change/plan/update/{id?}', [LearnerController::class, 'changePlanUpdate'])->name('learners.update.changePlan');

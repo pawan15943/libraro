@@ -332,13 +332,17 @@ class LearnerOperationService
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
 
         $today = Carbon::today();
-
         if($customer->status==0 && ($start_date <= $today)){
+           
             $status = 1;
+        }elseif($start_date > $today){
+            $status = 0;
         }else{
+            
             $status = $customer->status;
         }
-       
+
+     
        
         if(Carbon::parse($lastDetail->plan_end_date) <= $today && $endDate > $today && $is_paid == 1){
            
@@ -572,8 +576,15 @@ class LearnerOperationService
             $learner->sended_message_type = $dto->sended_message_type;
         }
 
-
         $learner->save();
+
+        if ($dto->exam_id_present ?? false) {
+            LearnerDetail::withTrashed()
+                ->where('learner_id', $dto->learner_id)
+                ->latest('id')
+                ->first()
+                ?->update(['exam_id' => $dto->exam_id]);
+        }
     }
 
 
