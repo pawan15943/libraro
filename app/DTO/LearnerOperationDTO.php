@@ -87,7 +87,7 @@ class LearnerOperationDTO
     {
         $nullableInt = fn ($value) => $value !== null && $value !== '' ? (int) $value : null;
         $nullableFloat = fn ($value) => $value !== null && $value !== '' ? (float) $value : null;
-       
+      
         return new self(
 
             learner_id:$request->learner_id,

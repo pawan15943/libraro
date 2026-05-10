@@ -2047,6 +2047,7 @@
        
         event.preventDefault();
         var formData = new FormData(this);
+        var learner_id = $('#update_user_id').val();
         var user_id = $('#update_user_id').val();
         var plan_id = $('#plan_id2').val();
         var plan_type_id = $('#plan_type_id_renew').val();
@@ -2097,7 +2098,7 @@
             dataType: 'json',
             success: function(response) {
                
-                if (response.success) {
+                if (response.status) {
                     logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
                     
                     Swal.fire({

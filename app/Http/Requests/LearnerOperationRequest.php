@@ -51,7 +51,7 @@ class LearnerOperationRequest extends FormRequest
 
     public function rules()
     {
-        
+         
         $isEditLearner = $this->payment_type === 'EDITLEARNER';
         $isEditOperation = $this->payment_type === 'EDIT';
         return [

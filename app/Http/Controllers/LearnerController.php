@@ -334,7 +334,7 @@ class LearnerController extends Controller
             return response()->json($result);
         }
 
-        if ($result['success']) {
+        if ($result['status']) {
             return redirect()->route('learners')
                 ->with('success', $result['message']);
         }
@@ -402,7 +402,7 @@ class LearnerController extends Controller
         
         
         $dto = LearnerOperationDTO::fromRequest($request);
-       
+     
        
         $result = $service->process($dto);
 
@@ -410,7 +410,7 @@ class LearnerController extends Controller
             return response()->json($result);
         }
 
-        if ($result['success']) {
+        if ($result['status']) {
             return redirect()->route('learners')
                 ->with('success', $result['message']);
         }
@@ -460,6 +460,7 @@ class LearnerController extends Controller
   
         
         $dto = LearnerOperationDTO::fromRequest($request);
+        dd($dto);
        
         $result = $service->process($dto);
 

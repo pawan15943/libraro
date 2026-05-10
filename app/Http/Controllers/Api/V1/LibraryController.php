@@ -127,7 +127,7 @@ class LibraryController extends Controller
     public function dashboard(Request $request, DashboardService $service)
     {
         $validated = $request->validate([
-            'branch_id' => 'nullable|exists:branches,id',
+            // 'branch_id' => 'nullable|exists:branches,id',
             'type'      => 'nullable|in:daily,monthly'
         ]);
 
@@ -445,5 +445,75 @@ class LibraryController extends Controller
                 'message' => 'Something went wrong'
             ], 500);
         }
-    }      
+    } 
+    
+    public function todayFinancial(Request $request,DashboardService $service) {
+
+        $data = $service->todayFinancialData($request);
+
+        return response()->json([
+
+            'status' => true,
+
+            'summary' => [
+
+                'today_booking_income' =>
+                    $data['today_booking_amt'],
+
+                'today_other_income' =>
+                    $data['today_other_amt'],
+
+                'today_expense' =>
+                    $data['today_expense'],
+
+                'today_refund' =>
+                    $data['today_refund'],
+
+                'today_pending' =>
+                    $data['today_pending'],
+
+                'today_total_revenue' =>
+                    $data['total_revenue'],
+            ],
+
+            'transactions' => $data['collection']
+        ]);
+    }
+
+    public function monthlyFinancial(Request $request,DashboardService $service) {
+
+    $data = $service->monthlyFinancialData($request);
+
+    return response()->json([
+
+        'status' => true,
+
+        'summary' => [
+
+            'monthly_booking_income' =>
+                $data['monthly_income'],
+
+            'monthly_other_income' =>
+                $data['other_total_income'],
+
+            'monthly_expense' =>
+                $data['monthly_expense'],
+
+            'monthly_refund' =>
+                $data['monthly_refund'],
+
+            'monthly_pending' =>
+                $data['monthly_pending'],
+
+            'monthly_total_revenue' =>
+                $data['monthlyBalance'],
+        ],
+
+        // ✅ monthly cards list UI
+        'list' => $data['monthly_balance'],
+
+        // ✅ if filter clicked
+        'transactions' => $data['collection']
+    ]);
+}
 }
