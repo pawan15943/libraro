@@ -168,6 +168,7 @@
                                         @endcan
 
                                         <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
+                                        <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Settlement" class="settlement-learner"><i class="fa-solid fa-scale-balanced"></i></a></li>
                                         <!-- View Seat Info -->
                                         @can('has-permission', 'View Seat')
                                         <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>
@@ -185,11 +186,6 @@
                                         @can('has-permission', 'Delete Seat')
                                         <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                                         @endcan
-                                        @can('has-permission', 'Delete Seat')
-                                        <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-payblerefund="{{ paybleRefund($value->learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="New Soft Delete Workflow" class="delete-customer-v2"><i class="fas fa-trash-can text-danger"></i></a></li>
-                                        @endcan
-
-                                        
                                         {{-- @can('has-permission', 'Delete Seat')
                                         @if($today->lessThanOrEqualTo($threeDaysAfterStart))
                                         <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>

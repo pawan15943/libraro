@@ -3254,6 +3254,68 @@ class LearnerController extends Controller
         return response()->json($data);
     }
 
+    public function settlement(Request $request, $learnerId, LearnerService $service)
+    {
+        if ($request->has('adjust')) {
+            $adjust = filter_var($request->input('adjust'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($adjust !== null) {
+                $request->merge([
+                    'adjust' => $adjust,
+                ]);
+            }
+        }
+
+        $request->merge([
+            'learner_id' => $request->input('learner_id', $learnerId),
+        ]);
+
+        $validator = Validator::make($request->all(), [
+            'learner_id' => 'required|integer|exists:learners,id',
+            'pending_amount' => 'nullable|numeric|min:0',
+            'refund_amount' => 'nullable|numeric|min:0',
+            'payment_mode' => 'required|in:1,2,3',
+            'adjust' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'error' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        if (($validated['pending_amount'] ?? 0) <= 0 && ($validated['refund_amount'] ?? 0) <= 0 && ! $validated['adjust']) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => 'Pending amount or refund amount is required when adjust is false.',
+                'error' => 'Pending amount or refund amount is required when adjust is false.',
+            ], 422);
+        }
+
+        try {
+            $result = $service->settlement((object) $validated);
+
+            return response()->json([
+                'status' => true,
+                'success' => true,
+                'message' => $result['message'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     /**
      * JSON for learner list modal: transaction summary rows + ledger activity.
      */

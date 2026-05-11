@@ -1738,6 +1738,7 @@ class LearnerService
     private function payRefundAmount(int $learnerId, float $amount): void
     {
         $remaining = $amount;
+      
 
         $futureRefunds = LearnerTransaction::where('learner_id', $learnerId)
             ->where('refund', '>', 0)

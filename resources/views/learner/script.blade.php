@@ -1,43 +1,47 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // New soft delete workflow (V2) - 2 popup steps only.
-    $(document).on('click', '.delete-customer-v2', async function (e) {
+    $(document).on('click', '.settlement-learner', async function (e) {
         e.preventDefault();
+        e.stopImmediatePropagation();
 
         const learnerId = $(this).data('id');
         const fallbackDetailId = parseInt($(this).data('learnerdetail'), 10) || null;
-        const postUrl = '{{ route("learners.soft.destroy.v2", ":id") }}'.replace(':id', learnerId);
-        const detailsUrl = '{{ route("learners.soft.destroy.v2.details", ":id") }}'.replace(':id', learnerId);
+        const postUrl = '{{ route("learners.settlement", ":id") }}'.replace(':id', learnerId);
+        const detailsUrl = '{{ route("learners.settlement.details", ":id") }}'.replace(':id', learnerId);
+        const toNumber = (value) => {
+            const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
 
         let detailsResponse = null;
         try {
             detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
         } catch (xhr) {
             Swal.fire('Error', xhr?.responseJSON?.error || 'Unable to load learner details.', 'error');
-            return;
+            return false;
         }
 
         const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
         if (!detailRows.length) {
             Swal.fire('Info', 'No active details found for this learner.', 'info');
-            return;
+            return false;
         }
 
         const detailsHtml = detailRows.map((row) => {
-            const total = parseFloat(row.paid_amount || 0);
-            const paid = parseFloat(row.paid_amount || 0);
-            const pending = parseFloat(row.pending_amount || 0);
-            const extra = parseFloat(row.extra_amount || 0);
+            const total = toNumber(row.total_amount || row.paid_amount);
+            const paid = toNumber(row.paid_amount);
+            const pending = toNumber(row.pending_amount);
+            const extra = toNumber(row.extra_amount);
             const checked = detailRows.length > 1
                 ? 'checked'
                 : (fallbackDetailId && Number(row.id) === Number(fallbackDetailId) ? 'checked' : '');
+
             return `
                 <tr>
                     <td><input type="checkbox" class="v2DetailSelector" value="${row.id}" ${checked}></td>
                     <td>${row.plan_name || ''}</td>
-                    <td>${row.plan_start_date || ''}</td>
-                    <td>${row.plan_end_date || ''}</td>
+                    <td>${row.plan_start_date || ''} to ${row.plan_end_date || ''}</td>
                     <td>${total.toFixed(0)}</td>
                     <td>${paid.toFixed(0)}</td>
                     <td class="text-danger">${pending.toFixed(0)}</td>
@@ -46,164 +50,185 @@
             `;
         }).join('');
 
-        const step1 = await Swal.fire({
-            title: 'Step 1: Financial Summary & Action Selection',
-            width: 700,
+        const result = await Swal.fire({
+            title: 'Settlement',
+            width: 760,
             html: `
-                <div class="text-start mb-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="v2FullLearnerDelete">
-                        <label class="form-check-label fw-semibold" for="v2FullLearnerDelete">Full learner delete</label>
-                    </div>
-                </div>
-                <div class="table-responsive text-start">
-                    <table class="table table-bordered table-sm">
+                <style>
+                    .settlement-popup { font-size:13px; }
+                    .settlement-popup .swal2-html-container { margin: 0.75rem 1.25rem 0; }
+                    .settlement-row-table { max-height: 190px; overflow:auto; border:1px solid #d8ddff; border-radius:12px; }
+                    .settlement-row-table table { margin:0; }
+                    .settlement-summary-box { min-height:48px; border:1px solid #dcdcdc; border-radius:7px; padding:8px 10px; background:#fff; }
+                    .settlement-summary-box strong { display:block; font-size:18px; line-height:1.1; margin-top:3px; }
+                    .settlement-summary-box.pending { color:#d80000; border-color:#ff4d4d; background:#fff2f2; }
+                    .settlement-summary-box.extra { color:#4a7f00; border-color:#87ad45; background:#f5ffe9; }
+                    .settlement-summary-box.net { color:#001578; border-color:#cbd3ff; background:#eef1ff; }
+                    .settlement-action-panel { border-radius:12px; padding:14px; }
+                    .settlement-action-panel.pending { background:#fff2f2; border:1px solid #b50000; }
+                    .settlement-action-panel.extra { background:#efffe9; border:1px solid #5f8f1f; }
+                    .settlement-action-panel .form-check-input:checked { background-color:#001578; border-color:#001578; }
+                    .settlement-action-panel .form-control { max-width:130px; height:38px; border-radius:7px; }
+                    .settlement-mode-box { border:1px solid #e0e0e0; border-radius:7px; padding:8px 12px; }
+                    .settlement-primary-btn { width:100%; border:0; border-radius:7px; background:#050a78; color:#fff; font-weight:700; padding:12px; }
+                </style>
+                <div class="settlement-popup">
+                <div class="settlement-row-table text-start">
+                    <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th></th><th>Plan</th><th>Start Date</th><th>End Date</th><th>Total</th><th>Paid</th><th>Pending</th><th>Extra</th>
+                                <th></th><th>Plan</th><th>Duration</th><th>Plan Price</th><th>Paid</th><th>Pending</th><th>Extra</th>
                             </tr>
                         </thead>
                         <tbody>${detailsHtml}</tbody>
                     </table>
                 </div>
                 <div class="row g-2 text-start mt-1">
-                    <div class="col-md-3"><div class="p-2 border rounded">Total: <b class="v2Total">0</b></div></div>
-                    <div class="col-md-3"><div class="p-2 border rounded">Paid: <b class="v2Paid">0</b></div></div>
-                    <div class="col-md-3"><div class="p-2 border rounded">Pending: <b class="v2Pending text-danger">0</b></div></div>
-                    <div class="col-md-3"><div class="p-2 border rounded">Extra: <b class="v2Extra text-success">0</b></div></div>
+                    <div class="col-3"><div class="settlement-summary-box">Total Paid Amt.<strong class="v2Paid">0</strong></div></div>
+                    <div class="col-3"><div class="settlement-summary-box pending">Pending Amt.<strong class="v2Pending">0</strong></div></div>
+                    <div class="col-3"><div class="settlement-summary-box extra">Extra Amt.<strong class="v2Extra">0</strong></div></div>
+                    <div class="col-3"><div class="settlement-summary-box net">Net Amt.<strong class="v2NetAmount">0</strong></div></div>
                 </div>
-                <div class="mt-2 text-start p-2 border rounded" style="background:#fff8f8;">
-                   
-                    <div>Net Amount: <b class="v2NetAmount">0</b></div>
+                <div class="form-check text-start mt-2 ${detailRows.length > 1 ? '' : 'd-none'}">
+                    <input type="checkbox" class="form-check-input" id="v2FullLearnerDelete">
+                    <label class="form-check-label" for="v2FullLearnerDelete">Select all transactions</label>
                 </div>
+                <div class="small text-muted text-start mt-2 fw-semibold">
+                    Note: The above amounts change according to the selected transaction. Please check carefully before settling.
+                </div>
+
+                <input type="hidden" class="v2SettlementCase" value="settled">
                 <div class="mt-3 text-start">
-                    <label class="fw-semibold mb-2 d-block">Choose Action</label>
-                    <div class="row g-2">
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100" style="background:#f3fff7;">
-                                <div class="fw-semibold text-success mb-2">Extra Amount Available</div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="refund_pending_future" id="v2ActionRefundFuture">
-                                    <label class="form-check-label" for="v2ActionRefundFuture">Refund & Delete</label>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Refund Amount (₹)</label>
-                                    <input type="text" class="form-control form-control-sm v2Step1RefundAmount" placeholder="Enter refund amount">
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Payment Mode</label>
-                                    <select class="form-control form-control-sm v2Step1PayMode">
-                                        <option value="">Select payment mode</option>
-                                        <option value="1">Online</option>
-                                        <option value="2">Offline</option>
-                                        <option value="3">Paylater</option>
-                                    </select>
-                                </div>
-                              
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="adjust" id="v2ActionDeleteWithoutRefund">
-                                    <label class="form-check-label" for="v2ActionDeleteWithoutRefund">Delete Without Refund</label>
-                                </div>
-                              
-                            </div>
+                    <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" checked>
+                            <label class="form-check-label fw-semibold text-danger">Settle pending amount</label>
                         </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100" style="background:#fff5f5;">
-                                <div class="fw-semibold text-danger mb-2">Pending Amount (You Need to Pay)</div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="pending_pay_future" id="v2ActionPendingFuture">
-                                    <label class="form-check-label" for="v2ActionPendingFuture">Pay Pending & Delete</label>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Pay Amount (₹)</label>
-                                    <input type="text" class="form-control form-control-sm v2Step1PayAmount" placeholder="Enter pay amount">
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Payment Mode</label>
-                                    <select class="form-control form-control-sm v2Step1PayMode">
-                                        <option value="">Select payment mode</option>
-                                        <option value="1">Online</option>
-                                        <option value="2">Offline</option>
-                                        <option value="3">Paylater</option>
-                                    </select>
-                                </div>
-                               
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="pending_pay_future" id="v2ActionMarkDue">
-                                    <label class="form-check-label" for="v2ActionMarkDue">Delete Without Adjust (Mark as Due)</label>
-                                </div>
-                              
-                            </div>
+                        <input type="text" class="form-control form-control-sm v2PayAmount mb-2" placeholder="Enter pay amount">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="future" id="v2PendingFuture" checked>
+                            <label class="form-check-label" for="v2PendingFuture">The remaining amount will be collected in the future.</label>
                         </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100" style="background:#f4f7ff;">
-                                <div class="fw-semibold text-primary mb-2">No Pending, No Extra (Settled)</div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input v2ActionPreview" type="radio" name="v2ActionPreview" value="adjust" id="v2ActionAdjust">
-                                    <label class="form-check-label" for="v2ActionAdjust">Delete Selected Details</label>
-                                </div>
-                              
-                                <div class="small text-muted">No Pending/Extra case: delete selected details directly.</div>
-                            </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="adjust" id="v2PendingAdjust">
+                            <label class="form-check-label" for="v2PendingAdjust">Or, adjust / settle remaining amt. now</label>
+                        </div>
+                        <div class="small text-muted mt-2 v2PendingHelp"></div>
+                    </div>
+
+                    <div class="v2ExtraPanel settlement-action-panel extra" style="display:none;">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" checked>
+                            <label class="form-check-label fw-semibold text-success">Settle extra <span class="v2ExtraTitleAmount">0</span></label>
+                        </div>
+                        <input type="text" class="form-control form-control-sm v2RefundAmount mb-2" placeholder="Enter refund amount">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="refund_pending_future" id="v2ExtraFuture" checked>
+                            <label class="form-check-label" for="v2ExtraFuture">The remaining amount will be refunded in the future.</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="adjust" id="v2ExtraAdjust">
+                            <label class="form-check-label" for="v2ExtraAdjust">Or, adjust / settle remaining amount now.</label>
                         </div>
                     </div>
+
+                    <div class="v2SettledPanel settlement-action-panel" style="display:none;background:#eef1ff;border:1px solid #cbd3ff;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" checked>
+                            <label class="form-check-label fw-semibold text-primary">No pending, no extra. Selected transactions are already settled.</label>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 v2PaymentModeWrap settlement-mode-box">
+                        <label class="form-label mb-1">Payment Mode</label>
+                        <select class="form-control form-control-sm v2PaymentMode">
+                            <option value="">Choose</option>
+                            <option value="1">Online</option>
+                            <option value="2">Offline</option>
+                            <option value="3">Paylater</option>
+                        </select>
+                    </div>
                 </div>
-               
+                </div>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Next',
+            confirmButtonText: 'Settle',
+            confirmButtonColor: '#050a78',
             didOpen: () => {
                 const popup = Swal.getPopup();
-                popup.style.setProperty('width', '700px', 'important');
+                popup.style.setProperty('width', '760px', 'important');
                 popup.style.setProperty('max-width', '98vw', 'important');
                 popup.style.fontSize = '13px';
-                const toNumber = (value) => {
-                    if (value === null || value === undefined) {
-                        return 0;
-                    }
-                    const cleaned = String(value).replace(/,/g, '').trim();
-                    const parsed = parseFloat(cleaned);
-                    return Number.isFinite(parsed) ? parsed : 0;
+
+                const selectedTotals = () => {
+                    const ids = $(popup).find('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
+                    const selected = detailRows.filter(row => ids.includes(Number(row.id)));
+                    const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
+
+                    return {
+                        ids,
+                        total: sum('total_amount'),
+                        paid: sum('paid_amount'),
+                        pending: sum('pending_amount'),
+                        extra: sum('extra_amount'),
+                    };
+                };
+
+                const updatePendingHelp = () => {
+                    const totals = selectedTotals();
+                    const net = Math.max(totals.pending - totals.extra, 0);
+                    const payAmount = toNumber($(popup).find('.v2PayAmount').val());
+                    const remaining = Math.max(net - payAmount, 0);
+                    const help = remaining > 0
+                        ? `After this payment, Rs ${remaining.toFixed(0)} will remain pending.`
+                        : 'After this payment, the account will be fully settled.';
+                    $(popup).find('.v2PendingHelp').text(help);
                 };
 
                 const recalc = () => {
-                    const ids = $(popup).find('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
-                    const selected = detailRows.filter(r => ids.includes(Number(r.id)));
-                    const sum = (k) => selected.reduce((a, b) => a + toNumber(b[k]), 0);
-                    const total = sum('paid_amount');
-                    const paid = sum('paid_amount');
-                    const pending = sum('pending_amount');
-                    const extra = sum('extra_amount');
-                    const net = pending - extra;    
+                    const totals = selectedTotals();
+                    const net = totals.pending - totals.extra;
+                    const netAbs = Math.abs(net);
 
-                    $(popup).find('.v2Total').text(total.toFixed(0));
-                    $(popup).find('.v2Paid').text(paid.toFixed(0));
-                    $(popup).find('.v2Pending').text(pending.toFixed(0));
-                    $(popup).find('.v2Extra').text(extra.toFixed(0));
-                    $(popup).find('.v2NetAmount').text(net.toFixed(0));
-                    const canRefundFuture = pending >= 0 && extra >= 0;
-                    const canPendingFuture = pending > 0;
-                    $(popup).find('#v2ActionRefundFuture').prop('disabled', !canRefundFuture);
-                    $(popup).find('#v2ActionPendingFuture').prop('disabled', !canPendingFuture);
+                    $(popup).find('#v2FullLearnerDelete').prop('checked', detailRows.length > 0 && totals.ids.length === detailRows.length);
+                    $(popup).find('.v2Total').text(totals.total.toFixed(0));
+                    $(popup).find('.v2Paid').text(totals.paid.toFixed(0));
+                    $(popup).find('.v2Pending').text(totals.pending.toFixed(0));
+                    $(popup).find('.v2Extra').text(totals.extra.toFixed(0));
+                    $(popup).find('.v2NetAmount').text(netAbs.toFixed(0));
+                    $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel').hide();
 
-                    if (!canRefundFuture && $(popup).find('#v2ActionRefundFuture').is(':checked')) {
-                        $(popup).find('#v2ActionRefundFuture').prop('checked', false);
-                    }
-                    if (!canPendingFuture && $(popup).find('#v2ActionPendingFuture').is(':checked')) {
-                        $(popup).find('#v2ActionPendingFuture').prop('checked', false);
+                    if (net > 0) {
+                        $(popup).find('.v2SettlementCase').val('pending');
+                        $(popup).find('.v2PendingPanel,.v2PaymentModeWrap').show();
+                        $(popup).find('.v2PayAmount').val(net.toFixed(0));
+                        Swal.getConfirmButton().textContent = `Pay the pending amount.`;
+                        updatePendingHelp();
+                    } else if (net < 0) {
+                        $(popup).find('.v2SettlementCase').val('extra');
+                        $(popup).find('.v2ExtraPanel,.v2PaymentModeWrap').show();
+                        $(popup).find('.v2ExtraTitleAmount').text(netAbs.toFixed(0));
+                        $(popup).find('.v2RefundAmount').val(netAbs.toFixed(0));
+                        Swal.getConfirmButton().textContent = `Settle extra amount.`;
+                    } else {
+                        $(popup).find('.v2SettlementCase').val('settled');
+                        $(popup).find('.v2SettledPanel').show();
+                        $(popup).find('.v2PaymentModeWrap').hide();
+                        Swal.getConfirmButton().textContent = 'Already settled';
                     }
                 };
-                $(popup).on('change', '.v2DetailSelector', recalc);
-                $(popup).on('change', '#v2FullLearnerDelete', function () {
-                    const checked = $(this).is(':checked');
-                    $(popup).find('.v2DetailSelector').prop('checked', checked);
-                    recalc();
-                });
+
                 $(popup).on('change', '.v2DetailSelector', function () {
                     const totalRows = $(popup).find('.v2DetailSelector').length;
                     const selectedRows = $(popup).find('.v2DetailSelector:checked').length;
                     $(popup).find('#v2FullLearnerDelete').prop('checked', totalRows > 0 && totalRows === selectedRows);
+                    recalc();
                 });
+                $(popup).on('change', '#v2FullLearnerDelete', function () {
+                    $(popup).find('.v2DetailSelector').prop('checked', $(this).is(':checked'));
+                    recalc();
+                });
+                $(popup).on('input', '.v2PayAmount', updatePendingHelp);
                 recalc();
             },
             preConfirm: () => {
@@ -213,138 +238,80 @@
                     return false;
                 }
 
-                const selected = detailRows.filter(r => selectedIds.includes(Number(r.id)));
-                const sum = (k) => selected.reduce((a, b) => a + (parseFloat(b[k] || 0)), 0);
-                let deleteType = 'multiple_details';
-                if (selectedIds.length === 1) {
-                    deleteType = 'single_detail';
-                } else if (selectedIds.length === detailRows.length) {
-                    deleteType = 'full_learner';
-                }
-                const selectedPreviewAction = $('.v2ActionPreview:checked').val() || null;
-                const refundAmountInput = parseFloat($('.v2Step1RefundAmount').val()) || 0;
-                const payAmountInput = parseFloat($('.v2Step1PayAmount').val()) || 0;
-                const paymentModeInput = $('.v2Step1PayMode').val() || '';
-                const fullLearnerDelete = $('#v2FullLearnerDelete').is(':checked');
-                return {
-                    deleteType,
-                    selectedIds,
-                    selectedPreviewAction,
-                    refundAmountInput,
-                    payAmountInput,
-                    paymentModeInput,
-                    fullLearnerDelete,
-                    totals: {
-                        pending: sum('pending_amount'),
-                        extra: sum('extra_amount')
-                    }
-                };
-            }
-        });
-
-        if (!step1.isConfirmed) {
-            return;
-        }
-
-        const selectedPending = Number(step1.value.totals.pending || 0);
-        const selectedExtra = Number(step1.value.totals.extra || 0);
-        const showRefundPendingFuture = (selectedPending > 0 && selectedExtra > 0) ;
-        const showPendingFuture = selectedPending > 0;
-
-        const step2 = await Swal.fire({
-            title: 'Step 2: Choose Settlement Option',
-            width: 820,
-            html: `
-                <div class="text-start">
-                    ${showRefundPendingFuture ? `
-                    <div class="form-check mb-2">
-                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="refund_pending_future" id="v2RefundPendingFuture" ${step1.value.selectedPreviewAction === 'refund_pending_future' ? 'checked' : ''}>
-                        <label class="form-check-label text-danger" for="v2RefundPendingFuture">Pending refund pay in future</label>
-                    </div>` : ''}
-                    ${showPendingFuture ? `
-                    <div class="form-check mb-2">
-                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="pending_pay_future" id="v2PendingPayFuture" ${step1.value.selectedPreviewAction === 'pending_pay_future' ? 'checked' : ''}>
-                        <label class="form-check-label text-danger" for="v2PendingPayFuture">Pending amount pay in future</label>
-                    </div>` : ''}
-                    <div class="form-check mb-3">
-                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust" id="v2AdjustOption" ${(step1.value.selectedPreviewAction === 'adjust' || !step1.value.selectedPreviewAction) ? 'checked' : ''}>
-                        <label class="form-check-label" for="v2AdjustOption">Adjust</label>
-                    </div>
-                    <label>Remark (optional)</label>
-                    <input type="text" class="form-control v2Remark" placeholder="Enter remark">
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Confirm & Delete',
-            confirmButtonColor: '#0d6efd',
-            didOpen: () => {
-                const popup = Swal.getPopup();
-                popup.style.fontSize = '14px';
-            },
-            preConfirm: () => {
-                const settlementMode = $('.v2SettlementOption:checked').val();
-                if (!settlementMode) {
-                    Swal.showValidationMessage('Please select one option.');
+                const selected = detailRows.filter(row => selectedIds.includes(Number(row.id)));
+                const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
+                const pendingTotal = sum('pending_amount');
+                const extraTotal = sum('extra_amount');
+                const net = pendingTotal - extraTotal;
+                const caseType = $('.v2SettlementCase').val();
+                const paymentMode = $('.v2PaymentMode').val() || '';
+                const payAmount = toNumber($('.v2PayAmount').val());
+                const refundAmount = toNumber($('.v2RefundAmount').val());
+                if (caseType !== 'settled' && !paymentMode) {
+                    Swal.showValidationMessage('Please choose payment mode.');
                     return false;
                 }
+
+                if (caseType === 'settled') {
+                    Swal.showValidationMessage('Selected transactions are already settled.');
+                    return false;
+                }
+
+                if (caseType === 'pending' && (payAmount <= 0 || payAmount > net)) {
+                    Swal.showValidationMessage('Please enter a valid pending amount.');
+                    return false;
+                }
+
+                if (caseType === 'extra' && (refundAmount < 0 || refundAmount > Math.abs(net))) {
+                    Swal.showValidationMessage('Please enter a valid refund amount.');
+                    return false;
+                }
+
+                const adjust = caseType === 'extra'
+                    ? (($('.v2ExtraMode:checked').val() || 'refund_pending_future') === 'adjust' ? 1 : 0)
+                    : (($('.v2PendingMode:checked').val() || 'future') === 'adjust' ? 1 : 0);
+
                 return {
-                    settlementMode,
-                    remark: $('.v2Remark').val() || ''
+                    selectedIds,
+                    adjust,
+                    paymentMode: paymentMode || '1',
+                    pendingAmount: caseType === 'pending' ? payAmount : 0,
+                    refundAmount: caseType === 'extra' ? refundAmount : 0,
+                    isRefund: caseType === 'extra' && refundAmount > 0 ? 1 : 0,
+                    extra: extraTotal,
                 };
             }
         });
 
-        if (!step2.isConfirmed) {
-            return;
+        if (!result.isConfirmed) {
+            return false;
         }
-
-        let isRefund = 0;
-        let refundAmount = 0;
-        let pending = 0;
-        let extra = 0;
-        let payAmount = 0;
-        let paymentMode = step1.value.paymentModeInput || '';
-
-        refundAmount = step1.value.refundAmountInput > 0
-                ? step1.value.refundAmountInput
-                : 0;
-        if(refundAmount){
-            isRefund = 1;
-        }
-        
-        pending = Math.max(selectedPending, 0);
-        extra = Math.max(selectedExtra, 0);
-
-        payAmount = step1.value.payAmountInput > 0 ? step1.value.payAmountInput : 0;
-
-        const payload = {
-            delete_type: step1.value.deleteType,
-            learner_detail_id: step1.value.selectedIds[0] || null,
-            learner_detail_ids: step1.value.selectedIds,
-            full_learner_delete: step1.value.fullLearnerDelete ? 1 : 0,
-            settlement_mode: step2.value.settlementMode,
-            is_refund: isRefund,
-            refund_amount: refundAmount,
-            extra: extra,
-            pending: pending,
-            pay_amount: payAmount,
-            payment_mode: paymentMode,
-            remark: step2.value.remark
-        };
 
         $.ajax({
             url: postUrl,
             type: 'POST',
-            data: $.extend({ _token: '{{ csrf_token() }}' }, payload),
+            data: $.extend({ _token: '{{ csrf_token() }}' }, {
+                learner_id: learnerId,
+                learner_detail_id: result.value.selectedIds[0] || null,
+                learner_detail_ids: result.value.selectedIds,
+                adjust: result.value.adjust,
+                refund_amount: result.value.refundAmount,
+                pending_amount: result.value.pendingAmount,
+                pay_amount: result.value.pendingAmount,
+                extra: result.value.extra,
+                payment_mode: result.value.paymentMode,
+                remark: ''
+            }),
             success: function (response) {
-                Swal.fire('Success', response.message || 'Delete completed successfully.', 'success').then(() => location.reload());
+                Swal.fire('Success', response.message || 'Settlement completed successfully.', 'success').then(() => location.reload());
             },
             error: function (xhr) {
-                Swal.fire('Error', xhr?.responseJSON?.error || 'Delete workflow failed.', 'error');
+                Swal.fire('Error', xhr?.responseJSON?.error || 'Settlement failed.', 'error');
             }
         });
-    });
 
+        return false;
+    });
     // soft delete Learner 
     $(document).on('click', '.delete-customer', function () {
         var id = $(this).data('id');

@@ -13,14 +13,19 @@ use DB;
 
 class LearnerDeleteController extends Controller
 {
-   protected $service;
+//    protected $service;
 
-    public function __construct(LearnerDeleteService $service)
-    {
-        $this->service = $service;
-    }
+//     public function __construct(LearnerDeleteService $service)
+//     {
+//         $this->service = $service;
+//     }
 
-    public function softDeleteV2Details(Request $request, $id)
+//     public function softDeleteV2Details(Request $request, $id)
+//     {
+//         return $this->settlementDetails($request, $id);
+//     }
+
+    public function settlementDetails(Request $request, $id)
     {
         try {
             $learner = Learner::withTrashed()
@@ -42,10 +47,11 @@ class LearnerDeleteController extends Controller
                     ->orderByDesc('id')
                     ->first();
 
+                $total = (float) ($tx->total_amount ?? 0);
                 $paid = (float) ($tx->paid_amount ?? 0);
                 $pending = (float) ($tx->pending_amount ?? 0);
                 $used = max($paid - $pending, 0);
-                $extra = (float) ($tx->refund); // refund is a pending refund which is extra amount
+                $extra = (float) ($tx->refund ?? 0); // refund is a pending refund which is extra amount
 
                 return [
                     'id' => (int) $detail->id,
@@ -54,6 +60,7 @@ class LearnerDeleteController extends Controller
                     'plan_type_name' => optional($detail->planType)->name ?? 'N/A',
                     'plan_start_date' => $detail->plan_start_date,
                     'plan_end_date' => $detail->plan_end_date,
+                    'total_amount' => $total,
                     'paid_amount' => $paid,
                     'used_amount' => $used,
                     'pending_amount' => $pending,
@@ -78,69 +85,89 @@ class LearnerDeleteController extends Controller
         }
     }
 
-    /**
-     * STEP 1 → Summary + Case Detection
-     */
-    public function prepare(Request $request, $learnerId)
-    {
-        $validator = Validator::make($request->all(), [
-            'learner_detail_ids' => 'required|array|min:1',
-            'learner_detail_ids.*' => 'integer|exists:learner_detail,id',
-            'full_learner_delete' => 'nullable|in:0,1',
+//     /**
+//      * STEP 1 → Summary + Case Detection
+//      */
+//     public function prepare(Request $request, $learnerId)
+//     {
+//         $validator = Validator::make($request->all(), [
+//             'learner_detail_ids' => 'required|array|min:1',
+//             'learner_detail_ids.*' => 'integer|exists:learner_detail,id',
+//             'full_learner_delete' => 'nullable|in:0,1',
 
-            'settlement_mode' => 'nullable|in:refund_pending_future,pending_pay_future,adjust',
-            'is_refund' => 'nullable|in:0,1',
-            'refund_amount' => 'nullable|numeric|min:0',
-            'pay_amount' => 'nullable|numeric|min:0',
-            'payment_mode' => 'nullable|in:1,2,3',
-            'remark' => 'nullable|string|max:1000',
-        ]);
+//             'settlement_mode' => 'nullable|in:refund_pending_future,pending_pay_future,adjust',
+//             'pending_amount' => 'nullable|numeric|min:0',
+//             'is_refund' => 'nullable|in:0,1',
+//             'refund_amount' => 'nullable|numeric|min:0',
+//             'pay_amount' => 'nullable|numeric|min:0',
+//             'payment_mode' => 'nullable|in:1,2,3',
+//             'adjust' => 'nullable|boolean',
+//             'remark' => 'nullable|string|max:1000',
+//         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()->first(),
-            ], 422);
-        }
+//         if ($validator->fails()) {
+//             return response()->json([
+//                 'error' => $validator->errors()->first(),
+//             ], 422);
+//         }
 
-        $totalDetails = LearnerDetail::where('learner_id', $learnerId)->count();
+//         $totalDetails = LearnerDetail::where('learner_id', $learnerId)->count();
 
-        $selectedDetails = LearnerDetail::where('learner_id', $learnerId)
-            ->whereIn('id', $request->learner_detail_ids ?? [])
-            ->count();
+//         $selectedDetails = LearnerDetail::where('learner_id', $learnerId)
+//             ->whereIn('id', $request->learner_detail_ids ?? [])
+//             ->count();
 
-        if ($totalDetails > 0 && $totalDetails === $selectedDetails && $request->full_learner_delete != 1) {
-            return response()->json([
-                'error' => 'You selected all records. Please use "Full Learner Delete checkbox".'
-            ], 422);
-        }
+//         if ($totalDetails > 0 && $totalDetails === $selectedDetails && $request->full_learner_delete != 1) {
+//             return response()->json([
+//                 'error' => 'You selected all records. Please use "Full Learner Delete checkbox".'
+//             ], 422);
+//         }
 
-        try {
+//         try {
 
-            DB::beginTransaction();
+//             DB::beginTransaction();
 
-            // ✅ STEP 2 (Settlement)
-            $this->service->processSettlement($request, $learnerId);
+//             if ($request->filled('pending_amount') && ! $request->filled('pay_amount')) {
+//                 $request->merge([
+//                     'pay_amount' => $request->input('pending_amount'),
+//                 ]);
+//             }
 
-            // ✅ FINAL DELETE
-            $data = $this->service->executeDelete($request, $learnerId);
+//             if (! $request->filled('settlement_mode')) {
+//                 $request->merge([
+//                     'settlement_mode' => $request->boolean('adjust') ? 'adjust' : (
+//                         ((float) $request->input('refund_amount', 0) > 0) ? 'refund_pending_future' : 'pending_pay_future'
+//                     ),
+//                 ]);
+//             }
 
-            DB::commit();
+//             if (! $request->filled('payment_mode')) {
+//                 $request->merge(['payment_mode' => 1]);
+//             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Deleted successfully',
-                'data' => $data
-            ]);
+//             // ✅ STEP 2 (Settlement)
+//             $this->service->processSettlement($request, $learnerId);
 
-        } catch (\Throwable $e) {
+//             // ✅ FINAL DELETE
+//             $data = $this->service->executeDelete($request, $learnerId);
 
-            DB::rollBack();
+//             DB::commit();
 
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Deleted successfully',
+//                 'data' => $data
+//             ]);
+
+//         } catch (\Throwable $e) {
+
+//             DB::rollBack();
+
+//             return response()->json([
+//                 'error' => $e->getMessage()
+//             ], 500);
+//         }
+//     }
 
    
 }

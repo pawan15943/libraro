@@ -319,12 +319,13 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/change/plan/{id?}', [LearnerController::class, 'getLearner'])->name('learner.change.plan');
     Route::post('/close', [LearnerController::class, 'userclose'])->name('learners.close');
     Route::delete('/{Learner}', [LearnerController::class, 'destroy'])->name('learners.destroy');
+    Route::get('/{Learner}/settlement/details', [LearnerDeleteController::class, 'settlementDetails'])->name('learners.settlement.details');
     Route::get('/{Learner}/soft-delete-v2/details', [LearnerDeleteController::class, 'softDeleteV2Details'])->name('learners.soft.destroy.v2.details');
     // Route::post('/{Learner}/soft-delete-v2', [LearnerController::class, 'softDeleteV2'])->name('learners.soft.destroy.v2');
    
 
       Route::post('/{Learner}/soft-delete-v2', [LearnerDeleteController::class, 'prepare'])->name('learners.soft.destroy.v2');
-      Route::post('/settlement/{id}', [LearnerDeleteController::class, 'settlement']);
+      Route::post('/settlement/{id}', [LearnerController::class, 'settlement'])->name('learners.settlement');
       Route::post('/execute/{id}', [LearnerDeleteController::class, 'delete']);
 
 

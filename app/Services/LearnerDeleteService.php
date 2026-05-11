@@ -11,479 +11,304 @@ use Exception;
 class LearnerDeleteService
 {
     
+   
+
     // public function processSettlement($request, $learnerId)
     // {
     //     $settlementMode = $request->settlement_mode;
+    //     $refundInput    = (float) $request->refund_amount;
+    //     $payInput       = (float) $request->pay_amount;
+    //     $detailIds      = array_filter((array) ($request->learner_detail_ids ?? []));
 
-    //     $detailIds = $request->learner_detail_ids ?? [];
+    //     $txQuery = LearnerTransaction::where('learner_id', $learnerId)
+    //         ->when(! empty($detailIds), fn ($query) => $query->whereIn('learner_detail_id', $detailIds));
 
+    //     $txList = (clone $txQuery)
+    //         ->orderBy('id', 'asc')
+    //         ->get();
 
-    //     $details = LearnerDetail::whereIn('id', $detailIds)->get();
-    //     $lastTx=LearnerTransaction::where('learner_id', $learnerId)->orderBy('DESC')->first();
-
-    //     $tx = LearnerTransaction::query()
-    //                 ->where('learner_id', $learnerId)
-    //                 ->get();
-
-    //     $total = $tx->sum('total_amount');
-    //     $paid = $tx->sum('paid_amount');
-    //     $pending = $tx->sum('pending_amount');
-    //     $extra = $tx->sum('refund');
-
-    //     $net = $pending - $extra;
-
-    //     $ispending=false ;
-    //     $isextra=false ;
-    //     if($net > 0){
-    //         $ispending=true ;
-
-    //     }
-    //     if($net < 0){
-    //         $isextra=true;
+    //     if ($txList->isEmpty()) {
+    //         throw new Exception("No transactions found");
     //     }
 
-    //     if($request->payment_mode== 1){
-    //         $paymentmode='ONLINE';
-    //     }elseif($request->payment_mode== 2){
-    //         $paymentmode='OFFLINE';
-    //     }else{
-    //         $paymentmode='PAYLATER';
-    //     }
+    //     $total   = $txList->sum('total_amount');
+    //     $paid    = $txList->sum('paid_amount');
+    //     $pending = $txList->sum('pending_amount');
+    //     $extra   = $txList->sum('refund'); // advance/refund column
+
+    //     $lastTx = $txList->last();
+
+    //     $paymentMode = match ((int) $request->payment_mode) {
+    //         3 => 'PAYLATER',
+    //         2 => 'OFFLINE',
+    //         default => 'ONLINE'
+    //     };
 
 
+    //     /**
+    //      * ======================================
+    //      * ✅ STEP 1: ADJUST EXTRA FIRST (CRITICAL FIX)
+    //      * ======================================
+    //      */
+    //     if ($extra > 0 && $pending > 0) {
 
-    //     $pay = (float) $request->pay_amount;
+    //         foreach ($txList as $extraTx) {
+    //             $remainingExtra = (float) $extraTx->refund;
 
-       
-    //     if($request->is_refund==1 && $request->refund_amount ){
-    //          $refund = (float) $request->refund_amount;
+    //             if ($remainingExtra <= 0) continue;
 
-    //          if ($ispending==true) {
-    //             throw new Exception("You have already pending amount");
+    //             foreach ($txList as $pendingTx) {
+    //                 if ($remainingExtra <= 0) break;
+    //                 if ($pendingTx->pending_amount <= 0) continue;
+
+    //                 $use = min($pendingTx->pending_amount, $remainingExtra);
+    //                 $newPending = $pendingTx->pending_amount - $use;
+
+    //                 $pendingTx->update([
+    //                     'paid_amount' => $pendingTx->paid_amount + $use,
+    //                     'pending_amount' => $newPending,
+    //                     'is_paid' => $newPending == 0 ? 1 : 0,
+    //                 ]);
+
+    //                 $remainingExtra -= $use;
+    //                 $pendingTx->refresh();
+    //             }
+
+    //             $extraTx->update(['refund' => $remainingExtra]);
     //         }
 
+    //         // Refresh values after adjustment
+    //         $pending = (clone $txQuery)->sum('pending_amount');
+    //         $extra   = (clone $txQuery)->sum('refund');
+    //     }
 
-    //         $remainingRefund = $net-$refund;
+    //     /**
+    //      * ======================================
+    //      * ✅ STEP 2: REFUND LOGIC
+    //      * ======================================
+    //      */
+    //     if ($request->is_refund == 1 && $refundInput > 0) {
 
-    //         LearnerTransaction::where('learner_id', $learnerId)->update([
-    //                 'refund'=>0,
+    //         if ($refundInput > ($paid + $extra)) {
+    //             throw new Exception("Refund cannot exceed available extra amount");
+    //         }
+
+    //         $remainingRefund = $refundInput;
+
+    //         // Pay existing extra/refund first.
+    //         foreach ($txList->reverse() as $tx) {
+
+    //             if ($remainingRefund <= 0) break;
+
+    //             if ($tx->refund <= 0) continue;
+
+    //             $deduct = min($tx->refund, $remainingRefund);
+
+    //             $tx->update([
+    //                 'refund' => $tx->refund - $deduct
     //             ]);
-    //         if($remainingRefund < 0){
-    //              $remaining_paid=$paid-$remainingRefund;
-                
-               
-    //             LearnerTransaction::where('id',$lastTx->id)->update([
-    //                 'paid_amount'=>$remaining_paid,
+
+    //             $remainingRefund -= $deduct;
+    //         }
+
+    //         // Deduct from PAID if refund is more than stored extra.
+    //         foreach ($txList->reverse() as $tx) {
+
+    //             if ($remainingRefund <= 0) break;
+
+    //             if ($tx->paid_amount <= 0) continue;
+
+    //             $deduct = min($tx->paid_amount, $remainingRefund);
+
+    //             $tx->update([
+    //                 'paid_amount' => $tx->paid_amount - $deduct
     //             ]);
+
+    //             $remainingRefund -= $deduct;
     //         }
-            
-    //         if($remainingRefund > 0){
-    //             if($settlementMode === 'refund_pending_future'){
-    //                  LearnerTransaction::where('id',$lastTx->id)->update([
-    //                     'refund'=>$remaining_paid,
+
+    //         // Handle remaining refund (future / adjust)
+    //         if ($remainingRefund > 0) {
+
+    //             if ($settlementMode === 'refund_pending_future') {
+    //                 $lastTx->update(['refund' => $remainingRefund]);
+    //             }
+
+    //             if ($settlementMode === 'adjust') {
+    //                 $lastTx->increment('discount_amount', $remainingRefund);
+    //             }
+    //         }
+
+    //         if ($settlementMode === 'adjust') {
+    //             foreach ($txList as $tx) {
+    //                 $tx->refresh();
+
+    //                 if ($tx->refund <= 0) continue;
+
+    //                 $tx->update([
+    //                     'sattle_amount' => (float) ($tx->sattle_amount ?? 0) - (float) $tx->refund,
+    //                     'refund' => 0,
     //                 ]);
     //             }
-    //             if($settlementMode === 'adjust'){
-    //                 $adddiscount=$lastTx->discount_amount + $remainingRefund;
-    //                 LearnerTransaction::where('id',$lastTx->id)->update([
-    //                     'discount_amount'=>$adddiscount,
-    //                 ]);
-    //             }
-
     //         }
 
-    //         $type  = 'REFUND';
-    //         $parti = 'SATTELED';
-    //         $dr_cr='Dr';
-
-    //         $payload = [
-    //             'branch_id'      => getCurrentBranch(),
-    //             'learner_id'     => $learnerId,
-    //             'learner_transaction_id' => null,
-    //             'date'           => now()->format('Y-m-d'),
-    //             'transaction_id' => transaction_id(),
-    //             'particular'     => $parti,
-    //             'payment_type'   => $type,
-    //             'payment_mode'   => $paymentmode,
-    //             'amount'         => $refund ?? 0,
-    //             'dr_cr'          => $dr_cr,
-    //         ];
-
-
-    //         LearnerTransactionActivity::create($payload);
-
-
-    //     }else if($pay){
-    //         if ($pay > $net) {
-    //             throw new Exception("Pay amount exceeds pending");
-    //         }
-
-          
-
-    //             // Get old pending transactions
-    //         $pendingTransactions = LearnerTransaction::where('learner_id', $learnerId)
-    //             ->where('pending_amount', '>', 0)
-    //             ->orderBy('id', 'asc')
-    //             ->get();
-
-    //         $oldPendingTotal = $pendingTransactions->sum('pending_amount');
-
-    //         // Apply payment to old pending first
-    //         $pendingPaid = min($pay, $oldPendingTotal);
-    //         $remainingForNewPlan = $pay - $pendingPaid;
-
-    //         $remainingPendingPayment = $pendingPaid;
-
-    //         foreach ($pendingTransactions as $tran) {
-    //             if ($remainingPendingPayment <= 0) {
-    //                 break;
-    //             }
-
-    //             $tranPending = $tran->pending_amount;
-
-    //             if ($remainingPendingPayment >= $tranPending) {
-    //                 // Fully clear this transaction
-    //                 $paidNow = $tranPending;
-    //                 $newPending = 0;
-    //             } else {
-    //                 // Partially clear
-    //                 $paidNow = $remainingPendingPayment;
-    //                 $newPending = $tranPending - $paidNow;
-    //             }
-
-    //             $updateData = [
-    //                 'paid_amount'    => $tran->paid_amount + $paidNow,
-    //                 'pending_amount' => $newPending,
-    //                 'is_paid'        => $newPending == 0 ? 1 : 0,
-    //             ];
-
-                
-
-    //             $tran->update($updateData);
-
-    //             $remainingPendingPayment -= $paidNow;
-    //         }
-
-    //         $afterpayremaing=LearnerTransaction::where('learner_id', $learnerId)
-    //             ->where('pending_amount', '>', 0)->get();
-    //         $afterpayRemain=$afterpayremaing ?? $afterpayremaing->sum('pending_amount');
-    //         if($settlementMode === 'adjust'){
-    //              $adddiscount=$lastTx->discount_amount + $afterpayRemain;
-    //                 LearnerTransaction::where('id',$lastTx->id)->update([
-    //                     'discount_amount'=>$adddiscount,
-    //                 ]);
-    //         }
-
-    //         $type  = 'PENDING';
-    //         $parti = 'SATTELED';
-    //         $dr_cr='Cr';
-
-    //         $payload = [
-    //             'branch_id'      => getCurrentBranch(),
-    //             'learner_id'     => $learnerId,
-    //             'learner_transaction_id' => null,
-    //             'date'           => now()->format('Y-m-d'),
-    //             'transaction_id' => transaction_id(),
-    //             'particular'     => $parti,
-    //             'payment_type'   => $type,
-    //             'payment_mode'   => $paymentmode,
-    //             'amount'         => $pay ?? 0,
-    //             'dr_cr'          => $dr_cr,
-    //         ];
-
-
-    //         LearnerTransactionActivity::create($payload);
-
-           
-    //     }else{
-           
-
-    //         if($settlementMode === 'adjust'){
-    //             if($ispending==true){
-    //                 $adddiscount=$lastTx->discount_amount + $net;
-    //                 LearnerTransaction::where('id',$lastTx->id)->update([
-    //                     'discount_amount'=>$adddiscount,
-    //                 ]);
-    //             }
-    //             if($isextra==true){
-    //                  LearnerTransaction::where('id',$lastTx->id)->update([
-    //                     'total_amount'=>$lastTx->total_amount+$net,
-    //                     'paid_amount'=>$lastTx->paid_amount+$net,
-    //                 ]);
-    //             }
-                
-    //         }
-
+    //         // Activity
+    //         $this->logActivity($learnerId, 'REFUND', $refundInput, $paymentMode, 'Dr');
     //     }
 
+    //     /**
+    //      * ======================================
+    //      * ✅ STEP 3: PAY PENDING (FIFO)
+    //      * ======================================
+    //      */
+    //     if ($payInput > 0) {
 
-      
+    //         if ($payInput > $pending) {
+    //             throw new Exception("Pay exceeds pending amount");
+    //         }
 
+    //         $remainingPay = $payInput;
 
-        
+    //         foreach ($txList as $tx) {
 
-    //     return true ;
+    //             if ($remainingPay <= 0) break;
+    //             if ($tx->pending_amount <= 0) continue;
+
+    //             $use = min($tx->pending_amount, $remainingPay);
+
+    //             $tx->update([
+    //                 'paid_amount'    => $tx->paid_amount + $use,
+    //                 'pending_amount' => $tx->pending_amount - $use,
+    //                 'is_paid'        => ($tx->pending_amount - $use) == 0 ? 1 : 0,
+    //             ]);
+
+    //             $remainingPay -= $use;
+    //         }
+
+    //         // Remaining pending
+    //         $remainingPending = (clone $txQuery)
+    //             ->sum('pending_amount');
+
+    //         if ($remainingPending > 0 && $settlementMode === 'adjust') {
+
+    //             $remainingAdjust = $remainingPending;
+
+    //             foreach ($txList as $tx) {
+
+    //                 if ($remainingAdjust <= 0) break;
+    //                 if ($tx->pending_amount <= 0) continue;
+
+    //                 $use = min($tx->pending_amount, $remainingAdjust);
+
+    //                 $tx->update([
+    //                     'pending_amount'  => $tx->pending_amount - $use,
+    //                     'discount_amount' => $tx->discount_amount + $use,
+    //                     'is_paid'         => ($tx->pending_amount - $use) == 0 ? 1 : 0,
+    //                 ]);
+
+    //                 $remainingAdjust -= $use;
+    //             }
+    //         }
+
+    //         // Activity
+    //         $this->logActivity($learnerId, 'PENDING', $payInput, $paymentMode, 'Cr');
+    //     }
+
+    //     /**
+     
+    //     * ======================================
+    //     * ✅ STEP 4: ONLY ADJUST (NO PAY / REFUND)
+    //     * ======================================
+    //     */
+    //     if (!$request->is_refund && !$payInput && $settlementMode === 'adjust') {
+
+    //         $remainingAdjust = $pending;
+
+    //         foreach ($txList as $tx) {
+
+    //             if ($remainingAdjust <= 0) break;
+    //             if ($tx->pending_amount <= 0) continue;
+
+    //             $use = min($tx->pending_amount, $remainingAdjust);
+
+    //             $tx->update([
+    //                 'pending_amount'  => $tx->pending_amount - $use,
+    //                 'discount_amount' => $tx->discount_amount + $use,
+    //                 'is_paid'         => ($tx->pending_amount - $use) == 0 ? 1 : 0,
+    //             ]);
+
+    //             $remainingAdjust -= $use;
+    //         }
+    //     }
+
+    //     return true;
     // }
 
-    public function processSettlement($request, $learnerId)
-{
-    $settlementMode = $request->settlement_mode;
-    $refundInput    = (float) $request->refund_amount;
-    $payInput       = (float) $request->pay_amount;
+    // /**
+    //  * FINAL DELETE
+    //  */
+    // public function executeDelete($request, $learnerId)
+    // {
+    //     $learner = Learner::findOrFail($learnerId);
 
-    $txList = LearnerTransaction::where('learner_id', $learnerId)
-        ->orderBy('id', 'asc')
-        ->get();
+    //     $isFull = $request->full_learner_delete == 1;
 
-    if ($txList->isEmpty()) {
-        throw new Exception("No transactions found");
-    }
-
-    $total   = $txList->sum('total_amount');
-    $paid    = $txList->sum('paid_amount');
-    $pending = $txList->sum('pending_amount');
-    $extra   = $txList->sum('refund'); // advance/refund column
-
-    $lastTx = $txList->last();
-
-    $paymentMode = match ($request->payment_mode) {
-        3 => 'PAYLATER',
-        2 => 'OFFLINE',
-        default => 'ONLINE'
-    };
-
-
-    /**
-     * ======================================
-     * ✅ STEP 1: ADJUST EXTRA FIRST (CRITICAL FIX)
-     * ======================================
-     */
-    if ($extra > 0) {
-
-        $remainingExtra = $extra;
-
-        foreach ($txList as $tx) {
-
-            if ($remainingExtra <= 0) break;
-            if ($tx->pending_amount <= 0) continue;
-
-            $use = min($tx->pending_amount, $remainingExtra);
-
-            $tx->update([
-                'pending_amount' => $tx->pending_amount - $use,
-                'is_paid' => ($tx->pending_amount - $use) == 0 ? 1 : 0,
-            ]);
-
-            $remainingExtra -= $use;
-        }
-
-        // Reset extra after adjustment
-        LearnerTransaction::where('learner_id', $learnerId)
-            ->update(['refund' => 0]);
-
-        // Refresh values after adjustment
-        $pending = LearnerTransaction::where('learner_id', $learnerId)->sum('pending_amount');
-        $extra   = 0;
-    }
-
-    /**
-     * ======================================
-     * ✅ STEP 2: REFUND LOGIC
-     * ======================================
-     */
-    if ($request->is_refund == 1 && $refundInput > 0) {
-
-        if ($refundInput > $paid) {
-            throw new Exception("Refund cannot exceed total paid amount");
-        }
-
-        $remainingRefund = $refundInput;
-
-        // Deduct from PAID (reverse order - latest first)
-        foreach ($txList->reverse() as $tx) {
-
-            if ($remainingRefund <= 0) break;
-
-            if ($tx->paid_amount <= 0) continue;
-
-            $deduct = min($tx->paid_amount, $remainingRefund);
-
-            $tx->update([
-                'paid_amount' => $tx->paid_amount - $deduct
-            ]);
-
-            $remainingRefund -= $deduct;
-        }
-
-        // Handle remaining refund (future / adjust)
-        if ($remainingRefund > 0) {
-
-            if ($settlementMode === 'refund_pending_future') {
-                $lastTx->update(['refund' => $remainingRefund]);
-            }
-
-            if ($settlementMode === 'adjust') {
-                $lastTx->increment('discount_amount', $remainingRefund);
-            }
-        }
-
-        // Activity
-        $this->logActivity($learnerId, 'REFUND', $refundInput, $paymentMode, 'Dr');
-    }
-
-    /**
-     * ======================================
-     * ✅ STEP 3: PAY PENDING (FIFO)
-     * ======================================
-     */
-    if ($payInput > 0) {
-
-        if ($payInput > $pending) {
-            throw new Exception("Pay exceeds pending amount");
-        }
-
-        $remainingPay = $payInput;
-
-        foreach ($txList as $tx) {
-
-            if ($remainingPay <= 0) break;
-            if ($tx->pending_amount <= 0) continue;
-
-            $use = min($tx->pending_amount, $remainingPay);
-
-            $tx->update([
-                'paid_amount'    => $tx->paid_amount + $use,
-                'pending_amount' => $tx->pending_amount - $use,
-                'is_paid'        => ($tx->pending_amount - $use) == 0 ? 1 : 0,
-            ]);
-
-            $remainingPay -= $use;
-        }
-
-        // Remaining pending
-        $remainingPending = LearnerTransaction::where('learner_id', $learnerId)
-            ->sum('pending_amount');
-
-        if ($remainingPending > 0 && $settlementMode === 'adjust') {
-
-            $remainingAdjust = $remainingPending;
-
-            foreach ($txList as $tx) {
-
-                if ($remainingAdjust <= 0) break;
-                if ($tx->pending_amount <= 0) continue;
-
-                $use = min($tx->pending_amount, $remainingAdjust);
-
-                $tx->update([
-                    'pending_amount'  => $tx->pending_amount - $use,
-                    'discount_amount' => $tx->discount_amount + $use,
-                    'is_paid'         => ($tx->pending_amount - $use) == 0 ? 1 : 0,
-                ]);
-
-                $remainingAdjust -= $use;
-            }
-        }
-
-        // Activity
-        $this->logActivity($learnerId, 'PENDING', $payInput, $paymentMode, 'Cr');
-    }
-
-    /**
-  
-    * ======================================
-    * ✅ STEP 4: ONLY ADJUST (NO PAY / REFUND)
-    * ======================================
-    */
-    if (!$request->is_refund && !$payInput && $settlementMode === 'adjust') {
-
-        $remainingAdjust = $pending;
-
-        foreach ($txList as $tx) {
-
-            if ($remainingAdjust <= 0) break;
-            if ($tx->pending_amount <= 0) continue;
-
-            $use = min($tx->pending_amount, $remainingAdjust);
-
-            $tx->update([
-                'pending_amount'  => $tx->pending_amount - $use,
-                'discount_amount' => $tx->discount_amount + $use,
-                'is_paid'         => ($tx->pending_amount - $use) == 0 ? 1 : 0,
-            ]);
-
-            $remainingAdjust -= $use;
-        }
-    }
-
-    return true;
-}
-
-    /**
-     * FINAL DELETE
-     */
-    public function executeDelete($request, $learnerId)
-    {
-        $learner = Learner::findOrFail($learnerId);
-
-        $isFull = $request->full_learner_delete == 1;
-
-        $detailIds = $isFull
-            ? LearnerDetail::where('learner_id', $learnerId)->pluck('id')->toArray()
-            : ($request->learner_detail_ids ?? []);
+    //     $detailIds = $isFull
+    //         ? LearnerDetail::where('learner_id', $learnerId)->pluck('id')->toArray()
+    //         : ($request->learner_detail_ids ?? []);
         
         
 
 
-        DB::transaction(function () use ($detailIds, $learner, $isFull, $request) {
+    //     DB::transaction(function () use ($detailIds, $learner, $isFull, $request) {
 
-            foreach ($detailIds as $id) {
+    //         foreach ($detailIds as $id) {
 
-                $detail = LearnerDetail::find($id);
+    //             $detail = LearnerDetail::find($id);
 
-                if (!$detail) continue;
+    //             if (!$detail) continue;
 
-                /**
-                 * DELETE TRANSACTION
-                 */
-                LearnerTransaction::where('learner_detail_id', $id)->delete();
+    //             /**
+    //              * DELETE TRANSACTION
+    //              */
+    //             LearnerTransaction::where('learner_detail_id', $id)->delete();
 
-                /**
-                 * DELETE DETAIL
-                 */
-                $detail->delete();
-            }
+    //             /**
+    //              * DELETE DETAIL
+    //              */
+    //             $detail->delete();
+    //         }
 
-            /**
-             * FULL DELETE
-             */
-            if ($isFull) {
-                $learner->update([
-                    'status'=>0
-                ]);
-                $learner->delete();
-            }
-        });
+    //         /**
+    //          * FULL DELETE
+    //          */
+    //         if ($isFull) {
+    //             $learner->update([
+    //                 'status'=>0
+    //             ]);
+    //             $learner->delete();
+    //         }
+    //     });
 
-        return [
-            'deleted_details' => count($detailIds),
-            'full_delete' => $isFull
-        ];
-    }
+    //     return [
+    //         'deleted_details' => count($detailIds),
+    //         'full_delete' => $isFull
+    //     ];
+    // }
 
 
-    private function logActivity($learnerId, $type, $amount, $mode, $drcr)
-{
-    LearnerTransactionActivity::create([
-        'branch_id' => getCurrentBranch(),
-        'learner_id' => $learnerId,
-        'date' => now(),
-        'transaction_id' => transaction_id(),
-        'particular' => 'SETTLEMENT',
-        'payment_type' => $type,
-        'payment_mode' => $mode,
-        'amount' => $amount,
-        'dr_cr' => $drcr,
-    ]);
-}
+    // private function logActivity($learnerId, $type, $amount, $mode, $drcr)
+    // {
+    //     LearnerTransactionActivity::create([
+    //         'branch_id' => getCurrentBranch(),
+    //         'learner_id' => $learnerId,
+    //         'date' => now(),
+    //         'transaction_id' => transaction_id(),
+    //         'particular' => 'SETTLEMENT',
+    //         'payment_type' => $type,
+    //         'payment_mode' => $mode,
+    //         'amount' => $amount,
+    //         'dr_cr' => $drcr,
+    //     ]);
+    // }
 }
