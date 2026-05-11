@@ -201,6 +201,13 @@ if (!function_exists('totalPending')) {
         return  $transaction;
     }
 }
+if (!function_exists('totalExtra')) {
+    function totalExtra($id)
+    {
+        $transaction = LearnerTransaction::withTrashed()->where('learner_id', $id)->sum('refund');
+        return  $transaction;
+    }
+}
 
 if (!function_exists('learnerTransactionStatus')) {
 
@@ -434,7 +441,7 @@ if (!function_exists('getEndDate')) {
         $type      = strtoupper($planData->type);
         $duration  = (int) ($planData->plan_id ?? 1);
         $monthdays = $planData->monthdays;
-
+ 
         $branchId  = $branch_id ?? getCurrentBranch();
 
         $branch = Branch::find($branchId);
@@ -445,7 +452,7 @@ if (!function_exists('getEndDate')) {
         | 🔹 CASE 1: FIXED BILLING DATE ENABLED (FINAL FIX)
         |--------------------------------------------------------------------------
         */
-       if ($branch && !empty($branch->fixed_billing_date)) {
+        if ($branch && !empty($branch->fixed_billing_date)) {
 
             $fixedDay = (int) $branch->fixed_billing_date;
 

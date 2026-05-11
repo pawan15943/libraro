@@ -302,7 +302,7 @@ $learner_id=$value->id;
                         <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due</a></li>
                         @endif
 
-                       @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)?->pending_amount))
+                        @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)?->pending_amount))
                         <li>
                             <a class="" target="_blank"
                                 data-bs-placement="bottom"
@@ -338,44 +338,44 @@ $learner_id=$value->id;
 
                                 @if(notificationActive())
                                     @if(wabaNotificationActive())
-                                    <li>
-                                        <a target="_blank" href="javascript:;"
-                                            data-bs-toggle="modal" class="open-waba"
+                                        <li>
+                                            <a target="_blank" href="javascript:;"
+                                                data-bs-toggle="modal" class="open-waba"
 
-                                            data-learner_id="{{$learner_id}}"
-                                            data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
+                                                data-learner_id="{{$learner_id}}"
+                                                data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders">
+                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
                                     @endif
 
                                     @if(textNotificationActive())
-                                    <li>
-                                        <a target="_blank" href="javascript:;" data-bs-toggle="modal"
-                                            data-learner_id="{{$learner_id}}" class="open-text"
-                                            data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders">
-                                            <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
-                                        </a>
-                                    </li>
+                                        <li>
+                                            <a target="_blank" href="javascript:;" data-bs-toggle="modal"
+                                                data-learner_id="{{$learner_id}}" class="open-text"
+                                                data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders">
+                                                <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
+                                            </a>
+                                        </li>
                                     @endif
 
                                 @else
 
                                     @if($planStatus['class']=='extedned')
-                                    <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                        <li>
+                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
-                                        </a>
-                                    </li>
+                                            </a>
+                                        </li>
                                     @else
                                     
-                                    <li>
-                                        <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                        <li>
+                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
-                                        </a>
-                                    </li>
+                                            </a>
+                                        </li>
 
                                     @endif
 
@@ -391,10 +391,10 @@ $learner_id=$value->id;
                             <!-- Swap Seat-->
 
                         @can('has-permission', 'Swap Seat')
-                        @if($value->frozen_status != 1)
-                        
-                        <li><a href="{{route('learners.swap',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Swap Seat"><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
-                        @endif
+                            @if($value->frozen_status != 1)
+                            
+                            <li><a href="{{route('learners.swap',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Swap Seat"><i class="fa-solid fa-arrow-right-arrow-left"></i></a></li>
+                            @endif
                         @endcan
 
 
@@ -450,7 +450,11 @@ $learner_id=$value->id;
                     @can('has-permission', 'Add Misllaneous Payment')
                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                     @endcan
+                    @if (totalPending($learner_id) > 0 || totalExtra($learner_id) > 0)
+                        
+                    
                     <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Settlement" class="settlement-learner"><i class="fa-solid fa-scale-balanced"></i></a></li>
+                    @endif
                     @can('has-permission', 'Gift Days')
                     @if(!in_array('33', toggleHideField()) && $value->frozen_status != 1)
                     <li><a href="javascript:;" class="giftDaysBtn" data-learner_id="{{$learner_id}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Gift Days"><i class="fa-solid fa-gift"></i></a></li>
@@ -520,8 +524,8 @@ $learner_id=$value->id;
                         <span class="extended">Closed</span>
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
-                        @elseif(has_non_expired($value->id))
-                         <span class="success">Non-Expired</span>
+                        @elseif(has_non_expired($value->id) && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension'))
+                         <span class="actives">Active</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif

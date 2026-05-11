@@ -411,8 +411,12 @@ class LearnerOperationService
             'status'=>$detailstatus
         ]);
        
-        if($dto->operation == 'EDIT' && !$startDateBlocked){
+        if($dto->operation == 'EDIT' && !$startDateBlocked ){
             $detail->plan_start_date = $start_date;
+            $detail->plan_end_date = $endDate;
+            $detail->save();
+        }
+        if($dto->operation == 'CHANGE PLAN' ){
             $detail->plan_end_date = $endDate;
             $detail->save();
         }
