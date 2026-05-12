@@ -2369,173 +2369,114 @@ class LearnerController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        if ($request->input('permanent') == '1') {
+            $deleteAllActivities = in_array($request->input('deleteAll'), [1, '1', true, 'true'], true);
+            $result = $this->learnerLifecycleService->permanentDelete((int) $id, $deleteAllActivities);
 
-        try {
-            DB::transaction(function () use ($request, $id) {
+            if (! $result['ok']) {
+                return response()->json(['error' => $result['message']], 422);
+            }
 
-                $customer = Learner::withTrashed()->findOrFail($id);
-
-                if ($request->permanent == '1') {
-                    $deleteAll = in_array($request->input('deleteAll'), [1, '1', true], true);
-                    $result = $this->learnerLifecycleService->permanentDelete((int) $id, $deleteAll);
-                    if (! $result['ok']) {
-                        throw new Exception($result['message']);
-                    }
-                } else {
-
-                    $lastLearnerDetail = LearnerDetail::where('learner_id', $customer->id)->orderBy('id', 'DESC')->first();
-                    if (!$lastLearnerDetail) {
-                        throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
-                    }
-                    if ($lastLearnerDetail) {
-                        if ($request->isRefund && $request->refundAmount > 0) {
-                            LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->update([
-                                'refund' => $request->pendingRefund
-                            ]);
-                        }
-                        if ($request->remark) {
-                            $customer->remark =  $request->remark;
-                        }
-                        // Delete associated LearnerTransaction records
-                        // LearnerTransaction::where('learner_detail_id', $lastLearnerDetail->id)->delete();
-                        $lastLearnerDetail->status = 0;
-                        $lastLearnerDetail->save();
-                        LearnerDetail::where('learner_id', $customer->id)->delete();
-                        $customer->status = 0;
-
-                        $customer->save();
-                        $customer->delete();
-                        if ($request->isRefund && $request->refundAmount > 0) {
-
-                            $data = [];
-                            $data['learner_id'] = $id;
-                            $data['particular'] = 'Delete Seat';
-                            $data['payment_type'] = 'REFUND';
-                            $data['payment_mode'] = 1;
-                            $data['amount'] = $request->refundAmount ?? 0;
-                            $data['dr_cr'] = 'Dr';
-                            $this->learnerTransactionActivity($data);
-                        }
-
-                        try {
-                            $noti = new NotificationSentController;
-                            if (autowabaNotificationActive()) {
-                                if ($request->isRefund) {
-                                    $template_code = 'refund-waba';
-                                } else {
-                                    $template_code = 'delete-waba';
-                                }
-                                \Log::info('autowabaNotificationActive');
-                                $noti->autoMessage($customer->id, 'waba', $template_code);
-                            }
-                            if (autotextNotificationActive()) {
-                                if ($request->isRefund) {
-                                    $template_code_sms = 'refund-sms';
-                                } else {
-                                    $template_code_sms = 'delete-sms';
-                                }
-                                \Log::info('autotextNotificationActive');
-                                $noti->autoMessage($customer->id, 'text', $template_code_sms);
-                            }
-                        } catch (\Throwable $e) {
-                            // Log the error (won't break your main code)
-                            \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                                'exception' => $e
-                            ]);
-                        }
-                    }
-                }
-            });
-
-
-            return response()->json(['success' => 'Learner and related details deleted successfully.']);
-        } catch (\Exception $e) {
-
-            return response()->json(['error' => 'An error occurred while deleting the customer: ' . $e->getMessage()], 500);
+            return response()->json(['success' => $result['message']]);
         }
 
-        return response()->json(['success' => 'Learner deleted successfully.']);
+        return $this->closeOrDeleteLearner($request, (int) $id, 'delete');
     }
 
     public function userclose(Request $request)
     {
+        return $this->closeOrDeleteLearner($request, (int) $request->input('learner_id'), 'close');
+    }
 
+    private function closeOrDeleteLearner(Request $request, int $learnerId, string $operation)
+    {
+        $normalized = $this->normalizeCloseDeletePayload($request, $learnerId, $operation);
 
-        try {
+        $validator = Validator::make($normalized, [
+            'learner_id' => 'required|integer|exists:learners,id',
+            'operation' => 'required|in:close,delete',
+            'isRefund' => 'required|boolean',
+            'refund_amount' => [
+                Rule::requiredIf((bool) $normalized['isRefund']),
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'payment_mode' => [
+                Rule::requiredIf((bool) $normalized['isRefund']),
+                'nullable',
+                'in:1,2,3',
+            ],
+            'pendind_refund' => 'nullable|numeric|min:0',
+            'transaction' => [
+                Rule::requiredIf($operation === 'delete'),
+                'nullable',
+                'in:current,all',
+            ],
+            'remark' => 'nullable|string|max:1000',
+        ]);
 
-            DB::transaction(function () use ($request) {
-                $today = date('Y-m-d');
-                $customer = Learner::findOrFail($request->learner_id);
+        $validator->after(function ($validator) use ($normalized) {
+            if ((bool) $normalized['isRefund'] && ! array_key_exists('pendind_refund', $normalized)) {
+                $validator->errors()->add('pendind_refund', 'Pending refund amount is required when refund is selected.');
+            }
+        });
 
-
-                $lastLearnerDetail = LearnerDetail::where('id', $request->learnerDetail)->exists();
-                if (!$lastLearnerDetail) {
-                    throw new Exception("No LearnerDetail found for learner ID: {$customer->id}");
-                }
-                if ($lastLearnerDetail) {
-                    if ($request->isRefund && $request->refundAmount > 0) {
-                        LearnerTransaction::where('learner_detail_id', $request->learnerDetail)->update([
-                            'refund' => $request->pendingRefund
-                        ]);
-                    }
-                    if ($request->remark) {
-                        $customer->remark =  $request->remark;
-                    }
-                    // Delete associated LearnerTransaction records
-                    $exists = LearnerDetail::where('id', $request->learnerDetail)->where('plan_start_date', '>', date('Y-m-d'))->exists();
-
-                    if ($exists) {
-                        LearnerDetail::where('id', $request->learnerDetail)->update([
-                            'plan_start_date' => $today,
-                            'plan_end_date'   => $today,
-                            'status'          => 0
-                        ]);
-                    } else {
-                        LearnerDetail::where('id', $request->learnerDetail)->update([
-                            'plan_end_date' => $today,
-                            'status'        => 0
-                        ]);
-                    }
-
-                    $customer->status = 0;
-                    $customer->save();
-                    if ($request->isRefund && $request->refundAmount > 0) {
-                        $data = [];
-                        $data['learner_id'] = $request->learner_id;
-                        $data['particular'] = 'Close Seat';
-                        $data['payment_type'] = 'REFUND';
-                        $data['payment_mode'] = 1;
-                        $data['amount'] = $request->refundAmount ?? 0;
-                        $data['dr_cr'] = 'Dr';
-                        $this->learnerTransactionActivity($data);
-                    }
-                    try {
-                        $noti = new NotificationSentController;
-
-                        if (autowabaNotificationActive()) {
-                            \Log::info('autowabaNotificationActive');
-                            $noti->autoMessage($customer->id, 'waba', 'close-waba');
-                        }
-                        if (autotextNotificationActive()) {
-                            \Log::info('autotextNotificationActive');
-                            $noti->autoMessage($customer->id, 'text', 'close-sms');
-                        }
-                    } catch (\Throwable $e) {
-                        // Log the error (won't break your main code)
-                        \Log::error('Notification sending failed: ' . $e->getMessage(), [
-
-                            'exception' => $e
-                        ]);
-                    }
-                }
-            });
-
-            return response()->json(['success' => 'Learner closed successfully.']);
-        } catch (\Exception $e) {
-
-            return response()->json(['error' => 'An error occurred while close the customer: ' . $e->getMessage()], 500);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'error' => $validator->errors()->first(),
+                'message' => $validator->errors()->first(),
+            ], 422);
         }
+
+        $validated = $validator->validated();
+        $result = $this->learnerLifecycleService->closedelete($validated);
+
+        if (! $result['ok']) {
+            return response()->json([
+                'status' => false,
+                'success' => false,
+                'error' => $result['message'],
+                'message' => $result['message'],
+            ], 422);
+        }
+
+        return response()->json([
+            'status' => true,
+            'success' => $result['message'],
+            'message' => $result['message'],
+        ]);
+    }
+
+    private function normalizeCloseDeletePayload(Request $request, int $learnerId, string $operation): array
+    {
+        $isRefund = filter_var($request->input('isRefund', false), FILTER_VALIDATE_BOOLEAN);
+        $pendingRefund = $request->input('pendind_refund', $request->input('pending_refund', $request->input('pendingRefund')));
+
+        $refundAmount = $request->input('refund_amount', $request->input('refundAmount', 0));
+        if (! $isRefund) {
+            $refundAmount = 0;
+        }
+
+        $payload = [
+            'learner_id' => $learnerId,
+            'operation' => $operation,
+            'isRefund' => $isRefund,
+            'refund_amount' => $refundAmount,
+            'payment_mode' => $request->input('payment_mode', 1),
+            'transaction' => $request->input('transaction', 'all'),
+            'remark' => $request->input('remark'),
+        ];
+
+        if ($pendingRefund !== null && $pendingRefund !== '') {
+            $payload['pendind_refund'] = $pendingRefund;
+        } elseif ($isRefund) {
+            $payload['pendind_refund'] = 0;
+        }
+
+        return $payload;
     }
 
     public function makePayment(Request $request)
