@@ -23,12 +23,15 @@ use App\Models\Setting;
 use Carbon\Carbon;
 
 if (!function_exists('alreadyRenewed')) {
+
     function alreadyRenewed($learnerId)
     {
         return LearnerDetail::where('learner_id', $learnerId)
-            ->where('status', 0) // future booking
+            ->where('status', 0)
             ->whereDate('plan_start_date', '>', now())
-            ->exists();
+            ->count() > 0
+            &&
+            LearnerDetail::where('learner_id', $learnerId)->count() > 1;
     }
 }
 
