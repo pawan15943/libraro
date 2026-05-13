@@ -102,7 +102,7 @@
                     <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" checked>
-                            <label class="form-check-label fw-semibold text-danger">Settle pending amount</label>
+                            <label class="form-check-label fw-semibold text-danger">Pay pending amount</label>
                         </div>
                         <input type="text" class="form-control form-control-sm v2PayAmount mb-2" placeholder="Enter pay amount">
                         <div class="form-check mt-2">
@@ -247,7 +247,9 @@
                 const paymentMode = $('.v2PaymentMode').val() || '';
                 const payAmount = toNumber($('.v2PayAmount').val());
                 const refundAmount = toNumber($('.v2RefundAmount').val());
-                if (caseType !== 'settled' && !paymentMode) {
+                console.log('caseType',caseType);
+                console.log('payAmount',payAmount);
+                if (caseType !== 'settled' && !paymentMode && payAmount!=0) {
                     Swal.showValidationMessage('Please choose payment mode.');
                     return false;
                 }
@@ -257,7 +259,7 @@
                     return false;
                 }
 
-                if (caseType === 'pending' && (payAmount <= 0 || payAmount > net)) {
+                if (caseType === 'pending' && (payAmount < 0 || payAmount > net)) {
                     Swal.showValidationMessage('Please enter a valid pending amount.');
                     return false;
                 }
@@ -424,6 +426,7 @@
                 };
             }
         }).then((result) => {
+            
             if (result.isConfirmed) {
                 $.ajax({
                     url: url,
@@ -438,6 +441,7 @@
                         remark: result.value.remark
                     },
                     success: function (response) {
+                        console.log(response);
                         logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
                         Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
                             location.reload();
@@ -1080,7 +1084,7 @@
         
         let pendingAmount;
         const paymentType = $('input[name="payment_type"]').val();
-        if (paymentType === 'CHANGE PLAN') {
+        if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
             pendingAmount = effectivePaid - paid_val - previous_amount10;
         } else {
             pendingAmount = effectivePaid - paid_val;

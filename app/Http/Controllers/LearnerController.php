@@ -2379,7 +2379,7 @@ class LearnerController extends Controller
 
             return response()->json(['success' => $result['message']]);
         }
-
+        
         return $this->closeOrDeleteLearner($request, (int) $id, 'delete');
     }
 
@@ -3215,7 +3215,23 @@ class LearnerController extends Controller
             'learner_id' => 'required|integer|exists:learners,id',
             'pending_amount' => 'nullable|numeric|min:0',
             'refund_amount' => 'nullable|numeric|min:0',
-            'payment_mode' => 'required|in:1,2,3',
+            'payment_mode' => [
+                function ($attribute, $value, $fail) use ($request) {
+
+                    $pending = (float) ($request->pending_amount ?? 0);
+                    $refund = (float) ($request->refund_amount ?? 0);
+
+                    // payment mode required only when amount entered > 0
+                    if (($pending > 0 || $refund > 0) && empty($value)) {
+                        $fail('Payment mode is required.');
+                    }
+
+                    // validate allowed values only if provided
+                    if (!empty($value) && !in_array($value, [1,2,3])) {
+                        $fail('Invalid payment mode.');
+                    }
+                },
+            ],
             'adjust' => 'required|boolean',
         ]);
 
