@@ -1,6 +1,55 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    function openLearnerSettlement(learnerId, learnerDetailId) {
+        const trigger = $('<a href="javascript:void(0)" class="settlement-learner"></a>');
+        trigger.attr('data-id', learnerId);
+        trigger.attr('data-learnerdetail', learnerDetailId || '');
+        trigger.data('id', learnerId);
+        trigger.data('learnerdetail', learnerDetailId || '');
+        $('body').append(trigger);
+        trigger.trigger('click');
+        setTimeout(() => trigger.remove(), 1000);
+    }
+
+    function getAjaxMessage(xhr, fallback) {
+        return xhr?.responseJSON?.message || xhr?.responseJSON?.error || fallback;
+    }
+
+    function showSettlementRequired(xhr, learnerId, learnerDetailId, actionText) {
+        const message = getAjaxMessage(xhr, `Please settle this learner before ${actionText}.`);
+        const needsSettlement = /pending amount|extra amount|settle/i.test(message || '');
+
+        if (!needsSettlement) {
+            Swal.fire('Error!', message, 'error');
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: `Settlement required before ${actionText}`,
+            html: `
+                <div style="text-align:left;">
+                    <div style="background:#ffe8e8;color:#d80000;border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:12px;">
+                        ${message}
+                    </div>
+                    <p style="margin:0;color:#555;">
+                        Please settle the pending or extra amount first. After settlement, you can continue the ${actionText} process as usual.
+                    </p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Settle Now',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#050a78',
+            cancelButtonColor: '#d00000'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                openLearnerSettlement(learnerId, learnerDetailId);
+            }
+        });
+    }
+
     $(document).on('click', '.settlement-learner', async function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -315,7 +364,7 @@
         return false;
     });
     // soft delete Learner 
-    $(document).on('click', '.delete-customer', function () {
+    $(document).on('click', '.delete-customer', async function () {
         var id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
         var seat = $(this).data('seat');
@@ -323,11 +372,46 @@
 
         var url = '{{ route('learners.destroy', ':id') }}';
         url = url.replace(':id', id);
+        var detailsUrl = '{{ route("learners.settlement.details", ":id") }}'.replace(':id', id);
 
         var formId = 'deleteSeat';
         var fieldName = 'seat';
         var newValue = seat;
         var oldValue = seat;
+
+        const toDeleteNumber = (value) => {
+            const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        try {
+            const detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
+            const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
+            const pendingTotal = detailRows.reduce((amount, row) => amount + toDeleteNumber(row.pending_amount), 0);
+            const extraTotal = detailRows.reduce((amount, row) => amount + toDeleteNumber(row.extra_amount), 0);
+            const netAmount = pendingTotal - extraTotal;
+
+            if (netAmount > 0) {
+                showSettlementRequired({
+                    responseJSON: {
+                        message: `This member has a pending amount(${netAmount}). Please settle it before delete`
+                    }
+                }, id, learnerDetail, 'delete');
+                return false;
+            }
+
+            if (netAmount < 0) {
+                showSettlementRequired({
+                    responseJSON: {
+                        message: `This member has an extra amount(${Math.abs(netAmount)}). Please settle it before delete`
+                    }
+                }, id, learnerDetail, 'delete');
+                return false;
+            }
+        } catch (xhr) {
+            Swal.fire('Error!', getAjaxMessage(xhr, 'Unable to check learner settlement details.'), 'error');
+            return false;
+        }
 
         Swal.fire({
             title: 'Are you sure you want to delete this Record?',
@@ -336,15 +420,26 @@
             <p style="margin-bottom:10px;">
                 Deleting this seat will not remove it permanently. It will remain visible in the learner’s history.
             </p>
+            <div style="background:#ffe8e8;color:#d80000;border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:14px;text-align:left;">
+                This is a Temporary delete operation and can be reverted later from Learner History. Once deleted, this learner will be moved to Learner History.
+            </div>
                 <div class="row g-4 delete">
-                    <div class="col-lg-12">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType isRefund" type="checkbox" id="removeRefund" value="with_refund">
-                            <label class="form-check-label" for="removeRefund">Proceed with Refund</label>
+                    <div class="col-lg-12 text-start">
+                        <label>Delete Option</label>
+                        <select class="form-control refundChoice">
+                            <option value="">Choose</option>
+                            <option value="with_refund">Proceed with Refund</option>
+                            <option value="without_refund">Proceed without Refund</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-12 text-start">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input deleteTransactionScope deleteCurrentTransaction" type="checkbox" id="deleteCurrentTransaction" value="current">
+                            <label class="form-check-label" for="deleteCurrentTransaction">Delete only current transaction</label>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund" id="refundNo">
-                            <label class="form-check-label" for="refundNo">Proceed without Refund</label>
+                        <div class="form-check">
+                            <input class="form-check-input deleteTransactionScope deleteAllTransactions" type="checkbox" id="deleteAllTransactions" value="all">
+                            <label class="form-check-label" for="deleteAllTransactions">Delete all past transactions as well.</label>
                         </div>
                     </div>
                 
@@ -390,15 +485,35 @@
                         $(popup).find('.refundAmountDiv').css('display', 'none');
                     }
                 });
+
+                $(popup).find('.refundChoice').on('change', function () {
+                    if ($(this).val() === 'with_refund') {
+                        $(popup).find('.refundAmountDiv').css('display', 'block');
+                    } else {
+                        $(popup).find('.refundAmountDiv').css('display', 'none');
+                    }
+                });
+
+                $(popup).find('.deleteTransactionScope').on('change', function () {
+                    if ($(this).is(':checked')) {
+                        $(popup).find('.deleteTransactionScope').not(this).prop('checked', false);
+                    }
+                });
             },
 
             preConfirm: () => {
-                const isRefund = $('.isRefund').is(':checked');
-                const withoutRefundSelected = $('.refundNo').is(':checked');
+                const refundChoice = $('.refundChoice').val();
+                const isRefund = refundChoice === 'with_refund';
+                const deleteCurrent = $('.deleteCurrentTransaction').is(':checked');
+                const deleteAll = $('.deleteAllTransactions').is(':checked');
 
                 // ⭐ REQUIRED VALIDATION — at least ONE must be selected
-                if (!isRefund && !withoutRefundSelected) {
-                    Swal.showValidationMessage('Please select one from Refund or Without Refund');
+                if (!refundChoice) {
+                    Swal.showValidationMessage('Please choose delete option');
+                    return false;
+                }
+                if (!deleteCurrent && !deleteAll) {
+                    Swal.showValidationMessage('Please select one delete action');
                     return false;
                 }
                 let refundValue = $('.refundAmount').val();
@@ -423,6 +538,7 @@
                     refundAmount: refundAmount,
                     pendingRefund: $('.pendingRefund').val(),
                     remark: remark,
+                    transaction: deleteAll ? 'all' : 'current',
                 };
             }
         }).then((result) => {
@@ -438,7 +554,8 @@
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
                         pendingRefund: result.value.pendingRefund,
-                        remark: result.value.remark
+                        remark: result.value.remark,
+                        transaction: result.value.transaction
                     },
                     success: function (response) {
                         console.log(response);
@@ -448,7 +565,7 @@
                         });
                     },
                     error: function (xhr) {
-                        Swal.fire('Error!', 'An error occurred while deleting.', 'error');
+                        showSettlementRequired(xhr, id, learnerDetail, 'delete');
                     }
                 });
             }
@@ -557,11 +674,12 @@
     });
 
     // Learner Close Plan Form
-    $(document).on('click', '.link-close-plan', function() {
+    $(document).on('click', '.link-close-plan', async function() {
        var learner_id = $(this).data('id');
         var learnerDetail = $(this).data('learnerdetail');
         var paybleRefund = parseFloat($(this).data('payblerefund'));
         var url = '{{ route('learners.close') }}'; // Adjust the route as necessary
+        var detailsUrl = '{{ route("learners.settlement.details", ":id") }}'.replace(':id', learner_id);
         var oldValue=this.getAttribute('data-plan_end_date');
         var formId='closeSeat';
         var fieldName='plan_end_date';
@@ -570,6 +688,40 @@
         var month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
         var day = String(today.getDate()).padStart(2, '0');
         var newValue = `${year}-${month}-${day}`;
+
+        const toCloseNumber = (value) => {
+            const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        try {
+            const detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
+            const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
+            const pendingTotal = detailRows.reduce((amount, row) => amount + toCloseNumber(row.pending_amount), 0);
+            const extraTotal = detailRows.reduce((amount, row) => amount + toCloseNumber(row.extra_amount), 0);
+            const netAmount = pendingTotal - extraTotal;
+
+            if (netAmount > 0) {
+                showSettlementRequired({
+                    responseJSON: {
+                        message: `This member has a pending amount(${netAmount}). Please settle it before close`
+                    }
+                }, learner_id, learnerDetail, 'close');
+                return false;
+            }
+
+            if (netAmount < 0) {
+                showSettlementRequired({
+                    responseJSON: {
+                        message: `This member has an extra amount(${Math.abs(netAmount)}). Please settle it before close`
+                    }
+                }, learner_id, learnerDetail, 'close');
+                return false;
+            }
+        } catch (xhr) {
+            Swal.fire('Error!', getAjaxMessage(xhr, 'Unable to check learner settlement details.'), 'error');
+            return false;
+        }
        
         Swal.fire({
             title: 'Are you sure you want to close this Seat?',
@@ -683,7 +835,7 @@
                         });
                     },
                     error: function (xhr) {
-                        Swal.fire('Error!', 'An error occurred while close.', 'error');
+                        showSettlementRequired(xhr, learner_id, learnerDetail, 'close');
                     }
                 });
             }
