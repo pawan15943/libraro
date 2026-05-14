@@ -221,7 +221,7 @@ if (!function_exists('learnerTransactionStatus')) {
         $transactions = LearnerTransaction::withTrashed()
             ->leftJoin('learner_detail as ld', 'ld.id', '=', 'learner_transactions.learner_detail_id')
             ->where('learner_transactions.learner_id', $learnerId)
-            ->where('learner_transactions.pending_amount', '>', 0)
+            // ->where('learner_transactions.pending_amount', '>', 0)
             ->select(
                 'learner_transactions.pending_amount',
                 'learner_transactions.refund',
