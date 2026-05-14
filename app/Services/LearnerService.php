@@ -1124,8 +1124,15 @@ class LearnerService
             $mainstatus='Active';
         }
 
-        $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
-
+        // $fetchPlanType=PlanType::where('id',$detail->planType->id)->select('id','name','start_time','end_time')->first();
+        $fetchPlanType = $detail->planType
+        ? [
+            'id' => $detail->planType->id,
+            'name' => $detail->planType->name,
+            'start_time' => $detail->planType->start_time,
+            'end_time' => $detail->planType->end_time,
+        ]
+        : null;
        $total_overall = $this->amountSatelment($learnerId);
 
         if($detail->exam_id){
@@ -1155,8 +1162,8 @@ class LearnerService
             'detail_info'=>[
                 'plan'=>$detail->plan->name ?? '',
                 'plan_type'=>$detail->planType->name ?? '',
-                'plan_id'=>$detail->plan->id ?? '',
-                'plan_type_id'=>$detail->planType->id ?? '',
+                'plan_id' => optional($detail->plan)->id ?? '',
+                'plan_type_id' => optional($detail->planType)->id ?? '',
                 
                 'price'=>$detail->plan_price_id,
                 'monthdays'=>$detail->plan->monthdays ?? 'Calendar wise',
@@ -1172,7 +1179,13 @@ class LearnerService
                 'locker_no'=>$learner->locker_no ?? '',
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
-                'plan_days' => getChargeableDays($detail->plan->id, $detail->plan_start_date, $branchId)['chargeable_days'] ?? 0,
+                'plan_days' => $detail->plan
+                    ? getChargeableDays(
+                        $detail->plan->id,
+                        $detail->plan_start_date,
+                        $branchId
+                    )['chargeable_days'] ?? 0
+                    : 0,               
                 'plantype_detail'=>$fetchPlanType ?? '',
                 'total_gift_days' => app(LearnerGiftDaysService::class)->getTotalGiftDays((int) $learnerId),
                
@@ -1510,6 +1523,7 @@ class LearnerService
             ->selectRaw('
                 SUM(total_amount) as total_amount_sum,
                 SUM(paid_amount) as paid_amount_sum,
+                SUM(pending_amount) as pending_amount_sum,
                 SUM(refund) as pending_refund_sum,
                 SUM(sattle_amount) as sattle_amount_sum
             ')
@@ -1519,14 +1533,14 @@ class LearnerService
         $paid   = $total_overall->paid_amount_sum ?? 0;
         $refund = $total_overall->pending_refund_sum ?? 0;
         $sattle = $total_overall->sattle_amount_sum ?? 0;
+        $pending = $total_overall->pending_amount_sum ?? 0;
 
-        $balance = $total - $paid - $refund;
 
         return (object)[
             'overall_total_amt'     => (string) $total,
             'overall_paid_amount'   => (string) $paid,
-            'overall_pending_sum'   => (string) max($balance, 0),
-            'total_refund_pending'  => (string) max(-$balance, 0),
+            'overall_pending_sum'   => (string) $pending>$refund ? $pending-$refund : 0,
+            'total_refund_pending'  => (string) $refund>$pending ? $refund-$pending : 0,
             'overall_sattle_amount' => (string) $sattle,
         ];
     }
@@ -1696,6 +1710,7 @@ class LearnerService
             ->where('pending_amount', '>', 0)
             ->orderBy('id', 'asc')
             ->get();
+        $totalSettledAmount = 0;
 
         foreach ($transactions as $transaction) {
             $pending = (float) $transaction->pending_amount;
@@ -1705,7 +1720,12 @@ class LearnerService
                 'pending_amount' => 0,
                 'is_paid' => 1,
             ]);
+            // current adjusted amount only
+            $totalSettledAmount += $pending;
+
+            
         }
+        $this->logSettlementActivity($learnerId, 'SETTLED', $totalSettledAmount, 3, 'Settle');
     }
 
     private function moveRemainingPendingToLastTransaction(int $learnerId): void
@@ -1797,6 +1817,7 @@ class LearnerService
         ]);
 
         LearnerTransaction::where('learner_id', $learnerId)->update(['refund' => 0]);
+        $this->logSettlementActivity($learnerId, 'SETTLED', $remainingRefund, 3, 'Settle');
     }
 
     private function moveRemainingRefundToLastTransaction(int $learnerId): void
@@ -1854,7 +1875,7 @@ class LearnerService
     private function logSettlementActivity(int $learnerId, string $paymentType, float $amount, $paymentMode, string $drCr): void
     {
         $mode = match ((int) $paymentMode) {
-            3 => 'PAYLATER',
+            3 => 'OTHER',
             2 => 'OFFLINE',
             default => 'ONLINE',
         };
