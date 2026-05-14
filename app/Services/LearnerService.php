@@ -1224,10 +1224,10 @@ class LearnerService
             ],
 
             'setlment_amount' => [
-                'overall_total_amt'     => $total_overall->overall_total_amt,
-                'overall_paid_amount'   => $total_overall->overall_paid_amount,
-                'overall_pending_sum'   => $total_overall->overall_pending_sum,
-                'total_refund_pending'  => $total_overall->total_refund_pending,
+                'overall_total_amt'     => (string)$total_overall->overall_total_amt,
+                'overall_paid_amount'   => (string)$total_overall->overall_paid_amount,
+                'overall_pending_sum'   => (string)$total_overall->overall_pending_sum,
+                'total_refund_pending'  => (string)$total_overall->total_refund_pending,
             ],
 
             'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
