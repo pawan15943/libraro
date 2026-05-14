@@ -119,6 +119,10 @@
                     .settlement-action-panel .form-check-input:checked { background-color:#001578; border-color:#001578; }
                     .settlement-action-panel .form-control { max-width:130px; height:38px; border-radius:7px; }
                     .settlement-mode-box { border:1px solid #e0e0e0; border-radius:7px; padding:8px 12px; }
+                    .settlement-choice-row { display:flex; gap:12px; flex-wrap:wrap; }
+                    .settlement-choice-card { flex:1 1 220px; min-height:56px; display:flex; align-items:center; gap:9px; border:1px solid #e4e4e4; border-radius:7px; background:#eee; color:#15155d; padding:10px 14px; font-weight:700; cursor:pointer; }
+                    .settlement-choice-card:has(.form-check-input:checked) { border-color:#1a39ff; background:#fff; }
+                    .settlement-choice-card .form-check-input { margin:0; }
                     .settlement-primary-btn { width:100%; border:0; border-radius:7px; background:#050a78; color:#fff; font-weight:700; padding:12px; }
                 </style>
                 <div class="settlement-popup">
@@ -148,6 +152,17 @@
 
                 <input type="hidden" class="v2SettlementCase" value="settled">
                 <div class="mt-3 text-start">
+                    <div class="settlement-choice-row mb-3 v2SettlementOptionWrap" style="display:none;">
+                        <label class="settlement-choice-card" for="v2SettleWithAmount">
+                            <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="amount" id="v2SettleWithAmount" checked>
+                            <span>Settle with Amount</span>
+                        </label>
+                        <label class="settlement-choice-card" for="v2AdjustFullAmount">
+                            <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust_full" id="v2AdjustFullAmount">
+                            <span>Adjust full Amount</span>
+                        </label>
+                    </div>
+
                     <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" checked>
@@ -234,6 +249,25 @@
                     $(popup).find('.v2PendingHelp').text(help);
                 };
 
+                const updateSettlementOption = () => {
+                    const option = $(popup).find('.v2SettlementOption:checked').val() || 'amount';
+                    const caseType = $(popup).find('.v2SettlementCase').val();
+
+                    if (caseType === 'pending') {
+                        $(popup).find('.v2PendingPanel').toggle(option === 'amount');
+                        $(popup).find('.v2PaymentModeWrap').toggle(option === 'amount');
+                        Swal.getConfirmButton().textContent = option === 'amount'
+                            ? 'Pay the pending amount.'
+                            : 'Adjust Payment';
+                    } else if (caseType === 'extra') {
+                        $(popup).find('.v2ExtraPanel').toggle(option === 'amount');
+                        $(popup).find('.v2PaymentModeWrap').toggle(option === 'amount');
+                        Swal.getConfirmButton().textContent = option === 'amount'
+                            ? 'Settle extra amount.'
+                            : 'Adjust Payment';
+                    }
+                };
+
                 const recalc = () => {
                     const totals = selectedTotals();
                     const net = totals.pending - totals.extra;
@@ -245,20 +279,22 @@
                     $(popup).find('.v2Pending').text(totals.pending.toFixed(0));
                     $(popup).find('.v2Extra').text(totals.extra.toFixed(0));
                     $(popup).find('.v2NetAmount').text(netAbs.toFixed(0));
-                    $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel').hide();
+                    $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel,.v2SettlementOptionWrap').hide();
 
                     if (net > 0) {
                         $(popup).find('.v2SettlementCase').val('pending');
-                        $(popup).find('.v2PendingPanel,.v2PaymentModeWrap').show();
+                        $(popup).find('.v2SettlementOptionWrap,.v2PendingPanel,.v2PaymentModeWrap').show();
                         $(popup).find('.v2PayAmount').val(net.toFixed(0));
                         Swal.getConfirmButton().textContent = `Pay the pending amount.`;
                         updatePendingHelp();
+                        updateSettlementOption();
                     } else if (net < 0) {
                         $(popup).find('.v2SettlementCase').val('extra');
-                        $(popup).find('.v2ExtraPanel,.v2PaymentModeWrap').show();
+                        $(popup).find('.v2SettlementOptionWrap,.v2ExtraPanel,.v2PaymentModeWrap').show();
                         $(popup).find('.v2ExtraTitleAmount').text(netAbs.toFixed(0));
                         $(popup).find('.v2RefundAmount').val(netAbs.toFixed(0));
                         Swal.getConfirmButton().textContent = `Settle extra amount.`;
+                        updateSettlementOption();
                     } else {
                         $(popup).find('.v2SettlementCase').val('settled');
                         $(popup).find('.v2SettledPanel').show();
@@ -278,6 +314,7 @@
                     recalc();
                 });
                 $(popup).on('input', '.v2PayAmount', updatePendingHelp);
+                $(popup).on('change', '.v2SettlementOption', updateSettlementOption);
                 recalc();
             },
             preConfirm: () => {
@@ -296,9 +333,10 @@
                 const paymentMode = $('.v2PaymentMode').val() || '';
                 const payAmount = toNumber($('.v2PayAmount').val());
                 const refundAmount = toNumber($('.v2RefundAmount').val());
-                console.log('caseType',caseType);
-                console.log('payAmount',payAmount);
-                if (caseType !== 'settled' && !paymentMode && payAmount!=0) {
+                const settlementOption = $('.v2SettlementOption:checked').val() || 'amount';
+                const isAdjustFull = settlementOption === 'adjust_full';
+                const enteredAmount = caseType === 'extra' ? refundAmount : payAmount;
+                if (caseType !== 'settled' && !isAdjustFull && !paymentMode && enteredAmount != 0) {
                     Swal.showValidationMessage('Please choose payment mode.');
                     return false;
                 }
@@ -308,27 +346,27 @@
                     return false;
                 }
 
-                if (caseType === 'pending' && (payAmount < 0 || payAmount > net)) {
+                if (!isAdjustFull && caseType === 'pending' && (payAmount < 0 || payAmount > net)) {
                     Swal.showValidationMessage('Please enter a valid pending amount.');
                     return false;
                 }
 
-                if (caseType === 'extra' && (refundAmount < 0 || refundAmount > Math.abs(net))) {
+                if (!isAdjustFull && caseType === 'extra' && (refundAmount < 0 || refundAmount > Math.abs(net))) {
                     Swal.showValidationMessage('Please enter a valid refund amount.');
                     return false;
                 }
 
-                const adjust = caseType === 'extra'
+                const adjust = isAdjustFull ? 1 : (caseType === 'extra'
                     ? (($('.v2ExtraMode:checked').val() || 'refund_pending_future') === 'adjust' ? 1 : 0)
-                    : (($('.v2PendingMode:checked').val() || 'future') === 'adjust' ? 1 : 0);
+                    : (($('.v2PendingMode:checked').val() || 'future') === 'adjust' ? 1 : 0));
 
                 return {
                     selectedIds,
                     adjust,
                     paymentMode: paymentMode || '1',
-                    pendingAmount: caseType === 'pending' ? payAmount : 0,
-                    refundAmount: caseType === 'extra' ? refundAmount : 0,
-                    isRefund: caseType === 'extra' && refundAmount > 0 ? 1 : 0,
+                    pendingAmount: !isAdjustFull && caseType === 'pending' ? payAmount : 0,
+                    refundAmount: !isAdjustFull && caseType === 'extra' ? refundAmount : 0,
+                    isRefund: !isAdjustFull && caseType === 'extra' && refundAmount > 0 ? 1 : 0,
                     extra: extraTotal,
                 };
             }
