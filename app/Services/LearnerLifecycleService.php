@@ -133,13 +133,12 @@ class LearnerLifecycleService
                 return ['ok' => false, 'message' => 'Learner not found.'];
             }
 
-            $lastTrashedDetail = LearnerDetail::onlyTrashed()
-                ->where('learner_id', $learnerId)
+            $lastTrashedDetail = LearnerDetail::where('learner_id', $learnerId)
                 ->orderByDesc('id')
                 ->first();
 
             if (! $lastTrashedDetail) {
-                return ['ok' => false, 'message' => 'No soft-deleted learner detail found. Delete the seat first before permanent remove.'];
+                return ['ok' => false, 'message' => 'No learner detail found. Delete the seat first before permanent remove.'];
             }
 
             $customer = Learner::onlyTrashed()->where('id', $learnerId)->first();
