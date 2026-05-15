@@ -1163,7 +1163,7 @@ class LearnerService
                 'plan'=>$detail->plan->name ?? '',
                 'plan_type'=>$detail->planType->name ?? '',
                 'plan_id' => optional($detail->plan)->id ?? '',
-                'plan_type_id' => optional($detail->planType)->id ?? '',
+                'plan_type_id' => optional($detail->planType)->id ?? null,
                 
                 'price'=>$detail->plan_price_id,
                 'monthdays'=>$detail->plan->monthdays ?? 'Calendar wise',
@@ -1176,7 +1176,7 @@ class LearnerService
                 'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
-                'locker_no'=>$learner->locker_no ?? '',
+                'locker_no'=>(string)$learner->locker_no ?? '',
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
                 'plan_days' => $detail->plan
@@ -1186,7 +1186,7 @@ class LearnerService
                         $branchId
                     )['chargeable_days'] ?? 0
                     : 0,               
-                'plantype_detail'=>$fetchPlanType ?? '',
+                'plantype_detail'=>$fetchPlanType ?? null,
                 'total_gift_days' => app(LearnerGiftDaysService::class)->getTotalGiftDays((int) $learnerId),
                
             ],

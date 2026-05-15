@@ -628,12 +628,12 @@
             <div style="text-align:left;">
                 <div class="form-check">
                     <input class="form-check-input delete-all-yes" type="checkbox" id="deleteAllYes">
-                    <label class="form-check-label" for="deleteAllYes"> Delete ALL related records (YES) </label>
+                    <label class="form-check-label" for="deleteAllYes"> Delete all past transactions with their revenue records. </label>
                 </div>
 
                 <div class="form-check">
                     <input class="form-check-input delete-all-no" type="checkbox" id="deleteAllNo">
-                    <label class="form-check-label" for="deleteAllNo"> Delete ONLY this main record (NO) </label>
+                    <label class="form-check-label" for="deleteAllNo">Delete all past transactions without deleting the revenue records.</label>
                 </div>
 
                 <small class="text-danger required-msg" style="display:none;">
