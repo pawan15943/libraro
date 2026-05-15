@@ -158,7 +158,7 @@ class LearnerController extends Controller
             'payment_mode' => [Rule::requiredIf($refundSelected === true), 'nullable', 'in:1,2,3'],
             'pendind_refund' => 'nullable|numeric|min:0',
             'pending_refund' => 'nullable|numeric|min:0',
-            'transaction' => [Rule::requiredIf($request->input('operation') === 'delete'), 'nullable', 'in:current,all'],
+            // 'transaction' => [Rule::requiredIf($request->input('operation') === 'delete'), 'nullable', 'in:current,all'],
             'remark' => 'nullable|string|max:1000',
         ], [
             'learner_id.required' => 'Learner id is required.',
@@ -173,8 +173,8 @@ class LearnerController extends Controller
             'payment_mode.in' => 'Payment mode must be 1, 2, or 3.',
             'pendind_refund.numeric' => 'Pending refund amount must be a valid number.',
             'pending_refund.numeric' => 'Pending refund amount must be a valid number.',
-            'transaction.required' => 'Transaction option is required when delete is selected.',
-            'transaction.in' => 'Transaction option must be current or all.',
+            // 'transaction.required' => 'Transaction option is required when delete is selected.',
+            // 'transaction.in' => 'Transaction option must be current or all.',
         ]);
 
         $validator->after(function ($validator) use ($request, $refundSelected) {

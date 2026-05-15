@@ -470,17 +470,6 @@
                             <option value="without_refund">Proceed without Refund</option>
                         </select>
                     </div>
-                    <div class="col-lg-12 text-start">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input deleteTransactionScope deleteCurrentTransaction" type="checkbox" id="deleteCurrentTransaction" value="current">
-                            <label class="form-check-label" for="deleteCurrentTransaction">Delete only current transaction</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input deleteTransactionScope deleteAllTransactions" type="checkbox" id="deleteAllTransactions" value="all">
-                            <label class="form-check-label" for="deleteAllTransactions">Delete all past transactions as well.</label>
-                        </div>
-                    </div>
-                
                     <div class="col-lg-6 refundAmountDiv" style="display:none;">
                         <label>Total Amt.</label>
                         <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly>
@@ -532,26 +521,15 @@
                     }
                 });
 
-                $(popup).find('.deleteTransactionScope').on('change', function () {
-                    if ($(this).is(':checked')) {
-                        $(popup).find('.deleteTransactionScope').not(this).prop('checked', false);
-                    }
-                });
             },
 
             preConfirm: () => {
                 const refundChoice = $('.refundChoice').val();
                 const isRefund = refundChoice === 'with_refund';
-                const deleteCurrent = $('.deleteCurrentTransaction').is(':checked');
-                const deleteAll = $('.deleteAllTransactions').is(':checked');
 
                 // ⭐ REQUIRED VALIDATION — at least ONE must be selected
                 if (!refundChoice) {
                     Swal.showValidationMessage('Please choose delete option');
-                    return false;
-                }
-                if (!deleteCurrent && !deleteAll) {
-                    Swal.showValidationMessage('Please select one delete action');
                     return false;
                 }
                 let refundValue = $('.refundAmount').val();
@@ -576,7 +554,6 @@
                     refundAmount: refundAmount,
                     pendingRefund: $('.pendingRefund').val(),
                     remark: remark,
-                    transaction: deleteAll ? 'all' : 'current',
                 };
             }
         }).then((result) => {
@@ -592,8 +569,7 @@
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
                         pendingRefund: result.value.pendingRefund,
-                        remark: result.value.remark,
-                        transaction: result.value.transaction
+                        remark: result.value.remark
                     },
                     success: function (response) {
                         console.log(response);

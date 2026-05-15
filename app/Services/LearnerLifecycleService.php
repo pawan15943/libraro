@@ -295,9 +295,9 @@ class LearnerLifecycleService
                     return ['ok' => false, 'message' => 'No active learner detail found.'];
                 }
 
-                if ((int) $detail->status === 0) {
-                    return ['ok' => false, 'message' => 'This seat is already closed.'];
-                }
+                // if ((int) $detail->status === 0) {
+                //     return ['ok' => false, 'message' => 'This seat is already closed.'];
+                // }
 
                 if ($isRefund) {
                     $refundAmount = (float) ($validated['refund_amount'] ?? 0);
@@ -307,7 +307,7 @@ class LearnerLifecycleService
                         'learner_id' => $learnerId,
                         'refund_amount' => $refundAmount,
                         'pendind_refund' => $pendingRefund,
-                        'transaction' => $operation === 'delete' ? $transactionScope : 'current',
+                        'transaction' =>'current',
                     ]);
 
                     $this->logTransactionActivity([
@@ -325,22 +325,31 @@ class LearnerLifecycleService
                 }
 
                 if ($operation === 'delete') {
-                    $deletedDetailIds = $this->softDeleteLearnerDetails($learnerId, $transactionScope, $detail);
-                    $this->softDeleteTransactions($learnerId, $transactionScope);
+                    // $deletedDetailIds = $this->softDeleteLearnerDetails($learnerId, $transactionScope, $detail);
+                    // $this->softDeleteTransactions($learnerId, $transactionScope);
 
-                    if ($transactionScope === 'all') {
-                        $this->logLearnerOperation($learnerId, null, 'deleteSeat', [
+                    // if ($transactionScope === 'all') {
+                    //     $this->logLearnerOperation($learnerId, null, 'deleteSeat', [
+                    //         'field_updated' => 'deleted_at',
+                    //         'old_value' => 'deleteSeat',
+                    //         'new_value' => now()->toISOString(),
+                    //     ]);
+                    // } else {
+                    //     $this->logLearnerOperation($learnerId, (int) null, 'deleteSeat', [
+                    //         'field_updated' => 'deleted_at',
+                    //         'old_value' => 'deleteSeat',
+                    //         'new_value' => now()->toISOString(),
+                    //     ]);
+                    // }
+                    $detail->update([
+                        'status'=>0
+                    ]);
+                    $detail->delete();
+                    $this->logLearnerOperation($learnerId,null, 'deleteSeat', [
                             'field_updated' => 'deleted_at',
                             'old_value' => 'deleteSeat',
                             'new_value' => now()->toISOString(),
                         ]);
-                    } else {
-                        $this->logLearnerOperation($learnerId, (int) $deletedDetailIds[0], 'deleteSeat', [
-                            'field_updated' => 'deleted_at',
-                            'old_value' => 'deleteSeat',
-                            'new_value' => now()->toISOString(),
-                        ]);
-                    }
                 } else {
                     $today = now()->format('Y-m-d');
                     $update = [
@@ -377,10 +386,7 @@ class LearnerLifecycleService
                     'message' => $operation === 'delete'
                         ? 'Learner deleted successfully.'
                         : 'Learner closed successfully.',
-                    'data' => [
-                        'learner_id' => $learnerId,
-                        'learner_detail_id' => (int) $detail->id,
-                    ],
+                   
                 ];
             });
         } catch (Exception $e) {
@@ -429,7 +435,7 @@ class LearnerLifecycleService
             throw new Exception("No transactions found");
         }
 
-        if ($refundAmount > (float) $lastTransaction->paid_amount) {
+        if ($refundAmount > (float) ($lastTransaction->paid_amount + $lastTransaction->miscellaneous + $lastTransaction->token_money)) {
             throw new Exception("Refund amount cannot exceed last transaction paid amount");
         }
 
@@ -448,35 +454,35 @@ class LearnerLifecycleService
         }
     }
 
-    private function softDeleteLearnerDetails(int $learnerId, string $transactionScope, LearnerDetail $currentDetail): array
-    {
-        if ($transactionScope === 'current') {
-            $currentDetail->status = 0;
-            $currentDetail->save();
-            $detailId = (int) $currentDetail->id;
-            $currentDetail->delete();
+    // private function softDeleteLearnerDetails(int $learnerId, string $transactionScope, LearnerDetail $currentDetail): array
+    // {
+    //     if ($transactionScope === 'current') {
+    //         $currentDetail->status = 0;
+    //         $currentDetail->save();
+    //         $detailId = (int) $currentDetail->id;
+    //         $currentDetail->delete();
 
-            return [$detailId];
-        }
+    //         return [$detailId];
+    //     }
 
-        $details = LearnerDetail::where('learner_id', $learnerId)
-            ->whereNull('learner_detail.deleted_at')
-            ->get();
+    //     $details = LearnerDetail::where('learner_id', $learnerId)
+    //         ->whereNull('learner_detail.deleted_at')
+    //         ->get();
 
-        if ($details->isEmpty()) {
-            throw new Exception("No active learner detail found");
-        }
+    //     if ($details->isEmpty()) {
+    //         throw new Exception("No active learner detail found");
+    //     }
 
-        $detailIds = [];
-        foreach ($details as $detail) {
-            $detail->status = 0;
-            $detail->save();
-            $detailIds[] = (int) $detail->id;
-            $detail->delete();
-        }
+    //     $detailIds = [];
+    //     foreach ($details as $detail) {
+    //         $detail->status = 0;
+    //         $detail->save();
+    //         $detailIds[] = (int) $detail->id;
+    //         $detail->delete();
+    //     }
 
-        return $detailIds;
-    }
+    //     return $detailIds;
+    // }
 
     private function logLearnerOperation(int $learnerId, ?int $learnerDetailId, string $operation, array $changes): void
     {
