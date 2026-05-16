@@ -340,52 +340,37 @@ class LibraryController extends Controller
     public function templateList(Request $request)
     {
         $libraryId = authLibraryId();
-        $type      = $request->type; // text | waba | all
+        $templateMap = $this->libraryMessageTemplateMap();
 
-        // ✅ Step 1: Get global templates + operation name
-        $globalQuery = DB::table('notification_templates as nt')
-            ->leftJoin('operations as o', 'o.id', '=', 'nt.operation_id')
-            ->where('nt.is_active', 1)
-            ->select(
-                'nt.operation_id',
-                'nt.type',
-                'nt.template_message',
-                'nt.template_code',
-                'o.name as operation_name' // 👈 ADD THIS
-            );
-
-        if ($type && $type != 'all') {
-            $globalQuery->where('nt.type', $type);
-        }
-
-        $globalTemplates = $globalQuery->get();
-
-        // ✅ Step 2: Get custom templates
-        $customTemplates = DB::table('custom_notification_templates')
-            ->where('library_id', $libraryId)
+        $globalTemplates = DB::table('notification_templates')
+            ->where('is_active', 1)
+            ->whereIn('operation_id', array_column($templateMap, 'operation_id'))
+            ->whereIn('type', array_column($templateMap, 'type'))
             ->get()
             ->keyBy(function ($item) {
                 return $item->operation_id . '_' . $item->type;
             });
 
-        // ✅ Step 3: Merge
+        $customTemplates = DB::table('custom_notification_templates')
+            ->where('library_id', $libraryId)
+            ->whereIn('operation_id', array_column($templateMap, 'operation_id'))
+            ->whereIn('type', array_column($templateMap, 'type'))
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->operation_id . '_' . $item->type;
+            });
+
         $final = [];
 
-        foreach ($globalTemplates as $template) {
+        foreach ($templateMap as $responseKey => $template) {
 
-            $key = $template->operation_id . '_' . $template->type;
+            $key = $template['operation_id'] . '_' . $template['type'];
 
             $message = isset($customTemplates[$key])
                 ? $customTemplates[$key]->template_message
-                : $template->template_message;
+                : ($globalTemplates[$key]->template_message ?? '');
 
-            $final[] = [
-                'operation_id'   => $template->operation_id,
-                'operation_name' => $template->operation_name, // 👈 RETURN THIS
-                'type'           => $template->type,
-                'template_code'  => $template->template_code,
-                'message'        => $message,
-            ];
+            $final[$responseKey] = $message;
         }
 
         return response()->json([
@@ -396,20 +381,64 @@ class LibraryController extends Controller
 
     public function templateUpdate(Request $request)
     {
-        
-        $request->validate([
-            'templates' => 'required|array|min:1',
-            'templates.*.operation_id' => 'required|integer|exists:operations,id',
-            'templates.*.type' => 'required|in:text,waba',
-            'templates.*.template_message' => 'required|string',
-        ]);
+        $templateMap = $this->libraryMessageTemplateMap();
+        $templates = [];
+
+        if ($request->has('templates')) {
+            $request->validate([
+                'templates' => 'required|array|min:1',
+                'templates.*.operation_id' => 'required|integer|exists:operations,id',
+                'templates.*.type' => 'required|in:text,waba',
+                'templates.*.template_message' => 'required|string',
+            ]);
+
+            $templates = $request->templates;
+        } else {
+            $validator = Validator::make($request->all(), [
+                'waba_reminder' => 'nullable|string',
+                'waba_pending_payment' => 'nullable|string',
+                'waba_birthday' => 'nullable|string',
+                'text_reminder' => 'nullable|string',
+                'text_pending_payment' => 'nullable|string',
+                'text_birthday' => 'nullable|string',
+            ]);
+
+            $validator->after(function ($validator) use ($request, $templateMap) {
+                $hasTemplate = false;
+
+                foreach (array_keys($templateMap) as $key) {
+                    if ($request->has($key)) {
+                        $hasTemplate = true;
+                        break;
+                    }
+                }
+
+                if (! $hasTemplate) {
+                    $validator->errors()->add('templates', 'At least one template message is required.');
+                }
+            });
+
+            $validator->validate();
+
+            foreach ($templateMap as $key => $template) {
+                if (! $request->has($key)) {
+                    continue;
+                }
+
+                $templates[] = [
+                    'operation_id' => $template['operation_id'],
+                    'type' => $template['type'],
+                    'template_message' => $request->input($key),
+                ];
+            }
+        }
 
         try {
             $libraryId = authLibraryId();
 
             DB::beginTransaction();
 
-            foreach ($request->templates as $item) {
+            foreach ($templates as $item) {
 
                 DB::table('custom_notification_templates')->updateOrInsert(
                     [
@@ -446,6 +475,36 @@ class LibraryController extends Controller
             ], 500);
         }
     } 
+
+    private function libraryMessageTemplateMap()
+    {
+        return [
+            'waba_reminder' => [
+                'operation_id' => 11,
+                'type' => 'waba',
+            ],
+            'waba_pending_payment' => [
+                'operation_id' => 18,
+                'type' => 'waba',
+            ],
+            'waba_birthday' => [
+                'operation_id' => 19,
+                'type' => 'waba',
+            ],
+            'text_reminder' => [
+                'operation_id' => 11,
+                'type' => 'text',
+            ],
+            'text_pending_payment' => [
+                'operation_id' => 18,
+                'type' => 'text',
+            ],
+            'text_birthday' => [
+                'operation_id' => 19,
+                'type' => 'text',
+            ],
+        ];
+    }
     
     public function todayFinancial(Request $request,DashboardService $service) {
 
