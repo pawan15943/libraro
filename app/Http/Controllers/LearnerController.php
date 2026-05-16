@@ -3412,6 +3412,17 @@ class LearnerController extends Controller
         return $s;
     }
 
+    public function learnerTransactionSection($learnerId)
+    {
+        try {
+            $data = $this->learnerLifecycleService->transactionDashboard((int) $learnerId);
+        } catch (\Throwable $e) {
+            return redirect()->route('learners')->with('error', $e->getMessage());
+        }
+
+        return view('learner.transaction-section', $data);
+    }
+
     public function pendingPaymentStore(Request $request)
     {
        

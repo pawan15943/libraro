@@ -450,6 +450,11 @@ $learner_id=$value->id;
                     @can('has-permission', 'Add Misllaneous Payment')
                     <li><a href="{{route('learner.other.payment',$learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
                     @endcan
+                    <li>
+                        <a href="{{ route('learners.transactions', $learner_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Transactions">
+                            <i class="fa-solid fa-wallet"></i>
+                        </a>
+                    </li>
                     @if (totalPending($learner_id) > 0 || totalExtra($learner_id) > 0)
                         
                     

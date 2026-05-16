@@ -14,6 +14,68 @@ use App\Http\Controllers\NotificationSentController;
 
 class LearnerLifecycleService
 {
+    public function transactionDashboard(int $learnerId): array
+    {
+        if (! $this->learnerBelongsToCurrentContext($learnerId)) {
+            throw new Exception('Learner not found.');
+        }
+
+        $learner = Learner::withTrashed()->findOrFail($learnerId);
+
+        $currentDetail = LearnerDetail::withTrashed()
+            ->with(['plan', 'planType'])
+            ->where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->first();
+
+        $transactions = LearnerTransaction::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->orderByDesc('id')
+            ->get();
+
+        $activities = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_id', $learnerId)
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->orderByDesc('id')
+            ->get();
+
+        $subscriptionActivities = $activities->filter(function ($activity) {
+            return in_array(strtoupper((string) $activity->payment_type), ['SUBSCRIPTION', 'RENEW', 'UPGRADE', 'CHANGEPLAN', 'PENDING'], true);
+        })->values();
+
+        $otherActivities = $activities->filter(function ($activity) {
+            return in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'RESTORE'], true);
+        })->values();
+
+        $totalAmount = (float) $transactions->sum('total_amount');
+        $receivedAmount = (float) $transactions->sum('paid_amount')
+            + (float) $transactions->sum('token_money')
+            + (float) $transactions->sum('miscellaneous');
+        $pendingAmount = (float) $transactions->sum('pending_amount');
+        $extraAmount = max(0, (float) $transactions->sum('refund'));
+        $refundAmount = $activities->where('payment_type', 'REFUND')->sum('amount');
+
+        $latestTransaction = $transactions->first();
+
+        return [
+            'learner' => $learner,
+            'currentDetail' => $currentDetail,
+            'latestTransaction' => $latestTransaction,
+            'transactions' => $transactions,
+            'activities' => $activities,
+            'subscriptionActivities' => $subscriptionActivities,
+            'otherActivities' => $otherActivities,
+            'summary' => [
+                'total_amount' => $totalAmount,
+                'received_amount' => $receivedAmount,
+                'pending_amount' => $pendingAmount,
+                'extra_amount' => $extraAmount,
+                'refund_amount' => (float) $refundAmount,
+                'next_due_date' => optional($transactions->firstWhere('pending_amount', '>', 0))->due_date,
+            ],
+        ];
+    }
+
     /**
      * @param  array{with_revenue?: bool, learner_detail_id?: int|null}  $options
      * @return array{ok: bool, message: string}
