@@ -142,7 +142,7 @@ public function manualAttendance(Request $request, AttendanceService $service)
     $request->validate([
         'learner_id' => 'required|integer|exists:learners,id',
         'attendance' => 'nullable|integer|in:0,1',
-        'time'       => ['required', 'regex:/^(in|out|([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?)$/'],
+        'time'       => 'required|date_format:H:i:s',
         'date'       => 'nullable|date',
     ]);
 
@@ -158,14 +158,14 @@ public function manualAttendance(Request $request, AttendanceService $service)
         return response()->json([
             'status' => 'error',
             'message' => 'Learner not found'
-        ], 404);
+        ]);
     }
 
     if ($learner->branch_id != $branchId) {
         return response()->json([
             'status' => 'error',
             'message' => 'Learner belongs to another branch'
-        ], 403);
+        ]);
     }
 
     try {
@@ -181,9 +181,7 @@ public function manualAttendance(Request $request, AttendanceService $service)
 
         return response()->json([
             'status' => 'success',
-            'message' => $request->attendance == 1
-                ? 'Attendance marked Present'
-                : 'Attendance marked Absent'
+            'message' => 'Attendance marked successfully'
         ]);
 
     } catch (\Throwable $e) {

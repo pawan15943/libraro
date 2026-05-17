@@ -41,6 +41,16 @@ public function summary($request)
         $toDate   = Carbon::today()->toDateString();
     }
 
+    if (
+        Carbon::parse($fromDate)->isFuture() ||
+        Carbon::parse($toDate)->isFuture()
+    ) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Future dates are not allowed'
+        ]);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Main Query
