@@ -27,13 +27,13 @@ public function summary($request)
 
     if ($request->filled('from_date') && $request->filled('to_date')) {
 
-        $fromDate = Carbon::parse($request->from_date)->toDateString();
-        $toDate   = Carbon::parse($request->to_date)->toDateString();
+        $fromDate = $this->parseAttendanceDate($request->from_date);
+        $toDate   = $this->parseAttendanceDate($request->to_date);
 
     } elseif ($request->filled('date')) {
 
-        $fromDate = Carbon::parse($request->date)->toDateString();
-        $toDate   = Carbon::parse($request->date)->toDateString();
+        $fromDate = $this->parseAttendanceDate($request->date);
+        $toDate   = $this->parseAttendanceDate($request->date);
 
     } else {
 
@@ -47,7 +47,14 @@ public function summary($request)
     |--------------------------------------------------------------------------
     */
 
-    $query = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
+    $branchId = $request->filled('branch_id')
+        ? $request->branch_id
+        : getCurrentBranch();
+
+    $query = Learner::leftJoin('attendances', function ($join) use ($fromDate, $toDate) {
+            $join->on('learners.id', '=', 'attendances.learner_id')
+                ->whereBetween('attendances.date', [$fromDate, $toDate]);
+        })
 
         ->leftJoin('learner_detail', function ($join) {
 
@@ -67,7 +74,7 @@ public function summary($request)
 
         ->where('learners.status', 1)
 
-        ->whereBetween('attendances.date', [$fromDate, $toDate]);
+        ->where('learners.library_id', authLibraryId());
 
     /*
     |--------------------------------------------------------------------------
@@ -80,15 +87,25 @@ public function summary($request)
         $query->where('learners.id', $request->learner_id);
     }
 
+    if ($request->filled('learner_name')) {
+
+        $query->where('learners.name', 'like', '%' . $request->learner_name . '%');
+    }
+
+    if ($request->filled('search')) {
+
+        $query->where('learners.name', 'like', '%' . $request->search . '%');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Branch Filter (Optional)
     |--------------------------------------------------------------------------
     */
 
-    if ($request->filled('branch_id')) {
+    if ($branchId) {
 
-        $query->where('attendances.branch_id', $request->branch_id);
+        $query->where('learners.branch_id', $branchId);
     }
 
     /*
@@ -103,6 +120,8 @@ public function summary($request)
             'learners.mobile',
             'learners.seat_no',
             'plan_types.name as plan_type_name',
+            'plan_types.start_time',
+            'plan_types.end_time',
             'learner_detail.plan_end_date',
             'attendances.in_time',
             'attendances.out_time',
@@ -130,6 +149,12 @@ public function summary($request)
                                         ? Carbon::parse($item->plan_end_date)->format('d/m/Y')
                                         : null,
 
+            'learner_plan_status' => $item->plan_end_date
+                                        ? getUserStatusWithSpan($item->plan_end_date, $item->learner_id)
+                                        : null,
+
+            'shift_timing'      => $this->formatShiftTiming($item->start_time, $item->end_time),
+
             'attendance_date'   => $item->date
                                         ? Carbon::parse($item->date)->format('d/m/Y')
                                         : null,
@@ -141,6 +166,8 @@ public function summary($request)
             'punch_out'         => $item->out_time
                                         ? Carbon::parse($item->out_time)->format('h:i A')
                                         : null,
+
+            'duration_in_library' => $this->formatAttendanceDuration($item->in_time, $item->out_time),
 
             'attendance_status' => $item->attendance == 1
                                         ? 'Present'
@@ -161,7 +188,9 @@ public function summary($request)
                         ->count();
 
     $absentStudents  = $attendance
-                        ->where('attendance', 0)
+                        ->filter(function ($item) {
+                            return $item->attendance === null || $item->attendance == 0;
+                        })
                         ->count();
 
     /*
@@ -343,6 +372,57 @@ public function attendanceLogs($request)
 
         ], 500);
     }
+}
+
+private function parseAttendanceDate($date)
+{
+    if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $date)) {
+        return Carbon::createFromFormat('d/m/Y', $date)->toDateString();
+    }
+
+    return Carbon::parse($date)->toDateString();
+}
+
+private function formatShiftTiming($startTime, $endTime)
+{
+    if (!$startTime || !$endTime) {
+        return null;
+    }
+
+    return $this->formatTime($startTime) . ' to ' . $this->formatTime($endTime);
+}
+
+private function formatTime($time)
+{
+    return Carbon::parse($time)->format('h:i A');
+}
+
+private function formatAttendanceDuration($inTime, $outTime)
+{
+    if (!$inTime || !$outTime) {
+        return null;
+    }
+
+    $in = Carbon::parse($inTime);
+    $out = Carbon::parse($outTime);
+
+    if ($out->lessThan($in)) {
+        return null;
+    }
+
+    $totalMinutes = $in->diffInMinutes($out);
+    $hours = intdiv($totalMinutes, 60);
+    $minutes = $totalMinutes % 60;
+
+    if ($hours > 0 && $minutes > 0) {
+        return $hours . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ' Hrs';
+    }
+
+    if ($hours > 0) {
+        return $hours . ' Hrs';
+    }
+
+    return $minutes . ' Min';
 }
 
 public function processAttendance($learnerId, $branchId, $source)
@@ -531,7 +611,7 @@ public function manualAttendance(
     $branchId
 )
 {
-    $currentTime = now();
+    $currentTime = $this->manualPunchDateTime($date, $time);
 
     $existingAttendance = Attendance::where('learner_id', $learnerId)
         ->where('date', $date)
@@ -539,11 +619,11 @@ public function manualAttendance(
 
     if ($existingAttendance) {
 
-        if ($time == 'in') {
+        if ($time == 'in' || ! $existingAttendance->in_time) {
             $existingAttendance->in_time = $currentTime;
         }
 
-        if ($time == 'out') {
+        if ($time == 'out' || ($time != 'in' && $existingAttendance->in_time)) {
             $existingAttendance->out_time = $currentTime;
         }
 
@@ -556,7 +636,7 @@ public function manualAttendance(
             'learner_id' => $learnerId,
             'attendance' => $attendance,
             'date'       => $date,
-            'in_time'    => $time == 'in' ? $currentTime : null,
+            'in_time'    => $time != 'out' ? $currentTime : null,
             'out_time'   => $time == 'out' ? $currentTime : null,
             'library_id' => $libraryId,
             'branch_id'  => $branchId,
@@ -572,6 +652,15 @@ public function manualAttendance(
     ]);
 
     return true;
+}
+
+private function manualPunchDateTime($date, $time)
+{
+    if (in_array($time, ['in', 'out'])) {
+        return now();
+    }
+
+    return Carbon::parse($date . ' ' . $time);
 }
 
 

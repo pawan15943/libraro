@@ -43,6 +43,7 @@ use App\Services\PlanService;
 use App\Services\LearnerGiftDaysService;
 use App\Services\LearnerLifecycleService;
 use App\Services\LearnerSeatSwapService;
+use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
 
 
@@ -2795,6 +2796,9 @@ class LearnerController extends Controller
                 })
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
+                ->when($request->filled('search'), function ($query) use ($request) {
+                    $query->where('learners.name', 'like', '%' . $request->search . '%');
+                })
                 ->with(['planType'])
                 ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'), 'attendances.in_time', 'attendances.out_time')
                 ->get();
@@ -2806,7 +2810,7 @@ class LearnerController extends Controller
         return view('learner.attendance', compact('learners'));
     }
 
-    public function updateAttendance(Request $request)
+    public function updateAttendance(Request $request, AttendanceService $service)
     {
 
         $request->validate([
@@ -2816,48 +2820,20 @@ class LearnerController extends Controller
             'time' => 'required|in:in,out',
         ]);
 
-        // Extract variables from the request
         $learnerId = $request->learner_id;
         $attendance = $request->attendance;
         $date = $request->date;
-        $currentTime = now();
 
-        $existingAttendance = Attendance::where('learner_id', $learnerId)
-            ->where('date', $date)
-            ->first();
+        $service->manualAttendance(
+            $learnerId,
+            $attendance,
+            $date,
+            $request->time,
+            getLibraryId(),
+            getCurrentBranch()
+        );
 
-        if ($existingAttendance) {
-
-            if ($request->time == 'in') {
-                $existingAttendance->in_time = $currentTime;
-            } elseif ($request->time == 'out') {
-                $existingAttendance->out_time = $currentTime;
-            }
-
-            // Update attendance status
-            $existingAttendance->attendance = $attendance;
-            $existingAttendance->save();
-        } else {
-
-            Attendance::create([
-                'learner_id' => $learnerId,
-                'attendance' => $attendance,
-                'date' => $date,
-                'in_time' => $request->time == 'in' ? $currentTime : null,
-                'out_time' => $request->time == 'out' ? $currentTime : null,
-                'library_id' => getLibraryId(),
-                'branch_id' => getCurrentBranch(),
-            ]);
-        }
         $learner = Learner::where('id', $learnerId)->select('name')->first();
-        DB::table('learner_attendance_logs')->insert([
-            'learner_id'     => $learnerId,
-            'branch_id'      => getCurrentBranch(),
-            'punch_datetime' => $currentTime,
-            'source'         => 'MANUAL',
-            'created_at'     => now(),
-            
-        ]);
 
         if ($attendance == 1) {
             $message = 'Attendance of ' . $learner->name . ' has been marked Present!';

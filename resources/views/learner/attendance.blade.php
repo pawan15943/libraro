@@ -19,6 +19,9 @@
                     <!-- Filter By Plan -->
 
                     <div class="col-lg-4">
+                        <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Search by learner name">
+                    </div>
+                    <div class="col-lg-4">
                         <input type="date" class="form-control" name="date" value="{{ request('date') ?: date('Y-m-d') }}" id="date">
                     </div>
                     <div class="col-lg-2">

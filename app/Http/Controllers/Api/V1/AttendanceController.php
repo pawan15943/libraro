@@ -128,8 +128,8 @@ public function manualAttendance(Request $request, AttendanceService $service)
 {
     $request->validate([
         'learner_id' => 'required|integer|exists:learners,id',
-        'attendance' => 'required|integer|in:0,1',
-        'time'       => 'required|in:in,out',
+        'attendance' => 'nullable|integer|in:0,1',
+        'time'       => ['required', 'regex:/^(in|out|([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?)$/'],
         'date'       => 'nullable|date',
     ]);
 
@@ -159,7 +159,7 @@ public function manualAttendance(Request $request, AttendanceService $service)
 
         $service->manualAttendance(
             $request->learner_id,
-            $request->attendance,
+            $request->attendance ?? 1,
             $request->date ?? today()->toDateString(),
             $request->time,
             $libraryId,
