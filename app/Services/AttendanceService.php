@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
 
@@ -389,22 +389,39 @@ public function summary($request)
 
 public function attendanceLogs($request)
 {
-    
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
+
+    $validator = Validator::make($request->all(), [
+
+        'learner_id' => 'required|integer|exists:learners,id',
+
+        'date' => 'required|date_format:Y-m-d',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation Error Response
+    |--------------------------------------------------------------------------
+    */
+
+    if ($validator->fails()) {
+
+        return response()->json([
+
+            'status' => false,
+
+            'message' => 'Validation failed',
+
+            'errors' => $validator->errors(),
+
+        ], 422);
+    }
+
     try {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validation
-        |--------------------------------------------------------------------------
-        */
-
-        $request->validate([
-
-            'learner_id' => 'required|integer|exists:learners,id',
-            'date'       => 'required|date_format:d/m/Y',
-        ]);
-
-       
 
         /*
         |--------------------------------------------------------------------------
@@ -412,10 +429,7 @@ public function attendanceLogs($request)
         |--------------------------------------------------------------------------
         */
 
-        $date = Carbon::createFromFormat(
-                    'd/m/Y',
-                    $request->date
-                )->format('Y-m-d');
+      $date = $request->date;
 
         /*
         |--------------------------------------------------------------------------
@@ -443,16 +457,18 @@ public function attendanceLogs($request)
 
             return response()->json([
 
-                'status'  => true,
+                'status' => true,
+
                 'message' => 'No attendance logs found',
-                'data'    => [
+
+                'data' => [
 
                     'learner_id' => $request->learner_id,
-                    'date'       => $request->date,
-                    'logs'       => []
 
+                    'date' => $request->date,
+
+                    'logs' => []
                 ]
-
             ]);
         }
 
@@ -467,14 +483,14 @@ public function attendanceLogs($request)
             return [
 
                 'punch_time' => Carbon::parse(
-                                    $row->punch_datetime
-                                )->format('h:i A'),
+                    $row->punch_datetime
+                )->format('h:i A'),
 
                 'source' => $row->source,
 
                 'datetime' => Carbon::parse(
-                                    $row->punch_datetime
-                                )->format('d/m/Y h:i A'),
+                    $row->punch_datetime
+                )->format('Y-m-d h:i A'),
             ];
         });
 
@@ -486,7 +502,7 @@ public function attendanceLogs($request)
 
         return response()->json([
 
-            'status'  => true,
+            'status' => true,
 
             'message' => 'Attendance logs fetched successfully',
 
@@ -495,11 +511,10 @@ public function attendanceLogs($request)
                 'learner_id' => $request->learner_id,
 
                 'date' => Carbon::parse($date)
-                            ->format('d/m/Y'),
+                    ->format('Y-m-d'),
 
                 'logs' => $response
             ]
-
         ]);
 
     } catch (\Throwable $e) {
@@ -513,8 +528,10 @@ public function attendanceLogs($request)
         Log::error('Attendance log error', [
 
             'message' => $e->getMessage(),
-            'line'    => $e->getLine(),
-            'file'    => $e->getFile(),
+
+            'line' => $e->getLine(),
+
+            'file' => $e->getFile(),
         ]);
 
         /*
@@ -525,11 +542,11 @@ public function attendanceLogs($request)
 
         return response()->json([
 
-            'status'  => false,
+            'status' => false,
 
-            'message' => 'Something went wrong',
+            'message' => $e->getMessage(),
 
-            'data'    => []
+            'data' => []
 
         ], 500);
     }
