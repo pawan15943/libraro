@@ -44,6 +44,7 @@ use App\Helpers\ReferralHelper;
 use App\Models\Branch;
 use App\Models\LibraryReferral;
 use App\Services\LibraryConfigurationService;
+use App\Services\LibraryLifecycleService;
 
 class LibraryController extends Controller
 {
@@ -2107,88 +2108,127 @@ class LibraryController extends Controller
         return $query->orderBy('date', 'desc');
     }
 
-    public function expenceStore(Request $request)
-    {
-      
-        $validator = Validator::make($request->all(), [
-            'date' => 'required|date',
-            'name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'payment_mode' => 'required',
-            'remark' => 'nullable|string',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-        if($request->name=='other' && $request->remark){
-            $particular=$request->remark ;
-        }elseif($request->name=='other' && !$request->remark){
-            $particular='other' ;
-        }else{
-            $particular=$request->name ;
-        }
-        if($request->payment_mode==1){
-            $mode='ONLINE';
-        }elseif($request->payment_mode==2){
-             $mode='OFFLINE';
-        }elseif($request->payment_mode==3){
-             $mode='PAYLATER';
-        }else{
-             $mode='OTHER';
-        }
-        
-         // Fixed year
-        $year = "2025";
+    public function expenceStore(Request $request, LibraryLifecycleService $service)
+{
+    $validator = $request->validate([
 
-        // Get last transaction (only for 2025 IDs)
-        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
-            ->orderBy('id', 'desc')
-            ->first();
-        if ($last && !empty($last->transaction_id)) {
-            // extract last sequence (last 4 digits)
-            $lastSeq = (int)substr($last->transaction_id, -4);
-            $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
-        } else {// first transaction
-            $newSeq = "0001";
-        }
+        'id'           => 'nullable|exists:learner_transaction_activity,id',
 
-        // Build transaction ID
-        $transactionId = $year . "0000" . $newSeq;
+        'expense_id'   => 'required|integer|exists:expenses,id',
 
-        $data=[
-           'branch_id' => getCurrentBranch(),
-           'learner_id'=>null,
-           'date'=>$request->date ?? date('Y-m-d'),
-            'particular'=>$particular,
-            'payment_type'=>'EXPENSE',
-            'payment_mode'=>$mode,
-            'amount'=>$request->amount,
-            'dr_cr'=>'Dr',
-            'amount'=>$request->amount,
-            'transaction_id'=>$transactionId
-           
-        ];
+        'amount'       => 'required|numeric|min:1',
 
+        'date'         => 'required|date',
 
-        $expenseId = $request->input('id', $request->input('expense_id'));
+        'payment_mode' => 'required',
 
-        if ($expenseId) {
-            $expense = LearnerTransactionActivity::findOrFail($expenseId);
-            $expense->update($data);
-            $message = 'Expense updated successfully';
-        } else {
-            $expense = LearnerTransactionActivity::create($data);
-            $message = 'Expense created successfully';
-        }
+        'remark'       => 'nullable|string',
+    ]);
+
+    try {
+
+        $expense = $service->storeExpense($request);
 
         return response()->json([
+
             'success' => true,
-            'message' => $message,
+
+            'message' => $expense['message'],
         ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+
+            'success' => false,
+
+            'message' => $e->getMessage(),
+
+        ], 500);
     }
+}
+
+    // public function expenceStore(Request $request)
+    // {
+      
+    //     $validator = Validator::make($request->all(), [
+    //         'date' => 'required|date',
+    //         'name' => 'required|string|max:255',
+    //         'amount' => 'required|numeric|min:0',
+    //         'payment_mode' => 'required',
+    //         'remark' => 'nullable|string',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors'  => $validator->errors(),
+    //         ], 422);
+    //     }
+    //     if($request->name=='other' && $request->remark){
+    //         $particular=$request->remark ;
+    //     }elseif($request->name=='other' && !$request->remark){
+    //         $particular='other' ;
+    //     }else{
+    //         $particular=$request->name ;
+    //     }
+    //     if($request->payment_mode==1){
+    //         $mode='ONLINE';
+    //     }elseif($request->payment_mode==2){
+    //          $mode='OFFLINE';
+    //     }elseif($request->payment_mode==3){
+    //          $mode='PAYLATER';
+    //     }else{
+    //          $mode='OTHER';
+    //     }
+        
+    //      // Fixed year
+    //     $year = "2025";
+
+    //     // Get last transaction (only for 2025 IDs)
+    //     $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
+    //         ->orderBy('id', 'desc')
+    //         ->first();
+    //     if ($last && !empty($last->transaction_id)) {
+    //         // extract last sequence (last 4 digits)
+    //         $lastSeq = (int)substr($last->transaction_id, -4);
+    //         $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+    //     } else {// first transaction
+    //         $newSeq = "0001";
+    //     }
+
+    //     // Build transaction ID
+    //     $transactionId = $year . "0000" . $newSeq;
+
+    //     $data=[
+    //        'branch_id' => getCurrentBranch(),
+    //        'learner_id'=>null,
+    //        'date'=>$request->date ?? date('Y-m-d'),
+    //         'particular'=>$particular,
+    //         'payment_type'=>'EXPENSE',
+    //         'payment_mode'=>$mode,
+    //         'amount'=>$request->amount,
+    //         'dr_cr'=>'Dr',
+    //         'transaction_id'=>$transactionId
+           
+    //     ];
+
+
+    //     $expenseId = $request->input('id', $request->input('expense_id'));
+
+    //     if ($expenseId) {
+    //         $expense = LearnerTransactionActivity::findOrFail($expenseId);
+    //         $expense->update($data);
+    //         $message = 'Expense updated successfully';
+    //     } else {
+    //         $expense = LearnerTransactionActivity::create($data);
+    //         $message = 'Expense created successfully';
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => $message,
+    //     ]);
+    // }
 
     public function expencedestroy($id)
     {

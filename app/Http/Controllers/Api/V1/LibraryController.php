@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Expense;
 use App\Models\Floor;
 use App\Models\Hour;
+use App\Models\LearnerTransactionActivity;
 use App\Models\Library;
 use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
@@ -14,6 +16,8 @@ use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Subscription;
 use App\Services\DashboardService;
+use App\Services\LibraryLifecycleService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
@@ -232,107 +236,191 @@ class LibraryController extends Controller
         }
     }
 
-    public function expenseList(Request $request)
-    {
-        $libraryId = authLibraryId();
-        $branchId  = getCurrentBranch();
+   public function expenseList(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
 
-        $query = DB::table('monthly_expense')->where('library_id', $libraryId)
-            ->where('branch_id', $branchId);
+    $request->validate([
 
-        // 🔎 Filter by date
-        if ($request->filled('date')) {
-            $month = date('m', strtotime($request->date));
-            $year  = date('Y', strtotime($request->date));
+        /*
+        |--------------------------------------------------------------------------
+        | Month Format Example:
+        | 2026-05
+        |--------------------------------------------------------------------------
+        */
 
-            $query->where('month', $month)
-                ->where('year', $year);
-        } else {
-            // default current month
-            $query->where('month', date('m'))
-                ->where('year', date('Y'));
-        }
+        'month' => 'nullable|date_format:Y-m',
 
-        $expenses = $query->orderBy('id', 'desc')->get();
+        /*
+        |--------------------------------------------------------------------------
+        | Expense ID
+        |--------------------------------------------------------------------------
+        */
 
-        return response()->json([
-            'status' => true,
-            'data'   => $expenses
-        ]);
+        'expense_id' => 'nullable|exists:expenses,id',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Main Query
+    |--------------------------------------------------------------------------
+    */
+
+    $query = LearnerTransactionActivity::query()
+
+        ->where('payment_type', 'EXPENSE')
+
+        ->where('branch_id', getCurrentBranch());
+
+    /*
+    |--------------------------------------------------------------------------
+    | Month Filter
+    |--------------------------------------------------------------------------
+    |
+    | Example:
+    | 2026-05
+    |
+    */
+
+    if ($request->filled('month')) {
+
+        $month = Carbon::parse($request->month . '-01');
+
+        $query->whereYear('date', $month->year)
+              ->whereMonth('date', $month->month);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Expense Filter
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('expense_id')) {
+
+        $expense = Expense::find($request->expense_id);
+
+        if ($expense) {
+
+            $query->where('particular', $expense->name);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Expense List
+    |--------------------------------------------------------------------------
+    */
+
+    $expenses = $query
+
+        ->latest('date')
+
+        ->latest('id')
+
+        ->get()
+
+        ->map(function ($item) {
+
+            return [
+
+                'id' => $item->id,
+
+                'date' => Carbon::parse($item->date)
+                    ->format('Y-m-d'),
+
+                'expense_name' => $item->particular,
+
+                'amount' => (string) $item->amount,
+
+                'payment_mode' => $item->payment_mode,
+
+                'remark' => $item->remark,
+
+                'transaction_id' => $item->transaction_id,
+            ];
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Total Expense
+    |--------------------------------------------------------------------------
+    */
+
+    $totalExpense = $query->sum('amount');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Final Response
+    |--------------------------------------------------------------------------
+    */
+
+    return response()->json([
+
+        'success' => true,
+
+        'message' => 'Expense list fetched successfully',
+
+        'data' => [
+
+            'total_expense' => (float) $totalExpense,
+
+            'filters' => [
+
+                'month' => $request->month,
+
+                'expense_id' => $request->expense_id,
+            ],
+
+            'expenses' => $expenses,
+        ]
+    ]);
+}
 
     
 
-    public function expenseSave(Request $request)
+   
+
+    public function expenseSave(Request $request, LibraryLifecycleService $service)
     {
-        
-        $validator =  $request->validate([
-            'id'         => 'nullable|exists:monthly_expense,id',
-            'expense_id' => 'required|integer|exists:expenses,id',
-            'amount'     => 'required|numeric|min:1',
-            'date'       => 'required|date',
+        $validator = $request->validate([
+
+            'id'           => 'nullable|exists:learner_transaction_activity,id',
+
+            'expense_id'   => 'required|integer|exists:expenses,id',
+
+            'amount'       => 'required|numeric|min:1',
+
+            'date'         => 'required|date',
+
+            'payment_mode' => 'required',
+
+            'remark'       => 'nullable|string',
         ]);
 
-        
-
         try {
-            $libraryId = authLibraryId();
-            $branchId  = getCurrentBranch();
 
-            $month = date('m', strtotime($request->date));
-            $year  = date('Y', strtotime($request->date));
-
-            if ($request->id) {
-                // 🔴 SECURITY CHECK
-                $exists = DB::table('monthly_expense')
-                    ->where('id', $request->id)
-                    ->where('library_id', $libraryId)
-                    ->exists();
-
-                if (!$exists) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Expense does not belong to this library'
-                    ], );
-                }
-                // 🔵 UPDATE
-                DB::table('monthly_expense')
-                    ->where('id', $request->id)
-                    ->update([
-                        'expense_id' => $request->expense_id,
-                        'amount'     => $request->amount,
-                        'month'      => $month,
-                        'year'       => $year,
-                        'updated_at' => now(),
-                    ]);
-
-                $message = 'Expense updated';
-
-            } else {
-                // 🟢 INSERT
-                $id = DB::table('monthly_expense')->insertGetId([
-                    'library_id' => $libraryId,
-                    'branch_id'  => $branchId,
-                    'expense_id' => $request->expense_id,
-                    'amount'     => $request->amount,
-                    'month'      => $month,
-                    'year'       => $year,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $message = 'Expense added';
-            }
+            $expense = $service->storeExpense($request);
 
             return response()->json([
-                'status'  => true,
-                'message' => $message
+
+                'success' => true,
+
+                'message' => $expense['message'],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+
             return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong'
+
+                'success' => false,
+
+                'message' => $e->getMessage(),
+
             ], 500);
         }
     }
