@@ -299,15 +299,28 @@ class LibraryController extends Controller
     | Expense Filter
     |--------------------------------------------------------------------------
     */
-
     if ($request->filled('expense_id')) {
 
-        $expense = Expense::find($request->expense_id);
+        /*
+        |--------------------------------------------------------------------------
+        | Get Expense Names
+        |--------------------------------------------------------------------------
+        */
 
-        if ($expense) {
+        $expenseNames = Expense::whereIn(
+                'id',
+                $request->expense_id
+            )
+            ->pluck('name')
+            ->toArray();
 
-            $query->where('particular', $expense->name);
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | Apply Filter
+        |--------------------------------------------------------------------------
+        */
+
+        $query->whereIn('particular', $expenseNames);
     }
 
     /*
