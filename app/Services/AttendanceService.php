@@ -37,7 +37,7 @@ public function summary($request)
 
     } else {
 
-        $fromDate = Carbon::now()->startOfMonth()->toDateString();
+        $fromDate = Carbon::today()->toDateString();
         $toDate   = Carbon::today()->toDateString();
     }
 
@@ -51,10 +51,11 @@ public function summary($request)
         ? $request->branch_id
         : getCurrentBranch();
 
-    $query = Learner::leftJoin('attendances', function ($join) use ($fromDate, $toDate) {
-            $join->on('learners.id', '=', 'attendances.learner_id')
-                ->whereBetween('attendances.date', [$fromDate, $toDate]);
-        })
+    $query = DB::table('learners')
+        ->leftJoin('attendances', function ($join) use ($fromDate, $toDate) {
+                $join->on('learners.id', '=', 'attendances.learner_id')
+                    ->whereBetween('attendances.date', [$fromDate, $toDate]);
+            })
 
         ->leftJoin('learner_detail', function ($join) {
 
@@ -114,6 +115,9 @@ public function summary($request)
     |--------------------------------------------------------------------------
     */
 
+    $limit = (int) $request->input('limit', 100);
+    $limit = $limit > 0 && $limit <= 200 ? $limit : 100;
+
     $attendance = $query->select(
             'learners.id as learner_id',
             'learners.name',
@@ -129,6 +133,8 @@ public function summary($request)
             'attendances.date'
         )
         ->latest('attendances.date')
+        ->latest('learners.id')
+        ->limit($limit)
         ->get();
 
     /*
@@ -149,9 +155,7 @@ public function summary($request)
                                         ? Carbon::parse($item->plan_end_date)->format('d/m/Y')
                                         : null,
 
-            'learner_plan_status' => $item->plan_end_date
-                                        ? getUserStatusWithSpan($item->plan_end_date, $item->learner_id)
-                                        : null,
+            'learner_plan_status' => $this->safeLearnerPlanStatus($item->plan_end_date, $item->learner_id),
 
             'shift_timing'      => $this->formatShiftTiming($item->start_time, $item->end_time),
 
@@ -423,6 +427,24 @@ private function formatAttendanceDuration($inTime, $outTime)
     }
 
     return $minutes . ' Min';
+}
+
+private function safeLearnerPlanStatus($planEndDate, $learnerId)
+{
+    if (!$planEndDate) {
+        return null;
+    }
+
+    try {
+        return getUserStatusWithSpan($planEndDate, $learnerId);
+    } catch (\Throwable $e) {
+        Log::error('Attendance summary plan status error', [
+            'learner_id' => $learnerId,
+            'message' => $e->getMessage(),
+        ]);
+
+        return null;
+    }
 }
 
 public function processAttendance($learnerId, $branchId, $source)

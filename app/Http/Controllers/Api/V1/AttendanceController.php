@@ -12,7 +12,20 @@ class AttendanceController extends Controller
 {
     public function summary(Request $request, AttendanceService $service)
     {
-        return $service->summary($request);
+        try {
+            return $service->summary($request);
+        } catch (\Throwable $e) {
+            \Log::error('Attendance Summary Error', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong'
+            ], 500);
+        }
     }
 
     public function logs(Request $request, AttendanceService $service)

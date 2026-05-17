@@ -339,44 +339,69 @@ class LibraryController extends Controller
 
     public function templateList(Request $request)
     {
-        $libraryId = authLibraryId();
-        $templateMap = $this->libraryMessageTemplateMap();
+        try {
+            $libraryId = authLibraryId();
+            $templateMap = $this->libraryMessageTemplateMap();
 
-        $globalTemplates = DB::table('notification_templates')
-            ->where('is_active', 1)
-            ->whereIn('operation_id', array_column($templateMap, 'operation_id'))
-            ->whereIn('type', array_column($templateMap, 'type'))
-            ->get()
-            ->keyBy(function ($item) {
-                return $item->operation_id . '_' . $item->type;
-            });
+            $globalTemplates = DB::table('notification_templates')
+                ->where('is_active', 1)
+                ->where(function ($query) use ($templateMap) {
+                    foreach ($templateMap as $template) {
+                        $query->orWhere(function ($q) use ($template) {
+                            $q->where('operation_id', $template['operation_id'])
+                                ->where('type', $template['type']);
+                        });
+                    }
+                })
+                ->select('operation_id', 'type', 'template_message')
+                ->limit(count($templateMap))
+                ->get()
+                ->keyBy(function ($item) {
+                    return $item->operation_id . '_' . $item->type;
+                });
 
-        $customTemplates = DB::table('custom_notification_templates')
-            ->where('library_id', $libraryId)
-            ->whereIn('operation_id', array_column($templateMap, 'operation_id'))
-            ->whereIn('type', array_column($templateMap, 'type'))
-            ->get()
-            ->keyBy(function ($item) {
-                return $item->operation_id . '_' . $item->type;
-            });
+            $customTemplates = DB::table('custom_notification_templates')
+                ->where('library_id', $libraryId)
+                ->where(function ($query) use ($templateMap) {
+                    foreach ($templateMap as $template) {
+                        $query->orWhere(function ($q) use ($template) {
+                            $q->where('operation_id', $template['operation_id'])
+                                ->where('type', $template['type']);
+                        });
+                    }
+                })
+                ->select('operation_id', 'type', 'template_message')
+                ->limit(count($templateMap))
+                ->get()
+                ->keyBy(function ($item) {
+                    return $item->operation_id . '_' . $item->type;
+                });
 
-        $final = [];
+            $final = [];
 
-        foreach ($templateMap as $responseKey => $template) {
+            foreach ($templateMap as $responseKey => $template) {
 
-            $key = $template['operation_id'] . '_' . $template['type'];
+                $key = $template['operation_id'] . '_' . $template['type'];
 
-            $message = isset($customTemplates[$key])
-                ? $customTemplates[$key]->template_message
-                : ($globalTemplates[$key]->template_message ?? '');
+                $message = isset($customTemplates[$key])
+                    ? $customTemplates[$key]->template_message
+                    : ($globalTemplates[$key]->template_message ?? '');
 
-            $final[$responseKey] = $message;
+                $final[$responseKey] = $message;
+            }
+
+            return response()->json([
+                'status' => true,
+                'data'   => $final
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Template List Error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong'
+            ], 500);
         }
-
-        return response()->json([
-            'status' => true,
-            'data'   => $final
-        ]);
     }
 
     public function templateUpdate(Request $request)
