@@ -152,7 +152,7 @@ public function summary($request)
             'seat_no'           => $item->seat_no,
             'plan_type'         => $item->plan_type_name,
             'plan_end_date'     => $item->plan_end_date
-                                        ? Carbon::parse($item->plan_end_date)->format('d/m/Y')
+                                        ? Carbon::parse($item->plan_end_date)->format('Y-m-d')
                                         : null,
 
             'learner_plan_status' => $this->safeLearnerPlanStatus($item->plan_end_date, $item->learner_id),
@@ -160,7 +160,7 @@ public function summary($request)
             'shift_timing'      => $this->formatShiftTiming($item->start_time, $item->end_time),
 
             'attendance_date'   => $item->date
-                                        ? Carbon::parse($item->date)->format('d/m/Y')
+                                        ? Carbon::parse($item->date)->format('Y-m-d')
                                         : null,
 
             'punch_in'          => $item->in_time
@@ -380,11 +380,7 @@ public function attendanceLogs($request)
 
 private function parseAttendanceDate($date)
 {
-    if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $date)) {
-        return Carbon::createFromFormat('d/m/Y', $date)->toDateString();
-    }
-
-    return Carbon::parse($date)->toDateString();
+    return Carbon::parse($date)->format('Y-m-d');
 }
 
 private function formatShiftTiming($startTime, $endTime)
@@ -436,7 +432,7 @@ private function safeLearnerPlanStatus($planEndDate, $learnerId)
     }
 
     try {
-        return getUserStatusWithSpan($planEndDate, $learnerId);
+        return strip_tags(getUserStatusWithSpan($planEndDate, $learnerId));
     } catch (\Throwable $e) {
         Log::error('Attendance summary plan status error', [
             'learner_id' => $learnerId,
