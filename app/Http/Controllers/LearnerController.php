@@ -2810,7 +2810,7 @@ class LearnerController extends Controller
         return view('learner.attendance', compact('learners'));
     }
 
-    public function updateAttendance(Request $request, AttendanceService $service)
+    public function  updateAttendance(Request $request, AttendanceService $service)
     {
 
         $request->validate([
@@ -2823,12 +2823,14 @@ class LearnerController extends Controller
         $learnerId = $request->learner_id;
         $attendance = $request->attendance;
         $date = $request->date;
+        $type=$request->time;
 
         $service->manualAttendance(
             $learnerId,
             $attendance,
             $date,
             $request->time,
+            $type,
             getLibraryId(),
             getCurrentBranch()
         );

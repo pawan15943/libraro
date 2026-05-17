@@ -139,11 +139,12 @@ class AttendanceController extends Controller
 
 public function manualAttendance(Request $request, AttendanceService $service)
 {
-    $request->validate([
+   $request->validate([
         'learner_id' => 'required|integer|exists:learners,id',
         'attendance' => 'nullable|integer|in:0,1',
         'time'       => 'required|date_format:H:i:s',
         'date'       => 'nullable|date',
+        'time_type'  => 'required|in:in,out',
     ]);
 
     $owner = auth()->user();
@@ -175,6 +176,7 @@ public function manualAttendance(Request $request, AttendanceService $service)
             $request->attendance ?? 1,
             $request->date ?? today()->toDateString(),
             $request->time,
+            $request->time_type,
             $libraryId,
             $branchId
         );
@@ -188,7 +190,7 @@ public function manualAttendance(Request $request, AttendanceService $service)
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Attendance not marked'
+            'message' => $e->getMessage()
         ], 500);
     }
 }
