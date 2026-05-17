@@ -22,12 +22,12 @@
                         </div>
                         <div class="col-lg-6">
                             <label>Expense Name <span>*</span></label>
-                            <select class="form-select" name="name">
+                            <select class="form-select" name="expense_id">
                                 <option value="">Choose</option>
                                 @foreach($data as $key => $value)
-                                <option value="{{$value->name}}">{{$value->name}}</option>
+                                <option value="{{$value->id}}">{{$value->name}}</option>
                                 @endforeach
-                                <option value="other">Other</option>
+                               
                             </select>
 
                         </div>
