@@ -662,7 +662,7 @@ class LibraryController extends Controller
 
     public function expenseSave(Request $request, LibraryLifecycleService $service)
     {
-        $validator = $request->validate([
+        $validator = Validator::make($request->all(), [
 
             'id'           => 'nullable|exists:learner_transaction_activity,id',
 
@@ -676,6 +676,16 @@ class LibraryController extends Controller
 
             'remark'       => 'nullable|string',
         ]);
+
+         if ($validator->fails()) {
+
+            return response()->json([
+
+                'status' => false,
+
+                'message' => $validator->errors()->first(),
+            ]);
+        }
 
         try {
 
