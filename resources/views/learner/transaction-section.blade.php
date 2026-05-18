@@ -18,6 +18,34 @@
         }
         return ucwords(strtolower((string) $mode));
     };
+    $typeLabel = function ($value) {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') {
+            return 'Transaction';
+        }
+        return ucwords(strtolower(str_replace('_', ' ', $text)));
+    };
+    $transactionBreakdown = function ($transaction) {
+        $total = (float) ($transaction->total_amount ?? 0);
+        $locker = (float) ($transaction->locker_amount ?? 0);
+        $token = (float) ($transaction->token_money ?? 0);
+        $misc = (float) ($transaction->miscellaneous ?? 0);
+        $discount = (float) ($transaction->discount_amount ?? 0);
+
+        return [
+            'plan_price' => max(0, $total - $locker - $token - $misc + $discount),
+            'locker' => $locker,
+            'discount' => $discount,
+            'total_amount' => $total,
+            'final_payable' => $total + $token + $misc,
+            'paid_amount' => (float) ($transaction->paid_amount ?? 0) + $token + $misc,
+            'pending_or_extra' => (float) ($transaction->pending_amount ?? 0) > 0
+                ? (float) $transaction->pending_amount
+                : (float) ($transaction->refund ?? 0),
+            'pending_or_extra_label' => (float) ($transaction->pending_amount ?? 0) > 0 ? 'Pending Amt.' : 'Extra Amt.',
+            'other_total' => $token + $misc,
+        ];
+    };
     $activeStatus = (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive';
 @endphp
 
@@ -52,12 +80,51 @@
     .detail-row { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; font-size: .92rem; }
     .detail-row span { color: #666; }
     .detail-row strong { text-align: right; }
+    .all-transaction-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+    .transaction-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .transaction-filter-bar button { border: 1px solid #dce1ea; background: #fff; color: #555; border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: .82rem; }
+    .transaction-filter-bar button.active { background: #07156f; border-color: #07156f; color: #fff; }
+    .transaction-history-card { border: 1px solid #e4e7ed; border-radius: 8px; background: #fff; margin-bottom: 12px; overflow: hidden; }
+    .transaction-history-main { width: 100%; border: 0; background: #fff; padding: 14px 16px; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 24px; gap: 12px; align-items: center; text-align: left; }
+    .transaction-history-title h6 { color: #07156f; font-weight: 800; margin: 0; }
+    .transaction-history-title small { color: #707070; display: block; margin-top: 2px; }
+    .transaction-history-amount { text-align: right; font-weight: 800; color: #4dae3c; white-space: nowrap; }
+    .transaction-history-amount.debit, .transaction-history-amount.pending { color: #d60000; }
+    .transaction-chevron { color: #555; transition: transform .18s ease; }
+    .transaction-history-main[aria-expanded="true"] .transaction-chevron { transform: rotate(180deg); }
+    .transaction-history-body { border-top: 1px solid #edf0f4; padding: 14px 16px 16px; background: #fff; }
+    .transaction-breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #edf0f4; border-bottom: 1px solid #edf0f4; margin-top: 12px; }
+    .transaction-breakdown div { padding: 11px 10px; border-right: 1px solid #edf0f4; }
+    .transaction-breakdown div:last-child { border-right: 0; }
+    .transaction-breakdown span { display: block; color: #777; font-size: .75rem; margin-bottom: 3px; }
+    .transaction-breakdown strong { color: #111; font-size: .9rem; }
+    .transaction-body-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .transaction-body-row div { background: #f8fafc; border-radius: 8px; padding: 10px; }
+    .transaction-body-row span { display: block; color: #777; font-size: .75rem; }
+    .transaction-body-row strong { font-size: .9rem; }
+    .transaction-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+    .transaction-actions a, .transaction-actions span { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f6; color: #111; text-decoration: none; }
+    .all-summary-panel { border: 1px solid #e4e7ed; border-radius: 8px; background: #fff; padding: 16px; position: sticky; top: 14px; }
+    .all-summary-panel h6 { color: #07156f; font-weight: 800; margin-bottom: 12px; }
+    .all-summary-panel .summary-line { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid #edf0f4; font-size: .9rem; }
+    .all-summary-panel .summary-line:last-child { border-bottom: 0; }
+    .activity-mini-list { margin-top: 12px; }
+    .activity-mini-list h6 { color: #686868; font-size: .86rem; margin-bottom: 8px; }
+    .activity-mini-item { display: flex; justify-content: space-between; gap: 10px; border-top: 1px dashed #e4e7ed; padding: 8px 0; font-size: .84rem; }
+    .transaction-empty { border: 1px dashed #dfe3ea; border-radius: 8px; background: #fff; padding: 22px; text-align: center; color: #777; }
     @media (max-width: 768px) {
         .transaction-header { align-items: flex-start; }
         .transaction-status { margin-left: 0; }
         .metric-grid { grid-template-columns: repeat(2, 1fr); }
         .transaction-header { flex-wrap: wrap; }
         .payment-card { align-items: flex-start; }
+        .all-transaction-layout { grid-template-columns: 1fr; }
+        .all-summary-panel { position: static; order: -1; }
+        .transaction-history-main { grid-template-columns: 44px minmax(0, 1fr) auto 20px; padding: 12px; }
+        .transaction-breakdown { grid-template-columns: repeat(2, 1fr); }
+        .transaction-breakdown div:nth-child(2) { border-right: 0; }
+        .transaction-breakdown div:nth-child(-n+2) { border-bottom: 1px solid #edf0f4; }
+        .transaction-body-row { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -160,13 +227,136 @@
         </div>
 
         <div class="tab-pane fade" id="allTransactions">
-            @forelse($activities as $activity)
-                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel])
-            @empty
-                <div class="payment-card text-muted">No transaction recorded.</div>
-            @endforelse
+            <div class="all-transaction-layout">
+                <div>
+                    <div class="transaction-filter-bar" data-transaction-filters>
+                        <button type="button" class="active" data-filter="all">All</button>
+                        <button type="button" data-filter="paid">Paid</button>
+                        <button type="button" data-filter="pending">Pending</button>
+                        <button type="button" data-filter="other">Other</button>
+                        <button type="button" data-filter="refund">Refund</button>
+                    </div>
+
+                    @forelse($transactions as $transaction)
+                        @php
+                            $breakdown = $transactionBreakdown($transaction);
+                            $relatedActivities = $activities->where('learner_transaction_id', $transaction->id)->values();
+                            $primaryActivity = $relatedActivities->first();
+                            $isPending = (float) ($transaction->pending_amount ?? 0) > 0;
+                            $hasOther = ((float) ($transaction->token_money ?? 0) + (float) ($transaction->miscellaneous ?? 0)) > 0;
+                            $hasRefund = (float) ($transaction->refund ?? 0) > 0 || $relatedActivities->contains(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND');
+                            $filterTags = collect(['all'])
+                                ->when(!$isPending, fn ($items) => $items->push('paid'))
+                                ->when($isPending, fn ($items) => $items->push('pending'))
+                                ->when($hasOther, fn ($items) => $items->push('other'))
+                                ->when($hasRefund, fn ($items) => $items->push('refund'))
+                                ->implode(' ');
+                            $collapseId = 'transaction-detail-'.$transaction->id;
+                            $title = $primaryActivity?->payment_type ?: 'Subscription Payment';
+                            $amountClass = $isPending ? 'pending' : '';
+                        @endphp
+
+                        <div class="transaction-history-card" data-transaction-card data-tags="{{ $filterTags }}">
+                            <button class="transaction-history-main" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $collapseId }}" aria-expanded="false" aria-controls="{{ $collapseId }}">
+                                <span class="payment-icon {{ $hasRefund ? 'debit' : '' }}">
+                                    <i class="fa-solid fa-arrow-{{ $hasRefund ? 'up' : 'down' }}"></i>
+                                </span>
+                                <span class="transaction-history-title">
+                                    <h6>{{ $typeLabel($title) }}</h6>
+                                    <small>{{ $modeLabel($primaryActivity?->payment_mode ?? $transaction->learnerDetail?->payment_mode) }} &bull; {{ $dateFmt($transaction->paid_date) }}</small>
+                                </span>
+                                <span class="transaction-history-amount {{ $amountClass }}">
+                                    {{ $fmt($breakdown['paid_amount']) }}
+                                    @if($isPending)
+                                        <small class="d-block text-danger">Due {{ $fmt($transaction->pending_amount) }}</small>
+                                    @endif
+                                </span>
+                                <span class="transaction-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+                            </button>
+
+                            <div class="collapse" id="{{ $collapseId }}">
+                                <div class="transaction-history-body">
+                                    <div class="detail-row"><span>Plan</span><strong>{{ $transaction->learnerDetail?->plan?->name ?? 'NA' }} / {{ $transaction->learnerDetail?->planType?->name ?? 'NA' }}</strong></div>
+                                    <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($transaction->learnerDetail?->plan_start_date) }} - {{ $dateFmt($transaction->learnerDetail?->plan_end_date) }}</strong></div>
+
+                                    <div class="transaction-breakdown">
+                                        <div><span>Plan Price</span><strong>{{ $fmt($breakdown['plan_price']) }}</strong></div>
+                                        <div><span>Locker</span><strong>{{ $fmt($breakdown['locker']) }}</strong></div>
+                                        <div><span>Discount</span><strong>{{ $fmt($breakdown['discount']) }}</strong></div>
+                                        <div><span>Total Amt.</span><strong>{{ $fmt($breakdown['total_amount']) }}</strong></div>
+                                    </div>
+
+                                    <div class="transaction-body-row">
+                                        <div><span>Final Payable Amt.</span><strong>{{ $fmt($breakdown['final_payable']) }}</strong></div>
+                                        <div><span>Paid Amt.</span><strong class="text-success">{{ $fmt($breakdown['paid_amount']) }}</strong></div>
+                                        <div><span>{{ $breakdown['pending_or_extra_label'] }}</span><strong class="{{ $isPending ? 'text-danger' : 'text-primary' }}">{{ $fmt($breakdown['pending_or_extra']) }}</strong></div>
+                                    </div>
+
+                                    @if($relatedActivities->isNotEmpty())
+                                        <div class="activity-mini-list">
+                                            <h6>Activity</h6>
+                                            @foreach($relatedActivities as $activity)
+                                                <div class="activity-mini-item">
+                                                    <span>{{ $typeLabel($activity->payment_type) }} &bull; {{ $modeLabel($activity->payment_mode) }}</span>
+                                                    <strong class="{{ strtolower((string) $activity->dr_cr) === 'dr' ? 'text-danger' : 'text-success' }}">{{ $fmt($activity->amount) }}</strong>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    <div class="transaction-actions">
+                                        @if((int) ($transaction->is_paid ?? 0) === 1)
+                                            <a href="{{ route('receipt.view', ['transactionId' => $transaction->id]) }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
+                                        @else
+                                            <span class="text-muted" data-bs-toggle="tooltip" data-bs-title="Receipt unavailable"><i class="fa-solid fa-download"></i></span>
+                                        @endif
+                                        <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-title="Pay Due"><i class="fa-solid fa-credit-card"></i></a>
+                                        <a href="{{ route('learner.other.payment', $transaction->learner_detail_id) }}" data-bs-toggle="tooltip" data-bs-title="Other Payment"><i class="fa-solid fa-plus"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="transaction-empty">No transaction recorded.</div>
+                    @endforelse
+                </div>
+
+                <aside class="all-summary-panel">
+                    <h6>All Transaction</h6>
+                    <div class="summary-line"><span>Total Entries</span><strong>{{ $transactions->count() }}</strong></div>
+                    <div class="summary-line"><span>Received</span><strong class="text-success">{{ $fmt($summary['received_amount']) }}</strong></div>
+                    <div class="summary-line"><span>Pending</span><strong class="text-danger">{{ $fmt($summary['pending_amount']) }}</strong></div>
+                    <div class="summary-line"><span>Other Payment</span><strong>{{ $fmt($transactions->sum('token_money') + $transactions->sum('miscellaneous')) }}</strong></div>
+                    <div class="summary-line"><span>Refund / Extra</span><strong class="text-primary">{{ $fmt($summary['extra_amount']) }}</strong></div>
+                </aside>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const filterWrap = document.querySelector('[data-transaction-filters]');
+        if (!filterWrap) {
+            return;
+        }
+
+        filterWrap.addEventListener('click', function (event) {
+            const button = event.target.closest('button[data-filter]');
+            if (!button) {
+                return;
+            }
+
+            const filter = button.dataset.filter;
+            filterWrap.querySelectorAll('button').forEach(item => item.classList.remove('active'));
+            button.classList.add('active');
+
+            document.querySelectorAll('[data-transaction-card]').forEach(card => {
+                const tags = (card.dataset.tags || '').split(' ');
+                card.style.display = tags.includes(filter) ? '' : 'none';
+            });
+        });
+    });
+</script>
 
 @endsection

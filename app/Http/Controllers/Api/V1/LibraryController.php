@@ -667,38 +667,112 @@ class LibraryController extends Controller
 
     public function monthlyFinancial(Request $request,DashboardService $service) {
 
-    $data = $service->monthlyFinancialData($request);
+        $data = $service->monthlyFinancialData($request);
 
-    return response()->json([
+        return response()->json([
 
-        'status' => true,
+            'status' => true,
 
-        'summary' => [
+            'summary' => [
 
-            'monthly_booking_income' =>
-                $data['monthly_income'],
+                'monthly_booking_income' =>
+                    $data['monthly_income'],
 
-            'monthly_other_income' =>
-                $data['other_total_income'],
+                'monthly_other_income' =>
+                    $data['other_total_income'],
 
-            'monthly_expense' =>
-                $data['monthly_expense'],
+                'monthly_expense' =>
+                    $data['monthly_expense'],
 
-            'monthly_refund' =>
-                $data['monthly_refund'],
+                'monthly_refund' =>
+                    $data['monthly_refund'],
 
-            'monthly_pending' =>
-                $data['monthly_pending'],
+                'monthly_pending' =>
+                    $data['monthly_pending'],
 
-            'monthly_total_revenue' =>
-                $data['monthlyBalance'],
-        ],
+                'monthly_total_revenue' =>
+                    $data['monthlyBalance'],
+            ],
 
-        // ✅ monthly cards list UI
-        'list' => $data['monthly_balance'],
+            // ✅ monthly cards list UI
+            'list' => $data['monthly_balance'],
 
-        // ✅ if filter clicked
-        'transactions' => $data['collection']
-    ]);
-}
+            // ✅ if filter clicked
+            'transactions' => $data['collection']
+        ]);
+    }
+
+    public function expenseDelete(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Validation
+        |--------------------------------------------------------------------------
+        */
+
+        $request->validate([
+
+            'id' => 'required|integer|exists:learner_transaction_activity,id',
+        ]);
+
+        try {
+
+            $expense = LearnerTransactionActivity::where('id', $request->id)
+
+                ->where('payment_type', 'EXPENSE')
+
+                ->where('branch_id', getCurrentBranch())
+
+                ->first();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Expense Not Found
+            |--------------------------------------------------------------------------
+            */
+
+            if (!$expense) {
+
+                return response()->json([
+
+                    'success' => false,
+
+                    'message' => 'Expense not found',
+                ], 404);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Delete Expense
+            |--------------------------------------------------------------------------
+            */
+
+            $expense->delete();
+
+        
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Expense deleted successfully',
+            ]);
+
+        } catch (\Throwable $e) {
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Error Response
+            |--------------------------------------------------------------------------
+            */
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

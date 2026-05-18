@@ -55,6 +55,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     Route::post('library/expense/save', [LibraryController::class, 'expenseSave']); // add + update
     Route::post('library/expense/list', [LibraryController::class, 'expenseList']); // list with filters
+    Route::post('library/expense/delete', [LibraryController::class, 'expenseDelete']);
     // 🔹 Message Template List
     Route::post('library/templates/list', [LibraryController::class, 'templateList']);
 
