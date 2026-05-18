@@ -374,7 +374,7 @@ class LibraryController extends Controller
 
     return response()->json([
 
-        'success' => true,
+        'status' => true,
 
         'message' => 'Expense list fetched successfully',
 
@@ -421,7 +421,7 @@ class LibraryController extends Controller
 
             return response()->json([
 
-                'success' => true,
+                'status' => true,
 
                 'message' => $expense['message'],
             ]);
@@ -753,7 +753,7 @@ class LibraryController extends Controller
 
             return response()->json([
 
-                'success' => true,
+                'status' => true,
 
                 'message' => 'Expense deleted successfully',
             ]);
