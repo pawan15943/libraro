@@ -19,7 +19,7 @@ class LibraryLifecycleService
     |--------------------------------------------------------------------------
     */
 
-    $expense = Expense::findOrFail($request->expense_id);
+    $expense = Expense::find($request->expense_id);
 
     if (!$expense) {
 

@@ -705,6 +705,9 @@ class LibraryController extends Controller
                 'status' => false,
 
                 'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+
+                'file' => $e->getFile(),
 
             ], 500);
         }
