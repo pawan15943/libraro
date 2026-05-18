@@ -470,4 +470,43 @@ class LearnerController extends Controller
 
         return response()->json($response);
     }
+
+    public function transactions(Request $request, LearnerLifecycleService $service)
+    {
+        $validator = Validator::make($request->all(), [
+        
+            'learner_id' => 'required|integer|exists:learners,id',
+        ]);
+
+        if ($validator->fails()) {
+
+            return response()->json([
+
+                'status' => false,
+
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        try {
+
+            $validated = $validator->validated();
+
+            return response()->json([
+
+                'status' => true,
+
+                'data' => $service->transactionTabs((int) $validated['learner_id']),
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+
+                'status' => false,
+
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
 }

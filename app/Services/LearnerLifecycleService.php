@@ -35,6 +35,7 @@ class LearnerLifecycleService
             ->get();
 
         $activities = LearnerTransactionActivity::withoutGlobalScopes()
+            ->with('creator')
             ->where('learner_id', $learnerId)
             ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
             ->orderByDesc('id')
@@ -75,6 +76,231 @@ class LearnerLifecycleService
                 'next_due_date' => optional($transactions->firstWhere('pending_amount', '>', 0))->due_date,
             ],
         ];
+    }
+
+    public function transactionTabs(int $learnerId): array
+    {
+        $dashboard = $this->transactionDashboard($learnerId);
+        $transactions = $dashboard['transactions'];
+        $activities = $dashboard['activities'];
+        $currentTransaction = $dashboard['latestTransaction'];
+        $firstTransactionId = (int) ($transactions->sortBy('id')->first()?->id ?? 0);
+
+        $totalOtherPaid = (float) $transactions->sum('token_money') + (float) $transactions->sum('miscellaneous');
+        $refundActivityAmount = (float) $activities
+            ->filter(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND')
+            ->sum('amount');
+
+        return [
+            'learner' => $this->formatLearnerForTransactions($dashboard['learner'], $dashboard['currentDetail']),
+            'overview' => [
+                'total_amount_received' => $this->money((float) $transactions->sum('paid_amount') + $totalOtherPaid),
+                'total_amount' => $this->money((float) $transactions->sum('total_amount') + $totalOtherPaid),
+                'pending_amount' => $this->money((float) $transactions->sum('pending_amount')),
+                'extra_amount' => $this->money((float) $transactions->sum('refund')),
+                'refund_amount' => $this->money($refundActivityAmount),
+                'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
+                'last_transactions' => $activities->take(3)->map(fn ($activity) => $this->formatActivity($activity))->values(),
+            ],
+            'subscription' => [
+                'current_transaction' => $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
+                'summary' => [
+                    'total_payment' => $this->money((float) $transactions->sum('total_amount')),
+                    'received_amount' => $this->money((float) $transactions->sum('paid_amount')),
+                    'pending_amount' => $this->money((float) $transactions->sum('pending_amount')),
+                    'total_subscription_transactions' => $transactions->count(),
+                ],
+                'transactions' => $transactions->map(fn ($transaction, $index) => $this->formatSubscriptionTransaction($transaction, $index, 0, 0, $firstTransactionId))->values(),
+            ],
+            'other_payment' => [
+                'summary' => [
+                    'token_money' => $this->money((float) $transactions->sum('token_money')),
+                    'miscellaneous' => $this->money((float) $transactions->sum('miscellaneous')),
+                    'total_paid' => $this->money($totalOtherPaid),
+                    'refund_pending' => $this->money((float) $transactions->sum('refund')),
+                ],
+                'payments' => $this->formatOtherPayments($transactions, $activities),
+            ],
+            'all_transaction' => $this->formatAllTransactions($transactions, $activities, $firstTransactionId),
+            'transaction_activity' => $activities->map(fn ($activity) => $this->formatActivity($activity))->values(),
+        ];
+    }
+
+    private function formatAllTransactions($transactions, $activities, int $firstTransactionId)
+    {
+        $runningBalance = 0.0;
+        $carryForwardById = [];
+
+        foreach ($transactions->sortBy('id') as $transaction) {
+            $carryForwardById[$transaction->id] = [
+                'carry_forward_amount' => max($runningBalance, 0),
+                'extra_paid_amount' => max(-$runningBalance, 0),
+            ];
+
+            $runningBalance += (float) ($transaction->pending_amount ?? 0);
+            $runningBalance -= (float) ($transaction->refund ?? 0);
+        }
+
+        return $transactions->map(function ($transaction, $index) use ($activities, $carryForwardById, $firstTransactionId) {
+            $carry = $carryForwardById[$transaction->id]['carry_forward_amount'] ?? 0;
+            $extraPaid = $carryForwardById[$transaction->id]['extra_paid_amount'] ?? 0;
+
+            return $this->formatSubscriptionTransaction($transaction, $index, $carry, $extraPaid, $firstTransactionId) + [
+                'activity' => $activities
+                    ->where('learner_transaction_id', $transaction->id)
+                    ->map(fn ($activity) => $this->formatActivity($activity))
+                    ->values(),
+            ];
+        })->values();
+    }
+
+    private function formatSubscriptionTransaction($transaction, int $index, float $carryForwardAmount, float $extraPaidAmount = 0, int $firstTransactionId = 0): array
+    {
+        $detail = $transaction->learnerDetail;
+        $planPrice = $this->planPriceFromTransaction($transaction);
+        $totalAmount = (float) ($transaction->total_amount ?? 0);
+        $finalPayable = max(0, $totalAmount + $carryForwardAmount - $extraPaidAmount);
+        $pending = (float) ($transaction->pending_amount ?? 0);
+        $extra = (float) ($transaction->refund ?? 0);
+
+        return [
+            'id' => (int) $transaction->id,
+            'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
+            'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
+            'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
+            'plan' => $detail?->plan?->name ?? '',
+            'plan_type' => $detail?->planType?->name ?? '',
+            'plan_start_date' => (string) ($detail?->plan_start_date ?? ''),
+            'plan_end_date' => (string) ($detail?->plan_end_date ?? ''),
+            'paid_date' => (string) ($transaction->paid_date ?? ''),
+            'due_date' => (string) ($transaction->due_date ?? ''),
+            'payment_mode' => $this->paymentModeLabel($detail?->payment_mode),
+            'plan_price' => $this->money($planPrice),
+            'locker_amount' => $this->money((float) ($transaction->locker_amount ?? 0)),
+            'discount_amount' => $this->money((float) ($transaction->discount_amount ?? 0)),
+            'total_amount' => $this->money($totalAmount),
+            'carry_forward_amount' => $this->money($carryForwardAmount),
+            'extra_paid_amount' => $this->money($extraPaidAmount),
+            'final_payable_amount' => $this->money($finalPayable),
+            'total_paid_amount' => $this->money((float) ($transaction->paid_amount ?? 0)),
+            'pending_amount' => $this->money($pending),
+            'extra_amount' => $this->money($extra),
+            'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
+            'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
+            'is_paid' => (int) ($transaction->is_paid ?? 0),
+        ];
+    }
+
+    private function formatOtherPayments($transactions, $activities)
+    {
+        $rows = collect();
+
+        foreach ($transactions as $transaction) {
+            if ((float) ($transaction->token_money ?? 0) > 0) {
+                $rows->push($this->formatOtherPaymentRow($transaction, 'TOKEN MONEY', (float) $transaction->token_money));
+            }
+
+            if ((float) ($transaction->miscellaneous ?? 0) > 0) {
+                $rows->push($this->formatOtherPaymentRow($transaction, 'MISCELLANEOUS', (float) $transaction->miscellaneous));
+            }
+        }
+
+        $activities
+            ->filter(fn ($activity) => in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND'], true))
+            ->each(function ($activity) use ($rows) {
+                $rows->push([
+                    'id' => null,
+                    'learner_transaction_id' => (int) ($activity->learner_transaction_id ?? 0),
+                    'payment_type' => (string) ($activity->payment_type ?? ''),
+                    'amount' => $this->money((float) ($activity->amount ?? 0)),
+                    'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
+                    'paid_date' => (string) ($activity->date ?? ''),
+                    'particular' => (string) ($activity->particular ?? ''),
+                    'source' => 'activity',
+                ]);
+            });
+
+        return $rows->values();
+    }
+
+    private function formatOtherPaymentRow($transaction, string $type, float $amount): array
+    {
+        return [
+            'id' => (int) $transaction->id,
+            'learner_transaction_id' => (int) $transaction->id,
+            'payment_type' => $type,
+            'amount' => $this->money($amount),
+            'payment_mode' => $this->paymentModeLabel($transaction->learnerDetail?->payment_mode),
+            'paid_date' => (string) ($transaction->paid_date ?? ''),
+            'particular' => $type,
+            'source' => 'transaction',
+        ];
+    }
+
+    private function formatActivity($activity): array
+    {
+        return [
+            'id' => (int) $activity->id,
+            'learner_transaction_id' => (int) ($activity->learner_transaction_id ?? 0),
+            'transaction_id' => (string) ($activity->transaction_id ?? ''),
+            'transaction_date' => (string) ($activity->date ?? ''),
+            'paid_amount' => $this->money((float) ($activity->amount ?? 0)),
+            'payment_type' => (string) ($activity->payment_type ?? ''),
+            'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
+            'particular' => (string) ($activity->particular ?? ''),
+            'dr_cr' => (string) ($activity->dr_cr ?? ''),
+            'added_by' => $activity->created_by_name,
+            'updated_by' => $activity->created_by_name,
+            'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
+        ];
+    }
+
+    private function formatLearnerForTransactions($learner, $detail): array
+    {
+        return [
+            'id' => (int) $learner->id,
+            'learner_no' => (string) ($learner->learner_no ?? ''),
+            'name' => (string) ($learner->name ?? ''),
+            'mobile' => (string) ($learner->mobile ?? ''),
+            'profile_picture' => $learner->profile_picture ? asset($learner->profile_picture) : '',
+            'seat_no' => $detail?->seat_no ? getSeatDisplayByMainNo($detail->seat_no) : 'GEN',
+            'status' => (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive',
+        ];
+    }
+
+    private function planPriceFromTransaction($transaction): float
+    {
+        return max(0, (float) ($transaction->total_amount ?? 0)
+            - (float) ($transaction->locker_amount ?? 0)
+            + (float) ($transaction->discount_amount ?? 0));
+    }
+
+    private function transactionTypeLabel($transaction, int $firstTransactionId): string
+    {
+        return (int) $transaction->id === (int) $firstTransactionId ? 'BOOK SEAT' : 'RE-NEW SEAT';
+    }
+
+    private function paymentModeLabel($value): string
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return '';
+        }
+
+        if (is_numeric($value)) {
+            return match ((int) $value) {
+                1 => 'ONLINE',
+                2 => 'OFFLINE',
+                3 => 'PAYLATER',
+                default => (string) $value,
+            };
+        }
+
+        return strtoupper((string) $value);
+    }
+
+    private function money(float $amount): string
+    {
+        return number_format($amount, 2, '.', '');
     }
 
     /**

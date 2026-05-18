@@ -143,6 +143,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/lifecycle', [LearnerController::class, 'lifecycle']);
         Route::post('/settlement', [LearnerController::class, 'settlement']);
         Route::post('/other-payment', [LearnerController::class, 'otherPaymentApi']);
+        Route::post('/transactions', [LearnerController::class, 'transactions']);
 
          Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
          Route::post('/attendance/summary', [AttendanceController::class, 'summary']);
