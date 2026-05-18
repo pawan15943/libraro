@@ -21,6 +21,11 @@ class LibraryLifecycleService
 
     $expense = Expense::findOrFail($request->expense_id);
 
+    if (!$expense) {
+
+        throw new \Exception('Expense not found');
+    }
+
     $particular = $expense->name;
 
     /*
