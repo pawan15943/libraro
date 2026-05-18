@@ -236,207 +236,7 @@ class LibraryController extends Controller
         }
     }
 
-   public function expenseList(Request $request)
-{
-    /*
-    |--------------------------------------------------------------------------
-    | Validation
-    |--------------------------------------------------------------------------
-    */
-
-    $request->validate([
-
-        /*
-        |--------------------------------------------------------------------------
-        | Month Format Example:
-        | 2026-05
-        |--------------------------------------------------------------------------
-        */
-
-        'month' => 'nullable|date_format:Y-m',
-
-        /*
-        |--------------------------------------------------------------------------
-        | Expense ID
-        |--------------------------------------------------------------------------
-        */
-
-        'expense_id' => 'nullable|exists:expenses,id',
-    ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Main Query
-    |--------------------------------------------------------------------------
-    */
-
-    $query = LearnerTransactionActivity::query()
-
-        ->where('payment_type', 'EXPENSE')
-
-        ->where('branch_id', getCurrentBranch());
-
-    /*
-    |--------------------------------------------------------------------------
-    | Month Filter
-    |--------------------------------------------------------------------------
-    |
-    | Example:
-    | 2026-05
-    |
-    */
-
-    if ($request->filled('month')) {
-
-        $month = Carbon::parse($request->month . '-01');
-
-        $query->whereYear('date', $month->year)
-              ->whereMonth('date', $month->month);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Expense Filter
-    |--------------------------------------------------------------------------
-    */
-    if ($request->filled('expense_id')) {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get Expense Names
-        |--------------------------------------------------------------------------
-        */
-
-        $expenseNames = Expense::whereIn(
-                'id',
-                $request->expense_id
-            )
-            ->pluck('name')
-            ->toArray();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Apply Filter
-        |--------------------------------------------------------------------------
-        */
-
-        $query->whereIn('particular', $expenseNames);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Expense List
-    |--------------------------------------------------------------------------
-    */
-
-    $expenses = $query
-
-        ->latest('date')
-
-        ->latest('id')
-
-        ->get()
-
-        ->map(function ($item) {
-
-            return [
-
-                'id' => $item->id,
-
-                'date' => Carbon::parse($item->date)
-                    ->format('Y-m-d'),
-
-                'expense_name' => $item->particular,
-
-                'amount' => (string) $item->amount,
-
-                'payment_mode' => $item->payment_mode,
-
-                'remark' => $item->remark,
-
-                'transaction_id' => $item->transaction_id,
-            ];
-        });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Total Expense
-    |--------------------------------------------------------------------------
-    */
-
-    $totalExpense = $query->sum('amount');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Final Response
-    |--------------------------------------------------------------------------
-    */
-
-    return response()->json([
-
-        'status' => true,
-
-        'message' => 'Expense list fetched successfully',
-
-        'data' => [
-
-            'total_expense' => (float) $totalExpense,
-
-            'filters' => [
-
-                'month' => $request->month,
-
-                'expense_id' => $request->expense_id,
-            ],
-
-            'expenses' => $expenses,
-        ]
-    ]);
-}
-
-    
-
-   
-
-    public function expenseSave(Request $request, LibraryLifecycleService $service)
-    {
-        $validator = $request->validate([
-
-            'id'           => 'nullable|exists:learner_transaction_activity,id',
-
-            'expense_id'   => 'required|integer|exists:expenses,id',
-
-            'amount'       => 'required|numeric|min:1',
-
-            'date'         => 'required|date',
-
-            'payment_mode' => 'required',
-
-            'remark'       => 'nullable|string',
-        ]);
-
-        try {
-
-            $expense = $service->storeExpense($request);
-
-            return response()->json([
-
-                'status' => true,
-
-                'message' => $expense['message'],
-            ]);
-
-        } catch (\Throwable $e) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' => $e->getMessage(),
-
-            ], 500);
-        }
-    }
+  
 
     public function templateList(Request $request)
     {
@@ -702,7 +502,7 @@ class LibraryController extends Controller
         ]);
     }
 
-    public function expenseDelete(Request $request)
+      public function expenseList(Request $request)
     {
         /*
         |--------------------------------------------------------------------------
@@ -712,8 +512,216 @@ class LibraryController extends Controller
 
         $request->validate([
 
+            /*
+            |--------------------------------------------------------------------------
+            | Month Format Example:
+            | 2026-05
+            |--------------------------------------------------------------------------
+            */
+
+            'month' => 'nullable|date_format:Y-m',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Expense ID
+            |--------------------------------------------------------------------------
+            */
+
+            'expense_id' => 'nullable|exists:expenses,id',
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Main Query
+        |--------------------------------------------------------------------------
+        */
+
+        $query = LearnerTransactionActivity::query()
+
+            ->where('payment_type', 'EXPENSE')
+
+            ->where('branch_id', getCurrentBranch());
+
+        /*
+        |--------------------------------------------------------------------------
+        | Month Filter
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        | 2026-05
+        |
+        */
+
+        if ($request->filled('month')) {
+
+            $month = Carbon::parse($request->month . '-01');
+
+            $query->whereYear('date', $month->year)
+                ->whereMonth('date', $month->month);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Expense Filter
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('expense_id')) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Get Expense Names
+            |--------------------------------------------------------------------------
+            */
+
+            $expenseNames = Expense::whereIn(
+                    'id',
+                    $request->expense_id
+                )
+                ->pluck('name')
+                ->toArray();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Apply Filter
+            |--------------------------------------------------------------------------
+            */
+
+            $query->whereIn('particular', $expenseNames);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Expense List
+        |--------------------------------------------------------------------------
+        */
+
+        $expenses = $query
+
+            ->latest('date')
+
+            ->latest('id')
+
+            ->get()
+
+            ->map(function ($item) {
+
+                return [
+
+                    'id' => $item->id,
+
+                    'date' => Carbon::parse($item->date)
+                        ->format('Y-m-d'),
+
+                    'expense_name' => $item->particular,
+
+                    'amount' => (string) $item->amount,
+
+                    'payment_mode' => $item->payment_mode,
+
+                    'remark' => $item->remark,
+
+                    'transaction_id' => $item->transaction_id,
+                ];
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Total Expense
+        |--------------------------------------------------------------------------
+        */
+
+        $totalExpense = $query->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Final Response
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json([
+
+            'status' => true,
+
+            'message' => 'Expense list fetched successfully',
+
+            'data' => [
+
+                'total_expense' => (float) $totalExpense,
+
+                'filters' => [
+
+                    'month' => $request->month,
+
+                    'expense_id' => $request->expense_id,
+                ],
+
+                'expenses' => $expenses,
+            ]
+        ]);
+    }
+
+    public function expenseSave(Request $request, LibraryLifecycleService $service)
+    {
+        $validator = $request->validate([
+
+            'id'           => 'nullable|exists:learner_transaction_activity,id',
+
+            'expense_id'   => 'required|integer|exists:expenses,id',
+
+            'amount'       => 'required|numeric|min:1',
+
+            'date'         => 'required|date',
+
+            'payment_mode' => 'required',
+
+            'remark'       => 'nullable|string',
+        ]);
+
+        try {
+
+            $expense = $service->storeExpense($request);
+
+            return response()->json([
+
+                'status' => true,
+
+                'message' => $expense['message'],
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+
+                'status' => false,
+
+                'message' => $e->getMessage(),
+
+            ], 500);
+        }
+    }
+
+    public function expenseDelete(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Validation
+        |--------------------------------------------------------------------------
+        */
+
+        $validator = Validator::make($request->all(), [
+
             'id' => 'required|integer|exists:learner_transaction_activity,id',
         ]);
+
+         if ($validator->fails()) {
+
+            return response()->json([
+
+                'status' => false,
+
+                'message' => $validator->errors()->first(),
+            ]);
+        }
 
         try {
 
@@ -735,10 +743,10 @@ class LibraryController extends Controller
 
                 return response()->json([
 
-                    'success' => false,
+                    'status' => false,
 
                     'message' => 'Expense not found',
-                ], 404);
+                ]);
             }
 
             /*
@@ -769,7 +777,7 @@ class LibraryController extends Controller
 
             return response()->json([
 
-                'success' => false,
+                'status' => false,
 
                 'message' => $e->getMessage(),
             ], 500);
