@@ -87,6 +87,9 @@ class LearnerLifecycleService
         $firstTransactionId = (int) ($transactions->sortBy('id')->first()?->id ?? 0);
 
         $totalOtherPaid = (float) $transactions->sum('token_money') + (float) $transactions->sum('miscellaneous');
+        $totalPendingAmount = (float) $transactions->sum('pending_amount');
+        $totalExtraAmount = (float) $transactions->sum('refund');
+        $currentSubscriptionAmount = (float) ($currentTransaction?->total_amount ?? 0);
         $refundActivityAmount = (float) $activities
             ->filter(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND')
             ->sum('amount');
@@ -100,17 +103,11 @@ class LearnerLifecycleService
                 'extra_amount' => $this->money((float) $transactions->sum('refund')),
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
-                'last_transactions' => $activities->take(3)->map(fn ($activity) => $this->formatActivity($activity))->values(),
+                'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
+                'last_transactions' => $activities->take(1)->map(fn ($activity) => $this->formatActivity($activity))->values(),
             ],
             'subscription' => [
-                'current_transaction' => $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
-                'summary' => [
-                    'total_payment' => $this->money((float) $transactions->sum('total_amount')),
-                    'received_amount' => $this->money((float) $transactions->sum('paid_amount')),
-                    'pending_amount' => $this->money((float) $transactions->sum('pending_amount')),
-                    'total_subscription_transactions' => $transactions->count(),
-                ],
-                'transactions' => $transactions->map(fn ($transaction, $index) => $this->formatSubscriptionTransaction($transaction, $index, 0, 0, $firstTransactionId))->values(),
+                $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
             ],
             'other_payment' => [
                 'summary' => [
@@ -141,17 +138,74 @@ class LearnerLifecycleService
             $runningBalance -= (float) ($transaction->refund ?? 0);
         }
 
-        return $transactions->map(function ($transaction, $index) use ($activities, $carryForwardById, $firstTransactionId) {
+        $usedActivityIds = [];
+
+        return $transactions->map(function ($transaction, $index) use ($activities, $carryForwardById, $firstTransactionId, &$usedActivityIds) {
             $carry = $carryForwardById[$transaction->id]['carry_forward_amount'] ?? 0;
             $extraPaid = $carryForwardById[$transaction->id]['extra_paid_amount'] ?? 0;
 
             return $this->formatSubscriptionTransaction($transaction, $index, $carry, $extraPaid, $firstTransactionId) + [
-                'activity' => $activities
-                    ->where('learner_transaction_id', $transaction->id)
+                'activity' => $this->activitiesForTransaction($transaction, $activities, $usedActivityIds)
                     ->map(fn ($activity) => $this->formatActivity($activity))
                     ->values(),
             ];
         })->values();
+    }
+
+    private function activitiesForTransaction($transaction, $activities, array &$usedActivityIds)
+    {
+        $exact = $activities
+            ->filter(fn ($activity) => (int) ($activity->learner_transaction_id ?? 0) === (int) $transaction->id)
+            ->values();
+
+        foreach ($exact as $activity) {
+            $usedActivityIds[(int) $activity->id] = true;
+        }
+
+        $legacy = $activities
+            ->filter(function ($activity) use ($transaction, $usedActivityIds) {
+                if (isset($usedActivityIds[(int) $activity->id])) {
+                    return false;
+                }
+
+                if ((int) ($activity->learner_transaction_id ?? 0) > 0) {
+                    return false;
+                }
+
+                return $this->legacyActivityMatchesTransaction($activity, $transaction);
+            })
+            ->values();
+
+        foreach ($legacy as $activity) {
+            $usedActivityIds[(int) $activity->id] = true;
+        }
+
+        return $exact->merge($legacy)->values();
+    }
+
+    private function legacyActivityMatchesTransaction($activity, $transaction): bool
+    {
+        if ((string) ($activity->transaction_id ?? '') !== ''
+            && (string) ($activity->transaction_id ?? '') === (string) ($transaction->transaction_id ?? '')) {
+            return true;
+        }
+
+        $amount = round((float) ($activity->amount ?? 0), 2);
+        $candidateAmounts = [
+            (float) ($transaction->paid_amount ?? 0),
+            (float) ($transaction->pending_amount ?? 0),
+            (float) ($transaction->token_money ?? 0),
+            (float) ($transaction->miscellaneous ?? 0),
+            (float) ($transaction->refund ?? 0),
+        ];
+
+        foreach ($candidateAmounts as $candidate) {
+            if ($amount > 0 && round($candidate, 2) === $amount) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function formatSubscriptionTransaction($transaction, int $index, float $carryForwardAmount, float $extraPaidAmount = 0, int $firstTransactionId = 0): array
@@ -185,9 +239,12 @@ class LearnerLifecycleService
             'total_paid_amount' => $this->money((float) ($transaction->paid_amount ?? 0)),
             'pending_amount' => $this->money($pending),
             'extra_amount' => $this->money($extra),
-            'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
-            'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
+            // 'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
+            // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
             'is_paid' => (int) ($transaction->is_paid ?? 0),
+            'subscription_download_receipt_link' => (int) ($transaction->is_paid ?? 0) === 1 ? route('receipt.view', ['transactionId' => $transaction->id]) : '',
+            'edit_url' => route('learner.pending.payment', ['id' => $transaction->id]),
+            'delete_url' => route('create.renew.delete.destroy', ['transaction' => $transaction->id]),
         ];
     }
 
@@ -233,7 +290,9 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($transaction->learnerDetail?->payment_mode),
             'paid_date' => (string) ($transaction->paid_date ?? ''),
             'particular' => $type,
-            'source' => 'transaction',
+            'download_receipt_url' => '',
+            'edit_url' => route('learner.other.payment', $transaction->learner_detail_id),
+            'delete_url' => '',
         ];
     }
 
@@ -252,6 +311,9 @@ class LearnerLifecycleService
             'added_by' => $activity->created_by_name,
             'updated_by' => $activity->created_by_name,
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
+            'download_receipt_url' => '',
+            'edit_url' => $activity->learner_transaction_id ? route('learner.pending.payment', ['id' => $activity->learner_transaction_id]) : '',
+            'delete_url' => route('learners.transactions.activity.destroy', ['activity' => $activity->id]),
         ];
     }
 
@@ -300,7 +362,7 @@ class LearnerLifecycleService
 
     private function money(float $amount): string
     {
-        return number_format($amount, 2, '.', '');
+        return number_format($amount, 0, '.', '');
     }
 
     /**

@@ -3394,11 +3394,28 @@ class LearnerController extends Controller
     {
         try {
             $data = $this->learnerLifecycleService->transactionDashboard((int) $learnerId);
+            $data['tabData'] = $this->learnerLifecycleService->transactionTabs((int) $learnerId);
         } catch (\Throwable $e) {
             return redirect()->route('learners')->with('error', $e->getMessage());
         }
 
         return view('learner.transaction-section', $data);
+    }
+
+    public function destroyTransactionActivity($activity)
+    {
+        $activity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('id', $activity)
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->first();
+
+        if (! $activity) {
+            return redirect()->back()->with('error', 'Activity not found.');
+        }
+
+        $activity->delete();
+
+        return redirect()->back()->with('success', 'Transaction activity deleted successfully.');
     }
 
     public function pendingPaymentStore(Request $request)
