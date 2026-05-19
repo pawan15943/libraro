@@ -104,18 +104,19 @@ class LearnerLifecycleService
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
-                'last_transactions' => $activities->take(1)->map(fn ($activity) => $this->formatActivity($activity))->values(),
+                // 'last_transactions' => $activities->take(1)->map(fn ($activity) => $this->formatActivity($activity))->values(),
+                'last_transactions' =>  $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
             ],
             'subscription' => [
                 $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
             ],
             'other_payment' => [
                 'summary' => [
-                    'token_money' => $this->money((float) $transactions->sum('token_money')),
-                    'miscellaneous' => $this->money((float) $transactions->sum('miscellaneous')),
+                    'token_amount' => token_money() + $this->money((float) $transactions->sum('miscellaneous')),
                     'total_paid' => $this->money($totalOtherPaid),
-                    'refund_pending' => $this->money((float) $transactions->sum('refund')),
+                    'pending' =>( token_money() + $this->money((float) $transactions->sum('miscellaneous')))- $this->money($totalOtherPaid),
                 ],
+                
                 'payments' => $this->formatOtherPayments($transactions, $activities),
             ],
             'all_transaction' => $this->formatAllTransactions($transactions, $activities, $firstTransactionId),
@@ -216,10 +217,14 @@ class LearnerLifecycleService
         $finalPayable = max(0, $totalAmount + $carryForwardAmount - $extraPaidAmount);
         $pending = (float) ($transaction->pending_amount ?? 0);
         $extra = (float) ($transaction->refund ?? 0);
+        if($detail){
+            $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no')->first();
+        }
+        
 
         return [
             'id' => (int) $transaction->id,
-            'status'=>'Active',
+            'status'=>$learner?->status==1 ? 'Active' : 'Inactive',
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
             'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
@@ -232,6 +237,8 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($detail?->payment_mode),
             'plan_price' => $this->money($planPrice),
             'locker_amount' => $this->money((float) ($transaction->locker_amount ?? 0)),
+            'locker_no'=>$learner?->locker_no ?? '',
+            'locker'=>$transaction->locker_amount > 0 ? 'Yes' : 'No',
             'discount_amount' => $this->money((float) ($transaction->discount_amount ?? 0)),
             'total_amount' => $this->money($totalAmount),
             'carry_forward_amount' => $this->money($carryForwardAmount),
