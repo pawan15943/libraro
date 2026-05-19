@@ -219,6 +219,7 @@ class LearnerLifecycleService
 
         return [
             'id' => (int) $transaction->id,
+            'status'=>'Active',
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
             'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
@@ -241,6 +242,8 @@ class LearnerLifecycleService
             'extra_amount' => $this->money($extra),
             // 'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
             // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
+            'updated_by'=>'',
+            'updated_date'=>'',
             'is_paid' => (int) ($transaction->is_paid ?? 0),
             'subscription_download_receipt_link' => (int) ($transaction->is_paid ?? 0) === 1 ? route('receipt.view', ['transactionId' => $transaction->id]) : '',
             'edit_url' => route('learner.pending.payment', ['id' => $transaction->id]),
