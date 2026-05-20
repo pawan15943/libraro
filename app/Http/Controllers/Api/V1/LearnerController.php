@@ -509,4 +509,153 @@ class LearnerController extends Controller
             ], 422);
         }
     }
+
+    public function transactionsDetail(Request $request, LearnerLifecycleService $service)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:learner_transactions,id',
+            'plan_price' => 'nullable|numeric|min:0',
+            'locker_amount' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'total_amount' => 'nullable|numeric|min:0',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'pending_amount' => 'nullable|numeric|min:0',
+            'due_date' => 'nullable|date',
+            'paid_date' => 'nullable|date',
+            'payment_mode' => 'nullable|in:1,2,3,ONLINE,OFFLINE,PAYLATER,CASH,OTHER',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        try {
+            $validated = $validator->validated();
+            $id = (int) $validated['id'];
+            unset($validated['id']);
+
+            $data = empty($validated)
+                ? $service->transactionDetail($id)
+                : $service->updateTransaction($id, $validated);
+
+            return response()->json([
+                'status' => true,
+                'data' => $data,
+                'message' => empty($validated) ? 'Transaction detail.' : 'Transaction updated successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function transactionsDelete(Request $request, LearnerLifecycleService $service)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:learner_transactions,id',
+            'confirm' => 'nullable|in:delete,Delete,DELETE',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        if ($request->filled('confirm') && strtolower($request->confirm) !== 'delete') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Type delete to confirm this operation.',
+            ]);
+        }
+
+        try {
+            $service->deleteTransaction((int) $request->id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Transaction deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function transactionsActivityDetail(Request $request, LearnerLifecycleService $service)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:learner_transaction_activity,id',
+            'payment_date' => 'nullable|date',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'payment_mode' => 'nullable|string|max:50',
+            'payment_type' => 'nullable|string|max:100',
+            'particular' => 'nullable|string|max:255',
+            'dr_cr' => 'nullable|in:Dr,Cr,dr,cr,Settle',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        try {
+            $validated = $validator->validated();
+            $id = (int) $validated['id'];
+            unset($validated['id']);
+
+            $data = empty($validated)
+                ? $service->transactionActivityDetail($id)
+                : $service->updateTransactionActivity($id, $validated);
+
+            return response()->json([
+                'status' => true,
+                'data' => $data,
+                'message' => empty($validated) ? 'Transaction activity detail.' : 'Transaction activity updated successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function transactionsActivityDelete(Request $request, LearnerLifecycleService $service)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|exists:learner_transaction_activity,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        try {
+            $service->deleteTransactionActivity((int) $request->id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Transaction activity deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
 }

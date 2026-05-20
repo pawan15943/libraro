@@ -3418,6 +3418,17 @@ class LearnerController extends Controller
         return redirect()->back()->with('success', 'Transaction activity deleted successfully.');
     }
 
+    public function destroyTransaction($transaction)
+    {
+        try {
+            $this->learnerLifecycleService->deleteTransaction((int) $transaction);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Transaction deleted successfully.');
+    }
+
     public function pendingPaymentStore(Request $request)
     {
        

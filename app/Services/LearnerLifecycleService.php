@@ -124,6 +124,154 @@ class LearnerLifecycleService
         ];
     }
 
+    public function transactionDetail(int $transactionId): array
+    {
+        $transaction = $this->transactionInCurrentContext($transactionId);
+
+        return $this->formatSubscriptionTransaction(
+            $transaction,
+            0,
+            0,
+            0,
+            (int) LearnerTransaction::withTrashed()
+                ->where('learner_id', $transaction->learner_id)
+                ->orderBy('id')
+                ->value('id')
+        );
+    }
+
+    public function updateTransaction(int $transactionId, array $data): array
+    {
+        $transaction = $this->transactionInCurrentContext($transactionId);
+
+        DB::transaction(function () use ($transaction, $data) {
+            $update = [];
+
+            if (array_key_exists('locker_amount', $data)) {
+                $update['locker_amount'] = (float) $data['locker_amount'];
+            }
+
+            if (array_key_exists('discount_amount', $data)) {
+                $update['discount_amount'] = (float) $data['discount_amount'];
+            }
+
+            if (array_key_exists('total_amount', $data)) {
+                $update['total_amount'] = (float) $data['total_amount'];
+            } elseif (array_key_exists('plan_price', $data) || array_key_exists('locker_amount', $data) || array_key_exists('discount_amount', $data)) {
+                $planPrice = (float) ($data['plan_price'] ?? $this->planPriceFromTransaction($transaction));
+                $locker = (float) ($data['locker_amount'] ?? $transaction->locker_amount ?? 0);
+                $discount = (float) ($data['discount_amount'] ?? $transaction->discount_amount ?? 0);
+                $update['total_amount'] = max(0, $planPrice + $locker - $discount);
+            }
+
+            foreach (['paid_amount', 'pending_amount'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $update[$field] = (float) $data[$field];
+                }
+            }
+
+            if (array_key_exists('paid_date', $data)) {
+                $update['paid_date'] = $data['paid_date'];
+            }
+
+            if (array_key_exists('due_date', $data)) {
+                $update['due_date'] = $data['due_date'];
+            }
+
+            if (! empty($update)) {
+                $update['is_paid'] = ((float) ($update['pending_amount'] ?? $transaction->pending_amount ?? 0)) <= 0 ? 1 : 0;
+                $transaction->update($update);
+            }
+
+            if (array_key_exists('payment_mode', $data) && $transaction->learnerDetail) {
+                $transaction->learnerDetail->payment_mode = $this->paymentModeValue($data['payment_mode']);
+                $transaction->learnerDetail->save();
+            }
+        });
+
+        return $this->transactionDetail($transactionId);
+    }
+
+    public function deleteTransaction(int $transactionId): void
+    {
+        $transaction = $this->transactionInCurrentContext($transactionId);
+
+        DB::transaction(function () use ($transaction) {
+            LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_transaction_id', $transaction->id)
+                ->delete();
+
+            $transaction->delete();
+        });
+    }
+
+    public function transactionActivityDetail(int $activityId): array
+    {
+        $activity = $this->activityInCurrentContext($activityId);
+
+        return $this->formatActivity($activity);
+    }
+
+    public function updateTransactionActivity(int $activityId, array $data): array
+    {
+        $activity = $this->activityInCurrentContext($activityId);
+
+        $update = [];
+        if (array_key_exists('payment_date', $data)) {
+            $update['date'] = $data['payment_date'];
+        }
+        if (array_key_exists('paid_amount', $data)) {
+            $update['amount'] = (float) $data['paid_amount'];
+        }
+        foreach (['payment_mode', 'payment_type', 'particular', 'dr_cr'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $update[$field] = $data[$field];
+            }
+        }
+
+        if (! empty($update)) {
+            $activity->update($update);
+        }
+
+        return $this->transactionActivityDetail($activityId);
+    }
+
+    public function deleteTransactionActivity(int $activityId): void
+    {
+        $this->activityInCurrentContext($activityId)->delete();
+    }
+
+    private function transactionInCurrentContext(int $transactionId): LearnerTransaction
+    {
+        $transaction = LearnerTransaction::withTrashed()
+            ->with(['learnerDetail.plan', 'learnerDetail.planType'])
+            ->where('id', $transactionId)
+            ->where('library_id', getLibraryId())
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->first();
+
+        if (! $transaction) {
+            throw new Exception('Transaction not found.');
+        }
+
+        return $transaction;
+    }
+
+    private function activityInCurrentContext(int $activityId): LearnerTransactionActivity
+    {
+        $activity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->with('creator')
+            ->where('id', $activityId)
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->first();
+
+        if (! $activity) {
+            throw new Exception('Transaction activity not found.');
+        }
+
+        return $activity;
+    }
+
     private function formatAllTransactions($transactions, $activities, int $firstTransactionId)
     {
         $runningBalance = 0.0;
@@ -254,7 +402,7 @@ class LearnerLifecycleService
             'is_paid' => (int) ($transaction->is_paid ?? 0),
             'subscription_download_receipt_link' => (int) ($transaction->is_paid ?? 0) === 1 ? route('receipt.view', ['transactionId' => $transaction->id]) : '',
             'edit_url' => route('learner.pending.payment', ['id' => $transaction->id]),
-            'delete_url' => route('create.renew.delete.destroy', ['transaction' => $transaction->id]),
+            'delete_url' => route('learners.transactions.destroy', ['transaction' => $transaction->id]),
         ];
     }
 
@@ -368,6 +516,18 @@ class LearnerLifecycleService
         }
 
         return strtoupper((string) $value);
+    }
+
+    private function paymentModeValue($value)
+    {
+        $mode = strtoupper((string) $value);
+
+        return match ($mode) {
+            'ONLINE', 'CASH' => 1,
+            'OFFLINE', 'OTHER' => 2,
+            'PAYLATER' => 3,
+            default => $value,
+        };
     }
 
     private function money(float $amount): string

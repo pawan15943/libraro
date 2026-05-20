@@ -336,6 +336,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/getTransactionDetail', [LearnerController::class, 'getTransactionDetail'])->name('getTransactionDetail');
     Route::get('/transactions-data/{learnerId}', [LearnerController::class, 'learnerTransactionsModalData'])->name('learners.transactions.modal');
     Route::get('/{learner}/transactions', [LearnerController::class, 'learnerTransactionSection'])->name('learners.transactions');
+    Route::delete('/transactions/{transaction}', [LearnerController::class, 'destroyTransaction'])->name('learners.transactions.destroy');
     Route::delete('/transactions/activity/{activity}', [LearnerController::class, 'destroyTransactionActivity'])->name('learners.transactions.activity.destroy');
     Route::get('pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');

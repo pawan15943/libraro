@@ -256,6 +256,7 @@
                                 @if(!empty($subscription['delete_url']))
                                     <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
                                         @csrf
+                                        @method('DELETE')
                                         <input type="hidden" name="learner_id" value="{{ $learner->id }}">
                                         <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     </form>
@@ -373,6 +374,7 @@
                                         @if(!empty($transaction['delete_url']))
                                             <form method="POST" action="{{ $transaction['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
                                                 @csrf
+                                                @method('DELETE')
                                                 <input type="hidden" name="learner_id" value="{{ $learner->id }}">
                                                 <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
                                             </form>
