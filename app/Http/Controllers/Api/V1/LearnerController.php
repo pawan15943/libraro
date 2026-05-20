@@ -514,12 +514,7 @@ class LearnerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:learner_transactions,id',
-            'plan_price' => 'nullable|numeric|min:0',
-            'locker_amount' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'total_amount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
-            'pending_amount' => 'nullable|numeric|min:0',
             'due_date' => 'nullable|date',
             'paid_date' => 'nullable|date',
             'payment_mode' => 'nullable|in:1,2,3,ONLINE,OFFLINE,PAYLATER,CASH,OTHER',
@@ -596,10 +591,8 @@ class LearnerController extends Controller
             'id' => 'required|integer|exists:learner_transaction_activity,id',
             'payment_date' => 'nullable|date',
             'paid_amount' => 'nullable|numeric|min:0',
-            'payment_mode' => 'nullable|string|max:50',
-            'payment_type' => 'nullable|string|max:100',
-            'particular' => 'nullable|string|max:255',
-            'dr_cr' => 'nullable|in:Dr,Cr,dr,cr,Settle',
+            'payment_mode' => 'nullable|in:1,2,3',
+          
         ]);
 
         if ($validator->fails()) {

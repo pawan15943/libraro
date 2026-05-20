@@ -111,11 +111,13 @@ class LearnerLifecycleService
                 $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
             ],
             'other_payment' => [
-                'summary' => [
-                    'token_amount' => token_money() + $this->money((float) $transactions->sum('miscellaneous')),
-                    'total_paid' => $this->money($totalOtherPaid),
-                    'pending' =>( token_money() + $this->money((float) $transactions->sum('miscellaneous')))- $this->money($totalOtherPaid),
-                ],
+                  'summary' => [
+                        'total_payment' => (string) $this->money((float) token_money() + (float) $transactions->sum('miscellaneous')),
+
+                        'received_amount' => (string) $this->money($totalOtherPaid),
+
+                        'pending_amount' => (string) $this->money( ((float) token_money() +(float) $transactions->sum('miscellaneous') ) - (float) $totalOtherPaid),
+                    ],
                 
                 'payments' => $this->formatOtherPayments($transactions, $activities),
             ],
@@ -171,7 +173,7 @@ class LearnerLifecycleService
             }
 
             if (array_key_exists('paid_date', $data)) {
-                $update['paid_date'] = $data['paid_date'];
+                $update['date'] = $data['paid_date'];
             }
 
             if (array_key_exists('due_date', $data)) {
@@ -223,7 +225,7 @@ class LearnerLifecycleService
         if (array_key_exists('paid_amount', $data)) {
             $update['amount'] = (float) $data['paid_amount'];
         }
-        foreach (['payment_mode', 'payment_type', 'particular', 'dr_cr'] as $field) {
+        foreach (['payment_mode', 'payment_type'] as $field) {
             if (array_key_exists($field, $data)) {
                 $update[$field] = $data[$field];
             }
@@ -376,6 +378,7 @@ class LearnerLifecycleService
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
             'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
+            'transaction_date'=>optional($transaction->created_at)->toDateString() ?? '',
             'plan' => $detail?->plan?->name ?? '',
             'plan_type' => $detail?->planType?->name ?? '',
             'plan_start_date' => (string) ($detail?->plan_start_date ?? ''),
@@ -398,7 +401,8 @@ class LearnerLifecycleService
             // 'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
             // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
             'updated_by'=>'',
-            'updated_date'=>'',
+            'updated_date'=> optional($transaction->updated_at)->toDateTimeString() ?? '',
+
             'is_paid' => (int) ($transaction->is_paid ?? 0),
             'subscription_download_receipt_link' => (int) ($transaction->is_paid ?? 0) === 1 ? route('receipt.view', ['transactionId' => $transaction->id]) : '',
             'edit_url' => route('learner.pending.payment', ['id' => $transaction->id]),
@@ -466,8 +470,8 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
             'particular' => (string) ($activity->particular ?? ''),
             'dr_cr' => (string) ($activity->dr_cr ?? ''),
-            'added_by' => $activity->created_by_name,
-            'updated_by' => $activity->created_by_name,
+            'added_by' => $activity->created_by,
+            'updated_by' => $activity->created_by,
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
             'download_receipt_url' => '',
             'edit_url' => $activity->learner_transaction_id ? route('learner.pending.payment', ['id' => $activity->learner_transaction_id]) : '',
@@ -523,8 +527,8 @@ class LearnerLifecycleService
         $mode = strtoupper((string) $value);
 
         return match ($mode) {
-            'ONLINE', 'CASH' => 1,
-            'OFFLINE', 'OTHER' => 2,
+            'ONLINE' => 1,
+            'OFFLINE' => 2,
             'PAYLATER' => 3,
             default => $value,
         };
