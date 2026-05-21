@@ -93,6 +93,12 @@ class LearnerLifecycleService
         $refundActivityAmount = (float) $activities
             ->filter(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND')
             ->sum('amount');
+        $overviewUsedActivityIds = [];
+        $currentTransactionActivities = $currentTransaction
+            ? $this->activitiesForTransaction($currentTransaction, $activities, $overviewUsedActivityIds)
+                ->map(fn ($activity) => $this->formatActivity($activity))
+                ->values()
+            : collect();
 
         return [
             'learner' => $this->formatLearnerForTransactions($dashboard['learner'], $dashboard['currentDetail']),
@@ -104,8 +110,11 @@ class LearnerLifecycleService
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
-                // 'last_transactions' => $activities->take(1)->map(fn ($activity) => $this->formatActivity($activity))->values(),
-                'last_transactions' =>  $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
+                'last_transactions' => $currentTransaction ? (
+                    $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) + [
+                        'activity' => $currentTransactionActivities,
+                    ]
+                ) : null,
             ],
             'subscription' => [
                 $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
@@ -166,14 +175,12 @@ class LearnerLifecycleService
                 $update['total_amount'] = max(0, $planPrice + $locker - $discount);
             }
 
-            foreach (['paid_amount', 'pending_amount'] as $field) {
-                if (array_key_exists($field, $data)) {
-                    $update[$field] = (float) $data[$field];
-                }
+            if (array_key_exists('pending_amount', $data)) {
+                $update['pending_amount'] = (float) $data['pending_amount'];
             }
 
             if (array_key_exists('paid_date', $data)) {
-                $update['date'] = $data['paid_date'];
+                $update['paid_date'] = $data['paid_date'];
             }
 
             if (array_key_exists('due_date', $data)) {
@@ -183,12 +190,15 @@ class LearnerLifecycleService
             if (! empty($update)) {
                 $update['is_paid'] = ((float) ($update['pending_amount'] ?? $transaction->pending_amount ?? 0)) <= 0 ? 1 : 0;
                 $transaction->update($update);
+                $transaction->refresh();
             }
 
             if (array_key_exists('payment_mode', $data) && $transaction->learnerDetail) {
                 $transaction->learnerDetail->payment_mode = $this->paymentModeValue($data['payment_mode']);
                 $transaction->learnerDetail->save();
             }
+
+            $this->syncSubscriptionActivity($transaction, $data);
         });
 
         return $this->transactionDetail($transactionId);
@@ -199,11 +209,28 @@ class LearnerLifecycleService
         $transaction = $this->transactionInCurrentContext($transactionId);
 
         DB::transaction(function () use ($transaction) {
-            LearnerTransactionActivity::withoutGlobalScopes()
-                ->where('learner_transaction_id', $transaction->id)
-                ->delete();
+            $learnerId = (int) $transaction->learner_id;
+            $detailId = (int) $transaction->learner_detail_id;
+
+            $activities = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_id', $learnerId)
+                ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+                ->get();
+
+            $usedActivityIds = [];
+            $this->activitiesForTransaction($transaction, $activities, $usedActivityIds)
+                ->each(fn ($activity) => $activity->delete());
 
             $transaction->delete();
+
+            if ($detailId) {
+                LearnerDetail::withTrashed()
+                    ->where('id', $detailId)
+                    ->where('learner_id', $learnerId)
+                    ->delete();
+            }
+
+            $this->syncLearnerStatusAfterTransactionDelete($learnerId);
         });
     }
 
@@ -223,9 +250,10 @@ class LearnerLifecycleService
             $update['date'] = $data['payment_date'];
         }
         if (array_key_exists('paid_amount', $data)) {
-            $update['amount'] = (float) $data['paid_amount'];
+            $this->learnerActivityAmountManage($activityId, (float) $data['paid_amount']);
+            $activity = $this->activityInCurrentContext($activityId);
         }
-        foreach (['payment_mode', 'payment_type'] as $field) {
+        foreach (['payment_mode'] as $field) {
             if (array_key_exists($field, $data)) {
                 $update[$field] = $data[$field];
             }
@@ -240,7 +268,28 @@ class LearnerLifecycleService
 
     public function deleteTransactionActivity(int $activityId): void
     {
-        $this->activityInCurrentContext($activityId)->delete();
+        $activity = $this->activityInCurrentContext($activityId);
+
+        DB::transaction(function () use ($activity) {
+            $transactionId = (int) ($activity->learner_transaction_id ?? 0);
+
+            if (! $transactionId) {
+                throw new Exception('No activity found for this transaction.');
+            }
+
+            $activityCount = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_transaction_id', $transactionId)
+                ->count();
+
+            $paymentType = strtoupper((string) ($activity->payment_type ?? ''));
+
+            if ($activityCount <= 1 || in_array($paymentType, ['SEAT ASSIGNMENT', 'RENEW'], true)) {
+                throw new Exception('Cannot delete the only activity for this transaction. Delete the transaction instead.');
+            }
+
+            $this->reverseActivityAmount($activity);
+            $activity->delete();
+        });
     }
 
     private function transactionInCurrentContext(int $transactionId): LearnerTransaction
@@ -262,7 +311,7 @@ class LearnerLifecycleService
     private function activityInCurrentContext(int $activityId): LearnerTransactionActivity
     {
         $activity = LearnerTransactionActivity::withoutGlobalScopes()
-            ->with('creator')
+           
             ->where('id', $activityId)
             ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
             ->first();
@@ -270,8 +319,84 @@ class LearnerLifecycleService
         if (! $activity) {
             throw new Exception('Transaction activity not found.');
         }
-
+       
         return $activity;
+    }
+
+    private function syncSubscriptionActivity(LearnerTransaction $transaction, array $data): void
+    {
+        if (! array_key_exists('paid_amount', $data) && ! array_key_exists('payment_mode', $data) && ! array_key_exists('paid_date', $data)) {
+            return;
+        }
+
+        $activity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id)
+            ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED'])
+            ->orderBy('id')
+            ->first();
+
+        if (! $activity) {
+            throw new Exception('No activity found for this transaction.');
+        }
+
+        if (array_key_exists('paid_amount', $data)) {
+            $this->learnerActivityAmountManage((int) $activity->id, (float) $data['paid_amount']);
+            $activity->refresh();
+            $transaction->refresh();
+        }
+
+        $payload = [
+            'branch_id' => $transaction->branch_id,
+            'learner_id' => $transaction->learner_id,
+            'learner_transaction_id' => $transaction->id,
+            'date' => $data['paid_date'] ?? $transaction->paid_date ?? now()->format('Y-m-d'),
+            'particular' => $activity->particular,
+            'payment_type' => $activity->payment_type,
+            'payment_mode' => $this->paymentModeLabel($data['payment_mode'] ?? $transaction->learnerDetail?->payment_mode),
+            'dr_cr' => $activity->dr_cr,
+        ];
+
+        $activity->update($payload);
+    }
+
+    private function syncLearnerStatusAfterTransactionDelete(int $learnerId): void
+    {
+        $status = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->value('status');
+
+        Learner::withTrashed()
+            ->where('id', $learnerId)
+            ->update(['status' => $status !== null ? (int) $status : 0]);
+    }
+
+    private function reverseActivityAmount(LearnerTransactionActivity $activity): void
+    {
+        if (! $activity->learner_transaction_id) {
+            return;
+        }
+
+        $tran = LearnerTransaction::withTrashed()->where('id', $activity->learner_transaction_id)->first();
+        if (! $tran) {
+            return;
+        }
+
+        $amount = (float) ($activity->amount ?? 0);
+
+        if ($activity->dr_cr == 'Cr') {
+            $tran->paid_amount = max(0, (float) $tran->paid_amount - $amount);
+            $tran->pending_amount = max(0, (float) $tran->pending_amount + $amount);
+        } elseif ($activity->dr_cr == 'Dr') {
+            $tran->paid_amount = (float) $tran->paid_amount + $amount;
+        } elseif ($activity->dr_cr == 'Settle') {
+            $tran->paid_amount = (float) $tran->paid_amount + $amount;
+            $tran->sattle_amount = max(0, (float) $tran->sattle_amount - $amount);
+        }
+
+        $tran->is_paid = (float) $tran->pending_amount <= 0 ? 1 : 0;
+        $tran->save();
     }
 
     private function formatAllTransactions($transactions, $activities, int $firstTransactionId)
@@ -1150,5 +1275,40 @@ class LearnerLifecycleService
                 ? 'Refund Processed Successfully.'
                 : 'Payment successfully recorded.'
         ];
+    }
+
+    public function learnerActivityAmountManage($activityId,$reqAmount){
+        $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('id',$activityId)->select('id','dr_cr','amount','learner_transaction_id')->first();
+        if (!$activity || !$activity->learner_transaction_id) {
+            return;
+        }
+
+        $tran=LearnerTransaction::withTrashed()->where('id',$activity->learner_transaction_id)->first();
+        if (!$tran) {
+            return;
+        }
+
+        // not for other payment and expense  
+        $diffrence=(float) $reqAmount - (float) $activity->amount; 
+        if($activity->dr_cr=='Cr'){
+            //negative or positive according
+            $tran->paid_amount=max(0, (float) $tran->paid_amount + $diffrence);
+            $tran->pending_amount=max(0, (float) $tran->pending_amount - $diffrence);
+
+        }elseif($activity->dr_cr=='Dr'){
+            //refund negative or positive according
+            $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
+
+        }elseif($activity->dr_cr=='Settle'){
+            //settlement
+            $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
+            $tran->sattle_amount=max(0, (float) $tran->sattle_amount + $diffrence);
+            
+
+        }
+        $tran->is_paid = (float) $tran->pending_amount <= 0 ? 1 : 0;
+        $activity->amount=(float) $reqAmount;
+        $activity->save();
+        $tran->save();
     }
 }

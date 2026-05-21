@@ -538,8 +538,9 @@ class LearnerController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data' => $data,
                 'message' => empty($validated) ? 'Transaction detail.' : 'Transaction updated successfully.',
+                'data' => $data,
+                
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -628,12 +629,20 @@ class LearnerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:learner_transaction_activity,id',
+           'confirm' => 'nullable|in:delete,Delete,DELETE',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => $validator->errors()->first(),
+            ]);
+        }
+
+         if ($request->filled('confirm') && strtolower($request->confirm) !== 'delete') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Type delete to confirm this operation.',
             ]);
         }
 
@@ -651,4 +660,5 @@ class LearnerController extends Controller
             ], 422);
         }
     }
+    
 }
