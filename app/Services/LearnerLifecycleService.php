@@ -156,27 +156,17 @@ class LearnerLifecycleService
         $transaction = $this->transactionInCurrentContext($transactionId);
 
         DB::transaction(function () use ($transaction, $data) {
+            if($data['paid_amount']> $transaction->total_amount || $transaction->total_amount !=($data['paid_amount']+$transaction->sattle_amount+$transaction->refund-$transaction->pending_amount)){
+                throw new Exception('No activity found for this transaction.');
+            }
             $update = [];
 
-            if (array_key_exists('locker_amount', $data)) {
-                $update['locker_amount'] = (float) $data['locker_amount'];
+            if (array_key_exists('paid_date', $data)) {
+                $update['paid_amount'] = $data['paid_amount'];
             }
-
-            if (array_key_exists('discount_amount', $data)) {
-                $update['discount_amount'] = (float) $data['discount_amount'];
-            }
-
-            if (array_key_exists('total_amount', $data)) {
-                $update['total_amount'] = (float) $data['total_amount'];
-            } elseif (array_key_exists('plan_price', $data) || array_key_exists('locker_amount', $data) || array_key_exists('discount_amount', $data)) {
-                $planPrice = (float) ($data['plan_price'] ?? $this->planPriceFromTransaction($transaction));
-                $locker = (float) ($data['locker_amount'] ?? $transaction->locker_amount ?? 0);
-                $discount = (float) ($data['discount_amount'] ?? $transaction->discount_amount ?? 0);
-                $update['total_amount'] = max(0, $planPrice + $locker - $discount);
-            }
-
+            
             if (array_key_exists('pending_amount', $data)) {
-                $update['pending_amount'] = (float) $data['pending_amount'];
+                $update['pending_amount'] = (float) $transaction->total_amount-($data['paid_amount']+$transaction->sattle_amount+$transaction->refund);
             }
 
             if (array_key_exists('paid_date', $data)) {
@@ -194,11 +184,19 @@ class LearnerLifecycleService
             }
 
             if (array_key_exists('payment_mode', $data) && $transaction->learnerDetail) {
-                $transaction->learnerDetail->payment_mode = $this->paymentModeValue($data['payment_mode']);
+                $transaction->learnerDetail->payment_mode = $data['payment_mode'];
                 $transaction->learnerDetail->save();
             }
+            
+            $diffrence=$data['paid_amount']-$transaction->paid_amount;
+            
+            $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('learner_transaction_id',$transaction->id)->first();
+            
+            $activity->amount=(float) $activity->amount+$diffrence;
+            $activity->date= $data['paid_date'];
+            $activity->payment_mode= $this->paymentModeValue($data['payment_mode']);
+            $activity->save();
 
-            $this->syncSubscriptionActivity($transaction, $data);
         });
 
         return $this->transactionDetail($transactionId);
@@ -246,19 +244,19 @@ class LearnerLifecycleService
         $activity = $this->activityInCurrentContext($activityId);
 
         $update = [];
-        if (array_key_exists('payment_date', $data)) {
-            $update['date'] = $data['payment_date'];
-        }
+        
         if (array_key_exists('paid_amount', $data)) {
             $this->learnerActivityAmountManage($activityId, (float) $data['paid_amount']);
             $activity = $this->activityInCurrentContext($activityId);
         }
-        foreach (['payment_mode'] as $field) {
-            if (array_key_exists($field, $data)) {
-                $update[$field] = $data[$field];
-            }
+        if (array_key_exists('payment_date', $data)) {
+            $update['date'] = $data['payment_date'];
+        }
+        if (array_key_exists('payment_mode', $data)) {
+            $update['payment_mode'] = $this->paymentModeValue($data['payment_mode']);
         }
 
+       
         if (! empty($update)) {
             $activity->update($update);
         }
@@ -283,7 +281,7 @@ class LearnerLifecycleService
 
             $paymentType = strtoupper((string) ($activity->payment_type ?? ''));
 
-            if ($activityCount <= 1 || in_array($paymentType, ['SEAT ASSIGNMENT', 'RENEW'], true)) {
+            if ($activityCount <= 1 || in_array($paymentType, ['SEAT ASSIGNMENT', 'RENEW','REACTIVE'], true)) {
                 throw new Exception('Cannot delete the only activity for this transaction. Delete the transaction instead.');
             }
 
@@ -346,14 +344,13 @@ class LearnerLifecycleService
         }
 
         $payload = [
-            'branch_id' => $transaction->branch_id,
-            'learner_id' => $transaction->learner_id,
+            
             'learner_transaction_id' => $transaction->id,
             'date' => $data['paid_date'] ?? $transaction->paid_date ?? now()->format('Y-m-d'),
             'particular' => $activity->particular,
             'payment_type' => $activity->payment_type,
             'payment_mode' => $this->paymentModeLabel($data['payment_mode'] ?? $transaction->learnerDetail?->payment_mode),
-            'dr_cr' => $activity->dr_cr,
+            
         ];
 
         $activity->update($payload);
@@ -652,10 +649,10 @@ class LearnerLifecycleService
         $mode = strtoupper((string) $value);
 
         return match ($mode) {
-            'ONLINE' => 1,
-            'OFFLINE' => 2,
-            'PAYLATER' => 3,
-            default => $value,
+            1=>'ONLINE' ,
+            2=>'OFFLINE',
+            3=>'PAYLATER' ,
+            default => 'ONLINE',
         };
     }
 
@@ -1104,35 +1101,7 @@ class LearnerLifecycleService
         }
     }
 
-    // private function softDeleteLearnerDetails(int $learnerId, string $transactionScope, LearnerDetail $currentDetail): array
-    // {
-    //     if ($transactionScope === 'current') {
-    //         $currentDetail->status = 0;
-    //         $currentDetail->save();
-    //         $detailId = (int) $currentDetail->id;
-    //         $currentDetail->delete();
-
-    //         return [$detailId];
-    //     }
-
-    //     $details = LearnerDetail::where('learner_id', $learnerId)
-    //         ->whereNull('learner_detail.deleted_at')
-    //         ->get();
-
-    //     if ($details->isEmpty()) {
-    //         throw new Exception("No active learner detail found");
-    //     }
-
-    //     $detailIds = [];
-    //     foreach ($details as $detail) {
-    //         $detail->status = 0;
-    //         $detail->save();
-    //         $detailIds[] = (int) $detail->id;
-    //         $detail->delete();
-    //     }
-
-    //     return $detailIds;
-    // }
+ 
 
     private function logLearnerOperation(int $learnerId, ?int $learnerDetailId, string $operation, array $changes): void
     {
@@ -1287,25 +1256,33 @@ class LearnerLifecycleService
         if (!$tran) {
             return;
         }
-
-        // not for other payment and expense  
+        $paymentType = strtoupper((string) ($activity->payment_type ?? ''));
         $diffrence=(float) $reqAmount - (float) $activity->amount; 
-        if($activity->dr_cr=='Cr'){
-            //negative or positive according
-            $tran->paid_amount=max(0, (float) $tran->paid_amount + $diffrence);
-            $tran->pending_amount=max(0, (float) $tran->pending_amount - $diffrence);
 
-        }elseif($activity->dr_cr=='Dr'){
-            //refund negative or positive according
-            $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
+        if( in_array($paymentType, ['TOKEN MONEY', 'MISCELLANEOUS'], true)){
+            $tran->token_money=$tran->token_money+$diffrence;
+            $tran->miscellaneous=$tran->miscellaneous+$diffrence;
+        }else{
+             // not for other payment and expense  
+        
+            if($activity->dr_cr=='Cr'){
+                //negative or positive according
+                $tran->paid_amount=max(0, (float) $tran->paid_amount + $diffrence);
+                $tran->pending_amount=max(0, (float) $tran->pending_amount - $diffrence);
 
-        }elseif($activity->dr_cr=='Settle'){
-            //settlement
-            $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
-            $tran->sattle_amount=max(0, (float) $tran->sattle_amount + $diffrence);
-            
+            }elseif($activity->dr_cr=='Dr'){
+                //refund negative or positive according
+                $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
 
+            }elseif($activity->dr_cr=='Settle'){
+                //settlement
+                $tran->paid_amount=max(0, (float) $tran->paid_amount - $diffrence);
+                $tran->sattle_amount=max(0, (float) $tran->sattle_amount + $diffrence);
+                
+
+            }
         }
+
         $tran->is_paid = (float) $tran->pending_amount <= 0 ? 1 : 0;
         $activity->amount=(float) $reqAmount;
         $activity->save();

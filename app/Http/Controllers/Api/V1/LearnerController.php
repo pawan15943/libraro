@@ -517,7 +517,7 @@ class LearnerController extends Controller
             'paid_amount' => 'nullable|numeric|min:0',
             'due_date' => 'nullable|date',
             'paid_date' => 'nullable|date',
-            'payment_mode' => 'nullable|in:1,2,3,ONLINE,OFFLINE,PAYLATER,CASH,OTHER',
+            'payment_mode' => 'nullable|in:1,2,3',
         ]);
 
         if ($validator->fails()) {
