@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Scopes\LibraryScope;
 use App\Traits\HasBranch;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class LearnerTransaction extends Model
 {
@@ -20,6 +22,18 @@ class LearnerTransaction extends Model
             $builder->withTrashed();
         });
         static::addGlobalScope(new LibraryScope());
+
+        static::updating(function ($model) {
+            if (! Schema::hasColumn($model->getTable(), 'updated_by')) {
+                return;
+            }
+
+            if (Auth::guard('library_user')->check()) {
+                $model->updated_by = Auth::guard('library_user')->id();
+            } elseif (Auth::guard('library')->check()) {
+                $model->updated_by = Auth::guard('library')->id();
+            }
+        });
     }
   
 

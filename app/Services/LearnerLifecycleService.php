@@ -9,7 +9,9 @@ use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\NotificationSentController;
 
 class LearnerLifecycleService
@@ -159,6 +161,7 @@ class LearnerLifecycleService
             if($data['paid_amount']> $transaction->total_amount || $transaction->total_amount !=($data['paid_amount']+$transaction->sattle_amount+$transaction->refund-$transaction->pending_amount)){
                 throw new Exception('No activity found for this transaction.');
             }
+            $oldPaidAmount = (float) ($transaction->paid_amount ?? 0);
             $update = [];
 
             if (array_key_exists('paid_date', $data)) {
@@ -179,6 +182,7 @@ class LearnerLifecycleService
 
             if (! empty($update)) {
                 $update['is_paid'] = ((float) ($update['pending_amount'] ?? $transaction->pending_amount ?? 0)) <= 0 ? 1 : 0;
+                $update = array_merge($update, $this->updatedByPayload($transaction->getTable()));
                 $transaction->update($update);
                 $transaction->refresh();
             }
@@ -188,13 +192,17 @@ class LearnerLifecycleService
                 $transaction->learnerDetail->save();
             }
             
-            $diffrence=$data['paid_amount']-$transaction->paid_amount;
+            $diffrence=(float) $data['paid_amount'] - $oldPaidAmount;
             
             $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('learner_transaction_id',$transaction->id)->first();
+            if (! $activity) {
+                throw new Exception('No activity found for this transaction.');
+            }
             
             $activity->amount=(float) $activity->amount+$diffrence;
             $activity->date= $data['paid_date'];
             $activity->payment_mode= $this->paymentModeValue($data['payment_mode']);
+            $this->setUpdatedBy($activity);
             $activity->save();
 
         });
@@ -217,8 +225,14 @@ class LearnerLifecycleService
 
             $usedActivityIds = [];
             $this->activitiesForTransaction($transaction, $activities, $usedActivityIds)
-                ->each(fn ($activity) => $activity->delete());
+                ->each(function ($activity) {
+                    $this->setUpdatedBy($activity);
+                    $activity->save();
+                    $activity->delete();
+                });
 
+            $this->setUpdatedBy($transaction);
+            $transaction->save();
             $transaction->delete();
 
             if ($detailId) {
@@ -258,6 +272,7 @@ class LearnerLifecycleService
 
        
         if (! empty($update)) {
+            $update = array_merge($update, $this->updatedByPayload($activity->getTable()));
             $activity->update($update);
         }
 
@@ -286,6 +301,8 @@ class LearnerLifecycleService
             }
 
             $this->reverseActivityAmount($activity);
+            $this->setUpdatedBy($activity);
+            $activity->save();
             $activity->delete();
         });
     }
@@ -352,8 +369,63 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($data['payment_mode'] ?? $transaction->learnerDetail?->payment_mode),
             
         ];
+        $payload = array_merge($payload, $this->updatedByPayload($activity->getTable()));
 
         $activity->update($payload);
+    }
+
+    private function updatedByPayload(string $table): array
+    {
+        if (! Schema::hasColumn($table, 'updated_by')) {
+            return [];
+        }
+
+        $updatedBy = $this->currentUpdatedBy();
+
+        return $updatedBy ? ['updated_by' => $updatedBy] : [];
+    }
+
+    private function setUpdatedBy($model): void
+    {
+        if (! Schema::hasColumn($model->getTable(), 'updated_by')) {
+            return;
+        }
+
+        $updatedBy = $this->currentUpdatedBy();
+        if ($updatedBy) {
+            $model->updated_by = $updatedBy;
+        }
+    }
+
+    private function currentUpdatedBy(): ?int
+    {
+        if (Auth::guard('library_user')->check()) {
+            return (int) Auth::guard('library_user')->id();
+        }
+
+        if (Auth::guard('library')->check()) {
+            return (int) Auth::guard('library')->id();
+        }
+
+        if (Auth::check()) {
+            return (int) Auth::id();
+        }
+
+        return null;
+    }
+
+    private function updatedByName($updatedBy): string
+    {
+        if (! $updatedBy) {
+            return '';
+        }
+
+        $name = DB::table('library_users')->where('id', $updatedBy)->value('name');
+        if ($name) {
+            return (string) $name;
+        }
+
+        return (string) (DB::table('libraries')->where('id', $updatedBy)->value('library_name') ?? '');
     }
 
     private function syncLearnerStatusAfterTransactionDelete(int $learnerId): void
@@ -393,6 +465,7 @@ class LearnerLifecycleService
         }
 
         $tran->is_paid = (float) $tran->pending_amount <= 0 ? 1 : 0;
+        $this->setUpdatedBy($tran);
         $tran->save();
     }
 
@@ -522,7 +595,8 @@ class LearnerLifecycleService
             'extra_amount' => $this->money($extra),
             // 'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
             // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
-            'updated_by'=>'',
+            'updated_by' => (string) ($transaction->updated_by ?? ''),
+            'updated_by_name' => $this->updatedByName($transaction->updated_by ?? null),
             'updated_date'=> optional($transaction->updated_at)->toDateTimeString() ?? '',
 
             'is_paid' => (int) ($transaction->is_paid ?? 0),
@@ -592,8 +666,10 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
             'particular' => (string) ($activity->particular ?? ''),
             'dr_cr' => (string) ($activity->dr_cr ?? ''),
-            'added_by' => $activity->created_by,
-            'updated_by' => $activity->created_by,
+            'added_by' => (string) ($activity->created_by ?? ''),
+            'added_by_name' => $activity->created_by_name ?? '',
+            'updated_by' => (string) ($activity->updated_by ?? ''),
+            'updated_by_name' => $this->updatedByName($activity->updated_by ?? null),
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
             'download_receipt_url' => '',
             'edit_url' => $activity->learner_transaction_id ? route('learner.pending.payment', ['id' => $activity->learner_transaction_id]) : '',
@@ -1247,7 +1323,7 @@ class LearnerLifecycleService
     }
 
     public function learnerActivityAmountManage($activityId,$reqAmount){
-        $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('id',$activityId)->select('id','dr_cr','amount','learner_transaction_id')->first();
+        $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('id',$activityId)->select('id','dr_cr','amount','payment_type','learner_transaction_id')->first();
         if (!$activity || !$activity->learner_transaction_id) {
             return;
         }
@@ -1259,9 +1335,10 @@ class LearnerLifecycleService
         $paymentType = strtoupper((string) ($activity->payment_type ?? ''));
         $diffrence=(float) $reqAmount - (float) $activity->amount; 
 
-        if( in_array($paymentType, ['TOKEN MONEY', 'MISCELLANEOUS'], true)){
-            $tran->token_money=$tran->token_money+$diffrence;
-            $tran->miscellaneous=$tran->miscellaneous+$diffrence;
+        if($paymentType === 'TOKEN MONEY'){
+            $tran->token_money=max(0, (float) $tran->token_money+$diffrence);
+        }elseif($paymentType === 'MISCELLANEOUS'){
+            $tran->miscellaneous=max(0, (float) $tran->miscellaneous+$diffrence);
         }else{
              // not for other payment and expense  
         
@@ -1285,6 +1362,8 @@ class LearnerLifecycleService
 
         $tran->is_paid = (float) $tran->pending_amount <= 0 ? 1 : 0;
         $activity->amount=(float) $reqAmount;
+        $this->setUpdatedBy($activity);
+        $this->setUpdatedBy($tran);
         $activity->save();
         $tran->save();
     }
