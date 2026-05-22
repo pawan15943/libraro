@@ -6,6 +6,7 @@ use App\Http\Controllers\NotificationSentController;
 use App\Models\Branch;
 use App\Models\CustomerDetail;
 use App\Models\Exam;
+use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
@@ -1515,6 +1516,204 @@ class LearnerService
         });
 
         return $learners;
+    }
+
+    public function getSeatMapDetails(?int $branchId = null)
+    {
+        $branchId = $branchId ?: getCurrentBranch();
+
+        $planTypeStatus = [
+            ['id' => 1, 'name' => 'booked', 'color' => '#0B7F95'],
+            ['id' => 2, 'name' => 'available', 'color' => '#62B947'],
+            ['id' => 3, 'name' => 'about to expire', 'color' => '#EF1D1D'],
+            ['id' => 4, 'name' => 'extended', 'color' => '#D71E1E'],
+            ['id' => 5, 'name' => 'pending payment', 'color' => '#2B32A2'],
+            ['id' => 6, 'name' => 'paylater', 'color' => '#28536B'],
+            ['id' => 7, 'name' => 'extra paid', 'color' => '#00A7C8'],
+        ];
+
+        $planTypes = PlanType::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->get(['id', 'name', 'start_time', 'end_time']);
+
+        $bookingDetails = LearnerDetail::withTrashed()
+            ->with(['learner', 'plan', 'planType'])
+            ->where('branch_id', $branchId)
+            ->where('status', 1)
+            ->whereHas('learner', function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId)
+                    ->where('status', 1)
+                    ->whereNull('deleted_at');
+            })
+            ->orderBy('seat_no')
+            ->orderBy('plan_type_id')
+            ->get();
+
+        $transactions = LearnerTransaction::withTrashed()
+            ->whereIn('learner_id', $bookingDetails->pluck('learner_id')->filter()->unique()->values())
+            ->selectRaw('learner_id, SUM(pending_amount) as pending_amount, SUM(refund) as extra_amount')
+            ->groupBy('learner_id')
+            ->get()
+            ->keyBy('learner_id');
+
+        $numberedDetails = $bookingDetails
+            ->filter(fn ($detail) => ! empty($detail->seat_no))
+            ->groupBy(fn ($detail) => (int) $detail->seat_no);
+
+        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions);
+        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions);
+
+        return [
+            'plan_type_status' => $planTypeStatus,
+            'numbered' => $numbered,
+            'general' => $general,
+        ];
+    }
+
+    private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions)
+    {
+        $seatRows = collect(generateSeatNumbers2((int) $branchId));
+
+        $floors = Floor::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->orderBy('floor_no')
+            ->get()
+            ->keyBy('floor_no');
+
+        return $seatRows
+            ->groupBy(fn ($seat) => $seat['floor_no'] ?? 0)
+            ->map(function ($seats, $floorNo) use ($planTypes, $detailsBySeat, $transactions, $floors) {
+                $floor = $floors->get((int) $floorNo);
+
+                $formattedSeats = $seats->map(function ($seat) use ($planTypes, $detailsBySeat, $transactions) {
+                    $seatNo = (int) $seat['main'];
+                    $seatDetails = $detailsBySeat->get($seatNo, collect());
+                    $plantypes = $this->formatSeatPlanTypes($planTypes, $seatDetails, $transactions);
+                    $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
+
+                    return [
+                        'seat_id' => $seatNo,
+                        'seat_no' => 'Seat No. '.($seat['floor'] ?? $seatNo),
+                        'seat_status' => $isOccupied ? 'booked' : 'available',
+                        'seat_type' => 'regular',
+                        'plantype' => $plantypes,
+                    ];
+                })->values();
+
+                $occupiedSeats = $formattedSeats->filter(fn ($seat) => $seat['seat_status'] !== 'available')->count();
+
+                return [
+                    'floor_id' => $floor->id ?? 0,
+                    'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? 'Floor'),
+                    'total_seats' => $formattedSeats->count(),
+                    'available_seats' => $formattedSeats->count() - $occupiedSeats,
+                    'occupied_seats' => $occupiedSeats,
+                    'seats' => $formattedSeats->all(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions)
+    {
+        $generalDetails = $bookingDetails
+            ->filter(fn ($detail) => empty($detail->seat_no))
+            ->values();
+
+        $firstFloor = Floor::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->orderBy('floor_no')
+            ->first();
+
+        $plantypes = $this->formatSeatPlanTypes($planTypes, $generalDetails, $transactions);
+        $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
+
+        return [[
+            'floor_id' => $firstFloor->id ?? 0,
+            'floor_name' => $firstFloor->name ?? 'General',
+            'total_seats' => 1,
+            'available_seats' => $isOccupied ? 0 : 1,
+            'occupied_seats' => $isOccupied ? 1 : 0,
+            'seats' => [[
+                'seat_id' => 0,
+                'seat_no' => 'GEN',
+                'seat_status' => $isOccupied ? 'occupied' : 'available',
+                'seat_type' => 'Regular',
+                'plantype' => $plantypes,
+            ]],
+        ]];
+    }
+
+    private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions)
+    {
+        $detailsByPlanType = collect($seatDetails)->keyBy('plan_type_id');
+
+        return $planTypes->map(function ($planType) use ($detailsByPlanType, $transactions) {
+            $detail = $detailsByPlanType->get($planType->id);
+
+            return [
+                'plan_type_id' => $planType->id,
+                'plan_type_name' => $planType->name,
+                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : 'available',
+                'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
+            ];
+        })->values()->all();
+    }
+
+    private function seatPlanTypeStatus($detail, $transactions)
+    {
+        $transaction = $transactions->get($detail->learner_id);
+        $pendingAmount = (float) ($transaction->pending_amount ?? 0);
+        $extraAmount = (float) ($transaction->extra_amount ?? 0);
+        $planStatus = getPlanStatusDetails($detail->plan_end_date);
+
+        if ((int) $detail->payment_mode === 3) {
+            return 'paylater';
+        }
+
+        if ($pendingAmount > 0) {
+            return 'pending payment';
+        }
+
+        if ($extraAmount > 0) {
+            return 'extra paid';
+        }
+
+        if ($planStatus['status'] === 'About to Expire') {
+            return 'about to expire';
+        }
+
+        if ($planStatus['status'] === 'In Extension') {
+            return 'extended';
+        }
+
+        return 'booked';
+    }
+
+    private function formatSeatLearner($detail, $transactions)
+    {
+        $learner = $detail->learner;
+        $transaction = $transactions->get($detail->learner_id);
+        $planStatus = getPlanStatusDetails($detail->plan_end_date);
+
+        return [
+            'learner_id' => $learner->id,
+            'learner_no' => $learner->learner_no,
+            'name' => $learner->name,
+            'plan' => $detail->plan->name ?? '',
+            'profile_image' => $learner->profile_picture ? asset($learner->profile_picture) : '',
+            'plan_start_date' => $detail->plan_start_date,
+            'plan_end_date' => $detail->plan_end_date,
+            'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id)),
+            'pending_amount' => (string) ($transaction->pending_amount ?? 0),
+            'extra_amount' => (string) ($transaction->extra_amount ?? 0),
+            'pay_later' => (int) $detail->payment_mode === 3 ? (string) ($transaction->pending_amount ?? 0) : '0',
+            'days_left' => $planStatus['diff_in_days'],
+            'extend_days_left' => $planStatus['diff_extend_day'],
+        ];
     }
 
    public function amountSatelment($learnerId)

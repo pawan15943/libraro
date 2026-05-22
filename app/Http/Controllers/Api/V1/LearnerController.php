@@ -339,6 +339,35 @@ class LearnerController extends Controller
         ]);
     }
 
+    public function seatMap(Request $request, LearnerService $service)
+    {
+        // $validator = Validator::make($request->all(), [
+        //     'branch_id' => 'nullable|integer|exists:branches,id',
+        // ]);
+
+        // if ($validator->fails()) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => $validator->errors()->first(),
+        //     ], 422);
+        // }
+        $branch_id=getCurrentBranch();
+        try {
+            $data = $service->getSeatMapDetails($branch_id ? (int) $branch_id : null);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Seat Map details fetched successfully',
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     /**
      * Assign or update total gift days (same rules as web assign-gift-days).
      * Blocked when learner frozen_status is 1.

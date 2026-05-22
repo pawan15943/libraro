@@ -151,6 +151,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/transactions/activity/delete', [LearnerController::class, 'transactionsActivityDelete']); 
 
          Route::match(['get', 'post'], '/available-seats', [LearnerController::class, 'getAvailableSeat']);
+         Route::match(['get', 'post'], '/seat-map', [LearnerController::class, 'seatMap']);
          Route::post('/attendance/summary', [AttendanceController::class, 'summary']);
          Route::post('/attendance/logs', [AttendanceController::class, 'logs']);
     });
