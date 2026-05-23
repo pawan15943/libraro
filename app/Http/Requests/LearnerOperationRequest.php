@@ -171,4 +171,19 @@ class LearnerOperationRequest extends FormRequest
 
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $paymentMode = (int) $this->input('payment_mode');
+            if ($paymentMode !== 3) {
+                return;
+            }
+
+            $pendingAmount = $this->input('pending_amount');
+            if ($pendingAmount !== null && $pendingAmount !== '' && (float) $pendingAmount !== 0.0) {
+                $validator->errors()->add('pending_amount', 'For Pay Later, do not pass pending amount in request.');
+            }
+        });
+    }
 }

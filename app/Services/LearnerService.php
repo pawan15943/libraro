@@ -1518,23 +1518,24 @@ class LearnerService
         return $learners;
     }
 
-    public function getSeatMapDetails(?int $branchId = null)
+    public function getSeatMapDetails(?int $branchId = null, ?int $planTypeId = null, ?string $planTypeStatus = null)
     {
         $branchId = $branchId ?: getCurrentBranch();
-
-        $planTypeStatus = [
-            ['id' => 1, 'name' => 'booked', 'color' => '#0B7F95'],
-            ['id' => 2, 'name' => 'available', 'color' => '#62B947'],
-            ['id' => 3, 'name' => 'about to expire', 'color' => '#EF1D1D'],
-            ['id' => 4, 'name' => 'extended', 'color' => '#D71E1E'],
-            ['id' => 5, 'name' => 'pending payment', 'color' => '#2B32A2'],
-            ['id' => 6, 'name' => 'paylater', 'color' => '#28536B'],
-            ['id' => 7, 'name' => 'extra paid', 'color' => '#00A7C8'],
+        
+        $planTypeStatuses = [
+            ['id' => 1, 'name' => 'booked', 'color' => '#006E89'],
+            ['id' => 2, 'name' => 'available', 'color' => '#60B03E'],
+            ['id' => 3, 'name' => 'about to expire', 'color' => '#FF0000'],
+            ['id' => 4, 'name' => 'extended', 'color' => '#AB0000'],
+            ['id' => 5, 'name' => 'pending payment', 'color' => '#2E3ECD'],
+            ['id' => 6, 'name' => 'paylater', 'color' => '#073B5B'],
+            ['id' => 7, 'name' => 'extra paid', 'color' => '#00A1C8'],
         ];
 
         $planTypes = PlanType::withoutGlobalScopes()
             ->where('branch_id', $branchId)
             ->whereNull('deleted_at')
+            ->when($planTypeId, fn ($query) => $query->where('id', $planTypeId))
             ->orderBy('id')
             ->get(['id', 'name', 'start_time', 'end_time']);
 
@@ -1555,6 +1556,7 @@ class LearnerService
             ->whereIn('learner_id', $bookingDetails->pluck('learner_id')->filter()->unique()->values())
             ->selectRaw('learner_id, SUM(pending_amount) as pending_amount, SUM(refund) as extra_amount')
             ->groupBy('learner_id')
+            ->whereNull('deleted_at')
             ->get()
             ->keyBy('learner_id');
 
@@ -1562,8 +1564,8 @@ class LearnerService
             ->filter(fn ($detail) => ! empty($detail->seat_no))
             ->groupBy(fn ($detail) => (int) $detail->seat_no);
 
-        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions);
-        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions);
+        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId, $planTypeStatus);
+        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $planTypeStatus);
 
         return [
             'plan_type_status' => $planTypeStatus,
@@ -1572,7 +1574,7 @@ class LearnerService
         ];
     }
 
-    private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions)
+    private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null)
     {
         $seatRows = collect(generateSeatNumbers2((int) $branchId));
 
@@ -1617,7 +1619,7 @@ class LearnerService
             ->all();
     }
 
-    private function formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions)
+    private function formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null)
     {
         $generalDetails = $bookingDetails
             ->filter(fn ($detail) => empty($detail->seat_no))
@@ -1647,11 +1649,11 @@ class LearnerService
         ]];
     }
 
-    private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions)
+    private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
     {
         $detailsByPlanType = collect($seatDetails)->keyBy('plan_type_id');
 
-        return $planTypes->map(function ($planType) use ($detailsByPlanType, $transactions) {
+        return $planTypes->map(function ($planType) use ($detailsByPlanType, $transactions, $planTypeStatus) {
             $detail = $detailsByPlanType->get($planType->id);
 
             return [

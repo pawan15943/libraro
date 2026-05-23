@@ -341,19 +341,26 @@ class LearnerController extends Controller
 
     public function seatMap(Request $request, LearnerService $service)
     {
-        // $validator = Validator::make($request->all(), [
-        //     'branch_id' => 'nullable|integer|exists:branches,id',
-        // ]);
+        $validator = Validator::make($request->all(), [
+            'plan_type_id' => 'nullable|integer|exists:plan_types,id',
+            'plan_type_status' => 'nullable',
+        ]);
 
-        // if ($validator->fails()) {
-        //     return response()->json([
-        //         'status' => false,
-        //         'message' => $validator->errors()->first(),
-        //     ], 422);
-        // }
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
         $branch_id=getCurrentBranch();
         try {
-            $data = $service->getSeatMapDetails($branch_id ? (int) $branch_id : null);
+            $data = $service->getSeatMapDetails(
+                $branch_id ? (int) $branch_id : null,
+                isset($validated['plan_type_id']) ? (int) $validated['plan_type_id'] : null,
+                isset($validated['plan_type_status']) ? (string) $validated['plan_type_status'] : null
+            );
 
             return response()->json([
                 'status' => true,

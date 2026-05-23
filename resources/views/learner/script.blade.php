@@ -1004,6 +1004,49 @@
     }
 
         // Calculate Pending Amount on BOOKING FORM
+    function calculatePaylaterVisibility(pendingAmount) {
+        const $paymentMode = $('#payment_mode');
+        if (!$paymentMode.length) return;
+
+        const hasPayLaterOption = $paymentMode.find('option[value="3"]').length > 0;
+        const canShowPayLater = Number(pendingAmount) === 0;
+
+        if (!canShowPayLater) {
+            if ($paymentMode.val() === '3') {
+                $paymentMode.val('');
+            }
+            $paymentMode.find('option[value="3"]').remove();
+            return;
+        }
+
+        if (!hasPayLaterOption) {
+            $paymentMode.append('<option value="3">Pay Later</option>');
+        }
+    }
+
+    function calculatePaylaterVisibilityForOperationForm(pendingAmount) {
+        let $paymentMode = $('#payment_mode10');
+        if (!$paymentMode.length) {
+            $paymentMode = $('#payment_mode');
+        }
+        if (!$paymentMode.length) return;
+
+        const hasPayLaterOption = $paymentMode.find('option[value="3"]').length > 0;
+        const canShowPayLater = Number(pendingAmount) === 0;
+
+        if (!canShowPayLater) {
+            if ($paymentMode.val() === '3') {
+                $paymentMode.val('');
+            }
+            $paymentMode.find('option[value="3"]').remove();
+            return;
+        }
+
+        if (!hasPayLaterOption) {
+            $paymentMode.append('<option value="3">Pay Later</option>');
+        }
+    }
+
     function calculatePendingAmount() {
         const planPrice = parseFloat($('#plan_price_id').val()) || 0;
         const paidAmount = parseFloat($('#paid_amount').val()) || 0;
@@ -1030,6 +1073,8 @@
         }else{
             $('#pending_amt').html('');
         }
+
+        calculatePaylaterVisibility(pendingAmount);
 
     
 
@@ -1278,6 +1323,7 @@
             $('#pending_amt10').prev('label').text("Pending Amount *");
         
         }
+        calculatePaylaterVisibilityForOperationForm(pendingAmount);
 
 
     }
@@ -1625,16 +1671,25 @@
             errors.payment_mode = 'Payment Mode is required.';
         }
 
-        if (paidAmountRaw === '' || isNaN(paid_amount)) {
-            errors.paid_amount = 'Final Payable Amount is required.';
-        }
+        const effectiveTotal = (plan_price_value + locker_amount - discount_amount);
+        const pendingFromUi = effectiveTotal - (isNaN(paid_amount) ? 0 : paid_amount);
 
-        if (!errors.paid_amount && paid_amount > (plan_price_value + locker_amount - discount_amount)) {
-            errors.paid_amount = 'Paid amount should not be greater than the total amount.';
-        }
+        if (payment_mode === '3') {
+            if (pendingFromUi !== 0) {
+                errors.pending_amt = 'For Pay Later, pending amount must not be sent from request.';
+            }
+        } else {
+            if (paidAmountRaw === '' || isNaN(paid_amount)) {
+                errors.paid_amount = 'Final Payable Amount is required.';
+            }
 
-        if (!errors.paid_amount && !due_date && (paid_amount != (plan_price_value + locker_amount - discount_amount))) {
-            errors.due_date = 'Due Date is required.';
+            if (!errors.paid_amount && paid_amount > effectiveTotal) {
+                errors.paid_amount = 'Paid amount should not be greater than the total amount.';
+            }
+
+            if (!errors.paid_amount && !due_date && (paid_amount != effectiveTotal)) {
+                errors.due_date = 'Due Date is required.';
+            }
         }
         
         // Remove previous errors
@@ -2919,6 +2974,12 @@
 
         // Add submit event listener to the form
         form.addEventListener('submit', function(event) {
+            const paymentMode10 = form.querySelector('#payment_mode10');
+            const pendingAmount10 = form.querySelector('#pending_amt10');
+            if (paymentMode10 && pendingAmount10 && paymentMode10.value === '3') {
+                pendingAmount10.value = '';
+            }
+
             for (const fieldName in changes) {
                 const { oldValue, newValue } = changes[fieldName];
                 const swap_old_value=$('#swap_old_value').val();
