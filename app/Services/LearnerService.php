@@ -1139,17 +1139,30 @@ class LearnerService
         if($detail->exam_id){
             $exam=Exam::where('id',$detail->exam_id)->select('id','name')->first();
         }
+
+        $birthStatus = false;
+        if (!empty($learner->dob)) {
+            try {
+                $dob = \Carbon\Carbon::parse($learner->dob);
+                $today = now();
+                $birthStatus = (int) $dob->month === (int) $today->month
+                    && (int) $dob->day === (int) $today->day;
+            } catch (\Throwable $e) {
+                $birthStatus = false;
+            }
+        }
         
 
         return [
 
             'personal_info'=>[
                 'learner_no'=>$learner->learner_no,
-                'seat_no'=>$learner->seat_no ?? "GEN",
-                'seat_with_floor'=>$learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no) : "GEN",
+                'seat_no'=>(string)$learner->seat_no ?? "GEN",
+                'seat_with_floor'=>$learner->seat_no ? (string)getSeatDisplayByMainNo($learner->seat_no) : "GEN",
                 'name'=>$learner->name,
                 'mobile'=>$learner->mobile,
                 'email'=>$learner->email ? $learner->email : '',
+                'birth_status'=>$birthStatus,
                 'dob'=>$learner->dob ?? '',
                 'father_name'=>$learner->father_name ?? '',
                 'profile_picture'=>$learner->profile_picture 
@@ -1597,19 +1610,26 @@ class LearnerService
             ->map(function ($floor) use ($status) {
                 $floor['seats'] = collect($floor['seats'] ?? [])
                     ->values()
-                    ->map(function ($seat, $index) use ($status) {
-                        $seat['_sort_index'] = $index;
-                        $seat['_sort_status'] = collect($seat['plantype'] ?? [])
-                            ->contains(fn ($planType) => ($planType['plan_type_status'] ?? null) === $status) ? 0 : 1;
+                    ->map(function ($seat) use ($status) {
+                        $seat['plantype'] = collect($seat['plantype'] ?? [])
+                            ->values()
+                            ->map(function ($planType, $planTypeIndex) use ($status) {
+                                $planType['_sort_index'] = $planTypeIndex;
+                                $planType['_sort_status'] = ($planType['plan_type_status'] ?? null) === $status ? 0 : 1;
 
-                        return $seat;
-                    })
-                    ->sortBy([
-                        ['_sort_status', 'asc'],
-                        ['_sort_index', 'asc'],
-                    ])
-                    ->map(function ($seat) {
-                        unset($seat['_sort_status'], $seat['_sort_index']);
+                                return $planType;
+                            })
+                            ->sortBy([
+                                ['_sort_status', 'asc'],
+                                ['_sort_index', 'asc'],
+                            ])
+                            ->map(function ($planType) {
+                                unset($planType['_sort_status'], $planType['_sort_index']);
+
+                                return $planType;
+                            })
+                            ->values()
+                            ->all();
 
                         return $seat;
                     })
@@ -1656,7 +1676,7 @@ class LearnerService
 
                 return [
                     'floor_id' => $floor->id ?? 0,
-                    'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? 'Floor'),
+                    'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? ''),
                     'total_seats' => $formattedSeats->count(),
                     'available_seats' => $formattedSeats->count() - $occupiedSeats,
                     'occupied_seats' => $occupiedSeats,
@@ -1683,7 +1703,7 @@ class LearnerService
 
         return [[
             'floor_id' => $firstFloor->id ?? 0,
-            'floor_name' => $firstFloor->name ?? 'General',
+            'floor_name' => $firstFloor->name ?? '',
             'total_seats' => 1,
             'available_seats' => $isOccupied ? 0 : 1,
             'occupied_seats' => $isOccupied ? 1 : 0,
