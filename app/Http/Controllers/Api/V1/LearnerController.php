@@ -343,7 +343,7 @@ class LearnerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'plan_type_id' => 'nullable|integer|exists:plan_types,id',
-            'plan_type_status' => 'nullable',
+            'plan_type_status' => 'nullable|integer|in:1,2,3,4,5,6,7',
         ]);
 
         if ($validator->fails()) {
@@ -359,7 +359,7 @@ class LearnerController extends Controller
             $data = $service->getSeatMapDetails(
                 $branch_id ? (int) $branch_id : null,
                 isset($validated['plan_type_id']) ? (int) $validated['plan_type_id'] : null,
-                isset($validated['plan_type_status']) ? (string) $validated['plan_type_status'] : null
+                isset($validated['plan_type_status']) ? (int) $validated['plan_type_status'] : null
             );
 
             return response()->json([

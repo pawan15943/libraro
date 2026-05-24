@@ -1518,7 +1518,7 @@ class LearnerService
         return $learners;
     }
 
-    public function getSeatMapDetails(?int $branchId = null, ?int $planTypeId = null, ?string $planTypeStatus = null)
+    public function getSeatMapDetails(?int $branchId = null, ?int $planTypeId = null, ?int $planTypeStatus = null)
     {
         $branchId = $branchId ?: getCurrentBranch();
         
@@ -1566,12 +1566,50 @@ class LearnerService
 
         $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId, $planTypeStatus);
         $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $planTypeStatus);
+        $sortStatusRow = collect($planTypeStatuses)->firstWhere('id', $planTypeStatus);
+        $sortStatus = $sortStatusRow['name'] ?? null;
+
+        if ($sortStatus) {
+            $numbered = $this->sortSeatMapByPlanTypeStatus($numbered, $sortStatus);
+            $general = $this->sortSeatMapByPlanTypeStatus($general, $sortStatus);
+        }
 
         return [
-            'plan_type_status' => $planTypeStatus,
+            'plan_type_status' => $planTypeStatuses,
             'numbered' => $numbered,
             'general' => $general,
         ];
+    }
+
+    private function sortSeatMapByPlanTypeStatus(array $floors, string $status): array
+    {
+        return collect($floors)
+            ->map(function ($floor) use ($status) {
+                $floor['seats'] = collect($floor['seats'] ?? [])
+                    ->values()
+                    ->map(function ($seat, $index) use ($status) {
+                        $seat['_sort_index'] = $index;
+                        $seat['_sort_status'] = collect($seat['plantype'] ?? [])
+                            ->contains(fn ($planType) => ($planType['plan_type_status'] ?? null) === $status) ? 0 : 1;
+
+                        return $seat;
+                    })
+                    ->sortBy([
+                        ['_sort_status', 'asc'],
+                        ['_sort_index', 'asc'],
+                    ])
+                    ->map(function ($seat) {
+                        unset($seat['_sort_status'], $seat['_sort_index']);
+
+                        return $seat;
+                    })
+                    ->values()
+                    ->all();
+
+                return $floor;
+            })
+            ->values()
+            ->all();
     }
 
     private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null)
