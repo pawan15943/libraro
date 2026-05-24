@@ -1568,7 +1568,7 @@ class LearnerService
         $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $planTypeStatus);
 
         return [
-            'plan_type_status' => $planTypeStatus,
+            'plan_type_status' => $planTypeStatuses,
             'numbered' => $numbered,
             'general' => $general,
         ];
