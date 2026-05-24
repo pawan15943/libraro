@@ -176,6 +176,15 @@ class LearnerController extends Controller
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('plan_end_date', '<', $today)
                     ->update(['status' => 0]);
+
+                $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('status', 1)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $today)
+                    ->exists();
+
+                Learner::where('id', $customerdata->learner_id)
+                    ->update(['status' => $hasActiveDetail ? 1 : 0]);
             }
             elseif ($planEndDateWithExtension->lt($today)) {
                 Learner::where('id', $customerdata->learner_id)
@@ -184,15 +193,20 @@ class LearnerController extends Controller
 
                 $customerdata->update(['status' => 0]);
             }  else {
-                Learner::where('id', $customerdata->learner_id)
-                    ->where('status', '!=', 1)
-                    ->update(['status' => 1]);
-
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('status', 0)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>', $today)
                     ->update(['status' => 1]);
+
+                $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                    ->where('status', 1)
+                    ->where('plan_start_date', '<=', $today)
+                    ->where('plan_end_date', '>', $today)
+                    ->exists();
+
+                Learner::where('id', $customerdata->learner_id)
+                    ->update(['status' => $hasActiveDetail ? 1 : 0]);
             }
         }
     }
