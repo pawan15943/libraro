@@ -1537,6 +1537,10 @@ class LearnerService
                 ->where('id', $planTypeId)
                 ->whereNull('deleted_at')
                 ->get(['id', 'name', 'start_time', 'end_time']);
+
+            if ($planTypes->isEmpty()) {
+                throw new \Exception('selected shift not avialable');
+            }
         } else {
             $planTypes = PlanType::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
