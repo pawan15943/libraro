@@ -1532,12 +1532,18 @@ class LearnerService
             ['id' => 7, 'name' => 'extra paid', 'color' => '#00A1C8'],
         ];
 
-        $planTypes = PlanType::withoutGlobalScopes()
-            ->where('branch_id', $branchId)
-            ->whereNull('deleted_at')
-            ->when($planTypeId, fn ($query) => $query->where('id', $planTypeId))
-            ->orderBy('id')
-            ->get(['id', 'name', 'start_time', 'end_time']);
+        if ($planTypeId) {
+            $planTypes = PlanType::withoutGlobalScopes()
+                ->where('id', $planTypeId)
+                ->whereNull('deleted_at')
+                ->get(['id', 'name', 'start_time', 'end_time']);
+        } else {
+            $planTypes = PlanType::withoutGlobalScopes()
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->orderBy('id')
+                ->get(['id', 'name', 'start_time', 'end_time']);
+        }
 
         $bookingDetails = LearnerDetail::withTrashed()
             ->with(['learner', 'plan', 'planType'])
