@@ -1349,14 +1349,18 @@ class LearnerService
         if (!empty($filters['status'])) {
 
             switch ($filters['status']) {
-                case 'deleted':
-                    $query->whereNotNull('learners.deleted_at');
+                case 'all':
                 break;
 
                 case 'active':
+                    $extendDays = getExtendDays($branchId);
 
                     $query->where('learner_detail.status',1)
-                        ->whereDate('learner_detail.plan_end_date','>=',now());
+                        ->whereDate(
+                            'learner_detail.plan_end_date',
+                            '>=',
+                            now()->subDays($extendDays)
+                        );
 
                 break;
 
@@ -1403,7 +1407,7 @@ class LearnerService
 
                 case 'deleted':
 
-                    $query->whereNotNull('learners.deleted_at')->whereNull('learners.deleted_at');
+                    $query->whereNotNull('learners.deleted_at');
 
                 break;
 
@@ -1419,6 +1423,10 @@ class LearnerService
                 break;
 
             }
+        }
+
+        if (!empty($filters['plan_type_id'])) {
+            $query->where('learner_detail.plan_type_id', (int) $filters['plan_type_id']);
         }
 
         /* -----------------------------
@@ -1448,8 +1456,44 @@ class LearnerService
 
         ]);
 
-        $learners = $query->orderBy('learner_detail.seat_no','asc')
-            ->paginate(20);
+        $sortBy = $filters['sort_by'] ?? 'seat_no';
+        $sortOrder = strtolower($filters['sort_order'] ?? 'asc');
+        $sortOrder = in_array($sortOrder, ['asc', 'desc'], true) ? $sortOrder : 'asc';
+
+        $sortableColumns = [
+            'seat_no' => 'learner_detail.seat_no',
+            'name' => 'learners.name',
+            'expire_date' => 'learner_detail.plan_end_date',
+            'gen' => 'learner_detail.seat_no',
+        ];
+
+        $sortColumn = $sortableColumns[$sortBy] ?? 'learner_detail.seat_no';
+
+        if ($sortBy === 'seat_no') {
+            // Keep null seats (general) at the end for both asc/desc and sort seat numbers numerically.
+            $learners = $query
+                ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 1 ELSE 0 END ASC')
+                ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) '.$sortOrder)
+                ->paginate(20);
+        } elseif ($sortBy === 'gen') {
+            // Dedicated general-seat sort (DB general seat = NULL).
+            // asc: general first, desc: general last.
+            if ($sortOrder === 'asc') {
+                $learners = $query
+                    ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 0 ELSE 1 END ASC')
+                    ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC')
+                    ->paginate(20);
+            } else {
+                $learners = $query
+                    ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 1 ELSE 0 END ASC')
+                    ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) DESC')
+                    ->paginate(20);
+            }
+        } else {
+            $learners = $query
+                ->orderBy($sortColumn, $sortOrder)
+                ->paginate(20);
+        }
 
         /* -----------------------------
         FORMAT RESPONSE
@@ -1503,7 +1547,7 @@ class LearnerService
                 'mobile'=>decryptData($learner->mobile),
                 'dob'=>$learner->dob,
                 'birth_status'=>$birthStatus,
-                'seat_no'=>$learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no): 'GEN',
+                'seat_no' => $learner->seat_no !== null ? (int) $learner->seat_no : 0,
 
                 'profile_picture' => $learner->profile_picture 
                 ? asset($learner->profile_picture) 

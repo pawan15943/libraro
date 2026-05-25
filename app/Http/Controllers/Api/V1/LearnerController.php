@@ -86,6 +86,12 @@ class LearnerController extends Controller
     public function index(Request $request, LearnerService $service)
     {
         try {
+            $request->validate([
+                'status' => 'nullable|in:all,active,about_to_expire,extended,future,expired,deleted,closed,pending_payment',
+                'plan_type_id' => 'nullable|integer|exists:plan_types,id',
+                'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
+                'sort_order' => 'nullable|in:asc,desc',
+            ]);
 
             // map page_no to page
             if ($request->has('page_no')) {
@@ -96,7 +102,10 @@ class LearnerController extends Controller
 
             $filters = [
                 'search' => $request->search,
-                'status' => $request->status
+                'status' => $request->status,
+                'plan_type_id' => $request->plan_type_id,
+                'sort_by' => $request->sort_by,
+                'sort_order' => $request->sort_order,
             ];
 
             $data = $service->getLearnersList($filters);
@@ -695,6 +704,24 @@ class LearnerController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    public function statusList()
+    {
+        return response()->json([
+            'status' => true,
+            'data' => [
+                ['key' => 'all', 'label' => 'All'],
+                ['key' => 'active', 'label' => 'Active'],
+                ['key' => 'about_to_expire', 'label' => 'About to expire'],
+                ['key' => 'extended', 'label' => 'Extended'],
+                ['key' => 'future', 'label' => 'Future Booking'],
+                ['key' => 'expired', 'label' => 'Expired'],
+                ['key' => 'deleted', 'label' => 'Deleted'],
+                ['key' => 'closed', 'label' => 'Closed'],
+                ['key' => 'pending_payment', 'label' => 'Pending Payment'],
+            ],
+        ]);
     }
     
 }
