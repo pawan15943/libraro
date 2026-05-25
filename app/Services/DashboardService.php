@@ -14,15 +14,39 @@ use App\Models\LibraryTransaction;
 
 class DashboardService
 {
-    public function getDashboardData(int $branchId, string $type): array
+    public function getDashboardData(int $branchId, string $type, ?string $value = null): array
     {
+        $branchName = DB::table('branches')->where('id', $branchId)->value('name');
+        $authUser = auth('library_api')->user();
+        $userType = 'library user';
+        if ($authUser && get_class($authUser) === \App\Models\Library::class) {
+            $userType = 'library owner';
+        }
+
         return [
-            'collection' => $this->collectionSummary($branchId, $type),
+            'user' => [
+                'name' => $authUser->name ?? $authUser->library_name ?? '',
+                'avatar' => !empty($authUser->profile_picture) ? asset($authUser->profile_picture) : '',
+                'current_branch_name' => $branchName ?? '',
+                'type' => $userType,
+            ],
+            'collection' => $this->collectionSummary($branchId, $type, $value),
             'seat_summary' => $this->seatSummary($branchId),
             'library_occupancy' => $this->libraryOccupancy($branchId),
             'online_bookings' => $this->onlineBookings($branchId),
             'expired_members' => $this->expiredMembers($branchId),
             'due_pending' => $this->duePayment($branchId),
+            'banner' => [
+                'title' => 'Libraoo Track Everything',
+                'image_url' => '',
+                'cta_label' => 'View Details',
+                'cta_action' => '/promo/libraoo-track',
+                'colour' => '#22c55e',
+            ],
+            'stats_footer' => [
+                'total_learners_count' => (int) Learner::where('branch_id', $branchId)->count(),
+                'label' => 'Learner Added',
+            ],
         ];
     }
 
@@ -32,17 +56,20 @@ class DashboardService
     |--------------------------------------------------------------------------
     */
 
-    private function collectionSummary(int $branchId, string $type): array
+    private function collectionSummary(int $branchId, string $type, ?string $value = null): array
     {
-        
-
         $query = LearnerTransactionActivity::where('branch_id', $branchId);
-
-        if ($type === 'daily') {
-            $query->whereDate('date', Carbon::today());
+        $resolvedValue = $value;
+        if ($type === 'date') {
+            $resolvedValue = $value ?: Carbon::today()->format('Y-m-d');
+            $query->whereDate('date', Carbon::parse($resolvedValue)->toDateString());
+        } elseif ($type === 'monthly') {
+            $resolvedValue = $value ?: Carbon::now()->format('Y-m');
+            $monthDate = Carbon::parse($resolvedValue . '-01');
+            $query->whereMonth('date', $monthDate->month)->whereYear('date', $monthDate->year);
         } else {
-            $query->whereMonth('date', Carbon::now()->month)
-                  ->whereYear('date', Carbon::now()->year);
+            $resolvedValue = $value ?: Carbon::now()->format('Y');
+            $query->whereYear('date', (int) $resolvedValue);
         }
 
         $collection = $query ->where(function($q) {
@@ -73,12 +100,13 @@ class DashboardService
 
         return [
             'type' => $type,
-            'collection' => (int) $collection,
-            'other_income' => $today_other_amt ?? 0,
-            'expense' => $todayExpense ?? 0,
-            'refund' =>$today_refund ?? 0,
-            'pending_payment' => $today_pending ?? 0,
-            'balance' => (int) $todayBalance
+            'value' => (string) $resolvedValue,
+            'collection' => (string) $collection,
+            'other_income' => (string)$today_other_amt ?? 0,
+            'expense' => (string)$todayExpense ?? 0,
+            'refund' =>(string)$today_refund ?? 0,
+            'pending_payment' => (string)$today_pending ?? 0,
+            'balance' => (string) $todayBalance
         ];
     }
 
@@ -198,12 +226,13 @@ class DashboardService
             ->latest()
             ->get();
 
-        return $bookings->map(function ($booking) {
+        $list = $bookings->map(function ($booking) {
 
             $isPaid = !empty($booking->payment_screenshot);
 
             return [
-                'seat_no' => $booking->seat_no,
+                'booking_id' => $booking->id,
+                'seat_no' => (string) ($booking->seat_no ?? '0'),
                 'name' => $booking->name,
                 'mobile' => $booking->mobile,
                 'plan_name' => $booking->plan?->name ?? '',
@@ -221,6 +250,11 @@ class DashboardService
                                 : '',
             ];
         })->toArray();
+
+        return [
+            'total_count' => count($list),
+            'booking' => $list
+        ];
     }
 
     /**
@@ -304,7 +338,8 @@ class DashboardService
                     . Carbon::parse(
                         $item->due_date
                     )->format('d M')
-                    . '.'
+                    . '.',
+                'send_message' => 'pending_waba'
             ];
         });
 
@@ -376,7 +411,7 @@ class DashboardService
                 'learner_detail.plan_end_date','learners.profile_picture'
             ]);
 
-        return $learners->map(function ($learner) use ($today, $extendDay) {
+        $list = $learners->map(function ($learner) use ($today, $extendDay) {
 
             $planEndDate = Carbon::parse($learner->plan_end_date);
             $extensionEndDate = $planEndDate->copy()->addDays($extendDay);
@@ -387,6 +422,7 @@ class DashboardService
                 $daysLeft = $today->diffInDays($planEndDate);
 
                 return [
+                    'learner_id' => $learner->id,
                     'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
@@ -407,6 +443,7 @@ class DashboardService
                 $daysLeft = $today->diffInDays($extensionEndDate);
 
                 return [
+                    'learner_id' => $learner->id,
                     'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
@@ -425,6 +462,7 @@ class DashboardService
             $expiredDays = $planEndDate->diffInDays($today);
 
             return [
+                 'learner_id' => $learner->id,
                  'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
@@ -437,6 +475,11 @@ class DashboardService
             ];
 
         })->toArray();
+
+        return [
+            'count' => count($list),
+            'list' => $list
+        ];
     }
 
     /*

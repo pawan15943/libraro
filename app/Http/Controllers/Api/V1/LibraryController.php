@@ -131,16 +131,12 @@ class LibraryController extends Controller
     public function dashboard(Request $request, DashboardService $service)
     {
         $validated = $request->validate([
-            // 'branch_id' => 'nullable|exists:branches,id',
-            'type'      => 'nullable|in:daily,monthly'
+            'type'  => 'nullable|in:date,monthly,yearly',
+            'value' => 'nullable|string'
         ]);
-
-        $libraryId = authLibraryId();
-
-
-        $type = $validated['type'] ?? 'daily';
-
-        $data = $service->getDashboardData(getCurrentBranch(), $type);
+        $type = $validated['type'] ?? 'date';
+        $value = $validated['value'] ?? null;
+        $data = $service->getDashboardData(getCurrentBranch(), $type, $value);
 
         return response()->json([
             'status' => true,

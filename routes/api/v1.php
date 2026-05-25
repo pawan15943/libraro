@@ -79,7 +79,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     
     // Route::get('library/branches', [LibraryController::class, 'getCurrentBranchDetail']);
 
-    Route::get('library/dashboard', [LibraryController::class, 'dashboard']);
+    Route::post('library/dashboard', [LibraryController::class, 'dashboard']);
     Route::post('library/branch/switch', [LibraryController::class, 'switchBranch']);
 
     // Explicit path (avoids prefix nesting issues; same as api/v1/library/learners/available-seats)
