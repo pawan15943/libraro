@@ -794,4 +794,139 @@ class LibraryController extends Controller
             ], 500);
         }
     }
+
+    public function about()
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'About Libraro fetched successfully',
+            'data' => [
+                'title' => 'About Libraro',
+                'description' => 'At Libraro, we are dedicated to transforming how libraries operate by providing an intuitive, all-in-one solution for library management. Our goal is to make library operations efficient and effortless for everyone, helping them save time and resources while focusing on what truly matters - their learners.',
+                'stats' => [
+                    ['label' => 'Library Registered', 'value' => '270+'],
+                    ['label' => 'Learners Enrolled', 'value' => '4000+'],
+                    ['label' => 'City Covered', 'value' => '50+'],
+                ],
+                'website' => 'https://www.libraro.in',
+            ],
+        ]);
+    }
+
+    public function support()
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'Support details fetched successfully',
+            'data' => [
+                'title' => 'How can we help you?',
+                'subtitle' => 'Our support team is here to assist you. Connect with us.',
+                'channels' => [
+                    [
+                        'type' => 'call',
+                        'title' => 'Call Support',
+                        'value' => '+91-8149476982, +91-9428640636',
+                    ],
+                    [
+                        'type' => 'email',
+                        'title' => 'Mail Support',
+                        'value' => 'support@libraro.in',
+                    ],
+                    [
+                        'type' => 'whatsapp',
+                        'title' => 'WhatsApp Support',
+                        'value' => 'support@libraro.in',
+                    ],
+                ],
+                'note' => 'We value your time and trust we usually respond in 15-30 min during working hours.',
+            ],
+        ]);
+    }
+
+    public function howToUse(Request $request)
+    {
+        $validated = $request->validate([
+            'language' => 'nullable|in:english,hindi',
+        ]);
+
+        $language = strtolower($validated['language'] ?? 'english');
+
+        $items = [
+            ['title' => 'Operation : Book Seat', 'content' => $language === 'hindi' ? 'सीट बुक करने की प्रक्रिया।' : 'Process to book a seat.'],
+            ['title' => 'Operation : Re-new Seat', 'content' => $language === 'hindi' ? 'सीट रिन्यू करने की प्रक्रिया।' : 'Process to renew a seat.'],
+            ['title' => 'Operation : Swap Seat', 'content' => $language === 'hindi' ? 'सीट स्वैप करने की प्रक्रिया।' : 'Process to swap a seat.'],
+            ['title' => 'Operation : Change Plan', 'content' => $language === 'hindi' ? 'प्लान बदलने की प्रक्रिया।' : 'Process to change learner plan.'],
+            ['title' => 'Operation : Upgrade Plan', 'content' => $language === 'hindi' ? 'प्लान अपग्रेड करने की प्रक्रिया।' : 'Process to upgrade learner plan.'],
+            ['title' => 'Operation : Close Seat', 'content' => $language === 'hindi' ? 'सीट क्लोज करने की प्रक्रिया।' : 'Process to close a seat.'],
+            ['title' => 'Operation : Delete Seat', 'content' => $language === 'hindi' ? 'सीट डिलीट करने की प्रक्रिया।' : 'Process to delete a seat.'],
+        ];
+
+        return response()->json([
+            'status' => true,
+            'message' => 'How to use fetched successfully',
+            'data' => [
+                'language' => $language,
+                'title' => 'How to Use',
+                'items' => $items,
+            ],
+        ]);
+    }
+
+    public function videoTutorial()
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'Video tutorials fetched successfully',
+            'data' => [
+                'title' => 'Video Tutorial',
+                'description' => 'Libraro video tutorials help you understand and use every feature of the platform with ease.',
+                'sections' => [
+                    [
+                        'title' => 'Registration Process',
+                        'videos' => [
+                            ['title' => 'Registration Process', 'url' => 'https://www.youtube.com/watch?v=demo_registration'],
+                            ['title' => 'Create Branch', 'url' => 'https://www.youtube.com/watch?v=demo_branch'],
+                            ['title' => 'Create Shifts', 'url' => 'https://www.youtube.com/watch?v=demo_shift'],
+                        ],
+                    ],
+                    [
+                        'title' => 'How to Use',
+                        'videos' => [
+                            ['title' => 'Seat Booking', 'url' => 'https://www.youtube.com/watch?v=demo_seat_booking'],
+                            ['title' => 'Reporting', 'url' => 'https://www.youtube.com/watch?v=demo_reporting'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function faq()
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'FAQ fetched successfully',
+            'data' => [
+                'title' => 'Frequently Asked Questions',
+                'items' => [
+                    [
+                        'question' => 'How do I book a seat?',
+                        'answer' => 'Go to learner section, choose plan and seat, then complete booking.',
+                    ],
+                    [
+                        'question' => 'How can I renew a learner?',
+                        'answer' => 'Open learner details and select renew operation with plan and payment details.',
+                    ],
+                    [
+                        'question' => 'How to change branch?',
+                        'answer' => 'Use library branch switch API from profile/dashboard section.',
+                    ],
+                    [
+                        'question' => 'How to contact support?',
+                        'answer' => 'Use call, email or WhatsApp options in support section.',
+                    ],
+                ],
+            ],
+        ]);
+    }
 }
