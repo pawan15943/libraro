@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\V1\Auth\LearnerAuthController;
 use App\Http\Controllers\Api\V1\LearnerController;
 use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
-use App\Http\Controllers\api\V1\QrBookingController;
+use App\Http\Controllers\Api\V1\Authpi\V1\QrBookingController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 
