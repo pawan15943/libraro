@@ -38,7 +38,7 @@ class LibraryController extends Controller
       $libraryId = authLibraryId();
 
       // Library detail
-      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch')->findOrFail($libraryId);
+      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch','referral_code')->findOrFail($libraryId);
 
       // Branches
       $branches = Branch::where('library_id', $libraryId)
@@ -50,7 +50,7 @@ class LibraryController extends Controller
          ->select('upi_id')
          ->first();
      // ✅ Selected Branch Detail
-        $selectedBranch = Branch::where('id', $library->current_branch)
+    $selectedBranch = Branch::where('id', $library->current_branch)
             ->select('id', 'name', 'library_logo')
             ->first();
 
@@ -106,6 +106,7 @@ class LibraryController extends Controller
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
+               'referral_code'    => $library->referral_code,
                  // ✅ Image (FROM BRANCH)
                 'library_image' => !empty($selectedBranch->library_logo)
                    ? asset('public/'.$selectedBranch->library_logo)
@@ -130,13 +131,25 @@ class LibraryController extends Controller
 
     public function dashboard(Request $request, DashboardService $service)
     {
+       $branch=getCurrentBranch();
+        $data = $service->getDashboardData($branch);
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    public function dashboardRevenue(Request $request, DashboardService $service)
+    {
         $validated = $request->validate([
             'type'  => 'nullable|in:date,monthly,yearly',
             'value' => 'nullable|string'
         ]);
+
         $type = $validated['type'] ?? 'date';
         $value = $validated['value'] ?? null;
-        $data = $service->getDashboardData(getCurrentBranch(), $type, $value);
+        $data = $service->getDashboardRevenue(getCurrentBranch(), $type, $value);
 
         return response()->json([
             'status' => true,

@@ -11,15 +11,19 @@ use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerTransactionActivity;
 use App\Models\LibraryTransaction;
+use App\Models\Library;
+use App\Models\LibraryUser;
+use App\Models\Subscription;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardService
 {
-    public function getDashboardData(int $branchId, string $type, ?string $value = null): array
+    public function getDashboardData(int $branchId)
     {
         $branchName = DB::table('branches')->where('id', $branchId)->value('name');
         $authUser = auth('library_api')->user();
         $userType = 'library user';
-        if ($authUser && get_class($authUser) === \App\Models\Library::class) {
+        if ($authUser && get_class($authUser) === Library::class) {
             $userType = 'library owner';
         }
 
@@ -30,24 +34,21 @@ class DashboardService
                 'current_branch_name' => $branchName ?? '',
                 'type' => $userType,
             ],
-            'collection' => $this->collectionSummary($branchId, $type, $value),
             'seat_summary' => $this->seatSummary($branchId),
             'library_occupancy' => $this->libraryOccupancy($branchId),
             'online_bookings' => $this->onlineBookings($branchId),
             'expired_members' => $this->expiredMembers($branchId),
             'due_pending' => $this->duePayment($branchId),
-            'banner' => [
-                'title' => 'Libraoo Track Everything',
-                'image_url' => '',
-                'cta_label' => 'View Details',
-                'cta_action' => '/promo/libraoo-track',
-                'colour' => '#22c55e',
-            ],
-            'stats_footer' => [
-                'total_learners_count' => (int) Learner::where('branch_id', $branchId)->count(),
-                'label' => 'Learner Added',
-            ],
+            'top_banner'=>$this->topBanner(),
+            'last_banner'=>$this->lastBanner(),
+           
+           
         ];
+    }
+
+    public function getDashboardRevenue(int $branchId, string $type, ?string $value = null): array
+    {
+        return $this->collectionSummary($branchId, $type, $value);
     }
 
     /*
@@ -222,7 +223,7 @@ class DashboardService
                 'plan:id,name',
                 'planType:id,name'
             ])
-            ->select('id','seat_no','name','mobile','plan_id','plan_type_id','payment_screenshot','profile_picture')
+            ->select('id','seat_no','name','mobile','plan_id','plan_type_id','payment_screenshot','profile_picture','plan_start_date','status')
             ->latest()
             ->get();
 
@@ -237,9 +238,11 @@ class DashboardService
                 'mobile' => $booking->mobile,
                 'plan_name' => $booking->plan?->name ?? '',
                 'plan_type_name' => $booking->planType?->name ?? '',
+                'plan_start_date' => $booking->plan_start_date ?? '',
                 
                 'payment_status' => $isPaid ? 'paid' : 'unpaid',
                 'is_paid' => $isPaid,
+                'status'=>$booking->status?? '',
 
                 'payment_screenshot' => $isPaid
                     ? asset($booking->payment_screenshot)
@@ -261,93 +264,95 @@ class DashboardService
     /**
      * Due payment
      **/
-   private function duePayment(int $branchId)
-{
-    $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
-        ->groupBy('learner_id');
+    private function duePayment(int $branchId)
+    {
+        $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
+            ->groupBy('learner_id');
 
-    $data = LearnerDetail::query()
+        $data = LearnerDetail::query()
 
-        ->joinSub($latestDetail, 'latest', function ($join) {
+            ->joinSub($latestDetail, 'latest', function ($join) {
 
-            $join->on('learner_detail.id', '=', 'latest.id');
-        })
+                $join->on('learner_detail.id', '=', 'latest.id');
+            })
 
-        ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+            ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
 
-        ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+            ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
 
-        ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
 
-        ->leftJoin('learner_transactions', function ($join) {
+            ->leftJoin('learner_transactions', function ($join) {
 
-            $join->on(
-                'learner_transactions.learner_id',
-                '=',
-                'learners.id'
+                $join->on(
+                    'learner_transactions.learner_id',
+                    '=',
+                    'learners.id'
+                )
+
+                ->where('learner_transactions.pending_amount', '>', 0);
+            })
+
+            ->where('learner_detail.branch_id', $branchId)
+
+            ->select(
+
+                'learners.profile_picture',
+
+                'learners.seat_no',
+
+                'learners.name',
+
+                'learner_transactions.pending_amount',
+
+                'learner_transactions.due_date',
+                'learner_detail.id as learner_detail_id'
             )
 
-            ->where('learner_transactions.pending_amount', '>', 0);
-        })
+            ->whereNotNull('learner_transactions.id')
 
-        ->where('learner_detail.branch_id', $branchId)
+            ->limit(5)
+            ->get()
 
-        ->select(
+            ->map(function ($item) {
 
-            'learners.profile_picture',
+                return [
+                    'learner_detail_id'=>$item->learner_detail_id ?? '',
 
-            'learners.seat_no',
+                    'profile_picture' =>
+                        $item->profile_picture
+                        ? asset($item->profile_picture)
+                        : '',
 
-            'learners.name',
+                    'seat_no' => $item->seat_no,
 
-            'learner_transactions.pending_amount',
+                    'name' => $item->name,
 
-            'learner_transactions.due_date'
-        )
+                    'pending_amount' =>
+                        $item->pending_amount,
 
-        ->whereNotNull('learner_transactions.id')
-
-        ->get()
-
-        ->map(function ($item) {
-
-            return [
-
-                'profile_picture' =>
-                    $item->profile_picture
-                    ? asset($item->profile_picture)
-                    : '',
-
-                'seat_no' => $item->seat_no,
-
-                'name' => $item->name,
-
-                'pending_amount' =>
-                    $item->pending_amount,
-
-                'due_date' =>
-                    $item->due_date
-                    ? Carbon::parse(
+                    'due_date' =>
                         $item->due_date
-                    )->format('d M')
-                    : null,
+                        ? Carbon::parse(
+                            $item->due_date
+                        )->format('d M')
+                        : null,
 
-                'due_text' =>
-                    'Due '
-                    . $item->pending_amount
-                    . ' on '
-                    . Carbon::parse(
-                        $item->due_date
-                    )->format('d M')
-                    . '.',
-                'send_message' => 'pending_waba'
-            ];
-        });
+                    'due_text' =>
+                        'Due '
+                        . $item->pending_amount
+                        . ' on '
+                        . Carbon::parse(
+                            $item->due_date
+                        )->format('d M')
+                        . '.',
+                    'send_message' => 'pending_waba'
+                ];
+            });
 
     return [
-
+        'limit' => 5,
         'count' => $data->count(),
-
         'list' => $data
     ];
 }
@@ -475,9 +480,10 @@ class DashboardService
                 'label' => "Expired {$expiredDays} days ago"
             ];
 
-        })->toArray();
+        })->take(5)->values()->toArray();
 
         return [
+            'limit' => 5,
             'count' => count($list),
             'list' => $list
         ];
@@ -1018,6 +1024,141 @@ class DashboardService
             'monthly_balance' => $finalData,
 
             'collection' => $query->latest()->paginate(10)
+        ];
+    }
+
+    private function topBanner(): array
+    {
+        $today = Carbon::today();
+        $branchId = getCurrentBranch();
+        $libraryId = (int) getLibraryId();
+        $banners = [[
+            'type' => 'other_wishes',
+            'tital' => '',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => '',
+            'subscription_status' => '',
+            'days_in_left' => '',
+        ]];
+
+        $learners = Learner::query()
+            ->where('branch_id', $branchId)
+            ->whereMonth('dob', $today->month)
+            ->whereDay('dob', $today->day)
+            ->select('name', 'seat_no')
+            ->get();
+
+        foreach ($learners as $learner) {
+            $banners[] = [
+                'type' => 'birthday_wishes',
+                'tital' => 'Wish you happy birthay',
+                'description' => '',
+                'birthday_user' => (string) ($learner->name ?? ''),
+                'seat_no' => !empty($learner->seat_no) ? ('Seat ' . $learner->seat_no) : '',
+                'subscription_type' => '',
+                'subscription_status' => '',
+                'days_in_left' => '',
+            ];
+        }
+
+        if (Schema::hasColumn('libraries', 'dob')) {
+            $owner = Library::query()
+                ->where('id', $libraryId)
+                ->whereMonth('dob', $today->month)
+                ->whereDay('dob', $today->day)
+                ->select('name', 'library_name')
+                ->first();
+
+            if ($owner) {
+                $banners[] = [
+                    'type' => 'birthday_wishes',
+                    'tital' => 'Wish you happy birthay',
+                    'description' => '',
+                    'birthday_user' => (string) ($owner->name ?? $owner->library_name ?? ''),
+                    'seat_no' => '',
+                    'subscription_type' => '',
+                    'subscription_status' => '',
+                    'days_in_left' => '',
+                ];
+            }
+        }
+
+        if (Schema::hasColumn('library_users', 'dob')) {
+            $users = LibraryUser::query()
+                ->where('library_id', $libraryId)
+                ->whereMonth('dob', $today->month)
+                ->whereDay('dob', $today->day)
+                ->select('name')
+                ->get();
+
+            foreach ($users as $user) {
+                $banners[] = [
+                    'type' => 'birthday_wishes',
+                    'tital' => 'Wish you happy birthay',
+                    'description' => '',
+                    'birthday_user' => (string) ($user->name ?? ''),
+                    'seat_no' => '',
+                    'subscription_type' => '',
+                    'subscription_status' => '',
+                    'days_in_left' => '',
+                ];
+            }
+        }
+
+        $library = Library::query()->select('library_type')->find($libraryId);
+        $subscriptionName = '';
+        if ($library && !empty($library->library_type)) {
+            $subscriptionName = (string) (Subscription::where('id', $library->library_type)->value('name') ?? '');
+        }
+
+        $latestPlan = LibraryTransaction::query()
+            ->where('library_id', $libraryId)
+            ->latest('id')
+            ->first(['status', 'end_date']);
+
+        $subscriptionStatus = ($latestPlan && (int) $latestPlan->status === 1) ? 'Active' : 'Inactive';
+        $daysLeft = '';
+        if ($latestPlan && !empty($latestPlan->end_date)) {
+            $daysLeft = (string) max(0, Carbon::today()->diffInDays(Carbon::parse($latestPlan->end_date), false));
+        }
+
+        $banners[] = [
+            'type' => 'subscription',
+            'tital' => '',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => $subscriptionName,
+            'subscription_status' => $subscriptionStatus,
+            'days_in_left' => $daysLeft,
+        ];
+
+        return $banners;
+    }
+
+    private function lastBanner(): array
+    {
+        return [
+            [
+                'tital' => 'Libraro Track Everithing',
+                'description' => '',
+                'image' => '',
+                'link' => '',
+            ],
+            [
+                'tital' => 'Libraro Track Everithing',
+                'description' => '',
+                'image' => '',
+                'link' => '',
+            ],
+            [
+                'tital' => 'Libraro Track Everithing',
+                'description' => '',
+                'image' => '',
+                'link' => '',
+            ],
         ];
     }
 
