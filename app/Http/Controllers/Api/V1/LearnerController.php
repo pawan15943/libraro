@@ -88,7 +88,8 @@ class LearnerController extends Controller
         try {
             $request->validate([
                 'status' => 'nullable|in:all,active,about_to_expire,extended,future,expired,deleted,closed,pending_payment',
-                'plan_type_id' => 'nullable|integer|exists:plan_types,id',
+                'plan_type_id' => 'nullable',
+                'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
                 'sort_order' => 'nullable|in:asc,desc',
             ]);
@@ -103,7 +104,9 @@ class LearnerController extends Controller
             $filters = [
                 'search' => $request->search,
                 'status' => $request->status,
-                'plan_type_id' => $request->plan_type_id,
+                'plan_type_id' => is_array($request->plan_type_id)
+                    ? $request->plan_type_id
+                    : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
                 'sort_by' => $request->sort_by,
                 'sort_order' => $request->sort_order,
             ];

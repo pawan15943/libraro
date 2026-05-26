@@ -12,66 +12,59 @@ class QrBookingController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'tab' => 'nullable|in:qr_online_booking,daily_demo_inquiry',
+            'date' => 'nullable|date',
+            'search' => 'nullable|string',
+        ]);
+
         $branchId = auth()->user()->current_branch;
+        $perPage = 10;
+        $tab = $request->input('tab', 'qr_online_booking');
 
-        $query = Booking::where('branch_id', $branchId)
-            ->with('planType:id,name');
-
-        // ✅ Date Filter
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
-
-        // ✅ Booking Status Filter
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // ✅ Payment Status Filter
-        if ($request->filled('payment_status')) {
-
-            if ($request->payment_status == 'Paid') {
-                $query->whereNotNull('payment_screenshot');
+        $applyCommonFilters = function ($query) use ($request) {
+            if ($request->filled('date')) {
+                $query->whereDate('created_at', $request->date);
             }
-
-            if ($request->payment_status == 'Unpaid') {
-                $query->whereNull('payment_screenshot');
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('mobile', 'LIKE', "%{$search}%");
+                });
             }
-        }
+        };
 
-        // ✅ Search
-        if ($request->filled('search')) {
-
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-
-                $q->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('mobile', 'LIKE', "%{$search}%");
+        $query = Booking::where('branch_id', $branchId)->with('planType:id,name');
+        if ($tab === 'daily_demo_inquiry') {
+            $query->where('type', 'demo-bookings');
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('type')->orWhere('type', '!=', 'demo-bookings');
             });
         }
+        $applyCommonFilters($query);
+        $bookings = $query->latest()->paginate($perPage);
 
-        $bookings = $query->latest()->paginate(10);
-
-        // ✅ Only Selected Data
-        $bookings->getCollection()->transform(function ($booking) {
-
+        $transform = function ($booking) {
             return [
+                'booking_id' => $booking->id,
                 'name' => $booking->name,
-
                 'plan_type_name' => optional($booking->planType)->name,
-
-                'seat_no' => $booking->seat_no,
-
-                'payment_status' => $booking->payment_screenshot
-                    ? 'Paid'
-                    : 'Unpaid',
+                'seat_no' => (string) ($booking->seat_no ?? ''),
+                'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
+                'plan_start_date' => $booking->plan_start_date,
+                'profile_picture' => $booking->profile_picture ? asset($booking->profile_picture) : '',
             ];
-        });
+        };
+        $bookings->getCollection()->transform($transform);
 
         return response()->json([
             'status' => 'success',
-            'data'   => $bookings
+            'data'   => [
+                'tab' => $tab,
+                $tab => $bookings,
+            ]
         ]);
     }
 

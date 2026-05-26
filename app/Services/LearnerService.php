@@ -1425,8 +1425,11 @@ class LearnerService
             }
         }
 
-        if (!empty($filters['plan_type_id'])) {
-            $query->where('learner_detail.plan_type_id', (int) $filters['plan_type_id']);
+        if (!empty($filters['plan_type_id']) && is_array($filters['plan_type_id'])) {
+            $planTypeIds = array_values(array_filter(array_map('intval', $filters['plan_type_id'])));
+            if (!empty($planTypeIds)) {
+                $query->whereIn('learner_detail.plan_type_id', $planTypeIds);
+            }
         }
 
         /* -----------------------------
