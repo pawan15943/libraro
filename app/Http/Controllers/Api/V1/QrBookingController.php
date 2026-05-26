@@ -55,6 +55,7 @@ class QrBookingController extends Controller
                 'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
                 'plan_start_date' => $booking->plan_start_date,
                 'profile_picture' => $booking->profile_picture ? asset($booking->profile_picture) : '',
+                'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
         $bookings->getCollection()->transform($transform);

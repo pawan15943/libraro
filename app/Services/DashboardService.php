@@ -248,6 +248,7 @@ class DashboardService
                  'profile_picture'=>$booking->profile_picture 
                                 ? asset($booking->profile_picture) 
                                 : '',
+                'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         })->toArray();
 
