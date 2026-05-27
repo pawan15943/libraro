@@ -13,13 +13,11 @@ class QrBookingController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'tab' => 'nullable|in:qr_online_booking,daily_demo_inquiry',
             'date' => 'nullable|date',
             'search' => 'nullable|string',
         ]);
 
         $branchId = auth()->user()->current_branch;
-        $tab = $request->input('tab', 'qr_online_booking');
 
         $applyCommonFilters = function ($query) use ($request) {
             if ($request->filled('date')) {
@@ -34,16 +32,19 @@ class QrBookingController extends Controller
             }
         };
 
-        $query = Booking::where('branch_id', $branchId)->with('planType:id,name');
-        if ($tab === 'daily_demo_inquiry') {
-            $query->where('type', 'demo-bookings');
-        } else {
-            $query->where(function ($q) {
+        $dailyDemoQuery = Booking::where('branch_id', $branchId)
+            ->with('planType:id,name')
+            ->where('type', 'demo-bookings');
+        $applyCommonFilters($dailyDemoQuery);
+        $dailyDemoInquiry = $dailyDemoQuery->latest()->get();
+
+        $qrOnlineQuery = Booking::where('branch_id', $branchId)
+            ->with('planType:id,name')
+            ->where(function ($q) {
                 $q->whereNull('type')->orWhere('type', '!=', 'demo-bookings');
             });
-        }
-        $applyCommonFilters($query);
-        $bookings = $query->latest()->get();
+        $applyCommonFilters($qrOnlineQuery);
+        $qrOnlineBooking = $qrOnlineQuery->latest()->get();
 
         $transform = function ($booking) {
             return [
@@ -57,13 +58,14 @@ class QrBookingController extends Controller
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
-        $bookings = $bookings->map($transform)->values();
+        $dailyDemoInquiry = $dailyDemoInquiry->map($transform)->values();
+        $qrOnlineBooking = $qrOnlineBooking->map($transform)->values();
 
         return response()->json([
             'status' => true,
             'data'   => [
-                'tab' => $tab,
-                $tab => $bookings,
+                'daily_demo_inquiry' => $dailyDemoInquiry,
+                'qr_online_booking' => $qrOnlineBooking,
             ]
         ]);
     }
