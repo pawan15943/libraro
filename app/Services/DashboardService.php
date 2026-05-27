@@ -482,6 +482,12 @@ class DashboardService
 
         })->take(5)->values()->toArray();
 
+        $list = collect($list)
+            ->whereIn('status', ['about_to_expire', 'expires_today', 'extension', 'extension_last_day'])
+            ->take(5)
+            ->values()
+            ->toArray();
+
         return [
             'limit' => 5,
             'count' => count($list),
@@ -1032,10 +1038,15 @@ class DashboardService
         $today = Carbon::today();
         $branchId = getCurrentBranch();
         $libraryId = (int) getLibraryId();
+        $festival = DB::table('india_festivals')
+            ->whereDate('festival_date', $today->toDateString())
+            ->select('festival_name', 'description')
+            ->first();
+
         $banners = [[
             'type' => 'other_wishes',
-            'tital' => '',
-            'description' => '',
+            'tital' => $festival ? ('Wish you happy ' . $festival->festival_name) : '',
+            'description' => $festival->description ?? '',
             'birthday_user' => '',
             'seat_no' => '',
             'subscription_type' => '',
