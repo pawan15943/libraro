@@ -19,7 +19,6 @@ class QrBookingController extends Controller
         ]);
 
         $branchId = auth()->user()->current_branch;
-        $perPage = 10;
         $tab = $request->input('tab', 'qr_online_booking');
 
         $applyCommonFilters = function ($query) use ($request) {
@@ -44,7 +43,7 @@ class QrBookingController extends Controller
             });
         }
         $applyCommonFilters($query);
-        $bookings = $query->latest()->paginate($perPage);
+        $bookings = $query->latest()->get();
 
         $transform = function ($booking) {
             return [
@@ -58,7 +57,7 @@ class QrBookingController extends Controller
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
-        $bookings->getCollection()->transform($transform);
+        $bookings = $bookings->map($transform)->values();
 
         return response()->json([
             'status' => true,
