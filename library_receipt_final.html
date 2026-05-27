@@ -1,0 +1,563 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+  }
+
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f9fafb;
+    --color-text-primary: #11181c;
+    --color-text-secondary: #475569;
+    --color-text-tertiary: #94a3b8;
+    --color-border-primary: #e2e8f0;
+    --color-border-secondary: #cbd5e1;
+    --color-border-tertiary: #e2e8f0;
+    --border-radius-sm: 6px;
+    --border-radius-md: 10px;
+    --border-radius-lg: 14px
+  }
+
+  .rw {
+    font-family: 'DM Sans', sans-serif;
+    max-width: 600px;
+    margin: 1.5rem auto;
+    color: var(--color-text-primary)
+  }
+
+  /* Header */
+  .hdr {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border-tertiary)
+  }
+
+  .logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #ffe4e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: #9f1239;
+    border: 1.5px solid #fecdd3;
+    flex-shrink: 0
+  }
+
+  .lib-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 19px;
+    color: var(--color-text-primary)
+  }
+
+  .lib-meta {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-top: 2px
+  }
+
+  .inv-right {
+    margin-left: auto;
+    text-align: right;
+    flex-shrink: 0
+  }
+
+  .inv-no {
+    font-size: 12px;
+    font-weight: 600;
+    color: #be123c
+  }
+
+  .inv-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 3px;
+    line-height: 1.7
+  }
+
+  /* Alert banner */
+  .alert {
+    background: #fff7ed;
+    border: 0.5px solid #fed7aa;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px
+  }
+
+  .alert i {
+    color: #c2410c;
+    font-size: 18px;
+    flex-shrink: 0
+  }
+
+  .alert-text {
+    font-size: 12px;
+    color: #9a3412;
+    line-height: 1.5
+  }
+
+  .alert-text strong {
+    font-weight: 600
+  }
+
+  /* Chips */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 1rem
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px;
+    color: var(--color-text-secondary)
+  }
+
+  .chip i {
+    color: #be123c;
+    font-size: 13px
+  }
+
+  .chip strong {
+    color: var(--color-text-primary);
+    font-weight: 500
+  }
+
+  /* Cards */
+  .card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem
+  }
+
+  .card-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: #be123c;
+    margin-bottom: .85rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .card-title i {
+    font-size: 13px
+  }
+
+  /* Info rows */
+  .irow {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .irow:last-child {
+    border-bottom: none
+  }
+
+  .ilabel {
+    font-size: 11.5px;
+    color: var(--color-text-secondary)
+  }
+
+  .ival {
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+    max-width: 60%
+  }
+
+  /* Progress bar */
+  .prog-wrap {
+    margin: 10px 0 4px
+  }
+
+  .prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 5px
+  }
+
+  .prog-track {
+    height: 6px;
+    background: var(--color-background-secondary);
+    border-radius: 3px;
+    overflow: hidden
+  }
+
+  .prog-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #f43f5e, #e11d48)
+  }
+
+  /* Payment table */
+  .ptbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px
+  }
+
+  .ptbl thead tr {
+    border-bottom: 1px solid var(--color-border-tertiary)
+  }
+
+  .ptbl th {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--color-text-secondary);
+    padding: 0 6px 8px 0;
+    text-align: left;
+    white-space: nowrap
+  }
+
+  .ptbl th:last-child {
+    text-align: right;
+    padding-right: 0
+  }
+
+  .ptbl td {
+    padding: 7px 6px 7px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    vertical-align: middle
+  }
+
+  .ptbl td:last-child {
+    text-align: right;
+    padding-right: 0
+  }
+
+  .ptbl tr:last-child td {
+    border-bottom: none
+  }
+
+  .pill {
+    display: inline-block;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 500
+  }
+
+  .pill.cash {
+    background: #fffbeb;
+    border: 0.5px solid #fde68a;
+    color: #92400e
+  }
+
+  .pill.online {
+    background: #f0fdf4;
+    border: 0.5px solid #bbf7d0;
+    color: #166534
+  }
+
+  .pill.upi {
+    background: #eff6ff;
+    border: 0.5px solid #bfdbfe;
+    color: #1e40af
+  }
+
+  /* Summary rows */
+  .srow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-top: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .srow.first {
+    border-top: none;
+    padding-top: 0
+  }
+
+  .srow .sl {
+    font-size: 12.5px;
+    color: var(--color-text-secondary)
+  }
+
+  .srow .sv {
+    font-size: 12.5px;
+    color: var(--color-text-primary)
+  }
+
+  .srow.bold .sl,
+  .srow.bold .sv {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--color-text-primary)
+  }
+
+  .srow.green .sv {
+    color: #16a34a;
+    font-weight: 600
+  }
+
+  .srow.pending-row {
+    background: #fff1f2;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 6px -12px 0;
+    border-top: none
+  }
+
+  .srow.pending-row .sl,
+  .srow.pending-row .sv {
+    color: #be123c;
+    font-weight: 600;
+    font-size: 13.5px
+  }
+
+  /* Due date box */
+  .due-box {
+    background: #fff1f2;
+    border: 0.5px solid #fecdd3;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center
+  }
+
+  .due-box .dl {
+    font-size: 12px;
+    color: #9f1239
+  }
+
+  .due-box .dr {
+    font-size: 14px;
+    font-weight: 600;
+    color: #be123c
+  }
+
+  /* Two col grid */
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1rem
+  }
+
+  .stat-card {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 12px 14px
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .9px;
+    color: var(--color-text-secondary);
+    margin-bottom: 5px
+  }
+
+  .stat-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary)
+  }
+
+  .stat-sub {
+    font-size: 10.5px;
+    color: var(--color-text-secondary);
+    margin-top: 2px
+  }
+
+  .stat-val.red {
+    color: #be123c
+  }
+
+  .stat-val.green {
+    color: #16a34a
+  }
+
+  /* Divider */
+  .div {
+    border: none;
+    border-top: 0.5px dashed var(--color-border-tertiary);
+    margin: .5rem 0 1rem
+  }
+
+  /* TC */
+  .tc-t {
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-bottom: 5px
+  }
+
+  .tc-l {
+    padding-left: 1.1rem;
+    margin-bottom: .85rem
+  }
+
+  .tc-l li {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.75
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+    color: var(--color-text-tertiary);
+    padding-top: .85rem;
+    border-top: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .stamp {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 4px
+  }
+</style>
+
+
+<div class="rw">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="logo">L</div>
+    <div>
+      <div class="lib-name">Library Name</div>
+      <div class="lib-meta">ID: LN004565489<br>955, Vinoba bhave Nagar Kota</div>
+    </div>
+    <div class="inv-right">
+      <div class="inv-no">INV #4521521412</div>
+      <div class="inv-sub">
+        Invoice Date: 26/05/2026<br>
+        Generated: 26/05/2026, 10:42 AM<br>
+        Staff: Admin
+      </div>
+    </div>
+  </div>
+
+  <!-- Next due reminder box -->
+  <div class="due-box">
+    <div>
+      <div class="dl" style="font-weight:600;margin-bottom:2px">Next Renewal Due</div>
+      <div style="font-size:10.5px;color:#9f1239">Clear ₹700 + next month's fee to renew seat</div>
+    </div>
+    <div class="dr">09 May 2026</div>
+  </div>
+
+  <!-- Plan validity progress -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-id-badge" aria-hidden="true"></i> Learner & Subscription</div>
+    <div class="irow"><span class="ilabel">Learner ID</span><span class="ival">LN00001</span></div>
+    <div class="irow"><span class="ilabel">Learner Name</span><span class="ival">Pawan Kumar Rathore</span></div>
+    <div class="irow"><span class="ilabel">Seat No.</span><span class="ival">8 — First Floor</span></div>
+    <div class="irow"><span class="ilabel">Plan</span><span class="ival">Monthly · Full Day</span></div>
+    <div class="irow"><span class="ilabel">Plan Duration</span><span class="ival">10 Apr → 09 May 2026</span></div>
+    <div class="irow"><span class="ilabel">Locker Assigned</span><span class="ival">Yes · #256</span></div>
+
+  </div>
+
+  <!-- Payment history -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-history" aria-hidden="true"></i> Payment History</div>
+    <table class="ptbl">
+      <thead>
+        <tr>
+          <th>Trxn</th>
+          <th>Date & Time</th>
+          <th>Amount</th>
+          <th>Mode</th>
+          <th>Due After</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--color-text-secondary);font-style:italic;font-size:10.5px">Partial payment 1</td>
+          <td>10/04/2026 09:15 AM</td>
+          <td style="font-weight:500;color:#16a34a">₹400</td>
+          <td><span class="pill cash">Cash</span></td>
+          <td style="color:#be123c;font-weight:500">₹700</td>
+        </tr>
+        <tr>
+          <td style="color:var(--color-text-secondary);font-style:italic;font-size:10.5px">Partial payment 2</td>
+          <td>25/04/2026 09:15 AM</td>
+          <td style="font-weight:500;color:#16a34a">₹300</td>
+          <td><span class="pill cash">Online</span></td>
+          <td style="color:#be123c;font-weight:500">₹400</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Today's payment summary -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+      <div class="card-title" style="margin:0"><i class="ti ti-receipt" aria-hidden="true"></i> Payment Summary</div>
+
+    </div>
+    <div class="srow first"><span class="sl">Due Plan Price (Monthly · Full Day)</span><span class="sv">₹400</span>
+    </div>
+    <div class="srow"><span class="sl">Locker Charges</span><span class="sv">₹0</span></div>
+    <div class="srow"><span class="sl">Discount (in Amt.)</span><span class="sv">₹0</span></div>
+    <div class="srow"><span class="sl">Carryforward / Extra (as of 26/05/2026)</span><span class="sv">₹0</span></div>
+    <div class="srow bold"><span class="sl">Final Subscription Price</span><span class="sv">₹400</span></div>
+    <div class="srow green"><span class="sl">Paid Amount <span
+          style="font-size:10.5px;font-weight:400;color:var(--color-text-secondary)">(10 Apr 2026 ·
+          Cash)</span></span><span class="sv">✓ ₹400</span></div>
+    <!-- <div class="srow pending-row">
+      <span class="sl">⏳ Pending Amount</span>
+      <span class="sv">₹300</span>
+    </div> -->
+  </div>
+
+
+
+  <!-- Terms -->
+  <div>
+    <ul class="tc-l">
+      <li>This is a computer-generated receipt; no signature is required.</li>
+      <li>No refunds will be issued once the subscription is activated. Please review your plan carefully before making
+        a purchase.</li>
+    </ul>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Library Name · LN004565489 · Kota</span>
+    <span class="stamp"><i class="ti ti-device-desktop" aria-hidden="true"></i> Computer Generated · Admin ·
+      26/05/2026</span>
+  </div>
+
+</div>

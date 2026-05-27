@@ -27,6 +27,10 @@ class DashboardService
             $userType = 'library owner';
         }
 
+        $query = LearnerTransactionActivity::query()
+            ->where('branch_id', $branchId)
+            ->with('learner');
+
         $transactions = $query->latest()->get()->map(function ($item) {
             return [
                 'payment_type' => $item->payment_type ?? '',
