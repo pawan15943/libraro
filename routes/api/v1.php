@@ -43,6 +43,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::match(['get', 'post'], 'library/how-to-use', [LibraryController::class, 'howToUse']);
     Route::get('library/video-tutorial', [LibraryController::class, 'videoTutorial']);
     Route::get('library/faq', [LibraryController::class, 'faq']);
+    Route::get('library/payment-types', [MasterController::class, 'paymentTypeList']);
     
 });
 
@@ -168,6 +169,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
     Route::post('/attendance/manual', [AttendanceController::class, 'manualAttendance']);
+    
     Route::post('/qr-bookings', [QrBookingController::class, 'index']);
     Route::post('/qr-bookings/detail', [QrBookingController::class, 'show']);
     Route::post('/qr-bookings/verify', [QrBookingController::class, 'verify']);

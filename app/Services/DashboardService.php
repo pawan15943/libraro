@@ -27,6 +27,20 @@ class DashboardService
             $userType = 'library owner';
         }
 
+        $transactions = $query->latest()->get()->map(function ($item) {
+            return [
+                'payment_type' => $item->payment_type ?? '',
+                'dr_cr' => $item->dr_cr ?? '',
+                'particular' => $item->particular ?? '',
+                'payment_mode' => $item->payment_mode ?? '',
+                'amount' => $item->amount ?? 0,
+                'transaction_id' => $item->transaction_id ?? '',
+                'created_by' => $item->created_by_name ?? 'System User',
+                'learner_name' => optional($item->learner)->name ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? '',
+            ];
+        })->values();
+
         return [
             'user' => [
                 'name' => $authUser->name ?? $authUser->library_name ?? '',
@@ -505,8 +519,16 @@ class DashboardService
 
     public function todayFinancialData($request)
     {
-        $query = LearnerTransactionActivity::with('learner')
+        $baseQuery = LearnerTransactionActivity::query()
             ->where('branch_id', getCurrentBranch());
+
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $baseQuery->whereBetween('date', [$request->from_date, $request->to_date]);
+        } elseif ($request->filled('date')) {
+            $baseQuery->whereDate('date', $request->date);
+        } else {
+            $baseQuery->whereDate('date', now()->toDateString());
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -514,12 +536,7 @@ class DashboardService
         |--------------------------------------------------------------------------
         */
 
-        $today_booking_amt =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $today_booking_amt = (clone $baseQuery)
             ->where(function ($q) {
 
                 $q->whereIn('payment_type', [
@@ -537,12 +554,7 @@ class DashboardService
             })
             ->sum('amount');
 
-        $today_other_amt =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $today_other_amt = (clone $baseQuery)
             ->whereIn('payment_type', [
                 'TOKEN MONEY',
                 'MISCELLANEOUS'
@@ -550,30 +562,15 @@ class DashboardService
             ->where('dr_cr', 'Cr')
             ->sum('amount');
 
-        $today_expense =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $today_expense = (clone $baseQuery)
             ->where('payment_type', 'EXPENSE')
             ->sum('amount');
 
-        $today_pending =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $today_pending = (clone $baseQuery)
             ->where('payment_type', 'PENDING')
             ->sum('amount');
 
-        $today_refund =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $today_refund = (clone $baseQuery)
             ->where(function ($q) {
 
                 $q->where('payment_type', 'REFUND')
@@ -586,21 +583,11 @@ class DashboardService
             })
             ->sum('amount');
 
-        $total_cr =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $total_cr = (clone $baseQuery)
             ->where('dr_cr', 'Cr')
             ->sum('amount');
 
-        $total_dr =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereDate('date', now()->toDateString())
+        $total_dr = (clone $baseQuery)
             ->where('dr_cr', 'Dr')
             ->sum('amount');
 
@@ -611,6 +598,16 @@ class DashboardService
         | FILTER CLICK LOGIC
         |--------------------------------------------------------------------------
         */
+
+        $query = (clone $baseQuery)->with('learner');
+
+        if ($request->filled('payment_type')) {
+            $paymentTypes = is_array($request->payment_type)
+                ? $request->payment_type
+                : [$request->payment_type];
+
+            $query->whereIn('payment_type', $paymentTypes);
+        }
 
         switch ($request->type) {
 
@@ -671,14 +668,24 @@ class DashboardService
 
             break;
 
-             case 'today_balance':
-
-                $query->whereDate('date', now()->toDateString());
-
-            break;
+            case 'today_balance':
+                break;
         }
 
-        $query->whereDate('date', now()->toDateString());
+        $transactions = $query->latest()->get()->map(function ($item) {
+            return [
+                'payment_type' => $item->payment_type ?? '',
+                'dr_cr' => $item->dr_cr ?? '',
+                'date' => $item->date ?? '',
+                'particular' => $item->particular ?? '',
+                'payment_mode' => $item->payment_mode ?? '',
+                'amount' => $item->amount ?? 0,
+                'transaction_id' => $item->transaction_id ?? '',
+                'created_by' => $item->created_by_name ?? 'System User',
+                'learner_name' => optional($item->learner)->name ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? '',
+            ];
+        })->values();
 
         return [
 
@@ -694,7 +701,7 @@ class DashboardService
 
             'total_revenue' => $total_revenue,
 
-            'collection' => $query->latest()->paginate(10)
+            'collection' => $transactions
         ];
     }
 
@@ -706,18 +713,20 @@ class DashboardService
 
     public function monthlyFinancialData($request)
     {
-        $query = LearnerTransactionActivity::with('learner')
+        $year = $request->year ?? date('Y');
+        $month = $request->month ?? date('m');
+
+        $baseQuery = LearnerTransactionActivity::query()
             ->where('branch_id', getCurrentBranch());
 
-        /*
-        |--------------------------------------------------------------------------
-        | MONTH / YEAR
-        |--------------------------------------------------------------------------
-        */
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $baseQuery->whereBetween('date', [$request->from_date, $request->to_date]);
+        } else {
+            $baseQuery->whereYear('date', $year)
+                ->whereMonth('date', $month);
+        }
 
-        $year = $request->year ?? date('Y');
-
-        $month = $request->month ?? date('m');
+        $query = (clone $baseQuery)->with('learner');
 
         /*
         |--------------------------------------------------------------------------
@@ -725,15 +734,7 @@ class DashboardService
         |--------------------------------------------------------------------------
         */
 
-        $monthlyIncome =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-
-            ->where(function ($q) {
+        $monthlyIncome = (clone $baseQuery)->where(function ($q) {
 
                 $q->whereIn('payment_type', [
                     'SEAT ASSIGNMENT',
@@ -747,48 +748,20 @@ class DashboardService
                     $sub->where('payment_type', 'CHANGE PLAN')
                         ->where('dr_cr', 'Cr');
                 });
-            })
+            })->sum('amount');
 
-            ->sum('amount');
-
-        $other_total_income =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-
-            ->whereIn('payment_type', [
+        $other_total_income = (clone $baseQuery)->whereIn('payment_type', [
                 'TOKEN MONEY',
                 'MISCELLANEOUS'
             ])
-
             ->where('dr_cr', 'Cr')
-
             ->sum('amount');
 
-        $monthlyExpense =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-
+        $monthlyExpense = (clone $baseQuery)
             ->where('payment_type', 'EXPENSE')
-
             ->sum('amount');
 
-        $monthly_refund =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-
-            ->where(function ($q) {
+        $monthly_refund = (clone $baseQuery)->where(function ($q) {
 
                 $q->where('payment_type', 'REFUND')
 
@@ -797,30 +770,16 @@ class DashboardService
                     $sub->where('payment_type', 'CHANGE PLAN')
                         ->where('dr_cr', 'Dr');
                 });
-            })
+            })->sum('amount');
 
-            ->sum('amount');
-
-        $monthly_pending =
-            LearnerTransactionActivity::where(
-                'branch_id',
-                getCurrentBranch()
-            )
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-
+        $monthly_pending = (clone $baseQuery)
             ->where('payment_type', 'PENDING')
-
             ->sum('amount');
 
-        $totals_monthly =
-            LearnerTransactionActivity::selectRaw("
+        $totals_monthly = (clone $baseQuery)->selectRaw("
                 SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
                 SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr
             ")
-            ->where('branch_id', getCurrentBranch())
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
             ->first();
 
         /*
@@ -829,8 +788,7 @@ class DashboardService
         |--------------------------------------------------------------------------
         */
 
-        $monthlyBalance =
-            LearnerTransactionActivity::selectRaw("
+        $monthlyBalance = (clone $baseQuery)->selectRaw("
                 DATE(date) as tx_date,
 
                 SUM(
@@ -890,12 +848,6 @@ class DashboardService
                 ) as pending
             ")
 
-            ->where('branch_id', getCurrentBranch())
-
-            ->whereYear('date', $year)
-
-            ->whereMonth('date', $month)
-
             ->groupBy('tx_date')
 
             ->orderBy('tx_date')
@@ -921,19 +873,19 @@ class DashboardService
 
                 'date' => $row->tx_date,
 
-                'collection' => $row->collection,
+                'collection' =>(string)$row->collection,
 
-                'other_collection' => $row->other_collection,
+                'other_collection' => (string)$row->other_collection,
 
-                'expense' => $row->expense,
+                'expense' => (string)$row->expense,
 
-                'refund' => $row->refund,
+                'refund' =>(string) $row->refund,
 
-                'pending' => $row->pending,
+                'pending' =>(string) $row->pending,
 
-                'net' => $net,
+                'net' => (string)$net,
 
-                'final_balance' => $runningBalance
+                'final_balance' => (string)$runningBalance
             ];
         }
 
@@ -942,6 +894,14 @@ class DashboardService
         | FILTER CLICK LOGIC
         |--------------------------------------------------------------------------
         */
+
+        if ($request->filled('payment_type')) {
+            $paymentTypes = is_array($request->payment_type)
+                ? $request->payment_type
+                : [$request->payment_type];
+
+            $query->whereIn('payment_type', $paymentTypes);
+        }
 
         switch ($request->type) {
 
@@ -1002,15 +962,22 @@ class DashboardService
 
             break;
             case 'monthly_balance':
-
-                $query->whereYear('date', $year)
-                    ->whereMonth('date', $month);
-
             break;
         }
-
-        $query->whereYear('date', $year)
-            ->whereMonth('date', $month);
+        
+        $transactions = $query->latest()->get()->map(function ($item) {
+            return [
+                'payment_type' => $item->payment_type ?? '',
+                'dr_cr' => $item->dr_cr ?? '',
+                'particular' => $item->particular ?? '',
+                'payment_mode' => $item->payment_mode ?? '',
+                'amount' => $item->amount ?? 0,
+                'transaction_id' => $item->transaction_id ?? '',
+                'created_by' => $item->created_by_name ?? 'System User',
+                'learner_name' => optional($item->learner)->name ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? '',
+            ];
+        })->values();
 
         return [
 
@@ -1031,7 +998,7 @@ class DashboardService
 
             'monthly_balance' => $finalData,
 
-            'collection' => $query->latest()->paginate(10)
+            'collection' => $transactions
         ];
     }
 

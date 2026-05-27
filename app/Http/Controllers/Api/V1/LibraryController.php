@@ -442,6 +442,14 @@ class LibraryController extends Controller
     }
     
     public function todayFinancial(Request $request,DashboardService $service) {
+        $request->validate([
+            'type' => 'nullable|string',
+            'date' => 'nullable|date',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'payment_type' => 'nullable',
+            'payment_type.*' => 'nullable|string'
+        ]);
 
         $data = $service->todayFinancialData($request);
 
@@ -475,6 +483,15 @@ class LibraryController extends Controller
     }
 
     public function monthlyFinancial(Request $request,DashboardService $service) {
+        $request->validate([
+            'type' => 'nullable|string',
+            'month' => 'nullable|integer|min:1|max:12',
+            'year' => 'nullable|integer|min:2000|max:2100',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'payment_type' => 'nullable',
+            'payment_type.*' => 'nullable|string'
+        ]);
 
         $data = $service->monthlyFinancialData($request);
 

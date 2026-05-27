@@ -184,6 +184,35 @@ class MasterController extends Controller
             ]
         ]);
     }
+
+    public function paymentTypeList()
+    {
+        $paymentTypes = [
+            ['key' => 'SEAT ASSIGNMENT', 'value' => 'SEAT ASSIGNMENT'],
+            ['key' => 'CHANGE PLAN', 'value' => 'CHANGE PLAN'],
+            ['key' => 'RENEW', 'value' => 'RENEW'],
+            ['key' => 'REFUND', 'value' => 'REFUND'],
+            ['key' => 'REACTIVE', 'value' => 'REACTIVE'],
+            ['key' => 'UPGRADE', 'value' => 'UPGRADE'],
+            ['key' => 'TOKEN MONEY', 'value' => 'TOKEN MONEY'],
+            ['key' => 'MISCELLANEOUS', 'value' => 'MISCELLANEOUS'],
+            ['key' => 'EXPENSE', 'value' => 'EXPENSE'],
+            ['key' => 'PENDING', 'value' => 'PENDING'],
+            ['key' => 'LOCKER', 'value' => 'LOCKER'],
+            ['key' => 'RESTORE', 'value' => 'RESTORE'],
+            ['key' => 'EDIT', 'value' => 'EDIT'],
+            ['key' => 'VIP', 'value' => 'VIP'],
+            ['key' => 'RESERVED', 'value' => 'RESERVED'],
+            ['key' => 'NON-EXPIRED', 'value' => 'NON-EXPIRED'],
+            ['key' => 'SETTLED', 'value' => 'SETTLED'],
+        ];
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Payment types fetched successfully',
+            'data' => $paymentTypes,
+        ]);
+    }
     public function plans(Request $request)
     {
         $validated = $request->validate([
