@@ -46,7 +46,7 @@ class AttendanceController extends Controller
 
         if (!$learner) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'Unauthorized'
             ], 401);
         }
@@ -56,7 +56,7 @@ class AttendanceController extends Controller
 
         if (!$branchId) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'QR expired or invalid'
             ], 403);
         }
@@ -66,7 +66,7 @@ class AttendanceController extends Controller
 
         if (cache()->has($cacheKey)) {
             return response()->json([
-                'status' => 'success',
+                'status' => true,
                 'message' => 'Attendance already captured'
             ]);
         }
@@ -91,7 +91,7 @@ class AttendanceController extends Controller
 
         if (!$owner) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'Unauthorized'
             ], 401);
         }
@@ -105,7 +105,7 @@ class AttendanceController extends Controller
 
         if (!$learner) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'Learner not found'
             ], 404);
         }
@@ -113,7 +113,7 @@ class AttendanceController extends Controller
         // ✅ Security: same branch
         if ($learner->branch_id != $branchId) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'Wrong library QR'
             ], 403);
         }
@@ -124,7 +124,7 @@ class AttendanceController extends Controller
 
         if (cache()->has($cacheKey)) {
             return response()->json([
-                'status' => 'success',
+                'status' => true,
                 'message' => 'Attendance already captured'
             ]);
         }
@@ -157,14 +157,14 @@ public function manualAttendance(Request $request, AttendanceService $service)
 
     if (!$learner) {
         return response()->json([
-            'status' => 'error',
+            'status' => false,
             'message' => 'Learner not found'
         ]);
     }
 
     if ($learner->branch_id != $branchId) {
         return response()->json([
-            'status' => 'error',
+            'status' => false,
             'message' => 'Learner belongs to another branch'
         ]);
     }
@@ -182,16 +182,17 @@ public function manualAttendance(Request $request, AttendanceService $service)
         );
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'message' => 'Attendance marked successfully'
         ]);
 
     } catch (\Throwable $e) {
 
         return response()->json([
-            'status' => 'error',
+            'status' => false,
             'message' => $e->getMessage()
         ], 500);
     }
 }
 }
+

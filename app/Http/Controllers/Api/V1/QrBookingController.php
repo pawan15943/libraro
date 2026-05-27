@@ -61,7 +61,7 @@ class QrBookingController extends Controller
         $bookings->getCollection()->transform($transform);
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'data'   => [
                 'tab' => $tab,
                 $tab => $bookings,
@@ -84,13 +84,13 @@ class QrBookingController extends Controller
 
             if (!$booking) {
                 return response()->json([
-                    'status' => 'error',
+                    'status' => false,
                     'message' => 'Booking not found'
                 ], 404);
             }
 
             return response()->json([
-                'status' => 'success',
+                'status' => true,
                 'data'   => $booking
             ]);
     }
@@ -122,7 +122,7 @@ class QrBookingController extends Controller
         } catch (\Throwable $e) {
 
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -142,7 +142,7 @@ class QrBookingController extends Controller
 
         if (!$booking) {
             return response()->json([
-                'status' => 'error',
+                'status' => false,
                 'message' => 'Booking not found'
             ], 404);
         }
@@ -150,8 +150,9 @@ class QrBookingController extends Controller
         $booking->delete();
 
         return response()->json([
-            'status' => 'success',
+            'status' => true,
             'message' => 'Booking deleted successfully'
         ]);
     }
 }
+
