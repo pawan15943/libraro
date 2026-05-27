@@ -225,6 +225,7 @@ class DashboardService
             ])
             ->select('id','seat_no','name','mobile','plan_id','plan_type_id','payment_screenshot','profile_picture','plan_start_date','status')
             ->latest()
+            ->limit(5)
             ->get();
 
         $list = $bookings->map(function ($booking) {
@@ -296,7 +297,7 @@ class DashboardService
             ->where('learner_detail.branch_id', $branchId)
 
             ->select(
-
+                'learners.id as learner_id',
                 'learners.profile_picture',
 
                 'learners.seat_no',
@@ -311,12 +312,13 @@ class DashboardService
 
             ->whereNotNull('learner_transactions.id')
 
-            ->limit(5)
+            ->limit(7)
             ->get()
 
             ->map(function ($item) {
 
                 return [
+                    'learner_id'=>$item->learner_id ?? '',
                     'learner_detail_id'=>$item->learner_detail_id ?? '',
 
                     'profile_picture' =>
@@ -484,7 +486,7 @@ class DashboardService
 
         $list = collect($list)
             ->whereIn('status', ['about_to_expire', 'expires_today', 'extension', 'extension_last_day'])
-            ->take(5)
+            ->take(7)
             ->values()
             ->toArray();
 

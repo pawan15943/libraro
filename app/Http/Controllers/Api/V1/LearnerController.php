@@ -65,7 +65,7 @@ class LearnerController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Learner id is required'
-                ], 400);
+                ]);
             }
 
             $data = $service->getLearnerDetails($id);
