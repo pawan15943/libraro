@@ -114,6 +114,10 @@ class QrBookingService
 
             $planType = PlanType::withoutGlobalScopes()->find($plan_type_id);
 
+            if (!$planType) {
+                throw new \Exception('Invalid plan type selected');
+            }
+
             $hours = $planType->slot_hours;
 
             $endDate = getEndDate($plan_id, $start_date);
