@@ -872,29 +872,45 @@ class LibraryController extends Controller
     public function howToUse(Request $request)
     {
         $validated = $request->validate([
-            'language' => 'nullable|in:english,hindi',
+            'language' => 'nullable|in:english,hindi,all',
         ]);
 
-        $language = strtolower($validated['language'] ?? 'english');
+        $language = strtolower($validated['language'] ?? 'all');
 
-        $items = [
-            ['title' => 'Operation : Book Seat', 'content' => $language === 'hindi' ? 'सीट बुक करने की प्रक्रिया।' : 'Process to book a seat.'],
-            ['title' => 'Operation : Re-new Seat', 'content' => $language === 'hindi' ? 'सीट रिन्यू करने की प्रक्रिया।' : 'Process to renew a seat.'],
-            ['title' => 'Operation : Swap Seat', 'content' => $language === 'hindi' ? 'सीट स्वैप करने की प्रक्रिया।' : 'Process to swap a seat.'],
-            ['title' => 'Operation : Change Plan', 'content' => $language === 'hindi' ? 'प्लान बदलने की प्रक्रिया।' : 'Process to change learner plan.'],
-            ['title' => 'Operation : Upgrade Plan', 'content' => $language === 'hindi' ? 'प्लान अपग्रेड करने की प्रक्रिया।' : 'Process to upgrade learner plan.'],
-            ['title' => 'Operation : Close Seat', 'content' => $language === 'hindi' ? 'सीट क्लोज करने की प्रक्रिया।' : 'Process to close a seat.'],
-            ['title' => 'Operation : Delete Seat', 'content' => $language === 'hindi' ? 'सीट डिलीट करने की प्रक्रिया।' : 'Process to delete a seat.'],
+        $rows = DB::table('how-to-use')
+            ->select('operation_name', 'usage_english', 'usage_hindi')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $english = $rows->map(function ($row) {
+            return [
+                'title' => (string) ($row->operation_name ?? ''),
+                'content' => (string) ($row->usage_english ?? ''),
+            ];
+        })->values();
+
+        $hindi = $rows->map(function ($row) {
+            return [
+                'title' => (string) ($row->operation_name ?? ''),
+                'content' => (string) ($row->usage_hindi ?? ''),
+            ];
+        })->values();
+
+        $data = [
+            'hindi' => $hindi,
+            'english' => $english,
         ];
+
+        if ($language === 'english') {
+            $data = ['english' => $english];
+        } elseif ($language === 'hindi') {
+            $data = ['hindi' => $hindi];
+        }
 
         return response()->json([
             'status' => true,
             'message' => 'How to use fetched successfully',
-            'data' => [
-                'language' => $language,
-                'title' => 'How to Use',
-                'items' => $items,
-            ],
+            'data' => $data,
         ]);
     }
 

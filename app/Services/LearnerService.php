@@ -374,6 +374,7 @@ class LearnerService
         LearnerTransactionActivity::create([
             'branch_id'      => $data['branchId'],
             'learner_id'     => $data['learner_id'],
+            'learner_transaction_id' => $data['learner_transaction_id'] ?? null,
             'date'           => now()->format('Y-m-d'),
             'transaction_id' => transaction_id(),
             'particular'     => $data['particular'],
@@ -472,6 +473,7 @@ class LearnerService
             $activityData1 = [
                 'branchId'    =>$data['branchId'],
                 'learner_id'   => $data['learner_id'],
+                'learner_transaction_id' => optional($pendingTransactions->first())->id,
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => 'PENDING',
                 'payment_mode' => $data['payment_mode'],
@@ -486,6 +488,7 @@ class LearnerService
             $activityData2 = [
                 'branchId'    =>$data['branchId'],
                 'learner_id'   => $data['learner_id'],
+                'learner_transaction_id' => $learnerTransaction->id,
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => $data['payment_type'],
                 'payment_mode' => $data['payment_mode'],

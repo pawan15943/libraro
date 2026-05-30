@@ -33,14 +33,21 @@ use App\Models\Subscription;
 use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Str;
 use Carbon\Exceptions\InvalidFormatException;
+use App\Services\ReceiptService;
  
 
 class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
     use LearnerQueryTrait;
-    public function generateReceipt(Request $request)
+    public function generateReceipt(Request $request, ReceiptService $receiptService)
     {
+        // Unified receipt flow: learner receipts use global payload helper via ReceiptService.
+        if ($request->type == 'learner' && !empty($request->id)) {
+            $transaction = $receiptService->findPaidTransaction((int) $request->id);
+            return $receiptService->downloadResponse($transaction);
+        }
+
         if ($request->type == 'library') {
 
             $data = LibraryTransaction::where('id', $request->id)->first();
@@ -59,6 +66,8 @@ class Controller extends BaseController
             $branch_slug = null;
             $shift_timing=null;
         }
+        // Deprecated learner receipt block (kept for reference):
+        // learner flow is now handled above via ReceiptService.
         if ($request->type == 'learner') {
             // id is tran id and learner_id 
 

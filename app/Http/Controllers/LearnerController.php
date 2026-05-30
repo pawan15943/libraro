@@ -42,6 +42,7 @@ use App\Services\LibraryService;
 use App\Services\PlanService;
 use App\Services\LearnerGiftDaysService;
 use App\Services\LearnerLifecycleService;
+use App\Services\ReceiptService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
@@ -4060,16 +4061,16 @@ class LearnerController extends Controller
         return response()->json($payload);
     }
 
-    public function viewReceipt($transactionId)
+    public function viewReceipt($transactionId, ReceiptService $receiptService)
     {
-        $transaction = LearnerTransaction::withoutGlobalScopes()
-            ->where('id', $transactionId)
-            ->where('is_paid', 1)
-            ->firstOrFail();
-
-        return $this->generateReceiptPdf($transaction);
+        $transaction = $receiptService->findPaidTransaction((int) $transactionId);
+        
+        return $receiptService->downloadResponse($transaction);
     }
 
+    // Deprecated: replaced by ReceiptService + learnerReceiptPayloadByTransactionId()
+    // Kept intentionally commented for reference and safe rollback.
+    /*
     private function generateReceiptPdf(LearnerTransaction $transaction)
     {
         \Log::info('Generating receipt', ['transaction_id' => $transaction->id]);
@@ -4143,4 +4144,5 @@ class LearnerController extends Controller
 
         return $pdf->download(now()->timestamp . '_receipt.pdf');
     }
+    */
 }

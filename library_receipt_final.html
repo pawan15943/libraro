@@ -28,6 +28,16 @@
     color: var(--color-text-primary)
   }
 
+  .text-success {
+    color: #16a34a !important;
+    font-size: 12.5px;
+  }
+
+  .text-danger {
+    color: #be123c !important;
+    font-size: 12.5px;
+  }
+
   /* Header */
   .hdr {
     display: flex;
@@ -462,19 +472,18 @@
       <div class="inv-sub">
         Invoice Date: 26/05/2026<br>
         Generated: 26/05/2026, 10:42 AM<br>
-        Staff: Admin
       </div>
     </div>
   </div>
 
   <!-- Next due reminder box -->
-  <div class="due-box">
+  <!-- <div class="due-box">
     <div>
       <div class="dl" style="font-weight:600;margin-bottom:2px">Next Renewal Due</div>
       <div style="font-size:10.5px;color:#9f1239">Clear ₹700 + next month's fee to renew seat</div>
     </div>
     <div class="dr">09 May 2026</div>
-  </div>
+  </div> -->
 
   <!-- Plan validity progress -->
   <div class="card">
@@ -507,14 +516,14 @@
           <td>10/04/2026 09:15 AM</td>
           <td style="font-weight:500;color:#16a34a">₹400</td>
           <td><span class="pill cash">Cash</span></td>
-          <td style="color:#be123c;font-weight:500">₹700</td>
+          <td style="color:#be123c;font-weight:500">₹1050</td>
         </tr>
         <tr>
           <td style="color:var(--color-text-secondary);font-style:italic;font-size:10.5px">Partial payment 2</td>
           <td>25/04/2026 09:15 AM</td>
           <td style="font-weight:500;color:#16a34a">₹300</td>
           <td><span class="pill cash">Online</span></td>
-          <td style="color:#be123c;font-weight:500">₹400</td>
+          <td style="color:#be123c;font-weight:500">₹750</td>
         </tr>
 
       </tbody>
@@ -527,19 +536,21 @@
       <div class="card-title" style="margin:0"><i class="ti ti-receipt" aria-hidden="true"></i> Payment Summary</div>
 
     </div>
-    <div class="srow first"><span class="sl">Due Plan Price (Monthly · Full Day)</span><span class="sv">₹400</span>
+    <div class="srow first"><span class="sl">Plan Price (Monthly · Full Day)</span><span class="sv">₹1100</span>
     </div>
-    <div class="srow"><span class="sl">Locker Charges</span><span class="sv">₹0</span></div>
-    <div class="srow"><span class="sl">Discount (in Amt.)</span><span class="sv">₹0</span></div>
-    <div class="srow"><span class="sl">Carryforward / Extra (as of 26/05/2026)</span><span class="sv">₹0</span></div>
-    <div class="srow bold"><span class="sl">Final Subscription Price</span><span class="sv">₹400</span></div>
-    <div class="srow green"><span class="sl">Paid Amount <span
-          style="font-size:10.5px;font-weight:400;color:var(--color-text-secondary)">(10 Apr 2026 ·
+    <div class="srow"><span class="sl">Locker Charges</span><span class="sv">₹100</span></div>
+    <div class="srow"><span class="sl">Discount (in Amt.)</span><span class="sv">₹50</span></div>
+    <div class="srow"><span class="sl">Carryforward / Extra (as of 26/05/2026)</span><span class="sv">₹300</span></div>
+    <div class="srow bold"><span class="sl">Final Subscription Price</span><span class="sv">₹1450</span></div>
+
+    <div class="srow text-success"><span class=""> Paid Earlier</span><span class="">₹700</span></div>
+    <div class="srow green"><span class="sl"> Paid Now<span
+          style="font-size:10.5px;font-weight:400;color:var(--color-text-secondary)"> (10 Apr 2026 ·
           Cash)</span></span><span class="sv">✓ ₹400</span></div>
-    <!-- <div class="srow pending-row">
+    <div class="srow pending-row">
       <span class="sl">⏳ Pending Amount</span>
-      <span class="sv">₹300</span>
-    </div> -->
+      <span class="sv">₹350</span>
+    </div>
   </div>
 
 

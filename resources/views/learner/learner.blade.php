@@ -576,16 +576,6 @@ $learner_id=$value->id;
                             @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
-                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <input type="hidden" name="learner_id" value="{{$learner_id}}">
-                                <input type="hidden" name="id" value="{{ learnerTransaction($learner_id,$learner_detail_id)->id ?? 'NA'}}">
-                                <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
-                                <input type="hidden" name="type" value="learner">
-                                <button type="submit" class="noLoader">
-                                    <i class="fa fa-download receipt"></i>
-                                </button>
-                            </form>
 
                             @elseif(empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount))
                             <span></span>
@@ -602,6 +592,19 @@ $learner_id=$value->id;
 
                                 @endif
                             </a> &nbsp;<a href="javascript:;" class="open-transaction-modal" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            @endif
+
+                            @if (learnerTransaction($learner_id,$learner_detail_id)->id)
+                            <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank">
+                                @csrf
+                                <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                                <input type="hidden" name="id" value="{{(learnerTransaction($learner_id,$learner_detail_id)->id ?? 0)}}">
+                                <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
+                                <input type="hidden" name="type" value="learner">
+                                <button type="submit" class="noLoader">
+                                    <i class="fa fa-download receipt"></i>
+                                </button>
+                            </form>
                             @endif
                         </div>
                     </li>

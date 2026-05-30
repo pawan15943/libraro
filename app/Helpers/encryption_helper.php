@@ -2113,5 +2113,206 @@ if (!function_exists('changeFormate')) {
     }
 }
 
-require_once __DIR__ . '/privacy_helper.php';
+if (!function_exists('learnerReceiptPayloadByTransactionId')) {
+    function learnerReceiptPayloadByTransactionId(int $transactionId): array
+    {
+        $transaction = LearnerTransaction::withoutGlobalScopes()
+            ->where('id', $transactionId)
+            ->first();
 
+        if (!$transaction) {
+            throw new \RuntimeException('Transaction not found');
+        }
+
+        $learner = Learner::withoutGlobalScopes()->find($transaction->learner_id);
+        $detail = LearnerDetail::withoutGlobalScopes()
+            ->with(['plan', 'planType'])
+            ->find($transaction->learner_detail_id);
+
+        if (!$learner || !$detail) {
+            throw new \RuntimeException('Learner detail not found');
+        }
+
+        $library = Library::leftJoin('branches', 'libraries.id', '=', 'branches.library_id')
+            ->where('libraries.id', $detail->library_id)
+            ->select(
+                'libraries.library_name',
+                'libraries.email',
+                'libraries.library_no',
+                'libraries.library_mobile',
+                'branches.library_address'
+            )
+            ->first();
+
+        $branchLogo = Branch::where('id', $transaction->branch_id)->value('library_logo');
+        $branchSlug = Branch::where('id', $transaction->branch_id)->value('slug');
+        $library_address=Branch::where('id', $transaction->branch_id)->value('library_address');
+
+         $previousTransactions = LearnerTransaction::withoutGlobalScopes()
+            ->where('learner_id', $transaction->learner_id)
+            ->where('id', '<', $transaction->id)
+            ->get(['pending_amount', 'refund']);
+
+        $carryForward = (float) $previousTransactions->sum('pending_amount')
+            - (float) $previousTransactions->sum('refund');
+
+        $thatLastActivity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id)
+            ->orderByDesc('id')
+            ->first();
+        $thatPrevActivity = null;
+        if ($thatLastActivity) {
+            $thatPrevActivity = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('id', ($thatLastActivity->id - 1))
+                ->where('learner_id', $transaction->learner_id)
+                ->first();
+        }
+
+        $currentAmount = (float) ($thatLastActivity->amount ?? $transaction->paid_amount ?? 0);
+        // Carry forward base: previous pending as +ve, extra/refund as -ve
+        if($thatLastActivity && $thatPrevActivity && $thatLastActivity->date == $thatPrevActivity->date){
+                $carryForward = (float) $thatPrevActivity->amount;
+                $currentAmount = (float) $thatLastActivity->amount + (float) $thatPrevActivity->amount;
+        }
+       
+        
+        $invoiceDate = \Carbon\Carbon::parse($thatLastActivity->date ?? $transaction->paid_date ?? now())->toDateString();
+
+        $activitySelect = [
+            'learner_transaction_id',
+            'payment_type',
+            'particular',
+            'amount',
+            'dr_cr',
+            'payment_mode',
+            'transaction_id',
+            'date',
+            'created_at'
+        ];
+
+        // Detect carry-forward payment on invoice date from previous transaction ids.
+        $previousTxnIds = LearnerTransaction::withoutGlobalScopes()
+            ->where('learner_id', $transaction->learner_id)
+            ->where('id', '<', $transaction->id)
+            ->pluck('id')
+            ->toArray();
+
+        $hasCarryForwardPaidOnInvoiceDate = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_id', $transaction->learner_id)
+            ->whereIn('learner_transaction_id', $previousTxnIds)
+            ->where('date', $invoiceDate)
+            ->whereIn('payment_type', ['PENDING', 'pending'])
+            ->where('amount', '>', 0)
+            ->exists();
+
+        if ($hasCarryForwardPaidOnInvoiceDate) {
+            // Same-date mixed mode: current txn + previous pending payments done on invoice date.
+            $activitiesCollection = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_id', $transaction->learner_id)
+                ->where('date', $invoiceDate)
+                ->where(function ($q) use ($transaction, $previousTxnIds) {
+                    $q->where('learner_transaction_id', $transaction->id)
+                      ->orWhere(function ($sq) use ($previousTxnIds) {
+                          $sq->whereIn('learner_transaction_id', $previousTxnIds)
+                             ->whereIn('payment_type', ['PENDING', 'pending']);
+                      });
+                })
+                ->where(function ($q) {
+                    $q->whereNull('dr_cr')
+                      ->orWhereIn('dr_cr', ['Cr', 'Settle']);
+                })
+                ->orderBy('id')
+                ->get($activitySelect);
+        } else {
+            // Normal mode: only current transaction history.
+            $activitiesCollection = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_id', $transaction->learner_id)
+                ->where('learner_transaction_id', $transaction->id)
+                ->where(function ($q) {
+                    $q->whereNull('dr_cr')
+                      ->orWhereIn('dr_cr', ['Cr', 'Settle']);
+                })
+                ->orderBy('id')
+                ->get($activitySelect);
+        }
+
+        // If fully paid and only one row, hide history (optional behavior requested).
+        if ((float) ($transaction->pending_amount ?? 0) <= 0 && $activitiesCollection->count() <= 1) {
+            $activitiesCollection = collect();
+        }
+
+        $activities = $activitiesCollection
+            ->map(function ($row) {
+                return [
+                    'learner_transaction_id' => (int) ($row->learner_transaction_id ?? 0),
+                    'payment_type' => $row->payment_type ?? '',
+                    'particular' => $row->particular ?? '',
+                    'amount' => (float) ($row->amount ?? 0),
+                    'dr_cr' => $row->dr_cr ?? '',
+                    'payment_mode' => $row->payment_mode ?? '',
+                    'transaction_id' => $row->transaction_id ?? '',
+                    'date' => !empty($row->date)
+                        ? \Carbon\Carbon::parse($row->date)->format('d-m-Y')
+                        : ($row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d-m-Y') : ''),
+                ];
+            })->values()->toArray();
+
+        // Paid amount = sum of all shown payment-history rows
+        $paidAmountOnDate = (float) $activitiesCollection->sum(function ($row) {
+            return (float) ($row->amount ?? 0);
+        });
+
+        $carryForward = max(0, $carryForward);
+
+        // Paid earlier: transaction-id based previous paid totals (no carry-forward addition).
+        $paidEarlierQuery = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id);
+
+        if ($thatLastActivity) {
+            $paidEarlierQuery->where('id', '<', $thatLastActivity->id);
+        } else {
+            // No activity row yet for this transaction, so no "paid earlier" inside this transaction.
+            $paidEarlierQuery->whereRaw('1 = 0');
+        }
+
+        $paidEarlier = (float) $paidEarlierQuery->sum('amount');
+
+        $invoiceRef = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_id', $transaction->learner_id)
+            ->where('learner_transaction_id', $transaction->id)
+            ->value('transaction_id') ?? ('TXN_' . $transaction->id);
+
+        return [
+            'branch_logo' => $branchLogo ?? '',
+            'branch_slug' => $branchSlug ?? '',
+            'library_name' => $library->library_name ?? '',
+            'library_email' => $library->email ?? '',
+            'library_mobile' => $library->library_mobile ?? '',
+            'library_address' => $library_address ?? '',
+            'library_no' => $library->library_no ?? '',
+            'invoice_ref_no' => $invoiceRef,
+            'invoice_date' => $transaction->paid_date ?? now()->format('Y-m-d'),
+            'learner_no' => $learner->learner_no ?? '',
+            'learner_name' => $learner->name ?? '',
+            'locker_no' => $learner->locker_no ?? '',
+            'seat_no' => $detail->seat_no ?? 'GEN',
+            'plan_name' => optional($detail->plan)->name ?? '',
+            'plan_type' => optional($detail->planType)->name ?? '',
+            'plan_start_date' => $detail->plan_start_date ?? '',
+            'plan_end_date' => $detail->plan_end_date ?? '',
+            'plan_price' => (float) ($detail->plan_price_id ?? 0),
+            'locker_charge' => (float) ($transaction->locker_amount ?? 0),
+            'discount_amount' => (float) ($transaction->discount_amount ?? 0),
+            'carry_forward' => $carryForward,
+            'final_amount' => (float) ($transaction->total_amount ?? 0),
+            'paid_amount' => $paidAmountOnDate > 0 ? $paidAmountOnDate : (float) ($transaction->paid_amount ?? 0),
+            'pending_amount' => (float) ($transaction->pending_amount ?? 0),
+            'activities' => $activities,
+            'current_paid' => $currentAmount,
+            'paid_earlier' => $paidEarlier,
+            'current_transaction_id' => (int) $transaction->id,
+        ];
+    }
+}
+
+require_once __DIR__ . '/privacy_helper.php';

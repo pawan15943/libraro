@@ -32,9 +32,24 @@ class ReceiptController extends Controller
     {
         $validated = $request->validate([
             'id' => 'required|integer',
+            'learner_id' => 'nullable|integer',
         ]);
 
-        $transaction = $receiptService->findPaidTransaction((int) $validated['id']);
+        $txnId = (int) $validated['id'];
+        $transaction = \App\Models\LearnerTransaction::withoutGlobalScopes()
+            ->where('id', $txnId)
+            ->first();
+
+        if (! $transaction && !empty($validated['learner_id'])) {
+            $transaction = \App\Models\LearnerTransaction::withoutGlobalScopes()
+                ->where('learner_id', (int) $validated['learner_id'])
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if (! $transaction) {
+            return back()->with('error', 'Receipt transaction not found.');
+        }
 
         return $receiptService->downloadResponse($transaction);
     }
@@ -44,6 +59,6 @@ class ReceiptController extends Controller
         $transaction = $receiptService->findPaidTransaction($transactionId);
         $data = $receiptService->buildViewData($transaction);
 
-        return view('recieptPdf', $data);
+        return view('html-library_receipt_final', $data);
     }
 }

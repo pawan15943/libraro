@@ -36,7 +36,15 @@ class QrBookingService
             }
 
             // ✅ Seat
-            $seat_no = $request->seat_no ?? $booking->seat_no;
+            $requestedSeat = $request->input('seat_no');
+
+            if ($requestedSeat === 0 || $requestedSeat === '0') {
+                $seat_no = null; // explicit clear
+            } elseif ($requestedSeat === null || $requestedSeat === '') {
+                $seat_no = $booking->seat_no; // fallback only when truly missing
+            } else {
+                $seat_no = $requestedSeat;
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -287,6 +295,15 @@ class QrBookingService
                 $customer->hours    = $hours;
                 $customer->locker_no = $locker_no;
                 $customer->status=$status;
+                if (!empty($request->id_proof_name)) {
+                    $customer->id_proof_name = $request->id_proof_name;
+                }
+                if (!empty($request->id_proof_number)) {
+                    $customer->id_proof_number = $request->id_proof_number;
+                }
+                if (!empty($request->sended_message_type)) {
+                    $customer->sended_message_type = $request->sended_message_type;
+                }
                 $customer->save();
 
             } else {
@@ -300,6 +317,8 @@ class QrBookingService
                     'id_proof_name' => $request->input('id_proof_name'),
                     'id_proof_file' => $relPathidproof,
                     'id_proof_number'=>$request->input('id_proof_number') ?? $booking->id_proof_number,
+                   
+                    'no_expiry' => $request->input('no_expiry') ?? 0,
                     'hours' => $hours,
                     'status' => $status,
                     'library_id' => getLibraryId(),
@@ -338,6 +357,7 @@ class QrBookingService
                 'payment_mode' => $payment_mode,
                 'is_paid' =>1,
                 'status' => $detailStatus,
+                'exam_id' => $request->input('exam_id'),
             ]);
 
             /*

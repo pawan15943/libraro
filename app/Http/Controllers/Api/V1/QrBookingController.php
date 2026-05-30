@@ -109,6 +109,13 @@ class QrBookingController extends Controller
     {
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
+            'direct_validate' => 'nullable|boolean',
+            'due_date' => 'nullable|date',
+            'id_proof_name' => 'nullable',
+            'id_proof_number' => 'nullable|string',
+            'exam_id' => 'nullable|integer',
+            'no_expiry' => 'nullable|in:0,1',
+            'sended_message_type' => 'nullable|in:whatsapp,sms,both,no',
         ]);
 
         try {

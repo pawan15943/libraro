@@ -10,6 +10,7 @@ use App\Models\LearnerTransactionActivity;
 use App\Models\Library;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -99,14 +100,20 @@ class ReceiptService
 
     public function pdf(LearnerTransaction $transaction)
     {
-        return Pdf::loadView('recieptPdf', $this->buildViewData($transaction));
+        $data = learnerReceiptPayloadByTransactionId((int) $transaction->id);
+        return Pdf::loadView('html-library_receipt_final', $data);
     }
 
     public function downloadResponse(LearnerTransaction $transaction): Response
     {
         Log::info('Receipt download', ['transaction_id' => $transaction->id]);
+        $path = 'receipts/learner_txn_' . $transaction->id . '.pdf';
+        $disk = Storage::disk('public');
 
-        return $this->pdf($transaction)->download(now()->timestamp . '_receipt.pdf');
+        $pdf = $this->pdf($transaction)->output();
+        $disk->put($path, $pdf);
+
+        return response()->file(storage_path('app/public/' . $path));
     }
 
     public function receiptOpenLink(int $transactionId): string
