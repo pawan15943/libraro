@@ -1,0 +1,50 @@
+{
+  "info": {
+    "_postman_id": "a6a84d86-6db5-4fa6-9c81-77bd852f88d2",
+    "name": "Library Demo Booking API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Demo Booking Store",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "x-api-key", "value": "{{api_key}}" },
+          { "key": "device-type", "value": "android" },
+          { "key": "app-version", "value": "1.0.0" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "branch_id", "value": "1", "type": "text" },
+            { "key": "name", "value": "Demo Student", "type": "text" },
+            { "key": "mobile", "value": "9876543210", "type": "text" },
+            { "key": "email", "value": "demo@example.com", "type": "text" },
+            { "key": "dob", "value": "2000-01-15", "type": "text" },
+            { "key": "general_seat", "value": "no", "type": "text" },
+            { "key": "seat_no", "value": "A-12", "type": "text" },
+            { "key": "plan_id", "value": "1", "type": "text" },
+            { "key": "plan_type_id", "value": "1", "type": "text" },
+            { "key": "plan_price_id", "value": "1200", "type": "text" },
+            { "key": "plan_start_date", "value": "2026-06-01", "type": "text" },
+            { "key": "payment_mode", "value": "offline", "type": "text" },
+            { "key": "id_proof_name", "value": "1", "type": "text" },
+            { "key": "id_proof_number", "value": "ID123456", "type": "text" },
+            { "key": "address", "value": "Ahmedabad", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/demo-bookings/store",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "demo-bookings", "store"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1/library" },
+    { "key": "api_key", "value": "" }
+  ]
+}

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\LearnerController;
 use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
 use App\Http\Controllers\Api\V1\QrBookingController;
+use App\Http\Controllers\Api\V1\DemoBookingController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 
@@ -44,6 +45,7 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/video-tutorial', [LibraryController::class, 'videoTutorial']);
     Route::get('library/faq', [LibraryController::class, 'faq']);
     Route::get('library/payment-types', [MasterController::class, 'paymentTypeList']);
+    Route::post('demo-bookings/store', [DemoBookingController::class, 'store']);
     
 });
 
@@ -188,3 +190,5 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 //     Route::get('learner/profile', [LearnerAuthController::class, 'profile']);
 //     Route::post('learner/logout', [LearnerAuthController::class, 'logout']);
 // });
+
+

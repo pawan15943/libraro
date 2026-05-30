@@ -6,8 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\Learner;
 use App\Models\PlanType;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
+use App\Services\FileUploadService;
 
 class StoreLearnerRequest extends FormRequest
 {
@@ -184,7 +183,7 @@ class StoreLearnerRequest extends FormRequest
         } elseif (!empty($this->id_proof_file) && is_string($this->id_proof_file)) {
             
             $id_proof_file = $this->moveTempFileToPublic(
-                $this->id_proof,
+                $this->id_proof_file ?: $this->id_proof,
                 'id_proof_file',
                 'uploade/id_proof_file'
             );
@@ -270,70 +269,6 @@ class StoreLearnerRequest extends FormRequest
 
     function moveTempFileToPublic($file, $filePrefix = 'file', $folder)
     {
-        /* ========= CASE 1: FILE (WEB) ========= */
-        if ($file instanceof \Illuminate\Http\UploadedFile) {
-
-            $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-            $destinationFolder = public_path($folder);
-
-            if (!File::exists($destinationFolder)) {
-                File::makeDirectory($destinationFolder, 0777, true);
-            }
-
-            $file->move($destinationFolder, $fileName);
-
-            return 'public/'.$folder . '/' . $fileName;
-        }
-
-        /* ========= CASE 2: STRING (APP URL) ========= */
-        if (is_string($file)) {
-
-            $path = parse_url($file, PHP_URL_PATH);
-
-            /* ===== TEMP FILE MOVE ===== */
-            if (str_contains($file, '/temp/')) {
-
-                if (str_contains($path, '/storage/')) {
-                    $path = substr($path, strpos($path, '/storage/') + 9);
-                }
-
-                if (!str_starts_with($path, 'temp/')) {
-                    return null;
-                }
-
-                $sourcePath = storage_path('app/public/' . $path);
-
-                if (File::exists($sourcePath)) {
-
-                    $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . pathinfo($path, PATHINFO_EXTENSION);
-
-                    $destinationFolder = public_path($folder);
-
-                    if (!File::exists($destinationFolder)) {
-                        File::makeDirectory($destinationFolder, 0777, true);
-                    }
-
-                    $destinationPath = $destinationFolder . '/' . $fileName;
-
-                    File::move($sourcePath, $destinationPath);
-
-                    return $folder . '/' . $fileName;
-                }
-                
-            }
-
-            /* ===== ALREADY UPLOADED FILE ===== */
-            if (str_contains($file, '/uploade/')) {
-
-                $pos = strpos($path, 'uploade/');
-
-                if ($pos !== false) {
-                    return substr($path, $pos);
-                }
-            }
-        }
-
-        return null;
+        return app(FileUploadService::class)->moveTempFileToPublic($file, $filePrefix, $folder);
     }
 }

@@ -54,7 +54,7 @@ class QrBookingController extends Controller
                 'seat_no' => (string) ($booking->seat_no ?? ''),
                 'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
                 'plan_start_date' => $booking->plan_start_date,
-                'profile_picture' => $booking->profile_picture ? asset($booking->profile_picture) : '',
+                'profile_picture' => $booking->profile_picture ? asset('public/' . ltrim($booking->profile_picture, '/')) : '',
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
