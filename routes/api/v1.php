@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\MasterController;
 use App\Http\Controllers\Api\V1\LibraryController;
 use App\Http\Controllers\Api\V1\QrBookingController;
 use App\Http\Controllers\Api\V1\DemoBookingController;
+use App\Http\Controllers\Api\V1\LibraryReferralController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 
@@ -85,6 +86,8 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/dashboard', [LibraryController::class, 'dashboard']);
     Route::post('library/dashboard/revenue', [LibraryController::class, 'dashboardRevenue']);
     Route::post('library/branch/switch', [LibraryController::class, 'switchBranch']);
+    Route::get('library/referral/dashboard', [LibraryReferralController::class, 'dashboard']);
+    Route::post('library/referral/redeem', [LibraryReferralController::class, 'redeem']);
 
     // Explicit path (avoids prefix nesting issues; same as api/v1/library/learners/available-seats)
    
