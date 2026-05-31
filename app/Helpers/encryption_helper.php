@@ -2032,33 +2032,33 @@ if (!function_exists('whatsappReceiptMessage')) {
     }
 }
 if (!function_exists('makeTinyUrl')) {
-function makeTinyUrl($longUrl)
-{
-    try {
-        if (!$longUrl) {
-            return null;
+    function makeTinyUrl($longUrl)
+    {
+        try {
+            if (!$longUrl) {
+                return null;
+            }
+
+            $apiUrl = 'https://tinyurl.com/api-create.php?url=' . urlencode($longUrl);
+
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 5 // ⏱ avoid hanging request
+                ]
+            ]);
+
+            $shortUrl = @file_get_contents($apiUrl, false, $context);
+
+            return $shortUrl ?: $longUrl; // fallback to original URL
+        } catch (\Exception $e) {
+            \Log::error('TinyURL Error', [
+                'url' => $longUrl,
+                'error' => $e->getMessage()
+            ]);
+
+            return $longUrl; // fallback
         }
-
-        $apiUrl = 'https://tinyurl.com/api-create.php?url=' . urlencode($longUrl);
-
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 5 // ⏱ avoid hanging request
-            ]
-        ]);
-
-        $shortUrl = @file_get_contents($apiUrl, false, $context);
-
-        return $shortUrl ?: $longUrl; // fallback to original URL
-    } catch (\Exception $e) {
-        \Log::error('TinyURL Error', [
-            'url' => $longUrl,
-            'error' => $e->getMessage()
-        ]);
-
-        return $longUrl; // fallback
     }
-}
 }
 
 if (!function_exists('calculatePlanDays')) {

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use App\Models\LearnerTransaction;
 
 class LearnerTransactionActivity extends Model
 {
@@ -19,14 +20,26 @@ class LearnerTransactionActivity extends Model
         static::creating(function ($model) {
             // If already set in some old code, do NOT override
             if (!empty($model->created_by)) {
-                return;
+                // continue to learner_transaction_id fallback below
             }
 
             // If library_user is logged in
             if (Auth::guard('library_user')->check()) {
                 $model->created_by = Auth::guard('library_user')->id();
             }
-            
+
+            // Global fallback (web + API): if learner_transaction_id is missing,
+            // attach latest transaction of this learner.
+            if (empty($model->learner_transaction_id) && !empty($model->learner_id)) {
+                $latestTxnId = LearnerTransaction::withoutGlobalScopes()
+                    ->where('learner_id', $model->learner_id)
+                    ->orderByDesc('id')
+                    ->value('id');
+
+                if (!empty($latestTxnId)) {
+                    $model->learner_transaction_id = $latestTxnId;
+                }
+            }
         });
 
         static::updating(function ($model) {
