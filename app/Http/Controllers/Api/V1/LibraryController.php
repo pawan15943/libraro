@@ -74,6 +74,14 @@ class LibraryController extends Controller
       $planData = null;
       $isActive = true;
       $isNotification = false;
+      $today = Carbon::today();
+
+      $hasActiveOrQueuedPlan = LibraryTransaction::where('library_id', $libraryId)
+         ->where(function ($query) use ($today) {
+               $query->where('status', 1)
+                  ->orWhereDate('start_date', '>=', $today->toDateString());
+         })
+         ->exists();
 
       if ($activePlan) {
 
@@ -87,10 +95,18 @@ class LibraryController extends Controller
 
          $planType = $planTypes[$activePlan->month] ?? $activePlan->month . '_months';
 
+         $modeIds = [
+               'monthly' => 1,
+               'yearly' => 2,
+               'three_monthly' => 3,
+               'six_monthly' => 4,
+               'two_yearly' => 5,
+         ];
+
          $planData = [
                'plan_id'    => $activePlan->plan_id,
                'plan_name'  => $activePlan->plan_name ?? '',
-               'plan_type_id' => $activePlan->plan_type_id ?? null,
+               'plan_type_id' => $modeIds[$planType] ?? '',
                'plan_type'  => $planType,
                'price'      => (string) ($activePlan->paid_amount ?? ''),
                'start_date' => $activePlan->start_date,
@@ -99,7 +115,6 @@ class LibraryController extends Controller
          ];
 
          if (!empty($activePlan->end_date)) {
-            $today = Carbon::today();
             $endDate = Carbon::parse($activePlan->end_date)->startOfDay();
             $extensionDays = (int) getExtendDays();
 
@@ -114,6 +129,11 @@ class LibraryController extends Controller
             $isActive = !$inExtension;
             $isNotification = $showNotification;
          }
+      }
+
+      if ($hasActiveOrQueuedPlan) {
+         $isActive = true;
+         $isNotification = false;
       }
 
       return response()->json([
