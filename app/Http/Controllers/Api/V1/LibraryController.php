@@ -61,6 +61,7 @@ class LibraryController extends Controller
          ->select(
                'library_transactions.subscription as plan_id',
                'subscriptions.name as plan_name',
+               'subscriptions.id as plan_type_id',
                'library_transactions.month',
                'library_transactions.start_date',
                'library_transactions.end_date',
@@ -89,6 +90,7 @@ class LibraryController extends Controller
          $planData = [
                'plan_id'    => $activePlan->plan_id,
                'plan_name'  => $activePlan->plan_name ?? '',
+               'plan_type_id' => $activePlan->plan_type_id ?? null,
                'plan_type'  => $planType,
                'price'      => (string) ($activePlan->paid_amount ?? ''),
                'start_date' => $activePlan->start_date,
