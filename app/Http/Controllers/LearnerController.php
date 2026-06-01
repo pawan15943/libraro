@@ -3869,6 +3869,7 @@ class LearnerController extends Controller
             $remainingForNewPlan = $paidAmount - $pendingPaid;
 
             $remainingPendingPayment = $pendingPaid;
+            $appliedPayments = [];
 
             foreach ($pendingTransactions as $tran) {
                 if ($remainingPendingPayment <= 0) {
@@ -3901,25 +3902,32 @@ class LearnerController extends Controller
 
                 $tran->update($updateData);
 
+                if ($paidNow > 0) {
+                    $appliedPayments[] = [
+                        'transaction_id' => $tran->id,
+                        'amount' => $paidNow,
+                    ];
+                }
+
                 $remainingPendingPayment -= $paidNow;
             }
 
             $type  = 'PENDING';
             $parti = 'REMAINING PAYMENT';
 
-            // Pending payment activity
-            if ($pendingPaid > 0) {
-                $activityData1 = [
+            // Activity split per transaction (same pattern as renew split)
+            foreach ($appliedPayments as $row) {
+                $activityData = [
                     'branchId'     => getCurrentBranch(),
                     'learner_id'   => $learnerId,
-                    'learner_transaction_id' => optional($pendingTransactions->first())->id,
+                    'learner_transaction_id' => $row['transaction_id'],
                     'particular'   => $parti ?? 'Paid By Trans',
                     'payment_type' => $type,
                     'payment_mode' => $payment_mode,
-                    'amount'       => $pendingPaid,
+                    'amount'       => $row['amount'],
                     'dr_cr'        => 'Cr',
                 ];
-                $this->learnerTransactionActivity($activityData1);
+                $this->learnerTransactionActivity($activityData);
             }
 
 

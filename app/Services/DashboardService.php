@@ -1054,6 +1054,16 @@ class DashboardService
 
         if ($listFor === 'balance') {
             $data = $this->monthlyFinancialData($innerRequest);
+            $paginatedList = $this->paginateArrayItems(
+                $data['monthly_balance'],
+                (int) $request->input('page', 1),
+                (int) $request->input('per_page', 20)
+            );
+            $paginatedTransactions = $this->paginateArrayItems(
+                $data['collection'],
+                (int) $request->input('page', 1),
+                (int) $request->input('per_page', 20)
+            );
 
             return [
                 'summary' => [
@@ -1064,12 +1074,21 @@ class DashboardService
                     'pending' => $data['monthly_pending'],
                     'total_revenue' => $data['monthlyBalance'],
                 ],
-                'list' => $data['monthly_balance'],
-                'transactions' => $data['collection'],
+                'list' => $paginatedList['items'],
+                'transactions' => $paginatedTransactions['items'],
+                'pagination' => [
+                    'list' => $paginatedList['pagination'],
+                    'transactions' => $paginatedTransactions['pagination'],
+                ],
             ];
         }
 
         $data = $this->todayFinancialData($innerRequest);
+        $paginatedTransactions = $this->paginateArrayItems(
+            $data['collection'],
+            (int) $request->input('page', 1),
+            (int) $request->input('per_page', 20)
+        );
 
         return [
             'summary' => [
@@ -1080,7 +1099,30 @@ class DashboardService
                 'pending' => $data['today_pending'],
                 'total_revenue' => $data['total_revenue'],
             ],
-            'transactions' => $data['collection'],
+            'transactions' => $paginatedTransactions['items'],
+            'pagination' => $paginatedTransactions['pagination'],
+        ];
+    }
+
+    private function paginateArrayItems($items, int $page = 1, int $perPage = 20): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, $perPage);
+        $collection = collect($items)->values();
+        $total = $collection->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $offset = ($page - 1) * $perPage;
+
+        return [
+            'items' => $collection->slice($offset, $perPage)->values(),
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
+                'has_more' => $page < $lastPage,
+            ],
         ];
     }
 
