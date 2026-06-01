@@ -71,6 +71,8 @@ class LibraryController extends Controller
          ->first();
 
       $planData = null;
+      $isActive = true;
+      $isNotification = false;
 
       if ($activePlan) {
 
@@ -93,6 +95,23 @@ class LibraryController extends Controller
                'end_date'   => $activePlan->end_date,
                'status'     => $activePlan->status ? 'active' : 'inactive',
          ];
+
+         if (!empty($activePlan->end_date)) {
+            $today = Carbon::today();
+            $endDate = Carbon::parse($activePlan->end_date)->startOfDay();
+            $extensionDays = (int) getExtendDays();
+
+            // In extension window: after end date and within configured extension period.
+            $inExtension = $today->gt($endDate)
+               && $today->lte($endDate->copy()->addDays($extensionDays));
+
+            // Notification: subscription reaches extension in next 5 days.
+            $daysToEnd = $today->diffInDays($endDate, false);
+            $showNotification = $daysToEnd >= 0 && $daysToEnd <= 5;
+
+            $isActive = !$inExtension;
+            $isNotification = $showNotification;
+         }
       }
 
       return response()->json([
@@ -106,6 +125,8 @@ class LibraryController extends Controller
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
+               'is_active'      => $isActive,
+               'is_notification'=> $isNotification,
                'referral_code'    => $library->referral_code,
                  // ✅ Image (FROM BRANCH)
                 'library_image' => !empty($selectedBranch->library_logo)
@@ -525,6 +546,46 @@ class LibraryController extends Controller
 
             // ✅ if filter clicked
             'transactions' => $data['collection']
+        ]);
+    }
+
+    public function dashboardFinancial(Request $request, DashboardService $service)
+    {
+        $request->validate([
+            'type' => 'required|in:daily,monthly,yearly,custom',
+            'list_for' => 'required|in:collection,other_collection,expense,refund,pending,balance',
+            'date' => 'nullable|date',
+            'month' => 'nullable|integer|min:1|max:12',
+            'year' => 'nullable|integer|min:2000|max:2100',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'payment_type' => 'nullable|array',
+            'payment_type.*' => 'nullable|string'
+        ]);
+
+        $type = $request->input('type');
+
+        if ($type === 'daily') {
+            $request->validate(['date' => 'required|date']);
+        } elseif ($type === 'monthly') {
+            $request->validate([
+                'month' => 'required|integer|min:1|max:12',
+                'year' => 'required|integer|min:2000|max:2100',
+            ]);
+        } elseif ($type === 'yearly') {
+            $request->validate(['year' => 'required|integer|min:2000|max:2100']);
+        } elseif ($type === 'custom') {
+            $request->validate([
+                'from_date' => 'required|date',
+                'to_date' => 'required|date|after_or_equal:from_date',
+            ]);
+        }
+
+        $data = $service->dashboardFinancialData($request);
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
         ]);
     }
 

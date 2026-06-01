@@ -1006,6 +1006,84 @@ class DashboardService
         ];
     }
 
+    public function dashboardFinancialData($request): array
+    {
+        $type = (string) $request->input('type');
+        $listFor = (string) $request->input('list_for');
+
+        $mappedType = match ($type) {
+            'daily' => 'today',
+            'monthly' => 'monthly',
+            'yearly' => 'yearly',
+            'custom' => 'custom',
+            default => 'today',
+        };
+
+        $financialType = match ($listFor) {
+            'collection' => $listFor === 'balance' ? '' : $mappedType . '_collection',
+            'other_collection' => $mappedType . '_other_collection',
+            'expense' => $mappedType . '_expense',
+            'refund' => $mappedType . '_refund',
+            'pending' => $mappedType . '_pending',
+            'balance' => $mappedType . '_balance',
+            default => null,
+        };
+
+        $payload = [
+            'type' => $financialType,
+            'payment_type' => $request->input('payment_type'),
+            'date' => $request->input('date'),
+            'month' => $request->input('month'),
+            'year' => $request->input('year'),
+            'from_date' => $request->input('from_date'),
+            'to_date' => $request->input('to_date'),
+        ];
+
+        if ($type === 'yearly') {
+            $payload['from_date'] = $request->year . '-01-01';
+            $payload['to_date'] = $request->year . '-12-31';
+        } elseif ($type === 'monthly') {
+            $payload['from_date'] = null;
+            $payload['to_date'] = null;
+        } elseif ($type === 'daily') {
+            $payload['from_date'] = null;
+            $payload['to_date'] = null;
+        }
+
+        $innerRequest = new \Illuminate\Http\Request($payload);
+
+        if ($listFor === 'balance') {
+            $data = $this->monthlyFinancialData($innerRequest);
+
+            return [
+                'summary' => [
+                    'booking_income' => $data['monthly_income'],
+                    'other_income' => $data['other_total_income'],
+                    'expense' => $data['monthly_expense'],
+                    'refund' => $data['monthly_refund'],
+                    'pending' => $data['monthly_pending'],
+                    'total_revenue' => $data['monthlyBalance'],
+                ],
+                'list' => $data['monthly_balance'],
+                'transactions' => $data['collection'],
+            ];
+        }
+
+        $data = $this->todayFinancialData($innerRequest);
+
+        return [
+            'summary' => [
+                'booking_income' => $data['today_booking_amt'],
+                'other_income' => $data['today_other_amt'],
+                'expense' => $data['today_expense'],
+                'refund' => $data['today_refund'],
+                'pending' => $data['today_pending'],
+                'total_revenue' => $data['total_revenue'],
+            ],
+            'transactions' => $data['collection'],
+        ];
+    }
+
     private function topBanner(): array
     {
         $today = Carbon::today();

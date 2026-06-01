@@ -45,6 +45,7 @@ use App\Models\Branch;
 use App\Models\LibraryReferral;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryLifecycleService;
+use Illuminate\Validation\ValidationException;
 
 class LibraryController extends Controller
 {
@@ -496,6 +497,8 @@ class LibraryController extends Controller
                 ->route('verification.notice')
                 ->with('message', 'Please verify your email to continue.');
 
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
 
             return back()->with('error', 'Something went wrong.');

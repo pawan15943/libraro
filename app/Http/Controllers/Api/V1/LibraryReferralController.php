@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\LibraryTransaction;
+use App\Models\ReferralWallet;
+use App\Services\ReferralRewardService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +19,7 @@ class LibraryReferralController extends Controller
         $referralCode = (string) ($library->referral_code ?? '');
         $referralLink = url('/library/register?ref=' . $referralCode);
 
-        $maxReferrals = 30;
+        $maxReferrals = ReferralRewardService::MAX_REDEEM_COUNT;
         $pointPerReferral = 10;
         $redeemThresholdPoints = 30;
 
@@ -27,12 +29,14 @@ class LibraryReferralController extends Controller
             ->get();
 
         $completedReferralsCount = $referrals->where('status', 'completed')->count();
-        $availableReferrals = max($maxReferrals - $completedReferralsCount, 0);
 
-        $pendingPoints = $referrals
-            ->where('status', 'completed')
-            ->where('redeem_status', 0)
-            ->count() * $pointPerReferral;
+        $wallet = ReferralWallet::where('library_id', $libraryId)->first();
+        $pendingPoints = (int) ($wallet->available_points ?? 0);
+        $totalEarned = (int) ($wallet->total_earned_points ?? 0);
+        $redeemedPoints = (int) ($wallet->redeemed_points ?? 0);
+        $redeemedCount = (int) floor($redeemedPoints / ReferralRewardService::REDEEM_POINTS);
+        $maxRewardPoints = (int) ($wallet->max_cap_points ?? ReferralRewardService::MAX_REWARD_POINTS);
+        $availableReferrals = max($maxReferrals - $redeemedCount, 0);
 
         $mapRow = function ($row) {
             $referredLibrary = DB::table('libraries')
@@ -83,8 +87,12 @@ class LibraryReferralController extends Controller
                 'point_per_referral' => $pointPerReferral,
                 'my_reward_points' => (int) $pendingPoints,
                 'can_redeem' => $pendingPoints >= $redeemThresholdPoints,
+                'redeemed_count' => $redeemedCount,
+                'max_redeem_count' => ReferralRewardService::MAX_REDEEM_COUNT,
+                'total_reward_earned' => $totalEarned,
+                'max_reward_points' => $maxRewardPoints,
                 'max_referral' => (int) $maxReferrals,
-                'referral_availed' => (int) $completedReferralsCount,
+                'referral_availed' => $redeemedCount,
                 'available_referral' => (int) $availableReferrals,
                 
                 'refer_method' => [
@@ -98,64 +106,29 @@ class LibraryReferralController extends Controller
         ]);
     }
 
-    public function redeem()
+    public function redeem(ReferralRewardService $rewardService)
     {
         $libraryId = authLibraryId();
-        $pointPerReferral = 10;
-        $redeemThresholdPoints = 30;
-        $requiredReferrals = (int) ($redeemThresholdPoints / $pointPerReferral);
+        $result = $rewardService->redeemLibraryReward($libraryId);
+        if (!$result['status']) {
+            return response()->json($result, 422);
+        }
 
-        try {
-            DB::transaction(function () use ($libraryId, $requiredReferrals) {
-                $transaction = LibraryTransaction::where('library_id', $libraryId)
-                    ->where('status', 1)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+        $transaction = LibraryTransaction::where('library_id', $libraryId)
+            ->where('status', 1)
+            ->first();
 
-                $referrals = DB::table('library_referrals')
-                    ->where('referrer_library_id', $libraryId)
-                    ->where('status', 'completed')
-                    ->where('redeem_status', 0)
-                    ->orderBy('created_at')
-                    ->limit($requiredReferrals)
-                    ->lockForUpdate()
-                    ->get();
-
-                if ($referrals->count() < $requiredReferrals) {
-                    throw new \RuntimeException('Not enough points to redeem');
-                }
-
-                DB::table('library_referrals')
-                    ->whereIn('id', $referrals->pluck('id'))
-                    ->update([
-                        'redeem_status' => 1,
-                        'redeemed_at' => now(),
-                    ]);
-
-                $currentEndDate = Carbon::parse($transaction->end_date);
-                $newEndDate = $currentEndDate->isPast()
-                    ? Carbon::today()->addDays(30)
-                    : $currentEndDate->addDays(30);
-
-                $transaction->update([
-                    'end_date' => $newEndDate,
-                ]);
-            });
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unable to redeem reward right now.',
-            ], 500);
+        if ($transaction) {
+            $currentEndDate = Carbon::parse($transaction->end_date);
+            $transaction->update([
+                'end_date' => $currentEndDate->isPast() ? Carbon::today()->addDays(30) : $currentEndDate->addDays(30),
+            ]);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Reward redeemed successfully',
+            'message' => $result['message'],
+            // 'redeem_no' => $result['redeem_no'] ?? null,
         ]);
     }
 }

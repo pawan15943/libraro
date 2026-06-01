@@ -182,6 +182,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('library/finance/today', [LibraryController::class, 'todayFinancial']);
 
     Route::post('library/finance/monthly', [LibraryController::class, 'monthlyFinancial']);
+    Route::post('library/finance/dashboardfinancial', [LibraryController::class, 'dashboardFinancial']);
    
 });
 

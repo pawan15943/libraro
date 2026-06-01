@@ -8,9 +8,15 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\ReferralHelper;
 use App\Models\LibraryReferral;
+use App\Services\ReferralRewardService;
+use Illuminate\Validation\ValidationException;
 
 class RegisterLibrary
 {
+    public function __construct(private ReferralRewardService $rewardService)
+    {
+    }
+
     public function handle(array $data): Library
     {
        
@@ -55,22 +61,32 @@ class RegisterLibrary
             }
             // Handle Referral
             if (!empty($referral_code)) {
-
                 $referrer = Library::where('referral_code', $referral_code)->first();
 
-                if ($referrer && $referrer->id !== $library->id) {
-
-                    $library->referred_by = $referrer->id;
-                    $library->save();
-
-                    LibraryReferral::create([
-                        'referrer_library_id' => $referrer->id,
-                        'referred_library_id' => $library->id,
-                        'referral_code' => $referral_code,
-                        'referral_type' => $referral_type ?? 'code',
-                        'status' => 'pending'
+                if (! $referrer) {
+                    throw ValidationException::withMessages([
+                        'referral_code' => ['Invalid referral code.'],
                     ]);
                 }
+
+                if ((int) $referrer->id === (int) $library->id) {
+                    throw ValidationException::withMessages([
+                        'referral_code' => ['Self referral is not allowed.'],
+                    ]);
+                }
+
+                $library->referred_by = $referrer->id;
+                $library->save();
+
+                $referral = LibraryReferral::create([
+                    'referrer_library_id' => $referrer->id,
+                    'referred_library_id' => $library->id,
+                    'referral_code' => $referral_code,
+                    'referral_type' => $referral_type ?? 'code',
+                    'status' => 'completed'
+                ]);
+
+                $this->rewardService->processReferralReward((int) $referral->id);
             }
         
             // Fire Event
