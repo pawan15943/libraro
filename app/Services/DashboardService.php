@@ -683,7 +683,7 @@ class DashboardService
                 'date' => $item->date ?? '',
                 'particular' => $item->particular ?? '',
                 'payment_mode' => $item->payment_mode ?? '',
-                'amount' => $item->amount ?? 0,
+                'amount' => (string) $item->amount ?? 0,
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
@@ -693,17 +693,17 @@ class DashboardService
 
         return [
 
-            'today_booking_amt' => $today_booking_amt,
+            'today_booking_amt' => (string)$today_booking_amt,
 
-            'today_other_amt' => $today_other_amt,
+            'today_other_amt' =>  (string)$today_other_amt,
 
-            'today_expense' => $today_expense,
+            'today_expense' => (string) $today_expense,
 
-            'today_pending' => $today_pending,
+            'today_pending' => (string) $today_pending,
 
-            'today_refund' => $today_refund,
+            'today_refund' => (string) $today_refund,
 
-            'total_revenue' => $total_revenue,
+            'total_revenue' => (string) $total_revenue,
 
             'collection' => $transactions
         ];
@@ -1067,12 +1067,12 @@ class DashboardService
 
             return [
                 'summary' => [
-                    'booking_income' => $data['monthly_income'],
-                    'other_income' => $data['other_total_income'],
-                    'expense' => $data['monthly_expense'],
-                    'refund' => $data['monthly_refund'],
-                    'pending' => $data['monthly_pending'],
-                    'total_revenue' => $data['monthlyBalance'],
+                    'booking_income' => (string)$data['monthly_income'],
+                    'other_income' =>(string) $data['other_total_income'],
+                    'expense' => (string)$data['monthly_expense'],
+                    'refund' => (string)$data['monthly_refund'],
+                    'pending' =>(string) $data['monthly_pending'],
+                    'total_revenue' =>(string) $data['monthlyBalance'],
                 ],
                 'list' => $paginatedList['items'],
                 'transactions' => $paginatedTransactions['items'],
@@ -1092,12 +1092,12 @@ class DashboardService
 
         return [
             'summary' => [
-                'booking_income' => $data['today_booking_amt'],
-                'other_income' => $data['today_other_amt'],
-                'expense' => $data['today_expense'],
-                'refund' => $data['today_refund'],
-                'pending' => $data['today_pending'],
-                'total_revenue' => $data['total_revenue'],
+                'booking_income' =>(string) $data['today_booking_amt'],
+                'other_income' =>(string) $data['today_other_amt'],
+                'expense' =>(string) $data['today_expense'],
+                'refund' => (string)$data['today_refund'],
+                'pending' => (string)$data['today_pending'],
+                'total_revenue' => (string)$data['total_revenue'],
             ],
             'transactions' => $paginatedTransactions['items'],
             'pagination' => $paginatedTransactions['pagination'],

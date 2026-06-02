@@ -205,6 +205,7 @@ class LibraryController extends Controller
                     'plan_id' => $transaction->subscription,
                     'plan_name' => (string) ($transaction->subscription_name ?? ''),
                     'plan_type' => $this->mapSubscriptionDuration((int) $transaction->month),
+                    'plan_name_color' => $this->mapSubscriptionColor((int) $transaction->subscription),
                     'start_date' => optional($startDate)->format('Y-m-d'),
                     'end_date' => optional($endDate)->format('Y-m-d'),
                   
@@ -216,6 +217,8 @@ class LibraryController extends Controller
                     'days_used_text' => $subscriptionStatus === 'upcoming'
                         ? 'Not started yet'
                         : $usedDays . ' of ' . $totalDays . ' days used',
+                    'totaldays'=>$totalDays,
+                    'used_days'=>$usedDays,
                     'can_renew' => $subscriptionStatus === 'expired',
                     'download_receipt' => false,
                     'transaction_date' => $transaction->transaction_date,
@@ -1143,6 +1146,16 @@ class LibraryController extends Controller
             12 => 'Yearly',
             24 => 'Two Yearly',
             default => $month . ' Months',
+        };
+    }
+
+    private function mapSubscriptionColor(int $subscriptionId): string
+    {
+        return match ($subscriptionId) {
+            1 => '#004AAD',
+            2 => '#2E9E3F',
+            3 => '#F2A900',
+            default => '#000000',
         };
     }
 }

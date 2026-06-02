@@ -180,9 +180,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/qr-bookings/detail', [QrBookingController::class, 'show']);
     Route::post('/qr-bookings/verify', [QrBookingController::class, 'verify']);
     Route::post('/qr-bookings/delete', [QrBookingController::class, 'destroy']);
-    Route::post('library/finance/today', [LibraryController::class, 'todayFinancial']);
+    // Route::post('library/finance/today', [LibraryController::class, 'todayFinancial']);
 
-    Route::post('library/finance/monthly', [LibraryController::class, 'monthlyFinancial']);
+    // Route::post('library/finance/monthly', [LibraryController::class, 'monthlyFinancial']);
     Route::post('library/finance/dashboardfinancial', [LibraryController::class, 'dashboardFinancial']);
    
 });
