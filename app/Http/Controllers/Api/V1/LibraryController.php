@@ -38,7 +38,7 @@ class LibraryController extends Controller
       $libraryId = authLibraryId();
 
       // Library detail
-      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch','referral_code')->findOrFail($libraryId);
+      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch','referral_code', 'extend_days')->findOrFail($libraryId);
 
       // Branches
       $branches = Branch::where('library_id', $libraryId)
@@ -72,16 +72,9 @@ class LibraryController extends Controller
          ->first();
 
       $planData = null;
-      $isActive = true;
+      $isActive = false;
       $isNotification = false;
       $today = Carbon::today();
-
-      $hasActiveOrQueuedPlan = LibraryTransaction::where('library_id', $libraryId)
-         ->where(function ($query) use ($today) {
-               $query->where('status', 1)
-                  ->orWhereDate('start_date', '>=', $today->toDateString());
-         })
-         ->exists();
 
       if ($activePlan) {
 
@@ -116,24 +109,13 @@ class LibraryController extends Controller
 
          if (!empty($activePlan->end_date)) {
             $endDate = Carbon::parse($activePlan->end_date)->startOfDay();
-            $extensionDays = (int) getExtendDays();
+            $extensionDays = (int) ($library->extend_days ?? 0);
+            $extensionEndDate = $endDate->copy()->addDays($extensionDays);
+            $notificationStartDate = $endDate->copy()->subDays(5);
 
-            // In extension window: after end date and within configured extension period.
-            $inExtension = $today->gt($endDate)
-               && $today->lte($endDate->copy()->addDays($extensionDays));
-
-            // Notification: subscription reaches extension in next 5 days.
-            $daysToEnd = $today->diffInDays($endDate, false);
-            $showNotification = $daysToEnd >= 0 && $daysToEnd <= 5;
-
-            $isActive = !$inExtension;
-            $isNotification = $showNotification;
+            $isActive = $today->lte($extensionEndDate);
+            $isNotification = $today->gte($notificationStartDate) && $today->lte($extensionEndDate);
          }
-      }
-
-      if ($hasActiveOrQueuedPlan) {
-         $isActive = true;
-         $isNotification = false;
       }
 
       return response()->json([
@@ -168,6 +150,8 @@ class LibraryController extends Controller
     public function subscriptions(Request $request)
     {
         $libraryId = authLibraryId();
+        $library = Library::select('id', 'extend_days')->findOrFail($libraryId);
+        $extensionDays = (int) ($library->extend_days ?? 0);
         $today = Carbon::today();
 
         $transactions = LibraryTransaction::withoutGlobalScopes()
@@ -188,22 +172,27 @@ class LibraryController extends Controller
             ->orderByDesc('library_transactions.start_date')
             ->orderByDesc('library_transactions.id')
             ->get()
-            ->map(function ($transaction) use ($today) {
+            ->map(function ($transaction) use ($today, $extensionDays) {
                 $startDate = $transaction->start_date ? Carbon::parse($transaction->start_date)->startOfDay() : null;
                 $endDate = $transaction->end_date ? Carbon::parse($transaction->end_date)->startOfDay() : null;
+                $extensionEndDate = $endDate ? $endDate->copy()->addDays($extensionDays) : null;
+                $isExtensionPeriod = $endDate
+                    && $today->gt($endDate)
+                    && $extensionEndDate
+                    && $today->lte($extensionEndDate);
 
                 if ($startDate && $startDate->gt($today)) {
                     $subscriptionStatus = 'upcoming';
-                } elseif ($endDate && $endDate->lt($today)) {
-                    $subscriptionStatus = 'expired';
-                } else {
+                } elseif ($extensionEndDate && $today->lte($extensionEndDate)) {
                     $subscriptionStatus = 'active';
+                } else {
+                    $subscriptionStatus = 'expired';
                 }
 
                 $totalDays = max(((int) $transaction->month * 30), 0);
                 $usageDate = $today;
 
-                if ($endDate && $endDate->lt($today)) {
+                if ($extensionEndDate && $extensionEndDate->lt($today)) {
                     $usageDate = $endDate;
                 }
 
@@ -215,42 +204,33 @@ class LibraryController extends Controller
                     'transaction_id' => $transaction->id,
                     'plan_id' => $transaction->subscription,
                     'plan_name' => (string) ($transaction->subscription_name ?? ''),
-                    'duration' => $this->mapSubscriptionDuration((int) $transaction->month),
+                    'plan_type' => $this->mapSubscriptionDuration((int) $transaction->month),
                     'start_date' => optional($startDate)->format('Y-m-d'),
                     'end_date' => optional($endDate)->format('Y-m-d'),
+                  
+                    'extension_end_date' => optional($extensionEndDate)->format('Y-m-d'),
                     'amount_paid' => (string) ($transaction->paid_amount ?? '0'),
                     'status' => $subscriptionStatus,
                     'status_label' => ucfirst($subscriptionStatus),
+                    'is_extension_period' => $isExtensionPeriod,
                     'days_used_text' => $subscriptionStatus === 'upcoming'
                         ? 'Not started yet'
                         : $usedDays . ' of ' . $totalDays . ' days used',
                     'can_renew' => $subscriptionStatus === 'expired',
-                    'show_download_receipt' => false,
+                    'download_receipt' => false,
                     'transaction_date' => $transaction->transaction_date,
                 ];
             });
 
         $groupedSubscriptions = [
-            'all' => [
-                'count' => $transactions->count(),
-                'items' => $transactions->values(),
-            ],
-            'active' => [
-                'count' => $transactions->where('status', 'active')->count(),
-                'items' => $transactions->where('status', 'active')->values(),
-            ],
-            'upcoming' => [
-                'count' => $transactions->where('status', 'upcoming')->count(),
-                'items' => $transactions->where('status', 'upcoming')->values(),
-            ],
-            'expired' => [
-                'count' => $transactions->where('status', 'expired')->count(),
-                'items' => $transactions->where('status', 'expired')->values(),
-            ],
+            'all' => $transactions->values(),
+            'active' => $transactions->where('status', 'active')->values(),
+            'upcoming' => $transactions->where('status', 'upcoming')->values(),
+            'expired' => $transactions->where('status', 'expired')->values(),
         ];
 
-        $hasAnyActiveSubscription = $groupedSubscriptions['active']['count'] > 0
-            || $groupedSubscriptions['upcoming']['count'] > 0;
+        $hasAnyActiveSubscription = $groupedSubscriptions['active']->count() > 0
+            || $groupedSubscriptions['upcoming']->count() > 0;
 
         return response()->json([
             'status' => true,
