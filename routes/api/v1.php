@@ -75,6 +75,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
    
     Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
     Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
+    Route::get('library/subscriptions', [LibraryController::class, 'subscriptions']);
 
     Route::post('receipt/link', [ReceiptController::class, 'link']);
     Route::post('id-card/link', [IdCardController::class, 'link']);

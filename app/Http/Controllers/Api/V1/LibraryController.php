@@ -33,7 +33,7 @@ class LibraryController extends Controller
     |--------------------------------------------------------------------------
     */
 
-   public function getLibraryDetail()
+    public function getLibraryDetail()
    {
       $libraryId = authLibraryId();
 
@@ -147,8 +147,8 @@ class LibraryController extends Controller
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
-               'is_active'      => $isActive,
-               'is_notification'=> $isNotification,
+               'subscription_active'      => $isActive,
+               'subscription_notification'=> $isNotification,
                'referral_code'    => $library->referral_code,
                  // ✅ Image (FROM BRANCH)
                 'library_image' => !empty($selectedBranch->library_logo)
@@ -164,6 +164,103 @@ class LibraryController extends Controller
          ]
       ]);
    }
+
+    public function subscriptions(Request $request)
+    {
+        $libraryId = authLibraryId();
+        $today = Carbon::today();
+
+        $transactions = LibraryTransaction::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->where('is_paid', 1)
+            ->leftJoin('subscriptions', 'subscriptions.id', '=', 'library_transactions.subscription')
+            ->select(
+                'library_transactions.id',
+                'library_transactions.subscription',
+                'library_transactions.month',
+                'library_transactions.start_date',
+                'library_transactions.end_date',
+                'library_transactions.paid_amount',
+                'library_transactions.transaction_date',
+                'library_transactions.status',
+                'subscriptions.name as subscription_name'
+            )
+            ->orderByDesc('library_transactions.start_date')
+            ->orderByDesc('library_transactions.id')
+            ->get()
+            ->map(function ($transaction) use ($today) {
+                $startDate = $transaction->start_date ? Carbon::parse($transaction->start_date)->startOfDay() : null;
+                $endDate = $transaction->end_date ? Carbon::parse($transaction->end_date)->startOfDay() : null;
+
+                if ($startDate && $startDate->gt($today)) {
+                    $subscriptionStatus = 'upcoming';
+                } elseif ($endDate && $endDate->lt($today)) {
+                    $subscriptionStatus = 'expired';
+                } else {
+                    $subscriptionStatus = 'active';
+                }
+
+                $totalDays = max(((int) $transaction->month * 30), 0);
+                $usageDate = $today;
+
+                if ($endDate && $endDate->lt($today)) {
+                    $usageDate = $endDate;
+                }
+
+                $usedDays = ($startDate && $today->gte($startDate))
+                    ? min($startDate->diffInDays($usageDate) + 1, $totalDays)
+                    : 0;
+
+                return [
+                    'transaction_id' => $transaction->id,
+                    'plan_id' => $transaction->subscription,
+                    'plan_name' => (string) ($transaction->subscription_name ?? ''),
+                    'duration' => $this->mapSubscriptionDuration((int) $transaction->month),
+                    'start_date' => optional($startDate)->format('Y-m-d'),
+                    'end_date' => optional($endDate)->format('Y-m-d'),
+                    'amount_paid' => (string) ($transaction->paid_amount ?? '0'),
+                    'status' => $subscriptionStatus,
+                    'status_label' => ucfirst($subscriptionStatus),
+                    'days_used_text' => $subscriptionStatus === 'upcoming'
+                        ? 'Not started yet'
+                        : $usedDays . ' of ' . $totalDays . ' days used',
+                    'can_renew' => $subscriptionStatus === 'expired',
+                    'show_download_receipt' => false,
+                    'transaction_date' => $transaction->transaction_date,
+                ];
+            });
+
+        $groupedSubscriptions = [
+            'all' => [
+                'count' => $transactions->count(),
+                'items' => $transactions->values(),
+            ],
+            'active' => [
+                'count' => $transactions->where('status', 'active')->count(),
+                'items' => $transactions->where('status', 'active')->values(),
+            ],
+            'upcoming' => [
+                'count' => $transactions->where('status', 'upcoming')->count(),
+                'items' => $transactions->where('status', 'upcoming')->values(),
+            ],
+            'expired' => [
+                'count' => $transactions->where('status', 'expired')->count(),
+                'items' => $transactions->where('status', 'expired')->values(),
+            ],
+        ];
+
+        $hasAnyActiveSubscription = $groupedSubscriptions['active']['count'] > 0
+            || $groupedSubscriptions['upcoming']['count'] > 0;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Library subscriptions fetched successfully',
+            'data' => [
+                'subscription_active' => $hasAnyActiveSubscription,
+                'subscriptions' => $groupedSubscriptions,
+            ],
+        ]);
+    }
 
 
     /*
@@ -1055,5 +1152,17 @@ class LibraryController extends Controller
                 ],
             ],
         ]);
+    }
+
+    private function mapSubscriptionDuration(int $month): string
+    {
+        return match ($month) {
+            1 => 'Monthly',
+            3 => 'Quarterly',
+            6 => 'Half Yearly',
+            12 => 'Yearly',
+            24 => 'Two Yearly',
+            default => $month . ' Months',
+        };
     }
 }
