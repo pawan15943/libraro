@@ -283,57 +283,132 @@ class DashboardService
     /**
      * Due payment
      **/
-    private function duePayment(int $branchId)
+    // private function duePayment(int $branchId)
+    // {
+    //     $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
+    //         ->groupBy('learner_id');
+
+    //     $data = LearnerDetail::query()
+
+    //         ->joinSub($latestDetail, 'latest', function ($join) {
+
+    //             $join->on('learner_detail.id', '=', 'latest.id');
+    //         })
+
+    //         ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+
+    //         ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
+
+    //         ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+
+    //         ->leftJoin('learner_transactions', function ($join) {
+
+    //             $join->on(
+    //                 'learner_transactions.learner_id',
+    //                 '=',
+    //                 'learners.id'
+    //             )
+
+    //             ->where('learner_transactions.pending_amount', '>', 0);
+    //         })
+
+    //         ->where('learner_detail.branch_id', $branchId)
+
+    //         ->select(
+    //             'learners.id as learner_id',
+    //             'learners.profile_picture',
+
+    //             'learners.seat_no',
+
+    //             'learners.name',
+
+    //             'learner_transactions.pending_amount',
+
+    //             'learner_transactions.due_date',
+    //             'learner_detail.id as learner_detail_id'
+    //         )
+
+    //         ->whereNotNull('learner_transactions.id')
+
+    //         ->limit(7)
+    //         ->get()
+
+    //         ->map(function ($item) {
+
+    //             return [
+    //                 'learner_id'=>$item->learner_id ?? '',
+    //                 'learner_detail_id'=>$item->learner_detail_id ?? '',
+
+    //                 'profile_picture' =>
+    //                     $item->profile_picture
+    //                     ? asset($item->profile_picture)
+    //                     : '',
+
+    //                 'seat_no' => $item->seat_no,
+
+    //                 'name' => $item->name,
+
+    //                 'pending_amount' =>
+    //                     $item->pending_amount,
+
+    //                 'due_date' =>
+    //                     $item->due_date
+    //                     ? Carbon::parse(
+    //                         $item->due_date
+    //                     )->format('d M')
+    //                     : null,
+
+    //                 'due_text' =>
+    //                     'Due '
+    //                     . $item->pending_amount
+    //                     . ' on '
+    //                     . Carbon::parse(
+    //                         $item->due_date
+    //                     )->format('d M')
+    //                     . '.',
+    //                 'send_message' => 'pending_waba'
+    //             ];
+    //         });
+
+    //     return [
+    //         'limit' => 5,
+    //         'count' => $data->count(),
+    //         'list' => $data
+    //     ];
+    // }
+
+      private function duePayment(int $branchId)
     {
-        $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
-            ->groupBy('learner_id');
-
-        $data = LearnerDetail::query()
-
-            ->joinSub($latestDetail, 'latest', function ($join) {
-
-                $join->on('learner_detail.id', '=', 'latest.id');
+        $data = DB::table('learner_transactions')
+            ->join('learners', 'learners.id', '=', 'learner_transactions.learner_id')
+            ->where('learner_transactions.branch_id', $branchId)
+            ->where('learner_transactions.pending_amount', '>', 0)
+            ->when(Schema::hasColumn('learner_transactions', 'deleted_at'), function ($query) {
+                $query->whereNull('learner_transactions.deleted_at');
             })
-
-            ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
-
-            ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-
-            ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
-
-            ->leftJoin('learner_transactions', function ($join) {
-
-                $join->on(
-                    'learner_transactions.learner_id',
-                    '=',
-                    'learners.id'
-                )
-
-                ->where('learner_transactions.pending_amount', '>', 0);
-            })
-
-            ->where('learner_detail.branch_id', $branchId)
-
             ->select(
                 'learners.id as learner_id',
                 'learners.profile_picture',
-
                 'learners.seat_no',
-
                 'learners.name',
-
-                'learner_transactions.pending_amount',
-
-                'learner_transactions.due_date',
-                'learner_detail.id as learner_detail_id'
+                DB::raw('MIN(learner_transactions.learner_detail_id) as learner_detail_id'),
+                DB::raw('SUM(learner_transactions.pending_amount) as pending_amount'),
+                DB::raw('MIN(learner_transactions.due_date) as due_date')
             )
-
-            ->whereNotNull('learner_transactions.id')
-
-            ->limit(7)
+            ->groupBy(
+                'learners.id',
+                'learners.profile_picture',
+                'learners.seat_no',
+                'learners.name'
+            )
+            ->orderByRaw('MIN(learner_transactions.due_date) IS NULL')
+            ->orderByRaw('MIN(learner_transactions.due_date) ASC')
+            ->limit(5)
             ->get()
 
             ->map(function ($item) {
+                $pendingAmount = (float) $item->pending_amount;
+                $dueDate = $item->due_date ? Carbon::parse($item->due_date) : null;
 
                 return [
                     'learner_id'=>$item->learner_id ?? '',
@@ -348,36 +423,27 @@ class DashboardService
 
                     'name' => $item->name,
 
-                    'pending_amount' =>
-                        $item->pending_amount,
+                    'pending_amount' =>(string)$pendingAmount,
 
                     'due_date' =>
-                        $item->due_date
-                        ? Carbon::parse(
-                            $item->due_date
-                        )->format('d M')
+                        $dueDate
+                        ? $dueDate->format('d M')
                         : null,
 
                     'due_text' =>
-                        'Due '
-                        . $item->pending_amount
-                        . ' on '
-                        . Carbon::parse(
-                            $item->due_date
-                        )->format('d M')
-                        . '.',
+                        $dueDate
+                        ? 'Due ' . $pendingAmount . ' on ' . $dueDate->format('d M') . '.'
+                        : 'Due ' . $pendingAmount . '.',
                     'send_message' => 'pending_waba'
                 ];
             });
 
-    return [
-        'limit' => 5,
-        'count' => $data->count(),
-        'list' => $data
-    ];
-}
-
-    
+        return [
+            'limit' => 5,
+            'count' => $data->count(),
+            'list' => $data
+        ];
+    }
 
     /*
     |--------------------------------------------------------------------------
