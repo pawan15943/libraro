@@ -205,6 +205,7 @@ class LibraryController extends Controller
                     'plan_id' => $transaction->subscription,
                     'plan_name' => (string) ($transaction->subscription_name ?? ''),
                     'plan_type' => $this->mapSubscriptionDuration((int) $transaction->month),
+                    'plan_type_id' => $this->mapSubscriptionModeId((int) $transaction->month),
                     'plan_name_color' => $this->mapSubscriptionColor((int) $transaction->subscription),
                     'start_date' => optional($startDate)->format('Y-m-d'),
                     'end_date' => optional($endDate)->format('Y-m-d'),
@@ -1146,6 +1147,18 @@ class LibraryController extends Controller
             12 => 'Yearly',
             24 => 'Two Yearly',
             default => $month . ' Months',
+        };
+    }
+
+    private function mapSubscriptionModeId(int $month): int|string
+    {
+        return match ($month) {
+            1 => 1,
+            12 => 2,
+            3 => 3,
+            6 => 4,
+            24 => 5,
+            default => '',
         };
     }
 
