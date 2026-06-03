@@ -785,6 +785,7 @@ class DashboardService
     {
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
+        $groupByMonth = $request->input('group_by') === 'month';
 
         $baseQuery = LearnerTransactionActivity::query()
             ->where('branch_id', getCurrentBranch());
@@ -858,8 +859,12 @@ class DashboardService
         |--------------------------------------------------------------------------
         */
 
+        $dateBucket = $groupByMonth
+            ? "DATE_FORMAT(date, '%Y-%m-01')"
+            : 'DATE(date)';
+
         $monthlyBalance = (clone $baseQuery)->selectRaw("
-                DATE(date) as tx_date,
+                {$dateBucket} as tx_date,
 
                 SUM(
                     CASE
@@ -928,35 +933,73 @@ class DashboardService
 
         $runningBalance = 0;
 
-        foreach ($monthlyBalance as $row) {
+        if ($groupByMonth) {
+            $monthlyBalance = $monthlyBalance->keyBy('tx_date');
+            $startMonth = Carbon::createFromDate((int) $year, 1, 1)->startOfMonth();
 
-            $net =
-                ($row->collection + $row->other_collection)
-                -
-                ($row->expense + $row->refund)
-                +
-                $row->pending;
+            for ($index = 0; $index < 12; $index++) {
+                $date = $startMonth->copy()->addMonths($index)->toDateString();
+                $row = $monthlyBalance->get($date);
 
-            $runningBalance += $net;
+                $collection = (float) ($row->collection ?? 0);
+                $otherCollection = (float) ($row->other_collection ?? 0);
+                $expense = (float) ($row->expense ?? 0);
+                $refund = (float) ($row->refund ?? 0);
+                $pending = (float) ($row->pending ?? 0);
+                $net = ($collection + $otherCollection) - ($expense + $refund) + $pending;
 
-            $finalData[] = [
+                $runningBalance += $net;
 
-                'date' => $row->tx_date,
+                $finalData[] = [
 
-                'collection' =>(string)$row->collection,
+                    'date' => $date,
 
-                'other_collection' => (string)$row->other_collection,
+                    'collection' => (string)$collection,
 
-                'expense' => (string)$row->expense,
+                    'other_collection' => (string)$otherCollection,
 
-                'refund' =>(string) $row->refund,
+                    'expense' => (string)$expense,
 
-                'pending' =>(string) $row->pending,
+                    'refund' => (string)$refund,
 
-                'net' => (string)$net,
+                    'pending' => (string)$pending,
 
-                'final_balance' => (string)$runningBalance
-            ];
+                    'net' => (string)$net,
+
+                    'final_balance' => (string)$runningBalance
+                ];
+            }
+        } else {
+            foreach ($monthlyBalance as $row) {
+
+                $net =
+                    ($row->collection + $row->other_collection)
+                    -
+                    ($row->expense + $row->refund)
+                    +
+                    $row->pending;
+
+                $runningBalance += $net;
+
+                $finalData[] = [
+
+                    'date' => $row->tx_date,
+
+                    'collection' =>(string)$row->collection,
+
+                    'other_collection' => (string)$row->other_collection,
+
+                    'expense' => (string)$row->expense,
+
+                    'refund' =>(string) $row->refund,
+
+                    'pending' =>(string) $row->pending,
+
+                    'net' => (string)$net,
+
+                    'final_balance' => (string)$runningBalance
+                ];
+            }
         }
 
         /*
@@ -1108,6 +1151,7 @@ class DashboardService
         if ($type === 'yearly') {
             $payload['from_date'] = $request->year . '-01-01';
             $payload['to_date'] = $request->year . '-12-31';
+            $payload['group_by'] = 'month';
         } elseif ($type === 'monthly') {
             $payload['from_date'] = null;
             $payload['to_date'] = null;

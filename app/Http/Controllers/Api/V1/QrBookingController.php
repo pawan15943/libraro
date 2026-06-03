@@ -47,6 +47,11 @@ class QrBookingController extends Controller
         $qrOnlineBooking = $qrOnlineQuery->latest()->get();
 
         $transform = function ($booking) {
+            $profilePicture = ltrim((string) $booking->profile_picture, '/');
+            if ($profilePicture !== '' && ! str_starts_with($profilePicture, 'public/')) {
+                $profilePicture = 'public/'.$profilePicture;
+            }
+
             return [
                 'booking_id' => $booking->id,
                 'name' => $booking->name,
@@ -54,7 +59,7 @@ class QrBookingController extends Controller
                 'seat_no' => (string) ($booking->seat_no ?? ''),
                 'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
                 'plan_start_date' => $booking->plan_start_date,
-                'profile_picture' => $booking->profile_picture ? asset('public/' . ltrim($booking->profile_picture, '/')) : '',
+                'profile_picture' => $profilePicture !== '' ? asset($profilePicture) : '',
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
@@ -163,4 +168,3 @@ class QrBookingController extends Controller
         ]);
     }
 }
-

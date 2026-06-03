@@ -1223,9 +1223,11 @@ class LearnerService
         STATUS FILTER
         ------------------------------*/
 
+        $statusFilter = $filters['status'] ?? 'all';
+
         if (!empty($filters['status'])) {
 
-            switch ($filters['status']) {
+            switch ($statusFilter) {
                 case 'all':
                 break;
 
@@ -1263,7 +1265,18 @@ class LearnerService
 
                 case 'future':
 
-                    $query->whereDate('learner_detail.plan_start_date','>',now());
+                    $extendDays = getExtendDays($branchId);
+
+                    $query->whereDate('learner_detail.plan_start_date','>',now())
+                        ->whereNotExists(function ($sub) use ($branchId, $extendDays) {
+                            $sub->select(DB::raw(1))
+                                ->from('learner_detail as active_detail')
+                                ->whereColumn('active_detail.learner_id', 'learner_detail.learner_id')
+                                ->where('active_detail.branch_id', $branchId)
+                                ->where('active_detail.status', 1)
+                                ->whereDate('active_detail.plan_start_date', '<=', now())
+                                ->whereDate('active_detail.plan_end_date', '>=', now()->subDays($extendDays));
+                        });
 
                 break;
 

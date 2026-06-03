@@ -897,7 +897,7 @@ class LearnerOperationService
             }
             $file->move($destinationFolder, $fileName);
 
-            return $folder.'/'.$fileName;
+            return 'public/'.$folder.'/'.$fileName;
         }
 
         if (is_string($file)) {
@@ -920,14 +920,14 @@ class LearnerOperationService
                     $destinationPath = $destinationFolder.'/'.$fileName;
                     File::move($sourcePath, $destinationPath);
 
-                    return $folder.'/'.$fileName;
+                    return 'public/'.$folder.'/'.$fileName;
                 }
             }
 
-            if (str_contains($file, '/uploade/')) {
+            if (str_contains($file, '/uploade/') || str_contains($file, 'uploade/')) {
                 $pos = strpos((string) $path, 'uploade/');
                 if ($pos !== false) {
-                    return substr((string) $path, $pos);
+                    return 'public/'.substr((string) $path, $pos);
                 }
             }
         }

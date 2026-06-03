@@ -44,14 +44,14 @@ class FileUploadService
                     $destinationPath = $destinationFolder . '/' . $fileName;
                     File::move($sourcePath, $destinationPath);
 
-                    return $folder . '/' . $fileName;
+                    return 'public/' . $folder . '/' . $fileName;
                 }
             }
 
-            if (str_contains($file, '/uploade/')) {
+            if (str_contains($file, '/uploade/') || str_contains($file, 'uploade/')) {
                 $pos = strpos($path, 'uploade/');
                 if ($pos !== false) {
-                    return substr($path, $pos);
+                    return 'public/' . substr($path, $pos);
                 }
             }
         }
