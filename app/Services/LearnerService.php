@@ -1774,8 +1774,18 @@ class LearnerService
                     ->orderBy('id', 'asc')
                     ->get();
 
-                $this->payPendingAmount($transactions, $pendingPay);
-                $this->logSettlementActivity($learnerId, 'PENDING', $pendingPay, $data->payment_mode ?? 1, 'Cr');
+                $appliedPayments = $this->payPendingAmount($transactions, $pendingPay);
+
+                foreach ($appliedPayments as $payment) {
+                    $this->logSettlementActivity(
+                        $learnerId,
+                        'PENDING',
+                        $payment['amount'],
+                        $data->payment_mode ?? 1,
+                        'Cr',
+                        $payment['transaction_id']
+                    );
+                }
 
                 if ($adjust) {
                     $this->adjustRemainingPending($learnerId);
@@ -1869,9 +1879,10 @@ class LearnerService
         }
     }
 
-    private function payPendingAmount($transactions, float $amount): void
+    private function payPendingAmount($transactions, float $amount): array
     {
         $remaining = $amount;
+        $appliedPayments = [];
 
         foreach ($transactions as $transaction) {
             if ($remaining <= 0) {
@@ -1893,8 +1904,17 @@ class LearnerService
                 'paid_date' => now()->format('Y-m-d'),
             ]);
 
+            if ($paidNow > 0) {
+                $appliedPayments[] = [
+                    'transaction_id' => $transaction->id,
+                    'amount' => $paidNow,
+                ];
+            }
+
             $remaining -= $paidNow;
         }
+
+        return $appliedPayments;
     }
 
     private function adjustRemainingPending(int $learnerId): void
@@ -2065,10 +2085,10 @@ class LearnerService
         }
     }
 
-    private function logSettlementActivity(int $learnerId, string $paymentType, float $amount, $paymentMode, string $drCr): void
+    private function logSettlementActivity(int $learnerId, string $paymentType, float $amount, $paymentMode, string $drCr, ?int $learnerTransactionId = null): void
     {
         $mode = match ((int) $paymentMode) {
-            3 => 'OTHER',
+            3 => 'PAYLATER',
             2 => 'OFFLINE',
             default => 'ONLINE',
         };
@@ -2076,6 +2096,7 @@ class LearnerService
         LearnerTransactionActivity::create([
             'branch_id' => getCurrentBranch(),
             'learner_id' => $learnerId,
+            'learner_transaction_id' => $learnerTransactionId,
             'date' => now()->format('Y-m-d'),
             'transaction_id' => transaction_id(),
             'particular' => 'SETTLEMENT',
