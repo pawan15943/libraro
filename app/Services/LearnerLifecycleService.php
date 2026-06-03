@@ -609,19 +609,24 @@ class LearnerLifecycleService
     private function formatOtherPayments($transactions, $activities)
     {
         $rows = collect();
+        $activityPaymentTypes = $activities
+            ->filter(fn ($activity) => in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS'], true))
+            ->pluck('payment_type')
+            ->map(fn ($type) => strtoupper((string) $type))
+            ->unique();
 
         foreach ($transactions as $transaction) {
-            if ((float) ($transaction->token_money ?? 0) > 0) {
+            if ((float) ($transaction->token_money ?? 0) > 0 && ! $activityPaymentTypes->contains('TOKEN MONEY')) {
                 $rows->push($this->formatOtherPaymentRow($transaction, 'TOKEN MONEY', (float) $transaction->token_money));
             }
 
-            if ((float) ($transaction->miscellaneous ?? 0) > 0) {
+            if ((float) ($transaction->miscellaneous ?? 0) > 0 && ! $activityPaymentTypes->contains('MISCELLANEOUS')) {
                 $rows->push($this->formatOtherPaymentRow($transaction, 'MISCELLANEOUS', (float) $transaction->miscellaneous));
             }
         }
 
         $activities
-            ->filter(fn ($activity) => in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND'], true))
+            ->filter(fn ($activity) => in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS'], true))
             ->each(function ($activity) use ($rows) {
                 $rows->push([
                     'id' => null,
@@ -1286,6 +1291,7 @@ class LearnerLifecycleService
         // Activity Log Data
         $data = [
             'learner_id'   => $request->learner_id,
+            'learner_transaction_id' => $transaction->id,
             'particular'   => 'Paid By Trans',
             'payment_type' => $payment_type,
             'payment_mode' => $request->payment_mode ?? 1,
