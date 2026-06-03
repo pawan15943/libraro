@@ -629,7 +629,7 @@ class LearnerLifecycleService
             ->filter(fn ($activity) => in_array(strtoupper((string) $activity->payment_type), ['TOKEN MONEY', 'MISCELLANEOUS'], true))
             ->each(function ($activity) use ($rows) {
                 $rows->push([
-                    'id' => null,
+                    'id' => (int) $activity->id,
                     'learner_transaction_id' => (int) ($activity->learner_transaction_id ?? 0),
                     'payment_type' => (string) ($activity->payment_type ?? ''),
                     'amount' => $this->money((float) ($activity->amount ?? 0)),
