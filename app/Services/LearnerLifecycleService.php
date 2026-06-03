@@ -75,7 +75,7 @@ class LearnerLifecycleService
                 'pending_amount' => $pendingAmount,
                 'extra_amount' => $extraAmount,
                 'refund_amount' => (float) $refundAmount,
-                'next_due_date' => optional($transactions->firstWhere('pending_amount', '>', 0))->due_date,
+                'next_due_date' => $currentDetail?->plan_end_date,
             ],
         ];
     }
