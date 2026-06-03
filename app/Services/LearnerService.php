@@ -1182,16 +1182,34 @@ class LearnerService
     {
         $branchId = getCurrentBranch();
 
-        $latestDetail = LearnerDetail::selectRaw('MAX(id) as id')
+        $latestDetail = LearnerDetail::withTrashed()
+            ->selectRaw('MAX(id) as id')
             ->groupBy('learner_id');
 
-        $query = LearnerDetail::query()
+        $learners = Learner::withTrashed()
+            ->select([
+                'id',
+                'learner_no',
+                'name',
+                'mobile',
+                'email',
+                'dob',
+                'profile_picture',
+                'branch_id',
+                'frozen_status',
+                'status',
+                'deleted_at',
+            ]);
+
+        $query = LearnerDetail::withTrashed()
 
             ->joinSub($latestDetail,'latest',function($join){
                 $join->on('learner_detail.id','=','latest.id');
             })
 
-            ->join('learners','learners.id','=','learner_detail.learner_id')
+            ->joinSub($learners,'learners',function($join){
+                $join->on('learners.id','=','learner_detail.learner_id');
+            })
 
             ->leftJoin('plans','plans.id','=','learner_detail.plan_id')
 
@@ -1224,6 +1242,10 @@ class LearnerService
         ------------------------------*/
 
         $statusFilter = $filters['status'] ?? 'all';
+
+        if (!in_array($statusFilter, ['all', 'deleted'], true)) {
+            $query->whereNull('learners.deleted_at');
+        }
 
         if (!empty($filters['status'])) {
 
