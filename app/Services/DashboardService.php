@@ -1194,13 +1194,18 @@ class DashboardService
         }
 
         $data = $this->todayFinancialData($innerRequest);
+        $paginatedList = $this->paginateArrayItems(
+            [],
+            (int) $request->input('page', 1),
+            (int) $request->input('per_page', 20)
+        );
         $paginatedTransactions = $this->paginateArrayItems(
             $data['collection'],
             (int) $request->input('page', 1),
             (int) $request->input('per_page', 20)
         );
 
-        return [
+        $response = [
             'summary' => [
                 'booking_income' =>(string) $data['today_booking_amt'],
                 'other_income' =>(string) $data['today_other_amt'],
@@ -1210,8 +1215,17 @@ class DashboardService
                 'total_revenue' => (string)$data['total_revenue'],
             ],
             'transactions' => $paginatedTransactions['items'],
-            'pagination' => $paginatedTransactions['pagination'],
+            'pagination' => [
+                'list' => $paginatedList['pagination'],
+                'transactions' => $paginatedTransactions['pagination'],
+            ],
         ];
+
+        if ($paginatedList['items']->isNotEmpty()) {
+            $response['list'] = $paginatedList['items'];
+        }
+
+        return $response;
     }
 
     private function paginateArrayItems($items, int $page = 1, int $perPage = 20): array
