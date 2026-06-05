@@ -1283,7 +1283,12 @@ class LearnerService
                             'learner_detail.plan_end_date',
                             '>=',
                             now()->subDays($extendDays)
-                        );
+                        )->whereNotExists(function ($sub) {
+                            $sub->select(DB::raw(1))
+                                ->from('learner_operations_log as closed_op')
+                                ->whereColumn('closed_op.learner_detail_id', 'learner_detail.id')
+                                ->where('closed_op.operation', 'closeSeat');
+                        });
 
                 break;
 
@@ -1306,7 +1311,14 @@ class LearnerService
 
                 case 'expired':
 
-                    $query->whereDate('learner_detail.plan_end_date','<',now())->where('learners.status',0);
+                    $query->whereDate('learner_detail.plan_end_date','<',now())
+                        ->where('learners.status',0)
+                        ->whereNotExists(function ($sub) {
+                            $sub->select(DB::raw(1))
+                                ->from('learner_operations_log as closed_op')
+                                ->whereColumn('closed_op.learner_detail_id', 'learner_detail.id')
+                                ->where('closed_op.operation', 'closeSeat');
+                        });
 
                 break;
 
