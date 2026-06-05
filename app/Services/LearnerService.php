@@ -1432,10 +1432,11 @@ class LearnerService
             ->orderByDesc('id') // latest operation
             ->select('operation', 'created_at')
             ->first();
+            $operationName = $operation->operation ?? null;
             $planStatus =getPlanStatusDetails($learner->plan_end_date);
-            if($operation->operation == 'closeSeat'){
+            if($operationName == 'closeSeat'){
                     $status='Closed';
-            }elseif($operation->operation == 'deleteSeat' && $learner->deleted_at !=null){
+            }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $status='Deleted';
             }else{
                     $status = strip_tags(
@@ -1445,9 +1446,9 @@ class LearnerService
         
             
         
-            if($operation->operation == 'closeSeat'){
+            if($operationName == 'closeSeat'){
                 $mainstatus='Closed';
-            }elseif($operation->operation == 'deleteSeat' && $learner->deleted_at !=null){
+            }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
