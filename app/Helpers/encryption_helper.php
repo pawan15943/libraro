@@ -2004,7 +2004,7 @@ if (!function_exists('whatsappReceiptMessage')) {
         $transaction = learnerTransaction($learner->id, $learner->learner_detail_id);
         $receiptUrl = null;
         if ($transaction) {
-            $receiptUrl = route('receipt.view', $transaction->id);
+            $receiptUrl = route('receipt.view', ['transactionId' => $transaction->id]);
         }
         
         $shortUrl   = makeTinyUrl($receiptUrl);

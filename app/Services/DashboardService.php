@@ -91,13 +91,15 @@ class DashboardService
             $query->whereYear('date', (int) $resolvedValue);
         }
 
-        $collection = $query ->where(function($q) {
-                $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
-                ->orWhere(function($sub) {
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Cr');
-                });
-            })->sum('amount');
+        $collection =$query->where('dr_cr', 'Cr')->sum('amount');
+
+        // $collection = $query ->where(function($q) {
+        //         $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
+        //         ->orWhere(function($sub) {
+        //             $sub->where('payment_type', 'CHANGE PLAN')
+        //                 ->where('dr_cr', 'Cr');
+        //         });
+        //     })->sum('amount');
 
         $today_other_amt=$query->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
 

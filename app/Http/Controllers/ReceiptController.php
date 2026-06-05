@@ -57,8 +57,7 @@ class ReceiptController extends Controller
     public function mobile(int $transactionId, ReceiptService $receiptService)
     {
         $transaction = $receiptService->findPaidTransaction($transactionId);
-        $data = $receiptService->buildViewData($transaction);
 
-        return view('html-library_receipt_final', $data);
+        return $receiptService->downloadResponse($transaction);
     }
 }
