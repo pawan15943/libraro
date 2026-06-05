@@ -1371,7 +1371,7 @@ class LearnerService
             'learner_detail.id as learner_detail_id',
             'learners.deleted_at',
             DB::raw('(
-                SELECT learner_transactions.transaction_id
+                SELECT learner_transactions.id
                 FROM learner_transactions
                 WHERE learner_transactions.learner_id = learners.id
                 ORDER BY learner_transactions.id DESC
