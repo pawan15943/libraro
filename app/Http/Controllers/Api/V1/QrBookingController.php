@@ -85,6 +85,8 @@ class QrBookingController extends Controller
 
             $booking = Booking::where('branch_id', $branchId)
             ->where('id', $request->booking_id)
+            ->select('bookings.*')
+            ->selectRaw('bookings.total_amount as paid_amount')
             ->with('planType:id,name')
             ->first();
 

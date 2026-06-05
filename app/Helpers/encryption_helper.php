@@ -1907,12 +1907,17 @@ if (!function_exists('checkAvailability')) {
             }
         }
 
-        // future booking protection
-        $futureBooking = LearnerDetail::where('branch_id', $branchId)
-            ->where('seat_no', $seatNo)
-            ->whereDate('plan_start_date', '>', today())
+        // future booking protection: block only when date range and time slot overlap
+        $futureBooking = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where('learner_detail.branch_id', $branchId)
+            ->where('learner_detail.seat_no', $seatNo)
+            ->whereDate('learner_detail.plan_start_date', '>', today())
+            ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
+            ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
+            ->where('plan_types.start_time', '<', $planType->end_time)
+            ->where('plan_types.end_time', '>', $planType->start_time)
             ->when($learnerId, fn ($q) =>
-                $q->where('learner_id', '!=', $learnerId)
+                $q->where('learner_detail.learner_id', '!=', $learnerId)
             )
             ->exists();
 

@@ -701,6 +701,8 @@ class LearnerService
                 ->where('learner_detail.branch_id', $branchId)
                 ->where('learner_detail.seat_no', $seat_no)
                 ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+                ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
+                ->where('learner_detail.plan_end_date', '>=', $start_date->format('Y-m-d'))
                 ->where(function ($query) use ($plan_type_id) {
 
                     $query->whereExists(function ($sub) use ($plan_type_id) {
@@ -789,7 +791,7 @@ class LearnerService
             }
           
 
-            if(($detailstatus == 0 || $status == 0) && $data['learner_data']['no_expiry']==1){
+            if($start_date->lt($today) && ($detailstatus == 0 || $status == 0) && $data['learner_data']['no_expiry']==1){
                 throw new \Exception('You can only select a back date within your plan duration.');
             }
            
@@ -1367,7 +1369,14 @@ class LearnerService
             'plans.id as plan_id',
             'plan_types.name as plan_type',
             'learner_detail.id as learner_detail_id',
-            'learners.deleted_at'
+            'learners.deleted_at',
+            DB::raw('(
+                SELECT learner_transactions.transaction_id
+                FROM learner_transactions
+                WHERE learner_transactions.learner_id = learners.id
+                ORDER BY learner_transactions.id DESC
+                LIMIT 1
+            ) as transaction_id')
 
         ]);
 
@@ -1416,31 +1425,31 @@ class LearnerService
 
         $learners->getCollection()->transform(function($learner){
 
-        $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
+            $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
 
-        $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
-        $planStatus =getPlanStatusDetails($learner->plan_end_date);
-        if($operation == 'closeSeat'){
-                $status='Closed';
-        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
-            $status='Deleted';
-        }else{
-                $status = strip_tags(
-                getUserStatusWithSpan($learner->plan_end_date,$learner->id)
-            );
-        }
-    
+            $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
+            $planStatus =getPlanStatusDetails($learner->plan_end_date);
+            if($operation == 'closeSeat'){
+                    $status='Closed';
+            }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+                $status='Deleted';
+            }else{
+                    $status = strip_tags(
+                    getUserStatusWithSpan($learner->plan_end_date,$learner->id)
+                );
+            }
         
-    
-        if($operation == 'closeSeat'){
-            $mainstatus='Closed';
-        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
-            $mainstatus='Deleted';
-        }elseif($planStatus['diff_extend_day'] < 0){
-            $mainstatus='Expired';
-        }else{
-            $mainstatus='Active';
-        }
+            
+        
+            if($operation == 'closeSeat'){
+                $mainstatus='Closed';
+            }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+                $mainstatus='Deleted';
+            }elseif($planStatus['diff_extend_day'] < 0){
+                $mainstatus='Expired';
+            }else{
+                $mainstatus='Active';
+            }
 
             $birthStatus = false;
             if (!empty($learner->dob)) {
@@ -1480,9 +1489,11 @@ class LearnerService
                 'mainstatus'=>$mainstatus,
                 'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
+                'transaction_id'=>$learner->transaction_id ?? '',
                 'payment'=>learnerTransactionStatus($learner->id),
                 
-               
+                
+                
             ];
 
         });
