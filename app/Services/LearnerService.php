@@ -1426,12 +1426,16 @@ class LearnerService
         $learners->getCollection()->transform(function($learner){
 
             $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
-
-            $operation = optional(getLearnerOperation($learner->learner_detail_id))->operation;    
+                    
+            $operation = DB::table('learner_operations_log')
+            ->where('learner_id', $learner->id)
+            ->orderByDesc('id') // latest operation
+            ->select('operation', 'created_at')
+            ->first();
             $planStatus =getPlanStatusDetails($learner->plan_end_date);
-            if($operation == 'closeSeat'){
+            if($operation->operation == 'closeSeat'){
                     $status='Closed';
-            }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            }elseif($operation->operation == 'deleteSeat' && $learner->deleted_at !=null){
                 $status='Deleted';
             }else{
                     $status = strip_tags(
@@ -1441,9 +1445,9 @@ class LearnerService
         
             
         
-            if($operation == 'closeSeat'){
+            if($operation->operation == 'closeSeat'){
                 $mainstatus='Closed';
-            }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            }elseif($operation->operation == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
