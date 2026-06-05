@@ -97,6 +97,10 @@ class QrBookingController extends Controller
                 ], 404);
             }
 
+            $booking->plan_price_id = (string) ($booking->plan_price_id ?? '');
+            $booking->total_amount = (string) ($booking->total_amount ?? '');
+            $booking->paid_amount = (string) ($booking->paid_amount ?? '');
+
             return response()->json([
                 'status' => true,
                 'data'   => $booking
