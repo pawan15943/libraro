@@ -1685,7 +1685,7 @@ class LearnerService
             ->orderBy('floor_no')
             ->first();
 
-        $plantypes = $this->formatSeatPlanTypes($planTypes, $generalDetails, $transactions);
+        $plantypes = $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions);
         $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
 
         return [[
@@ -1702,6 +1702,33 @@ class LearnerService
                 'plantype' => $plantypes,
             ]],
         ]];
+    }
+
+    private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions)
+    {
+        $detailsByPlanType = collect($seatDetails)->groupBy('plan_type_id');
+
+        return $planTypes->flatMap(function ($planType) use ($detailsByPlanType, $transactions) {
+            $details = $detailsByPlanType->get($planType->id, collect())->values();
+
+            if ($details->isEmpty()) {
+                return [[
+                    'plan_type_id' => $planType->id,
+                    'plan_type_name' => $planType->name,
+                    'plan_type_status' => 'available',
+                    'learner' => null,
+                ]];
+            }
+
+            return $details->map(function ($detail) use ($planType, $transactions) {
+                return [
+                    'plan_type_id' => $planType->id,
+                    'plan_type_name' => $planType->name,
+                    'plan_type_status' => $this->seatPlanTypeStatus($detail, $transactions),
+                    'learner' => $this->formatSeatLearner($detail, $transactions),
+                ];
+            })->all();
+        })->values()->all();
     }
 
     private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
