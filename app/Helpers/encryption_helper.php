@@ -511,7 +511,7 @@ if (!function_exists('getEndDate')) {
             case 'MONTH':
                 if (!empty($monthdays)) {
                     return $planStartDate->copy()
-                        ->addDays($monthdays)
+                        ->addDays($monthdays * $duration)
                         ->subDay();
                 }
                 return $planStartDate->copy()
@@ -591,7 +591,7 @@ if (!function_exists('getBillingCyclePrice')) {
             case 'MONTH':
                 if (!empty($monthdays)) {
                   
-                    $totalDays = $monthdays;
+                    $totalDays = $monthdays * $duration;
                 } else {
                      
                     // Days in joining month
