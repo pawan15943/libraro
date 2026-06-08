@@ -815,10 +815,10 @@ class LearnerController extends Controller
         return [
             'id' => (int) $log->id,
             'learner_id' => (int) $log->learner_id,
-            'learner_detail_id' => $log->learner_detail_id ? (int) $log->learner_detail_id : null,
+            // 'learner_detail_id' => $log->learner_detail_id ? (int) $log->learner_detail_id : null,
             'learner_name' => optional($log->learner)->name ?? '',
             'seat_no' => optional($log->learner)->seat_no ?? '',
-            'operation_key' => (string) $log->operation,
+            // 'operation_key' => (string) $log->operation,
             'operation_type' => $operationType,
             'filter_key' => $meta['filter_key'],
             'color_code' => $meta['color_code'],
@@ -828,11 +828,11 @@ class LearnerController extends Controller
             'field_updated' => (string) ($log->field_updated ?? ''),
             'old_value' => (string) ($log->old_value ?? ''),
             'new_value' => (string) ($log->new_value ?? ''),
-            'updated_by' => (string) ($log->updated_by ?? ''),
+            // 'updated_by' => (string) ($log->updated_by ?? ''),
             'updated_by_name' => $log->updated_by_name,
-            'date' => $createdAt->toDateString(),
-            'time' => $createdAt->format('h:i A'),
-            'created_at' => $createdAt->toDateTimeString(),
+            // 'date' => $createdAt->toDateString(),
+            // 'time' => $createdAt->format('h:i A'),
+            // 'created_at' => $createdAt->toDateTimeString(),
             'group_label' => $this->activityGroupLabel($createdAt),
         ];
     }
