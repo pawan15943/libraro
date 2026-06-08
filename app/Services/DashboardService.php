@@ -609,21 +609,12 @@ class DashboardService
         */
 
         $today_booking_amt = (clone $baseQuery)
-            ->where(function ($q) {
-
-                $q->whereIn('payment_type', [
-                    'SEAT ASSIGNMENT',
-                    'RENEW',
-                    'REACTIVE',
-                    'UPGRADE'
+            ->whereNotIn('payment_type', [
+                    'TOKEN MONEY',
+                    'MISCELLANEOUS',
+                    'PENDING',
                 ])
-
-                ->orWhere(function ($sub) {
-
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Cr');
-                });
-            })
+             ->where('dr_cr', 'Cr')
             ->sum('amount');
 
         $today_other_amt = (clone $baseQuery)
@@ -685,22 +676,12 @@ class DashboardService
 
             case 'today_collection':
 
-                $query->where(function ($q) {
-
-                    $q->whereIn('payment_type', [
-                        'SEAT ASSIGNMENT',
-                        'RENEW',
-                        'REACTIVE',
-                        'UPGRADE'
-                    ])
-
-                    ->orWhere(function ($sub) {
-
-                        $sub->where('payment_type', 'CHANGE PLAN')
-                            ->where('dr_cr', 'Cr');
-                    });
-                });
-
+                $query->whereNotIn('payment_type', [
+                    'TOKEN MONEY',
+                    'MISCELLANEOUS',
+                    'PENDING',
+                ])
+             ->where('dr_cr', 'Cr');
             break;
 
             case 'today_other_collection':
@@ -809,19 +790,13 @@ class DashboardService
 
         $monthlyIncome = (clone $baseQuery)->where(function ($q) {
 
-                $q->whereIn('payment_type', [
-                    'SEAT ASSIGNMENT',
-                    'RENEW',
-                    'REACTIVE',
-                    'UPGRADE'
+                $q->whereNotIn('payment_type', [
+                    'TOKEN MONEY',
+                    'MISCELLANEOUS',
+                    'PENDING',
                 ])
-
-                ->orWhere(function ($sub) {
-
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Cr');
-                });
-            })->sum('amount');
+             ->where('dr_cr', 'Cr')
+             ->sum('amount');
 
         $other_total_income = (clone $baseQuery)->whereIn('payment_type', [
                 'TOKEN MONEY',
