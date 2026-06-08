@@ -794,7 +794,8 @@ class DashboardService
                     'TOKEN MONEY',
                     'MISCELLANEOUS',
                     'PENDING',
-                ])
+                ]);
+            })
              ->where('dr_cr', 'Cr')
              ->sum('amount');
 
