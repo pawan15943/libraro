@@ -11,12 +11,16 @@ use Illuminate\Http\Request;
 use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Http\Requests\LearnerOperationRequest;
+use App\Helpers\HelperService;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
+use App\Models\LearnerOperationsLog;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -709,6 +713,79 @@ class LearnerController extends Controller
         }
     }
 
+    public function activity(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'search' => 'nullable|string|max:100',
+            'date' => 'nullable|date',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'activity_type' => 'nullable',
+            'operation' => 'nullable',
+            'operation_type' => 'nullable',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page_no' => 'nullable|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        if ($request->has('page_no')) {
+            $request->merge(['page' => $request->page_no]);
+        }
+
+        $filterValue = $request->input('activity_type', $request->input('operation_type', $request->input('operation')));
+        $operations = $this->activityOperationsFromFilter($filterValue);
+
+        $query = LearnerOperationsLog::query()
+            ->where('branch_id', getCurrentBranch())
+            ->with('learner');
+
+        if (! empty($operations)) {
+            $query->whereIn('operation', $operations);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        } else {
+            if ($request->filled('from_date')) {
+                $query->whereDate('created_at', '>=', $request->from_date);
+            }
+
+            if ($request->filled('to_date')) {
+                $query->whereDate('created_at', '<=', $request->to_date);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('learner', function ($q) use ($search) {
+                $q->where('name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('mobile', 'LIKE', '%' . $search . '%')
+                    ->orWhere('email', 'LIKE', '%' . $search . '%')
+                    ->orWhere('seat_no', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        $logs = $query->latest()->paginate((int) $request->input('per_page', 20));
+
+        return response()->json([
+            'status' => true,
+            'filters' => $this->activityFilters(),
+            'data' => collect($logs->items())->map(fn ($log) => $this->formatLearnerActivity($log))->values(),
+            'pagination' => [
+                'current_page' => $logs->currentPage(),
+                'per_page' => $logs->perPage(),
+                'last_page' => $logs->lastPage(),
+                'total' => $logs->total(),
+            ],
+        ]);
+    }
+
     public function statusList()
     {
         return response()->json([
@@ -725,6 +802,146 @@ class LearnerController extends Controller
                 ['key' => 'pending_payment', 'label' => 'Pending Payment'],
             ],
         ]);
+    }
+
+    private function formatLearnerActivity($log): array
+    {
+        $log->updated_by_name = $this->activityUpdatedByName($log->updated_by);
+        $details = HelperService::getOperationDetails($log);
+        $meta = $this->activityMeta($log->operation);
+        $createdAt = Carbon::parse($log->created_at);
+        $operationType = $details['operation_type'] ?: $meta['label'];
+
+        return [
+            'id' => (int) $log->id,
+            'learner_id' => (int) $log->learner_id,
+            'learner_detail_id' => $log->learner_detail_id ? (int) $log->learner_detail_id : null,
+            'learner_name' => optional($log->learner)->name ?? '',
+            'seat_no' => optional($log->learner)->seat_no ?? '',
+            'operation_key' => (string) $log->operation,
+            'operation_type' => $operationType,
+            'filter_key' => $meta['filter_key'],
+            'color_code' => $meta['color_code'],
+            'title' => $operationType . ' successfully',
+            'message' => trim(strip_tags(str_replace('<br>', ' ', $details['message']))),
+            'message_html' => $details['message'],
+            'field_updated' => (string) ($log->field_updated ?? ''),
+            'old_value' => (string) ($log->old_value ?? ''),
+            'new_value' => (string) ($log->new_value ?? ''),
+            'updated_by' => (string) ($log->updated_by ?? ''),
+            'updated_by_name' => $log->updated_by_name,
+            'date' => $createdAt->toDateString(),
+            'time' => $createdAt->format('h:i A'),
+            'created_at' => $createdAt->toDateTimeString(),
+            'group_label' => $this->activityGroupLabel($createdAt),
+        ];
+    }
+
+    private function activityFilters(): array
+    {
+        return [
+            ['key' => 'renew', 'label' => 'Seat Booking', 'color_code' => '#10B7D9'],
+            ['key' => 'modify', 'label' => 'Modify Plan', 'color_code' => '#E19A00'],
+            ['key' => 'swap', 'label' => 'Swap Seat', 'color_code' => '#D633E9'],
+            ['key' => 'all_day', 'label' => 'All Day', 'color_code' => '#25176E'],
+            ['key' => 'pending_payment', 'label' => 'Pending Payment', 'color_code' => '#6B7280'],
+            ['key' => 'miscellaneous_payment', 'label' => 'Miscellaneous Payment', 'color_code' => '#64748B'],
+            ['key' => 'settle', 'label' => 'Settle', 'color_code' => '#22C55E'],
+            ['key' => 'edit', 'label' => 'Edit', 'color_code' => '#6366F1'],
+            ['key' => 'refund', 'label' => 'Refund', 'color_code' => '#EF4444'],
+            ['key' => 'close_plan', 'label' => 'Close Plan', 'color_code' => '#F97316'],
+            ['key' => 'gift_day', 'label' => 'Gift Day', 'color_code' => '#14B8A6'],
+            ['key' => 'delete', 'label' => 'Delete', 'color_code' => '#DC2626'],
+            ['key' => 'freeze_plan', 'label' => 'Freeze Plan', 'color_code' => '#0EA5E9'],
+        ];
+    }
+
+    private function activityOperationsFromFilter($filter): array
+    {
+        $values = is_array($filter) ? $filter : explode(',', (string) $filter);
+        $map = [
+            'renew' => ['renewSeat', 'renewDelete'],
+            'seat_booking' => ['renewSeat'],
+            'modify' => ['learnerUpgrade', 'changePlan'],
+            'modify_plan' => ['learnerUpgrade', 'changePlan'],
+            'swap' => ['swapseat'],
+            'swap_seat' => ['swapseat'],
+            'close_plan' => ['closeSeat'],
+            'delete' => ['deleteSeat'],
+            'restore' => ['restoreSeat'],
+            'reactive' => ['reactive'],
+            'all' => [],
+            'all_day' => [],
+        ];
+
+        $operations = [];
+        foreach ($values as $value) {
+            $key = strtolower(trim((string) $value));
+            if ($key === '') {
+                continue;
+            }
+
+            if (array_key_exists($key, $map)) {
+                if ($map[$key] === []) {
+                    return [];
+                }
+
+                $operations = array_merge($operations, $map[$key]);
+                continue;
+            }
+
+            $operations[] = trim((string) $value);
+        }
+
+        return array_values(array_unique($operations));
+    }
+
+    private function activityMeta(?string $operation): array
+    {
+        $map = [
+            'renewSeat' => ['label' => 'Renew Seat', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
+            'renewDelete' => ['label' => 'Renew Delete', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
+            'learnerUpgrade' => ['label' => 'Upgrade Seat', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
+            'changePlan' => ['label' => 'Change Plan', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
+            'swapseat' => ['label' => 'Swap Seat', 'filter_key' => 'swap', 'color_code' => '#D633E9'],
+            'reactive' => ['label' => 'Reactive Seat', 'filter_key' => 'reactive', 'color_code' => '#22C55E'],
+            'closeSeat' => ['label' => 'Close Seat', 'filter_key' => 'close_plan', 'color_code' => '#F97316'],
+            'deleteSeat' => ['label' => 'Delete Seat', 'filter_key' => 'delete', 'color_code' => '#DC2626'],
+            'restoreSeat' => ['label' => 'Restore Seat', 'filter_key' => 'restore', 'color_code' => '#14B8A6'],
+        ];
+
+        return $map[$operation] ?? [
+            'label' => ucwords(str_replace(['_', '-'], ' ', (string) $operation)),
+            'filter_key' => (string) $operation,
+            'color_code' => '#6B7280',
+        ];
+    }
+
+    private function activityGroupLabel(Carbon $date): string
+    {
+        if ($date->isToday()) {
+            return 'Today - ' . $date->format('d M Y');
+        }
+
+        if ($date->isYesterday()) {
+            return 'Yesterday - ' . $date->format('d M Y');
+        }
+
+        return $date->format('d M Y');
+    }
+
+    private function activityUpdatedByName($updatedBy): string
+    {
+        if (! $updatedBy) {
+            return 'System';
+        }
+
+        $name = DB::table('library_users')->where('id', $updatedBy)->value('name');
+        if ($name) {
+            return (string) $name;
+        }
+
+        return (string) (DB::table('libraries')->where('id', $updatedBy)->value('library_name') ?? 'System');
     }
     
 }

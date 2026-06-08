@@ -147,6 +147,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::match(['get', 'post'], '/seat-status', [LearnerController::class, 'seatStatus']);
         Route::post('/swap-seat', [LearnerController::class, 'swapSeat']);
         Route::post('/list', [LearnerController::class,'index']);
+        Route::match(['get', 'post'], '/activity', [LearnerController::class, 'activity']);
         Route::get('/status-list', [LearnerController::class,'statusList']);
         Route::post('/detail', [LearnerController::class,'show']);
         Route::post('/gift-days/assign', [LearnerController::class, 'assignGiftDays']);
@@ -195,5 +196,4 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 //     Route::get('learner/profile', [LearnerAuthController::class, 'profile']);
 //     Route::post('learner/logout', [LearnerAuthController::class, 'logout']);
 // });
-
 
