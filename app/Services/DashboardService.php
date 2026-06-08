@@ -1263,7 +1263,7 @@ class DashboardService
             ->first();
 
         $banners = [[
-            'type' => 'other_wishes',
+            'type' => $festival ? 'other_wishes' : '',
             'tital' => $festival ? ('Wish you happy ' . $festival->festival_name) : '',
             'description' => $festival->description ?? '',
             'birthday_user' => '',
@@ -1356,7 +1356,7 @@ class DashboardService
 
         $banners[] = [
             'type' => 'subscription',
-            'tital' => '',
+            'tital' => 'subscription',
             'description' => '',
             'birthday_user' => '',
             'seat_no' => '',
@@ -1365,7 +1365,10 @@ class DashboardService
             'days_in_left' => $daysLeft,
         ];
 
-        return $banners;
+        return collect($banners)
+            ->filter(fn ($banner) => !empty($banner['tital']))
+            ->values()
+            ->all();
     }
 
     private function lastBanner(): array

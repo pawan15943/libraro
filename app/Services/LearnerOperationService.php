@@ -112,7 +112,7 @@ class LearnerOperationService
                 }
             }
           
-
+            \Log::info('Learner for end date', ['endDate' => $endDate]);
             /* Billing */
 
             $billing = $this->calculateBilling($dto,$customer,$start_date,app(PlanService::class));

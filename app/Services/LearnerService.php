@@ -18,6 +18,7 @@ use App\Models\Seat;
 use App\Services\LearnerGiftDaysService;
 use App\Services\TransactionActivityService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 use Log;
 use Auth;
@@ -1388,7 +1389,15 @@ class LearnerService
                 WHERE learner_transactions.learner_id = learners.id
                 ORDER BY learner_transactions.id DESC
                 LIMIT 1
-            ) as transaction_id')
+            ) as transaction_id'),
+            DB::raw('(
+                SELECT learner_transactions.id
+                FROM learner_transactions
+                WHERE learner_transactions.learner_detail_id = learner_detail.id
+                AND learner_transactions.is_paid = 1
+                ORDER BY learner_transactions.id DESC
+                LIMIT 1
+            ) as receipt_transaction_id')
 
         ]);
 
@@ -1507,6 +1516,10 @@ class LearnerService
                 'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'transaction_id'=>$learner->transaction_id ?? '',
+                'receipt_url' => $learner->receipt_transaction_id
+                    ? URL::signedRoute('receipt.signed', ['transactionId' => $learner->receipt_transaction_id])
+                    : '',
+             
                 'payment'=>learnerTransactionStatus($learner->id),
                 
                 
