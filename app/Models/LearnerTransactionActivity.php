@@ -40,6 +40,28 @@ class LearnerTransactionActivity extends Model
                     $model->learner_transaction_id = $latestTxnId;
                 }
             }
+
+            if (!empty($model->learner_transaction_id)) {
+                $learnerTransaction = LearnerTransaction::withoutGlobalScopes()
+                    ->where('id', $model->learner_transaction_id)
+                    ->first();
+
+                $transactionId = $learnerTransaction?->transaction_id;
+
+                if (empty($transactionId) && $learnerTransaction) {
+                    $transactionId = transaction_id();
+                    $learnerTransaction->transaction_id = $transactionId;
+                    $learnerTransaction->save();
+                }
+
+                if (!empty($transactionId)) {
+                    $model->transaction_id = $transactionId;
+                }
+            }
+
+            if (empty($model->transaction_id)) {
+                $model->transaction_id = transaction_id();
+            }
         });
 
         static::updating(function ($model) {

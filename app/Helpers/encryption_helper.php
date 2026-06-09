@@ -1468,17 +1468,22 @@ if (!function_exists('transaction_id')) {
     function transaction_id()
     {
 
-        // Fixed year
-        $year = "2025";
+        $year = date('Y');
 
-        // Get last transaction (only for 2025 IDs)
-        $last = LearnerTransactionActivity::where('transaction_id', 'like', $year . '000%')
-            ->orderBy('id', 'desc')
-            ->first();
+        $lastActivityId = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('transaction_id', 'like', $year . '000%')
+            ->max('transaction_id');
 
-        if ($last && !empty($last->transaction_id)) {
+        $lastTransactionId = LearnerTransaction::withoutGlobalScopes()
+            ->where('transaction_id', 'like', $year . '000%')
+            ->max('transaction_id');
+
+        $lastIds = array_filter([$lastActivityId, $lastTransactionId]);
+        $lastId = empty($lastIds) ? null : max($lastIds);
+
+        if (!empty($lastId)) {
             // extract last sequence (last 4 digits)
-            $lastSeq = (int)substr($last->transaction_id, -4);
+            $lastSeq = (int)substr($lastId, -4);
             $newSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
         } else {
             // first transaction

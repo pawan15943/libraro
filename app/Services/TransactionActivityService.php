@@ -121,7 +121,6 @@ class TransactionActivityService
             'learner_id' => $data['learner_id'],
             'learner_transaction_id' => $learnerTransactionId,
             'date' => now()->format('Y-m-d'),
-            'transaction_id' => transaction_id(),
             'particular' => $data['particular'],
             'payment_type' => $data['payment_type'],
             'payment_mode' => $paymentMode,

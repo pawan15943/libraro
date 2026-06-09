@@ -391,7 +391,7 @@ class QrBookingService
                 'branchId' => getCurrentBranch(),
                 'transaction_date'=>$booking->created_at->format('Y-m-d')
             ];
-            $service->learnerTransactionAddUpdate($tran);
+            $learnerTransaction = $service->learnerTransactionAddUpdate($tran);
 
           
 
@@ -415,6 +415,7 @@ class QrBookingService
 
             $data['payment_type'] =$booking->type == 'qr_renew' ? 'RENEW' : 'SEAT ASSIGNMENT';
             $data['branchId'] = getCurrentBranch();
+            $data['learner_transaction_id'] = $learnerTransaction->id;
            
             $service->learnerTransactionActivity($data);
 
