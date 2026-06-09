@@ -102,6 +102,11 @@ class QrBookingController extends Controller
             $booking->plan_price_id = (string) ($booking->plan_price_id ?? '');
             $booking->total_amount = (string) ($booking->total_amount ?? '');
             $booking->paid_amount = (string) ($booking->paid_amount ?? '');
+            $profilePicture = ltrim((string) $booking->profile_picture, '/');
+            if ($profilePicture !== '' && ! str_starts_with($profilePicture, 'public/')) {
+                $profilePicture = 'public/'.$profilePicture;
+            }
+            $booking->profile_picture = $profilePicture !== '' ? asset($profilePicture) : '';
 
             return response()->json([
                 'status' => true,
