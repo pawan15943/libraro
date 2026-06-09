@@ -26,8 +26,10 @@ class QrBookingController extends Controller
             if ($request->filled('search')) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
+                    $encryptedSearch = encryptData($search);
+
                     $q->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('mobile', 'LIKE', "%{$search}%");
+                        ->orWhere('mobile', $encryptedSearch);
                 });
             }
         };
