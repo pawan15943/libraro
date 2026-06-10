@@ -24,6 +24,7 @@ use DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class LibraryController extends Controller
 {
@@ -51,8 +52,14 @@ class LibraryController extends Controller
          ->first();
      // ✅ Selected Branch Detail
     $selectedBranch = Branch::where('id', $library->current_branch)
-            ->select('id', 'name', 'library_logo')
+            ->select('id', 'name', 'uuid', 'library_logo','library_address')
             ->first();
+      $branchQrValue = $selectedBranch?->uuid
+         ? route('qr.branch', $selectedBranch->uuid)
+         : '';
+      $branchQrSvg = $branchQrValue
+         ? (string) QrCode::size(650)->generate($branchQrValue)
+         : '';
 
       // Active plan with subscription name
       $activePlan = LibraryTransaction::where('library_transactions.library_id', $libraryId)
@@ -126,6 +133,7 @@ class LibraryController extends Controller
                'library_name'   => $library->library_name,
                'library_email'  => $library->library_email,
                'library_mobile' => $library->library_mobile,
+               'library_no'=> $library->library_no ?? '',
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,
@@ -136,11 +144,16 @@ class LibraryController extends Controller
                 'library_image' => !empty($selectedBranch->library_logo)
                    ? asset('public/'.$selectedBranch->library_logo)
                 : asset('public/img/user.png'),
+                
 
                 // ✅ Selected Branch
                 'selected_branch' => [
                     'id'   => $selectedBranch->id ?? null,
-                    'name' => $selectedBranch->name ?? ''
+                    'name' => $selectedBranch->name ?? '',
+                    'address' => $selectedBranch->library_address ?? '',
+                    'uuid' => $selectedBranch->uuid ?? '',
+                    'branch_qr_value' => $branchQrValue,
+                    'branch_qr_svg' => $branchQrSvg,
                 ],
               
          ]

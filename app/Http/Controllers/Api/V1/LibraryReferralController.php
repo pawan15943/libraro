@@ -8,6 +8,7 @@ use App\Models\ReferralWallet;
 use App\Services\ReferralRewardService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class LibraryReferralController extends Controller
 {
@@ -18,6 +19,9 @@ class LibraryReferralController extends Controller
 
         $referralCode = (string) ($library->referral_code ?? '');
         $referralLink = url('/library/register?ref=' . $referralCode);
+        $referralQrSvg = $referralLink
+            ? (string) QrCode::size(650)->generate($referralLink)
+            : '';
 
         $maxReferrals = ReferralRewardService::MAX_REDEEM_COUNT;
         $pointPerReferral = 10;
@@ -98,6 +102,8 @@ class LibraryReferralController extends Controller
                 'refer_method' => [
                     'referral_code' => $referralCode,
                     'referral_link' => $referralLink,
+                    'referral_qr_value' => $referralLink,
+                    'referral_qr_svg' => $referralQrSvg,
                 ],
                 'your_referrals' => $yourReferrals,
                 'completed' => $completedList,
