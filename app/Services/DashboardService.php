@@ -846,11 +846,8 @@ class DashboardService
 
                 SUM(
                     CASE
-                        WHEN payment_type IN
-                        ('SEAT ASSIGNMENT','RENEW','REACTIVE','UPGRADE')
-                        THEN amount
-
-                        WHEN payment_type = 'CHANGE PLAN'
+                        WHEN payment_type NOT IN
+                        ('TOKEN MONEY','MISCELLANEOUS','PENDING')
                         AND dr_cr = 'Cr'
                         THEN amount
 
@@ -998,21 +995,12 @@ class DashboardService
 
             case 'monthly_collection':
 
-                $query->where(function ($q) {
-
-                    $q->whereIn('payment_type', [
-                        'SEAT ASSIGNMENT',
-                        'RENEW',
-                        'REACTIVE',
-                        'UPGRADE'
-                    ])
-
-                    ->orWhere(function ($sub) {
-
-                        $sub->where('payment_type', 'CHANGE PLAN')
-                            ->where('dr_cr', 'Cr');
-                    });
-                });
+                $query->whereNotIn('payment_type', [
+                    'TOKEN MONEY',
+                    'MISCELLANEOUS',
+                    'PENDING',
+                ])
+                ->where('dr_cr', 'Cr');
 
             break;
 
@@ -1097,22 +1085,16 @@ class DashboardService
     {
         $type = (string) $request->input('type');
         $listFor = (string) $request->input('list_for');
-
-        $mappedType = match ($type) {
-            'daily' => 'today',
-            'monthly' => 'monthly',
-            'yearly' => 'yearly',
-            'custom' => 'custom',
-            default => 'today',
-        };
+        $useMonthlyEngine = $type !== 'daily' || $listFor === 'balance';
+        $filterPrefix = $useMonthlyEngine ? 'monthly' : 'today';
 
         $financialType = match ($listFor) {
-            'collection' => $listFor === 'balance' ? '' : $mappedType . '_collection',
-            'other_collection' => $mappedType . '_other_collection',
-            'expense' => $mappedType . '_expense',
-            'refund' => $mappedType . '_refund',
-            'pending' => $mappedType . '_pending',
-            'balance' => $mappedType . '_balance',
+            'collection' => $filterPrefix . '_collection',
+            'other_collection' => $filterPrefix . '_other_collection',
+            'expense' => $filterPrefix . '_expense',
+            'refund' => $filterPrefix . '_refund',
+            'pending' => $filterPrefix . '_pending',
+            'balance' => 'monthly_balance',
             default => null,
         };
 
@@ -1126,14 +1108,18 @@ class DashboardService
             'to_date' => $request->input('to_date'),
         ];
 
-        if ($type === 'yearly') {
+        if ($type === 'daily' && $useMonthlyEngine) {
+            $date = $request->input('date') ?: now()->toDateString();
+            $payload['from_date'] = $date;
+            $payload['to_date'] = $date;
+        } elseif ($type === 'daily') {
+            $payload['from_date'] = null;
+            $payload['to_date'] = null;
+        } elseif ($type === 'yearly') {
             $payload['from_date'] = $request->year . '-01-01';
             $payload['to_date'] = $request->year . '-12-31';
             $payload['group_by'] = 'month';
         } elseif ($type === 'monthly') {
-            $payload['from_date'] = null;
-            $payload['to_date'] = null;
-        } elseif ($type === 'daily') {
             $payload['from_date'] = null;
             $payload['to_date'] = null;
         }
@@ -1171,7 +1157,28 @@ class DashboardService
             ];
         }
 
-        $data = $this->todayFinancialData($innerRequest);
+        $data = $useMonthlyEngine
+            ? $this->monthlyFinancialData($innerRequest)
+            : $this->todayFinancialData($innerRequest);
+
+        $summaryKeys = $useMonthlyEngine
+            ? [
+                'booking_income' => 'monthly_income',
+                'other_income' => 'other_total_income',
+                'expense' => 'monthly_expense',
+                'refund' => 'monthly_refund',
+                'pending' => 'monthly_pending',
+                'total_revenue' => 'monthlyBalance',
+            ]
+            : [
+                'booking_income' => 'today_booking_amt',
+                'other_income' => 'today_other_amt',
+                'expense' => 'today_expense',
+                'refund' => 'today_refund',
+                'pending' => 'today_pending',
+                'total_revenue' => 'total_revenue',
+            ];
+
         $paginatedList = $this->paginateArrayItems(
             [],
             (int) $request->input('page', 1),
@@ -1185,12 +1192,12 @@ class DashboardService
 
         $response = [
             'summary' => [
-                'booking_income' =>(string) $data['today_booking_amt'],
-                'other_income' =>(string) $data['today_other_amt'],
-                'expense' =>(string) $data['today_expense'],
-                'refund' => (string)$data['today_refund'],
-                'pending' => (string)$data['today_pending'],
-                'total_revenue' => (string)$data['total_revenue'],
+                'booking_income' => (string) $data[$summaryKeys['booking_income']],
+                'other_income' => (string) $data[$summaryKeys['other_income']],
+                'expense' => (string) $data[$summaryKeys['expense']],
+                'refund' => (string) $data[$summaryKeys['refund']],
+                'pending' => (string) $data[$summaryKeys['pending']],
+                'total_revenue' => (string) $data[$summaryKeys['total_revenue']],
             ],
             'transactions' => $paginatedTransactions['items'],
             'pagination' => [

@@ -675,7 +675,7 @@ class LibraryController extends Controller
             'year' => 'nullable|integer|min:2000|max:2100',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
-            'payment_type' => 'nullable|array',
+            'payment_type' => 'nullable',
             'payment_type.*' => 'nullable|string',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100'
