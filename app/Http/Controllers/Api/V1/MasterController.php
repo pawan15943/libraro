@@ -203,7 +203,7 @@ class MasterController extends Controller
             ['key' => 'EDIT', 'value' => 'EDIT'],
             ['key' => 'VIP', 'value' => 'VIP'],
             ['key' => 'RESERVED', 'value' => 'RESERVED'],
-            ['key' => 'NON-EXPIRED', 'value' => 'NON-EXPIRED'],
+            ['key' => 'SEAT ASSIGNMENT(NON-EXPIRED)', 'value' => 'NON-EXPIRED'],
             ['key' => 'SETTLED', 'value' => 'SETTLED'],
         ];
 

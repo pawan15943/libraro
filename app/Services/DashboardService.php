@@ -665,11 +665,11 @@ class DashboardService
         $query = (clone $baseQuery)->with('learner');
 
         if ($request->filled('payment_type')) {
-            $paymentTypes = is_array($request->payment_type)
-                ? $request->payment_type
-                : [$request->payment_type];
+            $paymentTypes = $this->normalizeFinancialPaymentTypes($request->payment_type);
 
-            $query->whereIn('payment_type', $paymentTypes);
+            if (!empty($paymentTypes)) {
+                $query->whereIn('payment_type', $paymentTypes);
+            }
         }
 
         switch ($request->type) {
@@ -984,11 +984,11 @@ class DashboardService
         */
 
         if ($request->filled('payment_type')) {
-            $paymentTypes = is_array($request->payment_type)
-                ? $request->payment_type
-                : [$request->payment_type];
+            $paymentTypes = $this->normalizeFinancialPaymentTypes($request->payment_type);
 
-            $query->whereIn('payment_type', $paymentTypes);
+            if (!empty($paymentTypes)) {
+                $query->whereIn('payment_type', $paymentTypes);
+            }
         }
 
         switch ($request->type) {
@@ -1211,6 +1211,20 @@ class DashboardService
         }
 
         return $response;
+    }
+
+    private function normalizeFinancialPaymentTypes($paymentType): array
+    {
+        $paymentTypes = is_array($paymentType) ? $paymentType : [$paymentType];
+        $paymentTypes = array_values(array_filter(array_map(function ($type) {
+            return strtoupper(trim((string) $type));
+        }, $paymentTypes)));
+
+        if (in_array('SEAT ASSIGNMENT', $paymentTypes, true)) {
+            $paymentTypes[] = 'NON-EXPIRED';
+        }
+
+        return array_values(array_unique($paymentTypes));
     }
 
     private function paginateArrayItems($items, int $page = 1, int $perPage = 20): array
