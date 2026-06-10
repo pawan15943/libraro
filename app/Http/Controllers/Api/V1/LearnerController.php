@@ -740,6 +740,7 @@ class LearnerController extends Controller
 
         $filterValue = $request->input('activity_type', $request->input('operation_type', $request->input('operation')));
         $operations = $this->activityOperationsFromFilter($filterValue);
+        $selectedFilters = $this->activitySelectedFilters($filterValue);
 
         $query = LearnerOperationsLog::query()
             ->where('branch_id', getCurrentBranch())
@@ -772,11 +773,31 @@ class LearnerController extends Controller
         }
 
         $logs = $query->latest()->paginate((int) $request->input('per_page', 20));
+        $activities = collect($logs->items())
+            ->map(fn ($log) => $this->formatLearnerActivity($log))
+            ->groupBy('group_date_key')
+            ->map(function ($items) {
+                $first = $items->first();
+
+                return [
+                    'date_label' => $first['date_label'],
+                    'date' => $first['date'],
+                    'items' => $items->map(function ($item) {
+                        unset($item['group_date_key'], $item['date_label']);
+
+                        return $item;
+                    })->values(),
+                ];
+            })
+            ->values();
 
         return response()->json([
             'status' => true,
-            'filters' => $this->activityFilters(),
-            'data' => collect($logs->items())->map(fn ($log) => $this->formatLearnerActivity($log))->values(),
+            'selected_date' => (string) ($request->date ?? ''),
+            'search' => (string) ($request->search ?? ''),
+            'activity_type' => is_array($filterValue) ? $selectedFilters : (string) ($filterValue ?? ''),
+            'filters' => $this->activityFilters($selectedFilters),
+            'data' => $activities,
             'pagination' => [
                 'current_page' => $logs->currentPage(),
                 'per_page' => $logs->perPage(),
@@ -830,16 +851,17 @@ class LearnerController extends Controller
             'new_value' => (string) ($log->new_value ?? ''),
             // 'updated_by' => (string) ($log->updated_by ?? ''),
             'updated_by_name' => $log->updated_by_name,
-            // 'date' => $createdAt->toDateString(),
-            // 'time' => $createdAt->format('h:i A'),
+            'time' => $createdAt->format('h:i A'),
             // 'created_at' => $createdAt->toDateTimeString(),
-            'group_label' => $this->activityGroupLabel($createdAt),
+            'date' => $createdAt->format('d M Y'),
+            'date_label' => $this->activityDateLabel($createdAt),
+            'group_date_key' => $createdAt->toDateString(),
         ];
     }
 
-    private function activityFilters(): array
+    private function activityFilters(array $selectedFilters = []): array
     {
-        return [
+        $filters = [
             ['key' => 'renew', 'label' => 'Seat Booking', 'color_code' => '#10B7D9'],
             ['key' => 'modify', 'label' => 'Modify Plan', 'color_code' => '#E19A00'],
             ['key' => 'swap', 'label' => 'Swap Seat', 'color_code' => '#D633E9'],
@@ -854,6 +876,12 @@ class LearnerController extends Controller
             ['key' => 'delete', 'label' => 'Delete', 'color_code' => '#DC2626'],
             ['key' => 'freeze_plan', 'label' => 'Freeze Plan', 'color_code' => '#0EA5E9'],
         ];
+
+        return collect($filters)->map(function ($filter) use ($selectedFilters) {
+            $filter['selected'] = in_array($filter['key'], $selectedFilters, true);
+
+            return $filter;
+        })->all();
     }
 
     private function activityOperationsFromFilter($filter): array
@@ -896,6 +924,29 @@ class LearnerController extends Controller
         return array_values(array_unique($operations));
     }
 
+    private function activitySelectedFilters($filter): array
+    {
+        $values = is_array($filter) ? $filter : explode(',', (string) $filter);
+        $aliases = [
+            'seat_booking' => 'renew',
+            'modify_plan' => 'modify',
+            'swap_seat' => 'swap',
+            'all' => 'all_day',
+        ];
+
+        $selected = [];
+        foreach ($values as $value) {
+            $key = strtolower(trim((string) $value));
+            if ($key === '') {
+                continue;
+            }
+
+            $selected[] = $aliases[$key] ?? $key;
+        }
+
+        return array_values(array_unique($selected));
+    }
+
     private function activityMeta(?string $operation): array
     {
         $map = [
@@ -917,14 +968,14 @@ class LearnerController extends Controller
         ];
     }
 
-    private function activityGroupLabel(Carbon $date): string
+    private function activityDateLabel(Carbon $date): string
     {
         if ($date->isToday()) {
-            return 'Today - ' . $date->format('d M Y');
+            return 'Today';
         }
 
         if ($date->isYesterday()) {
-            return 'Yesterday - ' . $date->format('d M Y');
+            return 'Yesterday';
         }
 
         return $date->format('d M Y');
