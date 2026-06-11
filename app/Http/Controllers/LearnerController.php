@@ -205,8 +205,12 @@ class LearnerController extends Controller
                     ->where('plan_end_date', '>', $today)
                     ->exists();
 
-                Learner::where('id', $customerdata->learner_id)
-                    ->update(['status' => $hasActiveDetail ? 1 : 0]);
+                // Learner::where('id', $customerdata->learner_id)
+                //     ->update(['status' => $hasActiveDetail ? 1 : 0]);
+
+                 Learner::where('id', $customerdata->learner_id)
+                    ->where('status', '!=', 1)
+                    ->update(['status' => 1]);
             }
         }
     }
