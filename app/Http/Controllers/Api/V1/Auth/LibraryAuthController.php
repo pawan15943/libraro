@@ -28,6 +28,7 @@ use App\Models\Hour;
 use App\Models\TempOrder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 
 
@@ -734,8 +735,151 @@ class LibraryAuthController extends Controller
     public function profile(Request $request)
     {
         return response()->json([
-            'user' => $request->user()
+            'status' => true,
+            'message' => 'Profile fetched successfully.',
+            'data' => $this->profilePayload($request->user()),
+        ], 200);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user instanceof Library) {
+            $validator = Validator::make($request->all(), [
+                'library_name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'library_mobile' => 'required|digits:10',
+                'library_owner' => 'required|string|max:255',
+            ]);
+        } else {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'mobile' => 'required|digits:10',
+            ]);
+        }
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $emailExists = Library::where('email', $request->email)
+            ->when($user instanceof Library, function ($query) use ($user) {
+                $query->where('id', '!=', $user->id);
+            })
+            ->exists()
+            || LibraryUser::where('email', $request->email)
+                ->when($user instanceof LibraryUser, function ($query) use ($user) {
+                    $query->where('id', '!=', $user->id);
+                })
+                ->exists();
+
+        if ($emailExists) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Email already exists.',
+            ], 200);
+        }
+
+        if ($user instanceof Library) {
+            $data = [
+                'library_name' => $request->library_name,
+                'email' => $request->email,
+                'library_mobile' => $request->library_mobile,
+                'library_owner' => $request->library_owner,
+            ];
+
+            if (Schema::hasColumn('libraries', 'library_email')) {
+                $data['library_email'] = $request->email;
+            }
+
+            if (Schema::hasColumn('libraries', 'is_profile')) {
+                $data['is_profile'] = 1;
+            }
+
+            $user->update($data);
+        } else {
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'mobile' => $request->mobile,
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Profile updated successfully.',
+            'data' => $this->profilePayload($user->fresh()),
+        ], 200);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Old password is incorrect.',
+            ], 200);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->original_password = $request->password;
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Password updated successfully.',
+        ], 200);
+    }
+
+    private function profilePayload($user)
+    {
+        if ($user instanceof Library) {
+            return [
+                'user_type' => 'library',
+                'library_id' => $user->id,
+                'library_name' => $user->library_name ?? '',
+                'email' => $user->email ?? $user->library_email ?? '',
+                'library_mobile' => $user->library_mobile ?? '',
+                'library_owner' => $user->library_owner ?? '',
+                'profile_image' => !empty($user->library_logo)
+                    ? asset('public/'.$user->library_logo)
+                    : asset('public/img/user.png'),
+            ];
+        }
+
+        $library = Library::find($user->library_id);
+
+        return [
+            'user_type' => 'library_user',
+            'library_id' => $user->library_id,
+            'library_user_id' => $user->id,
+            'library_name' => $library->library_name ?? '',
+            'email' => $user->email ?? '',
+            'library_mobile' => $user->mobile ?? '',
+            'library_owner' => $user->name ?? '',
+            'profile_image' => !empty($user->profile_picture)
+                ? asset('public/'.$user->profile_picture)
+                : asset('public/img/user.png'),
+        ];
     }
 
     public function logout(Request $request)

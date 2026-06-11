@@ -124,6 +124,8 @@ class LibraryController extends Controller
             $isNotification = $today->gte($notificationStartDate) && $today->lte($extensionEndDate);
          }
       }
+    $referralCode = (string) ($library->referral_code ?? '');
+    $referralLink = url('/library/register?ref=' . $referralCode);
 
       return response()->json([
          'status'  => true,
@@ -144,7 +146,7 @@ class LibraryController extends Controller
                 'library_image' => !empty($selectedBranch->library_logo)
                    ? asset('public/'.$selectedBranch->library_logo)
                 : asset('public/img/user.png'),
-                
+                'referral_link'=>$referralLink,
 
                 // ✅ Selected Branch
                 'selected_branch' => [

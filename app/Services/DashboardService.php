@@ -172,56 +172,23 @@ class DashboardService
 
     private function libraryOccupancy(int $branchId)
     {
-        $attendance = Learner::leftJoin('attendances', function ($join) use ($branchId) {
+        $today = Carbon::today()->toDateString();
 
-            $join->on('learners.id', '=', 'attendances.learner_id')
-                ->where('attendances.branch_id', $branchId)
-                ->whereDate('attendances.date', today());
-        })
+        $totalStudents = Learner::where('status', 1)
+            ->where('branch_id', $branchId)
+            ->count();
 
-        ->leftJoin('learner_detail', function ($join) {
+        $presentStudents = DB::table('attendances')
+            ->join('learners', 'learners.id', '=', 'attendances.learner_id')
+            ->where('learners.status', 1)
+            ->where('learners.branch_id', $branchId)
+            ->where('attendances.branch_id', $branchId)
+            ->whereDate('attendances.date', $today)
+            ->where('attendances.attendance', 1)
+            ->distinct('attendances.learner_id')
+            ->count('attendances.learner_id');
 
-            $join->on('learners.id', '=', 'learner_detail.learner_id')
-                ->where('learner_detail.id', function ($query) {
-
-                    $query->select('id')
-                        ->from('learner_detail as ld')
-                        ->whereColumn('ld.learner_id', 'learner_detail.learner_id')
-                        ->where('ld.status', 1)
-                        ->latest()
-                        ->limit(1);
-                });
-        })
-
-        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-
-        ->where('learners.status', 1)
-
-        ->where('learners.branch_id', $branchId)
-
-        ->select(
-            'learners.id as learner_id',
-            'learners.name',
-            'learners.mobile',
-            'learners.seat_no',
-            'plan_types.name as plan_type_name',
-            'learner_detail.plan_end_date',
-            'attendances.in_time',
-            'attendances.out_time',
-            'attendances.attendance',
-            'attendances.date'
-        )
-
-        ->get();
-
-        $totalStudents   = $attendance->count();
-
-        $presentStudents = $attendance
-                        ->where('attendance', 1)
-                        ->where('attendances.date', date('Y-m-d'))
-                        ->count();
-
-       $absentStudents = $totalStudents - $presentStudents;
+       $absentStudents = max($totalStudents - $presentStudents, 0);
 
          return [
             'total_seats' => $totalStudents,
