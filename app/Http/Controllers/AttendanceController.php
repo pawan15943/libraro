@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\AttendanceService;
 use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
@@ -84,26 +85,8 @@ class AttendanceController extends Controller
         
         $branchId = getCurrentBranch(); // library logged in
          \Log::info('getCurrentBranch', ['getCurrentBranch' => $branchId]);
-        $slot = floor(now()->timestamp / 30); // 5-second slot
 
-        $token = $this->makeToken($branchId, $slot);
-
-        // fallback token (30 sec window)
-        $fallbackSlot = floor(now()->timestamp / 30);
-        $fallback = $this->makeToken($branchId, $fallbackSlot);
-
-        return response()->json([
-            'primary'  => $token,
-            'fallback' => $fallback
-        ]);
-    }
-
-    private function makeToken($libraryId, $slot)
-    {
-        $payload = $libraryId . '|' . $slot;
-        $signature = hash_hmac('sha256', $payload, config('app.key'));
-
-        return base64_encode($payload . '|' . $signature);
+        return response()->json(AttendanceService::attendanceQrTokens((int) $branchId));
     }
     //Learner enters UID + Mobile page
     public function showLink(){
@@ -220,6 +203,8 @@ class AttendanceController extends Controller
     //Scanner opens ->Learner scans CURRENT QR
     private function validateQrToken(string $qrToken)
     {
+        return AttendanceService::validateQrToken($qrToken);
+
         // STEP 1: Decode QR
         $decoded = base64_decode($qrToken, true);
         \Log::info('QR decoded payload', ['payload' => $decoded]);

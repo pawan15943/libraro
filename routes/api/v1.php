@@ -172,6 +172,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
          Route::post('/attendance/logs', [AttendanceController::class, 'logs']);
     });
    
+    Route::get('/attendance/qr-token', [AttendanceController::class, 'qrToken']);
     Route::post('/attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
 
     Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
@@ -196,4 +197,3 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 //     Route::get('learner/profile', [LearnerAuthController::class, 'profile']);
 //     Route::post('learner/logout', [LearnerAuthController::class, 'logout']);
 // });
-

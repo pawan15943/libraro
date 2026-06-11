@@ -17,6 +17,72 @@ use Carbon\CarbonPeriod;
 
 class AttendanceService
 {
+    private const QR_SLOT_SECONDS = 30;
+    private const QR_STATIC_SLOT = 'download';
+
+    public static function attendanceQrTokens(int $branchId): array
+    {
+        $slot = self::currentQrSlot();
+
+        return [
+            'primary' => self::makeQrToken($branchId, (string) $slot),
+            'fallback' => self::makeQrToken($branchId, (string) ($slot + 1)),
+            'for_download' => self::makeQrToken($branchId, self::QR_STATIC_SLOT),
+            'expires_in' => self::QR_SLOT_SECONDS,
+        ];
+    }
+
+    public static function validateQrToken(string $qrToken): int|false
+    {
+        $decoded = base64_decode($qrToken, true);
+        if (!$decoded) {
+            return false;
+        }
+
+        $parts = explode('|', $decoded);
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        [$branchId, $slot, $signature] = $parts;
+        $payload = $branchId . '|' . $slot;
+        $expectedSignature = self::signQrPayload($payload);
+
+        if (!hash_equals($expectedSignature, $signature)) {
+            return false;
+        }
+
+        if ($slot !== self::QR_STATIC_SLOT) {
+            $currentSlot = self::currentQrSlot();
+            if (abs($currentSlot - (int) $slot) > 1) {
+                return false;
+            }
+        }
+
+        if (!Branch::where('id', $branchId)->exists()) {
+            return false;
+        }
+
+        return (int) $branchId;
+    }
+
+    private static function currentQrSlot(): int
+    {
+        return (int) floor(now()->timestamp / self::QR_SLOT_SECONDS);
+    }
+
+    private static function makeQrToken(int $branchId, string $slot): string
+    {
+        $payload = $branchId . '|' . $slot;
+
+        return base64_encode($payload . '|' . self::signQrPayload($payload));
+    }
+
+    private static function signQrPayload(string $payload): string
+    {
+        return hash_hmac('sha256', $payload, config('app.key'));
+    }
+
     
 public function summary($request)
 {

@@ -10,6 +10,24 @@ use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
+    public function qrToken()
+    {
+        $owner = auth()->user();
+        $branchId = (int) ($owner->current_branch ?? getCurrentBranch());
+
+        if (!$branchId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch not found',
+            ], 422);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => AttendanceService::attendanceQrTokens($branchId),
+        ]);
+    }
+
     public function summary(Request $request, AttendanceService $service)
     {
         try {
@@ -107,7 +125,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Learner not found'
-            ], 404);
+            ], );
         }
 
         // ✅ Security: same branch
@@ -115,7 +133,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Wrong library QR'
-            ], 403);
+            ], );
         }
        
 
@@ -134,7 +152,7 @@ class AttendanceController extends Controller
         // ✅ Mark attendance
         $result = $service->processAttendance($learner->id, $branchId, 'SCAN');
 
-        return response()->json($result, $result['code'] ?? 200);
+        return response()->json($result);
     }
 
 public function manualAttendance(Request $request, AttendanceService $service)
@@ -195,4 +213,3 @@ public function manualAttendance(Request $request, AttendanceService $service)
     }
 }
 }
-
