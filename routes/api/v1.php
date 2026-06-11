@@ -86,6 +86,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     Route::post('library/dashboard', [LibraryController::class, 'dashboard']);
     Route::post('library/dashboard/revenue', [LibraryController::class, 'dashboardRevenue']);
+    Route::get('library/notifications', [LibraryController::class, 'notifications']);
     Route::post('library/branch/switch', [LibraryController::class, 'switchBranch']);
     Route::get('library/referral/dashboard', [LibraryReferralController::class, 'dashboard']);
     Route::post('library/referral/redeem', [LibraryReferralController::class, 'redeem']);

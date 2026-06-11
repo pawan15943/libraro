@@ -294,6 +294,74 @@ class LibraryController extends Controller
         ]);
     }
 
+    public function notifications(Request $request)
+    {
+        $perPage = (int) $request->input('per_page', 20);
+        $perPage = $perPage > 0 && $perPage <= 100 ? $perPage : 20;
+        $today = Carbon::today()->toDateString();
+        $user = Auth::guard('library_api')->user();
+
+        $query = DB::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->where('guard', 'library')
+            ->where('status', 1)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->select(
+                DB::raw('MIN(id) as id'),
+                'batch_id',
+                'guard',
+                'data',
+                DB::raw('MIN(read_at) as read_at'),
+                DB::raw('MIN(start_date) as start_date'),
+                DB::raw('MAX(end_date) as end_date'),
+                DB::raw('MAX(created_at) as created_at')
+            )
+            ->groupBy('batch_id', 'guard', 'data')
+            ->orderByDesc(DB::raw('MAX(created_at)'));
+
+        $unreadCount = (clone $query)
+            ->havingRaw('MIN(read_at) IS NULL')
+            ->get()
+            ->count();
+
+        $notifications = $query->paginate($perPage);
+
+        $items = $notifications->getCollection()->map(function ($notification) {
+            $data = json_decode($notification->data, true) ?: [];
+
+            return [
+                'id' => $notification->id,
+                'batch_id' => $notification->batch_id,
+                'title' => $data['title'] ?? '',
+                'description' => $data['description'] ?? '',
+                'link' => $data['link'] ?? '',
+                'image' => $data['image'] ?? '',
+                'guard' => $notification->guard,
+                'is_read' => !empty($notification->read_at),
+                'start_date' => $notification->start_date,
+                'end_date' => $notification->end_date,
+                'created_at' => $notification->created_at,
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Notifications fetched successfully',
+            'data' => [
+                'unread_count' => $unreadCount,
+                'notifications' => $items,
+                'pagination' => [
+                    'current_page' => $notifications->currentPage(),
+                    'per_page' => $notifications->perPage(),
+                    'total' => $notifications->total(),
+                    'last_page' => $notifications->lastPage(),
+                    'has_more' => $notifications->hasMorePages(),
+                ],
+            ],
+        ]);
+    }
+
     public function uploadTempImages(Request $request)
     {
         $request->validate([

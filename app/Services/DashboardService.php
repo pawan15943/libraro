@@ -59,6 +59,7 @@ class DashboardService
             'due_pending' => $this->duePayment($branchId),
             'top_banner'=>$this->topBanner(),
             'last_banner'=>$this->lastBanner(),
+            'qr_marque'=>"New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.",
            
            
         ];
