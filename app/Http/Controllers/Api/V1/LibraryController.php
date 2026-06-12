@@ -39,7 +39,7 @@ class LibraryController extends Controller
       $libraryId = authLibraryId();
 
       // Library detail
-      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch','referral_code', 'extend_days')->findOrFail($libraryId);
+      $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'current_branch','referral_code', 'extend_days','library_no')->findOrFail($libraryId);
 
       // Branches
       $branches = Branch::where('library_id', $libraryId)
