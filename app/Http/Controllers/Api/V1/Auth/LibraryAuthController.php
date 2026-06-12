@@ -912,11 +912,14 @@ class LibraryAuthController extends Controller
                     $service->finalize($data['transaction'], 'FREE');
                 });
 
+                $library = Library::find($libraryId);
+
                 return response()->json([
                     'status' => true,
                     'message' => 'Free plan activated successfully',
                     'data' => [
-                         'is_paid'=>true         // if free then true otherwise false
+                         'is_paid'=>true,         // if free then true otherwise false
+                         'library_no' => $library->library_no ?? ''
                     ]
                     
                 ]);
@@ -1017,9 +1020,14 @@ class LibraryAuthController extends Controller
 
             DB::commit();
 
+            $library = Library::find($transaction->library_id);
+
             $response = [
                 'status' => true,
-                'message' => 'Your payment successful'
+                'message' => 'Your payment successful',
+                'data' => [
+                    'library_no' => $library->library_no ?? ''
+                ]
             ];
 
             $tempOrder->update([

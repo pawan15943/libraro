@@ -82,6 +82,7 @@ class LibraryController extends Controller
       $isActive = false;
       $isNotification = false;
       $today = Carbon::today();
+      $planDays = 0;
 
       if ($activePlan) {
 
@@ -103,11 +104,16 @@ class LibraryController extends Controller
                'two_yearly' => 5,
          ];
 
+         if (!empty($activePlan->end_date)) {
+            $planDays = max(0, $today->diffInDays(Carbon::parse($activePlan->end_date)->startOfDay(), false));
+         }
+
          $planData = [
                'plan_id'    => $activePlan->plan_id,
                'plan_name'  => $activePlan->plan_name ?? '',
                'plan_type_id' => $modeIds[$planType] ?? '',
                'plan_type'  => $planType,
+               'plan_days'  => $planDays,
                'price'      => (string) ($activePlan->paid_amount ?? ''),
                'start_date' => $activePlan->start_date,
                'end_date'   => $activePlan->end_date,
@@ -136,6 +142,7 @@ class LibraryController extends Controller
                'library_email'  => $library->library_email,
                'library_mobile' => $library->library_mobile,
                'library_no'=> $library->library_no ?? '',
+               'library_owner'=> $library->library_owner ?? '',
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,

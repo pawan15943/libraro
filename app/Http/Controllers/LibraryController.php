@@ -708,8 +708,7 @@ class LibraryController extends Controller
         $this->handleReffrel($transaction, $status);
 
                 // ✅ Always mark paid
-        Library::where('id', $transaction->library_id)
-            ->update(['is_paid' => 1]);
+        $this->markLibraryPaidAndAssignNo($transaction->library_id);
 
         if ($status == 1) {
 
@@ -734,6 +733,21 @@ class LibraryController extends Controller
                 ->update(['status' => 0]);
         }
        
+    }
+
+    private function markLibraryPaidAndAssignNo(int $libraryId): void
+    {
+        DB::transaction(function () use ($libraryId) {
+            $library = Library::where('id', $libraryId)->lockForUpdate()->firstOrFail();
+
+            $library->is_paid = 1;
+
+            if (empty($library->library_no)) {
+                $library->library_no = generateLibraryCode();
+            }
+
+            $library->save();
+        });
     }
 
     
@@ -1432,14 +1446,13 @@ class LibraryController extends Controller
         
       
         $library = Library::where('id', getAuthenticatedUser()->id)->first();
-        $libraryCode = $this->generateLibraryCode();
        
         $update=$library->update($validated);
       
         if ($update) {
             $library->update(['is_profile' => 1]);
             if (empty($library->library_no)) {
-                $libraryCode = $this->generateLibraryCode();
+                $libraryCode = generateLibraryCode();
                 $library->library_no = $libraryCode;
                 $library->save();
                  \Log::info('sendSuccessfulEmail');
@@ -1881,11 +1894,7 @@ class LibraryController extends Controller
                 'status' => $status,
             ]);
 
-            // Update the corresponding library's `is_paid` status
-            Library::where('id', $library_transaction_id->library_id)->update([
-                'is_paid' => 1,
-               
-            ]);
+            $this->markLibraryPaidAndAssignNo($library_transaction_id->library_id);
           
             if( session('selected_plan_id') && session('selected_plan_mode')){
                 session()->forget(['selected_plan_id', 'selected_plan_mode']);

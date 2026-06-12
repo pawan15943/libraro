@@ -181,10 +181,7 @@ class LibraryPaymentService
             'transaction_id'   => $paymentId,
         ]);
 
-        Library::where('id', $transaction->library_id)
-            ->update([
-                'is_paid' => 1,
-            ]);
+        $this->markLibraryPaidAndAssignNo($transaction->library_id);
 
         if ($status === 1) {
             Library::where('id', $transaction->library_id)
@@ -198,5 +195,20 @@ class LibraryPaymentService
                 ->where('status', 1)
                 ->update(['status' => 0]);
         }
+    }
+
+    private function markLibraryPaidAndAssignNo(int $libraryId): void
+    {
+        DB::transaction(function () use ($libraryId) {
+            $library = Library::where('id', $libraryId)->lockForUpdate()->firstOrFail();
+
+            $library->is_paid = 1;
+
+            if (empty($library->library_no)) {
+                $library->library_no = generateLibraryCode();
+            }
+
+            $library->save();
+        });
     }
 }

@@ -59,6 +59,7 @@ class DashboardService
             'due_pending' => $this->duePayment($branchId),
             'top_banner'=>$this->topBanner(),
             'last_banner'=>$this->lastBanner(),
+            'unread_notification_count' => $this->unreadNotificationCount($authUser),
             'qr_marque'=>"New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.",
            
            
@@ -68,6 +69,32 @@ class DashboardService
     public function getDashboardRevenue(int $branchId, string $type, ?string $value = null): array
     {
         return $this->collectionSummary($branchId, $type, $value);
+    }
+
+    private function unreadNotificationCount($user): int
+    {
+        if (!$user) {
+            return 0;
+        }
+
+        $today = Carbon::today()->toDateString();
+
+        return DB::table('notifications')
+            ->where('notifiable_id', $user->id)
+            ->where('guard', 'library')
+            ->where('status', 1)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->select(
+                'batch_id',
+                'guard',
+                'data',
+                DB::raw('MIN(read_at) as read_at')
+            )
+            ->groupBy('batch_id', 'guard', 'data')
+            ->havingRaw('MIN(read_at) IS NULL')
+            ->get()
+            ->count();
     }
 
     /*

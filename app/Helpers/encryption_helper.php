@@ -41,6 +41,7 @@ if (!function_exists('generateLibraryCode')) {
         $prefix = "LB";
         $lastLibrary = Library::orderBy('id', 'DESC')
                               ->whereNotNull('library_no')
+                              ->lockForUpdate()
                               ->first();
                               
         if ($lastLibrary) {
