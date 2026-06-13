@@ -1104,7 +1104,8 @@ class LearnerService
 
             'other_details'=>[
                 'alternate_mobile'=>$learner->alternate_mobile ?? '',
-                'id_proof_name'=>$learner->id_proof_name,
+                'id_proof_id'=>$learner->id_proof_name ?? '',
+                'id_proof_name'=>getIdProofName($learner->id_proof_name),
                 'id_proof_image'=> $learner->id_proof_file 
                                 ? asset($learner->id_proof_file) 
                                 : '',

@@ -67,6 +67,20 @@ if (!function_exists('logoutOtherGuards')) {
     }
 }
 
+if (!function_exists('getIdProofName')) {
+    function getIdProofName($idProofName)
+    {
+        return match ((int) $idProofName) {
+            1 => 'Aadhar Card',
+            2 => 'Driving License',
+            3 => 'Other',
+            4 => 'Pan Card',
+            5 => 'Voter Id',
+            default => 'Not Updated Yet',
+        };
+    }
+}
+
 if (!function_exists('getAuthenticatedUser')) {
     function getAuthenticatedUser()
     {
