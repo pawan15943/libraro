@@ -45,6 +45,23 @@
                         @enderror
                     </div>
 
+                    <!-- Notification Type -->
+                    <div class="col-lg-12">
+                        <label for="notification_type">Notification Type <span class="text-danger">*</span></label>
+                        <select class="form-select @error('notification_type') is-invalid @enderror" id="notification_type" name="notification_type" required>
+                            <option value="">Select</option>
+                            <option value="important" {{ old('notification_type', $data['notification_type'] ?? '') == 'important' ? 'selected' : '' }}>Important</option>
+                            <option value="wishes" {{ old('notification_type', $data['notification_type'] ?? '') == 'wishes' ? 'selected' : '' }}>Wishes</option>
+                            <option value="maintenance" {{ old('notification_type', $data['notification_type'] ?? '') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+                            <option value="offers" {{ old('notification_type', $data['notification_type'] ?? '') == 'offers' ? 'selected' : '' }}>Offers</option>
+                        </select>
+                        @error('notification_type')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </div>
+
                     <!-- Title Input -->
                     <div class="col-lg-12">
                         <label for="title">Title <span class="text-danger">*</span></label>
@@ -128,6 +145,7 @@
             <thead>
                 <tr>
                     <th>Banner</th>
+                    <th>Type</th>
                     <th>Title</th>
                     <th class="w-25">Description</th>
                     <th>Notification Link</th>
@@ -150,6 +168,7 @@
                         <img src="http://localhost/libraryProject/public/img/user.png" alt="dummy" class="dummy">
                         @endif
                     </td>
+                    <td style="text-transform:capitalize;">{{ $data['notification_type'] ?? 'N/A' }}</td>
                     <td style="text-transform:capitalize; font-weight:700 !important; ">{{ $data['title'] ?? 'N/A' }}</td>
                     <td class="text-left" style="text-align:left;"><span class="m-0">{{ $data['description'] ?? 'N/A' }}</span></td>
 

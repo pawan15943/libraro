@@ -341,6 +341,7 @@ class LibraryController extends Controller
 
             return [
                 'id' => $notification->id,
+                'notification_type' => $data['notification_type'] ?? '',
                 'batch_id' => $notification->batch_id,
                 'title' => $data['title'] ?? '',
                 'description' => $data['description'] ?? '',
@@ -359,6 +360,15 @@ class LibraryController extends Controller
             'message' => 'Notifications fetched successfully',
             'data' => [
                 'unread_count' => $unreadCount,
+                'profile_link'=>[
+                        'id'=>'',
+                        'notification_type'=>'important',
+                        'title' =>'Complete Profile',
+                        'description' => 'Please complete your profile',
+                        'progress_percentage'=>50,
+                        
+
+                ],
                 'notifications' => $items,
                 'pagination' => [
                     'current_page' => $notifications->currentPage(),

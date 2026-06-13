@@ -49,6 +49,7 @@ class NotificationController extends Controller
     public function send(Request $request)
     {
         $request->validate([
+            'notification_type' => 'required|string|in:important,wishes,maintenance,offers',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'link' => 'nullable|url',
@@ -61,6 +62,7 @@ class NotificationController extends Controller
         $batchId = random_int(100000, 999999); // Generate a 6-digit random integer
 
         $data = [
+            'notification_type' => $request->notification_type,
             'title' => $request->title,
             'description' => $request->description,
             'link' => $request->link,
@@ -98,8 +100,12 @@ class NotificationController extends Controller
     {
         $request->validate([
             'batch_id' => 'required',
+            'notification_type' => 'required|string|in:important,wishes,maintenance,offers',
             'title' => 'required',
             'description' => 'required',
+            'link' => 'nullable|url',
+            'image' => 'nullable|url',
+            'guard' => 'required|string|in:web,library,learner',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
         ]);
@@ -109,9 +115,14 @@ class NotificationController extends Controller
             ->where('batch_id', $request->batch_id)
             ->update([
                 'data' => json_encode([
+                    'notification_type' => $request->notification_type,
                     'title' => $request->title,
                     'description' => $request->description,
+                    'link' => $request->link,
+                    'image' => $request->image,
+                    'guard' => $request->guard,
                 ]),
+                'guard' => $request->guard,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
             ]);
