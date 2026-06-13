@@ -1346,6 +1346,48 @@ if (!function_exists('getSeatDisplayShortFloor')) {
     }
 }
 
+if (!function_exists('shortFloorName')) {
+    function shortFloorName($floorName)
+    {
+        $floorName = trim((string) $floorName);
+
+        if ($floorName === '') {
+            return '';
+        }
+
+        $words = preg_split('/\s+/', $floorName);
+        $shortName = '';
+
+        foreach ($words as $word) {
+            $shortName .= strtoupper(substr($word, 0, 1));
+        }
+
+        return $shortName;
+    }
+}
+
+if (!function_exists('getSeatDisplayShortFloorName')) {
+    function getSeatDisplayShortFloorName($mainSeatNo)
+    {
+        if (empty($mainSeatNo)) {
+            return null;
+        }
+
+        $seatMap = collect(generateSeatNumbers());
+        $seat = $seatMap->firstWhere('main', $mainSeatNo);
+
+        if (!$seat) {
+            return null;
+        }
+
+        if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
+            return $seat['floor'] . ' (' . shortFloorName($seat['floor_name']) . ')';
+        }
+
+        return $seat['main'];
+    }
+}
+
 if (!function_exists('getSeatDisplayByMainNo2')) {
 
     function getSeatDisplayByMainNo2($mainSeatNo, $branchId)

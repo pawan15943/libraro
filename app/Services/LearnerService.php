@@ -1038,8 +1038,8 @@ class LearnerService
             'personal_info'=>[
                 'learner_no'=>$learner->learner_no,
                 'seat_id' => $learner->seat_no !== null ? (int) $learner->seat_no : 0,
-                'seat_no'=>$learner->seat_no ? (string)getSeatDisplayShortFloor($learner->seat_no) : "GEN",
-                'seat_with_floor'=>$learner->seat_no ? (string)getSeatDisplayShortFloor($learner->seat_no) : "GEN",
+                'seat_no'=>$learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
+                'seat_with_floor'=>$learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
                 'name'=>$learner->name,
                 'mobile'=>$learner->mobile,
                 'email'=>$learner->email ? $learner->email : '',
@@ -1499,8 +1499,8 @@ class LearnerService
                 'dob'=>$learner->dob,
                 'birth_status'=>$birthStatus,
                 'seat_id' => $learner->seat_no !== null ? (int) $learner->seat_no : 0,
-                'seat_no' => $learner->seat_no ? (string)getSeatDisplayShortFloor($learner->seat_no) : "GEN",
-                'seat_with_floor' => $learner->seat_no ? (string)getSeatDisplayShortFloor($learner->seat_no) : "GEN",
+                'seat_no' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
+                'seat_with_floor' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
 
                 'profile_picture' => $learner->profile_picture 
                 ? asset($learner->profile_picture) 
