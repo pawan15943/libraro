@@ -2387,6 +2387,16 @@ class MasterController extends Controller
             ->groupBy('seat_no')
             ->pluck('used_hours', 'seat_no');
 
+        $futureSeats = LearnerDetail::withoutGlobalScopes()
+            ->where('branch_id', $branch_id)
+            ->whereNotNull('seat_no')
+            ->whereDate('plan_start_date', '>', now()->toDateString())
+            ->whereNull('deleted_at')
+            ->pluck('seat_no')
+            ->map(fn ($seatNo) => (int) $seatNo)
+            ->unique()
+            ->flip();
+
         $allSeats = collect(generateSeatNumbers());
     
         $newAvailableSeat = collect();
@@ -2396,13 +2406,17 @@ class MasterController extends Controller
 
             if ($usedHours < $totalHour) {
                 $seatInfo = $allSeats->firstWhere('main', $seatNo);
+                $isFuture = $futureSeats->has((int) $seatNo);
 
-                $newAvailableSeat->push(
-                    $seatInfo ?? [
-                        'original_seat' => $seatNo,
-                        'display' => (string) $seatNo,
-                    ]
-                );
+                $seatInfo = $seatInfo ?? [
+                    'original_seat' => $seatNo,
+                    'display' => (string) $seatNo,
+                ];
+
+                $seatInfo['is_future'] = $isFuture;
+                $seatInfo['is_future_text'] = $isFuture ? 'already future booked' : '';
+
+                $newAvailableSeat->push($seatInfo);
             }
         }
         

@@ -105,21 +105,21 @@ class DashboardService
 
     private function collectionSummary(int $branchId, string $type, ?string $value = null): array
     {
-        $query = LearnerTransactionActivity::where('branch_id', $branchId);
+        $baseQuery = LearnerTransactionActivity::where('branch_id', $branchId);
         $resolvedValue = $value;
         if ($type === 'date') {
             $resolvedValue = $value ?: Carbon::today()->format('Y-m-d');
-            $query->whereDate('date', Carbon::parse($resolvedValue)->toDateString());
+            $baseQuery->whereDate('date', Carbon::parse($resolvedValue)->toDateString());
         } elseif ($type === 'monthly') {
             $resolvedValue = $value ?: Carbon::now()->format('Y-m');
             $monthDate = Carbon::parse($resolvedValue . '-01');
-            $query->whereMonth('date', $monthDate->month)->whereYear('date', $monthDate->year);
+            $baseQuery->whereMonth('date', $monthDate->month)->whereYear('date', $monthDate->year);
         } else {
             $resolvedValue = $value ?: Carbon::now()->format('Y');
-            $query->whereYear('date', (int) $resolvedValue);
+            $baseQuery->whereYear('date', (int) $resolvedValue);
         }
 
-        $collection =$query->where('dr_cr', 'Cr')->sum('amount');
+        $collection = (clone $baseQuery)->where('dr_cr', 'Cr')->sum('amount');
 
         // $collection = $query ->where(function($q) {
         //         $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
@@ -129,11 +129,14 @@ class DashboardService
         //         });
         //     })->sum('amount');
 
-        $today_other_amt=$query->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
+        $today_other_amt = (clone $baseQuery)
+            ->whereIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS'])
+            ->where('dr_cr', 'Cr')
+            ->sum('amount');
 
-        $todayExpense =$query->where('payment_type','EXPENSE')->sum('amount');
-        $today_pending=$query->where('payment_type','PENDING')->sum('amount');
-        $today_refund = $query->where(function($q) {
+        $todayExpense = (clone $baseQuery)->where('payment_type', 'EXPENSE')->sum('amount');
+        $today_pending = (clone $baseQuery)->where('payment_type', 'PENDING')->sum('amount');
+        $today_refund = (clone $baseQuery)->where(function($q) {
             $q->where('payment_type', 'REFUND')
             ->orWhere(function($sub) {
                 $sub->where('payment_type', 'CHANGE PLAN')
@@ -142,8 +145,8 @@ class DashboardService
         })
         ->sum('amount');
 
-        $total_cr=$query->where('dr_cr','Cr')->sum('amount');
-        $total_dr=$query->where('dr_cr','Dr')->sum('amount');
+        $total_cr = (clone $baseQuery)->where('dr_cr', 'Cr')->sum('amount');
+        $total_dr = (clone $baseQuery)->where('dr_cr', 'Dr')->sum('amount');
            
         $todayBalance = $total_cr-$total_dr;
 

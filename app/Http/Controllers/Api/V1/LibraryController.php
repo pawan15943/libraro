@@ -758,8 +758,8 @@ class LibraryController extends Controller
             'type' => 'required|in:daily,monthly,yearly,custom',
             'list_for' => 'required|in:collection,other_collection,expense,refund,pending,balance',
             'date' => 'nullable|date',
-            'month' => 'nullable|integer|min:1|max:12',
-            'year' => 'nullable|integer|min:2000|max:2100',
+            'month' => 'nullable',
+            'year' => 'nullable',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
             'payment_type' => 'nullable',
@@ -774,18 +774,18 @@ class LibraryController extends Controller
             $request->validate(['date' => 'required|date']);
         } elseif ($type === 'monthly') {
             $request->validate([
-                'month' => 'required|integer|min:1|max:12',
-                'year' => 'required|integer|min:2000|max:2100',
+                'month' => 'required|min:1|max:12',
+                'year' => 'required',
             ]);
         } elseif ($type === 'yearly') {
-            $request->validate(['year' => 'required|integer|min:2000|max:2100']);
+            $request->validate(['year' => 'required|min:2000|max:2100']);
         } elseif ($type === 'custom') {
             $request->validate([
                 'from_date' => 'required|date',
                 'to_date' => 'required|date|after_or_equal:from_date',
             ]);
         }
-
+      
         $data = $service->dashboardFinancialData($request);
 
         return response()->json([
