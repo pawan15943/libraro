@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
@@ -34,6 +35,21 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
+        if ($request->is('api/v1/*') && $exception instanceof ValidationException) {
+            return response()->json([
+                'status' => false,
+                'message' => collect($exception->errors())->flatten()->first() ?? 'Validation failed',
+                'errors' => $exception->errors(),
+            ], 200);
+        }
+
+        if ($request->is('api/v1/*') && $exception instanceof HttpException && $exception->getStatusCode() === 422) {
+            return response()->json([
+                'status' => false,
+                'message' => $exception->getMessage() ?: 'Validation failed',
+            ], 200);
+        }
+
         if (
             ! $request->expectsJson()
             && ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException)
