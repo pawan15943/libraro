@@ -204,8 +204,9 @@ public function manualAttendance(Request $request, AttendanceService $service)
             'message' => 'Attendance marked successfully'
         ]);
 
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        throw $e;
     } catch (\Throwable $e) {
-
         return response()->json([
             'status' => false,
             'message' => $e->getMessage()

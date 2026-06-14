@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Carbon\CarbonPeriod;
 
 
@@ -1047,9 +1048,9 @@ public function manualAttendance(
 
         if (!$attendanceRecord) {
 
-            throw new \Exception(
-                'Cannot mark OUT before IN attendance'
-            );
+            throw ValidationException::withMessages([
+                'time_type' => 'Cannot mark OUT before IN attendance',
+            ]);
         }
 
         /*

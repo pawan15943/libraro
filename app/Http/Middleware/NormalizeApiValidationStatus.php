@@ -12,7 +12,12 @@ class NormalizeApiValidationStatus
     {
         $response = $next($request);
 
-        if (! $request->is('api/v1/*') || ! $response instanceof JsonResponse || $response->getStatusCode() !== 422) {
+        if (
+            ! $request->is('api/v1/*')
+            || ! $response instanceof JsonResponse
+            || $response->getStatusCode() < 400
+            || $response->getStatusCode() >= 500
+        ) {
             return $response;
         }
 
@@ -20,10 +25,21 @@ class NormalizeApiValidationStatus
         $data['status'] = false;
 
         if (empty($data['message'])) {
-            $data['message'] = $this->firstErrorMessage($data['errors'] ?? null) ?? 'Validation failed';
+            $data['message'] = $this->firstErrorMessage($data['errors'] ?? null) ?? $this->defaultMessage($response->getStatusCode());
         }
 
         return response()->json($data, 200);
+    }
+
+    private function defaultMessage(int $statusCode): string
+    {
+        return match ($statusCode) {
+            401 => 'Unauthenticated',
+            403 => 'Forbidden',
+            404 => 'Not found',
+            422 => 'Validation failed',
+            default => 'Something went wrong',
+        };
     }
 
     private function firstErrorMessage($errors): ?string
