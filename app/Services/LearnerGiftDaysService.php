@@ -30,7 +30,7 @@ class LearnerGiftDaysService
             return [
                 'ok' => false,
                 'message' => 'Learner not found',
-                'status_code' => 404,
+                'status_code' => 200,
             ];
         }
 
@@ -38,7 +38,7 @@ class LearnerGiftDaysService
             return [
                 'ok' => false,
                 'message' => 'Cannot assign gift days while learner is frozen',
-                'status_code' => 422,
+                'status_code' => 200,
             ];
         }
 
@@ -51,7 +51,7 @@ class LearnerGiftDaysService
             return [
                 'ok' => false,
                 'message' => 'Active learner detail not found',
-                'status_code' => 404,
+                'status_code' => 200,
             ];
         }
 

@@ -496,7 +496,7 @@ class LearnerController extends Controller
             ]
         );
 
-        $status = $result['ok'] ? 200 : 422;
+        $status = 200;
         $body = [
             'status'  => $result['ok'],
             'message' => $result['message'],
