@@ -50,13 +50,6 @@ class Handler extends ExceptionHandler
             ], 200);
         }
 
-        if ($request->is('api/v1/*') && $exception instanceof AuthenticationException) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthenticated.',
-            ], 200);
-        }
-
         if ($request->is('api/v1/*') && ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException)) {
             return response()->json([
                 'status' => false,

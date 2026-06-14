@@ -16,6 +16,7 @@ class NormalizeApiValidationStatus
             ! $request->is('api/v1/*')
             || ! $response instanceof JsonResponse
             || $response->getStatusCode() < 400
+            || $response->getStatusCode() === 401
             || $response->getStatusCode() >= 500
         ) {
             return $response;
@@ -34,7 +35,6 @@ class NormalizeApiValidationStatus
     private function defaultMessage(int $statusCode): string
     {
         return match ($statusCode) {
-            401 => 'Unauthenticated',
             403 => 'Forbidden',
             404 => 'Not found',
             422 => 'Validation failed',
