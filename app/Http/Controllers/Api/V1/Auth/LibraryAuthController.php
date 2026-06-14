@@ -28,6 +28,7 @@ use App\Models\Hour;
 use App\Models\TempOrder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 
@@ -450,6 +451,7 @@ class LibraryAuthController extends Controller
         | 9️⃣ Response
         |---------------------------------------------------
         */
+        Log::info(['user_token'=>$token]);
 
         return response()->json([
             'status'      => true,
