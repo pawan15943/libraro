@@ -1570,6 +1570,7 @@ class LearnerService
             ->with(['learner', 'plan', 'planType'])
             ->where('branch_id', $branchId)
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->whereHas('learner', function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId)
                     ->where('status', 1)
@@ -1751,29 +1752,39 @@ class LearnerService
     private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
     {
         $detailsByPlanType = collect($seatDetails)->keyBy('plan_type_id');
+        $bookedPlanTypes = collect($seatDetails)
+            ->pluck('planType')
+            ->filter();
 
-        return $planTypes->map(function ($planType) use ($seatDetails, $detailsByPlanType, $transactions, $planTypeStatus) {
+        return $planTypes->filter(function ($planType) use ($detailsByPlanType, $bookedPlanTypes) {
             $detail = $detailsByPlanType->get($planType->id);
-            $overlappingDetail = $detail ? null : $this->overlappingSeatDetail($planType, $seatDetails);
+
+            if ($detail) {
+                return true;
+            }
+
+            return ! $this->planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes);
+        })->map(function ($planType) use ($detailsByPlanType, $transactions, $planTypeStatus) {
+            $detail = $detailsByPlanType->get($planType->id);
 
             return [
                 'plan_type_id' => $planType->id,
                 'plan_type_name' => $planType->name,
-                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : ($overlappingDetail ? 'not available' : 'available'),
+                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : 'available',
                 'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
             ];
         })->values()->all();
     }
 
-    private function overlappingSeatDetail($planType, $seatDetails)
+    private function planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes): bool
     {
-        return collect($seatDetails)->first(function ($detail) use ($planType) {
-            if (! $detail->planType) {
-                return false;
+        foreach ($bookedPlanTypes as $bookedPlanType) {
+            if ($this->planTypeTimesOverlap($planType, $bookedPlanType)) {
+                return true;
             }
+        }
 
-            return $this->planTypeTimesOverlap($planType, $detail->planType);
-        });
+        return false;
     }
 
     private function planTypeTimesOverlap($firstPlanType, $secondPlanType): bool
