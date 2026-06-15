@@ -2419,6 +2419,25 @@ class MasterController extends Controller
                 $newAvailableSeat->push($seatInfo);
             }
         }
+
+        $search = trim((string) $request->input('search', ''));
+
+        if ($search !== '') {
+            $newAvailableSeat = $newAvailableSeat->filter(function ($seat) use ($search) {
+                if (is_numeric($search)) {
+                    $seatNo = (int) $search;
+
+                    return (int) ($seat['main'] ?? 0) === $seatNo
+                        || (int) ($seat['floor'] ?? 0) === $seatNo
+                        || (int) ($seat['original_seat'] ?? 0) === $seatNo;
+                }
+
+                $needle = strtolower($search);
+
+                return str_contains(strtolower((string) ($seat['display'] ?? '')), $needle)
+                    || str_contains(strtolower((string) ($seat['floor_name'] ?? '')), $needle);
+            });
+        }
         
 
         return response()->json([
