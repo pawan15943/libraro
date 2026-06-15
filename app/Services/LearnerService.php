@@ -1754,13 +1754,13 @@ class LearnerService
 
         return $planTypes->map(function ($planType) use ($seatDetails, $detailsByPlanType, $transactions, $planTypeStatus) {
             $detail = $detailsByPlanType->get($planType->id);
-            $blockingDetail = $detail ?: $this->overlappingSeatDetail($planType, $seatDetails);
+            $overlappingDetail = $detail ? null : $this->overlappingSeatDetail($planType, $seatDetails);
 
             return [
                 'plan_type_id' => $planType->id,
                 'plan_type_name' => $planType->name,
-                'plan_type_status' => $blockingDetail ? $this->seatPlanTypeStatus($blockingDetail, $transactions) : 'available',
-                'learner' => $blockingDetail ? $this->formatSeatLearner($blockingDetail, $transactions) : null,
+                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : ($overlappingDetail ? 'not available' : 'available'),
+                'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
             ];
         })->values()->all();
     }
