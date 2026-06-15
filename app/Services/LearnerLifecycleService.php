@@ -380,7 +380,9 @@ class LearnerLifecycleService
             return [];
         }
 
-        $updatedBy = $this->currentUpdatedBy();
+        $updatedBy = $table === 'learner_transaction_activity'
+            ? $this->currentActorName()
+            : $this->currentUpdatedBy();
 
         return $updatedBy ? ['updated_by' => $updatedBy] : [];
     }
@@ -391,7 +393,10 @@ class LearnerLifecycleService
             return;
         }
 
-        $updatedBy = $this->currentUpdatedBy();
+        $updatedBy = $model->getTable() === 'learner_transaction_activity'
+            ? $this->currentActorName()
+            : $this->currentUpdatedBy();
+
         if ($updatedBy) {
             $model->updated_by = $updatedBy;
         }
@@ -407,6 +412,10 @@ class LearnerLifecycleService
             return (int) Auth::guard('library')->id();
         }
 
+        if (Auth::guard('library_api')->check()) {
+            return (int) Auth::guard('library_api')->id();
+        }
+
         if (Auth::check()) {
             return (int) Auth::id();
         }
@@ -414,10 +423,48 @@ class LearnerLifecycleService
         return null;
     }
 
+    private function currentActorName(): ?string
+    {
+        if (Auth::guard('library_user')->check()) {
+            return $this->actorDisplayName(Auth::guard('library_user')->user());
+        }
+
+        if (Auth::guard('library')->check()) {
+            return $this->actorDisplayName(Auth::guard('library')->user());
+        }
+
+        if (Auth::guard('library_api')->check()) {
+            return $this->actorDisplayName(Auth::guard('library_api')->user());
+        }
+
+        if (Auth::check()) {
+            return $this->actorDisplayName(Auth::user());
+        }
+
+        return null;
+    }
+
+    private function actorDisplayName($user): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        return $user->name
+            ?? $user->library_name
+            ?? $user->email
+            ?? $user->mobile
+            ?? null;
+    }
+
     private function updatedByName($updatedBy): string
     {
         if (! $updatedBy) {
             return '';
+        }
+
+        if (! is_numeric($updatedBy)) {
+            return (string) $updatedBy;
         }
 
         $name = DB::table('library_users')->where('id', $updatedBy)->value('name');
@@ -637,6 +684,7 @@ class LearnerLifecycleService
                     'paid_date' => (string) ($activity->date ?? ''),
                     'particular' => (string) ($activity->particular ?? ''),
                     'source' => 'activity',
+                    'added_by_name' => (string) ($activity->created_by_name ?? ''),
                 ]);
             });
 

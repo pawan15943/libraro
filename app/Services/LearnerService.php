@@ -1752,16 +1752,74 @@ class LearnerService
     {
         $detailsByPlanType = collect($seatDetails)->keyBy('plan_type_id');
 
-        return $planTypes->map(function ($planType) use ($detailsByPlanType, $transactions, $planTypeStatus) {
+        return $planTypes->map(function ($planType) use ($seatDetails, $detailsByPlanType, $transactions, $planTypeStatus) {
             $detail = $detailsByPlanType->get($planType->id);
+            $blockingDetail = $detail ?: $this->overlappingSeatDetail($planType, $seatDetails);
 
             return [
                 'plan_type_id' => $planType->id,
                 'plan_type_name' => $planType->name,
-                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : 'available',
-                'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
+                'plan_type_status' => $blockingDetail ? $this->seatPlanTypeStatus($blockingDetail, $transactions) : 'available',
+                'learner' => $blockingDetail ? $this->formatSeatLearner($blockingDetail, $transactions) : null,
             ];
         })->values()->all();
+    }
+
+    private function overlappingSeatDetail($planType, $seatDetails)
+    {
+        return collect($seatDetails)->first(function ($detail) use ($planType) {
+            if (! $detail->planType) {
+                return false;
+            }
+
+            return $this->planTypeTimesOverlap($planType, $detail->planType);
+        });
+    }
+
+    private function planTypeTimesOverlap($firstPlanType, $secondPlanType): bool
+    {
+        $firstIntervals = $this->timeIntervals($firstPlanType->start_time, $firstPlanType->end_time);
+        $secondIntervals = $this->timeIntervals($secondPlanType->start_time, $secondPlanType->end_time);
+
+        foreach ($firstIntervals as $first) {
+            foreach ($secondIntervals as $second) {
+                if ($first[0] < $second[1] && $second[0] < $first[1]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function timeIntervals($startTime, $endTime): array
+    {
+        $start = $this->timeToMinutes($startTime);
+        $end = $this->timeToMinutes($endTime);
+
+        if ($start === null || $end === null || $start === $end) {
+            return [];
+        }
+
+        if ($end > $start) {
+            return [[$start, $end]];
+        }
+
+        return [[$start, 1440], [0, $end]];
+    }
+
+    private function timeToMinutes($time): ?int
+    {
+        if ($time === null || $time === '') {
+            return null;
+        }
+
+        $parts = explode(':', (string) $time);
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        return ((int) $parts[0] * 60) + (int) $parts[1];
     }
 
     private function seatPlanTypeStatus($detail, $transactions)

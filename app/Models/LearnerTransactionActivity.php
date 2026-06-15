@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\LearnerTransaction;
 
@@ -18,14 +19,11 @@ class LearnerTransactionActivity extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            // If already set in some old code, do NOT override
-            if (!empty($model->created_by)) {
-                // continue to learner_transaction_id fallback below
-            }
-
-            // If library_user is logged in
-            if (Auth::guard('library_user')->check()) {
-                $model->created_by = Auth::guard('library_user')->id();
+            if (empty($model->created_by)) {
+                $createdBy = static::currentActorName();
+                if ($createdBy) {
+                    $model->created_by = $createdBy;
+                }
             }
 
             // Global fallback (web + API): if learner_transaction_id is missing,
@@ -69,10 +67,9 @@ class LearnerTransactionActivity extends Model
                 return;
             }
 
-            if (Auth::guard('library_user')->check()) {
-                $model->updated_by = Auth::guard('library_user')->id();
-            } elseif (Auth::guard('library')->check()) {
-                $model->updated_by = Auth::guard('library')->id();
+            $updatedBy = static::currentActorName();
+            if ($updatedBy) {
+                $model->updated_by = $updatedBy;
             }
         });
     }
@@ -87,7 +84,24 @@ class LearnerTransactionActivity extends Model
             return "System User";
         }
 
-        return $this->creator->name ?? "System User";
+        if (is_numeric($this->created_by)) {
+            return static::legacyActorName($this->created_by) ?: "System User";
+        }
+
+        return (string) $this->created_by;
+    }
+
+    public function getUpdatedByNameAttribute()
+    {
+        if (is_null($this->updated_by)) {
+            return "";
+        }
+
+        if (is_numeric($this->updated_by)) {
+            return static::legacyActorName($this->updated_by);
+        }
+
+        return (string) $this->updated_by;
     }
 
      public function learner()
@@ -105,6 +119,50 @@ class LearnerTransactionActivity extends Model
                 $builder->where('branch_id', getCurrentBranch());
             }
         });
+    }
+
+    private static function currentActorName(): ?string
+    {
+        if (Auth::guard('library_user')->check()) {
+            return static::displayName(Auth::guard('library_user')->user());
+        }
+
+        if (Auth::guard('library')->check()) {
+            return static::displayName(Auth::guard('library')->user());
+        }
+
+        if (Auth::guard('library_api')->check()) {
+            return static::displayName(Auth::guard('library_api')->user());
+        }
+
+        if (Auth::check()) {
+            return static::displayName(Auth::user());
+        }
+
+        return null;
+    }
+
+    private static function displayName($user): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        return $user->name
+            ?? $user->library_name
+            ?? $user->email
+            ?? $user->mobile
+            ?? null;
+    }
+
+    private static function legacyActorName($actorId): string
+    {
+        $name = DB::table('library_users')->where('id', $actorId)->value('name');
+        if ($name) {
+            return (string) $name;
+        }
+
+        return (string) (DB::table('libraries')->where('id', $actorId)->value('library_name') ?? '');
     }
 
 }
