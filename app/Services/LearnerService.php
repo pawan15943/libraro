@@ -1703,22 +1703,43 @@ class LearnerService
             ->orderBy('floor_no')
             ->first();
 
-        $plantypes = $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions);
-        $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
+        if ($generalDetails->isEmpty()) {
+            $seats = [[
+                'seat_id' => 0,
+                'seat_no' => 'GEN',
+                'seat_status' => 'available',
+                'seat_type' => 'Regular',
+                'plantype' => $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions),
+            ]];
+        } else {
+            $seats = $generalDetails
+                ->values()
+                ->map(function ($detail, $index) use ($transactions) {
+                    return [
+                        'seat_id' => 0,
+                        'seat_no' => 'GEN '.($index + 1),
+                        'seat_status' => 'occupied',
+                        'seat_type' => 'Regular',
+                        'plantype' => [[
+                            'plan_type_id' => $detail->planType?->id ?? $detail->plan_type_id,
+                            'plan_type_name' => $detail->planType?->name ?? '',
+                            'plan_type_status' => $this->seatPlanTypeStatus($detail, $transactions),
+                            'learner' => $this->formatSeatLearner($detail, $transactions),
+                        ]],
+                    ];
+                })
+                ->all();
+        }
+
+        $occupiedSeats = collect($seats)->filter(fn ($seat) => $seat['seat_status'] !== 'available')->count();
 
         return [[
             'floor_id' => $firstFloor->id ?? 0,
             'floor_name' => $firstFloor->name ?? '',
-            'total_seats' => 1,
-            'available_seats' => $isOccupied ? 0 : 1,
-            'occupied_seats' => $isOccupied ? 1 : 0,
-            'seats' => [[
-                'seat_id' => 0,
-                'seat_no' => 'GEN',
-                'seat_status' => $isOccupied ? 'occupied' : 'available',
-                'seat_type' => 'Regular',
-                'plantype' => $plantypes,
-            ]],
+            'total_seats' => count($seats),
+            'available_seats' => count($seats) - $occupiedSeats,
+            'occupied_seats' => $occupiedSeats,
+            'seats' => $seats,
         ]];
     }
 
