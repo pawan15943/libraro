@@ -1659,7 +1659,7 @@ class LearnerService
 
         return $seatRows
             ->groupBy(fn ($seat) => $seat['floor_no'] ?? 0)
-            ->map(function ($seats, $floorNo) use ($planTypes, $detailsBySeat, $transactions, $floors) {
+            ->map(function ($seats, $floorNo) use ($planTypes, $detailsBySeat, $transactions, $floors, $planTypeId) {
                 $floor = $floors->get((int) $floorNo);
 
                 $formattedSeats = $seats->map(function ($seat) use ($planTypes, $detailsBySeat, $transactions) {
@@ -1675,7 +1675,9 @@ class LearnerService
                         'seat_type' => 'regular',
                         'plantype' => $plantypes,
                     ];
-                })->values();
+                })
+                    ->when($planTypeId, fn ($items) => $items->filter(fn ($seat) => ! empty($seat['plantype'])))
+                    ->values();
 
                 $occupiedSeats = $formattedSeats->filter(fn ($seat) => $seat['seat_status'] !== 'available')->count();
 
