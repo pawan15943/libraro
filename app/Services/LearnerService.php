@@ -999,6 +999,8 @@ class LearnerService
             $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
+        }elseif(!empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
+            $mainstatus='Future';
         }elseif($planStatus['diff_extend_day'] < 0){
             $mainstatus='Expired';
         }else{
@@ -1473,6 +1475,8 @@ class LearnerService
                 $mainstatus='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
+            }elseif(!empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
+                $mainstatus='Future';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
             }else{
@@ -1511,6 +1515,7 @@ class LearnerService
                 'plan_type'=>$learner->plan_type ?? '',
                 'plan_days' => getChargeableDays($learner->plan_id, $learner->plan_start_date, $learner->branch_id)['chargeable_days'] ?? 0,
                 'plan_end_date'=>$learner->plan_end_date ?? '',
+                'plan_start_date'=>$learner->plan_start_date ?? '',
 
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
