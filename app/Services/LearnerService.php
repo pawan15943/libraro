@@ -1476,7 +1476,7 @@ class LearnerService
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
             }elseif(!empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
-                $mainstatus='Future';
+                $mainstatus='Upcoming';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
             }else{
