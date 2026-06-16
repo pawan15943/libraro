@@ -2414,7 +2414,7 @@ class MasterController extends Controller
                 ];
 
                 $seatInfo['is_future'] = $isFuture;
-                $seatInfo['is_future_text'] = $isFuture ? 'already future booked' : '';
+                $seatInfo['is_future_text'] = $isFuture ? 'future booked' : '';
 
                 $newAvailableSeat->push($seatInfo);
             }
