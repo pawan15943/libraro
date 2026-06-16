@@ -983,6 +983,10 @@ class LearnerService
 
         $operation = optional(getLearnerOperation($detail->id))->operation;    
         $planStatus =getPlanStatusDetails($detail->plan_end_date);
+        $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->min('id');
+
         if($operation == 'closeSeat'){
             $status='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
@@ -999,7 +1003,7 @@ class LearnerService
             $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
-        }elseif(!empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
+        }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
             $mainstatus='Future';
         }elseif($planStatus['diff_extend_day'] < 0){
             $mainstatus='Expired';
@@ -1388,6 +1392,11 @@ class LearnerService
             'learner_detail.id as learner_detail_id',
             'learners.deleted_at',
             DB::raw('(
+                SELECT MIN(first_detail.id)
+                FROM learner_detail as first_detail
+                WHERE first_detail.learner_id = learners.id
+            ) as first_learner_detail_id'),
+            DB::raw('(
                 SELECT learner_transactions.id
                 FROM learner_transactions
                 WHERE learner_transactions.learner_id = learners.id
@@ -1475,8 +1484,8 @@ class LearnerService
                 $mainstatus='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
-            }elseif(!empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
-                $mainstatus='Upcoming';
+            }elseif((int) ($learner->learner_detail_id ?? 0) === (int) ($learner->first_learner_detail_id ?? 0) && !empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
+                $mainstatus='Future';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
             }else{
