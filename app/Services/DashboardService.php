@@ -41,7 +41,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
             ];
         })->values();
 
@@ -252,7 +252,7 @@ class DashboardService
 
             return [
                 'booking_id' => $booking->id,
-                'seat_no' => (string) ($booking->seat_no ?? '0'),
+                'seat_no' => (string) ($booking->seat_no ?? 'GEN'),
                 'name' => $booking->name,
                 'mobile' => $booking->mobile,
                 'plan_name' => $booking->plan?->name ?? '',
@@ -734,7 +734,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
             ];
         })->values();
 
@@ -1052,7 +1052,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? '',
+                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
             ];
         })->values();
 
@@ -1281,7 +1281,7 @@ class DashboardService
                 'tital' => 'Wish you happy birthay',
                 'description' => '',
                 'birthday_user' => (string) ($learner->name ?? ''),
-                'seat_no' => !empty($learner->seat_no) ? ('Seat ' . $learner->seat_no) : '',
+                'seat_no' => !empty($learner->seat_no) ? ('Seat ' . $learner->seat_no) : 'GEN',
                 'subscription_type' => '',
                 'subscription_status' => '',
                 'days_in_left' => '',

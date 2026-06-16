@@ -752,6 +752,24 @@ class LearnerLifecycleService
 
     private function transactionTypeLabel($transaction, int $firstTransactionId): string
     {
+        $paymentType = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id)
+            ->whereNotNull('payment_type')
+            ->whereNotIn(DB::raw('UPPER(payment_type)'), ['PENDING', 'TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED'])
+            ->orderByDesc('id')
+            ->value('payment_type');
+
+        if ($paymentType) {
+            return match (strtoupper((string) $paymentType)) {
+                'SEAT ASSIGNMENT', 'SUBSCRIPTION' => 'BOOK SEAT',
+                'RENEW' => 'RE-NEW SEAT',
+                'REACTIVE' => 'REACTIVE SEAT',
+                'UPGRADE' => 'UPGRADE SEAT',
+                'CHANGEPLAN', 'CHANGE PLAN' => 'CHANGE PLAN',
+                default => strtoupper((string) $paymentType),
+            };
+        }
+
         return (int) $transaction->id === (int) $firstTransactionId ? 'BOOK SEAT' : 'RE-NEW SEAT';
     }
 

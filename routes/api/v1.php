@@ -181,7 +181,7 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
     Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
     Route::post('/attendance/manual', [AttendanceController::class, 'manualAttendance']);
     
-    Route::post('/qr-bookings', [QrBookingController::class, 'index']);
+    Route::post('/qr-bookings', [QrBookingControactivityller::class, 'index']);
     Route::post('/qr-bookings/detail', [QrBookingController::class, 'show']);
     Route::post('/qr-bookings/verify', [QrBookingController::class, 'verify']);
     Route::post('/qr-bookings/delete', [QrBookingController::class, 'destroy']);
