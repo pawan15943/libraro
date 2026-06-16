@@ -120,7 +120,7 @@ class LearnerOperationService
 
             /* Status */
 
-            [$status,$detailstatus] = $this->calculateStatus($customer,$lastDetail,$start_date,$endDate,$billing['is_paid'],$dto->branch_id);
+            [$status,$detailstatus] = $this->calculateStatus($customer,$lastDetail,$start_date,$endDate,$billing['is_paid'],$dto->branch_id,$dto->operation);
 
             /* Create / Update Detail */
  
@@ -329,31 +329,14 @@ class LearnerOperationService
     }
 
 
-    private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId){
+    private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId,$operation){
 
         $extendDay = getExtendDays($branchId);
 
         $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
 
         $today = Carbon::today();
-        $hasActiveDetailToday = LearnerDetail::where('learner_id', $customer->id)
-            ->where('status', 1)
-            ->whereDate('plan_start_date', '<=', $today)
-            ->whereDate('plan_end_date', '>=', $today)
-            ->exists();
 
-        if ($customer->status == 0 && ($start_date <= $today || $hasActiveDetailToday)) {
-            $status = 1;
-        } elseif ($start_date > $today) {
-            // If renewal is queued for future but learner is currently active,
-            // keep parent learner active.
-            $status = $hasActiveDetailToday ? 1 : $customer->status;
-        } else {
-            $status = $customer->status;
-        }
-
-     
-       
         if(Carbon::parse($lastDetail->plan_end_date) <= $today && $endDate > $today && $is_paid == 1){
            
             $detailstatus = 1;
@@ -367,8 +350,71 @@ class LearnerOperationService
             $detailstatus = 0;
         }
 
+        $extendDay = (int) $extendDay;
+        $activeDetailQuery = LearnerDetail::where('learner_id', $customer->id)
+            ->where('status', 1)
+            ->whereDate('plan_start_date', '<=', $today)
+            ->whereRaw("DATE_ADD(plan_end_date, INTERVAL {$extendDay} DAY) >= ?", [$today->toDateString()]);
+
+        if (in_array($operation, ['EDIT', 'CHANGE PLAN'])) {
+            $activeDetailQuery->where('id', '!=', $lastDetail->id);
+        }
+
+        $hasActiveDetailToday = $activeDetailQuery->exists();
+
+        if ($detailstatus == 1 || $hasActiveDetailToday) {
+            $status = 1;
+        } elseif ($start_date > $today) {
+            // Future booking should not deactivate an already active learner.
+            $status = $customer->status;
+        } else {
+            $status = 0;
+        }
+
         return [$status,$detailstatus];
     }
+
+    // private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId){
+
+    //     $extendDay = getExtendDays($branchId);
+
+    //     $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+
+    //     $today = Carbon::today();
+    //     $hasActiveDetailToday = LearnerDetail::where('learner_id', $customer->id)
+    //         ->where('status', 1)
+    //         ->whereDate('plan_start_date', '<=', $today)
+    //         ->whereDate('plan_end_date', '>=', $today)
+    //         ->exists();
+
+    //     if ($customer->status == 0 && ($start_date <= $today || $hasActiveDetailToday)) {
+    //         $status = 1;
+    //     } elseif ($start_date > $today) {
+    //         // If renewal is queued for future but learner is currently active,
+    //         // keep parent learner active.
+    //         $status = $hasActiveDetailToday ? 1 : $customer->status;
+    //     } else {
+    //         $status = $customer->status;
+    //     }
+
+     
+       
+    //     if(Carbon::parse($lastDetail->plan_end_date) <= $today && $endDate > $today && $is_paid == 1){
+           
+    //         $detailstatus = 1;
+
+    //     }elseif($inextendDate >= $today && $start_date <= $today){
+          
+    //         $detailstatus = 1;
+
+    //     }else{
+           
+    //         $detailstatus = 0;
+    //     }
+
+    //     return [$status,$detailstatus];
+    // }
+
 
 
     private function createDetail($dto,$start_date,$endDate, $hours,$detailstatus,$is_paid,$join_date,$seat,$billing){
