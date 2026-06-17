@@ -60,4 +60,11 @@ class ReceiptController extends Controller
 
         return $receiptService->downloadResponse($transaction);
     }
+
+    public function otherPayment(int $activityId, ReceiptService $receiptService)
+    {
+        $activity = $receiptService->findOtherPaymentActivity($activityId);
+
+        return $receiptService->otherPaymentDownloadResponse($activity);
+    }
 }

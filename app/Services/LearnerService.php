@@ -1105,6 +1105,7 @@ class LearnerService
                 'pending_refund'=>(string) $transaction->refund ?? '0',
                 'due_date'=>$transaction->due_date ?? '',
                 'transaction'=>$transaction->transaction_id ?? '',
+                'download_receipt_url' => $this->downloadReceiptUrl($transaction),
                
             ],
 
@@ -1147,6 +1148,7 @@ class LearnerService
                     'pending_refund' => (string) ($tx->refund ?? '0'),
                     'due_date' => $tx->due_date ?? '',
                     'transaction' => $tx->transaction_id ?? '',
+                    'download_receipt_url' => $this->downloadReceiptUrl($tx),
                     'seat_type' => $index === 0 ? 'BOOK SEAT' : 'RE-NEW SEAT',
                     'plan_start_date' => $ld?->plan_start_date ?? '',
                     'plan_end_date' => $ld?->plan_end_date ?? '',
@@ -1160,12 +1162,15 @@ class LearnerService
             'all_transaction_activity'=>$transaction_all_activity->map(function($txn){
 
                 return [
+                    'id'=>(int) $txn->id,
                     'transaction_id'=>$txn->transaction_id ?? '',
                     'amount'=>$txn->amount?? '',
                     'particular'=>$txn->particular,
+                    'payment_type'=>$txn->payment_type ?? '',
                     'mode'=>$txn->payment_mode,
                     'date'=>$txn->date,
-                    'dr_cr'=>$txn->dr_cr
+                    'dr_cr'=>$txn->dr_cr,
+                    'download_receipt_url' => $this->otherPaymentReceiptUrl($txn),
                 ];
 
             }),
@@ -1188,6 +1193,32 @@ class LearnerService
           
 
         ];
+    }
+
+    private function downloadReceiptUrl($transaction): string
+    {
+        if (! $transaction || (int) ($transaction->is_paid ?? 0) !== 1) {
+            return '';
+        }
+
+        try {
+            return app(ReceiptService::class)->receiptOpenLink((int) $transaction->id);
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function otherPaymentReceiptUrl($activity): string
+    {
+        if (! $activity || ! in_array(strtoupper((string) ($activity->payment_type ?? '')), ['TOKEN MONEY', 'MISCELLANEOUS'], true)) {
+            return '';
+        }
+
+        try {
+            return app(ReceiptService::class)->otherPaymentOpenLink((int) $activity->id);
+        } catch (\Throwable $e) {
+            return '';
+        }
     }
 
     public function getLearnersList($filters = [])

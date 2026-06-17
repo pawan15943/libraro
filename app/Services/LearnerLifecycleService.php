@@ -695,6 +695,7 @@ class LearnerLifecycleService
                     'particular' => (string) ($activity->particular ?? ''),
                     'source' => 'activity',
                     'added_by_name' => (string) ($activity->created_by_name ?? ''),
+                    'download_receipt_url' => $this->otherPaymentReceiptUrl($activity),
                 ]);
             });
 
@@ -736,10 +737,23 @@ class LearnerLifecycleService
             'updated_by' => (string) ($activity->updated_by ?? ''),
             'updated_by_name' => $this->updatedByName($activity->updated_by ?? null),
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
-            'download_receipt_url' => '',
+            'download_receipt_url' => $this->otherPaymentReceiptUrl($activity),
             'edit_url' => url('api/v1/library/learners/transactions/activity/detail'),
             'delete_url' => url('api/v1/library/learners/transactions/activity/delete'),
         ];
+    }
+
+    private function otherPaymentReceiptUrl($activity): string
+    {
+        if (! $activity || ! in_array(strtoupper((string) ($activity->payment_type ?? '')), ['TOKEN MONEY', 'MISCELLANEOUS'], true)) {
+            return '';
+        }
+
+        try {
+            return app(ReceiptService::class)->otherPaymentOpenLink((int) $activity->id);
+        } catch (\Throwable $e) {
+            return '';
+        }
     }
 
     private function activityAddedByDisplay($createdBy): string

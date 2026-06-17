@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
+use App\Models\Learner;
+use App\Models\LearnerDetail;
 use App\Models\LearnerTransaction;
+use App\Models\LearnerTransactionActivity;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -135,5 +139,147 @@ class ReceiptService
         $transaction = $this->findPaidTransaction($transactionId);
 
         return URL::signedRoute('receipt.mobile.signed', ['transactionId' => $transaction->id]);
+    }
+
+    public function otherPaymentOpenLink(int $activityId): string
+    {
+        $activity = $this->findOtherPaymentActivity($activityId);
+
+        return URL::signedRoute('receipt.other-payment.signed', ['activityId' => $activity->id]);
+    }
+
+    public function findOtherPaymentActivity(int $activityId): LearnerTransactionActivity
+    {
+        $activity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('id', $activityId)
+            ->whereIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS'])
+            ->first();
+
+        if (! $activity) {
+            abort(404, 'Other payment receipt not found');
+        }
+
+        return $activity;
+    }
+
+    public function otherPaymentDownloadResponse(LearnerTransactionActivity $activity): Response
+    {
+        Log::info('Other payment receipt download', ['activity_id' => $activity->id]);
+        $path = 'receipts/other_payment_' . $activity->id . '.pdf';
+        $disk = Storage::disk('public');
+
+        $pdf = $this->otherPaymentPdf($activity)->output();
+        $disk->put($path, $pdf);
+
+        return response()->file(storage_path('app/public/' . $path));
+    }
+
+    public function otherPaymentPdf(LearnerTransactionActivity $activity)
+    {
+        return Pdf::loadView('other_payment_receipt_final', $this->otherPaymentPayload($activity));
+    }
+
+    public function otherPaymentPayload(LearnerTransactionActivity $activity): array
+    {
+        $paymentType = strtoupper((string) $activity->payment_type);
+        if (! in_array($paymentType, ['TOKEN MONEY', 'MISCELLANEOUS'], true)) {
+            abort(404, 'Other payment receipt not found');
+        }
+
+        $transaction = LearnerTransaction::withoutGlobalScopes()
+            ->with('learnerDetail.plan', 'learnerDetail.planType')
+            ->find($activity->learner_transaction_id);
+        $learner = Learner::withoutGlobalScopes()->find($activity->learner_id);
+        $detail = $transaction?->learnerDetail
+            ?: LearnerDetail::withoutGlobalScopes()->with(['plan', 'planType'])->find($transaction?->learner_detail_id);
+
+        if (! $transaction || ! $learner || ! $detail) {
+            abort(404, 'Other payment receipt data not found');
+        }
+
+        $branch = Branch::withoutGlobalScopes()->find($activity->branch_id ?: $transaction->branch_id);
+        $branchTokenMoney = (float) ($branch->token_money ?? 0);
+        $currentAmount = (float) ($activity->amount ?? 0);
+        $paidToDate = 0.0;
+
+        $history = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_id', $activity->learner_id)
+            ->where('payment_type', $paymentType)
+            ->where('id', '<=', $activity->id)
+            ->where(function ($query) {
+                $query->whereNull('dr_cr')->orWhere('dr_cr', 'Cr');
+            })
+            ->orderBy('id')
+            ->get()
+            ->map(function ($row) use ($paymentType, $branchTokenMoney, &$paidToDate) {
+                $amount = (float) ($row->amount ?? 0);
+                $paidToDate += $amount;
+
+                return [
+                    'learner_transaction_id' => (int) ($row->learner_transaction_id ?? 0),
+                    'payment_type' => (string) ($row->payment_type ?? ''),
+                    'particular' => (string) ($row->particular ?? ''),
+                    'amount' => $amount,
+                    'dr_cr' => (string) ($row->dr_cr ?? ''),
+                    'payment_mode' => $this->paymentModeLabel($row->payment_mode),
+                    'transaction_id' => (string) ($row->transaction_id ?? ''),
+                    'date' => $row->date
+                        ? \Carbon\Carbon::parse($row->date)->format('d-m-Y')
+                        : optional($row->created_at)->format('d-m-Y'),
+                    'due_after' => $paymentType === 'TOKEN MONEY'
+                        ? max(0, $branchTokenMoney - $paidToDate)
+                        : 0,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        $pendingAmount = $paymentType === 'TOKEN MONEY'
+            ? max(0, $branchTokenMoney - $paidToDate)
+            : 0;
+
+        return [
+            'branch_logo' => $branch->library_logo ?? '',
+            'library_name' => $branch?->library?->library_name ?? '',
+            'library_email' => $branch?->library?->email ?? '',
+            'library_mobile' => $branch?->library?->library_mobile ?? '',
+            'library_address' => $branch->library_address ?? '',
+            'library_no' => $branch?->library?->library_no ?? '',
+            'invoice_ref_no' => $activity->transaction_id ?: ('OTHER_' . $activity->id),
+            'invoice_date' => $activity->date ?? optional($activity->created_at)->toDateString() ?? now()->toDateString(),
+            'learner_no' => $learner->learner_no ?? '',
+            'learner_name' => $learner->name ?? '',
+            'seat_no' => !empty($detail->seat_no) ? getSeatDisplayShortFloorName($detail->seat_no) : 'GEN',
+            'plan_name' => optional($detail->plan)->name ?? '',
+            'plan_type' => optional($detail->planType)->name ?? '',
+            'plan_start_date' => $detail->plan_start_date ?? '',
+            'plan_end_date' => $detail->plan_end_date ?? '',
+            'payment_type' => $paymentType,
+            'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
+            'expected_amount' => $paymentType === 'TOKEN MONEY' ? $branchTokenMoney : $currentAmount,
+            'paid_amount' => $paidToDate,
+            'pending_amount' => $pendingAmount,
+            'current_paid' => $currentAmount,
+            'activities' => $history,
+            'current_activity_id' => (int) $activity->id,
+        ];
+    }
+
+    private function paymentModeLabel($value): string
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return '';
+        }
+
+        if (is_numeric($value)) {
+            return match ((int) $value) {
+                1 => 'ONLINE',
+                2 => 'OFFLINE',
+                3 => 'PAYLATER',
+                default => (string) $value,
+            };
+        }
+
+        return strtoupper((string) $value);
     }
 }
