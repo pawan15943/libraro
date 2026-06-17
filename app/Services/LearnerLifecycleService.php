@@ -159,18 +159,27 @@ class LearnerLifecycleService
         $transaction = $this->transactionInCurrentContext($transactionId);
 
         DB::transaction(function () use ($transaction, $data) {
-            if($data['paid_amount']> $transaction->total_amount || $transaction->total_amount !=($data['paid_amount']+$transaction->sattle_amount+$transaction->refund-$transaction->pending_amount)){
-                throw new Exception('No activity found for this transaction.');
+            $paidAmount = array_key_exists('paid_amount', $data)
+                ? (float) $data['paid_amount']
+                : (float) ($transaction->paid_amount ?? 0);
+            $settleAmount = (float) ($transaction->sattle_amount ?? 0);
+            $refundAmount = (float) ($transaction->refund ?? 0);
+            $totalAmount = (float) ($transaction->total_amount ?? 0);
+
+            if ($paidAmount > $totalAmount) {
+                throw new Exception('Paid amount cannot be greater than total amount.');
             }
+
             $oldPaidAmount = (float) ($transaction->paid_amount ?? 0);
             $update = [];
 
-            if (array_key_exists('paid_date', $data)) {
-                $update['paid_amount'] = $data['paid_amount'];
+            if (array_key_exists('paid_amount', $data)) {
+                $update['paid_amount'] = $paidAmount;
+                $update['pending_amount'] = max(0, $totalAmount - ($paidAmount + $settleAmount + $refundAmount));
             }
             
             if (array_key_exists('pending_amount', $data)) {
-                $update['pending_amount'] = (float) $transaction->total_amount-($data['paid_amount']+$transaction->sattle_amount+$transaction->refund);
+                $update['pending_amount'] = max(0, $totalAmount - ($paidAmount + $settleAmount + $refundAmount));
             }
 
             if (array_key_exists('paid_date', $data)) {
@@ -193,18 +202,27 @@ class LearnerLifecycleService
                 $transaction->learnerDetail->save();
             }
             
-            $diffrence=(float) $data['paid_amount'] - $oldPaidAmount;
-            
-            $activity=LearnerTransactionActivity::withoutGlobalScopes()->where('learner_transaction_id',$transaction->id)->first();
-            if (! $activity) {
-                throw new Exception('No activity found for this transaction.');
+            $activity = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_transaction_id', $transaction->id)
+                ->first();
+
+            if ($activity) {
+                if (array_key_exists('paid_amount', $data)) {
+                    $diffrence = $paidAmount - $oldPaidAmount;
+                    $activity->amount = (float) $activity->amount + $diffrence;
+                }
+
+                if (array_key_exists('paid_date', $data)) {
+                    $activity->date = $data['paid_date'];
+                }
+
+                if (array_key_exists('payment_mode', $data)) {
+                    $activity->payment_mode = $this->paymentModeValue($data['payment_mode']);
+                }
+
+                $this->setUpdatedBy($activity);
+                $activity->save();
             }
-            
-            $activity->amount=(float) $activity->amount+$diffrence;
-            $activity->date= $data['paid_date'];
-            $activity->payment_mode= $this->paymentModeValue($data['payment_mode']);
-            $this->setUpdatedBy($activity);
-            $activity->save();
 
         });
 
