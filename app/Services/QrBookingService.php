@@ -169,8 +169,10 @@ class QrBookingService
             $is_paid = 1;
             if($request->payment_mode=='online'){
                 $payment_mode = 1;
-            }else{
+            }elseif($request->payment_mode=='offline'){
                 $payment_mode = 2;
+            }else{
+                $payment_mode = 3;
             }
 
             if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
