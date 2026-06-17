@@ -98,6 +98,7 @@ class LearnerLifecycleService
         $overviewUsedActivityIds = [];
         $currentTransactionActivities = $currentTransaction
             ? $this->activitiesForTransaction($currentTransaction, $activities, $overviewUsedActivityIds)
+                ->reject(fn ($activity) => $this->isOtherPaymentActivity($activity))
                 ->map(fn ($activity) => $this->formatActivity($activity))
                 ->values()
             : collect();
@@ -574,6 +575,15 @@ class LearnerLifecycleService
         }
 
         return $exact->merge($legacy)->values();
+    }
+
+    private function isOtherPaymentActivity($activity): bool
+    {
+        return in_array(strtoupper((string) ($activity->payment_type ?? '')), [
+            'TOKEN MONEY',
+            'MISCELLANEOUS',
+            'REFUND',
+        ], true);
     }
 
     private function legacyActivityMatchesTransaction($activity, $transaction): bool
