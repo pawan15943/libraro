@@ -580,7 +580,7 @@ class LearnerController extends Controller
             ]);
         }
 
-        Log::info(['request in tra'=>$request,'validate'=>$validator]);
+       
 
         try {
             $validated = $validator->validated();
