@@ -2181,6 +2181,88 @@ if (!function_exists('changeFormate')) {
 }
 
 if (!function_exists('learnerReceiptPayloadByTransactionId')) {
+    function receiptLocalAssetPath(?string $path): string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return '';
+        }
+
+        $path = str_replace('\\', '/', $path);
+        if (preg_match('/^https?:\/\//i', $path)) {
+            $parsedPath = parse_url($path, PHP_URL_PATH) ?: '';
+            $path = ltrim($parsedPath, '/');
+        }
+
+        foreach (['/storage/', 'storage/'] as $needle) {
+            if (str_contains($path, $needle)) {
+                $path = substr($path, strpos($path, $needle) + strlen($needle));
+                $storagePath = storage_path('app/public/' . ltrim($path, '/'));
+                if (file_exists($storagePath)) {
+                    return $storagePath;
+                }
+            }
+        }
+
+        $relativePath = ltrim($path, '/');
+        $candidates = [
+            public_path($relativePath),
+            public_path('public/' . $relativePath),
+            storage_path('app/public/' . $relativePath),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    function receiptSeatDisplay($seatNo): string
+    {
+        if (empty($seatNo)) {
+            return 'GEN';
+        }
+
+        return (string) (getSeatDisplayShortFloorName($seatNo) ?: $seatNo);
+    }
+
+    function receiptTemplateLogoPath(?string $path): string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return '';
+        }
+
+        $path = str_replace('\\', '/', $path);
+        if (preg_match('/^https?:\/\//i', $path)) {
+            $path = ltrim(parse_url($path, PHP_URL_PATH) ?: '', '/');
+        }
+
+        if (str_contains($path, '/storage/')) {
+            $path = substr($path, strpos($path, '/storage/') + 9);
+        } elseif (str_starts_with($path, 'storage/')) {
+            $path = substr($path, 8);
+        }
+
+        $relativePath = ltrim($path, '/');
+        $candidates = [
+            $relativePath,
+            'public/' . $relativePath,
+            'storage/' . $relativePath,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists(public_path($candidate))) {
+                return $candidate;
+            }
+        }
+
+        return $relativePath;
+    }
+
     function learnerReceiptPayloadByTransactionId(int $transactionId): array
     {
         $transaction = LearnerTransaction::withoutGlobalScopes()
@@ -2350,7 +2432,7 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
             ->value('transaction_id') ?? ('TXN_' . $transaction->id);
 
         return [
-            'branch_logo' => $branchLogo ?? '',
+            'branch_logo' => receiptTemplateLogoPath($branchLogo ?? ''),
             'branch_slug' => $branchSlug ?? '',
             'library_name' => $library->library_name ?? '',
             'library_email' => $library->email ?? '',
@@ -2362,7 +2444,7 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
             'learner_no' => $learner->learner_no ?? '',
             'learner_name' => $learner->name ?? '',
             'locker_no' => $learner->locker_no ?? '',
-            'seat_no' => $detail->seat_no ?? 'GEN',
+            'seat_no' => receiptSeatDisplay($detail->seat_no),
             'plan_name' => optional($detail->plan)->name ?? '',
             'plan_type' => optional($detail->planType)->name ?? '',
             'plan_start_date' => $detail->plan_start_date ?? '',

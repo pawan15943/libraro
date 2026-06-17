@@ -138,9 +138,13 @@
     <div class="section no-break">
         <div class="title">OTHER PAYMENT SUMMARY</div>
         <table class="sum-table">
-            <tr><td class="label">Expected Amount</td><td class="val">&#8377;{{ $money($expected_amount ?? 0) }}</td></tr>
+            @if($expected_amount !== null && $expected_amount !== '')
+                <tr><td class="label">Expected Amount</td><td class="val">&#8377;{{ $money($expected_amount) }}</td></tr>
+            @endif
             <tr><td class="label">Paid Amount ({{ \Carbon\Carbon::parse($invoice_date)->format('d M Y') }})</td><td class="val green">&#8377;{{ $money($current_paid ?? 0) }}</td></tr>
-            <tr class="bold"><td>Pending Amt</td><td class="val red">&#8377;{{ $money($pending_amount ?? 0) }}</td></tr>
+            @if($expected_amount !== null && $expected_amount !== '')
+                <tr class="bold"><td>Pending Amt</td><td class="val red">&#8377;{{ $money($pending_amount ?? 0) }}</td></tr>
+            @endif
         </table>
     </div>
 

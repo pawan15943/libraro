@@ -237,9 +237,12 @@ class ReceiptService
         $pendingAmount = $paymentType === 'TOKEN MONEY'
             ? max(0, $branchTokenMoney - $paidToDate)
             : 0;
+        $expectedAmount = $paymentType === 'TOKEN MONEY' && $branchTokenMoney > 0
+            ? $branchTokenMoney
+            : null;
 
         return [
-            'branch_logo' => $branch->library_logo ?? '',
+            'branch_logo' => receiptTemplateLogoPath($branch->library_logo ?? ''),
             'library_name' => $branch?->library?->library_name ?? '',
             'library_email' => $branch?->library?->email ?? '',
             'library_mobile' => $branch?->library?->library_mobile ?? '',
@@ -249,16 +252,16 @@ class ReceiptService
             'invoice_date' => $activity->date ?? optional($activity->created_at)->toDateString() ?? now()->toDateString(),
             'learner_no' => $learner->learner_no ?? '',
             'learner_name' => $learner->name ?? '',
-            'seat_no' => !empty($detail->seat_no) ? getSeatDisplayShortFloorName($detail->seat_no) : 'GEN',
+            'seat_no' => receiptSeatDisplay($detail->seat_no),
             'plan_name' => optional($detail->plan)->name ?? '',
             'plan_type' => optional($detail->planType)->name ?? '',
             'plan_start_date' => $detail->plan_start_date ?? '',
             'plan_end_date' => $detail->plan_end_date ?? '',
             'payment_type' => $paymentType,
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
-            'expected_amount' => $paymentType === 'TOKEN MONEY' ? $branchTokenMoney : $currentAmount,
+            'expected_amount' => $expectedAmount,
             'paid_amount' => $paidToDate,
-            'pending_amount' => $pendingAmount,
+            'pending_amount' => $expectedAmount !== null ? $pendingAmount : null,
             'current_paid' => $currentAmount,
             'activities' => $history,
             'current_activity_id' => (int) $activity->id,
