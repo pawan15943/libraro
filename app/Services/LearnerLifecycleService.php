@@ -658,8 +658,8 @@ class LearnerLifecycleService
 
             'is_paid' => (int) ($transaction->is_paid ?? 0),
             'subscription_download_receipt_link' => (int) ($transaction->is_paid ?? 0) === 1 ? route('receipt.view', ['transactionId' => $transaction->id]) : '',
-            'edit_url' => route('learner.pending.payment', ['id' => $transaction->id]),
-            'delete_url' => route('learners.transactions.destroy', ['transaction' => $transaction->id]),
+            'edit_url' => url('api/v1/library/learners/transactions/detail'),
+            'delete_url' => url('api/v1/library/learners/transactions/delete'),
         ];
     }
 
@@ -719,6 +719,8 @@ class LearnerLifecycleService
 
     private function formatActivity($activity): array
     {
+        $addedBy = $this->activityAddedByDisplay($activity->created_by ?? null);
+
         return [
             'id' => (int) $activity->id,
             'learner_transaction_id' => (int) ($activity->learner_transaction_id ?? 0),
@@ -729,15 +731,47 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
             'particular' => (string) ($activity->particular ?? ''),
             'dr_cr' => (string) ($activity->dr_cr ?? ''),
-            'added_by' => (string) ($activity->created_by ?? ''),
-            'added_by_name' => $activity->created_by_name ?? '',
+            'added_by' => $addedBy,
+            'added_by_name' => $addedBy,
             'updated_by' => (string) ($activity->updated_by ?? ''),
             'updated_by_name' => $this->updatedByName($activity->updated_by ?? null),
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
             'download_receipt_url' => '',
-            'edit_url' => $activity->learner_transaction_id ? route('learner.pending.payment', ['id' => $activity->learner_transaction_id]) : '',
-            'delete_url' => route('learners.transactions.activity.destroy', ['activity' => $activity->id]),
+            'edit_url' => url('api/v1/library/learners/transactions/activity/detail'),
+            'delete_url' => url('api/v1/library/learners/transactions/activity/delete'),
         ];
+    }
+
+    private function activityAddedByDisplay($createdBy): string
+    {
+        if ($createdBy === null || trim((string) $createdBy) === '') {
+            return '';
+        }
+
+        if (is_numeric($createdBy)) {
+            $userName = DB::table('library_users')->where('id', $createdBy)->value('name');
+            if ($userName) {
+                return strtoupper(substr(trim((string) $userName), 0, 1));
+            }
+
+            if (DB::table('libraries')->where('id', $createdBy)->exists()) {
+                return 'Admin';
+            }
+
+            return '';
+        }
+
+        $name = trim((string) $createdBy);
+        if (strtolower($name) === 'admin') {
+            return 'Admin';
+        }
+
+        $libraryName = DB::table('libraries')->where('id', getLibraryId())->value('library_name');
+        if ($libraryName && strcasecmp($name, trim((string) $libraryName)) === 0) {
+            return 'Admin';
+        }
+
+        return strtoupper(substr($name, 0, 1));
     }
 
     private function formatLearnerForTransactions($learner, $detail): array

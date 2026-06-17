@@ -21,6 +21,7 @@ use App\Services\LearnerSeatSwapService;
 use App\Services\SeatAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -578,6 +579,8 @@ class LearnerController extends Controller
                 'message' => $validator->errors()->first(),
             ]);
         }
+
+        Log::info(['request in tra'=>$request,'validate'=>$validator]);
 
         try {
             $validated = $validator->validated();
