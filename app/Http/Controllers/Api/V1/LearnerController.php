@@ -580,10 +580,13 @@ class LearnerController extends Controller
             ]);
         }
 
-       
-
         try {
             $validated = $validator->validated();
+            Log::info('Transaction detail API request', [
+                'request' => $request->all(),
+                'validated' => $validated,
+            ]);
+
             $id = (int) $validated['id'];
             unset($validated['id']);
 

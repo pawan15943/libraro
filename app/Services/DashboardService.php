@@ -41,7 +41,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
+                'seat_no' => $this->dashboardSeatNo(optional($item->learner)->seat_no),
             ];
         })->values();
 
@@ -241,6 +241,7 @@ class DashboardService
                 'plan:id,name',
                 'planType:id,name'
             ])
+            ->where('type','qr_seat_book')
             ->select('id','seat_no','name','mobile','plan_id','plan_type_id','payment_screenshot','profile_picture','plan_start_date','status')
             ->latest()
             ->limit(5)
@@ -252,7 +253,7 @@ class DashboardService
 
             return [
                 'booking_id' => $booking->id,
-                'seat_no' => (string) ($booking->seat_no ?? 'GEN'),
+                'seat_no' => $this->dashboardSeatNo($booking->seat_no),
                 'name' => $booking->name,
                 'mobile' => $booking->mobile,
                 'plan_name' => $booking->plan?->name ?? '',
@@ -419,7 +420,7 @@ class DashboardService
                         ? asset($item->profile_picture)
                         : '',
 
-                    'seat_no' => $item->seat_no,
+                    'seat_no' => $this->dashboardSeatNo($item->seat_no),
 
                     'name' => $item->name,
 
@@ -518,7 +519,7 @@ class DashboardService
                     'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
-                    'seat_no' => $learner->seat_no,
+                    'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
@@ -539,7 +540,7 @@ class DashboardService
                     'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
-                    'seat_no' => $learner->seat_no,
+                    'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
@@ -558,7 +559,7 @@ class DashboardService
                  'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
-                'seat_no' => $learner->seat_no,
+                'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                 'name' => $learner->name,
                 'plan_end_date' => $learner->plan_end_date,
                 'days_remaining' => $expiredDays,
@@ -734,7 +735,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
+                'seat_no' => $this->dashboardSeatNo(optional($item->learner)->seat_no),
             ];
         })->values();
 
@@ -1052,7 +1053,7 @@ class DashboardService
                 'transaction_id' => $item->transaction_id ?? '',
                 'created_by' => $item->created_by_name ?? 'System User',
                 'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => optional($item->learner)->seat_no ?? 'GEN',
+                'seat_no' => $this->dashboardSeatNo(optional($item->learner)->seat_no),
             ];
         })->values();
 
@@ -1247,6 +1248,13 @@ class DashboardService
         ];
     }
 
+    private function dashboardSeatNo($seatNo): string
+    {
+        $seatNo = trim((string) $seatNo);
+
+        return !empty($seatNo) ? (string) getSeatDisplayShortFloorName($seatNo) : 'GEN';
+    }
+
     private function topBanner(): array
     {
         $today = Carbon::today();
@@ -1281,7 +1289,7 @@ class DashboardService
                 'tital' => 'Wish you happy birthay',
                 'description' => '',
                 'birthday_user' => (string) ($learner->name ?? ''),
-                'seat_no' => !empty($learner->seat_no) ? ('Seat ' . $learner->seat_no) : 'GEN',
+                'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                 'subscription_type' => '',
                 'subscription_status' => '',
                 'days_in_left' => '',
