@@ -555,9 +555,15 @@ class LearnerLifecycleService
         return $transactions->map(function ($transaction, $index) use ($activities, $carryForwardById, $firstTransactionId, &$usedActivityIds) {
             $carry = $carryForwardById[$transaction->id]['carry_forward_amount'] ?? 0;
             $extraPaid = $carryForwardById[$transaction->id]['extra_paid_amount'] ?? 0;
+            $transactionActivities = $this->activitiesForTransaction($transaction, $activities, $usedActivityIds);
 
             return $this->formatSubscriptionTransaction($transaction, $index, $carry, $extraPaid, $firstTransactionId) + [
-                'activity' => $this->activitiesForTransaction($transaction, $activities, $usedActivityIds)
+                'activity' => $transactionActivities
+                    ->reject(fn ($activity) => $this->isOtherPaymentActivity($activity))
+                    ->map(fn ($activity) => $this->formatActivity($activity))
+                    ->values(),
+                'other_payment_activity' => $transactionActivities
+                    ->filter(fn ($activity) => $this->isOtherPaymentActivity($activity))
                     ->map(fn ($activity) => $this->formatActivity($activity))
                     ->values(),
             ];

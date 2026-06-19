@@ -18,6 +18,7 @@ use App\Models\LearnerDetail;
 use App\Models\LearnerOperationsLog;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerSeatSwapService;
+use App\Services\DashboardService;
 use App\Services\SeatAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -130,6 +131,50 @@ class LearnerController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function listByType(Request $request, LearnerService $service, DashboardService $dashboardService)
+    {
+        $validated = $request->validate([
+            'list_type' => 'required|in:extend_expired,payment_due',
+            'search' => 'nullable|string',
+            'plan_type_id' => 'nullable',
+            'plan_type_id.*' => 'integer|exists:plan_types,id',
+            'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
+            'sort_order' => 'nullable|in:asc,desc',
+        ]);
+
+        if ($request->has('page_no')) {
+            $request->merge([
+                'page' => $request->page_no
+            ]);
+        }
+
+        if ($validated['list_type'] === 'payment_due') {
+            return response()->json([
+                'status' => true,
+                'list_type' => 'payment_due',
+                'data' => $dashboardService->duePaymentList(getCurrentBranch(), null),
+            ]);
+        }
+
+        $baseFilters = [
+            'search' => $request->search,
+            'plan_type_id' => is_array($request->plan_type_id)
+                ? $request->plan_type_id
+                : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
+            'sort_by' => $request->sort_by,
+            'sort_order' => $request->sort_order,
+        ];
+
+        return response()->json([
+            'status' => true,
+            'list_type' => 'extend_expired',
+            'data' => [
+                'extended' => $service->getLearnersList(array_merge($baseFilters, ['status' => 'extended'])),
+                'about_to_expire' => $service->getLearnersList(array_merge($baseFilters, ['status' => 'about_to_expire'])),
+            ],
+        ]);
     }
 
     public function process(LearnerOperationRequest $request, LearnerOperationService $service)

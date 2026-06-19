@@ -378,7 +378,7 @@ class DashboardService
     //     ];
     // }
 
-      private function duePayment(int $branchId)
+      public function duePaymentList(int $branchId, ?int $limit = 5): array
     {
         $data = DB::table('learner_transactions')
             ->join('learners', 'learners.id', '=', 'learner_transactions.learner_id')
@@ -403,9 +403,13 @@ class DashboardService
                 'learners.name'
             )
             ->orderByRaw('MIN(learner_transactions.due_date) IS NULL')
-            ->orderByRaw('MIN(learner_transactions.due_date) ASC')
-            ->limit(5)
-            ->get()
+            ->orderByRaw('MIN(learner_transactions.due_date) ASC');
+
+        if ($limit !== null) {
+            $data->limit($limit);
+        }
+
+        $data = $data->get()
 
             ->map(function ($item) {
                 $pendingAmount = (float) $item->pending_amount;
@@ -440,10 +444,15 @@ class DashboardService
             });
 
         return [
-            'limit' => 5,
+            'limit' => $limit,
             'count' => $data->count(),
             'list' => $data
         ];
+    }
+
+    private function duePayment(int $branchId)
+    {
+        return $this->duePaymentList($branchId, 5);
     }
 
     /*

@@ -287,7 +287,14 @@ class MasterController extends Controller
             'plan_start_date'=> 'nullable|date',
 
             'locker_amount'  => 'nullable|numeric',
-            'discount_type' => 'nullable|in:percentage,amount|required_with:discount_value',
+
+            'discount_type' => [
+                'nullable',
+                'in:percentage,amount',
+                Rule::requiredIf(function () use ($request) {
+                    return $request->discount_value > 0;
+                }),
+            ],
 
             'discount_value' => [
                 'nullable',
