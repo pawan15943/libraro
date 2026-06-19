@@ -1166,6 +1166,10 @@ class LibraryAuthController extends Controller
        
 
         $planCount = Plan::where('library_id', $libraryId)->count();
+        $hasOneMonthPlan = Plan::where('library_id', $libraryId)
+            ->where('plan_id', 1)
+            ->whereRaw('UPPER(type) = ?', ['MONTH'])
+            ->exists();
 
         /* ================= BASE VALIDATION ================= */
 
@@ -1290,9 +1294,7 @@ class LibraryAuthController extends Controller
 
        
 
-        $plans = $request->has('plan') 
-        ? ($validated['plans'] ?? []) 
-        : null;
+        $plans = $validated['plans'] ?? [];
 
         $slug = Str::slug($validated['name'].'-'.$libraryId);
    
@@ -1318,34 +1320,14 @@ class LibraryAuthController extends Controller
 
         $branchCount = Branch::where('library_id', $libraryId)->count();
 
-        /* ================= KEEP YOUR 1 MONTH RULE ================= */
-       $shouldValidatePlans = false;
-
-        if ($branchCount == 0) {
-            // First branch creation
-            $shouldValidatePlans = true;
-        }
-
-        if ($branchId && $branchCount == 1) {
-            // Editing the first branch
-            $shouldValidatePlans = true;
-        }
-
-        if ($planCount == 0 || ($branchId && $branchCount == 1)) {
-
-
+        /* Require 1 MONTH only when it does not already exist for the library. */
+        if (!$hasOneMonthPlan) {
             $validator->after(function ($validator) use ($plans) {
+                $hasMonthPlan = collect($plans)->contains(
+                    fn ($plan) => strtoupper(trim($plan)) === '1 MONTH'
+                );
 
-                $hasMonthPlan = false;
-
-                foreach ($plans ?? [] as $plan) {
-                    if (strtoupper($plan) === '1 MONTH') {
-                        $hasMonthPlan = true;
-                        break;
-                    }
-                }
-
-                if ($hasMonthPlan == false) {
+                if (!$hasMonthPlan) {
                     $validator->errors()->add(
                         'plans',
                         '1 MONTH plan is required.'
