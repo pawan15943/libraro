@@ -388,38 +388,13 @@ class QrBookingService
                 'payment_type' =>$booking->type == 'qr_renew' ? 'RENEW': 'SEAT ASSIGNMENT',
                 'payment_mode' => $payment_mode,
                 'due_date' => $request->due_date ?? null,
-                'particular' => $data['particular'] ?? 'System',
+                'particular' => 'Paid By Trans',
                 'library_id' => getLibraryId(),
                 'branchId' => getCurrentBranch(),
                 'transaction_date'=>$booking->created_at->format('Y-m-d')
             ];
-            $learnerTransaction = $service->learnerTransactionAddUpdate($tran);
-
-          
-
-            /*
-            |--------------------------------------------------------------------------
-            | ACTIVITY
-            |--------------------------------------------------------------------------
-            */
-
-            $data = [];
-
-            $data['learner_id'] = $customer->id;
-
-            $data['particular'] = 'Paid By Trans';
-
-            $data['payment_mode'] = 1;
-
-            $data['amount'] = $paid_amount;
-
-            $data['dr_cr'] = 'Cr';
-
-            $data['payment_type'] =$booking->type == 'qr_renew' ? 'RENEW' : 'SEAT ASSIGNMENT';
-            $data['branchId'] = getCurrentBranch();
-            $data['learner_transaction_id'] = $learnerTransaction->id;
-           
-            $service->learnerTransactionActivity($data);
+            // learnerTransactionAddUpdate() creates the corresponding activity entry.
+            $service->learnerTransactionAddUpdate($tran);
 
              $previousLearnerDetail = LearnerDetail::where('learner_id', $learnerId)
             ->where('id', '!=', $learner_detail->id) // important
