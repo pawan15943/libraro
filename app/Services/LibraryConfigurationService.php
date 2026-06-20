@@ -462,10 +462,14 @@ class LibraryConfigurationService
                 }
             }
 
-            $totalCoveredHours = count($coveredMinutes) / 60;
-            // $totalCoveredHours = $totalMinutes / 60;
+            if (!$branchRecord) {
+                throw new \Exception('Library operating hours are not configured for this branch.');
+            }
 
-            if ($branchRecord->hour != 24 && $totalCoveredHours > $branchRecord->hour) {
+            $operatingMinutes = (int) round(((float) $branchRecord->hour) * 60);
+            $totalCoveredMinutes = count($coveredMinutes);
+
+            if ((float) $branchRecord->hour !== 24.0 && $totalCoveredMinutes > $operatingMinutes) {
                 throw new \Exception('Shift timing exceeds library hours.');
             }
 
@@ -478,7 +482,10 @@ class LibraryConfigurationService
 
             foreach ($planTypesss as $index => $row) {
 
-                if ($row['slot_hours'] > $branchRecord->hour && $branchRecord->hour != 24) {
+                if (
+                    (float) $branchRecord->hour !== 24.0
+                    && (int) round(((float) $row['slot_hours']) * 60) > $operatingMinutes
+                ) {
                     throw new \Exception('Selected hours exceed the library’s available hours.');
                 }
 
@@ -489,18 +496,20 @@ class LibraryConfigurationService
                     $end->addDay();
                 }
 
-                $actualHours = $start->diffInHours($end);
+                $actualMinutes = $start->diffInMinutes($end);
+                $submittedMinutes = (int) round(((float) $row['slot_hours']) * 60);
+                $actualHours = $actualMinutes / 60;
 
-                if ($row['slot_hours'] != $actualHours) {
+                if ($submittedMinutes !== $actualMinutes) {
                     throw new \Exception(
-                        "Slot hours must match shift time ({$actualHours} hours)."
+                        "Slot duration must match shift time ({$actualHours} hours)."
                     );
                 }
 
                 $dayTypeId = (int) $row['day_type_id'];
 
                 if (in_array($dayTypeId, [10, 11])) {
-                    if ($actualHours != $branchRecord->hour) {
+                    if ($actualMinutes !== $operatingMinutes) {
                         $shiftName = $dayTypeId == 11 ? 'VIP' : 'Reserved';
                         throw new \Exception(
                             "{$shiftName} shift must match library timing ({$branchRecord->hour} hours)."

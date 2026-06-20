@@ -483,12 +483,17 @@ $(document).on('submit', '#configure', function(e) {
                 });
             }
 
-            if (xhr.status === 400 || xhr.status === 409) {
+            let message = xhr.responseJSON?.message
+                || xhr.responseJSON?.error
+                || 'Unable to save shifts. Please try again.';
+
+            if (xhr.status !== 422 || !xhr.responseJSON?.errors) {
                 form.prepend(
                     `<div class="alert alert-danger form-error">
-                        ${xhr.responseJSON.message}
+                        ${$('<div>').text(message).html()}
                     </div>`
                 );
+                toastr.error(message);
             }
         },
 
