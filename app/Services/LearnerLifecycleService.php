@@ -606,7 +606,6 @@ class LearnerLifecycleService
         return in_array(strtoupper((string) ($activity->payment_type ?? '')), [
             'TOKEN MONEY',
             'MISCELLANEOUS',
-            'REFUND',
         ], true);
     }
 
