@@ -1105,6 +1105,7 @@ class LearnerService
                 'pending_refund'=>(string) $transaction->refund ?? '0',
                 'due_date'=>$transaction->due_date ?? '',
                 'transaction'=>$transaction->transaction_id ?? '',
+                'transaction_id'=>$transaction->id,
                 'download_receipt_url' => $this->downloadReceiptUrl($transaction),
                
             ],

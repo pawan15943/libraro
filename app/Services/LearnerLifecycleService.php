@@ -843,7 +843,7 @@ class LearnerLifecycleService
 
         if ($paymentType) {
             return match (strtoupper((string) $paymentType)) {
-                'SEAT ASSIGNMENT', 'SUBSCRIPTION' ,'NON-EXPIRED'=> 'BOOK SEAT',
+                'SEAT ASSIGNMENT', 'SUBSCRIPTION' ,'NON-EXPIRED','EDIT'=> 'BOOK SEAT',
                 'RENEW' => 'RE-NEW SEAT',
                 'REACTIVE' => 'REACTIVE SEAT',
                 'UPGRADE' => 'UPGRADE SEAT',
