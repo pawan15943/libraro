@@ -71,7 +71,8 @@
                 <small>Register Now and Unlock Exciting Opportunities!</small>
                 <form action="{{ route('library.store') }}" method="POST" class="validateForm" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="referral_code" value="{{ request('ref') }}">
+                    <input type="hidden" name="referral_code" value="{{ old('referral_code', request('ref')) }}">
+                    <input type="hidden" name="referral_type" value="link">
 
                     <div class="row g-3 mt-1">
                         <div class="col-lg-12">

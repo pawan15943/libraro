@@ -16,6 +16,64 @@ class ReferralRewardService
     public const MAX_REDEEM_COUNT = 3;
     public const REFERRAL_CREDIT = 10;
 
+    public function ensureWallet(int $libraryId): ReferralWallet
+    {
+        return ReferralWallet::firstOrCreate(
+            ['library_id' => $libraryId],
+            [
+                'total_earned_points' => 0,
+                'redeemed_points' => 0,
+                'available_points' => 0,
+                'max_cap_points' => self::MAX_REWARD_POINTS,
+            ]
+        );
+    }
+
+    public function completePendingReferralForLibrary(int $referredLibraryId): bool
+    {
+        return DB::transaction(function () use ($referredLibraryId) {
+            $library = Library::where('id', $referredLibraryId)->lockForUpdate()->first();
+            if (!$library || empty($library->referred_by)) {
+                return false;
+            }
+
+            $referrer = Library::where('id', $library->referred_by)->first();
+            if (!$referrer || (int) $referrer->id === $referredLibraryId) {
+                return false;
+            }
+
+            $this->ensureWallet((int) $referrer->id);
+            $this->ensureWallet($referredLibraryId);
+
+            // Repair older registrations where libraries.referred_by was saved
+            // but the corresponding referral row was never created.
+            LibraryReferral::firstOrCreate(
+                ['referred_library_id' => $referredLibraryId],
+                [
+                    'referrer_library_id' => $referrer->id,
+                    'referral_code' => $referrer->referral_code,
+                    'referral_type' => 'code',
+                    'status' => 'pending',
+                ]
+            );
+
+            $referral = LibraryReferral::where('referred_library_id', $referredLibraryId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$referral) {
+                return false;
+            }
+
+            if ($referral->status !== 'completed') {
+                $referral->status = 'completed';
+                $referral->save();
+            }
+
+            return $this->processReferralReward((int) $referral->id);
+        });
+    }
+
     public function addLibraryRewardPoints(int $libraryId, int $points, string $source, ?int $referralId = null, ?string $remark = null): bool
     {
         $library = Library::where('id', $libraryId)->first();

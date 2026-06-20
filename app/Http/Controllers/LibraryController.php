@@ -45,14 +45,18 @@ use App\Models\Branch;
 use App\Models\LibraryReferral;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryLifecycleService;
+use App\Services\ReferralRewardService;
 use Illuminate\Validation\ValidationException;
 
 class LibraryController extends Controller
 {
     protected $libraryService;
-    public function __construct(LibraryService $libraryService)
+    protected $referralRewardService;
+
+    public function __construct(LibraryService $libraryService, ReferralRewardService $referralRewardService)
     {
         $this->libraryService = $libraryService;
+        $this->referralRewardService = $referralRewardService;
     }
 
      public function dataUpdateStatus()
@@ -288,6 +292,8 @@ class LibraryController extends Controller
             'terms'          => 'accepted',
             'library_owner_email'=> 'nullable|email|max:255',
             'library_owner_contact' => 'nullable|digits:10',
+            'referral_code' => 'nullable|string|max:100',
+            'referral_type' => 'nullable|in:code,qr,link',
         ];
         
 
@@ -485,7 +491,10 @@ class LibraryController extends Controller
 
         $validated = $validatedData->validated();
         unset($validated['terms']);
-        $validated['referral_type']=$request->has('qr') ? 'qr' : 'code';
+        $validated['referral_type'] = $request->input(
+            'referral_type',
+            $request->has('qr') ? 'qr' : 'code'
+        );
       
         try {
 
@@ -832,42 +841,13 @@ class LibraryController extends Controller
         
     }
 
-    private function handleReffrel($transaction,$status){
-         $activePaidPlanCount = LibraryTransaction::where('library_id', $transaction->library_id)
-                    ->where('status', 1)
-                    ->where('is_paid', 1)
-                    ->count();
-
-                $pendingReferralExists = LibraryReferral::where('referred_library_id', $transaction->library_id)
-                    ->where('status', 'pending')
-                    ->exists();
-
-                /* 🔍 Log all condition values */
-                Log::info('Referral condition check', [
-                    'library_id'             => $transaction->library_id,
-                    'status_is_active'       => $status,
-                    'active_paid_plan_count' => $activePaidPlanCount,
-                    'pending_referral_exist' => $pendingReferralExists,
-                ]);
-
-                if ($status == 1 && ($activePaidPlanCount==1) && $pendingReferralExists) {
-                    Log::info('Referral marked as completed', [
-                        'library_id' => $transaction->library_id
-                    ]);
-                    LibraryReferral::where('referred_library_id', $transaction->library_id)
-                        ->where('status', 'pending')
-                        ->update([
-                            'status' => 'completed'
-                        ]);
-                }
-                Log::warning('Referral condition failed', [
-                    'library_id' => $transaction->library_id,
-                    'reason' => [
-                        'status_check_failed'       => !$status,
-                        'plan_count_not_one'        => $activePaidPlanCount !== 1,
-                        'no_pending_referral'       => !$pendingReferralExists,
-                    ]
-                ]);
+    private function handleReffrel($transaction, $status)
+    {
+        if ((int) $status === 1) {
+            $this->referralRewardService->completePendingReferralForLibrary(
+                (int) $transaction->library_id
+            );
+        }
     }
 
     public function handleError(){
@@ -1380,13 +1360,20 @@ class LibraryController extends Controller
         // library subscription update
         $library = Library::where('id', getAuthenticatedUser()->id)->first();
     
-        if (empty($library->library_no)) {
+        $sendSetupEmail = empty($library->library_no);
+
+        if ($sendSetupEmail) {
             $libraryCode = generateLibraryCode();
             $library->library_no = $libraryCode;
-            $library->status=1;
-            $library->save();
-            
+        }
 
+        // Referred libraries can already have a library number. Completing the
+        // shift setup must activate them as well, otherwise the dashboard sends
+        // them straight back to this configuration page.
+        $library->status = 1;
+        $library->save();
+
+        if ($sendSetupEmail) {
                 try {
                     \Log::info('sendSuccessfulEmail');
                     $this->sendSuccessfulEmail($library);
@@ -1397,7 +1384,6 @@ class LibraryController extends Controller
                         'error'      => $e->getMessage(),
                     ]);
                 }
-
         }
 
         /* =========================

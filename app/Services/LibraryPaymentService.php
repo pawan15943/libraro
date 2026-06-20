@@ -11,6 +11,10 @@ use App\Models\LibraryTransaction;
 
 class LibraryPaymentService
 {
+    public function __construct(private ReferralRewardService $referralRewardService)
+    {
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Create Razorpay Order
@@ -182,6 +186,9 @@ class LibraryPaymentService
         ]);
 
         $this->markLibraryPaidAndAssignNo($transaction->library_id);
+        $this->referralRewardService->completePendingReferralForLibrary(
+            (int) $transaction->library_id
+        );
 
         if ($status === 1) {
             Library::where('id', $transaction->library_id)

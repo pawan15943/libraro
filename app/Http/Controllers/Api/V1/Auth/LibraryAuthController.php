@@ -83,6 +83,9 @@ class LibraryAuthController extends Controller
 
     public function register(Request $request,RegisterLibrary $action)
     {
+        if (!$request->filled('referral_code') && $request->filled('ref')) {
+            $request->merge(['referral_code' => $request->input('ref')]);
+        }
        
         if (is_string($request->password)) {
             $request->merge(['password' => trim($request->password)]);
@@ -93,6 +96,8 @@ class LibraryAuthController extends Controller
             'email' => 'required|email|unique:libraries,email',
             'library_mobile' => 'required|digits:10',
             'password' => ['required', 'string', 'min:6', "regex:/^[^\\s'\"]/u"],
+            'referral_code' => 'nullable|string|max:100',
+            'referral_type' => 'nullable|in:code,qr,link',
         ], [
             'password.regex' => 'Password must not start with a space, single quote, or double quote.',
         ]);

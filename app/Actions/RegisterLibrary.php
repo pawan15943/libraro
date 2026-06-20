@@ -83,10 +83,11 @@ class RegisterLibrary
                     'referred_library_id' => $library->id,
                     'referral_code' => $referral_code,
                     'referral_type' => $referral_type ?? 'code',
-                    'status' => 'completed'
+                    'status' => 'pending'
                 ]);
 
-                $this->rewardService->processReferralReward((int) $referral->id);
+                $this->rewardService->ensureWallet((int) $referrer->id);
+                $this->rewardService->ensureWallet((int) $library->id);
             }
         
             // Fire Event
