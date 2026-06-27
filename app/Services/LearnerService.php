@@ -1700,6 +1700,7 @@ class LearnerService
 
         $floors = Floor::withoutGlobalScopes()
             ->where('branch_id', $branchId)
+            ->whereNull('deleted_at')
             ->orderBy('floor_no')
             ->get()
             ->keyBy('floor_no');
