@@ -1731,8 +1731,8 @@ class LearnerService
                 return [
                     'floor_id' => $floor->id ?? 0,
                     'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? ''),
-                    'total_seats' => totalSeat(),
-                    'available_seats' => totalSeat() - $occupiedSeats,
+                    'total_seats' => $floor->total_seats ?? totalSeat(),
+                    'available_seats' => $floor->total_seats ?? totalSeat() - $occupiedSeats,
                     'occupied_seats' => $occupiedSeats,
                     'seats' => $formattedSeats->all(),
                 ];
