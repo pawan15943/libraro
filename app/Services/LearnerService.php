@@ -1718,7 +1718,7 @@ class LearnerService
 
                     return [
                         'seat_id' => $seatNo,
-                        'seat_no' => 'Seat No. '.$seatNo,
+                        'seat_no' => 'Seat No. '.($seat['floor'] ?? $seatNo),
                         'seat_status' => $isOccupied ? 'booked' : 'available',
                         'seat_type' => 'regular',
                         'plantype' => $plantypes,

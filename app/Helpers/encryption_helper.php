@@ -1269,7 +1269,10 @@ if (!function_exists('generateSeatNumbers')) {
         }
 
         // Get floors ordered by floor number
-        $floors = Floor::where('branch_id', getCurrentBranch())->orderBy('floor_no')->get();
+        $floors = Floor::where('branch_id', getCurrentBranch())
+            ->whereNull('deleted_at')
+            ->orderBy('floor_no')
+            ->get();
 
         // Loop through all floors
         if (!empty($floors)) {
@@ -1444,7 +1447,11 @@ if (!function_exists('generateSeatNumbers2')) {
         }
 
         // Get floors ordered by floor number
-        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
+        $floors = Floor::withoutGlobalScopes()
+            ->where('branch_id', $branchId)
+            ->whereNull('deleted_at')
+            ->orderBy('floor_no')
+            ->get();
 
         // Loop through all floors
         if (!empty($floors)) {
