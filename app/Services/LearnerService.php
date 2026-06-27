@@ -1718,7 +1718,7 @@ class LearnerService
 
                     return [
                         'seat_id' => $seatNo,
-                        'seat_no' => 'Seat No. '.($seat['floor'] ?? $seatNo),
+                        'seat_no' => 'Seat No. '.$seatNo,
                         'seat_status' => $isOccupied ? 'booked' : 'available',
                         'seat_type' => 'regular',
                         'plantype' => $plantypes,
@@ -1728,12 +1728,13 @@ class LearnerService
                     ->values();
 
                 $occupiedSeats = $formattedSeats->filter(fn ($seat) => $seat['seat_status'] !== 'available')->count();
+                $totalSeats = (int) ($floor->total_seats ?? $formattedSeats->count());
 
                 return [
                     'floor_id' => $floor->id ?? 0,
                     'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? ''),
-                    'total_seats' => $floor->total_seats ?? totalSeat(),
-                    'available_seats' => $floor->total_seats ?? totalSeat() - $occupiedSeats,
+                    'total_seats' => $totalSeats,
+                    'available_seats' => max(0, $totalSeats - $occupiedSeats),
                     'occupied_seats' => $occupiedSeats,
                     'seats' => $formattedSeats->all(),
                 ];
