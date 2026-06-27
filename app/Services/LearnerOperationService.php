@@ -25,7 +25,10 @@ use Log;
 
 class LearnerOperationService
 {
-    public function __construct(private TransactionActivityService $transactionActivityService)
+    public function __construct(
+        private TransactionActivityService $transactionActivityService,
+        private LearnerOperationLogService $operationLogService
+    )
     {
     }
 
@@ -38,6 +41,17 @@ class LearnerOperationService
 
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
+            $beforeOperation = [
+                'learner' => $customer->only([
+                    'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
+                    'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
+                    'no_expiry', 'locker_no', 'seat_no',
+                ]),
+                'detail' => $lastDetail->only([
+                    'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',
+                    'plan_end_date', 'seat_no',
+                ]),
+            ];
 
             if ($dto->operation == 'EDIT') {
                 $this->fillEditDefaults($dto, $lastDetail);
@@ -144,7 +158,7 @@ class LearnerOperationService
 
             $this->updateLearner($dto,$detail,$status,$seat);
 
-            $this->logReactiveOperation($dto,$detail,$lastDetail,$seat);
+            $this->logOperation($dto, $detail, $lastDetail, $seat, $beforeOperation);
 
             /*send reminder */
             $this->sendReminder($dto->operation,$dto->learner_id);
@@ -906,24 +920,47 @@ class LearnerOperationService
         }
     }
 
-    private function logReactiveOperation($dto, $detail, $lastDetail, $seat): void
+    private function logOperation($dto, $detail, $lastDetail, $seat, array $beforeOperation): void
     {
-        if ($dto->operation !== 'REACTIVE') {
+        $operations = [
+            'EDIT' => ['edit', 'learner_and_plan'],
+            'CHANGE PLAN' => ['changePlan', 'plan_type_id'],
+            'RENEW' => ['renewSeat', 'plan_id'],
+            'UPGRADE' => ['learnerUpgrade', 'plan_type_id'],
+            'REACTIVE' => ['reactive', 'seat_no'],
+        ];
+
+        if (! isset($operations[$dto->operation])) {
             return;
         }
 
-        DB::table('learner_operations_log')->insert([
-            'learner_id' => $dto->learner_id,
-            'learner_detail_id' => $detail->id,
-            'library_id' => $dto->library_id,
-            'field_updated' => 'seat_no',
-            'old_value' => $lastDetail->seat_no,
-            'new_value' => $seat,
-            'updated_by' => $dto->library_id,
-            'branch_id' => $dto->branch_id,
-            'operation' => 'reactive',
-            'created_at' => now(),
-        ]);
+        [$operation, $field] = $operations[$dto->operation];
+        [$oldValue, $newValue] = match ($dto->operation) {
+            'CHANGE PLAN', 'UPGRADE' => [$lastDetail->plan_type_id, $detail->plan_type_id],
+            'RENEW' => [$lastDetail->plan_id, $detail->plan_id],
+            'REACTIVE' => [$lastDetail->seat_no, $seat],
+            default => [$beforeOperation, [
+                'learner' => Learner::withTrashed()->findOrFail($dto->learner_id)->only([
+                    'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
+                    'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
+                    'no_expiry', 'locker_no', 'seat_no',
+                ]),
+                'detail' => $detail->only([
+                    'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',
+                    'plan_end_date', 'seat_no',
+                ]),
+            ]],
+        };
+
+        $this->operationLogService->log(
+            (int) $dto->learner_id,
+            (int) $detail->id,
+            $operation,
+            $field,
+            $oldValue,
+            $newValue,
+            $dto->operation.' completed'
+        );
     }
 
     /**

@@ -16,6 +16,10 @@ use App\Http\Controllers\NotificationSentController;
 
 class LearnerLifecycleService
 {
+    public function __construct(private LearnerOperationLogService $operationLogService)
+    {
+    }
+
     public function transactionDashboard(int $learnerId): array
     {
         if (! $this->learnerBelongsToCurrentContext($learnerId)) {
@@ -159,6 +163,8 @@ class LearnerLifecycleService
         $transaction = $this->transactionInCurrentContext($transactionId);
 
         DB::transaction(function () use ($transaction, $data) {
+            $oldValues = $transaction->only(['paid_amount', 'pending_amount', 'paid_date', 'due_date']);
+            $oldPaymentMode = $transaction->learnerDetail?->payment_mode;
             $paidAmount = array_key_exists('paid_amount', $data)
                 ? (float) $data['paid_amount']
                 : (float) ($transaction->paid_amount ?? 0);
@@ -224,6 +230,19 @@ class LearnerLifecycleService
                 $activity->save();
             }
 
+            $newValues = $transaction->fresh()->only(['paid_amount', 'pending_amount', 'paid_date', 'due_date']);
+            $newValues['payment_mode'] = $transaction->learnerDetail?->fresh()?->payment_mode;
+            $oldValues['payment_mode'] = $oldPaymentMode;
+            $this->operationLogService->log(
+                (int) $transaction->learner_id,
+                $transaction->learner_detail_id ? (int) $transaction->learner_detail_id : null,
+                'transactionUpdate',
+                implode(',', array_keys($data)),
+                $oldValues,
+                $newValues,
+                'Transaction #'.$transaction->id.' updated'
+            );
+
         });
 
         return $this->transactionDetail($transactionId);
@@ -236,6 +255,7 @@ class LearnerLifecycleService
         DB::transaction(function () use ($transaction) {
             $learnerId = (int) $transaction->learner_id;
             $detailId = (int) $transaction->learner_detail_id;
+            $oldValues = $transaction->only(['id', 'total_amount', 'paid_amount', 'pending_amount', 'paid_date', 'due_date']);
 
             $activities = LearnerTransactionActivity::withoutGlobalScopes()
                 ->where('learner_id', $learnerId)
@@ -262,6 +282,15 @@ class LearnerLifecycleService
             }
 
             $this->syncLearnerStatusAfterTransactionDelete($learnerId);
+            $this->operationLogService->log(
+                $learnerId,
+                $detailId ?: null,
+                'transactionDelete',
+                'learner_transaction_id',
+                $oldValues,
+                'deleted',
+                'Transaction #'.$transaction->id.' deleted'
+            );
         });
     }
 
@@ -276,24 +305,37 @@ class LearnerLifecycleService
     {
         $activity = $this->activityInCurrentContext($activityId);
 
-        $update = [];
-        
-        if (array_key_exists('paid_amount', $data)) {
-            $this->learnerActivityAmountManage($activityId, (float) $data['paid_amount']);
-            $activity = $this->activityInCurrentContext($activityId);
-        }
-        if (array_key_exists('payment_date', $data)) {
-            $update['date'] = $data['payment_date'];
-        }
-        if (array_key_exists('payment_mode', $data)) {
-            $update['payment_mode'] = $this->paymentModeValue($data['payment_mode']);
-        }
+        DB::transaction(function () use (&$activity, $activityId, $data) {
+            $oldValues = $activity->only(['amount', 'date', 'payment_mode', 'payment_type']);
+            $update = [];
 
-       
-        if (! empty($update)) {
-            $update = array_merge($update, $this->updatedByPayload($activity->getTable()));
-            $activity->update($update);
-        }
+            if (array_key_exists('paid_amount', $data)) {
+                $this->learnerActivityAmountManage($activityId, (float) $data['paid_amount']);
+                $activity = $this->activityInCurrentContext($activityId);
+            }
+            if (array_key_exists('payment_date', $data)) {
+                $update['date'] = $data['payment_date'];
+            }
+            if (array_key_exists('payment_mode', $data)) {
+                $update['payment_mode'] = $this->paymentModeValue($data['payment_mode']);
+            }
+
+            if (! empty($update)) {
+                $update = array_merge($update, $this->updatedByPayload($activity->getTable()));
+                $activity->update($update);
+            }
+
+            $activity->refresh();
+            $this->operationLogService->log(
+                (int) $activity->learner_id,
+                $activity->learner_detail_id ? (int) $activity->learner_detail_id : null,
+                'transactionActivityUpdate',
+                implode(',', array_keys($data)),
+                $oldValues,
+                $activity->only(['amount', 'date', 'payment_mode', 'payment_type']),
+                'Transaction activity #'.$activityId.' updated'
+            );
+        });
 
         return $this->transactionActivityDetail($activityId);
     }
@@ -304,6 +346,7 @@ class LearnerLifecycleService
 
         DB::transaction(function () use ($activity) {
             $transactionId = (int) ($activity->learner_transaction_id ?? 0);
+            $oldValues = $activity->only(['id', 'amount', 'date', 'payment_mode', 'payment_type', 'dr_cr']);
 
             if (! $transactionId) {
                 throw new Exception('No activity found for this transaction.');
@@ -323,6 +366,15 @@ class LearnerLifecycleService
             $this->setUpdatedBy($activity);
             $activity->save();
             $activity->delete();
+            $this->operationLogService->log(
+                (int) $activity->learner_id,
+                $activity->learner_detail_id ? (int) $activity->learner_detail_id : null,
+                'transactionActivityDelete',
+                'learner_transaction_activity_id',
+                $oldValues,
+                'deleted',
+                'Transaction activity #'.$activity->id.' deleted'
+            );
         });
     }
 

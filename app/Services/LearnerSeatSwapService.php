@@ -17,6 +17,10 @@ class LearnerSeatSwapService
 {
     use LearnerQueryTrait;
 
+    public function __construct(private LearnerOperationLogService $operationLogService)
+    {
+    }
+
     /**
      * @param  int|string  $learnerId
      * @param  int|string|null  $seatId  New seat number (same as web: seat_id)
@@ -69,6 +73,17 @@ class LearnerSeatSwapService
             LearnerDetail::where('learner_id', $learnerId)->update([
                 'seat_no' => $newSeatId,
             ]);
+
+            $detailId = LearnerDetail::where('learner_id', $learnerId)->latest('id')->value('id');
+            $this->operationLogService->log(
+                (int) $learnerId,
+                $detailId ? (int) $detailId : null,
+                'swapseat',
+                'seat_no',
+                $customer->seat_no,
+                $newSeatNo,
+                'Seat swapped'
+            );
 
             try {
                 $noti = new NotificationSentController;
