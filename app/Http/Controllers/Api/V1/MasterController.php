@@ -388,7 +388,16 @@ class MasterController extends Controller
                 })
             ],
             'branch_id' => 'required|exists:branches,id',
-            'floor_no'  => 'required|integer|min:1',
+            'floor_no'  => [
+                'required',
+                'integer',
+                'min:1',
+                Rule::unique('floors', 'floor_no')
+                    ->where(fn ($query) => $query
+                        ->where('branch_id', $request->branch_id)
+                        ->whereNull('deleted_at'))
+                    ->ignore($request->id),
+            ],
             'name'      => 'required|string|max:255',
             'from_seat' => 'required|integer|min:1',
             'to_seat'   => 'required|integer|gte:from_seat',
