@@ -93,7 +93,7 @@ class LearnerController extends Controller
     {
         try {
             $request->validate([
-                'status' => 'nullable|in:all,active,about_to_expire,extended,future,expired,deleted,closed,pending_payment',
+                'status' => 'nullable|in:all,active,about_to_expire,extended,future,expired,deleted,closed,pending_payment,non_expiry',
                 'plan_type_id' => 'nullable',
                 'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
