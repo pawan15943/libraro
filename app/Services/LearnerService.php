@@ -1401,7 +1401,7 @@ class LearnerService
 
                 case 'non_expiry':
 
-                    $query->where('learners.no_expiry',0)->where('learners.status',1);
+                    $query->where('learners.no_expiry',1)->where('learners.status',1);
 
                 break;
 
