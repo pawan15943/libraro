@@ -402,7 +402,9 @@ class DashboardService
                 'learners.id',
                 'learners.profile_picture',
                 'learners.seat_no',
-                'learners.name'
+                'learners.name',
+                'learners.mobile',
+                'learners.sended_message_type'
             )
             ->orderByRaw('MIN(learner_transactions.due_date) IS NULL')
             ->orderByRaw('MIN(learner_transactions.due_date) ASC');
