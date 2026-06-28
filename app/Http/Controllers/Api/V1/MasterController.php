@@ -391,7 +391,8 @@ class MasterController extends Controller
             'floor_no'  => [
                 'required',
                 'integer',
-                'min:1',
+                'min:0',
+                'max:99',
                 Rule::unique('floors', 'floor_no')
                     ->where(fn ($query) => $query
                         ->where('branch_id', $request->branch_id)
