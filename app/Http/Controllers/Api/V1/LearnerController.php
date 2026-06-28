@@ -863,7 +863,7 @@ class LearnerController extends Controller
         return response()->json([
             'status' => true,
             'data' => [
-                ['key' => 'all', 'label' => 'All'],
+                
                 ['key' => 'active', 'label' => 'Active'],
                 ['key' => 'about_to_expire', 'label' => 'About to expire'],
                 ['key' => 'extended', 'label' => 'Extended'],
@@ -872,6 +872,7 @@ class LearnerController extends Controller
                 ['key' => 'deleted', 'label' => 'Deleted'],
                 ['key' => 'closed', 'label' => 'Closed'],
                 ['key' => 'pending_payment', 'label' => 'Pending Payment'],
+                ['key' => 'non_expiry', 'label' => 'Non Expire'],
             ],
         ]);
     }

@@ -1318,7 +1318,7 @@ class LearnerService
 
                 case 'about_to_expire':
 
-                    $query->where('learner_detail.status',1)
+                    $query->where('learner_detail.status',1)->where('learners.no_expiry',0)
                         ->whereBetween('learner_detail.plan_end_date',[now(), now()->addDays(5)]);
 
                 break;
@@ -1327,7 +1327,7 @@ class LearnerService
 
                     $extendDays = getExtendDays($branchId);
 
-                    $query->whereDate('learner_detail.plan_end_date','<',now())
+                    $query->whereDate('learner_detail.plan_end_date','<',now())->where('learners.no_expiry',0)
                         ->whereDate(
                             'learner_detail.plan_end_date',
                             '>=',
@@ -1394,6 +1394,12 @@ class LearnerService
                             ->whereColumn('learner_transactions.learner_id', 'learners.id')
                             ->where('learner_transactions.pending_amount', '>', 0);
                     });
+
+                break;
+
+                case 'non_expiry':
+
+                    $query->where('learners.no_expiry',0)->where('learners.status',1);
 
                 break;
 
