@@ -1249,6 +1249,7 @@ class LearnerService
                 'branch_id',
                 'frozen_status',
                 'status',
+                'no_expiry',
                 'deleted_at','sended_message_type'
             ]);
 
@@ -1292,13 +1293,14 @@ class LearnerService
         STATUS FILTER
         ------------------------------*/
 
-        $statusFilter = $filters['status'] ?? 'all';
+        $statusFilter = trim((string) ($filters['status'] ?? ''));
+        $statusFilter = $statusFilter !== '' ? $statusFilter : 'active';
 
         if (!in_array($statusFilter, ['all', 'deleted'], true)) {
             $query->whereNull('learners.deleted_at');
         }
 
-        if (!empty($filters['status'])) {
+        if (!empty($statusFilter)) {
 
             switch ($statusFilter) {
                 case 'all':

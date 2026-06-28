@@ -1442,19 +1442,19 @@ class DashboardService
     {
         return [
             [
-                'tital' => 'Libraro Track Everithing',
+                'tital' => 'Welcome to Libraro',
                 'description' => '',
                 'image' => asset('public/img/slider/last_banner_1.jpeg'),
                 'link' => '',
             ],
             [
-                'tital' => 'Libraro Track Everithing',
+                'tital' => 'Quick QR Seat Booking',
                 'description' => '',
                 'image' => asset('public/img/slider/last_banner_2.jpeg'),
                 'link' => '',
             ],
             [
-                'tital' => 'Libraro Track Everithing',
+                'tital' => 'Quick QR Attendance',
                 'description' => '',
                 'image' => asset('public/img/slider/last_banner_3.jpeg'),
                 'link' => '',
