@@ -66,6 +66,7 @@ class LibraryController extends Controller
          ->where('library_transactions.status', 1)
          ->leftJoin('subscriptions', 'subscriptions.id', '=', 'library_transactions.subscription')
          ->select(
+               'library_transactions.id',
                'library_transactions.subscription as plan_id',
                'subscriptions.name as plan_name',
                'subscriptions.id as plan_type_id',
@@ -125,9 +126,18 @@ class LibraryController extends Controller
             $extensionDays = (int) ($library->extend_days ?? 0);
             $extensionEndDate = $endDate->copy()->addDays($extensionDays);
             $notificationStartDate = $endDate->copy()->subDays(5);
+            $hasRenewedPlan = LibraryTransaction::withoutGlobalScopes()
+               ->where('library_id', $libraryId)
+               ->where('id', '!=', $activePlan->id)
+               ->where('is_paid', 1)
+               ->whereDate('start_date', '>', $endDate->toDateString())
+               ->whereDate('end_date', '>', $endDate->toDateString())
+               ->exists();
 
             $isActive = $today->lte($extensionEndDate);
-            $isNotification = $today->gte($notificationStartDate) && $today->lte($extensionEndDate);
+            $isNotification = !$hasRenewedPlan
+               && $today->gte($notificationStartDate)
+               && $today->lte($extensionEndDate);
          }
       }
     $referralCode = (string) ($library->referral_code ?? '');

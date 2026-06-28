@@ -1156,7 +1156,7 @@ class LearnerService
                     'plan' => $ld?->plan?->name ?? '',
                     'plan_type' => $ld?->planType?->name ?? '',
                     'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Success' : 'Success',
-                    'payment_mode'=>$tx->payment_mode ?? '',
+                    'payment_mode'=>$ld->payment_mode ?? '',
                 ];
             }),
 
