@@ -1724,13 +1724,16 @@ class LearnerService
 
                 $formattedSeats = $seats->map(function ($seat) use ($planTypes, $detailsBySeat, $transactions) {
                     $seatNo = (int) $seat['main'];
+                    $displaySeatNo = !empty($seat['floor_name']) && !empty($seat['floor'])
+                        ? (int) $seat['floor']
+                        : $seatNo;
                     $seatDetails = $detailsBySeat->get($seatNo, collect());
                     $plantypes = $this->formatSeatPlanTypes($planTypes, $seatDetails, $transactions);
                     $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
 
                     return [
                         'seat_id' => $seatNo,
-                        'seat_no' => 'Seat No. '.($seat['floor'] ?? $seatNo),
+                        'seat_no' => 'Seat No. '.$displaySeatNo,
                         'seat_status' => $isOccupied ? 'booked' : 'available',
                         'seat_type' => 'regular',
                         'plantype' => $plantypes,
