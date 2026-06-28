@@ -2420,6 +2420,8 @@ class MasterController extends Controller
                     'display' => (string) $seatNo,
                 ];
 
+                $displaySeatNo = $seatInfo['floor'] ?? $seatNo;
+                $seatInfo['display'] = 'Seat No - ' . $displaySeatNo;
                 $seatInfo['is_future'] = $isFuture;
                 $seatInfo['is_future_text'] = $isFuture ? 'future booked' : '';
 
