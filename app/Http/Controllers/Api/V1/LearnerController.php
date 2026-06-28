@@ -121,6 +121,7 @@ class LearnerController extends Controller
 
             return response()->json([
                 'status' => true,
+                'list_count' => $data->total(),
                 'data' => $data->items()
             ]);
 
