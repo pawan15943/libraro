@@ -255,7 +255,7 @@ class DashboardService
                 'booking_id' => $booking->id,
                 'seat_no' => $this->dashboardSeatNo($booking->seat_no),
                 'name' => $booking->name,
-                'mobile' => $booking->mobile,
+                'mobile' => $this->dashboardMobile($booking->mobile),
                 'plan_name' => $booking->plan?->name ?? '',
                 'plan_type_name' => $booking->planType?->name ?? '',
                 'plan_start_date' => $booking->plan_start_date ?? '',
@@ -440,7 +440,7 @@ class DashboardService
                     'seat_no' => $this->dashboardSeatNo($item->seat_no),
 
                     'name' => $item->name,
-                    'mobile' => $item->mobile,
+                    'mobile' => $this->dashboardMobile($item->mobile),
 
                     'pending_amount' =>(string)$pendingAmount,
 
@@ -555,7 +555,7 @@ class DashboardService
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
-                    'mobile' => $learner->mobile,
+                    'mobile' => $this->dashboardMobile($learner->mobile),
                     'sended_message_type'=>$sended_message_type,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
@@ -578,7 +578,7 @@ class DashboardService
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
-                    'mobile' => $learner->mobile,
+                    'mobile' => $this->dashboardMobile($learner->mobile),
                     'sended_message_type'=>$sended_message_type,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
@@ -599,7 +599,7 @@ class DashboardService
                                 : '',
                 'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                 'name' => $learner->name,
-                'mobile' => $learner->mobile,
+                'mobile' => $this->dashboardMobile($learner->mobile),
                 'sended_message_type'=>$sended_message_type,
                 'plan_end_date' => $learner->plan_end_date,
                 'days_remaining' => $expiredDays,
@@ -1293,6 +1293,19 @@ class DashboardService
         $seatNo = trim((string) $seatNo);
 
         return !empty($seatNo) ? (string) getSeatDisplayShortFloorName($seatNo) : 'GEN';
+    }
+
+    private function dashboardMobile($mobile): string
+    {
+        $mobile = trim((string) $mobile);
+
+        if ($mobile === '') {
+            return '';
+        }
+
+        $decrypted = decryptData($mobile);
+
+        return !empty($decrypted) ? (string) $decrypted : $mobile;
     }
 
     private function topBanner(): array

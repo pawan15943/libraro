@@ -1414,6 +1414,7 @@ class LearnerService
             'learners.profile_picture',
             'learners.branch_id',
             'learners.frozen_status',
+            'learners.sended_message_type',
 
             'learner_detail.seat_no',
             'learner_detail.plan_start_date',
@@ -1536,11 +1537,12 @@ class LearnerService
                     $birthStatus = false;
                 }
             }
-            if($learner->sended_message_type=='whatsapp'){
+            $messageType = strtolower(trim((string) $learner->sended_message_type));
+            if($messageType=='whatsapp'){
                         $sended_message_type=1;
-            }elseif($learner->sended_message_type=='text'){
+            }elseif($messageType=='text'){
                     $sended_message_type=2;
-            }elseif($learner->sended_message_type=='both'){
+            }elseif($messageType=='both'){
                 $sended_message_type=3;
             }else{
                     $sended_message_type=0;
