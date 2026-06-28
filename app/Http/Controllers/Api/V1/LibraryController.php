@@ -215,7 +215,7 @@ class LibraryController extends Controller
 
                 if ($startDate && $startDate->gt($today)) {
                     $subscriptionStatus = 'upcoming';
-                } elseif ($extensionEndDate && $today->lte($extensionEndDate)) {
+                } elseif ($extensionEndDate && $today->lte($extensionEndDate) && $transaction->status==1) {
                     $subscriptionStatus = 'active';
                 } else {
                     $subscriptionStatus = 'expired';
