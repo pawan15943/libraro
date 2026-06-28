@@ -1348,8 +1348,8 @@ class DashboardService
                 'subscription_type' => '',
                 'subscription_status' => '',
                 'days_in_left' => '',
-                'dob' => '',
-                'mobile' => '',
+                'dob' => (string) ($learner->dob ?? ''),
+                'mobile' => $this->dashboardMobile($learner->mobile),
             ];
         }
 
