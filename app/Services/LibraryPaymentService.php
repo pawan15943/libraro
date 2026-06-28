@@ -166,14 +166,14 @@ class LibraryPaymentService
             ->first();
 
         if ($lastPaidTransaction && Carbon::parse($lastPaidTransaction->end_date)->startOfDay()->gte($today)) {
-            $start = Carbon::parse($lastPaidTransaction->end_date)->addDay();
+            $start = Carbon::parse($lastPaidTransaction->end_date)->addDay()->startOfDay();
             $status = 0;
         } else {
-            $start = now();
+            $start = $today->copy();
             $status = 1;
         }
 
-        $end = $start->copy()->addMonths($duration);
+        $end = $this->calculateLibraryEndDate($start, (int) $duration);
 
         $transaction->update([
             'start_date'       => $start,
@@ -202,6 +202,18 @@ class LibraryPaymentService
                 ->where('status', 1)
                 ->update(['status' => 0]);
         }
+    }
+
+    public function calculateLibraryEndDate(Carbon $startDate, int $durationMonths): Carbon
+    {
+        if ($durationMonths <= 0) {
+            return $startDate->copy()->startOfDay();
+        }
+
+        return $startDate->copy()
+            ->startOfDay()
+            ->addMonthsNoOverflow($durationMonths)
+            ->subDay();
     }
 
     private function markLibraryPaidAndAssignNo(int $libraryId): void
