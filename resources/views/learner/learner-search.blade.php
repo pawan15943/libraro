@@ -83,6 +83,59 @@
                 <div class="seat-actions">
                     <ul>
                         <!-- Edit Seat Info -->
+                         @can('has-permission', 'WhatsApp Notification')
+
+                            @if(notificationActive())
+                                @if(wabaNotificationActive())
+                                <li>
+                                    <a target="_blank" href="javascript:;" data-bs-toggle="modal" class="open-waba"
+                                        data-learner_id="{{$learner_id}}" data-bs-target="#wabaSendModel"
+                                        data-bs-toggle="tooltip" data-bs-placement="bottom" title=""
+                                        data-original-title="WhatsApp Reminders">
+                                        <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"
+                                            data-bs-title="Send Reminder"></i>
+                                    </a>
+                                </li>
+                                @endif
+
+                                @if(textNotificationActive())
+                                <li>
+                                    <a target="_blank" href="javascript:;" data-bs-toggle="modal"
+                                        data-learner_id="{{$learner_id}}" class="open-text" data-bs-target="#textSendModel"
+                                        data-bs-toggle="tooltip" data-bs-placement="bottom" title=""
+                                        data-original-title="Text Message Reminders">
+                                        <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip"
+                                            data-bs-title="Send Text Reminder"></i>
+                                    </a>
+                                </li>
+                                @endif
+
+                            @else
+
+                                @if($planStatus['class']=='extedned')
+                                <li>
+                                    <a class="w-auto px-2" target="_blank"
+                                        href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"
+                                            data-bs-title="Send Reminder"></i>
+
+                                    </a>
+                                </li>
+                                @else
+
+                                <li>
+                                    <a class="w-auto px-2" target="_blank"
+                                        href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                        <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip"
+                                            data-bs-title="Send Reminder"></i>
+
+                                    </a>
+                                </li>
+
+                                @endif
+
+                            @endif
+                        @endcan
                         @if($planStatus['diff_extend_day']>0)
 
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
