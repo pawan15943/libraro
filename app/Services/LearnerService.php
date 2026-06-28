@@ -1242,7 +1242,7 @@ class LearnerService
                 'branch_id',
                 'frozen_status',
                 'status',
-                'deleted_at',
+                'deleted_at','sended_message_type'
             ]);
 
         $query = LearnerDetail::withTrashed()
@@ -1536,6 +1536,15 @@ class LearnerService
                     $birthStatus = false;
                 }
             }
+            if($learner->sended_message_type=='whatsapp'){
+                        $sended_message_type=1;
+            }elseif($learner->sended_message_type=='text'){
+                    $sended_message_type=2;
+            }elseif($learner->sended_message_type=='both'){
+                $sended_message_type=3;
+            }else{
+                    $sended_message_type=0;
+            }
 
             return [
 
@@ -1572,6 +1581,7 @@ class LearnerService
                     : '',
              
                 'payment'=>learnerTransactionStatus($learner->id),
+                'sended_message_type'=>$sended_message_type
                 
                 
                 

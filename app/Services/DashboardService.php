@@ -392,6 +392,8 @@ class DashboardService
                 'learners.profile_picture',
                 'learners.seat_no',
                 'learners.name',
+                'learners.mobile',
+                'learners.sended_message_type',
                 DB::raw('MIN(learner_transactions.learner_detail_id) as learner_detail_id'),
                 DB::raw('SUM(learner_transactions.pending_amount) as pending_amount'),
                 DB::raw('MIN(learner_transactions.due_date) as due_date')
@@ -414,6 +416,15 @@ class DashboardService
             ->map(function ($item) {
                 $pendingAmount = (float) $item->pending_amount;
                 $dueDate = $item->due_date ? Carbon::parse($item->due_date) : null;
+                if($item->sended_message_type=='whatsapp'){
+                        $sended_message_type=1;
+                }elseif($item->sended_message_type=='text'){
+                        $sended_message_type=2;
+                }elseif($item->sended_message_type=='both'){
+                        $sended_message_type=3;
+                }else{
+                        $sended_message_type=0;
+                }
 
                 return [
                     'learner_id'=>$item->learner_id ?? '',
@@ -427,6 +438,7 @@ class DashboardService
                     'seat_no' => $this->dashboardSeatNo($item->seat_no),
 
                     'name' => $item->name,
+                    'mobile' => $item->mobile,
 
                     'pending_amount' =>(string)$pendingAmount,
 
@@ -439,7 +451,7 @@ class DashboardService
                         $dueDate
                         ? 'Due ' . $pendingAmount . ' on ' . $dueDate->format('d M') . '.'
                         : 'Due ' . $pendingAmount . '.',
-                    'send_message' => 'pending_waba'
+                    'sended_message_type' => $sended_message_type
                 ];
             });
 
@@ -509,6 +521,8 @@ class DashboardService
             ->get([
                 'learners.id',
                 'learners.name',
+                'learners.mobile',
+                'learners.sended_message_type',
                 'learner_detail.seat_no',
                 'learner_detail.plan_end_date','learners.profile_picture'
             ]);
@@ -517,6 +531,15 @@ class DashboardService
 
             $planEndDate = Carbon::parse($learner->plan_end_date);
             $extensionEndDate = $planEndDate->copy()->addDays($extendDay);
+            if($learner->sended_message_type=='whatsapp'){
+                    $sended_message_type=1;
+            }elseif($learner->sended_message_type=='text'){
+                    $sended_message_type=2;
+            }elseif($learner->sended_message_type=='both'){
+                    $sended_message_type=3;
+            }else{
+                    $sended_message_type=0;
+            }
 
             // 🟡 About to expire (future date)
             if ($planEndDate->gte($today)) {
@@ -530,6 +553,8 @@ class DashboardService
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
+                    'mobile' => $learner->mobile,
+                    'sended_message_type'=>$sended_message_type,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
                     'status' => $daysLeft === 0 ? 'expires_today' : 'about_to_expire',
@@ -551,6 +576,8 @@ class DashboardService
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
+                    'mobile' => $learner->mobile,
+                    'sended_message_type'=>$sended_message_type,
                     'plan_end_date' => $learner->plan_end_date,
                     'days_remaining' => $daysLeft,
                     'status' => $daysLeft === 0 ? 'extension_last_day' : 'extension',
@@ -570,6 +597,8 @@ class DashboardService
                                 : '',
                 'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                 'name' => $learner->name,
+                'mobile' => $learner->mobile,
+                'sended_message_type'=>$sended_message_type,
                 'plan_end_date' => $learner->plan_end_date,
                 'days_remaining' => $expiredDays,
                 'status' => 'expired',
@@ -1283,13 +1312,15 @@ class DashboardService
             'subscription_type' => '',
             'subscription_status' => '',
             'days_in_left' => '',
+            'dob' => '',
+            'mobile' => '',
         ]];
 
         $learners = Learner::query()
             ->where('branch_id', $branchId)
             ->whereMonth('dob', $today->month)
             ->whereDay('dob', $today->day)
-            ->select('name', 'seat_no')
+            ->select('name', 'seat_no','dob','mobile')
             ->get();
 
         foreach ($learners as $learner) {
@@ -1302,6 +1333,8 @@ class DashboardService
                 'subscription_type' => '',
                 'subscription_status' => '',
                 'days_in_left' => '',
+                'dob' => '',
+                'mobile' => '',
             ];
         }
 
@@ -1323,6 +1356,9 @@ class DashboardService
                     'subscription_type' => '',
                     'subscription_status' => '',
                     'days_in_left' => '',
+                    'dob' => '',
+                    'mobile' => '',
+                    
                 ];
             }
         }
@@ -1345,6 +1381,8 @@ class DashboardService
                     'subscription_type' => '',
                     'subscription_status' => '',
                     'days_in_left' => '',
+                    'dob' => '',
+                    'mobile' => '',
                 ];
             }
         }
@@ -1375,6 +1413,8 @@ class DashboardService
             'subscription_type' => $subscriptionName,
             'subscription_status' => $subscriptionStatus,
             'days_in_left' => $daysLeft,
+            'dob' => '',
+            'mobile' => '',
         ];
 
         return collect($banners)
