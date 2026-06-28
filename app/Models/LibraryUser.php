@@ -10,10 +10,11 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasPermissions;
 use App\Traits\HasLibraryUserPermissions;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 
 class LibraryUser extends Authenticatable
 {
-    use HasFactory,SoftDeletes;
+    use HasApiTokens, HasFactory, SoftDeletes;
  
      use HasRoles;
      use HasLibraryUserPermissions;

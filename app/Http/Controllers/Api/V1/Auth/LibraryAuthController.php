@@ -334,6 +334,15 @@ class LibraryAuthController extends Controller
             : Library::find($user->library_id);
 
         $libraryId = $libraryRecord->id; // ⭐ ADDED
+        if ($userType === 'library_user' && empty($user->current_branch)) {
+            $assignedBranches = is_array($user->branch_id) ? $user->branch_id : [];
+            $firstBranchId = (int) ($assignedBranches[0] ?? 0);
+
+            if ($firstBranchId > 0) {
+                $user->current_branch = $firstBranchId;
+                $user->save();
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------

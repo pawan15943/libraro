@@ -1466,7 +1466,7 @@ class MasterController extends Controller
 
     public function saveLibraryUser(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = authLibraryId();
 
         $validated = $request->validate([
             'id' => [
@@ -1527,6 +1527,13 @@ class MasterController extends Controller
                 'library_id' => $libraryId,
                 'branch_id' => array_map('strval', $validated['branch']),
             ];
+
+            $selectedBranches = array_map('intval', $validated['branch']);
+            $currentBranch = (int) ($user->current_branch ?? 0);
+
+            if (!$user || $currentBranch <= 0 || !in_array($currentBranch, $selectedBranches, true)) {
+                $data['current_branch'] = $selectedBranches[0] ?? null;
+            }
 
             /* ======================
             PASSWORD
