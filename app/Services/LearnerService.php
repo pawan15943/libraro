@@ -1136,6 +1136,13 @@ class LearnerService
 
             'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
                 $ld = $tx->learnerDetail;
+                if($ld->payment_mode==1){
+                    $payment_mode='Online';
+                }elseif($ld->payment_mode==2){
+                    $payment_mode='Offline';
+                }else{
+                    $payment_mode='Paylater';
+                }
 
                 return [
                     'total_amount' => (string) ($tx->total_amount ?? '0'),
@@ -1156,7 +1163,7 @@ class LearnerService
                     'plan' => $ld?->plan?->name ?? '',
                     'plan_type' => $ld?->planType?->name ?? '',
                     'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Success' : 'Success',
-                    'payment_mode'=>$ld->payment_mode ?? '',
+                    'payment_mode'=>$payment_mode ?? '',
                 ];
             }),
 

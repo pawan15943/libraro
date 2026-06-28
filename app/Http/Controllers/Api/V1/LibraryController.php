@@ -784,11 +784,11 @@ class LibraryController extends Controller
             $request->validate(['date' => 'required|date']);
         } elseif ($type === 'monthly') {
             $request->validate([
-                'month' => 'required|min:1|max:12',
+                'month' => 'required',
                 'year' => 'required',
             ]);
         } elseif ($type === 'yearly') {
-            $request->validate(['year' => 'required|min:2000|max:2100']);
+            $request->validate(['year' => 'required']);
         } elseif ($type === 'custom') {
             $request->validate([
                 'from_date' => 'required|date',
