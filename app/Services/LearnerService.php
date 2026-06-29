@@ -1779,6 +1779,7 @@ class LearnerService
     {
         $generalDetails = $bookingDetails
             ->filter(fn ($detail) => empty($detail->seat_no))
+            ->when($planTypeId, fn ($details) => $details->filter(fn ($detail) => (int) $detail->plan_type_id === (int) $planTypeId))
             ->values();
 
         $firstFloor = Floor::withoutGlobalScopes()
