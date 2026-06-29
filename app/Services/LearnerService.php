@@ -1971,8 +1971,10 @@ class LearnerService
         $pendingAmount = (float) ($transaction->pending_amount ?? 0);
         $extraAmount = (float) ($transaction->extra_amount ?? 0);
         $planStatus = getPlanStatusDetails($detail->plan_end_date);
-        $learner = $detail->learner;
-        $isNonExpiry = (int) ($learner->no_expiry ?? 0) === 1;
+        $isNonExpiry = Learner::where('id', $detail->learner_id)
+            ->where('no_expiry', 1)
+            ->where('status', 1)
+            ->exists();
 
         if ($isNonExpiry) {
             return 'non expire';
