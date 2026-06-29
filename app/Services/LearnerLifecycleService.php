@@ -93,6 +93,11 @@ class LearnerLifecycleService
         $firstTransactionId = (int) ($transactions->sortBy('id')->first()?->id ?? 0);
 
         $totalOtherPaid = (float) $transactions->sum('token_money') + (float) $transactions->sum('miscellaneous');
+        $configuredTokenMoney = (float) token_money();
+        $paidTokenMoney = (float) $transactions->sum('token_money');
+        $tokenPayment = $configuredTokenMoney == 0.0 ? $paidTokenMoney : $configuredTokenMoney;
+        $miscellaneousPayment = (float) $transactions->sum('miscellaneous');
+        $totalOtherPayment = $tokenPayment + $miscellaneousPayment;
         $totalPendingAmount = (float) $transactions->sum('pending_amount');
         $totalExtraAmount = (float) $transactions->sum('refund');
         $currentSubscriptionAmount = (float) ($currentTransaction?->total_amount ?? 0);
@@ -128,11 +133,11 @@ class LearnerLifecycleService
             ],
             'other_payment' => [
                   'summary' => [
-                        'total_payment' => (string) $this->money((float) token_money() + (float) $transactions->sum('miscellaneous')),
+                        'total_payment' => (string) $this->money($totalOtherPayment),
 
                         'received_amount' => (string) $this->money($totalOtherPaid),
 
-                        'pending_amount' => (string) $this->money( ((float) token_money() +(float) $transactions->sum('miscellaneous') ) - (float) $totalOtherPaid),
+                        'pending_amount' => (string) $this->money($totalOtherPayment - $totalOtherPaid),
                     ],
                 
                 'payments' => $this->formatOtherPayments($transactions, $activities),
