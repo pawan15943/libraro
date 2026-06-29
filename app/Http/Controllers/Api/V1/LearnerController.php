@@ -406,7 +406,7 @@ class LearnerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'plan_type_id' => 'nullable|integer|exists:plan_types,id',
-            'plan_type_status' => 'nullable|integer|in:1,2,3,4,5,6,7',
+            'plan_type_status' => 'nullable|integer|in:1,2,3,4,5,6,7,8',
         ]);
 
         if ($validator->fails()) {

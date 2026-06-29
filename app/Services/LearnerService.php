@@ -1621,6 +1621,7 @@ class LearnerService
             ['id' => 5, 'name' => 'pending payment', 'color' => '#2E3ECD'],
             ['id' => 6, 'name' => 'paylater', 'color' => '#073B5B'],
             ['id' => 7, 'name' => 'extra paid', 'color' => '#00A1C8'],
+            ['id' => 8, 'name' => 'non expire', 'color' => '#c8009d'],
         ];
 
         if ($planTypeId) {
@@ -1941,6 +1942,12 @@ class LearnerService
         $pendingAmount = (float) ($transaction->pending_amount ?? 0);
         $extraAmount = (float) ($transaction->extra_amount ?? 0);
         $planStatus = getPlanStatusDetails($detail->plan_end_date);
+        $learner = $detail->learner;
+        $isNonExpiry = (int) ($learner->no_expiry ?? 0) === 1;
+
+        if ($isNonExpiry) {
+            return 'non expire';
+        }
 
         if ((int) $detail->payment_mode === 3) {
             return 'paylater';
