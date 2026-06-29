@@ -1004,7 +1004,7 @@ class LearnerService
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
         }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
-            $mainstatus='Future';
+            $mainstatus='Upcoming';
         }elseif($planStatus['diff_extend_day'] < 0){
             $mainstatus='Expired';
         }else{
@@ -1321,7 +1321,7 @@ class LearnerService
                 case 'about_to_expire':
 
                     $query->where('learner_detail.status',1)->where('learners.no_expiry',0)
-                        ->whereBetween('learner_detail.plan_end_date',[now(), now()->addDays(5)]);
+                        ->whereBetween('learner_detail.plan_end_date', [now()->startOfDay(), now()->addDays(5)]);
 
                 break;
 
@@ -1667,14 +1667,15 @@ class LearnerService
             ->filter(fn ($detail) => ! empty($detail->seat_no))
             ->groupBy(fn ($detail) => (int) $detail->seat_no);
 
-        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId, $planTypeStatus);
-        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $planTypeStatus);
-        $sortStatusRow = collect($planTypeStatuses)->firstWhere('id', $planTypeStatus);
-        $sortStatus = $sortStatusRow['name'] ?? null;
+        $statusRow = collect($planTypeStatuses)->firstWhere('id', $planTypeStatus);
+        $statusName = $statusRow['name'] ?? null;
 
-        if ($sortStatus) {
-            $numbered = $this->sortSeatMapByPlanTypeStatus($numbered, $sortStatus);
-            $general = $this->sortSeatMapByPlanTypeStatus($general, $sortStatus);
+        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId);
+        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $statusName);
+
+        if ($statusName) {
+            $numbered = $this->sortSeatMapByPlanTypeStatus($numbered, $statusName);
+            $general = $this->sortSeatMapByPlanTypeStatus($general, $statusName);
         }
 
         return [
@@ -1791,12 +1792,14 @@ class LearnerService
                 'seat_no' => 'GEN',
                 'seat_status' => 'available',
                 'seat_type' => 'Regular',
-                'plantype' => $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions),
+                'plantype' => $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions, $planTypeStatus),
             ]];
         } else {
             $seats = $generalDetails
                 ->values()
-                ->map(function ($detail, $index) use ($transactions) {
+                ->map(function ($detail, $index) use ($transactions, $planTypeStatus) {
+                    $status = $this->seatPlanTypeStatus($detail, $transactions);
+
                     return [
                         'seat_id' => 0,
                         'seat_no' => 'GEN '.($index + 1),
@@ -1805,11 +1808,31 @@ class LearnerService
                         'plantype' => [[
                             'plan_type_id' => $detail->planType?->id ?? $detail->plan_type_id,
                             'plan_type_name' => $detail->planType?->name ?? '',
-                            'plan_type_status' => $this->seatPlanTypeStatus($detail, $transactions),
+                            'plan_type_status' => $status,
                             'learner' => $this->formatSeatLearner($detail, $transactions),
                         ]],
                     ];
                 })
+                ->filter(function ($seat) use ($planTypeStatus) {
+                    return ! $planTypeStatus || collect($seat['plantype'])->contains(
+                        fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus
+                    );
+                })
+                ->all();
+        }
+
+        if ($planTypeStatus) {
+            $seats = collect($seats)
+                ->map(function ($seat) use ($planTypeStatus) {
+                    $seat['plantype'] = collect($seat['plantype'] ?? [])
+                        ->filter(fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus)
+                        ->values()
+                        ->all();
+
+                    return $seat;
+                })
+                ->filter(fn ($seat) => ! empty($seat['plantype']))
+                ->values()
                 ->all();
         }
 
@@ -1817,7 +1840,7 @@ class LearnerService
 
         return [[
             'floor_id' => $firstFloor->id ?? 0,
-            'floor_name' => $firstFloor->name ?? '',
+            'floor_name' => '',
             'total_seats' => count($seats),
             'available_seats' => count($seats) - $occupiedSeats,
             'occupied_seats' => $occupiedSeats,
@@ -1825,7 +1848,7 @@ class LearnerService
         ]];
     }
 
-    private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions)
+    private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
     {
         $detailsByPlanType = collect($seatDetails)->groupBy('plan_type_id');
 
@@ -1849,7 +1872,10 @@ class LearnerService
                     'learner' => $this->formatSeatLearner($detail, $transactions),
                 ];
             })->all();
-        })->values()->all();
+        })
+            ->when($planTypeStatus, fn ($items) => $items->filter(fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus))
+            ->values()
+            ->all();
     }
 
     private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
@@ -1876,7 +1902,10 @@ class LearnerService
                 'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : 'available',
                 'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
             ];
-        })->values()->all();
+        })
+            ->when($planTypeStatus, fn ($items) => $items->filter(fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus))
+            ->values()
+            ->all();
     }
 
     private function planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes): bool
