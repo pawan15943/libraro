@@ -34,12 +34,28 @@ use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Str;
 use Carbon\Exceptions\InvalidFormatException;
 use App\Services\ReceiptService;
+use App\Services\SubscriptionPermissionService;
  
 
 class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
     use LearnerQueryTrait;
+
+    protected function denyWithoutAppPermission(string|array $permission)
+    {
+        $user = auth('library_api')->user();
+
+        if (! app(SubscriptionPermissionService::class)->has($user, $permission)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission to perform this action.',
+            ], 403);
+        }
+
+        return null;
+    }
+
     public function generateReceipt(Request $request, ReceiptService $receiptService)
     {
         // Unified receipt flow: learner receipts use global payload helper via ReceiptService.

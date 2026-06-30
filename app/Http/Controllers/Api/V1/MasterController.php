@@ -380,6 +380,10 @@ class MasterController extends Controller
 
     public function floorStore(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Floor Master', 'add-floor-master'])) {
+            return $denied;
+        }
+
         $validated = $request->validate([
             'id' => [
                 'nullable',
@@ -573,6 +577,10 @@ class MasterController extends Controller
     }
     public function deleteFloor(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Floor Master', 'add-floor-master'])) {
+            return $denied;
+        }
+
         $request->validate([
             'id' => 'required|exists:floors,id',
         ]);
@@ -664,6 +672,10 @@ class MasterController extends Controller
 
     public function planStore(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Master', 'add-plan-master', 'Add Plan', 'add-plan'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         $validated = $request->validate([
@@ -787,6 +799,10 @@ class MasterController extends Controller
 
     public function deletePlan(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Master', 'add-plan-master', 'Add Plan', 'add-plan'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         // ✅ Validation
@@ -909,6 +925,10 @@ class MasterController extends Controller
 
     public function plantypeStore(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Type Master', 'add-plan-type-master', 'Add Master Plan Type', 'add-master-plan-type'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         $validated = $request->validate([
@@ -1191,6 +1211,10 @@ class MasterController extends Controller
     }
     public function deletePlanType(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Type Master', 'add-plan-type-master', 'Add Master Plan Type', 'add-master-plan-type'])) {
+            return $denied;
+        }
+
         try {
 
             $libraryId = authLibraryId();
@@ -1291,6 +1315,10 @@ class MasterController extends Controller
 
     public function priceStore(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Price Master', 'add-plan-price-master', 'Add Master Plan Price', 'add-master-plan-price'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
         $branchId  = $request->branch_id;
 
@@ -1418,6 +1446,10 @@ class MasterController extends Controller
     }
     public function deletePlanPrice(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Plan Price Master', 'add-plan-price-master', 'Add Master Plan Price', 'add-master-plan-price'])) {
+            return $denied;
+        }
+
          $libraryId = auth('library_api')->id();
         $request->validate([
             'id' => 'required|exists:plan_prices,id',
@@ -1476,6 +1508,10 @@ class MasterController extends Controller
 
     public function saveLibraryUser(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add User Master', 'add-user-master'])) {
+            return $denied;
+        }
+
         $libraryId = authLibraryId();
 
         $validated = $request->validate([
@@ -1789,6 +1825,10 @@ class MasterController extends Controller
 
     public function assignPermissions(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add User Master', 'add-user-master'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         $validated = $request->validate([
@@ -1821,6 +1861,10 @@ class MasterController extends Controller
 
     public function deleteLibraryUser(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add User Master', 'add-user-master'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         // ✅ Validate input
@@ -1868,6 +1912,10 @@ class MasterController extends Controller
 
     public function libraryUserStatus(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add User Master', 'add-user-master'])) {
+            return $denied;
+        }
+
         $libraryId = auth('library_api')->id();
 
         // ✅ Validation
@@ -1909,6 +1957,10 @@ class MasterController extends Controller
 
     public function branchStatus(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Edit Branch', 'edit-branch', 'Add Branch Master', 'add-branch-master'])) {
+            return $denied;
+        }
+
         $request->validate([
             'branch_id' => 'required|exists:branches,id'
         ]);
@@ -1926,6 +1978,10 @@ class MasterController extends Controller
 
     public function branchDestroy(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Edit Branch', 'edit-branch', 'Add Branch Master', 'add-branch-master'])) {
+            return $denied;
+        }
+
        
         $id = $request->id;
 
@@ -2242,6 +2298,10 @@ class MasterController extends Controller
 
     public function expenseStore(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Expense Master', 'add-expense-master', 'Add Expense', 'add-expense'])) {
+            return $denied;
+        }
+
         $validated = $request->validate([
 
             'id' => [
@@ -2344,6 +2404,10 @@ class MasterController extends Controller
 
     public function expenseDelete(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Expense Master', 'add-expense-master', 'Add Expense', 'add-expense'])) {
+            return $denied;
+        }
+
         $request->validate([
             'id' => 'required|exists:expenses,id'
         ]);

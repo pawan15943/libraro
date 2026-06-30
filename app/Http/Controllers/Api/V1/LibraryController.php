@@ -550,6 +550,10 @@ class LibraryController extends Controller
 
     public function templateUpdate(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['WhatsApp Notification', 'whatsapp-notification'])) {
+            return $denied;
+        }
+
         $templateMap = $this->libraryMessageTemplateMap();
         $templates = [];
 
@@ -964,6 +968,10 @@ class LibraryController extends Controller
 
     public function expenseSave(Request $request, LibraryLifecycleService $service)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Daily Expense', 'add-daily-expense', 'Add Expense', 'add-expense'])) {
+            return $denied;
+        }
+
         $validator = Validator::make($request->all(), [
 
             'id'           => 'nullable|exists:learner_transaction_activity,id',
@@ -1015,6 +1023,10 @@ class LibraryController extends Controller
 
     public function expenseDelete(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Add Daily Expense', 'add-daily-expense', 'Add Expense', 'add-expense'])) {
+            return $denied;
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Validation

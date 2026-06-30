@@ -30,7 +30,9 @@ class LearnerController extends Controller
 {
     public function store(StoreLearnerRequest $request, LearnerService $service)
     {
-       
+        if ($denied = $this->denyWithoutAppPermission(['Book Seat', 'book-seat'])) {
+            return $denied;
+        }
 
         try {
 
@@ -180,6 +182,11 @@ class LearnerController extends Controller
 
     public function process(LearnerOperationRequest $request, LearnerOperationService $service)
     {
+        $permission = $this->permissionForLearnerOperation((string) $request->operation);
+
+        if ($permission && $denied = $this->denyWithoutAppPermission($permission)) {
+            return $denied;
+        }
 
          $dto = LearnerOperationDTO::fromRequest($request);
         
@@ -202,6 +209,15 @@ class LearnerController extends Controller
 
     public function closeDelete(Request $request, LearnerLifecycleService $service)
     {
+        $operation = strtolower((string) $request->input('operation'));
+        $permission = $operation === 'delete'
+            ? ['Delete Seat', 'delete-seat']
+            : ['Close Seat', 'close-seat'];
+
+        if ($denied = $this->denyWithoutAppPermission($permission)) {
+            return $denied;
+        }
+
         $refundSelected = null;
         if ($request->has('isRefund')) {
             $refundSelected = filter_var($request->input('isRefund'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -656,6 +672,10 @@ class LearnerController extends Controller
 
     public function transactionsDelete(Request $request, LearnerLifecycleService $service)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Delete Seat', 'delete-seat'])) {
+            return $denied;
+        }
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:learner_transactions,id',
             'confirm' => 'nullable|in:delete,Delete,DELETE',
@@ -731,6 +751,10 @@ class LearnerController extends Controller
 
     public function transactionsActivityDelete(Request $request, LearnerLifecycleService $service)
     {
+        if ($denied = $this->denyWithoutAppPermission(['Delete Seat', 'delete-seat'])) {
+            return $denied;
+        }
+
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:learner_transaction_activity,id',
            'confirm' => 'nullable|in:delete,Delete,DELETE',
@@ -763,6 +787,24 @@ class LearnerController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    private function permissionForLearnerOperation(string $operation): ?array
+    {
+        return match (strtolower($operation)) {
+            'editlearner', LearnerOperation::EDIT->value => ['Edit Seat', 'edit-seat'],
+            LearnerOperation::RENEW->value => ['Renew Seat', 'renew-seat'],
+            LearnerOperation::UPGRADE->value => ['Upgrade Seat Plan', 'upgrade-seat-plan'],
+            LearnerOperation::CHANGE_PLAN->value => ['Change Plan', 'change-plan'],
+            LearnerOperation::REACTIVE->value => ['Reactive Seat', 'reactive-seat'],
+            LearnerOperation::SWAP_SEAT->value => ['Swap Seat', 'swap-seat'],
+            LearnerOperation::CLOSE_SEAT->value => ['Close Seat', 'close-seat'],
+            LearnerOperation::DELETE_SEAT->value => ['Delete Seat', 'delete-seat'],
+            LearnerOperation::FREEZE_SEAT->value => ['Freez Days', 'freez-days', 'Freeze Days', 'freeze-days'],
+            LearnerOperation::GIFT_DAYS->value => ['Gift Days', 'gift-days'],
+            LearnerOperation::MISC_PAYMENT->value => ['Add Misllaneous Payment', 'add-misllaneous-payment'],
+            default => null,
+        };
     }
 
     public function activity(Request $request)

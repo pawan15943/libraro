@@ -15,6 +15,7 @@ use App\Models\PlanType;
 use App\Models\Subscription;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryPaymentService;
+use App\Services\SubscriptionPermissionService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -476,10 +477,28 @@ class LibraryAuthController extends Controller
             'user_type'   => $userType,
             'data'    => [
                     'library_id' => $libraryId,
-                    'branch'=>$branches
+                    'branch'=>$branches,
                 ]
             
         ],200);
+    }
+
+    public function appPermissions()
+    {
+        $user = auth('library_api')->user();
+
+        if (! $user instanceof Library && ! $user instanceof LibraryUser) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthenticated.',
+                'data' => (object) [],
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => app(SubscriptionPermissionService::class)->permissionStatusMap($user),
+        ], 200);
     }
 
    

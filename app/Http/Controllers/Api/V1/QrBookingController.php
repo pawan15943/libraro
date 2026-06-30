@@ -125,6 +125,10 @@ class QrBookingController extends Controller
 
     public function verify(Request $request, QrBookingService $qrService, LearnerService $service)
     {
+        if ($denied = $this->denyWithoutAppPermission(['QR Seat Booking', 'qr-seat-booking', 'General Seat Booking', 'general-seat-booking'])) {
+            return $denied;
+        }
+
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'direct_validate' => 'nullable|boolean',
@@ -156,6 +160,10 @@ class QrBookingController extends Controller
 
     public function destroy(Request $request)
     {
+        if ($denied = $this->denyWithoutAppPermission(['QR Seat Booking', 'qr-seat-booking', 'General Seat Booking', 'general-seat-booking'])) {
+            return $denied;
+        }
+
         $request->validate([
             'booking_id' => 'required|integer|exists:bookings,id',
         ]);
