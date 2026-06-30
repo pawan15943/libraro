@@ -252,7 +252,10 @@ class QrBookingService
             }
             
             
-            if (($paid_amount > ($total_amt + $reprevious_pending)) || ($paid_amount == 0)) {
+            if (
+                $paid_amount > ($total_amt + $reprevious_pending)
+                || ((float) $total_amt > 0 && $paid_amount == 0)
+            ) {
 
                 throw new \Exception('Paid amount is not valid');
             }

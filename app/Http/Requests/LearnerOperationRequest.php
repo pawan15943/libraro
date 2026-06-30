@@ -106,11 +106,13 @@ class LearnerOperationRequest extends FormRequest
 
             'discount_amount' => [
                 'nullable',
+                'numeric',
+                'min:0',
                 function ($attribute,$value,$fail){
 
                     if(
                         in_array($this->discountType,['amount','percentage'])
-                        && empty($value)
+                        && ($value === null || $value === '')
                     ){
                         $fail('Discount amount required when discount type selected.');
                     }

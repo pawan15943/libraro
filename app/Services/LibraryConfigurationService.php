@@ -157,6 +157,18 @@ class LibraryConfigurationService
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
             unset($validated['hour'], $validated['seats']);
+
+            if ($existingBranch) {
+                $currentSeats = Hour::withoutGlobalScopes()
+                    ->where('branch_id', $existingBranch->id)
+                    ->value('seats');
+
+                if ($currentSeats !== null && (int) $seats < (int) $currentSeats) {
+                    throw new \Exception(
+                        "Branch seats cannot be decreased. Current seats: {$currentSeats}"
+                    );
+                }
+            }
            
 
             /* =========================

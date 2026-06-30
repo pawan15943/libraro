@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Library;
 use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
+use App\Models\LearnerDetail;
 use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
@@ -1656,6 +1657,10 @@ class LibraryAuthController extends Controller
                 ->select('id', 'name', 'day_type_id', 'start_time', 'end_time', 'slot_hours')
                 ->get();
 
+            $usedPlanTypes = LearnerDetail::whereIn('plan_type_id', $planTypesData->pluck('id')->toArray())
+                ->pluck('plan_type_id')
+                ->flip();
+
             $prices = DB::table('plan_prices')
                 ->where('plan_id', $planId)
                 ->pluck('price', 'plan_type_id');
@@ -1665,7 +1670,7 @@ class LibraryAuthController extends Controller
                 ->value('hour');
 
             // ✅ Format (no extra queries)
-            $data = $planTypesData->map(function ($item) use ($planTypes, $prices) {
+            $data = $planTypesData->map(function ($item) use ($planTypes, $prices, $usedPlanTypes) {
                 return [
                     'id'               => $item->id,
                     'custom_plan_type' => $item->name ?? '',
@@ -1675,6 +1680,7 @@ class LibraryAuthController extends Controller
                     'end_time'         => $item->end_time ?? '',
                     'slot_hours'       => $item->slot_hours ?? '',
                     'price'            => (string) ($prices[$item->id] ?? 0),
+                    'can_delete'       => !isset($usedPlanTypes[$item->id]),
                 ];
             });
 

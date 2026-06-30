@@ -729,11 +729,13 @@ class QrEntryController extends Controller
            
             'discount_amount' => [
                 'nullable',
+                'numeric',
+                'min:0',
                 function ($attribute, $value, $fail) use ($request) {
                     if (!in_array($request->discount_type, ['amount', 'percentage']) && $value) {
                         $fail('Discount type must be selected when providing a discount amount.');
                     }
-                    if (in_array($request->discount_type, ['amount', 'percentage']) && !$value) {
+                    if (in_array($request->discount_type, ['amount', 'percentage']) && ($value === null || $value === '')) {
                         $fail('Discount amount is required when a discount type is selected.');
                     }
                 }
@@ -962,7 +964,10 @@ class QrEntryController extends Controller
             }
             
             
-            if (($paid_amount > ($total_amt +$reprevious_pending)) || ($paid_amount == 0)) {
+            if (
+                $paid_amount > ($total_amt + $reprevious_pending)
+                || ((float) $total_amt > 0 && $paid_amount == 0)
+            ) {
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
             }

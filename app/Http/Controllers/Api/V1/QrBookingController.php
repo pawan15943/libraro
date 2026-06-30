@@ -10,6 +10,19 @@ use Illuminate\Http\Request;
 
 class QrBookingController extends Controller
 {
+    private function decryptedBookingValue(Booking $booking, string $key): string
+    {
+        $rawValue = $booking->getRawOriginal($key);
+
+        if ($rawValue === null || $rawValue === '') {
+            return '';
+        }
+
+        $decryptedValue = decryptData($rawValue);
+
+        return (string) ($decryptedValue === false ? $booking->{$key} : $decryptedValue);
+    }
+
     public function index(Request $request)
     {
         $request->validate([
@@ -57,6 +70,7 @@ class QrBookingController extends Controller
             return [
                 'booking_id' => $booking->id,
                 'name' => $booking->name,
+                'mobile' => $this->decryptedBookingValue($booking, 'mobile'),
                 'plan_type_name' => optional($booking->planType)->name,
                 'seat_no' => (string) ($booking->seat_no ?? ''),
                 'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
