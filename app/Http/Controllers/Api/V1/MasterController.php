@@ -1285,6 +1285,7 @@ class MasterController extends Controller
             ->where('plan_prices.id', $validated['id'])
             ->select(
                 'plan_prices.id',
+                'plan_prices.branch_id',
                 'plan_prices.price',
                 'plan_prices.deleted_at', // ✅ required
                 'plans.id as plan_id',
@@ -1303,7 +1304,12 @@ class MasterController extends Controller
         }
 
         // ✅ Add fields (no extra query)
-        $price->can_delete = true;
+        $price->can_delete = ! $this->isPlanPriceUsed(
+            $libraryId,
+            (int) $price->branch_id,
+            (int) $price->plan_id,
+            (int) $price->plan_type_id
+        );
         $price->status     = $price->deleted_at ? 'Inactive' : 'Active';
 
         return response()->json([
@@ -1433,8 +1439,18 @@ class MasterController extends Controller
             ->get();
 
         // ✅ Fast loop (no extra queries)
+        $usedPriceKeys = LearnerDetail::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->where('branch_id', $branchId)
+            ->whereIn('plan_id', $price->pluck('plan_id')->unique()->values()->all())
+            ->whereIn('plan_type_id', $price->pluck('plan_type_id')->unique()->values()->all())
+            ->select('plan_id', 'plan_type_id')
+            ->distinct()
+            ->get()
+            ->mapWithKeys(fn ($item) => [$item->plan_id.':'.$item->plan_type_id => true]);
+
         foreach ($price as $row) {
-            $row->can_delete = true;
+            $row->can_delete = !isset($usedPriceKeys[$row->plan_id.':'.$row->plan_type_id]);
             $row->status     = $row->deleted_at ? 'Inactive' : 'Active';
         }
 
@@ -1455,16 +1471,31 @@ class MasterController extends Controller
             'id' => 'required|exists:plan_prices,id',
         ]);
 
-        $deleted = PlanPrice::withoutGlobalScopes()->where('id', $request->id)
-            ->where('library_id', $libraryId) // remove if not needed
-            ->forceDelete();
+        $planPrice = PlanPrice::withoutGlobalScopes()
+            ->where('id', $request->id)
+            ->where('library_id', $libraryId)
+            ->first();
 
-        if (!$deleted) {
+        if (!$planPrice) {
             return response()->json([
                 'status' => false,
                 'message' => 'Plan Price not found'
             ]);
         }
+
+        if ($this->isPlanPriceUsed(
+            $libraryId,
+            (int) $planPrice->branch_id,
+            (int) $planPrice->plan_id,
+            (int) $planPrice->plan_type_id
+        )) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Plan Price is used by learners and cannot be deleted'
+            ]);
+        }
+
+        $planPrice->forceDelete();
 
         return response()->json([
             'status'  => true,
@@ -2536,6 +2567,16 @@ class MasterController extends Controller
             'data' => $newAvailableSeat->values(),
             
         ]);
+    }
+
+    private function isPlanPriceUsed(int $libraryId, ?int $branchId, int $planId, int $planTypeId): bool
+    {
+        return LearnerDetail::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('plan_id', $planId)
+            ->where('plan_type_id', $planTypeId)
+            ->exists();
     }
     
 }

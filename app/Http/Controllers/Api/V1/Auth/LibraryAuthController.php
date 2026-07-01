@@ -1211,6 +1211,7 @@ class LibraryAuthController extends Controller
             'name'        => 'required|string|max:255',
             'email'       => 'required|email',
             'mobile'      => 'required|digits:10',
+            'upi_id'      => 'nullable|string|max:255',
             'locker_amount' => 'nullable|integer',
             'token_money' => 'nullable|integer',
             'extend_days' => 'required|integer',
@@ -1455,10 +1456,17 @@ class LibraryAuthController extends Controller
    {
       $library = auth('library_api')->user();
        $libraryId = authLibraryId();
-      $branches = Branch::where('library_id', authLibraryId())->withCount('learners')->with(['state','city'])
+      $branches = Branch::where('library_id', $libraryId)->with(['state','city'])
         ->select('id', 'name','mobile','email', 'library_address','library_zip', 'status','state_id','city_id','library_images','library_logo')
-        ->get() 
-        ->map(function ($branch) {
+        ->get();
+
+        $usedBranchIds = LearnerDetail::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->whereIn('branch_id', $branches->pluck('id')->all())
+            ->pluck('branch_id')
+            ->flip();
+
+        $branches = $branches->map(function ($branch) use ($usedBranchIds) {
             // ✅ Decode JSON images
             $images = [];
             if (!empty($branch->library_images)) {
@@ -1489,7 +1497,7 @@ class LibraryAuthController extends Controller
                 'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : asset('public/img/user.png'),
                 'library_images' => $images,
                 // 🔥 main logic
-                'can_delete' => $branch->learners_count == 0 ? true : false
+                'can_delete' => !isset($usedBranchIds[$branch->id])
             ];
         });
 
