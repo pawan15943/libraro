@@ -1608,9 +1608,11 @@ class LibraryAuthController extends Controller
         $libraryId = authLibraryId();
         $branchId = $request->branch_id;
 
+        Log::info(['step1'=>'done']);
         // ✅ Cache key
         $cacheKey = "configure_price_{$libraryId}_{$branchId}";
 
+        Log::info(['step2'=>'done']);
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($libraryId, $branchId) {
 
             // ✅ Single branch check (light query)
@@ -1618,6 +1620,7 @@ class LibraryAuthController extends Controller
                 ->where('library_id', $libraryId)
                 ->exists();
 
+                
             if (!$branchExists) {
                 return response()->json([
                     'status' => false,
@@ -1668,7 +1671,7 @@ class LibraryAuthController extends Controller
             $hour = DB::table('hour')
                 ->where('branch_id', $branchId)
                 ->value('hour');
-
+        Log::info(['step3'=>'done']);
             // ✅ Format (no extra queries)
             $data = $planTypesData->map(function ($item) use ($planTypes, $prices, $usedPlanTypes) {
                 return [
@@ -1684,7 +1687,7 @@ class LibraryAuthController extends Controller
                 ];
             });
 
-
+            Log::info(['step4'=>'done']);
             Log::info(['shiftinfo'=>$data]);
             return [
                 'status' => true,
