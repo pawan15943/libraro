@@ -1684,6 +1684,8 @@ class LibraryAuthController extends Controller
                 ];
             });
 
+
+            Log::info(['shiftinfo'=>$data]);
             return [
                 'status' => true,
                 'data' => [
