@@ -266,6 +266,10 @@ class LearnerOperationService
                 $dr_cr = 'Cr';
             }
 
+            if ((int) $dto->payment_mode === 3) {
+                $activityamount = 0;
+            }
+
 
         }else{
             $pending = $effective - $dto->paid_amount;
