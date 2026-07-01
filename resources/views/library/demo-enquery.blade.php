@@ -85,7 +85,7 @@
                 <li>
                     <span>Mobile</span>
                     <p>
-                        {{ $value->mobile ? '+91-'.decryptData($value->mobile) : '-' }}
+                        {{ $value->mobile ? '+91-'.$value->mobile : '-' }}
                     </p>
                 </li>
 
@@ -149,7 +149,7 @@
 
                         {{-- WhatsApp --}}
                         <li>
-                            <a href="https://wa.me/+91{{decryptData($value->mobile) }}?text=Your%20demo%20plan%20is%20about%20to%20expire.%20Please%20book%20your%20monthly%20seat%20to%20experience%20the%20Library.%0A%0A-%20Team%20XYZ%20Library" target="_blank">
+                            <a href="https://wa.me/+91{{ $value->mobile }}?text=Your%20demo%20plan%20is%20about%20to%20expire.%20Please%20book%20your%20monthly%20seat%20to%20experience%20the%20Library.%0A%0A-%20Team%20XYZ%20Library" target="_blank">
 
                                 <i class="fab fa-whatsapp"></i>
                             </a>

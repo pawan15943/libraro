@@ -237,7 +237,7 @@ span.close-modal {
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Mobile Number <span>*</span></label>
-                                <input type="text" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="10" name="mobile"  value="{{ old('mobile') ?? decryptData($customer->mobile) ?? '' }}">
+                                <input type="text" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="10" name="mobile"  value="{{ old('mobile', $customer->mobile ?? '') }}">
                                  @error('mobile')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -261,7 +261,7 @@ span.close-modal {
                             @if(!in_array('1', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control  @error('email') is-invalid @enderror" name="email" value="{{ old('email') ?? decryptData($customer->email) ?? '' }}" >
+                                <input type="text" class="form-control  @error('email') is-invalid @enderror" name="email" value="{{ old('email', $customer->email ?? '') }}" >
                                  @error('email')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
