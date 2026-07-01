@@ -267,6 +267,17 @@ class MasterController extends Controller
         $data=$request->all();
         $plan_type_name=null;
         $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
+        if (in_array($request->databasemodel, ['Plan', 'PlanType'], true)
+            && $request->filled('id')
+            && $this->hasActiveLearnersForMaster($request->databasemodel, (int) $request->id)) {
+            return response()->json([
+                'error' => true,
+                'message' => $request->databasemodel === 'Plan'
+                    ? 'This plan cannot be edited because active learners are assigned to it.'
+                    : 'This plan type cannot be edited because active learners are assigned to it.'
+            ], 422);
+        }
+
         if ($request->databasemodel == 'Plan'){
             $data['name']=$request->plan_id .' '.$request->type;
             
@@ -338,13 +349,6 @@ class MasterController extends Controller
                 }
             }
 
-            $exists = LearnerDetail::where('plan_type_id', $data['id'])->where('status', 1)->exists();
-            if($data['id'] && $exists){
-                 return response()->json([
-                    'error' => true,
-                    'message' => 'You can not update, contact to support'
-                ]);
-            }
             $data = $request->except(['timming']);
 
             if ($request->image == 'orange') {
@@ -550,7 +554,16 @@ class MasterController extends Controller
     public function planTypeView()
     {
       
-        $data = PlanType::withTrashed()->get(); 
+        $data = PlanType::withTrashed()
+            ->select('plan_types.*')
+            ->selectSub(function ($query) {
+                $query->from('learner_detail')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('learner_detail.plan_type_id', 'plan_types.id')
+                    ->where('learner_detail.status', 1)
+                    ->where('learner_detail.branch_id', getCurrentBranch());
+            }, 'active_learners_count')
+            ->get(); 
 
         return view('master.plantype-list', compact('data'));
     }
@@ -562,6 +575,9 @@ class MasterController extends Controller
             $planType = PlanType::find($id);  // Load existing record for edit
             if (!$planType) {
                 return redirect()->route('planType.create')->with('error', 'Plan type not found.');
+            }
+            if ($this->hasActiveLearnersForMaster('PlanType', (int) $id)) {
+                return redirect()->route('plantype.index')->with('error', 'This plan type cannot be edited because active learners are assigned to it.');
             }
            
         }
@@ -595,7 +611,16 @@ class MasterController extends Controller
     public function planView()
     {
       
-        $data = Plan::withTrashed()->get(); 
+        $data = Plan::withTrashed()
+            ->select('plans.*')
+            ->selectSub(function ($query) {
+                $query->from('learner_detail')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('learner_detail.plan_id', 'plans.id')
+                    ->where('learner_detail.status', 1)
+                    ->where('learner_detail.library_id', getLibraryId());
+            }, 'active_learners_count')
+            ->get(); 
 
         return view('master.planlist', compact('data'));
     }
@@ -606,6 +631,9 @@ class MasterController extends Controller
             $plan = Plan::find($id);  
             if (!$plan) {
                 return redirect()->route('plan.create')->with('error', 'Plan not found.');
+            }
+            if ($this->hasActiveLearnersForMaster('Plan', (int) $id)) {
+                return redirect()->route('plan.index')->with('error', 'This plan cannot be edited because active learners are assigned to it.');
             }
         }
        
@@ -770,6 +798,15 @@ class MasterController extends Controller
         $data = $modelClass::withTrashed()->find($id);
             if (!$data) {
             return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
+        }
+
+        if (in_array($table, ['Plan', 'PlanType'], true) && $this->hasActiveLearnersForMaster($table, (int) $id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $table === 'Plan'
+                    ? 'This plan cannot be edited, deactivated, or deleted because active learners are assigned to it.'
+                    : 'This plan type cannot be edited, deactivated, or deleted because active learners are assigned to it.'
+            ], 422);
         }
 
         if ($deleteType === 'permanent') {
@@ -1199,7 +1236,7 @@ class MasterController extends Controller
             ]);
         }
 
-        $exists = LearnerDetail::where('plan_type_id', $request->id)->exists();
+        $exists = $this->hasActiveLearnersForMaster('PlanType', (int) $request->id);
                
                
         if (!empty($request->id) && $exists) {
@@ -1231,6 +1268,29 @@ class MasterController extends Controller
             ], 500);
         }
 
+    }
+
+    private function hasActiveLearnersForMaster(string $table, int $id): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+
+        $query = LearnerDetail::where('status', 1);
+
+        if ($table === 'Plan') {
+            return $query->where('plan_id', $id)
+                ->where('library_id', getLibraryId())
+                ->exists();
+        }
+
+        if ($table === 'PlanType') {
+            return $query->where('plan_type_id', $id)
+                ->where('branch_id', getCurrentBranch())
+                ->exists();
+        }
+
+        return false;
     }
 
     

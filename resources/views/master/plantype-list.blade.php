@@ -15,6 +15,11 @@
     </ul>
 </div>
 @endif
+@if(session('error'))
+<div class="alert alert-danger">
+    {{ session('error') }}
+</div>
+@endif
 
 <!-- Masters -->
 
@@ -91,6 +96,11 @@
                 </ul>
             </div>
 
+            @if(($value->active_learners_count ?? 0) > 0)
+            <div class="text-center py-3 border-top text-danger">
+                Active learners assigned
+            </div>
+            @else
             <ul class="actionalbles">
                 <li>
                     <a href="javascript:void(0)"
@@ -120,6 +130,7 @@
                     </a>
                 </li>
             </ul>
+            @endif
         </div>
     </div>
     @endforeach
