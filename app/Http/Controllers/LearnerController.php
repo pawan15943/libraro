@@ -2027,7 +2027,11 @@ class LearnerController extends Controller
                 })
             ->leftJoin('learner_detail', 'learner_detail.id', '=', 'latest.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
-            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.plan_start_date', '<=', date('Y-m-d'));
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->where(function ($q) {
+                $q->where('learner_detail.plan_start_date', '<=', date('Y-m-d'))
+                    ->orWhereNotNull('learners.deleted_at');
+            });
 
         if (getCurrentBranch() == 0) {
             $query->where('learners.library_id', getLibraryId())
@@ -2087,8 +2091,12 @@ class LearnerController extends Controller
                 }
             } else {
                 // Apply default status conditions if no status filter is provided
-                $query->where('learners.status', 0)
-                    ->where('learner_detail.status', 0);
+                $query->where(function ($q) {
+                    $q->where(function ($statusQuery) {
+                        $statusQuery->where('learners.status', 0)
+                            ->where('learner_detail.status', 0);
+                    })->orWhereNotNull('learners.deleted_at');
+                });
             }
             if (!empty($filters['seat_no'])) {
 
@@ -2107,8 +2115,12 @@ class LearnerController extends Controller
             }
         } else {
             // Apply default status conditions if no filters are provided
-            $query->where('learners.status', 0)
-                ->where('learner_detail.status', 0);
+            $query->where(function ($q) {
+                $q->where(function ($statusQuery) {
+                    $statusQuery->where('learners.status', 0)
+                        ->where('learner_detail.status', 0);
+                })->orWhereNotNull('learners.deleted_at');
+            });
         }
 
         $learnerHistory =   $query->paginate($perPage);

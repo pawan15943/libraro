@@ -17,6 +17,15 @@ class LearnerOperationLogService
         mixed $newValue = null,
         ?string $summary = null
     ): void {
+        $createdAt = now();
+        while (DB::table('learner_operations_log')
+            ->where('learner_id', $learnerId)
+            ->where('operation', $operation)
+            ->where('created_at', $createdAt->format('Y-m-d H:i:s'))
+            ->exists()) {
+            $createdAt = $createdAt->copy()->addSecond();
+        }
+
         $payload = [
             'learner_id' => $learnerId,
             'learner_detail_id' => $learnerDetailId,
@@ -26,8 +35,8 @@ class LearnerOperationLogService
             'old_value' => $this->stringValue($oldValue),
             'new_value' => $this->stringValue($newValue),
             'updated_by' => $this->actorId(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => $createdAt,
+            'updated_at' => $createdAt,
         ];
 
         if (Schema::hasColumn('learner_operations_log', 'branch_id')) {
