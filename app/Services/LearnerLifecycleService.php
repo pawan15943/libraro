@@ -703,6 +703,8 @@ class LearnerLifecycleService
         if($detail){
             $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no')->first();
         }
+        $addedByName = $this->transactionAddedByName($transaction);
+        $updatedByName = $this->updatedByName($transaction->updated_by ?? null) ?: $addedByName;
         
 
         return [
@@ -734,8 +736,8 @@ class LearnerLifecycleService
             // 'token_money' => $this->money((float) ($transaction->token_money ?? 0)),
             // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
             'updated_by' => (string) ($transaction->updated_by ?? ''),
-            'updated_by_name' => $this->updatedByName($transaction->updated_by ?? null),
-            'added_by_name' => $this->transactionAddedByName($transaction),
+            'updated_by_name' => $updatedByName,
+            'added_by_name' => $addedByName,
             'updated_date'=> optional($transaction->updated_at)->toDateTimeString() ?? '',
 
             'is_paid' => (int) ($transaction->is_paid ?? 0),
@@ -776,7 +778,7 @@ class LearnerLifecycleService
                     'paid_date' => (string) ($activity->date ?? ''),
                     'particular' => (string) ($activity->particular ?? ''),
                     'source' => 'activity',
-                    'added_by_name' => (string) ($activity->created_by_name ?? ''),
+                    'added_by_name' => $this->activityAddedByDisplay($activity->created_by ?? null),
                     'download_receipt_url' => $this->otherPaymentReceiptUrl($activity),
                 ]);
             });
@@ -820,7 +822,7 @@ class LearnerLifecycleService
         $activity = $activityQuery->orderBy('id')->first();
 
         if ($activity) {
-            return (string) ($activity->created_by_name ?? '');
+            return $this->activityAddedByDisplay($activity->created_by ?? null);
         }
 
         return $this->updatedByName($transaction->updated_by ?? null);
@@ -829,6 +831,7 @@ class LearnerLifecycleService
     private function formatActivity($activity): array
     {
         $addedBy = $this->activityAddedByDisplay($activity->created_by ?? null);
+        $updatedByName = $this->updatedByName($activity->updated_by ?? null) ?: $addedBy;
 
         return [
             'id' => (int) $activity->id,
@@ -843,7 +846,7 @@ class LearnerLifecycleService
             'added_by' => $addedBy,
             'added_by_name' => $addedBy,
             'updated_by' => (string) ($activity->updated_by ?? ''),
-            'updated_by_name' => $this->updatedByName($activity->updated_by ?? null),
+            'updated_by_name' => $updatedByName,
             'updated_date' => optional($activity->updated_at)->toDateTimeString() ?? '',
             'download_receipt_url' => $this->otherPaymentReceiptUrl($activity),
             'edit_url' => url('api/v1/library/learners/transactions/activity/detail'),
