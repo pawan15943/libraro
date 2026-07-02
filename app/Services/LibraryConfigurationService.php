@@ -456,6 +456,12 @@ class LibraryConfigurationService
 
             $finalShiftIds = [];
             $coveredMinutes = [];
+            $activeLearnerShiftIds = LearnerDetail::withoutGlobalScopes()
+                ->where('branch_id', $branchId)
+                ->where('status', 1)
+                ->whereIn('plan_type_id', $existingPlanTypes->pluck('id')->all())
+                ->pluck('plan_type_id')
+                ->flip();
            
 
             /* ================= GLOBAL COVERAGE CHECK ================= */
@@ -612,6 +618,18 @@ class LibraryConfigurationService
                         throw new \Exception('Invalid shift selected.');
                     }
 
+                    $timingChanged =
+                        (int) $planType->day_type_id !== (int) $row['day_type_id']
+                        || Carbon::parse($planType->start_time)->format('H:i') !== Carbon::parse($row['start_time'])->format('H:i')
+                        || Carbon::parse($planType->end_time)->format('H:i') !== Carbon::parse($row['end_time'])->format('H:i')
+                        || (float) $planType->slot_hours !== (float) $row['slot_hours'];
+
+                    if (isset($activeLearnerShiftIds[$planType->id]) && $timingChanged) {
+                        throw new \Exception(
+                            "Shift '{$planType->name}' timing cannot be updated because active learners are enrolled."
+                        );
+                    }
+
                     $planType->update([
                         'library_id'  => $libraryId,
                         'branch_id'   => $branchId,
@@ -686,11 +704,9 @@ class LibraryConfigurationService
 
                 if (!in_array($planType->id, $finalShiftIds)) {
 
-                    $exists = LearnerDetail::where('plan_type_id', $planType->id)->exists();
-
-                    if ($exists) {
+                    if (isset($activeLearnerShiftIds[$planType->id])) {
                         throw new \Exception(
-                            "Shift '{$planType->name}' cannot be deleted because learners are enrolled."
+                            "Shift '{$planType->name}' cannot be deleted because active learners are enrolled."
                         );
                     }
 
