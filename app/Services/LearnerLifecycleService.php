@@ -122,6 +122,7 @@ class LearnerLifecycleService
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
+                'added_by_name' => $currentTransaction ? $this->transactionAddedByName($currentTransaction) : '',
                 'last_transactions' => $currentTransaction ? (
                     $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) + [
                         'activity' => $currentTransactionActivities,
@@ -734,6 +735,7 @@ class LearnerLifecycleService
             // 'miscellaneous' => $this->money((float) ($transaction->miscellaneous ?? 0)),
             'updated_by' => (string) ($transaction->updated_by ?? ''),
             'updated_by_name' => $this->updatedByName($transaction->updated_by ?? null),
+            'added_by_name' => $this->transactionAddedByName($transaction),
             'updated_date'=> optional($transaction->updated_at)->toDateTimeString() ?? '',
 
             'is_paid' => (int) ($transaction->is_paid ?? 0),
@@ -792,10 +794,36 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($transaction->learnerDetail?->payment_mode),
             'paid_date' => (string) ($transaction->paid_date ?? ''),
             'particular' => $type,
+            'added_by_name' => $this->transactionAddedByName($transaction, [$type]),
             'download_receipt_url' => '',
             'edit_url' => route('learner.other.payment', $transaction->learner_detail_id),
             'delete_url' => '',
         ];
+    }
+
+    private function transactionAddedByName($transaction, array $paymentTypes = []): string
+    {
+        if (! $transaction || empty($transaction->id)) {
+            return '';
+        }
+
+        $activityQuery = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id)
+            ->whereNotNull('created_by');
+
+        if (! empty($paymentTypes)) {
+            $activityQuery->whereIn('payment_type', $paymentTypes);
+        } else {
+            $activityQuery->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS']);
+        }
+
+        $activity = $activityQuery->orderBy('id')->first();
+
+        if ($activity) {
+            return (string) ($activity->created_by_name ?? '');
+        }
+
+        return $this->updatedByName($transaction->updated_by ?? null);
     }
 
     private function formatActivity($activity): array
