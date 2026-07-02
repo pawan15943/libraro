@@ -447,7 +447,9 @@ class LibraryConfigurationService
             ->first();
 
        
-            $existingPlanTypes = PlanType::where('branch_id', $branchId)->get();
+            $existingPlanTypes = PlanType::withoutGlobalScopes()
+                ->where('branch_id', $branchId)
+                ->get();
             $existingPlanTypesById = $existingPlanTypes->keyBy('id');
 
             $isFirstTimeSetup = $existingPlanTypes->count() === 0;
@@ -493,6 +495,12 @@ class LibraryConfigurationService
             $planTypesss = $validated['plan_types'];
 
             foreach ($planTypesss as $index => $row) {
+                $currentId = $row['plan_type_id'] ?? $row['id'] ?? null;
+                $currentId = $currentId !== null && $currentId !== '' ? (int) $currentId : null;
+
+                if ($currentId && !isset($existingPlanTypesById[$currentId])) {
+                    throw new \Exception('Invalid shift selected.');
+                }
 
                 if (
                     (float) $branchRecord->hour !== 24.0
@@ -529,7 +537,6 @@ class LibraryConfigurationService
                     }
                 }
 
-                $rowId = $row['plan_type_id'] ?? 'new';
                 $currentDayType = (int) $row['day_type_id'];
 
                 if ($currentDayType === 0) {
@@ -552,13 +559,12 @@ class LibraryConfigurationService
                     $timePairs['non_custom'][$currentDayType] = true;
                 }
 
-                $currentId = $row['plan_type_id'] ?? null;
-
                 /* ================= DB DUPLICATE CHECK ================= */
                 $existing = null;
                 if ($row['day_type_id'] == 0) {
 
-                    $existing = PlanType::where('branch_id', $branchId)
+                    $existing = PlanType::withoutGlobalScopes()
+                        ->where('branch_id', $branchId)
                         ->where('day_type_id', 0)
                         ->where('start_time', $row['start_time'])
                         ->where('end_time', $row['end_time'])
@@ -566,20 +572,15 @@ class LibraryConfigurationService
 
                 } else {
 
-                    $existing = PlanType::where('branch_id', $branchId)
+                    $existing = PlanType::withoutGlobalScopes()
+                        ->where('branch_id', $branchId)
                         ->where('day_type_id', $row['day_type_id'])
                         ->first();
                 }
 
                 if ($existing) {
 
-                    if (!$currentId) {
-                        $planTypesss[$index]['plan_type_id'] = $existing->id;
-                        $row['plan_type_id'] = $existing->id;
-                        $currentId = $existing->id;
-                    }
-
-                    elseif ($existing->id != $currentId) {
+                    if (!$currentId || $existing->id != $currentId) {
                         throw new \Exception(
                             $row['day_type_id'] == 0
                                 ? 'Custom shift already exists for this time range.'
@@ -651,7 +652,10 @@ class LibraryConfigurationService
                 //     ->first();
 
 
-                 $existingPrices = PlanPrice::where('branch_id', $branchId)->get()->keyBy('plan_type_id');
+                $existingPrices = PlanPrice::withoutGlobalScopes()
+                    ->where('branch_id', $branchId)
+                    ->get()
+                    ->keyBy('plan_type_id');
                 $existingPrice = $existingPrices[$planType->id] ?? null;
 
                 if ($existingPrice) {
@@ -674,7 +678,9 @@ class LibraryConfigurationService
 
             /* ================= DELETE REMOVED ================= */
 
-            $existingShifts = PlanType::where('branch_id', $branchId)->get();
+            $existingShifts = PlanType::withoutGlobalScopes()
+                ->where('branch_id', $branchId)
+                ->get();
 
             foreach ($existingShifts as $planType) {
 
@@ -688,7 +694,10 @@ class LibraryConfigurationService
                         );
                     }
 
-                    PlanPrice::where('plan_type_id', $planType->id)->forceDelete();
+                    PlanPrice::withoutGlobalScopes()
+                        ->where('branch_id', $branchId)
+                        ->where('plan_type_id', $planType->id)
+                        ->forceDelete();
                     $planType->forceDelete();
                 }
             }

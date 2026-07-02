@@ -1308,6 +1308,8 @@ class LibraryController extends Controller
             'plan_types.*.slot_hours'      => 'required|numeric|min:1',
             'plan_types.*.price'           => 'required|numeric|min:0',
             'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
+            'plan_types.*.plan_type_id'    => 'nullable|integer',
+            'plan_types.*.id'              => 'nullable|integer',
         ]);
 
         $validator->after(function ($validator) use ($request) {

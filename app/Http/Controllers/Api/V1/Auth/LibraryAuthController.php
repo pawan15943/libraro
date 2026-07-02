@@ -29,7 +29,6 @@ use App\Models\Floor;
 use App\Models\Hour;
 use App\Models\TempOrder;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -1431,6 +1430,8 @@ class LibraryAuthController extends Controller
             'plan_types.*.slot_hours'      => 'required|numeric|min:1',
             'plan_types.*.price'           => 'required|numeric|min:0',
             'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
+            'plan_types.*.plan_type_id'    => 'nullable|integer',
+            'plan_types.*.id'              => 'nullable|integer',
             'branch_id'  => 'required',
         ]);
 
@@ -1617,11 +1618,7 @@ class LibraryAuthController extends Controller
         $branchId = $request->branch_id;
 
         Log::info(['step1'=>'done']);
-        // ✅ Cache key
-        $cacheKey = "configure_price_{$libraryId}_{$branchId}";
-
         Log::info(['step2'=>'done']);
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($libraryId, $branchId) {
 
             // ✅ Single branch check (light query)
             $branchExists = Branch::where('id', $branchId)
@@ -1704,7 +1701,6 @@ class LibraryAuthController extends Controller
                     'operating_hours' => $hour ?? 0
                 ]
             ];
-        });
     }
 
 //     public function branchDetailEdit(Request $request)
