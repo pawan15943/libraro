@@ -380,9 +380,11 @@ class DashboardService
 
       public function duePaymentList(int $branchId, ?int $limit = 5): array
     {
-        $data = DB::table('learner_transactions')
+        $query = DB::table('learner_transactions')
             ->join('learners', 'learners.id', '=', 'learner_transactions.learner_id')
             ->where('learner_transactions.branch_id', $branchId)
+            ->where('learners.branch_id', $branchId)
+            ->whereNull('learners.deleted_at')
             ->where('learner_transactions.pending_amount', '>', 0)
             ->when(Schema::hasColumn('learner_transactions', 'deleted_at'), function ($query) {
                 $query->whereNull('learner_transactions.deleted_at');
@@ -408,6 +410,12 @@ class DashboardService
             )
             ->orderByRaw('MIN(learner_transactions.due_date) IS NULL')
             ->orderByRaw('MIN(learner_transactions.due_date) ASC');
+
+        $totalCount = DB::query()
+            ->fromSub(clone $query, 'pending_learners')
+            ->count();
+
+        $data = clone $query;
 
         if ($limit !== null) {
             $data->limit($limit);
@@ -459,7 +467,7 @@ class DashboardService
 
         return [
             'limit' => $limit,
-            'count' => $data->count(),
+            'count' => $totalCount,
             'list' => $data
         ];
     }
@@ -481,11 +489,17 @@ class DashboardService
         $extendDay = getExtendDays($branchId); // extension window
         $aboutToExpireDays = 5;
 
-        $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.branch_id', $branchId)
-            ->where('learners.status', 1)
-            ->where('learner_detail.status', 1)
+            ->whereNull('learners.deleted_at')
+            ->where('learners.no_expiry', 0)
             ->where('learner_detail.is_paid', 1)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('learner_operations_log as closed_op')
+                    ->whereColumn('closed_op.learner_detail_id', 'learner_detail.id')
+                    ->where('closed_op.operation', 'closeSeat');
+            })
 
             ->where(function ($query) use ($today, $extendDay, $aboutToExpireDays) {
 
@@ -500,7 +514,9 @@ class DashboardService
 
                 // 🟡 About to expire: today to next X days
                 ->orWhere(function ($q) use ($today, $aboutToExpireDays) {
-                    $q->whereDate('learner_detail.plan_end_date', '>=', $today)
+                    $q->where('learners.status', 1)
+                    ->where('learner_detail.status', 1)
+                    ->whereDate('learner_detail.plan_end_date', '>=', $today)
                     ->whereDate(
                         'learner_detail.plan_end_date',
                         '<=',
@@ -517,9 +533,12 @@ class DashboardService
                     ->whereColumn('ld.plan_end_date', '>', 'learner_detail.plan_end_date');
             })
 
-            ->orderBy('learner_detail.plan_end_date', 'asc')
-            ->limit(5)
+            ->orderBy('learner_detail.plan_end_date', 'asc');
 
+        $totalCount = (clone $query)->count();
+
+        $learners = $query
+            ->limit(5)
             ->get([
                 'learners.id',
                 'learners.name',
@@ -617,7 +636,7 @@ class DashboardService
 
         return [
             'limit' => 5,
-            'count' => count($list),
+            'count' => $totalCount,
             'list' => $list
         ];
     }

@@ -274,6 +274,10 @@ class MasterController extends Controller
 
     public function getPriceApi(Request $request, PlanService $priceService)
     {
+        if ($request->filled('discount_type') && ($request->discount_value === null || $request->discount_value === '')) {
+            $request->merge(['discount_value' => 0]);
+        }
+
         
         $validated = $request->validate([
             'plan_id'        => 'required|exists:plans,id',

@@ -717,7 +717,7 @@ class LearnerLifecycleService
             'plan_end_date' => (string) ($detail?->plan_end_date ?? ''),
             'paid_date' => (string) ($transaction->paid_date ?? ''),
             'due_date' => (string) ($transaction->due_date ?? ''),
-            'payment_mode' => $this->paymentModeLabel($detail?->payment_mode),
+            'payment_mode' => $this->paymentModeLabel($this->subscriptionPaymentMode($transaction, $detail)),
             'plan_price' => $this->money($planPrice),
             'locker_amount' => $this->money((float) ($transaction->locker_amount ?? 0)),
             'locker_no'=>$learner?->locker_no ?? '',
@@ -911,6 +911,17 @@ class LearnerLifecycleService
         return (int) $transaction->id === (int) $firstTransactionId ? 'BOOK SEAT' : 'RE-NEW SEAT';
     }
 
+    private function subscriptionPaymentMode($transaction, $detail)
+    {
+        return LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $transaction->id)
+            ->whereNotNull('payment_mode')
+            ->whereNotIn(DB::raw('UPPER(payment_type)'), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED'])
+            ->orderByDesc('id')
+            ->value('payment_mode')
+            ?? $detail?->payment_mode;
+    }
+
     private function paymentModeLabel($value): string
     {
         if ($value === null || trim((string) $value) === '') {
@@ -934,10 +945,10 @@ class LearnerLifecycleService
         $mode = strtoupper((string) $value);
 
         return match ($mode) {
-            1=>'ONLINE' ,
-            2=>'OFFLINE',
-            3=>'PAYLATER' ,
-            default => 'ONLINE',
+            '1', 'ONLINE' => 'ONLINE',
+            '2', 'OFFLINE' => 'OFFLINE',
+            '3', 'PAYLATER', 'PAY LATER' => 'PAYLATER',
+            default => $mode ?: 'ONLINE',
         };
     }
 

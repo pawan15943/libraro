@@ -235,8 +235,8 @@ class LearnerOperationService
              $old_price      = $learnerTransaction->paid_amount ?? 0;
              $old_pending      = $learnerTransaction->pending_amount ?? 0;
              $old_pending_refund      = $learnerTransaction->refund ?? 0;
-            $diff_amount= $dto->diffrence_amount;
-            $paid_amount= $old_price + $diff_amount;
+            $diff_amount = (float) ($dto->diffrence_amount ?? 0);
+            $paid_amount = (float) $old_price + $diff_amount;
             if ($diff_amount > $effective) {
                 throw new Exception("Paid amount not valid");
             }
@@ -482,7 +482,9 @@ class LearnerOperationService
 
             // 'plan_end_date'=>$endDate,
 
-            'status'=>$detailstatus
+            'status'=>$detailstatus,
+            'is_paid' => $billing['is_paid'],
+            'payment_mode' => $dto->payment_mode,
         ]);
        
         if($dto->operation == 'EDIT' && !$startDateBlocked ){
@@ -718,8 +720,14 @@ class LearnerOperationService
         $learnerTransaction->discount_amount = $data['discount'];
 
         $learnerTransaction->save();
+        if ((float) ($data['activityamount'] ?? 0) == 0.0) {
+            return;
+        }
+
          $activityData = [
                 'learner_id'   => $data['learner_id'],
+                'branchId'     => $data['branchId'] ?? null,
+                'learner_transaction_id' => $learnerTransaction->id,
                 'particular'   => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => $data['payment_type'],
                 'payment_mode' => $data['payment_mode'],

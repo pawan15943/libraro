@@ -1263,7 +1263,7 @@
         if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
             const previous_amount = parseFloat($('#previous_amount10').val()) || 0;
             const difference = autoPaid - previous_amount;
-            $('#diffrence_amount10').val(difference);
+            $('#diffrence_amount10').val(difference.toFixed(2));
 
             if (difference < 0) {
                 $('label[for="diffrence_amount10"]').text("Refund Amount *");

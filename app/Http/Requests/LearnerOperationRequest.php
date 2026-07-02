@@ -26,7 +26,12 @@ class LearnerOperationRequest extends FormRequest
 
         if ($this->exists('discount_amount')) {
             $discountAmount = is_string($this->discount_amount) ? trim($this->discount_amount) : $this->discount_amount;
-            $data['discount_amount'] = $discountAmount === '' ? null : $discountAmount;
+            $data['discount_amount'] = $discountAmount === '' && $this->filled('discountType') ? 0 : ($discountAmount === '' ? null : $discountAmount);
+        }
+
+        if ($this->exists('diffrence_amount')) {
+            $differenceAmount = is_string($this->diffrence_amount) ? trim($this->diffrence_amount) : $this->diffrence_amount;
+            $data['diffrence_amount'] = $differenceAmount === '' ? 0 : $differenceAmount;
         }
 
         if ($this->exists('locker')) {
@@ -97,6 +102,7 @@ class LearnerOperationRequest extends FormRequest
             'payment_mode' => [
                 'nullable',
                 Rule::requiredIf(fn () => !$isEditLearner),
+                'in:1,2,3',
             ],
 
             'user_id' => 'nullable|exists:learners,id',
@@ -119,7 +125,7 @@ class LearnerOperationRequest extends FormRequest
 
                     if(
                         !in_array($this->discountType,['amount','percentage'])
-                        && $value
+                        && (float) ($value ?? 0) > 0
                     ){
                         $fail('Discount type must be selected.');
                     }
@@ -145,9 +151,7 @@ class LearnerOperationRequest extends FormRequest
             'due_date'=>'nullable',
              'diffrence_amount' => [
                     'nullable',
-                    Rule::requiredIf(fn () =>
-                        in_array($this->payment_type, ['CHANGE PLAN', 'EDIT'])
-                    ),
+                    'numeric',
                 ],
             'dob'=>'nullable|date',
 
