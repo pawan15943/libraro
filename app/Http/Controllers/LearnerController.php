@@ -385,12 +385,14 @@ class LearnerController extends Controller
             $filteredPlanTypes = PlanType::select('id', 'name')->get();
         }
 
-        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+        $currentTransaction = currentTransaction($customer->learner_detail_id);
+        $lockerAmount = (float) (optional($currentTransaction)->locker_amount ?? 0);
+        $hasLocker = $lockerAmount > 0 ? 'yes' : 'no';
+        $discountAmount = optional($currentTransaction)->discount_amount ?? null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
         $today = \Carbon\Carbon::now();
-        if($hasLocker){
-            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
+        if($hasLocker === 'yes'){
+            $locker_amt=$lockerAmount;
         }else{
             $locker_amt=0;
         }
@@ -436,13 +438,15 @@ class LearnerController extends Controller
 
         $customer_detail = LearnerDetail::withTrashed()->where('learner_id', $customerId)->orderBy('id', 'Desc')->first();
         
-        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+        $currentTransaction = currentTransaction($customer->learner_detail_id);
+        $lockerAmount = (float) (optional($currentTransaction)->locker_amount ?? 0);
+        $hasLocker = $lockerAmount > 0 ? 'yes' : 'no';
+        $discountAmount = optional($currentTransaction)->discount_amount ?? null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
         $oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
         $today = \Carbon\Carbon::now();
-        if($hasLocker){
-            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
+        if($hasLocker === 'yes'){
+            $locker_amt=$lockerAmount;
         }else{
             $locker_amt=0;
         }
@@ -2145,13 +2149,15 @@ class LearnerController extends Controller
 
         $customer = $this->fetchCustomerData($customerId, $is_renew, $status, $detailStatus, $perPage = 10, $paginate = false);
         
-        $hasLocker = currentTransaction($customer->learner_detail_id)->locker_amount > 0 ? 'yes' : 'no';
-        $discountAmount = currentTransaction($customer->learner_detail_id)->discount_amount ?? null;
+        $currentTransaction = currentTransaction($customer->learner_detail_id);
+        $lockerAmount = (float) (optional($currentTransaction)->locker_amount ?? 0);
+        $hasLocker = $lockerAmount > 0 ? 'yes' : 'no';
+        $discountAmount = optional($currentTransaction)->discount_amount ?? null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
         $oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
         $today = \Carbon\Carbon::now();
-        if($hasLocker){
-            $locker_amt=currentTransaction($customer->learner_detail_id)->locker_amount;
+        if($hasLocker === 'yes'){
+            $locker_amt=$lockerAmount;
         }else{
             $locker_amt=0;
         }

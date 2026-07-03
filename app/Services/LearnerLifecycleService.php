@@ -210,7 +210,7 @@ class LearnerLifecycleService
             }
 
             if (array_key_exists('payment_mode', $data) && $transaction->learnerDetail) {
-                $transaction->learnerDetail->payment_mode = $data['payment_mode'];
+                $transaction->learnerDetail->payment_mode = $this->paymentModeId($data['payment_mode']);
                 $transaction->learnerDetail->save();
             }
             
@@ -700,6 +700,7 @@ class LearnerLifecycleService
         $finalPayable = max(0, $totalAmount + $carryForwardAmount - $extraPaidAmount);
         $pending = (float) ($transaction->pending_amount ?? 0);
         $extra = (float) ($transaction->refund ?? 0);
+        $learner = null;
         if($detail){
             $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no')->first();
         }
@@ -809,20 +810,24 @@ class LearnerLifecycleService
             return '';
         }
 
-        $activityQuery = LearnerTransactionActivity::withoutGlobalScopes()
-            ->where('learner_transaction_id', $transaction->id)
-            ->whereNotNull('created_by');
+        try {
+            $activityQuery = LearnerTransactionActivity::withoutGlobalScopes()
+                ->where('learner_transaction_id', $transaction->id)
+                ->whereNotNull('created_by');
 
-        if (! empty($paymentTypes)) {
-            $activityQuery->whereIn('payment_type', $paymentTypes);
-        } else {
-            $activityQuery->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS']);
-        }
+            if (! empty($paymentTypes)) {
+                $activityQuery->whereIn('payment_type', $paymentTypes);
+            } else {
+                $activityQuery->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS']);
+            }
 
-        $activity = $activityQuery->orderBy('id')->first();
+            $activity = $activityQuery->orderBy('id')->first();
 
-        if ($activity) {
-            return $this->activityAddedByDisplay($activity->created_by ?? null);
+            if ($activity) {
+                return $this->activityAddedByDisplay($activity->created_by ?? null);
+            }
+        } catch (\Throwable $e) {
+            return $this->updatedByName($transaction->updated_by ?? null);
         }
 
         return $this->updatedByName($transaction->updated_by ?? null);
@@ -944,13 +949,7 @@ class LearnerLifecycleService
 
     private function subscriptionPaymentMode($transaction, $detail)
     {
-        return LearnerTransactionActivity::withoutGlobalScopes()
-            ->where('learner_transaction_id', $transaction->id)
-            ->whereNotNull('payment_mode')
-            ->whereNotIn(DB::raw('UPPER(payment_type)'), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED'])
-            ->orderByDesc('id')
-            ->value('payment_mode')
-            ?? $detail?->payment_mode;
+        return $detail?->payment_mode;
     }
 
     private function paymentModeLabel($value): string
@@ -980,6 +979,17 @@ class LearnerLifecycleService
             '2', 'OFFLINE' => 'OFFLINE',
             '3', 'PAYLATER', 'PAY LATER' => 'PAYLATER',
             default => $mode ?: 'ONLINE',
+        };
+    }
+
+    private function paymentModeId($value): int
+    {
+        $mode = strtoupper(trim((string) $value));
+
+        return match ($mode) {
+            '2', 'OFFLINE' => 2,
+            '3', 'PAYLATER', 'PAY LATER' => 3,
+            default => 1,
         };
     }
 

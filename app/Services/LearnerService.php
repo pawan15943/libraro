@@ -1097,7 +1097,7 @@ class LearnerService
                 'paid_amount'=>(string) $transaction->paid_amount,
                 'pending_amount'=>(string) $transaction->pending_amount,
                 'paid_date'=>$transaction->paid_date ?? '',
-                'payment_mode'=>$this->transactionActivityPaymentMode($transaction, $detail->payment_mode),
+                'payment_mode'=>$detail->payment_mode ?? '',
                  'locker_amount'=>(string) $transaction->locker_amount,
                 'discount'=>$transaction->discount_amount ?? '0',
                 'token_money'=>(string) $transaction->token_money ?? '0',
@@ -1136,7 +1136,7 @@ class LearnerService
 
             'all_transaction' => $transaction_all->values()->map(function ($tx, $index) {
                 $ld = $tx->learnerDetail;
-                $payment_mode = $this->transactionActivityPaymentMode($tx, $ld?->payment_mode);
+                $payment_mode = $ld?->payment_mode;
 
                 return [
                     'total_amount' => (string) ($tx->total_amount ?? '0'),
@@ -1157,7 +1157,7 @@ class LearnerService
                     'plan' => $ld?->plan?->name ?? '',
                     'plan_type' => $ld?->planType?->name ?? '',
                     'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Success' : 'Success',
-                    'payment_mode'=>$payment_mode ?? '',
+                    'payment_mode'=>$payment_mode !== null ? (string) $payment_mode : '',
                 ];
             }),
 
@@ -1221,40 +1221,6 @@ class LearnerService
         } catch (\Throwable $e) {
             return '';
         }
-    }
-
-    private function transactionActivityPaymentMode($transaction, $fallback = null): string
-    {
-        $mode = null;
-
-        if ($transaction && ! empty($transaction->id)) {
-            $mode = LearnerTransactionActivity::withoutGlobalScopes()
-                ->where('learner_transaction_id', $transaction->id)
-                ->whereNotNull('payment_mode')
-                ->whereNotIn(DB::raw('UPPER(payment_type)'), ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED'])
-                ->orderByDesc('id')
-                ->value('payment_mode');
-        }
-
-        return $this->paymentModeLabel($mode ?? $fallback);
-    }
-
-    private function paymentModeLabel($value): string
-    {
-        if ($value === null || trim((string) $value) === '') {
-            return '';
-        }
-
-        if (is_numeric($value)) {
-            return match ((int) $value) {
-                1 => 'ONLINE',
-                2 => 'OFFLINE',
-                3 => 'PAYLATER',
-                default => (string) $value,
-            };
-        }
-
-        return strtoupper((string) $value);
     }
 
     public function getLearnersList($filters = [])
