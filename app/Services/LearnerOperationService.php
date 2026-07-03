@@ -729,10 +729,6 @@ class LearnerOperationService
         $learnerTransaction->is_paid = $data['is_paid'];
 
         $learnerTransaction->save();
-        if ((float) ($data['activityamount'] ?? 0) == 0.0) {
-            return;
-        }
-
          $activityData = [
                 'learner_id'   => $data['learner_id'],
                 'branchId'     => $data['branchId'] ?? null,
