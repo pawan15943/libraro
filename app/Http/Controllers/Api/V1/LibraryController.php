@@ -224,11 +224,9 @@ class LibraryController extends Controller
 
                 $startDate = Carbon::parse($transaction->start_date)->startOfDay();
                 $endDate = Carbon::parse($transaction->end_date)->startOfDay();
-                $renewStartDate = $endDate->copy()->subDays(5);
                 $extensionEndDate = $endDate->copy()->addDays($extensionDays);
 
                 return $startDate->lte($today)
-                    && $today->gte($renewStartDate)
                     && $today->lte($extensionEndDate);
             });
 
