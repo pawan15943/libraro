@@ -1935,8 +1935,12 @@ class LearnerService
         $start = $this->timeToMinutes($startTime);
         $end = $this->timeToMinutes($endTime);
 
-        if ($start === null || $end === null || $start === $end) {
+        if ($start === null || $end === null) {
             return [];
+        }
+
+        if ($start === $end) {
+            return [[0, 1440]];
         }
 
         if ($end > $start) {
