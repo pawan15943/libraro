@@ -134,6 +134,9 @@ Route::get('/receipt/signed/{transactionId}', [LearnerController::class, 'viewRe
 Route::get('/receipt/mobile/signed/{transactionId}', [ReceiptController::class, 'mobile'])
     ->middleware('signed')
     ->name('receipt.mobile.signed');
+Route::get('/receipt/library/signed/{transactionId}', [ReceiptController::class, 'library'])
+    ->middleware('signed')
+    ->name('receipt.library.signed');
 Route::get('/receipt/other-payment/signed/{activityId}', [ReceiptController::class, 'otherPayment'])
     ->middleware('signed')
     ->name('receipt.other-payment.signed');

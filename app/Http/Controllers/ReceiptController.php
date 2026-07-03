@@ -61,6 +61,13 @@ class ReceiptController extends Controller
         return $receiptService->downloadResponse($transaction);
     }
 
+    public function library(int $transactionId, ReceiptService $receiptService)
+    {
+        $transaction = $receiptService->findPaidLibraryTransaction($transactionId);
+
+        return $receiptService->libraryDownloadResponse($transaction);
+    }
+
     public function otherPayment(int $activityId, ReceiptService $receiptService)
     {
         $activity = $receiptService->findOtherPaymentActivity($activityId);

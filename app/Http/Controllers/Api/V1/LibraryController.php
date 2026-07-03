@@ -17,6 +17,7 @@ use App\Models\PlanType;
 use App\Models\Subscription;
 use App\Services\DashboardService;
 use App\Services\LibraryLifecycleService;
+use App\Services\ReceiptService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -179,14 +180,14 @@ class LibraryController extends Controller
       ]);
    }
 
-    public function subscriptions(Request $request)
+    public function subscriptions(Request $request, ReceiptService $receiptService)
     {
         $libraryId = authLibraryId();
         $library = Library::select('id', 'extend_days')->findOrFail($libraryId);
         $extensionDays = (int) ($library->extend_days ?? 0);
         $today = Carbon::today();
 
-        $transactions = LibraryTransaction::withoutGlobalScopes()
+        $subscriptionRows = LibraryTransaction::withoutGlobalScopes()
             ->where('library_id', $libraryId)
             ->where('is_paid', 1)
             ->leftJoin('subscriptions', 'subscriptions.id', '=', 'library_transactions.subscription')
@@ -203,8 +204,35 @@ class LibraryController extends Controller
             )
             ->orderByDesc('library_transactions.start_date')
             ->orderByDesc('library_transactions.id')
-            ->get()
-            ->map(function ($transaction) use ($today, $extensionDays) {
+            ->get();
+
+        $hasUpcomingPaidPlan = $subscriptionRows->contains(function ($transaction) use ($today) {
+            return $transaction->start_date
+                && Carbon::parse($transaction->start_date)->startOfDay()->gt($today);
+        });
+
+        $renewableTransactionId = null;
+        if (! $hasUpcomingPaidPlan) {
+            $renewableTransaction = $subscriptionRows->first(function ($transaction) use ($today, $extensionDays) {
+                if (empty($transaction->start_date) || empty($transaction->end_date)) {
+                    return false;
+                }
+
+                $startDate = Carbon::parse($transaction->start_date)->startOfDay();
+                $endDate = Carbon::parse($transaction->end_date)->startOfDay();
+                $renewStartDate = $endDate->copy()->subDays(5);
+                $extensionEndDate = $endDate->copy()->addDays($extensionDays);
+
+                return $startDate->lte($today)
+                    && $today->gte($renewStartDate)
+                    && $today->lte($extensionEndDate);
+            });
+
+            $renewableTransactionId = $renewableTransaction?->id;
+        }
+
+        $transactions = $subscriptionRows
+            ->map(function ($transaction) use ($today, $extensionDays, $receiptService, $renewableTransactionId) {
                 $startDate = $transaction->start_date ? Carbon::parse($transaction->start_date)->startOfDay() : null;
                 $endDate = $transaction->end_date ? Carbon::parse($transaction->end_date)->startOfDay() : null;
                 $extensionEndDate = $endDate ? $endDate->copy()->addDays($extensionDays) : null;
@@ -252,8 +280,9 @@ class LibraryController extends Controller
                         : $usedDays . ' of ' . $totalDays . ' days used',
                     'totaldays'=>$totalDays,
                     'used_days'=>$usedDays,
-                    'can_renew' => $subscriptionStatus === 'expired',
-                    'download_receipt' => false,
+                    'can_renew' => $renewableTransactionId !== null && (int) $transaction->id === (int) $renewableTransactionId,
+                    'download_receipt' => true,
+                    'download_receipt_link' => $receiptService->libraryReceiptOpenLink((int) $transaction->id),
                     'transaction_date' => $transaction->transaction_date,
                 ];
             });

@@ -7,6 +7,9 @@ use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
+use App\Models\Library;
+use App\Models\LibraryTransaction;
+use App\Models\Subscription;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -139,6 +142,86 @@ class ReceiptService
         $transaction = $this->findPaidTransaction($transactionId);
 
         return URL::signedRoute('receipt.mobile.signed', ['transactionId' => $transaction->id]);
+    }
+
+    public function findPaidLibraryTransaction(int $transactionId): LibraryTransaction
+    {
+        $transaction = LibraryTransaction::withoutGlobalScopes()
+            ->where('id', $transactionId)
+            ->where('is_paid', 1)
+            ->first();
+
+        if (! $transaction) {
+            abort(404, 'Library receipt not found');
+        }
+
+        return $transaction;
+    }
+
+    public function libraryReceiptOpenLink(int $transactionId): string
+    {
+        $transaction = $this->findPaidLibraryTransaction($transactionId);
+
+        return URL::signedRoute('receipt.library.signed', ['transactionId' => $transaction->id]);
+    }
+
+    public function libraryDownloadResponse(LibraryTransaction $transaction): Response
+    {
+        Log::info('Library receipt download', ['transaction_id' => $transaction->id]);
+        $path = 'receipts/library_txn_' . $transaction->id . '.pdf';
+        $disk = Storage::disk('public');
+
+        $pdf = $this->libraryPdf($transaction)->output();
+        $disk->put($path, $pdf);
+
+        return response()->file(storage_path('app/public/' . $path));
+    }
+
+    public function libraryPdf(LibraryTransaction $transaction)
+    {
+        return Pdf::loadView('recieptPdf', $this->libraryReceiptPayload($transaction));
+    }
+
+    public function libraryReceiptPayload(LibraryTransaction $transaction): array
+    {
+        $library = Library::withoutGlobalScopes()->find($transaction->library_id);
+
+        if (! $library) {
+            abort(404, 'Library receipt data not found');
+        }
+
+        $branch = Branch::withoutGlobalScopes()
+            ->where('library_id', $library->id)
+            ->where('status', 1)
+            ->orderBy('id')
+            ->first();
+
+        $subscription = Subscription::where('id', $transaction->subscription)
+            ->value('name');
+
+        return [
+            'logo' => '',
+            'subscription' => $subscription ?? 'NA',
+            'name' => $library->library_owner ?? $library->library_name ?? 'NA',
+            'email' => $library->email ?? 'NA',
+            'transactiondate' => $transaction->transaction_date ?? optional($transaction->updated_at)->format('Y-m-d') ?? 'NA',
+            'paid_amount' => $transaction->paid_amount ?? 'NA',
+            'payment_mode' => $transaction->payment_mode ?? 1,
+            'invoice_ref_no' => $transaction->transaction_id ?? ('LIB_' . $transaction->id),
+            'total_amount' => $transaction->amount ?? $transaction->paid_amount ?? 'NA',
+            'start_date' => $transaction->start_date ?? 'NA',
+            'end_date' => $transaction->end_date ?? 'NA',
+            'monthly_amount' => $transaction->amount ?? $transaction->paid_amount ?? 'NA',
+            'month' => $transaction->month ?? 'NA',
+            'currency' => 'Rs.',
+            'library_name' => $library->library_name ?? '',
+            'library_email' => $library->email ?? '',
+            'library_mobile' => $library->library_mobile ?? '',
+            'library_address' => $branch->library_address ?? '',
+            'branch_logo' => $branch->library_logo ?? null,
+            'branch_slug' => $branch->slug ?? null,
+            'shift_timing' => null,
+        ];
     }
 
     public function otherPaymentOpenLink(int $activityId): string
