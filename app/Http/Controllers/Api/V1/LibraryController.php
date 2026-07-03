@@ -218,6 +218,10 @@ class LibraryController extends Controller
                     return false;
                 }
 
+                if ((int) $transaction->status !== 1) {
+                    return false;
+                }
+
                 $startDate = Carbon::parse($transaction->start_date)->startOfDay();
                 $endDate = Carbon::parse($transaction->end_date)->startOfDay();
                 $renewStartDate = $endDate->copy()->subDays(5);
