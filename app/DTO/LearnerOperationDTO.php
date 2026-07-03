@@ -89,6 +89,7 @@ class LearnerOperationDTO
     {
         $nullableInt = fn ($value) => $value !== null && $value !== '' ? (int) $value : null;
         $nullableFloat = fn ($value) => $value !== null && $value !== '' ? (float) $value : null;
+        $differenceAmount = $request->input('diffrence_amount', $request->input('difference_amount'));
       
         return new self(
 
@@ -106,7 +107,7 @@ class LearnerOperationDTO
 
             discount_type:$request->discountType,
             discount_amount:$nullableFloat($request->discount_amount),
-            diffrence_amount:$nullableFloat($request->diffrence_amount),
+            diffrence_amount:$nullableFloat($differenceAmount),
 
             payment_mode:$nullableInt($request->payment_mode),
 

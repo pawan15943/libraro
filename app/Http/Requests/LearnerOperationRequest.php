@@ -29,9 +29,12 @@ class LearnerOperationRequest extends FormRequest
             $data['discount_amount'] = $discountAmount === '' && $this->filled('discountType') ? 0 : ($discountAmount === '' ? null : $discountAmount);
         }
 
+        if ($this->exists('difference_amount') && ! $this->exists('diffrence_amount')) {
+            $data['diffrence_amount'] = $this->normalizeMoneyInput($this->input('difference_amount'), 0);
+        }
+
         if ($this->exists('diffrence_amount')) {
-            $differenceAmount = is_string($this->diffrence_amount) ? trim($this->diffrence_amount) : $this->diffrence_amount;
-            $data['diffrence_amount'] = $differenceAmount === '' ? 0 : $differenceAmount;
+            $data['diffrence_amount'] = $this->normalizeMoneyInput($this->input('diffrence_amount'), 0);
         }
 
         if ($this->exists('locker')) {
@@ -52,6 +55,29 @@ class LearnerOperationRequest extends FormRequest
         if ($data !== []) {
             $this->merge($data);
         }
+    }
+
+    private function normalizeMoneyInput($value, $emptyValue = null)
+    {
+        if ($value === null) {
+            return $emptyValue;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return $emptyValue;
+            }
+
+            $value = preg_replace('/[^\d.\-]/', '', $value);
+
+            if ($value === '' || $value === '-' || $value === '.' || $value === '-.') {
+                return $emptyValue;
+            }
+        }
+
+        return $value;
     }
 
     public function rules()
@@ -137,7 +163,6 @@ class LearnerOperationRequest extends FormRequest
             'locker_no'=>[
                 'nullable',
                 'required_if:locker,yes',
-                'numeric'
             ],
 
             'locker_amount'=>'nullable|numeric|min:0',
@@ -164,7 +189,7 @@ class LearnerOperationRequest extends FormRequest
             'alternate_mobile' => 'nullable|digits:10',
             'exam_id' => 'nullable|exists:exams,id',
             // 1=Aadhar, 2=Driving License, 3=Other, 4=Pan Card, 5=Voter Id (same as learner forms)
-            'id_proof_name' => 'nullable|integer|in:1,2,3,4,5',
+            'id_proof_name' => 'nullable|in:1,2,3,4,5',
             'id_proof_number' => 'nullable|string|max:255',
 
             'profile_picture' => 'nullable|string',
@@ -178,18 +203,4 @@ class LearnerOperationRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator)
-    {
-        $validator->after(function ($validator) {
-            $paymentMode = (int) $this->input('payment_mode');
-            if ($paymentMode !== 3) {
-                return;
-            }
-
-            $pendingAmount = $this->input('pending_amount');
-            if ($pendingAmount !== null && $pendingAmount !== '' && (float) $pendingAmount !== 0.0) {
-                $validator->errors()->add('pending_amount', 'For Pay Later, do not pass pending amount in request.');
-            }
-        });
-    }
 }

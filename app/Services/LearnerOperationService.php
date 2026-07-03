@@ -232,25 +232,37 @@ class LearnerOperationService
         if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
             $learnerTransaction = LearnerTransaction::where('learner_id', $customer->id)->latest()->first();
         
-             $old_price      = $learnerTransaction->paid_amount ?? 0;
-             $old_pending      = $learnerTransaction->pending_amount ?? 0;
-             $old_pending_refund      = $learnerTransaction->refund ?? 0;
+             $old_price      = (float) ($learnerTransaction->paid_amount ?? 0);
+             $old_pending      = (float) ($learnerTransaction->pending_amount ?? 0);
+             $old_pending_refund      = (float) ($learnerTransaction->refund ?? 0);
             $diff_amount = (float) ($dto->diffrence_amount ?? 0);
-            $paid_amount = (float) $old_price + $diff_amount;
-            if ($diff_amount > $effective) {
+            $paid_amount = $old_price + $diff_amount;
+            if ((int) $dto->payment_mode !== 3 && $diff_amount > $effective) {
                 throw new Exception("Paid amount not valid");
             }
             $pending_amount =$effective-$paid_amount;
              if ($dto->payment_mode == 3) {
-                $pending_amount = $paid_amount;
-                $paid_amount    = 0;
+                $paid_amount = $old_price;
+                $pending_amount = $effective - $paid_amount;
             }
             $activityamount = 0;
             $pending_refund = $old_pending_refund;
 
-            
+            if ((int) $dto->payment_mode === 3) {
+                if ($pending_amount < 0) {
+                    $pending = 0;
+                    $activityamount = abs($pending_amount);
+                    $pending_refund = abs($pending_amount) + $pending_refund;
+                    $dr_cr = 'Dr';
+                } else {
+                    $pending = $pending_amount;
+                    $activityamount = max($pending - $old_pending, 0);
+                    $pending_refund = 0;
+                    $dr_cr = 'Cr';
+                }
+
             // Handle difference amount (refund vs pending)
-            if ($diff_amount < 0 || $pending_amount <0) {
+            } elseif ($diff_amount < 0 || $pending_amount <0) {
 
                 // refund case
                 $activityamount = abs($diff_amount);
@@ -264,10 +276,6 @@ class LearnerOperationService
                 $activityamount = $diff_amount;
                 $pending_refund = 0;
                 $dr_cr = 'Cr';
-            }
-
-            if ((int) $dto->payment_mode === 3) {
-                $activityamount = 0;
             }
 
 
@@ -718,6 +726,7 @@ class LearnerOperationService
         $learnerTransaction->refund         = $data['pending_refund'];  
         $learnerTransaction->due_date       = $data['due_date'] ?? null;
         $learnerTransaction->discount_amount = $data['discount'];
+        $learnerTransaction->is_paid = $data['is_paid'];
 
         $learnerTransaction->save();
         if ((float) ($data['activityamount'] ?? 0) == 0.0) {
