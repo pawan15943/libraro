@@ -665,21 +665,25 @@ class LibraryConfigurationService
 
                
 
-                // $existingPrice = PlanPrice::where('plan_type_id', $planType->id)
-                //     ->where('branch_id', $branchId)
-                //     ->first();
-
-
-                $existingPrices = PlanPrice::withoutGlobalScopes()
+                $existingPrice = PlanPrice::withoutGlobalScopes()
+                    ->withTrashed()
+                    ->where('library_id', $libraryId)
                     ->where('branch_id', $branchId)
-                    ->get()
-                    ->keyBy('plan_type_id');
-                $existingPrice = $existingPrices[$planType->id] ?? null;
+                    ->where('plan_id', $plan->id)
+                    ->where('plan_type_id', $planType->id)
+                    ->first();
 
                 if ($existingPrice) {
+                    if ($existingPrice->trashed()) {
+                        $existingPrice->restore();
+                    }
 
                     $existingPrice->update([
-                        'price' => $row['price'],
+                        'library_id'   => $libraryId,
+                        'branch_id'    => $branchId,
+                        'plan_id'      => $plan->id,
+                        'plan_type_id' => $planType->id,
+                        'price'        => $row['price'],
                     ]);
 
                 } else {

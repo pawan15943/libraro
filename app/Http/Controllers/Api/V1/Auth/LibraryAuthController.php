@@ -31,6 +31,7 @@ use App\Models\TempOrder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 
 
@@ -1422,6 +1423,8 @@ class LibraryAuthController extends Controller
     }
 
     public function shiftConfigure(Request $request,LibraryConfigurationService $shiftService) {
+        $libraryId = authLibraryId();
+
         $validator = Validator::make($request->all(), [
             'plan_types'                   => 'required|array|min:1',
             'plan_types.*.day_type_id'     => 'required',
@@ -1432,7 +1435,12 @@ class LibraryAuthController extends Controller
             'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
             'plan_types.*.plan_type_id'    => 'nullable|integer',
             'plan_types.*.id'              => 'nullable|integer',
-            'branch_id'  => 'required',
+            'branch_id'  => [
+                'required',
+                Rule::exists('branches', 'id')->where(function ($query) use ($libraryId) {
+                    $query->where('library_id', $libraryId);
+                }),
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -1610,11 +1618,17 @@ class LibraryAuthController extends Controller
 
     public function getConfigurePrice(Request $request)
     {
+        $libraryId = authLibraryId();
+
         $request->validate([
-            'branch_id' => 'required|exists:branches,id'
+            'branch_id' => [
+                'required',
+                Rule::exists('branches', 'id')->where(function ($query) use ($libraryId) {
+                    $query->where('library_id', $libraryId);
+                }),
+            ],
         ]);
 
-        $libraryId = authLibraryId();
         $branchId = $request->branch_id;
 
         Log::info(['step1'=>'done']);
@@ -1670,7 +1684,10 @@ class LibraryAuthController extends Controller
                 ->flip();
 
             $prices = DB::table('plan_prices')
+                ->where('library_id', $libraryId)
+                ->where('branch_id', $branchId)
                 ->where('plan_id', $planId)
+                ->whereNull('deleted_at')
                 ->pluck('price', 'plan_type_id');
 
             $hour = DB::table('hour')
