@@ -371,7 +371,7 @@ class LibraryController extends Controller
             'data' => [
                 'unread_count' => $unreadCount,
                 'profile_link'=>[
-                        'id'=>'',
+                        'id'=>(int) getCurrentBranch(),
                         'notification_type'=>'important',
                         'title' =>'Complete Profile',
                         'description' => 'Please complete your profile',
