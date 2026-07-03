@@ -251,15 +251,14 @@ class LearnerOperationService
             if ((int) $dto->payment_mode === 3) {
                 if ($pending_amount < 0) {
                     $pending = 0;
-                    $activityamount = abs($pending_amount);
                     $pending_refund = abs($pending_amount) + $pending_refund;
                     $dr_cr = 'Dr';
                 } else {
                     $pending = $pending_amount;
-                    $activityamount = max($pending - $old_pending, 0);
                     $pending_refund = 0;
                     $dr_cr = 'Cr';
                 }
+                $activityamount = 0;
 
             // Handle difference amount (refund vs pending)
             } elseif ($diff_amount < 0 || $pending_amount <0) {

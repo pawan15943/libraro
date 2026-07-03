@@ -176,7 +176,6 @@ class LearnerOperationRequest extends FormRequest
             'due_date'=>'nullable',
              'diffrence_amount' => [
                     'nullable',
-                    'numeric',
                 ],
             'dob'=>'nullable|date',
 
