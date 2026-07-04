@@ -194,6 +194,15 @@ class LearnerLifecycleService
                 $update['pending_amount'] = max(0, $totalAmount - ($paidAmount + $settleAmount + $refundAmount));
             }
 
+            if (array_key_exists('payment_mode', $data) && $this->paymentModeId($data['payment_mode']) === 3) {
+                $update['paid_amount'] = 0;
+                $update['pending_amount'] = max(
+                    0,
+                    (float) ($transaction->pending_amount ?? 0) + (float) ($transaction->paid_amount ?? 0)
+                );
+                $update['is_paid'] = 0;
+            }
+
             if (array_key_exists('paid_date', $data)) {
                 $update['paid_date'] = $data['paid_date'];
             }
@@ -203,7 +212,7 @@ class LearnerLifecycleService
             }
 
             if (! empty($update)) {
-                $update['is_paid'] = ((float) ($update['pending_amount'] ?? $transaction->pending_amount ?? 0)) <= 0 ? 1 : 0;
+                $update['is_paid'] ??= ((float) ($update['pending_amount'] ?? $transaction->pending_amount ?? 0)) <= 0 ? 1 : 0;
                 $update = array_merge($update, $this->updatedByPayload($transaction->getTable()));
                 $transaction->update($update);
                 $transaction->refresh();

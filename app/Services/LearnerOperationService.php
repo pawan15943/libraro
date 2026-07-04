@@ -246,8 +246,8 @@ class LearnerOperationService
             }
             $pending_amount =$effective-$paid_amount;
              if ($dto->payment_mode == 3) {
-                $paid_amount = $old_price;
-                $pending_amount = $effective - $paid_amount;
+                $paid_amount = 0;
+                $pending_amount = $effective;
             }
             $activityamount = 0;
             $pending_refund = $old_pending_refund;
