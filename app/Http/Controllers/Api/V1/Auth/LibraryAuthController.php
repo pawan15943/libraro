@@ -207,6 +207,8 @@ class LibraryAuthController extends Controller
             $is_last_step = 2;
         }
 
+        $is_last_step = $this->libraryOnboardingStep($libraryRecord ?? $library);
+
 
         return response()->json([
             'status' => true,
@@ -371,6 +373,8 @@ class LibraryAuthController extends Controller
         if ($isPlanComplete) {
             $is_last_step = 3;
         }
+
+        $is_last_step = $this->libraryOnboardingStep($libraryRecord);
 
         /*
         |--------------------------------------------------------------------------
@@ -1913,4 +1917,45 @@ class LibraryAuthController extends Controller
 
     // }
 
+    private function libraryOnboardingStep(Library $library): int
+    {
+        $libraryId = (int) $library->id;
+
+        if ((int) ($library->is_paid ?? 0) !== 1) {
+            return 0;
+        }
+
+        $activeBranchIds = Branch::where('library_id', $libraryId)
+            ->where('status', 1)
+            ->pluck('id');
+
+        if ($activeBranchIds->isEmpty()) {
+            return 1;
+        }
+
+        $hasPlan = Plan::withoutGlobalScopes()
+            ->where('library_id', $libraryId)
+            ->exists();
+
+        $planTypeQuery = PlanType::withoutGlobalScopes()
+            ->where('library_id', $libraryId);
+
+        if (Schema::hasColumn('plan_types', 'branch_id')) {
+            $planTypeQuery->whereIn('branch_id', $activeBranchIds);
+        }
+
+        $planPriceQuery = PlanPrice::withoutGlobalScopes()
+            ->where('library_id', $libraryId);
+
+        if (Schema::hasColumn('plan_prices', 'branch_id')) {
+            $planPriceQuery->whereIn('branch_id', $activeBranchIds);
+        }
+
+        $isPlanComplete = (int) ($library->status ?? 0) === 1
+            && $hasPlan
+            && $planTypeQuery->exists()
+            && $planPriceQuery->exists();
+
+        return $isPlanComplete ? 3 : 2;
+    }
 }
