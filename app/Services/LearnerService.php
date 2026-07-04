@@ -1244,7 +1244,7 @@ class LearnerService
         $branchId = getCurrentBranch();
 
         $latestDetail = LearnerDetail::withTrashed()
-            ->selectRaw('MAX(id) as id')
+            ->selectRaw('COALESCE(MAX(CASE WHEN status = 1 THEN id END), MAX(id)) as id')
             ->groupBy('learner_id');
 
         $learners = Learner::withTrashed()
