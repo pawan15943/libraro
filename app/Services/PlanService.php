@@ -49,7 +49,7 @@ class PlanService
 
                 foreach ($bookings as $booking) {
                     foreach ($planTypes as $planType) {
-                        if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                        if ($this->planTypeTimesOverlap($booking, $planType)) {
                             $planTypesRemovals[] = $planType->id;
                         }
                     }
@@ -109,6 +109,56 @@ class PlanService
         }
 
         return $filteredPlanTypes;
+    }
+
+    private function planTypeTimesOverlap($firstPlanType, $secondPlanType): bool
+    {
+        $firstIntervals = $this->timeIntervals($firstPlanType->start_time, $firstPlanType->end_time);
+        $secondIntervals = $this->timeIntervals($secondPlanType->start_time, $secondPlanType->end_time);
+
+        foreach ($firstIntervals as $first) {
+            foreach ($secondIntervals as $second) {
+                if ($first[0] < $second[1] && $second[0] < $first[1]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function timeIntervals($startTime, $endTime): array
+    {
+        $start = $this->timeToMinutes($startTime);
+        $end = $this->timeToMinutes($endTime);
+
+        if ($start === null || $end === null) {
+            return [];
+        }
+
+        if ($start === $end) {
+            return [[0, 1440]];
+        }
+
+        if ($end > $start) {
+            return [[$start, $end]];
+        }
+
+        return [[$start, 1440], [0, $end]];
+    }
+
+    private function timeToMinutes($time): ?int
+    {
+        if ($time === null || $time === '') {
+            return null;
+        }
+
+        $parts = explode(':', (string) $time);
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        return ((int) $parts[0] * 60) + (int) $parts[1];
     }
 
     public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId,float $lockerAmount = 0,?string $discountType = null,float $discountValue = 0,float $paidAmount = 0) {
