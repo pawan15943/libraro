@@ -157,6 +157,10 @@ class LearnerOperationService
             /* Update learner */
 
             $this->updateLearner($dto,$detail,$status,$seat);
+            
+            if ( in_array($dto->operation, ['RENEW', 'UPGRADE', 'REACTIVE'], true) && $detailstatus === 1 ) { 
+                LearnerDetail::where('learner_id', $dto->learner_id) ->where('id', '!=', $detail->id) ->update(['status' => 0]); 
+            }
 
             $this->logOperation($dto, $detail, $lastDetail, $seat, $beforeOperation);
 
@@ -354,49 +358,133 @@ class LearnerOperationService
     }
 
 
-    private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId,$operation){
+    private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId,$operation)
+    {
 
-        $extendDay = getExtendDays($branchId);
-
-        $inextendDate = Carbon::parse($endDate)->addDays($extendDay);
+        $extendDay = (int) getExtendDays($branchId);
 
         $today = Carbon::today();
 
-        if(Carbon::parse($lastDetail->plan_end_date) <= $today && $endDate > $today && $is_paid == 1){
-           
-            $detailstatus = 1;
+        $startDate = Carbon::parse($start_date);
 
-        }elseif($inextendDate >= $today && $start_date <= $today){
-          
-            $detailstatus = 1;
+        $endDate = Carbon::parse($endDate);
 
-        }else{
-           
+        $oldEnd = Carbon::parse($lastDetail->plan_end_date);
+
+        $oldExtendEnd = $oldEnd->copy()->addDays($extendDay);
+
+
+
+        // --- learner_detail.status ---
+
+        if (in_array($operation, ['RENEW', 'UPGRADE', 'REACTIVE'], true)) {
+
+
+
+            // Future booking
+
+            if ($startDate->gt($today)) {
+
+                $detailstatus = 0;
+
+
+
+            // Renew/upgrade from extension period
+
+            } elseif ($oldEnd->lte($today) && $oldExtendEnd->gte($today) && $endDate->gt($today)) {
+
+                $detailstatus = 1;
+
+
+
+            // New row: end_date only (no extend on new end)
+
+            } elseif ($startDate->lte($today) && $endDate->gte($today)) {
+
+                $detailstatus = 1;
+
+
+
+            } else {
+
+                $detailstatus = 0;
+
+            }
+
+
+
+        } elseif (in_array($operation, ['EDIT', 'CHANGE PLAN'], true)) {
+
+
+
+            if ($startDate->lte($today) && $endDate->gte($today)) {
+
+                $detailstatus = 1;
+
+            } else {
+
+                $detailstatus = 0;
+
+            }
+
+
+
+        } else {
+
             $detailstatus = 0;
+
         }
 
-        $extendDay = (int) $extendDay;
+
+
+        // --- learners.status ---
+
         $activeDetailQuery = LearnerDetail::where('learner_id', $customer->id)
-            ->where('status', 1)
-            ->whereDate('plan_start_date', '<=', $today)
-            ->whereRaw("DATE_ADD(plan_end_date, INTERVAL {$extendDay} DAY) >= ?", [$today->toDateString()]);
 
-        if (in_array($operation, ['EDIT', 'CHANGE PLAN'])) {
+            ->where('status', 1)
+
+            ->whereDate('plan_start_date', '<=', $today)
+
+            ->whereRaw(
+
+                'DATE_ADD(plan_end_date, INTERVAL ? DAY) >= ?',
+
+                [$extendDay, $today->toDateString()]
+
+            );
+
+
+
+        if (in_array($operation, ['EDIT', 'CHANGE PLAN'], true)) {
+
             $activeDetailQuery->where('id', '!=', $lastDetail->id);
+
         }
+
+
 
         $hasActiveDetailToday = $activeDetailQuery->exists();
 
-        if ($detailstatus == 1 || $hasActiveDetailToday) {
+
+
+        if ($detailstatus === 1 || $hasActiveDetailToday) {
+
             $status = 1;
-        } elseif ($start_date > $today) {
-            // Future booking should not deactivate an already active learner.
+
+        } elseif ($startDate->gt($today)) {
+
             $status = $customer->status;
+
         } else {
+
             $status = 0;
+
         }
 
-        return [$status,$detailstatus];
+
+
+        return [$status, $detailstatus];
+
     }
 
     // private function calculateStatus( $customer,$lastDetail,$start_date,$endDate,$is_paid,$branchId){
