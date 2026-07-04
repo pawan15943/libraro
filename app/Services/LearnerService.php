@@ -73,9 +73,20 @@ class LearnerService
                                 JOIN branches b2 ON b2.id = ld2.branch_id WHERE l2.no_expiry = 0 
                                 AND ld2.plan_start_date <= ?
                                 AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) > ? 
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM learner_operations_log closed_op
+                                    WHERE closed_op.learner_detail_id = ld2.id
+                                    AND closed_op.operation = 'closeSeat'
+                                )
                                 GROUP BY learner_id ) 
                                 latest 
-                                ON latest.learner_id = ld1.learner_id AND latest.latest_start = ld1.plan_start_date ) active_ids ON active_ids.id = ld.id SET ld.status = 1 ",
+                                ON latest.learner_id = ld1.learner_id AND latest.latest_start = ld1.plan_start_date
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM learner_operations_log closed_op
+                    WHERE closed_op.learner_detail_id = ld1.id
+                    AND closed_op.operation = 'closeSeat'
+                )
+            ) active_ids ON active_ids.id = ld.id SET ld.status = 1 ",
                                  [$today, $today]);
 
           
@@ -96,6 +107,11 @@ class LearnerService
                     SELECT 1 FROM learner_detail ld
                     WHERE ld.learner_id = l.id
                     AND ld.status = 1
+                    AND NOT EXISTS (
+                        SELECT 1 FROM learner_operations_log closed_op
+                        WHERE closed_op.learner_detail_id = ld.id
+                        AND closed_op.operation = 'closeSeat'
+                    )
                 )
             ");
 

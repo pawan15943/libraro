@@ -18,7 +18,7 @@ class Kernel extends ConsoleKernel
     {
         //Learner status update
         $schedule->job(new DailyStatusUpdateJob())
-             ->dailyAt('09:07')
+             ->dailyAt('09:21')
              ->withoutOverlapping();
       
              //Library status update
