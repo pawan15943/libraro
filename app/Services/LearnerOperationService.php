@@ -837,7 +837,14 @@ class LearnerOperationService
     private function updateOriginalTransactionActivity(LearnerTransaction $learnerTransaction, array $data): void
     {
         $activity = LearnerTransactionActivity::withoutGlobalScopes()
-            ->where('learner_transaction_id', $learnerTransaction->id)
+            ->where('learner_id', $data['learner_id'] ?? $learnerTransaction->learner_id)
+            ->where(function ($query) use ($learnerTransaction) {
+                $query->where('learner_transaction_id', $learnerTransaction->id);
+
+                if (! empty($learnerTransaction->transaction_id)) {
+                    $query->orWhere('transaction_id', $learnerTransaction->transaction_id);
+                }
+            })
             ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'EDIT'])
             ->orderBy('id')
             ->first();
