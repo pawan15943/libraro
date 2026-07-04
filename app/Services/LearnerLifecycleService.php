@@ -239,6 +239,10 @@ class LearnerLifecycleService
 
                 if (array_key_exists('payment_mode', $data)) {
                     $activity->payment_mode = $this->paymentModeValue($data['payment_mode']);
+
+                    if ($this->paymentModeId($data['payment_mode']) === 3) {
+                        $activity->amount = 0;
+                    }
                 }
 
                 $this->setUpdatedBy($activity);
