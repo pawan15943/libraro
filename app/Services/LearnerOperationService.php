@@ -816,6 +816,11 @@ class LearnerOperationService
         $learnerTransaction->is_paid = $data['is_paid'];
 
         $learnerTransaction->save();
+
+        if ($data['payment_type'] === 'EDIT') {
+            $this->updateOriginalTransactionActivity($learnerTransaction, $data);
+        }
+
          $activityData = [
                 'learner_id'   => $data['learner_id'],
                 'branchId'     => $data['branchId'] ?? null,
@@ -827,6 +832,35 @@ class LearnerOperationService
                 'dr_cr'        => $data['dr_cr'],
             ];
             $this->learnerTransactionActivity($activityData);
+    }
+
+    private function updateOriginalTransactionActivity(LearnerTransaction $learnerTransaction, array $data): void
+    {
+        $activity = LearnerTransactionActivity::withoutGlobalScopes()
+            ->where('learner_transaction_id', $learnerTransaction->id)
+            ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'EDIT'])
+            ->orderBy('id')
+            ->first();
+
+        if (! $activity) {
+            return;
+        }
+
+        $activity->payment_mode = $this->activityPaymentModeLabel($data['payment_mode'] ?? null);
+        $activity->amount = (int) ($data['payment_mode'] ?? 0) === 3
+            ? 0
+            : (float) ($learnerTransaction->paid_amount ?? 0);
+
+        $activity->save();
+    }
+
+    private function activityPaymentModeLabel($paymentMode): string
+    {
+        return match ((int) $paymentMode) {
+            3 => 'PAYLATER',
+            2 => 'OFFLINE',
+            default => 'ONLINE',
+        };
     }
 
     // public function learnerTransactionAddUpdate($data)
