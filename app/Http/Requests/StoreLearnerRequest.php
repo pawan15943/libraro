@@ -237,6 +237,7 @@ class StoreLearnerRequest extends FormRequest
                 'locker_no'=>$this->locker_no,
                 'no_expiry'=>$no_expiry,
                 'id_proof_name'=>$this->id_proof_name,
+                'id_proof_number'=>$this->id_proof_number,
                 'id_proof_file'=>$id_proof_file,
                 'father_name'=>$this->father_name,
                 'alternate_mobile'=>$this->alternate_mobile,
