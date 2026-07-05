@@ -1178,6 +1178,10 @@ class LibraryAuthController extends Controller
             $request->merge($normalized);
         }
 
+        if ($request->exists('fixed_billing_date') && $request->fixed_billing_date === '') {
+            $request->merge(['fixed_billing_date' => null]);
+        }
+
 
          $request->validate([
            
@@ -1250,7 +1254,7 @@ class LibraryAuthController extends Controller
                 }
             ],
 
-            'fixed_billing_date' => 'nullable',
+            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
             'features'   => 'nullable|array',
             'features.*' => 'integer',
             // 'library_images'   => 'nullable|array|max:4',

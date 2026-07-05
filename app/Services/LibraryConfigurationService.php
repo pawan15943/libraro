@@ -229,7 +229,7 @@ class LibraryConfigurationService
             $branch = $existingBranch ?? new Branch();
        
             // $branch->fill($branchData);
-            $clearableBranchFields = ['library_address'];
+            $clearableBranchFields = ['library_address', 'fixed_billing_date'];
             foreach ($branchData as $key => $value) {
                 if (!is_null($value) || in_array($key, $clearableBranchFields, true)) {
                     $branch->$key = $value;
