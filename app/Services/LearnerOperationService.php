@@ -697,28 +697,28 @@ class LearnerOperationService
             }
         }
 
-        if($dto->father_name){
-            $learner->father_name = $dto->father_name;
+        if($dto->father_name !== null){
+            $learner->father_name = $dto->father_name === '' ? null : $dto->father_name;
         }
 
-        if($dto->alternate_mobile){
-            $learner->alternate_mobile = $dto->alternate_mobile;
+        if($dto->alternate_mobile !== null){
+            $learner->alternate_mobile = $dto->alternate_mobile === '' ? null : $dto->alternate_mobile;
         }
 
-        if($dto->address){
-            $learner->address = $dto->address;
+        if($dto->address !== null){
+            $learner->address = $dto->address === '' ? null : $dto->address;
         }
 
-        if($dto->remark){
-            $learner->remark = $dto->remark;
+        if($dto->remark !== null){
+            $learner->remark = $dto->remark === '' ? null : $dto->remark ;
         }
 
         if ($dto->id_proof_name !== null) {
-            $learner->id_proof_name = $dto->id_proof_name;
+            $learner->id_proof_name = $dto->id_proof_name === '' ? null : $dto->id_proof_name ;
         }
 
-        if($dto->id_proof_number){
-            $learner->id_proof_number = $dto->id_proof_number;
+        if($dto->id_proof_number !== null){
+            $learner->id_proof_number = $dto->id_proof_number === '' ? null : $dto->id_proof_number ;
         }
 
         if (! empty($dto->profile_picture)) {
