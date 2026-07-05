@@ -1250,7 +1250,7 @@ class LibraryAuthController extends Controller
                 }
             ],
 
-            'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+            'fixed_billing_date' => 'nullable',
             'features'   => 'nullable|array',
             'features.*' => 'integer',
             // 'library_images'   => 'nullable|array|max:4',
