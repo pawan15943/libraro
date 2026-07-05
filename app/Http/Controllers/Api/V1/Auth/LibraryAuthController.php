@@ -1332,7 +1332,22 @@ class LibraryAuthController extends Controller
 
         $plans = $validated['plans'] ?? [];
 
-        $slug = Str::slug($validated['name'].'-'.$libraryId);
+        $branchName = $validated['name']
+            ?? $validated['branch_name']
+            ?? $validated['display_name']
+            ?? $request->input('name')
+            ?? $request->input('branch_name')
+            ?? $request->input('branch_detail.branch_name');
+
+        if (empty($branchName)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch name is required.'
+            ], 200);
+        }
+
+        $validated['name'] = $branchName;
+        $slug = Str::slug($branchName.'-'.$libraryId);
    
         if($branchId){
               $existingBranch = Branch::where('library_id', $libraryId)->where('id', $branchId) ->first();

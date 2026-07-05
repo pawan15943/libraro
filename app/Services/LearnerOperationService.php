@@ -847,7 +847,7 @@ class LearnerOperationService
             })
             ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'EDIT'])
             ->orderBy('id')
-            ->first();
+                ->first();
 
         if (! $activity) {
             return;
