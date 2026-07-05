@@ -122,6 +122,18 @@ class QrBookingController extends Controller
             }
             $booking->profile_picture = $profilePicture !== '' ? asset($profilePicture) : '';
 
+             $id_proof_file = ltrim((string) $booking->id_proof_file, '/');
+            if ($id_proof_file !== '' && ! str_starts_with($id_proof_file, 'public/')) {
+                $id_proof_file = 'public/'.$id_proof_file;
+            }
+            $booking->id_proof_file = $id_proof_file !== '' ? asset($id_proof_file) : '';
+
+            $payment_screenshot = ltrim((string) $booking->payment_screenshot, '/');
+            if ($payment_screenshot !== '' && ! str_starts_with($payment_screenshot, 'public/')) {
+                $payment_screenshot = 'public/'.$payment_screenshot;
+            }
+            $booking->payment_screenshot = $payment_screenshot !== '' ? asset($payment_screenshot) : '';
+
             return response()->json([
                 'status' => true,
                 'data'   => $booking
