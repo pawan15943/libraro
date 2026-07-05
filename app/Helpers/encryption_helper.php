@@ -76,7 +76,7 @@ if (!function_exists('getIdProofName')) {
             3 => 'Other',
             4 => 'Pan Card',
             5 => 'Voter Id',
-            default => 'Not Updated Yet',
+            default => '',
         };
     }
 }
