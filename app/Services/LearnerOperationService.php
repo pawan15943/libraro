@@ -105,7 +105,7 @@ class LearnerOperationService
                     $seatCheck = checkAvailability($dto->branch_id,$seat,$dto->learner_id,$dto->plan_type_id,$dto->plan_id,$start_date);
                  }
                  if($dto->operation=='CHANGE PLAN'){
-                    $seatCheck = checkSeatAvailability($seat,$dto->learner_id,$dto->plan_type_id,$start_date,$endDate);
+                    $seatCheck = checkSeatAvailability($seat,$dto->learner_id,$dto->plan_type_id,$start_date,$endDate,$lastDetail->id);
                  }
 
                 if($seatCheck['error']){
