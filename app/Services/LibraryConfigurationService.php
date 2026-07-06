@@ -260,6 +260,9 @@ class LibraryConfigurationService
             /* =========================
             PLANS
             ========================= */
+            Log::info('monthdays', [
+                            'monthdays' => $validated['monthdays']
+                        ]);
             if ($plans !== null && ($existingBranch || $branchCount == 0)) {
                  Log::info('PLAN SYNC START', [
                     'library_id' => $libraryId,
