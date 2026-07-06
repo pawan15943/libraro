@@ -1256,7 +1256,7 @@ class LibraryAuthController extends Controller
 
             'google_map'      => 'nullable|string',
             'description'     => 'nullable|string',
-
+            'monthdays' => 'nullable',
             'library_category'=> 'nullable|string|in:public,private',
              'working_days' => [
                 'nullable',
