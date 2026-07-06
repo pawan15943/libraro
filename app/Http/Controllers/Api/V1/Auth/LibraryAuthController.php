@@ -353,22 +353,41 @@ class LibraryAuthController extends Controller
 
         $is_last_step = 0;
 
-       
+        $hasPlan = DB::table('plans')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
 
-       
+        $hasPlanType = DB::table('plan_types')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
 
-        $isPlanComplete =
-            $libraryRecord->status == 1 && // ⭐ CHANGED
-            Plan::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
-            PlanType::where('library_id', $libraryId)->exists() && // ⭐ CHANGED
-            PlanPrice::where('library_id', $libraryId)->exists(); // ⭐ CHANGED
+        $hasPlanPrice = DB::table('plan_prices')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
 
-        if ($isPlanComplete) {
-            $is_last_step = 3;
-        }elseif (Branch::where('library_id', $libraryId)->where('status', 1)->exists()) { // ⭐ CHANGED
-            $is_last_step = 2;
-        }elseif($libraryRecord->is_paid) { // ⭐ CHANGED ($user -> $libraryRecord)
-            $is_last_step = 1;
+        $hasActiveBranch = Branch::where('library_id', $libraryId)
+            ->where('status', 1)
+            ->exists();
+
+
+        $hasBranchSetup = $hasActiveBranch && $hasPlan ;
+
+        if ( (int) $libraryRecord->status !== 1 && $hasBranchSetup && $hasPlanType && $hasPlanPrice ) {
+            Library::where('id', $libraryId)->update(['status' => 1]);
+            $libraryRecord->status = 1;
+        }
+
+        if (!is_null($libraryRecord->email_verified_at)) {
+            if (!$libraryRecord->is_paid) {
+                $is_last_step = 1;
+            } elseif (!$hasBranchSetup) {
+                $is_last_step = 2;
+            } else {
+                $is_last_step = 3;
+            }
         }
 
        

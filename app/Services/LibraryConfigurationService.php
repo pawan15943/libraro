@@ -31,22 +31,7 @@ class LibraryConfigurationService
 
         try {
           
-           /* ======================
-           HANDLE LOGO UPLOAD
-            ======================= */
-           // Remove raw uploaded file from validated
-           
-
-            // if ($request->hasFile('library_logo')) {
-            //     $validated['library_logo'] = $request->file('library_logo')
-            //         ->store('uploads/logo', 'public');
-            // }
-
-           
-
-            //  if (isset($validated['library_logo']) && $validated['library_logo'] instanceof \Illuminate\Http\UploadedFile) {
-            //     unset($validated['library_logo']);
-            // }
+        
             /* ======================
             HANDLE LOGO (WEB + APP)
             ====================== */
@@ -117,35 +102,6 @@ class LibraryConfigurationService
             /* ========= FINAL ========= */
             $validated['library_images'] = !empty($images) ? $images : null;
            
-
-            // if ($request->hasFile('library_images')) {
-
-            //     $images = [];
-
-            //     // keep old images in edit mode
-            //     if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
-
-            //         $existingImages = $existingBranch->library_images;
-
-
-            //         $images = is_array($existingImages) ? $existingImages : json_decode($existingImages ?? '[]', true);
-            //     }
-
-            //     foreach ($request->file('library_images') as $image) {
-            //         $images[] = $image->store('uploads/library_images', 'public');
-            //     }
-
-            //     $validated['library_images'] = json_encode($images);
-
-            // } else {
-
-            //     if (!empty($existingBranch) && !empty($existingBranch->library_images)) {
-            //         $validated['library_images'] = is_array($existingBranch->library_images) ? json_encode($existingBranch->library_images) : $existingBranch->library_images;
-            //     } else {
-            //         $validated['library_images'] = null;
-            //     }
-            // }
-
 
            $validated['library_id'] = $libraryId;
            $validated['display_name'] = $validated['display_name'] ?? $validated['name'];
@@ -266,16 +222,7 @@ class LibraryConfigurationService
                 $branch->library_images = $validated['library_images'];
             }
 
-            // if (!empty($validated['features'])) {
-
-            //     $features = $validated['features'];
-
-            //     if (is_string($features)) {
-            //         $features = json_decode($features, true);
-            //     }
-
-            //     $branch->features = $features; 
-            // }
+           
             if (array_key_exists('features', $validated)) {
 
                 $features = $validated['features'];
@@ -314,11 +261,21 @@ class LibraryConfigurationService
             PLANS
             ========================= */
             if ($plans !== null && ($existingBranch || $branchCount == 0)) {
-            
+                 Log::info('PLAN SYNC START', [
+                    'library_id' => $libraryId,
+                    'plans' => $plans,
+                    'existingBranch' => $existingBranch,
+                    'branchCount' => $branchCount
+                ]);
+                        
                 $existingPlans = Plan::where('library_id', $libraryId)
                     ->get()
                     ->keyBy('name');
 
+                 Log::info('EXISTING PLANS', [
+                    'library_id' => $libraryId,
+                    'existing_plans' => $existingPlans->keys()->toArray()
+                ]);
                 $incomingPlanNames = [];
 
                 $baseMonthDays = null;
@@ -327,6 +284,11 @@ class LibraryConfigurationService
 
                     if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
                         $baseMonthDays = $validated['monthdays'] ?? null;
+
+                         Log::info('BASE MONTH DAYS FOUND', [
+                            'plan' => $plan,
+                            'monthdays' => $baseMonthDays
+                        ]);
                     }
                 }
 
@@ -342,19 +304,42 @@ class LibraryConfigurationService
                         'monthdays'  => strtoupper($type) === 'MONTH' ? $baseMonthDays : null,
                     ];
 
+                     Log::info('PROCESSING PLAN', [
+                        'plan' => $plan,
+                        'data' => $data
+                    ]);
+
+
                     if (isset($existingPlans[$plan])) {
+                         Log::info('UPDATING PLAN', [
+                            'plan_id' => $existingPlans[$plan]->id,
+                            'plan_name' => $plan
+                        ]);
                         $existingPlans[$plan]->update($data);
                     } else {
-                        Plan::create($data);
+                        $newPlan =Plan::create($data);
+                         Log::info('CREATED PLAN', [
+                            'plan_id' => $newPlan->id,
+                            'plan_name' => $plan
+                        ]);
                     }
 
                     $incomingPlanNames[] = $plan;
                 }
 
+             
+
                 /* DELETE UNUSED PLANS */
-                Plan::where('library_id', $libraryId)
+                $deletedPlans = Plan::where('library_id', $libraryId)
                     ->whereNotIn('name', $incomingPlanNames)
                     ->delete();
+
+                    if($deletedPlans){
+                    Log::info('PLAN SYNC COMPLETED', [
+                        'library_id' => $libraryId,
+                        'incoming_plans' => $incomingPlanNames
+                    ]);
+                 }
             }
            
 
@@ -724,6 +709,8 @@ class LibraryConfigurationService
             }
             
 
+            $this->markLibrarySetupCompletedIfReady($libraryId);
+
            if ($useTransaction) DB::commit();
             
             return [
@@ -740,6 +727,40 @@ class LibraryConfigurationService
                 'status' => false,
                 'message' => $e->getMessage()
             ];
+        }
+    }
+
+    private function markLibrarySetupCompletedIfReady(int $libraryId): void
+    {
+        $hasBranch = Branch::where('library_id', $libraryId)
+            ->where('status', 1)
+            ->exists();
+
+        $hasFloor = DB::table('floors')
+            ->join('branches', 'branches.id', '=', 'floors.branch_id')
+            ->where('branches.library_id', $libraryId)
+            ->where('branches.status', 1)
+            ->whereNull('branches.deleted_at')
+            ->whereNull('floors.deleted_at')
+            ->exists();
+
+        $hasPlan = DB::table('plans')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        $hasPlanType = DB::table('plan_types')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        $hasPlanPrice = DB::table('plan_prices')
+            ->where('library_id', $libraryId)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($hasBranch && $hasFloor && $hasPlan && $hasPlanType && $hasPlanPrice) {
+            Library::where('id', $libraryId)->update(['status' => 1]);
         }
     }
 
