@@ -1209,20 +1209,9 @@ class LibraryAuthController extends Controller
             
         ]);
 
-          
-        // $validation = branchCountValidation();
-
-        // if ($validation['success']) {
-        //     return response()->json([
-        //         'status'  => false,
-        //         'message' => $validation['message']
-        //     ], 400);
-        // }
-
+        
 
         $branchId  = $request->branch_id ?? null;
-       
-       
 
         $planCount = Plan::where('library_id', $libraryId)->count();
         $hasOneMonthPlan = Plan::where('library_id', $libraryId)

@@ -260,25 +260,15 @@ class LibraryConfigurationService
             /* =========================
             PLANS
             ========================= */
-            Log::info('monthdays', [
-                            'monthdays' => $validated['monthdays']
-                        ]);
+           
             if ($plans !== null && ($existingBranch || $branchCount == 0)) {
-                 Log::info('PLAN SYNC START', [
-                    'library_id' => $libraryId,
-                    'plans' => $plans,
-                    'existingBranch' => $existingBranch,
-                    'branchCount' => $branchCount
-                ]);
+             
                         
                 $existingPlans = Plan::where('library_id', $libraryId)
                     ->get()
                     ->keyBy('name');
 
-                 Log::info('EXISTING PLANS', [
-                    'library_id' => $libraryId,
-                    'existing_plans' => $existingPlans->keys()->toArray()
-                ]);
+               
                 $incomingPlanNames = [];
 
                 $baseMonthDays = null;
@@ -288,10 +278,7 @@ class LibraryConfigurationService
                     if ((int)$num === 1 && strtoupper($type) === 'MONTH') {
                         $baseMonthDays = $validated['monthdays'] ?? null;
 
-                         Log::info('BASE MONTH DAYS FOUND', [
-                            'plan' => $plan,
-                            'monthdays' => $baseMonthDays
-                        ]);
+                       
                     }
                 }
 
@@ -307,42 +294,23 @@ class LibraryConfigurationService
                         'monthdays'  => strtoupper($type) === 'MONTH' ? $baseMonthDays : null,
                     ];
 
-                     Log::info('PROCESSING PLAN', [
-                        'plan' => $plan,
-                        'data' => $data
-                    ]);
-
-
                     if (isset($existingPlans[$plan])) {
-                         Log::info('UPDATING PLAN', [
-                            'plan_id' => $existingPlans[$plan]->id,
-                            'plan_name' => $plan
-                        ]);
+                        
                         $existingPlans[$plan]->update($data);
                     } else {
                         $newPlan =Plan::create($data);
-                         Log::info('CREATED PLAN', [
-                            'plan_id' => $newPlan->id,
-                            'plan_name' => $plan
-                        ]);
+                        
                     }
 
                     $incomingPlanNames[] = $plan;
                 }
-
-             
 
                 /* DELETE UNUSED PLANS */
                 $deletedPlans = Plan::where('library_id', $libraryId)
                     ->whereNotIn('name', $incomingPlanNames)
                     ->delete();
 
-                    if($deletedPlans){
-                    Log::info('PLAN SYNC COMPLETED', [
-                        'library_id' => $libraryId,
-                        'incoming_plans' => $incomingPlanNames
-                    ]);
-                 }
+                  
             }
            
 
@@ -564,6 +532,7 @@ class LibraryConfigurationService
                         ->where('start_time', $row['start_time'])
                         ->where('end_time', $row['end_time'])
                         ->first();
+                   
 
                 } else {
 
@@ -573,6 +542,14 @@ class LibraryConfigurationService
                         ->first();
                 }
 
+                /* NEW CHECK: SAME NAME + SAME TIME */
+                $duplicateNameTime = PlanType::withoutGlobalScopes()
+                    ->where('branch_id', $branchId)
+                    ->where('name', $row['custom_plan_type'])
+                    ->where('start_time', $row['start_time'])
+                    ->where('end_time', $row['end_time'])
+                    ->first();
+
                 if ($existing) {
 
                     if (!$currentId || $existing->id != $currentId) {
@@ -580,6 +557,15 @@ class LibraryConfigurationService
                             $row['day_type_id'] == 0
                                 ? 'Custom shift already exists for this time range.'
                                 : 'This shift type already exists.'
+                        );
+                    }
+                }
+                /* NEW CHECK ADD*/
+                if ($duplicateNameTime) {
+
+                    if (!$currentId || $duplicateNameTime->id != $currentId) {
+                        throw new \Exception(
+                            'Shift with same name and time range already exists.'
                         );
                     }
                 }
