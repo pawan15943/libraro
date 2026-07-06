@@ -1122,9 +1122,7 @@ class LibraryAuthController extends Controller
 
     public function configure(Request $request,LibraryConfigurationService $service) {
         $libraryId = authLibraryId();
-       Log::info('REQUEST DATA', [
-            'request' => $request->all()
-        ]);
+      
 
         if ($request->has('branch_detail') || $request->has('branch_master')) {
 
@@ -1347,9 +1345,7 @@ class LibraryAuthController extends Controller
        
         // ✅ FIRST get validated data
         $validated = $validator->validated();
-        Log::info('VALIDATED DATA', [
-            'validated' => $validated
-        ]);
+        
 
        // working_days
         if (!empty($validated['working_days'])) {
