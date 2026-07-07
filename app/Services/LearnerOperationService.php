@@ -647,7 +647,12 @@ class LearnerOperationService
 
     public function updateLearner($dto, $detail = null, $status = null, $seat = null)
     {
-
+        Log::info('DTO', [
+    'dto' => $dto,
+]);
+         Log::info('Profile Picture', [
+                'profile_picture' => $dto->profile_picture,
+            ]);
         $learner = Learner::findOrFail($dto->learner_id);
 
         if($learner->trashed()){
@@ -723,13 +728,13 @@ class LearnerOperationService
 
       
         if ($dto->profile_picture === '') {
-            Log::info([
-                'profile_picture'=>'nnuull'
+          Log::info('Profile Picture', [
+                'profile_picture' => '1',
             ]);
             $learner->profile_picture = null;
         } else if (!empty($dto->profile_picture)) {
-            Log::info([
-                'profile_picture'=>'no'
+            Log::info('Profile Picture', [
+                'profile_picture' => $dto->profile_picture,
             ]);
             $learner->profile_picture = $this->moveTempFileToPublic(
                 $dto->profile_picture,
