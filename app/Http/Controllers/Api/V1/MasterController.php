@@ -1703,7 +1703,7 @@ class MasterController extends Controller
 
         $user = LibraryUser::where('id', $request->library_user_id)
             ->where('library_id', $libraryId)
-            ->select( 'id','name','email','mobile','branch_id','profile_picture')
+            ->select( 'id','name','email','mobile','branch_id','profile_picture','original_password')
             ->first();
           
         if (!$user) {
