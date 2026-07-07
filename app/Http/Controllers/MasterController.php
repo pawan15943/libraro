@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\File;
 
 class MasterController extends Controller
 {
@@ -1045,9 +1046,17 @@ class MasterController extends Controller
         if ($request->hasFile('image') ) {
            
            $image = $request->file('image');
-            $imageName = "icon" . time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('uploads/icon/'), $imageName);
-            $data['image'] = 'uploads/icon/' . $imageName;
+            $imageName = 'icon_' . time() . '.' . $image->getClientOriginalExtension();
+
+            $destinationPath = public_path('upload/icon');
+
+            if (!File::exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0777, true, true);
+            }
+
+            $image->move($destinationPath, $imageName);
+
+            $data['image'] = 'upload/icon/' . $imageName;
             if ($id) {
                 $feature = Feature::findOrFail($id);
                 if ($feature->image && file_exists(public_path($feature->image))) {
