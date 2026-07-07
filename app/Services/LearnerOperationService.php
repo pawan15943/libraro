@@ -723,8 +723,14 @@ class LearnerOperationService
 
       
         if ($dto->profile_picture === '') {
+            Log::info([
+                'profile_picture'=>'nnuull'
+            ]);
             $learner->profile_picture = null;
         } else if (!empty($dto->profile_picture)) {
+            Log::info([
+                'profile_picture'=>'no'
+            ]);
             $learner->profile_picture = $this->moveTempFileToPublic(
                 $dto->profile_picture,
                 'profile_picture',
