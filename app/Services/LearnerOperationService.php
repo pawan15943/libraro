@@ -721,27 +721,27 @@ class LearnerOperationService
             $learner->id_proof_number = $dto->id_proof_number === '' ? null : $dto->id_proof_number ;
         }
 
-        if (! empty($dto->profile_picture)) {
-            $relPath = $this->moveTempFileToPublic(
+      
+        if ($dto->profile_picture === '') {
+            $learner->profile_picture = null;
+        } else if (!empty($dto->profile_picture)) {
+            $learner->profile_picture = $this->moveTempFileToPublic(
                 $dto->profile_picture,
                 'profile_picture',
-                'uploade/profile_picture'
+                'upload/profile_picture'
             );
-            if ($relPath !== null) {
-                $learner->profile_picture = $relPath;
-            }
         }
-
-        if (! empty($dto->id_proof_file)) {
-            $relPath = $this->moveTempFileToPublic(
+        if ($dto->id_proof_file === '') {
+            $learner->id_proof_file = null;
+        } else if (!empty($dto->id_proof_file)) {
+            $learner->id_proof_file = $this->moveTempFileToPublic(
                 $dto->id_proof_file,
                 'id_proof_file',
                 'uploade/id_proof_file'
             );
-            if ($relPath !== null) {
-                $learner->id_proof_file = $relPath;
-            }
         }
+
+       
 
         if ($dto->no_expiry !== null) {
             $learner->no_expiry = $dto->no_expiry;
