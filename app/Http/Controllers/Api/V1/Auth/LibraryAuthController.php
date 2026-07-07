@@ -375,10 +375,10 @@ class LibraryAuthController extends Controller
 
         $hasBranchSetup = $hasActiveBranch && $hasPlan ;
 
-        if ( (int) $libraryRecord->status !== 1 && $hasBranchSetup && $hasPlanType && $hasPlanPrice ) {
-            Library::where('id', $libraryId)->update(['status' => 1]);
-            $libraryRecord->status = 1;
-        }
+        // if ( (int) $libraryRecord->status !== 1 && $hasBranchSetup && $hasPlanType && $hasPlanPrice ) {
+        //     Library::where('id', $libraryId)->update(['status' => 1]);
+        //     $libraryRecord->status = 1;
+        // }
 
         if (!is_null($libraryRecord->email_verified_at)) {
             if (!$libraryRecord->is_paid) {
