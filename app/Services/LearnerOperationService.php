@@ -1124,11 +1124,11 @@ class LearnerOperationService
     /**
      * Same contract as StoreLearnerRequest::moveTempFileToPublic:
      * - UploadedFile: move into public/{folder}
-     * - string URL: if path contains /temp/, move from storage/app/public to public/{folder}; if already under /uploade/, return relative path
+     * - string URL: if path contains /temp/, move from storage/app/public to public/{folder}; if already permanent, return relative path
      *
      * @param  \Illuminate\Http\UploadedFile|string  $file
      */
-    public function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade'): ?string
+    public function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'upload'): ?string
     {
         if ($file instanceof \Illuminate\Http\UploadedFile) {
             $fileName = $filePrefix.'_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
@@ -1165,8 +1165,22 @@ class LearnerOperationService
                 }
             }
 
+            if (str_contains($file, '/upload/') || str_contains($file, 'upload/')) {
+                $pos = strpos((string) $path, 'upload/');
+                if ($pos !== false) {
+                    return 'public/'.substr((string) $path, $pos);
+                }
+            }
+
             if (str_contains($file, '/uploade/') || str_contains($file, 'uploade/')) {
                 $pos = strpos((string) $path, 'uploade/');
+                if ($pos !== false) {
+                    return 'public/'.substr((string) $path, $pos);
+                }
+            }
+
+            if (str_contains($file, '/uploads/') || str_contains($file, 'uploads/')) {
+                $pos = strpos((string) $path, 'uploads/');
                 if ($pos !== false) {
                     return 'public/'.substr((string) $path, $pos);
                 }

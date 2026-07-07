@@ -177,7 +177,7 @@ class StoreLearnerRequest extends FormRequest
             $id_proof_file = $this->moveTempFileToPublic(
                 $this->file('id_proof'),
                 'id_proof_file',
-                'uploade/id_proof_file'
+                'upload/id_proof_file'
             );
 
         } elseif (!empty($this->id_proof_file) && is_string($this->id_proof_file)) {
@@ -185,7 +185,7 @@ class StoreLearnerRequest extends FormRequest
             $id_proof_file = $this->moveTempFileToPublic(
                 $this->id_proof_file ?: $this->id_proof,
                 'id_proof_file',
-                'uploade/id_proof_file'
+                'upload/id_proof_file'
             );
         }
         
@@ -206,7 +206,7 @@ class StoreLearnerRequest extends FormRequest
             $profile_picture = $this->moveTempFileToPublic(
                 $this->file('profile_picture_image'),
                 'profile_picture',
-                'uploade/profile_picture'
+                'upload/profile_picture'
             );
 
         } elseif (!empty($this->profile_picture) && is_string($this->profile_picture)) {
@@ -214,7 +214,7 @@ class StoreLearnerRequest extends FormRequest
             $profile_picture = $this->moveTempFileToPublic(
                 $this->profile_picture,
                 'profile_picture',
-                'uploade/profile_picture'
+                'upload/profile_picture'
             );
         }
 

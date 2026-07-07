@@ -97,13 +97,13 @@ class BookingEnquiryService
             $profilePicturePath = $this->fileUploadService->moveTempFileToPublic(
                 $request->file('profile_picture'),
                 'profile_picture',
-                'uploade/profile_picture'
+                'upload/profile_picture'
             );
         } elseif (is_string($request->input('profile_picture')) && filter_var($request->input('profile_picture'), FILTER_VALIDATE_URL)) {
             $profilePicturePath = $this->fileUploadService->moveTempFileToPublic(
                 $request->input('profile_picture'),
                 'profile_picture',
-                'uploade/profile_picture'
+                'upload/profile_picture'
             );
         }
 
@@ -112,13 +112,13 @@ class BookingEnquiryService
             $idProofFilePath = $this->fileUploadService->moveTempFileToPublic(
                 $request->file('id_proof_file'),
                 'id_proof_file',
-                'uploade/id_proof_file'
+                'upload/id_proof_file'
             );
         } elseif (is_string($request->input('id_proof_file')) && filter_var($request->input('id_proof_file'), FILTER_VALIDATE_URL)) {
             $idProofFilePath = $this->fileUploadService->moveTempFileToPublic(
                 $request->input('id_proof_file'),
                 'id_proof_file',
-                'uploade/id_proof_file'
+                'upload/id_proof_file'
             );
         }
 

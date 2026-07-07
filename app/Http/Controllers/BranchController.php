@@ -14,6 +14,7 @@ use App\Services\LibraryConfigurationService;
 use App\Services\LibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -237,7 +238,14 @@ class BranchController extends Controller
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
-            $branch->logo = $request->file('logo')->store('uploads/logo', 'public');
+            $file = $request->file('logo');
+            $fileName = 'logo_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $destinationFolder = public_path('upload/library_logo');
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+            $file->move($destinationFolder, $fileName);
+            $branch->logo = 'upload/library_logo/' . $fileName;
         }
 
         // Handle features (save as JSON)
@@ -322,7 +330,12 @@ class BranchController extends Controller
         // Handle multiple image uploads
         if ($request->hasFile('library_images')) {
             foreach ($request->file('library_images') as $image) {
-                $image->store('uploads/library_images', 'public');
+                $fileName = 'img_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $destinationFolder = public_path('upload/library_images');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $image->move($destinationFolder, $fileName);
                 
             }
         }
@@ -375,8 +388,12 @@ class BranchController extends Controller
             
             foreach ($request->file('library_images') as $file) {
                 $library_imageNewName = "library_img_" . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads'), $library_imageNewName);
-                $uploadedFiles[] = 'uploads/' . $library_imageNewName;
+                $destinationFolder = public_path('upload/library_images');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $file->move($destinationFolder, $library_imageNewName);
+                $uploadedFiles[] = 'upload/library_images/' . $library_imageNewName;
             }
         } else {
             $uploadedFiles = []; 
@@ -401,8 +418,12 @@ class BranchController extends Controller
         if ($request->hasFile('library_logo')) {
             $library_logo = $request->file('library_logo');
             $library_logoNewName = "library_logo_" . time() . '.' . $library_logo->getClientOriginalExtension();
-            $library_logo->move(public_path('uploads'), $library_logoNewName);
-            $validated['library_logo'] = 'uploads/' . $library_logoNewName;
+            $destinationFolder = public_path('upload/library_logo');
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+            $library_logo->move($destinationFolder, $library_logoNewName);
+            $validated['library_logo'] = 'upload/library_logo/' . $library_logoNewName;
         }
         if(($request->longitude && $request->latitude) || $request->google_map){
                 $validated['is_profile'] =1;         

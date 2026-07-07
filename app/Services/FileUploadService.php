@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 
 class FileUploadService
 {
-    public function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'uploade')
+    public function moveTempFileToPublic($file, string $filePrefix = 'file', string $folder = 'upload')
     {
         if ($file instanceof \Illuminate\Http\UploadedFile) {
             $fileName = $filePrefix . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -48,8 +48,22 @@ class FileUploadService
                 }
             }
 
+            if (str_contains($file, '/upload/') || str_contains($file, 'upload/')) {
+                $pos = strpos($path, 'upload/');
+                if ($pos !== false) {
+                    return 'public/' . substr($path, $pos);
+                }
+            }
+
             if (str_contains($file, '/uploade/') || str_contains($file, 'uploade/')) {
                 $pos = strpos($path, 'uploade/');
+                if ($pos !== false) {
+                    return 'public/' . substr($path, $pos);
+                }
+            }
+
+            if (str_contains($file, '/uploads/') || str_contains($file, 'uploads/')) {
+                $pos = strpos($path, 'uploads/');
                 if ($pos !== false) {
                     return 'public/' . substr($path, $pos);
                 }

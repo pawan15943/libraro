@@ -30,6 +30,7 @@ use App\Services\LearnerService;
 use Exception;
 use App\Traits\LearnerQueryTrait;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
@@ -1932,8 +1933,12 @@ class LearnerController extends Controller
             $id_proof_file = $request->file('id_proof_file');
             $id_proof_fileNewName = "id_proof_file_" . time() . "_" . $id_proof_file->getClientOriginalName();
 
-            $id_proof_file->move(public_path('uploads'), $id_proof_fileNewName);
-            $id_proof_filePath = 'uploads/' . $id_proof_fileNewName;
+            $destinationFolder = public_path('upload/id_proof_file');
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+            $id_proof_file->move($destinationFolder, $id_proof_fileNewName);
+            $id_proof_filePath = 'public/upload/id_proof_file/' . $id_proof_fileNewName;
 
             $customer->id_proof_file = $id_proof_filePath;
         }

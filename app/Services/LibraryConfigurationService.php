@@ -41,7 +41,7 @@ class LibraryConfigurationService
               // ✅ DELETE OLD FIRST
             if ($existingBranch && $existingBranch->library_logo && $logoPath !== $existingBranch->library_logo) {
 
-                if (!str_contains($existingBranch->library_logo, 'uploads/')) {
+                if (!str_contains($existingBranch->library_logo, 'upload/')) {
                     Storage::disk('public')->delete($existingBranch->library_logo);
                 }
             }
@@ -53,17 +53,20 @@ class LibraryConfigurationService
 
                 $fileName = "library_logo_" . time() . '.' . $file->getClientOriginalExtension();
 
-                // your old logic (unchanged)
-                $file->move(public_path('uploads'), $fileName);
+                $destinationFolder = public_path('upload/library_logo');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $file->move($destinationFolder, $fileName);
 
-                $logoPath = 'uploads/' . $fileName;
+                $logoPath = 'upload/library_logo/' . $fileName;
             }
             
 
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_logo']) && is_string($validated['library_logo'])) {
 
-                $logoPath = $this->moveTempFileToPublic($validated['library_logo'],'logo','uploads/logo'); 
+                $logoPath = $this->moveTempFileToPublic($validated['library_logo'],'logo','upload/library_logo'); 
                
             }
 
@@ -87,7 +90,12 @@ class LibraryConfigurationService
 
                     $fileName = 'img_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-                    $path = $image->storeAs('uploads/library_images', $fileName, 'public');
+                    $destinationFolder = public_path('upload/library_images');
+                    if (!File::exists($destinationFolder)) {
+                        File::makeDirectory($destinationFolder, 0777, true);
+                    }
+                    $image->move($destinationFolder, $fileName);
+                    $path = 'upload/library_images/' . $fileName;
 
                     $images[] = $path;
                 }
@@ -96,7 +104,7 @@ class LibraryConfigurationService
             /* ========= CASE 2: APP ========= */
             elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
 
-               $images= $validated['library_images'] = $this->moveTempFileToPublic( $validated['library_images'],'img','uploads/library_images');
+               $images= $validated['library_images'] = $this->moveTempFileToPublic( $validated['library_images'],'img','upload/library_images');
             }
 
             /* ========= FINAL ========= */
@@ -753,7 +761,7 @@ class LibraryConfigurationService
         }
     }
 
-   function moveTempFileToPublic($fileInput, $filePrefix = 'file', $folder = 'uploads/common')
+   function moveTempFileToPublic($fileInput, $filePrefix = 'file', $folder = 'upload/common')
     {
         $results = [];
 
@@ -825,6 +833,16 @@ class LibraryConfigurationService
                  }
 
                     // 🔥 CASE B: ALREADY PERMANENT → KEEP SAME
+                elseif (str_contains($file, '/upload/')) {
+
+                    $path = parse_url($file, PHP_URL_PATH);
+
+                    $pos = strpos($path, 'upload/');
+
+                    if ($pos !== false) {
+                        $results[] = substr($path, $pos);
+                    }
+                }
                 elseif (str_contains($file, '/uploads/')) {
 
                     $path = parse_url($file, PHP_URL_PATH);
@@ -832,7 +850,7 @@ class LibraryConfigurationService
                     $pos = strpos($path, 'uploads/');
 
                     if ($pos !== false) {
-                        $results[] = substr($path, $pos); // uploads/xxx.png
+                        $results[] = substr($path, $pos);
                     }
                 }
             }

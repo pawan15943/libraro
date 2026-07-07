@@ -278,7 +278,7 @@ class QrBookingService
                 $relPath_profile = $this->learnerOperationService->moveTempFileToPublic(
                     $request->profile_picture,
                     'profile_picture',
-                    'uploade/profile_picture'
+                    'upload/profile_picture'
                 );
                
             }
@@ -287,7 +287,7 @@ class QrBookingService
                 $relPathidproof = $this->learnerOperationService->moveTempFileToPublic(
                     $request->id_proof_file,
                     'id_proof_file',
-                    'uploade/id_proof_file'
+                    'upload/id_proof_file'
                 );
                 
             }

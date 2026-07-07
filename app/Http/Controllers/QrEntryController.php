@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use DB;
 use App\Http\Controllers\LearnerController;
 use App\Models\Floor;
@@ -518,8 +519,12 @@ class QrEntryController extends Controller
                 $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
                 $profile_picture = $request->profile_picture;
                 $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
-                $profile_picture->move('public/uploade/', $profile_pictureNewName);
-                $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+                $destinationFolder = public_path('upload/profile_picture');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $profile_picture->move($destinationFolder, $profile_pictureNewName);
+                $profile_picture = 'public/upload/profile_picture/' . $profile_pictureNewName;
             } else {
                  
                 $profile_picture = null;
@@ -531,9 +536,13 @@ class QrEntryController extends Controller
                 $file = $request->file('id_proof_file');
 
                 $fileName = 'id_proof_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads/id_proof'), $fileName);
+                $destinationFolder = public_path('upload/id_proof_file');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $file->move($destinationFolder, $fileName);
 
-                $idProofFilePath = 'public/uploads/id_proof/' . $fileName;
+                $idProofFilePath = 'public/upload/id_proof_file/' . $fileName;
             }
 
           
@@ -647,8 +656,12 @@ class QrEntryController extends Controller
             $this->validate($request, ['payment_screenshot' => 'mimes:webp,png,jpg,jpeg|max:2048']);
             $payment_screenshot = $request->payment_screenshot;
             $payment_screenshotNewName = "payment" . time() . $payment_screenshot->getClientOriginalName();
-            $payment_screenshot->move('public/uploade/', $payment_screenshotNewName);
-            $payment_screenshot = 'public/uploade/' . $payment_screenshotNewName;
+            $destinationFolder = public_path('upload/qr_payment');
+            if (!File::exists($destinationFolder)) {
+                File::makeDirectory($destinationFolder, 0777, true);
+            }
+            $payment_screenshot->move($destinationFolder, $payment_screenshotNewName);
+            $payment_screenshot = 'public/upload/qr_payment/' . $payment_screenshotNewName;
         } else {
             $payment_screenshot = null;
         }
@@ -981,8 +994,12 @@ class QrEntryController extends Controller
                 $this->validate($request, ['id_proof_file' => 'mimes:webp,png,jpg,jpeg|max:200']);
                 $id_proof_file = $request->id_proof_file;
                 $id_proof_fileNewName = "id_proof_file" . time() . $id_proof_file->getClientOriginalName();
-                $id_proof_file->move('public/uploade/', $id_proof_fileNewName);
-                $id_proof_file = 'public/uploade/' . $id_proof_fileNewName;
+                $destinationFolder = public_path('upload/id_proof_file');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $id_proof_file->move($destinationFolder, $id_proof_fileNewName);
+                $id_proof_file = 'public/upload/id_proof_file/' . $id_proof_fileNewName;
             } else {
                 $id_proof_file = null;
             }
@@ -991,8 +1008,12 @@ class QrEntryController extends Controller
                 $this->validate($request, ['profile_picture' => 'mimes:webp,png,jpg,jpeg|max:200']);
                 $profile_picture = $request->profile_picture;
                 $profile_pictureNewName = "profile_picture" . time() . $profile_picture->getClientOriginalName();
-                $profile_picture->move('public/uploade/', $profile_pictureNewName);
-                $profile_picture = 'public/uploade/' . $profile_pictureNewName;
+                $destinationFolder = public_path('upload/profile_picture');
+                if (!File::exists($destinationFolder)) {
+                    File::makeDirectory($destinationFolder, 0777, true);
+                }
+                $profile_picture->move($destinationFolder, $profile_pictureNewName);
+                $profile_picture = 'public/upload/profile_picture/' . $profile_pictureNewName;
             }elseif($bookingurl->profile_picture){
                 $profile_picture=$bookingurl->profile_picture;
             } else {
