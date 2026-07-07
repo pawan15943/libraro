@@ -167,9 +167,9 @@ class QrBookingService
                 $detailStatus = 0;
             }
             $is_paid = 1;
-            if($request->payment_mode=='online' || $request->payment_mode==1){
+            if($request->payment_mode=='online'){
                 $payment_mode = 1;
-            }elseif($request->payment_mode=='offline' || $request->payment_mode==2){
+            }elseif($request->payment_mode=='offline' ){
                 $payment_mode = 2;
             }else{
                 $payment_mode = 3;
@@ -183,9 +183,7 @@ class QrBookingService
                 $status =0;
             } 
 
-            Log::info('payment_mode1', [
-                'payment_mode' => $payment_mode,
-            ]);
+          
 
 
             /*
@@ -401,9 +399,7 @@ class QrBookingService
                 'transaction_date'=>$booking->created_at->format('Y-m-d')
             ];
 
-             Log::info('payment_mode2', [
-                'payment_mode' => $payment_mode,
-            ]);
+            
 
             // learnerTransactionAddUpdate() creates the corresponding activity entry.
             $service->learnerTransactionAddUpdate($tran);
