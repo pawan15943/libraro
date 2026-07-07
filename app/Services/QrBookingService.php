@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use DB;
 use App\Services\LearnerService;
 use App\Services\LearnerOperationService;
+use Illuminate\Support\Facades\Log;
 
 class QrBookingService
 {
@@ -28,7 +29,9 @@ class QrBookingService
         try {
 
            
-
+    Log::info([
+        'request'=>$request
+    ]);
             $booking = Booking::find($request->booking_id);
 
             if (!$booking) {
