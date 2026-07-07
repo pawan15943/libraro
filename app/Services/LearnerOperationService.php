@@ -647,7 +647,10 @@ class LearnerOperationService
 
     public function updateLearner($dto, $detail = null, $status = null, $seat = null)
     {
-       
+        Log::info('DTO', [
+            'dto' => $dto,
+        ]);
+        
         $learner = Learner::findOrFail($dto->learner_id);
 
         if($learner->trashed()){
@@ -713,12 +716,28 @@ class LearnerOperationService
             $learner->remark = $dto->remark === '' ? null : $dto->remark ;
         }
 
-        if ($dto->id_proof_name !== null) {
-            $learner->id_proof_name = $dto->id_proof_name === '' ? null : $dto->id_proof_name ;
-        }
+        if ($dto->id_proof_name === '' || is_null($dto->id_proof_name)) {
+            $learner->id_proof_name = null;
+            $learner->id_proof_number = null;
+            $learner->id_proof_file = null;
+        } else {
+            $learner->id_proof_name = $dto->id_proof_name;
 
-        if($dto->id_proof_number !== null){
-            $learner->id_proof_number = $dto->id_proof_number === '' ? null : $dto->id_proof_number ;
+            if ($dto->id_proof_number !== null) {
+                $learner->id_proof_number = $dto->id_proof_number === ''
+                    ? null
+                    : $dto->id_proof_number;
+            }
+
+            if ($dto->id_proof_file === '' || is_null($dto->id_proof_file)) {
+                $learner->id_proof_file = null;
+            } elseif (!empty($dto->id_proof_file)) {
+                $learner->id_proof_file = $this->moveTempFileToPublic(
+                    $dto->id_proof_file,
+                    'id_proof_file',
+                    'upload/id_proof_file'
+                );
+            }
         }
 
       
@@ -733,15 +752,7 @@ class LearnerOperationService
                 'upload/profile_picture'
             );
         }
-        if ($dto->id_proof_file === '' || is_null($dto->id_proof_file)) {
-            $learner->id_proof_file = null;
-        } else if (!empty($dto->id_proof_file)) {
-            $learner->id_proof_file = $this->moveTempFileToPublic(
-                $dto->id_proof_file,
-                'id_proof_file',
-                'uploade/id_proof_file'
-            );
-        }
+        
 
        
 
