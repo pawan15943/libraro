@@ -1627,21 +1627,25 @@ class MasterController extends Controller
            /* ======================
             IMAGE HANDLING (DIRECT DEBUG VERSION)
             ====================== */
+            $profilePath = null;
 
-                $profilePath = null;
+            if ($validated['library_user_image'] === '' || is_null($validated['library_user_image'])) {
 
-            if (!empty($validated['library_user_image'])) {
+                $data['profile_picture'] = null;
 
-                 $input = $validated['library_user_image'];
+            } elseif (!empty($validated['library_user_image'])) {
+
                 $service = new LibraryConfigurationService();
 
                 $profilePath = $service->moveTempFileToPublic(
-                    $input,
+                    $validated['library_user_image'],
                     'user_profile_picture',
-                    'uploads/user_profile_picture'
+                    'upload/user_profile_picture'
                 );
 
-
+                if ($profilePath !== null) {
+                    $data['profile_picture'] = $profilePath;
+                }
             }
 
             // ✅ ONLY set if not null
