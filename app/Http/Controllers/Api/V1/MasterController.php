@@ -1743,7 +1743,7 @@ class MasterController extends Controller
                 'can_delete' =>true,
                 'status' => $user->status ? 'Active' : 'Inactive',
                 'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
-               
+               'password'=>$user->original_password,
             ]
         ]);
     }
