@@ -28,10 +28,7 @@ class QrBookingService
 
         try {
 
-           
-    Log::info([
-        'request'=>$request
-    ]);
+    
             $booking = Booking::find($request->booking_id);
 
             if (!$booking) {
@@ -170,12 +167,8 @@ class QrBookingService
                 $detailStatus = 0;
             }
             $is_paid = 1;
-            if($request->payment_mode=='online'){
-                $payment_mode = 1;
-            }elseif($request->payment_mode=='offline' ){
-                $payment_mode = 2;
-            }else{
-                $payment_mode = 3;
+            if($request->payment_mode){
+                $payment_mode = $request->payment_mode;
             }
 
             if (($inextendDate > Carbon::today() && $start_date <= Carbon::today()) || $detailStatus == 1) {
