@@ -121,6 +121,7 @@ class LearnerLifecycleService
                 'extra_amount' => $this->money((float) $transactions->sum('refund')),
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
+                'next_plan'=>alreadyRenewed($learnerId) ? 1 : 0 ,
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
                 'added_by_name' => $currentTransaction ? $this->transactionAddedByName($currentTransaction) : '',
                 'last_transactions' => $currentTransaction ? (

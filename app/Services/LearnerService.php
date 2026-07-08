@@ -1090,6 +1090,7 @@ class LearnerService
                 'end_time'=>$detail->planType->end_time ?? '',
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
+                'next_plan'=>alreadyRenewed($learner->id) ? 1 : 0 ,
                 'frozen_status'=>$learner->frozen_status,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
