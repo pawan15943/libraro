@@ -711,7 +711,7 @@ class LearnerLifecycleService
         $planPrice = $this->planPriceFromTransaction($transaction);
         $totalAmount = (float) ($transaction->total_amount ?? 0);
         $finalPayable = max(0, $totalAmount + $carryForwardAmount - $extraPaidAmount);
-        $pending = (float) ($transaction->pending_amount ?? 0);
+        $pending = (float) ($transaction->pending_amount ?? 0) + $carryForwardAmount - $extraPaidAmount;
         $extra = (float) ($transaction->refund ?? 0);
         $learner = null;
         if($detail){
