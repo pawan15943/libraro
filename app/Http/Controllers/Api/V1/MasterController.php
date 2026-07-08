@@ -2518,8 +2518,14 @@ class MasterController extends Controller
             ->where('branch_id', $branch_id)
             ->whereNotNull('seat_no')
             ->whereDate('plan_start_date', '>', now()->toDateString())
-            ->where('learner_id', '!=', $learnerId)
             ->whereNull('deleted_at')
+            ->whereIn('learner_id', function ($query) {
+                $query->from('learner_details')
+                    ->select('learner_id')
+                    ->whereNull('deleted_at')
+                    ->groupBy('learner_id')
+                    ->havingRaw('COUNT(*) = 1');
+            })
             ->pluck('seat_no')
             ->map(fn ($seatNo) => (int) $seatNo)
             ->unique()
