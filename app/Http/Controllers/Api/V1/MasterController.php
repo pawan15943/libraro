@@ -2520,7 +2520,7 @@ class MasterController extends Controller
             ->whereDate('plan_start_date', '>', now()->toDateString())
             ->whereNull('deleted_at')
             ->whereIn('learner_id', function ($query) {
-                $query->from('learner_details')
+                $query->from('learner_detail')
                     ->select('learner_id')
                     ->whereNull('deleted_at')
                     ->groupBy('learner_id')
