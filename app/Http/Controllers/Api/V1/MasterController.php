@@ -2518,6 +2518,7 @@ class MasterController extends Controller
             ->where('branch_id', $branch_id)
             ->whereNotNull('seat_no')
             ->whereDate('plan_start_date', '>', now()->toDateString())
+            ->where('learner_id', '!=', $learnerId)
             ->whereNull('deleted_at')
             ->pluck('seat_no')
             ->map(fn ($seatNo) => (int) $seatNo)
