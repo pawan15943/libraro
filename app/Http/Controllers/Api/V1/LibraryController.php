@@ -406,7 +406,7 @@ class LibraryController extends Controller
                         'notification_type'=>'important',
                         'title' =>'Complete Profile',
                         'description' => 'Please complete your profile',
-                        'progress_percentage'=>50,
+                        'progress_percentage'=>getProfileCompletionPercentage(),
                         
 
                 ],
