@@ -1541,7 +1541,7 @@ class LearnerService
                     getUserStatusWithSpan($learner->plan_end_date,$learner->id)
                 );
             }
-        
+
             
         
             if($operationName == 'closeSeat'){
@@ -1602,7 +1602,7 @@ class LearnerService
 
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
-
+                'next_plan'=>alreadyRenewed($learner->id) ? 1 : 0 ,
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
                 'frozen_status'=>$learner->frozen_status,
