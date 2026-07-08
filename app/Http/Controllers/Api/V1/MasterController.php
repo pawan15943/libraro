@@ -1629,11 +1629,10 @@ class MasterController extends Controller
             ====================== */
             $profilePath = null;
 
-            if ($validated['library_user_image'] === '' || is_null($validated['library_user_image'])) {
+            // if ($validated['library_user_image'] === '' || is_null($validated['library_user_image'])) {
 
-                $data['profile_picture'] = null;
-
-            } elseif (!empty($validated['library_user_image'])) {
+            // } else
+            if (!empty($validated['library_user_image'])) {
 
                 $service = new LibraryConfigurationService();
 
@@ -1646,12 +1645,11 @@ class MasterController extends Controller
                 if ($profilePath !== null) {
                     $data['profile_picture'] = $profilePath;
                 }
+            }else{
+                $data['profile_picture'] = null;
             }
 
-            // ✅ ONLY set if not null
-            if (!empty($profilePath)) {
-                $data['profile_picture'] = $profilePath;
-            }
+          
             if ($user) {
                 $user->update($data);
             } else {
