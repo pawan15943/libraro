@@ -1322,17 +1322,17 @@ class LearnerService
                 case 'all':
                 break;
 
-                case 'active':
-                    $extendDays = getExtendDays($branchId);
+                    case 'active':
+                        $extendDays = getExtendDays($branchId);
 
-                    $query->where('learner_detail.status',1)
-                        ->whereDate(
-                            'learner_detail.plan_end_date',
-                            '>=',
-                            now()->subDays($extendDays)
-                        );
+                        $query->where('learner_detail.status',1);
+                            // ->whereDate(
+                            //     'learner_detail.plan_end_date',
+                            //     '>=',
+                            //     now()->subDays($extendDays)
+                            // );
 
-                break;
+                    break;
 
                 case 'about_to_expire':
 
@@ -2429,18 +2429,21 @@ class LearnerService
             2 => 'OFFLINE',
             default => 'ONLINE',
         };
+        if($amount >0){
+                LearnerTransactionActivity::create([
+                'branch_id' => getCurrentBranch(),
+                'learner_id' => $learnerId,
+                'learner_transaction_id' => $learnerTransactionId,
+                'date' => now()->format('Y-m-d'),
+                'transaction_id' => transaction_id(),
+                'particular' => 'SETTLEMENT',
+                'payment_type' => $paymentType,
+                'payment_mode' => $mode,
+                'amount' => $amount,
+                'dr_cr' => $drCr,
+            ]);
+        }
 
-        LearnerTransactionActivity::create([
-            'branch_id' => getCurrentBranch(),
-            'learner_id' => $learnerId,
-            'learner_transaction_id' => $learnerTransactionId,
-            'date' => now()->format('Y-m-d'),
-            'transaction_id' => transaction_id(),
-            'particular' => 'SETTLEMENT',
-            'payment_type' => $paymentType,
-            'payment_mode' => $mode,
-            'amount' => $amount,
-            'dr_cr' => $drCr,
-        ]);
+        
     }
 }
