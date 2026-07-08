@@ -2519,12 +2519,12 @@ class MasterController extends Controller
             ->whereNotNull('seat_no')
             ->whereDate('plan_start_date', '>', now()->toDateString())
             ->whereNull('deleted_at')
-            ->whereIn('learner_id', function ($query) {
-                $query->from('learner_detail')
-                    ->select('learner_id')
-                    ->whereNull('deleted_at')
-                    ->groupBy('learner_id')
-                    ->havingRaw('COUNT(*) = 1');
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('learner_detail as previous_detail')
+                    ->whereColumn('previous_detail.learner_id', 'learner_detail.learner_id')
+                    ->whereColumn('previous_detail.id', '!=', 'learner_detail.id')
+                    ->whereNull('previous_detail.deleted_at');
             })
             ->pluck('seat_no')
             ->map(fn ($seatNo) => (int) $seatNo)
