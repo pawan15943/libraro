@@ -164,7 +164,7 @@ class PlanService
     public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId,float $lockerAmount = 0,?string $discountType = null,float $discountValue = 0,float $paidAmount = 0) {
 
         $startDate = Carbon::parse($planStartDate);
-       
+       $day_type_id=PlanType::where('id',$planTypeId)->select('day_type_id')->first();
 
         $branch = Branch::select('fixed_billing_date')
             ->where('id', $branchId)
@@ -207,11 +207,18 @@ class PlanService
 
     $totalAmount = ($planPrice + $lockerAmount) - $discountAmount;
 
+   
+
     /* -----------------------------
        PENDING AMOUNT
     ------------------------------*/
 
     $pendingAmount = $totalAmount - $paidAmount;
+     if($day_type_id->day_type_id==11){
+        $totalAmount=0;
+        $pendingAmount=0;
+        
+    }
 
         return [
             'price' => (string)  $planPrice,
