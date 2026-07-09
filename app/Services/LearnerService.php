@@ -995,11 +995,16 @@ class LearnerService
             'planType'
         ])
         ->where('learner_id',$learnerId)->orderBy('id', 'desc')->get();
-        $currentDetail=LearnerDetail::where('learner_id',$learnerId)->where('status',1)->select('plan_end_date')->first();
+        $currentDetail = LearnerDetail::where('learner_id', $learnerId)
+            ->where('status', 1)
+            ->select('plan_end_date')
+            ->first();
 
         $operation = optional(getLearnerOperation($detail->id))->operation;    
         $planStatus =getPlanStatusDetails($detail->plan_end_date);
-        $current_planStatus =getPlanStatusDetails($currentDetail->plan_end_date);
+        $current_planStatus = $currentDetail
+            ? getPlanStatusDetails($currentDetail->plan_end_date)
+            : $planStatus;
        
         $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
             ->where('learner_id', $learnerId)
@@ -1114,19 +1119,19 @@ class LearnerService
             ],
 
             'payment_information'=>[
-                'total_amount'=>(string) $transaction->total_amount,
-                'paid_amount'=>(string) $transaction->paid_amount,
-                'pending_amount'=>(string) $transaction->pending_amount,
+                'total_amount'=>(string) ($transaction->total_amount ?? '0'),
+                'paid_amount'=>(string) ($transaction->paid_amount ?? '0'),
+                'pending_amount'=>(string) ($transaction->pending_amount ?? '0'),
                 'paid_date'=>$transaction->paid_date ?? '',
                 'payment_mode'=>$detail->payment_mode ?? '',
-                 'locker_amount'=>(string) $transaction->locker_amount,
+                 'locker_amount'=>(string) ($transaction->locker_amount ?? '0'),
                 'discount'=>$transaction->discount_amount ?? '0',
-                'token_money'=>(string) $transaction->token_money ?? '0',
-                'miscellaneous'=>(string) $transaction->miscellaneous ?? '0',
-                'pending_refund'=>(string) $transaction->refund ?? '0',
+                'token_money'=>(string) ($transaction->token_money ?? '0'),
+                'miscellaneous'=>(string) ($transaction->miscellaneous ?? '0'),
+                'pending_refund'=>(string) ($transaction->refund ?? '0'),
                 'due_date'=>$transaction->due_date ?? '',
                 'transaction'=>$transaction->transaction_id ?? '',
-                'transaction_id'=>$transaction->id,
+                'transaction_id'=>$transaction->id ?? null,
                 'download_receipt_url' => $this->downloadReceiptUrl($transaction),
                
             ],
