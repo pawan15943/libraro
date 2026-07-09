@@ -46,8 +46,14 @@ class LibraryConfigurationService
                 }
             }
 
+            if (array_key_exists('library_logo', $validated)
+                && ($validated['library_logo'] === '' || is_null($validated['library_logo']))) {
+
+                $logoPath = null;
+            }
+
             /* ========= CASE 1: WEB ========= */
-            if ($request->hasFile('library_logo')) {
+            elseif ($request->hasFile('library_logo')) {
 
                 $file = $request->file('library_logo');
 
