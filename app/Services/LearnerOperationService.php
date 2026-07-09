@@ -239,20 +239,29 @@ class LearnerOperationService
              $old_price      = (float) ($learnerTransaction->paid_amount ?? 0);
              $old_pending      = (float) ($learnerTransaction->pending_amount ?? 0);
              $old_pending_refund      = (float) ($learnerTransaction->refund ?? 0);
-            $diff_amount = (float) ($dto->diffrence_amount ?? 0);
-            $paid_amount = $old_price + $diff_amount;
+            $old_total = (float) ($learnerTransaction->total_amount ?? 0);
+            $total_difference = $effective - $old_total;
+            $diff_amount = $dto->operation === 'EDIT' && $dto->diffrence_amount === null
+                ? $total_difference
+                : (float) ($dto->diffrence_amount ?? 0);
+            $paid_amount = $dto->operation === 'EDIT'
+                ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount))
+                : $old_price + $diff_amount;
             if ((int) $dto->payment_mode !== 3 && $diff_amount > $effective) {
                 throw new Exception("Paid amount not valid");
             }
             $pending_amount =$effective-$paid_amount;
              if ($dto->payment_mode == 3) {
-                $paid_amount = 0;
+                $paid_amount = $dto->operation === 'EDIT' ? $old_price : 0;
                 $pending_amount = $effective;
             }
             $activityamount = 0;
             $pending_refund = $old_pending_refund;
 
             if ((int) $dto->payment_mode === 3) {
+                $pending_amount = $dto->operation === 'EDIT'
+                    ? $effective - $old_price
+                    : $pending_amount;
                 if ($pending_amount < 0) {
                     $pending = 0;
                     $pending_refund = abs($pending_amount) + $pending_refund;
@@ -265,10 +274,10 @@ class LearnerOperationService
                 $activityamount = 0;
 
             // Handle difference amount (refund vs pending)
-            } elseif ($diff_amount < 0 || $pending_amount <0) {
+            } elseif ($diff_amount < 0 || $pending_amount <0 || ($dto->operation === 'EDIT' && $total_difference < 0)) {
 
                 // refund case
-                $activityamount = abs($diff_amount);
+                $activityamount = abs($diff_amount ?: $total_difference);
                 $pending_refund = abs($pending_amount) + $pending_refund;
                 $pending = 0;
                 $dr_cr = 'Dr';
@@ -413,9 +422,21 @@ class LearnerOperationService
 
 
 
-        } elseif (in_array($operation, ['EDIT', 'CHANGE PLAN'], true)) {
+        } elseif ($operation === 'EDIT') {
 
+            $editedExtendEnd = $endDate->copy()->addDays($extendDay);
 
+            if ($startDate->lte($today) && $editedExtendEnd->gte($today)) {
+
+                $detailstatus = 1;
+
+            } else {
+
+                $detailstatus = 0;
+
+            }
+
+        } elseif ($operation === 'CHANGE PLAN') {
 
             if ($startDate->lte($today) && $endDate->gte($today)) {
 
@@ -796,6 +817,7 @@ class LearnerOperationService
             'payment_mode' => $dto->payment_mode,
 
             'due_date' => $dto->due_date,
+            'due_date_present' => $dto->due_date_present ?? false,
 
             'branchId' => $dto->branch_id,
             'library_id' => $dto->library_id,
@@ -824,7 +846,9 @@ class LearnerOperationService
         $learnerTransaction->paid_amount    = $data['paid_amount'];
         $learnerTransaction->pending_amount = $data['pending'];
         $learnerTransaction->refund         = $data['pending_refund'];  
-        $learnerTransaction->due_date       = $data['due_date'] ?? null;
+        if ($data['payment_type'] !== 'EDIT' || ($data['due_date_present'] ?? false)) {
+            $learnerTransaction->due_date = $data['due_date'] ?? null;
+        }
         $learnerTransaction->discount_amount = $data['discount'];
         $learnerTransaction->is_paid = $data['is_paid'];
 
@@ -832,6 +856,10 @@ class LearnerOperationService
 
         if ($data['payment_type'] === 'EDIT') {
             $this->updateOriginalTransactionActivity($learnerTransaction, $data);
+        }
+
+        if ($data['payment_type'] === 'EDIT' && (float) ($data['activityamount'] ?? 0) == 0.0) {
+            return;
         }
 
          $activityData = [

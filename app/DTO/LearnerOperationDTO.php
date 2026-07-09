@@ -81,6 +81,8 @@ class LearnerOperationDTO
     public bool $discount_type_present = false,
     /** True when discount_amount key was sent in the payload, even if blank/null */
     public bool $discount_amount_present = false,
+    /** True when due_date key was sent in the payload, even if blank/null */
+    public bool $due_date_present = false,
 
     ) {}
 
@@ -157,6 +159,7 @@ class LearnerOperationDTO
             locker_amount_present: $request->exists('locker_amount'),
             discount_type_present: $request->exists('discountType'),
             discount_amount_present: $request->exists('discount_amount'),
+            due_date_present: $request->exists('due_date'),
 
         );
     }
