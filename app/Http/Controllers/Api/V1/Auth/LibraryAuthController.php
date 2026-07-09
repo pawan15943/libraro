@@ -1533,7 +1533,7 @@ class LibraryAuthController extends Controller
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
                 
-                'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : asset('public/img/user.png'),
+                'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : '',
                 'library_images' => $images,
                 // 🔥 main logic
                 'can_delete' => !isset($usedBranchIds[$branch->id])

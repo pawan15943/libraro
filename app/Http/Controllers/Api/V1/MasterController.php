@@ -1788,7 +1788,7 @@ class MasterController extends Controller
                 'branches' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
                 'can_delete'=>true,
-                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : asset('public/img/user.png'),
+                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
             ];
         });
 
