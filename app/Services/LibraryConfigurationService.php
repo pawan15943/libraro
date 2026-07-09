@@ -228,9 +228,9 @@ class LibraryConfigurationService
           
 
             // ✅ THEN ASSIGN NEW
-            if (!empty($validated['library_logo'])) {
+            // if (!empty($validated['library_logo'])) {
                 $branch->library_logo = $validated['library_logo'];
-            }
+            // }
             
             if (array_key_exists('library_images', $validated)) {
                 $branch->library_images = $validated['library_images'];
