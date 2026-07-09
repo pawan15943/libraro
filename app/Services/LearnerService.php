@@ -995,10 +995,12 @@ class LearnerService
             'planType'
         ])
         ->where('learner_id',$learnerId)->orderBy('id', 'desc')->get();
-
+        $currentDetail=LearnerDetail::where('learner_id',$learnerId)->where('status',1)->select('plan_end_date')->first();
 
         $operation = optional(getLearnerOperation($detail->id))->operation;    
         $planStatus =getPlanStatusDetails($detail->plan_end_date);
+        $current_planStatus =getPlanStatusDetails($currentDetail->plan_end_date);
+       
         $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
             ->where('learner_id', $learnerId)
             ->min('id');
@@ -1097,6 +1099,8 @@ class LearnerService
                 'locker_no'=>(string)$learner->locker_no ?? '',
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
+                'current_days_left'=>$current_planStatus['diff_in_days'],
+                'current_extend_days_left'=>$current_planStatus['diff_extend_day'],
                 'plan_days' => $detail->plan
                     ? getChargeableDays(
                         $detail->plan->id,
