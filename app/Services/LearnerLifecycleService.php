@@ -101,6 +101,7 @@ class LearnerLifecycleService
         $totalPendingAmount = (float) $transactions->sum('pending_amount');
         $totalExtraAmount = (float) $transactions->sum('refund');
         $currentSubscriptionAmount = (float) ($currentTransaction?->total_amount ?? 0);
+        $isRenew = $this->shouldShowRenewOption($learnerId);
         $refundActivityAmount = (float) $activities
             ->filter(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND')
             ->sum('amount');
@@ -122,6 +123,7 @@ class LearnerLifecycleService
                 'refund_amount' => $this->money($refundActivityAmount),
                 'next_due_date' => (string) ($dashboard['summary']['next_due_date'] ?? ''),
                 'next_plan'=>alreadyRenewed($learnerId) ? 1 : 0 ,
+                'is_renew' => $isRenew,
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
                 'added_by_name' => $currentTransaction ? $this->transactionAddedByName($currentTransaction) : '',
                 'last_transactions' => $currentTransaction ? (
@@ -147,6 +149,24 @@ class LearnerLifecycleService
             'all_transaction' => $this->formatAllTransactions($transactions, $activities, $firstTransactionId),
             'transaction_activity' => $activities->map(fn ($activity) => $this->formatActivity($activity))->values(),
         ];
+    }
+
+    private function shouldShowRenewOption(int $learnerId): bool
+    {
+        if (alreadyRenewed($learnerId)) {
+            return false;
+        }
+
+        $today = Carbon::today();
+
+        return LearnerDetail::where('learner_id', $learnerId)
+            ->where('status', 1)
+            ->whereDate('plan_start_date', '<=', $today)
+            ->whereBetween('plan_end_date', [
+                $today->toDateString(),
+                $today->copy()->addDays(7)->toDateString(),
+            ])
+            ->exists();
     }
 
     public function transactionDetail(int $transactionId): array

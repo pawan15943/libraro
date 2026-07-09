@@ -985,16 +985,16 @@ class LearnerService
                 'learnerDetail.plan',
                 'learnerDetail.planType',
             ])
-            ->orderBy('id')
+           ->orderBy('id', 'desc')
             ->get();
 
-        $transaction_all_activity= LearnerTransactionActivity::where('learner_id',$learnerId)->get();
+        $transaction_all_activity= LearnerTransactionActivity::where('learner_id',$learnerId)->orderBy('id', 'desc')->get();
 
         $all_detail=LearnerDetail::with([
             'plan',
             'planType'
         ])
-        ->where('learner_id',$learnerId)->get();
+        ->where('learner_id',$learnerId)->orderBy('id', 'desc')->get();
 
 
         $operation = optional(getLearnerOperation($detail->id))->operation;    
