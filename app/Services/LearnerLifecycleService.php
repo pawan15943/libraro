@@ -1236,7 +1236,9 @@ class LearnerLifecycleService
 
         return [
             'ok'                => true,
-            'message'           => "Plan unfrozen successfully! Frozen days added: {$frozenDays}",
+           'message' => $frozenDays > 0
+            ? "Plan unfrozen successfully! {$frozenDays} frozen day(s) added."
+            : "Plan unfrozen successfully.",
             'frozen_days'      => $frozenDays,
         ];
     }
