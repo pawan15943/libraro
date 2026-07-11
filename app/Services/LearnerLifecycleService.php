@@ -1160,13 +1160,12 @@ class LearnerLifecycleService
                 return ['ok' => false, 'message' => 'No learner detail found. Delete the seat first before permanent remove.'];
             }
 
-            $customer = Learner::onlyTrashed()->where('id', $learnerId)->first();
-         
-            Log::info([
-                'isclose'=>isCloseSeat($learnerId)
+            $isCloseSeat = isCloseSeat($learnerId);
+            $customer = $isCloseSeat
+                ? Learner::withTrashed()->where('id', $learnerId)->first()
+                : Learner::onlyTrashed()->where('id', $learnerId)->first();
 
-            ]);
-            if ($customer || isCloseSeat($learnerId)) {
+            if ($customer) {
 
                 DB::transaction(function () use ($learnerId, $deleteAllActivities, $customer) {
                     if ($deleteAllActivities) {
