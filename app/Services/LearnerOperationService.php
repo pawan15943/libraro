@@ -297,12 +297,26 @@ class LearnerOperationService
             // Handle difference amount (refund vs pending)
             } elseif ($diff_amount < 0 || $pending_amount <0 || $total_difference < 0) {
 
-                // refund case
-                $activityamount = abs($diff_amount ?: $total_difference);
-                $pending_refund = abs($pending_amount) + $pending_refund;
+                 // refund case: total owed back to the learner given the new (lower) total,
+                // vs. how much of that is actually being handed back right now. The app can
+                // split this — e.g. total owed 120, hand back 100 offline now, leave 20 as
+                // pending_refund to settle later — by sending a smaller diffrence_amount than
+                // the full difference. If it doesn't specify one, we settle the whole amount
+                // now (same as it always has for a plain refund).
+                $totalRefundOwed = abs($pending_amount);
+                $refundedNow = abs($diff_amount ?: $total_difference);
+
+                if ($refundedNow > $totalRefundOwed + 0.01) {
+                    throw new Exception("Refund amount not valid");
+                }
+
+                $refundedNow = min($refundedNow, $totalRefundOwed);
+                $paid_amount = $old_price - $refundedNow;
+                $activityamount = $refundedNow;
+                $pending_refund = ($totalRefundOwed - $refundedNow) + $old_pending_refund;
                 $pending = 0;
                 $dr_cr = 'Dr';
-                $has_adjustment = $activityamount != 0.0;
+                $has_adjustment = true;
             } else {
 
               // extra payment (pending dues)
