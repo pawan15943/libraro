@@ -201,11 +201,13 @@ class PlanService
         $discountAmount = $discountValue;
     }
 
+    $discountAmount=max(0, min($discountAmount ,$planPrice+$lockerAmount));
+
     /* -----------------------------
        TOTAL PRICE
     ------------------------------*/
 
-    $totalAmount = ($planPrice + $lockerAmount) - $discountAmount;
+    $totalAmount = max(0,($planPrice + $lockerAmount) - $discountAmount);
 
    
 
@@ -213,7 +215,7 @@ class PlanService
        PENDING AMOUNT
     ------------------------------*/
 
-    $pendingAmount = $totalAmount - $paidAmount;
+    $pendingAmount = max(0, $totalAmount - $paidAmount);
      if($day_type_id->day_type_id==11){
         $totalAmount=0;
         $pendingAmount=0;

@@ -100,6 +100,7 @@ class LearnerOperationService
            
             $startDateBlocked = false;
             if($seat){
+                $seatCheck=['error'=>false];
                
                  if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE','EDIT'])){
                     $seatCheck = checkAvailability($dto->branch_id,$seat,$dto->learner_id,$dto->plan_type_id,$dto->plan_id,$start_date);
@@ -191,6 +192,14 @@ class LearnerOperationService
     {
         $customer = Learner::withTrashed()->findOrFail($dto->learner_id);
 
+        if ($customer->trashed() && $dto->operation !== 'REACTIVE') {
+            throw new Exception("Learner is deleted. Reactivate before performing this operation.");
+        }
+
+        if ($dto->operation === 'REACTIVE' && !$customer->trashed() && (int) $customer->status === 1) {
+            throw new Exception("Learner is already active.");
+        }
+
         if(alreadyRenewed($customer->id)){
             throw new Exception("Already have plan in queue");
         }
@@ -271,7 +280,7 @@ class LearnerOperationService
                     $pending_refund = 0;
                     $dr_cr = 'Cr';
                 }
-                $activityamount = 0;
+                $activityamount = abs($pending_amount);
 
             // Handle difference amount (refund vs pending)
             } elseif ($diff_amount < 0 || $pending_amount <0 || ($dto->operation === 'EDIT' && $total_difference < 0)) {
@@ -616,54 +625,54 @@ class LearnerOperationService
         return $detail;
     }
 
-   private function editDetail(
-        $dto,
-        $start_date,
-        $endDate,
-        $hours,
-        $detailstatus,
-        $seat
-    ){
-        $detail = LearnerDetail::where('learner_id',$dto->learner_id)
-            ->latest()
-            ->first();
+// private function editDetail(
+//         $dto,
+//         $start_date,
+//         $endDate,
+//         $hours,
+//         $detailstatus,
+//         $seat
+//     ){
+//         $detail = LearnerDetail::where('learner_id',$dto->learner_id)
+//             ->latest()
+//             ->first();
 
-        if(!$detail){
-            throw new Exception("Learner detail not found");
-        }
+//         if(!$detail){
+//             throw new Exception("Learner detail not found");
+//         }
 
-        if($dto->exam_id){
-            $detail->exam_id = $dto->exam_id;
-        }
+//         if($dto->exam_id){
+//             $detail->exam_id = $dto->exam_id;
+//         }
 
-        if($dto->plan_id){
-            $detail->plan_id = $dto->plan_id;
-        }
+//         if($dto->plan_id){
+//             $detail->plan_id = $dto->plan_id;
+//         }
 
-        if($dto->plan_type_id){
-            $detail->plan_type_id = $dto->plan_type_id;
-        }
+//         if($dto->plan_type_id){
+//             $detail->plan_type_id = $dto->plan_type_id;
+//         }
 
-        if($dto->plan_price){
-            $detail->plan_price_id = $dto->plan_price;
-        }
+//         if($dto->plan_price){
+//             $detail->plan_price_id = $dto->plan_price;
+//         }
 
-        if($dto->start_date){
-            $detail->plan_start_date = $start_date;
-            $detail->plan_end_date   = $endDate;
-        }
+//         if($dto->start_date){
+//             $detail->plan_start_date = $start_date;
+//             $detail->plan_end_date   = $endDate;
+//         }
 
-        if($seat){
-            $detail->seat_no = $seat;
-        }
+//         if($seat){
+//             $detail->seat_no = $seat;
+//         }
 
-        $detail->hour = $hours;
-        $detail->status = $detailstatus;
+//         $detail->hour = $hours;
+//         $detail->status = $detailstatus;
 
-        $detail->save();
+//         $detail->save();
 
-        return $detail;
-    }
+//         return $detail;
+// }
 
 
     public function updateLearner($dto, $detail = null, $status = null, $seat = null)
@@ -854,9 +863,9 @@ class LearnerOperationService
 
         $learnerTransaction->save();
 
-        if ($data['payment_type'] === 'EDIT') {
-            $this->updateOriginalTransactionActivity($learnerTransaction, $data);
-        }
+        // if ($data['payment_type'] === 'EDIT') {
+        //     $this->updateOriginalTransactionActivity($learnerTransaction, $data);
+        // }
 
         if ($data['payment_type'] === 'EDIT' && (float) ($data['activityamount'] ?? 0) == 0.0) {
             return;
@@ -875,41 +884,41 @@ class LearnerOperationService
             $this->learnerTransactionActivity($activityData);
     }
 
-    private function updateOriginalTransactionActivity(LearnerTransaction $learnerTransaction, array $data): void
-    {
-        $activity = LearnerTransactionActivity::withoutGlobalScopes()
-            ->where('learner_id', $data['learner_id'] ?? $learnerTransaction->learner_id)
-            ->where(function ($query) use ($learnerTransaction) {
-                $query->where('learner_transaction_id', $learnerTransaction->id);
+    // private function updateOriginalTransactionActivity(LearnerTransaction $learnerTransaction, array $data): void
+    // {
+    //     $activity = LearnerTransactionActivity::withoutGlobalScopes()
+    //         ->where('learner_id', $data['learner_id'] ?? $learnerTransaction->learner_id)
+    //         ->where(function ($query) use ($learnerTransaction) {
+    //             $query->where('learner_transaction_id', $learnerTransaction->id);
 
-                if (! empty($learnerTransaction->transaction_id)) {
-                    $query->orWhere('transaction_id', $learnerTransaction->transaction_id);
-                }
-            })
-            ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'EDIT'])
-            ->orderBy('id')
-                ->first();
+    //             if (! empty($learnerTransaction->transaction_id)) {
+    //                 $query->orWhere('transaction_id', $learnerTransaction->transaction_id);
+    //             }
+    //         })
+    //         ->whereNotIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS', 'REFUND', 'SETTLED', 'EDIT'])
+    //         ->orderBy('id')
+    //             ->first();
 
-        if (! $activity) {
-            return;
-        }
+    //     if (! $activity) {
+    //         return;
+    //     }
 
-        $activity->payment_mode = $this->activityPaymentModeLabel($data['payment_mode'] ?? null);
-        $activity->amount = (int) ($data['payment_mode'] ?? 0) === 3
-            ? 0
-            : (float) ($learnerTransaction->paid_amount ?? 0);
+    //     $activity->payment_mode = $this->activityPaymentModeLabel($data['payment_mode'] ?? null);
+    //     $activity->amount = (int) ($data['payment_mode'] ?? 0) === 3
+    //         ? 0
+    //         : (float) ($learnerTransaction->paid_amount ?? 0);
 
-        $activity->save();
-    }
+    //     $activity->save();
+    // }
 
-    private function activityPaymentModeLabel($paymentMode): string
-    {
-        return match ((int) $paymentMode) {
-            3 => 'PAYLATER',
-            2 => 'OFFLINE',
-            default => 'ONLINE',
-        };
-    }
+    // private function activityPaymentModeLabel($paymentMode): string
+    // {
+    //     return match ((int) $paymentMode) {
+    //         3 => 'PAYLATER',
+    //         2 => 'OFFLINE',
+    //         default => 'ONLINE',
+    //     };
+    // }
 
     // public function learnerTransactionAddUpdate($data)
     // {
@@ -1122,7 +1131,11 @@ class LearnerOperationService
 
         [$operation, $field] = $operations[$dto->operation];
         [$oldValue, $newValue] = match ($dto->operation) {
-            'CHANGE PLAN', 'UPGRADE' => [$lastDetail->plan_type_id, $detail->plan_type_id],
+            'CHANGE PLAN', 'UPGRADE' => [
+                    ['plan_id'=>$lastDetail->plan_id , 'plan_type_id'=>$lastDetail->plan_type_id],
+                    ['plan_id'=>$detail->plan_id , 'plan_type_id'=>$detail->plan_type_id]
+                
+                ],
             'RENEW' => [$lastDetail->plan_id, $detail->plan_id],
             'REACTIVE' => [$lastDetail->seat_no, $seat],
             default => [$beforeOperation, [

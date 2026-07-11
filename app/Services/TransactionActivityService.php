@@ -19,6 +19,7 @@ class TransactionActivityService
             ?? date('Y-m-d');
 
         $pendingTransactions = LearnerTransaction::where('learner_id', $data['learner_id'])
+            ->where('branch_id' , $data['branchId'])
             ->where('pending_amount', '>', 0)
             ->orderBy('id', 'asc')
             ->get();

@@ -1923,6 +1923,7 @@ if (!function_exists('checkSeatAvailability')) {
                 // Backward-compatible edit mode for older callers.
                 $q->where('learner_detail.learner_id', '!=', $learnerId);
             })
+            ->lockForUpdate()
             ->get([
                 'learner_detail.id',
                 'learner_detail.learner_id',
@@ -2031,6 +2032,7 @@ if (!function_exists('checkAvailability')) {
             ->when($learnerId, fn ($q) =>
                 $q->where('learner_detail.learner_id', '!=', $learnerId)
             )
+            ->lockForUpdate()
             ->get([
                 'plan_types.start_time',
                 'plan_types.end_time',

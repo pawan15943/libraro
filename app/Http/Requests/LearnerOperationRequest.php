@@ -156,6 +156,13 @@ class LearnerOperationRequest extends FormRequest
                         $fail('Discount type must be selected.');
                     }
 
+                    if(
+                        $this->discountType==='percentage'
+                        && (float) ($value ?? 0) > 100
+                    ){
+                        $fail('Discount percentage cannot exceed 100.');
+                    }
+
                 }
             ],
             'locker'=>'nullable|in:yes,no',
@@ -170,7 +177,7 @@ class LearnerOperationRequest extends FormRequest
             'seat_no'=>'nullable|numeric',
             'learner_detail'=>'nullable',
            
-            'payment_type'=>'nullable',
+            'payment_type'=>'nullable|in:RENEW,UPGRADE,CHANGE PLAN,EDIT,REACTIVE,EDITLEARNER',
             'previous_pending'=>'nullable|min:0',
             'pending_amount'=>'nullable',
             'due_date'=>'nullable|date',
