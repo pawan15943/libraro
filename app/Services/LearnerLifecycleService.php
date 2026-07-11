@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\NotificationSentController;
+use Illuminate\Support\Facades\Log;
 
 class LearnerLifecycleService
 {
@@ -1160,33 +1161,36 @@ class LearnerLifecycleService
             }
 
             $customer = Learner::onlyTrashed()->where('id', $learnerId)->first();
-            
-           if (!$customer && !isCloseSeat($learnerId)) {
-                return [
+         
+            Log::info([
+                'isclose'=>isCloseSeat($learnerId)
+
+            ]);
+            if ($customer || isCloseSeat($learnerId)) {
+
+                DB::transaction(function () use ($learnerId, $deleteAllActivities, $customer) {
+                    if ($deleteAllActivities) {
+                        LearnerTransactionActivity::where('learner_id', $learnerId)->forceDelete();
+                    } else {
+                        LearnerTransactionActivity::where('learner_id', $learnerId)->update(['learner_id' => null]);
+                    }
+
+                    LearnerFeedback::where('learner_id', $learnerId)->forceDelete();
+                    DB::table('learner_operations_log')->where('learner_id', $learnerId)->delete();
+                    DB::table('learner_request')->where('learner_id', $learnerId)->delete();
+                    DB::table('learner_gift_days')->where('learner_id', $learnerId)->delete();
+
+                    LearnerTransaction::withTrashed()->where('learner_id', $learnerId)->forceDelete();
+                    LearnerDetail::withTrashed()->where('learner_id', $learnerId)->forceDelete();
+
+                    $customer->forceDelete();
+                });
+            }else{
+                 return [
                     'ok' => false,
                     'message' => 'Permanent delete is allowed only for soft-deleted or closed learners.',
                 ];
             }
-
-           
-
-            DB::transaction(function () use ($learnerId, $deleteAllActivities, $customer) {
-                if ($deleteAllActivities) {
-                    LearnerTransactionActivity::where('learner_id', $learnerId)->forceDelete();
-                } else {
-                    LearnerTransactionActivity::where('learner_id', $learnerId)->update(['learner_id' => null]);
-                }
-
-                LearnerFeedback::where('learner_id', $learnerId)->forceDelete();
-                DB::table('learner_operations_log')->where('learner_id', $learnerId)->delete();
-                DB::table('learner_request')->where('learner_id', $learnerId)->delete();
-                DB::table('learner_gift_days')->where('learner_id', $learnerId)->delete();
-
-                LearnerTransaction::withTrashed()->where('learner_id', $learnerId)->forceDelete();
-                LearnerDetail::withTrashed()->where('learner_id', $learnerId)->forceDelete();
-
-                $customer->forceDelete();
-            });
 
             return ['ok' => true, 'message' => 'Learner and all related data permanently removed.'];
         } catch (Exception $e) {
