@@ -1160,7 +1160,8 @@ class LearnerLifecycleService
             }
 
             $customer = Learner::onlyTrashed()->where('id', $learnerId)->first();
-            if (! $customer) {
+            
+            if (! $customer || ! isCloseSeat($learnerId)) {
                 return ['ok' => false, 'message' => 'Learner must be soft-deleted before permanent delete.'];
             }
 

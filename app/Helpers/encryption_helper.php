@@ -2591,6 +2591,22 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
             'current_transaction_id' => (int) $transaction->id,
         ];
     }
+
+    if (!function_exists('isCloseSeat')) {
+    function isCloseSeat($learnerId)
+    {
+            $operation = DB::table('learner_operations_log')
+            ->where('learner_id', $learnerId)
+            ->orderByDesc('id') // latest operation
+            ->select('operation', 'created_at')
+            ->first();
+            $operationName = $operation->operation ?? null;
+            return false ;
+            if($operationName == 'closeSeat'){
+                return true ;
+            }
+        }
+    }
 }
 
 require_once __DIR__ . '/privacy_helper.php';
