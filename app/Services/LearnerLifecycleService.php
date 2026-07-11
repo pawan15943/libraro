@@ -1156,9 +1156,6 @@ class LearnerLifecycleService
                 ->orderByDesc('id')
                 ->first();
 
-            if (! $lastTrashedDetail) {
-                return ['ok' => false, 'message' => 'No learner detail found. Delete the seat first before permanent remove.'];
-            }
 
             $customer = Learner::withTrashed()->where('id', $learnerId)->first();
             $isSoftDeleted = $customer?->trashed() ?? false;
