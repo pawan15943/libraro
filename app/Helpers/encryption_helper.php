@@ -2596,15 +2596,10 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
 if (!function_exists('isCloseSeat')) {
     function isCloseSeat($learnerId)
     {
-        $operation = DB::table('learner_operations_log')
+        return DB::table('learner_operations_log')
             ->where('learner_id', $learnerId)
-            ->orderByDesc('id') // latest operation
-            ->select('operation', 'created_at')
-            ->first();
-
-        $operationName = $operation->operation ?? null;
-
-        return $operationName == 'closeSeat';
+            ->where('operation', 'closeSeat')
+            ->exists();
     }
 }
 
