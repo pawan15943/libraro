@@ -1160,13 +1160,12 @@ class LearnerLifecycleService
                 return ['ok' => false, 'message' => 'No learner detail found. Delete the seat first before permanent remove.'];
             }
 
-            $isCloseSeat = isCloseSeat($learnerId);
-            $customer = $isCloseSeat
-                ? Learner::withTrashed()->where('id', $learnerId)->first()
-                : Learner::onlyTrashed()->where('id', $learnerId)->first();
+            $customer = Learner::withTrashed()->where('id', $learnerId)->first();
+            $isSoftDeleted = $customer?->trashed() ?? false;
+            $isClosed = isCloseSeat($learnerId);
 
-            if ($customer) {
-
+          
+            if($isSoftDeleted || $isClosed){
                 DB::transaction(function () use ($learnerId, $deleteAllActivities, $customer) {
                     if ($deleteAllActivities) {
                         LearnerTransactionActivity::where('learner_id', $learnerId)->forceDelete();
@@ -1184,14 +1183,14 @@ class LearnerLifecycleService
 
                     $customer->forceDelete();
                 });
+
+                return ['ok' => true, 'message' => 'Learner and all related data permanently removed.'];
             }else{
                  return [
                     'ok' => false,
                     'message' => 'Permanent delete is allowed only for soft-deleted or closed learners.',
                 ];
             }
-
-            return ['ok' => true, 'message' => 'Learner and all related data permanently removed.'];
         } catch (Exception $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
