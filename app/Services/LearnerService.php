@@ -2049,7 +2049,7 @@ class LearnerService
             'plan_end_date' => $detail->plan_end_date,
             'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id)),
             'pending_amount' => (string) ($transaction->pending_amount ?? 0),
-            'pending_payment_overdue'=>$transaction->due_date > date('Y-m-d') ? true : false,
+            'pending_payment_overdue'=>$transaction->due_date < date('Y-m-d') ? true : false,
             'extra_amount' => (string) ($transaction->extra_amount ?? 0),
             'pay_later' => (int) $detail->payment_mode === 3 ? (string) ($transaction->pending_amount ?? 0) : '0',
             'days_left' => $planStatus['diff_in_days'],
