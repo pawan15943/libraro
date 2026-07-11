@@ -1682,7 +1682,7 @@ class LearnerService
 
         $transactions = LearnerTransaction::withTrashed()
             ->whereIn('learner_id', $bookingDetails->pluck('learner_id')->filter()->unique()->values())
-            ->selectRaw('learner_id, SUM(pending_amount) as pending_amount, SUM(refund) as extra_amount')
+            ->selectRaw('learner_id, SUM(pending_amount) as pending_amount, SUM(refund) as extra_amount ,due_date')
             ->groupBy('learner_id')
             ->whereNull('deleted_at')
             ->get()
