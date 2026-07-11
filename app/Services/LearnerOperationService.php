@@ -261,16 +261,18 @@ class LearnerOperationService
             }
             $pending_amount =$effective-$paid_amount;
              if ($dto->payment_mode == 3) {
-                $paid_amount = $dto->operation === 'EDIT' ? $old_price : 0;
+                // CHANGE PLAN and EDIT both modify the same already-billed transaction, so
+                // paylater must be old_price-aware for both — not just EDIT. Otherwise a
+                // CHANGE PLAN done via paylater forgets everything already collected and
+                // treats the whole new total as freshly owed.
+                $paid_amount = $old_price;
                 $pending_amount = $effective;
             }
             $activityamount = 0;
             $pending_refund = $old_pending_refund;
 
             if ((int) $dto->payment_mode === 3) {
-                $pending_amount = $dto->operation === 'EDIT'
-                    ? $effective - $old_price
-                    : $pending_amount;
+                $pending_amount = $effective - $old_price;
                 if ($pending_amount < 0) {
                     $pending = 0;
                     $pending_refund = abs($pending_amount) + $pending_refund;
@@ -280,16 +282,27 @@ class LearnerOperationService
                     $pending_refund = 0;
                     $dr_cr = 'Cr';
                 }
-                $activityamount = abs($pending_amount);
+                // Paylater defers settlement — no cash actually moves now, so the activity
+                // amount is 0 (the real owed/refund figures live on the transaction's own
+                // pending/refund columns). We still log an activity — with payment_mode
+                // PAYLATER — whenever the edit actually changed something, so the audit
+                // trail shows an adjustment happened even though nothing was collected.
+                $activityamount = 0;
+                // Use total_difference, not pending_amount, to detect a real change: if an
+                // earlier edit created a refund/pending and this edit reverses it exactly
+                // (back to old_price), pending_amount lands on 0 even though something
+                // genuinely changed and should still be logged.
+                $has_adjustment = $total_difference != 0.0;
 
             // Handle difference amount (refund vs pending)
-            } elseif ($diff_amount < 0 || $pending_amount <0 || ($dto->operation === 'EDIT' && $total_difference < 0)) {
+            } elseif ($diff_amount < 0 || $pending_amount <0 || $total_difference < 0) {
 
                 // refund case
                 $activityamount = abs($diff_amount ?: $total_difference);
                 $pending_refund = abs($pending_amount) + $pending_refund;
                 $pending = 0;
                 $dr_cr = 'Dr';
+                $has_adjustment = $activityamount != 0.0;
             } else {
 
               // extra payment (pending dues)
@@ -297,16 +310,19 @@ class LearnerOperationService
                 $activityamount = $diff_amount;
                 $pending_refund = 0;
                 $dr_cr = 'Cr';
+                $has_adjustment = $activityamount != 0.0;
             }
 
 
         }else{
-            $pending = $effective - $dto->paid_amount;
             $paid_amount=$dto->paid_amount;
             if ($dto->payment_mode == 3) {
-                
-                $paid_amount    = 0;
+                // Paylater: nothing is actually collected now, so pending must reflect the
+                // full effective amount — not effective minus whatever paid_amount the app
+                // happened to send before the user picked paylater.
+                $paid_amount = 0;
             }
+            $pending = $effective - $paid_amount;
             $activityamount=$paid_amount;
             $pending_refund=0;
              $dr_cr = 'Cr';
@@ -315,7 +331,7 @@ class LearnerOperationService
                 'learner_id',$customer->id
             )->where('pending_amount','>',0)->sum('pending_amount');
 
-            if($dto->paid_amount > ($effective+$oldPending)){
+            if((int) $dto->payment_mode !== 3 && $dto->paid_amount > ($effective+$oldPending)){
                 throw new Exception("Paid amount not valid");
             }
         }
@@ -337,6 +353,7 @@ class LearnerOperationService
             'locker'=>$locker,
             'is_paid'=>$is_paid,
             'activityamount'=>$activityamount,
+            'has_adjustment'=>$has_adjustment ?? true,
             'pending_refund'=>$pending_refund,
             'dr_cr'=>$dr_cr
         ];
@@ -609,7 +626,7 @@ class LearnerOperationService
 
             'status'=>$detailstatus,
             'is_paid' => $billing['is_paid'],
-            'payment_mode' => $dto->payment_mode,
+            // 'payment_mode' => $dto->payment_mode,
         ]);
        
         if($dto->operation == 'EDIT' && !$startDateBlocked ){
@@ -834,6 +851,7 @@ class LearnerOperationService
             'is_paid' => $billing['is_paid'],
             'dr_cr'=> $billing['dr_cr'],
             'activityamount'=>$billing['activityamount'],
+            'has_adjustment'=>$billing['has_adjustment'] ?? true,
             'pending_refund'=>$billing['pending_refund'],
             'total_amount'=>$billing['total_amount'],
             'pending'=>$billing['pending'],
@@ -867,7 +885,7 @@ class LearnerOperationService
         //     $this->updateOriginalTransactionActivity($learnerTransaction, $data);
         // }
 
-        if ($data['payment_type'] === 'EDIT' && (float) ($data['activityamount'] ?? 0) == 0.0) {
+        if ($data['payment_type'] === 'EDIT' && !($data['has_adjustment'] ?? true)) {
             return;
         }
 
