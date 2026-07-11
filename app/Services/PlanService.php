@@ -204,13 +204,11 @@ class PlanService
 
     $discountAmount = $billing['discount_amount'];
     $totalAmount = $billing['total_amount'];
-    $pendingAmount = $billing['pending_amount'];
-    $extraAmount = $billing['extra_amount'];
+    $pendingAmount = $totalAmount - (float) $paidAmount;
 
      if(($day_type_id->day_type_id ?? null)==11){
         $totalAmount=0;
         $pendingAmount=0;
-        $extraAmount=0;
         
     }
 
@@ -221,7 +219,6 @@ class PlanService
             'total_amount'    => (string) $totalAmount,
             'paid_amount'     => (string) $paidAmount,
             'pending_amount'  => (string) $pendingAmount,
-            'extra_amount'    => (string) $extraAmount,
             'fixed_billing'   => $hasFixedBilling
         ];
     }
