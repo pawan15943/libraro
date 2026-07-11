@@ -468,16 +468,17 @@ class LearnerService
             $locker = (float) ($data['locker_amount'] ?? 0);
             $paid_amount = (float) ($data['paid_amount'] ?? 0);
 
-            $discount = 0;
-            if (($data['discount_type'] ?? null) == 'amount') {
-                $discount = $data['discount_amount'];
-            } elseif (($data['discount_type'] ?? null) == 'percentage') {
-                $total = $planPrice + $locker;
-                $discount = ($total * $data['discount_amount']) / 100;
-            }
+            $billing = BillingAmountService::calculate(
+                $planPrice,
+                $locker,
+                $data['discount_type'] ?? null,
+                (float) ($data['discount_amount'] ?? 0),
+                $paid_amount
+            );
 
-            $effectivePaid = $planPrice + $locker - $discount;
-            $pending_amount = $effectivePaid - $paid_amount;
+            $discount = $billing['discount_amount'];
+            $effectivePaid = $billing['total_amount'];
+            $pending_amount = $billing['pending_amount'];
             $oldTotalPending=LearnerTransaction::where('learner_id',$customer->id)->where('pending_amount','>',0)->sum('pending_amount');
 
             $payment_mode = $data['payment_mode'];
@@ -520,7 +521,7 @@ class LearnerService
             }
             
 
-             if ( ($paid_amount > ($effectivePaid+$oldTotalPending)) || ($paid_amount == 0 && $payment_mode != 3)) {
+             if ( ($paid_amount > (($planPrice + $locker) + $oldTotalPending)) || ($paid_amount == 0 && $payment_mode != 3)) {
                  return [
                         'success' => false,
                         'message' => 'Paid amount is not valid',
@@ -756,16 +757,17 @@ class LearnerService
             $locker = (float) ($data['locker_amount'] ?? 0);
             $paid_amount = (float) ($data['paid_amount'] ?? 0);
 
-            $discount = 0;
-            if (($data['discount_type'] ?? null) == 'amount') {
-                $discount = $data['discount_amount'];
-            } elseif (($data['discount_type'] ?? null) == 'percentage') {
-                $total = $planPrice + $locker;
-                $discount = ($total * $data['discount_amount']) / 100;
-            }
+            $billing = BillingAmountService::calculate(
+                $planPrice,
+                $locker,
+                $data['discount_type'] ?? null,
+                (float) ($data['discount_amount'] ?? 0),
+                $paid_amount
+            );
 
-            $effectivePaid = $planPrice + $locker - $discount;
-            $pending_amount = $effectivePaid - $paid_amount;
+            $discount = $billing['discount_amount'];
+            $effectivePaid = $billing['total_amount'];
+            $pending_amount = $billing['pending_amount'];
         
 
             $payment_mode = $data['payment_mode'];
@@ -813,7 +815,7 @@ class LearnerService
             }
            
 
-             if ( ($paid_amount > ($effectivePaid)) ) {
+             if ( ($paid_amount > ($planPrice + $locker)) ) {
                  throw new \Exception('Paid amount is not valid');
             
             }

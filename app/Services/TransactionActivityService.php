@@ -10,7 +10,13 @@ class TransactionActivityService
 {
     public function learnerTransactionAddUpdate(array $data)
     {
-        $effectivePaid = $data['planPrice'] + $data['locker'] - $data['discount'];
+        $billing = BillingAmountService::totals(
+            (float) ($data['planPrice'] ?? 0),
+            (float) ($data['locker'] ?? 0),
+            (float) ($data['discount'] ?? 0),
+            (float) ($data['paid_amount'] ?? 0)
+        );
+        $effectivePaid = $billing['total_amount'];
 
         $transactionDate =
             $data['transaction_date']
@@ -49,14 +55,15 @@ class TransactionActivityService
                 'paid_amount' => (float) $tran->paid_amount + $paidNow,
                 'pending_amount' => $newPending,
                 'paid_date' => $transactionDate,
-                'is_paid' => 1,
+                'is_paid' => $newPending == 0 ? 1 : 0,
             ]);
 
             $remainingPendingPayment -= $paidNow;
         }
 
-        $newPlanPaid = max(0, $remainingForNewPlan);
+        $newPlanPaid = min(max(0, $remainingForNewPlan), $effectivePaid);
         $newPlanPending = max(0, $effectivePaid - $newPlanPaid);
+        $newPlanExtra = max(0, $remainingForNewPlan - $effectivePaid);
 
         $learnerTransaction = LearnerTransaction::create([
             'learner_id' => $data['learner_id'],
@@ -66,6 +73,7 @@ class TransactionActivityService
             'total_amount' => $effectivePaid,
             'paid_amount' => $newPlanPaid,
             'pending_amount' => $newPlanPending,
+            'refund' => $newPlanExtra,
             'locker_amount' => $data['locker'] ?? 0,
             'discount_amount' => $data['discount'] ?? 0,
             'paid_date' => $transactionDate,
@@ -89,7 +97,7 @@ class TransactionActivityService
             ]);
         }
          // New plan payment activity
-        if ($newPlanPaid >= 0) {
+        if ($remainingForNewPlan > 0) {
             $this->learnerTransactionActivity([
                 'branchId' => $data['branchId'],
                 'learner_id' => $data['learner_id'],
@@ -97,7 +105,7 @@ class TransactionActivityService
                 'particular' => $data['particular'] ?? 'Paid By Trans',
                 'payment_type' => $data['payment_type'],
                 'payment_mode' => $data['payment_mode'],
-                'amount' => $newPlanPaid,
+                'amount' => $remainingForNewPlan,
                 'dr_cr' => $data['dr_cr'] ?? 'Cr',
             ]);
         }

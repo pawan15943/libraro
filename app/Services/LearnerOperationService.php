@@ -240,7 +240,8 @@ class LearnerOperationService
         $discount =$result['discount_amount'] ;
 
        
-        $effective = $planPrice+$locker-$discount;
+        $effective = (float) ($result['total_amount'] ?? ($planPrice + $locker - $discount));
+        $grossAmount = max(0, (float) $planPrice + (float) $locker);
 
         if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
             $learnerTransaction = LearnerTransaction::where('learner_id', $customer->id)->latest()->first();
@@ -256,7 +257,7 @@ class LearnerOperationService
             $paid_amount = $dto->operation === 'EDIT'
                 ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount))
                 : $old_price + $diff_amount;
-            if ((int) $dto->payment_mode !== 3 && $diff_amount > $effective) {
+            if ((int) $dto->payment_mode !== 3 && $diff_amount > $grossAmount) {
                 throw new Exception("Paid amount not valid");
             }
             $pending_amount =$effective-$paid_amount;
@@ -329,23 +330,33 @@ class LearnerOperationService
 
 
         }else{
-            $paid_amount=$dto->paid_amount;
+            $billing = BillingAmountService::totals(
+                (float) $planPrice,
+                (float) $locker,
+                (float) $discount,
+                (float) ($dto->paid_amount ?? 0)
+            );
+
+            $paid_amount=$billing['paid_amount'];
             if ($dto->payment_mode == 3) {
                 // Paylater: nothing is actually collected now, so pending must reflect the
                 // full effective amount — not effective minus whatever paid_amount the app
                 // happened to send before the user picked paylater.
                 $paid_amount = 0;
+                $pending = $effective;
+                $pending_refund=0;
+            } else {
+                $pending = $billing['pending_amount'];
+                $pending_refund=$billing['extra_amount'];
             }
-            $pending = $effective - $paid_amount;
-            $activityamount=$paid_amount;
-            $pending_refund=0;
+            $activityamount=(float) ($dto->paid_amount ?? 0);
              $dr_cr = 'Cr';
 
             $oldPending = LearnerTransaction::where(
                 'learner_id',$customer->id
             )->where('pending_amount','>',0)->sum('pending_amount');
 
-            if((int) $dto->payment_mode !== 3 && $dto->paid_amount > ($effective+$oldPending)){
+            if((int) $dto->payment_mode !== 3 && $dto->paid_amount > ($grossAmount+$oldPending)){
                 throw new Exception("Paid amount not valid");
             }
         }

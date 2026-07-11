@@ -79,26 +79,19 @@ class QrBookingService
                 $planPrice = (float) $request->plan_price_id;
                 $locker    = (float) ($request->locker_amount ?? 0);
 
-                if ($request->discount_type == 'amount') {
-
-                    $discount = $request->discount_amount;
-
-                } elseif ($request->discount_type == 'percentage') {
-
-                    $total = $planPrice + $locker;
-
-                    $discount = ($total * $request->discount_amount) / 100;
-
-                } else {
-
-                    $discount = 0;
-                }
-
-                $total_amt = $planPrice + $locker - $discount;
-
                 $paid_amount = (float) $request->paid_amount;
 
-                $pending_amount = $total_amt - $paid_amount;
+                $billing = BillingAmountService::calculate(
+                    $planPrice,
+                    $locker,
+                    $request->discount_type,
+                    (float) ($request->discount_amount ?? 0),
+                    $paid_amount
+                );
+
+                $discount = $billing['discount_amount'];
+                $total_amt = $billing['total_amount'];
+                $pending_amount = $billing['pending_amount'];
 
                 if ($pending_amount > 0 && !$request->due_date) {
                     throw new \Exception('Due date is required');
@@ -251,7 +244,7 @@ class QrBookingService
             
             
             if (
-                $paid_amount > ($total_amt + $reprevious_pending)
+                $paid_amount > (($planPrice + $locker) + $reprevious_pending)
                 || ((float) $total_amt > 0 && $paid_amount == 0)
             ) {
 

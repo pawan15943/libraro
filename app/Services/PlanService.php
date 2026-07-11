@@ -12,6 +12,7 @@ use App\Models\PlanType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\BillingAmountService;
 
 class PlanService
 {
@@ -193,32 +194,23 @@ class PlanService
        DISCOUNT CALCULATION
     ------------------------------*/
 
-    $discountAmount = 0;
+    $billing = BillingAmountService::calculate(
+        (float) $planPrice,
+        (float) $lockerAmount,
+        $discountType,
+        (float) $discountValue,
+        (float) $paidAmount
+    );
 
-    if ($discountType === 'percentage') {
-        $discountAmount = (($planPrice + $lockerAmount) * $discountValue) / 100;
-    } elseif ($discountType === 'amount') {
-        $discountAmount = $discountValue;
-    }
+    $discountAmount = $billing['discount_amount'];
+    $totalAmount = $billing['total_amount'];
+    $pendingAmount = $billing['pending_amount'];
+    $extraAmount = $billing['extra_amount'];
 
-    $discountAmount=max(0, min($discountAmount ,$planPrice+$lockerAmount));
-
-    /* -----------------------------
-       TOTAL PRICE
-    ------------------------------*/
-
-    $totalAmount = max(0,($planPrice + $lockerAmount) - $discountAmount);
-
-   
-
-    /* -----------------------------
-       PENDING AMOUNT
-    ------------------------------*/
-
-    $pendingAmount = max(0, $totalAmount - $paidAmount);
-     if($day_type_id->day_type_id==11){
+     if(($day_type_id->day_type_id ?? null)==11){
         $totalAmount=0;
         $pendingAmount=0;
+        $extraAmount=0;
         
     }
 
@@ -229,6 +221,7 @@ class PlanService
             'total_amount'    => (string) $totalAmount,
             'paid_amount'     => (string) $paidAmount,
             'pending_amount'  => (string) $pendingAmount,
+            'extra_amount'    => (string) $extraAmount,
             'fixed_billing'   => $hasFixedBilling
         ];
     }
