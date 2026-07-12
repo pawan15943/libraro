@@ -763,7 +763,7 @@ class LearnerLifecycleService
             'id' => (int) $transaction->id,
             'status'=>$mainstatus ?? '',
             'frozen_status'=>$learner?->frozen_status,
-            'freez_date' => (string) ($detail?->freeze_start_date ?? ''),
+            'freeze_date' => (string) ($detail?->freeze_start_date ?? ''),
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
             'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
