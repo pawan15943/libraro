@@ -38,7 +38,7 @@ class LibraryLifecycleService
         strtolower($expense->name) == 'other' &&
         $request->filled('remark')
     ) {
-        $particular = $request->remark;
+        $particular = "Other";
     }
 
     /*
