@@ -1348,6 +1348,10 @@ class DashboardService
             'days_in_left' => '',
             'dob' => '',
             'mobile' => '',
+            'image_resource' =>"",
+            'banner_link' =>"",
+            'progress_percentage' =>'',
+            'branch_id'=>''
         ]];
 
         $learners = Learner::query()
@@ -1369,6 +1373,10 @@ class DashboardService
                 'days_in_left' => '',
                 'dob' => (string) ($learner->dob ?? ''),
                 'mobile' => $this->dashboardMobile($learner->mobile),
+                'image_resource' =>"",
+                'banner_link' =>"",
+                'progress_percentage' =>'',
+                'branch_id'=>''
             ];
         }
 
@@ -1392,6 +1400,10 @@ class DashboardService
                     'days_in_left' => '',
                     'dob' => '',
                     'mobile' => '',
+                    'image_resource' =>"",
+                    'banner_link' =>"",
+                     'progress_percentage' =>'',
+                    'branch_id'=>''
                     
                 ];
             }
@@ -1417,6 +1429,10 @@ class DashboardService
                     'days_in_left' => '',
                     'dob' => '',
                     'mobile' => '',
+                    'image_resource' =>"",
+                    'banner_link' =>"",
+                    'progress_percentage' =>'',
+                    'branch_id'=>''
                 ];
             }
         }
@@ -1449,6 +1465,44 @@ class DashboardService
             'days_in_left' => $daysLeft,
             'dob' => '',
             'mobile' => '',
+            'image_resource' =>"",
+            'banner_link' =>"",
+            'progress_percentage' =>'',
+            'branch_id'=>getCurrentBranch()
+        ];
+         $banners[] = [
+            'type' => 'image',
+            'tital' => '',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => '',
+            'subscription_status' => '',
+            'days_in_left' => '',
+            'dob' => '',
+            'mobile' => '',
+            'image_resource' =>asset('public/img/slider/topbanner.jpeg'),
+            'banner_link' =>"",
+            'progress_percentage' =>'',
+            'branch_id'=>''
+            
+        ];
+         $banners[] = [
+            'type' => 'profile',
+            'tital' => '',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => '',
+            'subscription_status' => '',
+            'days_in_left' => '',
+            'dob' => '',
+            'mobile' => '',
+            'image_resource' =>"",
+            'banner_link' =>"",
+            'progress_percentage' =>(int) round(getProfileCompletionPercentage()),
+            'branch_id'=>getCurrentBranch()
+            
         ];
 
         return collect($banners)

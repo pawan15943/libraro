@@ -35,8 +35,7 @@ class LibraryLifecycleService
     */
 
     if (
-        strtolower($expense->name) == 'other' &&
-        $request->filled('remark')
+        strtolower($expense->name) == 'other' 
     ) {
         $particular = "Other";
     }
