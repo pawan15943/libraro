@@ -737,7 +737,7 @@ class LearnerLifecycleService
         $extra = (float) ($transaction->refund ?? 0);
         $learner = null;
         if($detail){
-            $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no')->first();
+            $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no','frozen_status')->first();
         }
         $addedByName = $this->transactionAddedByName($transaction);
         $updatedByName = $this->updatedByName($transaction->updated_by ?? null) ?: $addedByName;
@@ -746,6 +746,7 @@ class LearnerLifecycleService
         return [
             'id' => (int) $transaction->id,
             'status'=>$learner?->status==1 ? 'Active' : 'Inactive',
+            'frozen_status'=>$learner?->frozen_status,
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
             'transaction_type' => $this->transactionTypeLabel($transaction, $firstTransactionId),
