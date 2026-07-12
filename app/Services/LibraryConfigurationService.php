@@ -841,13 +841,19 @@ class LibraryConfigurationService
                     }
 
                     // now must be temp/xxx.png
+                    // if (!str_starts_with($path, 'temp/')) {
+                    //     return null;
+                    // }
                     if (!str_starts_with($path, 'temp/')) {
-                        return null;
+                        continue;
                     }
 
                     $tempPath = $path;
 
                     $sourcePath = storage_path('app/public/' . $tempPath);
+                    if (!File::exists($sourcePath)) {
+                        continue;
+                    }
 
                     if (File::exists($sourcePath)) {
 
