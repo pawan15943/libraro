@@ -107,14 +107,43 @@ class LibraryConfigurationService
                 }
             }
 
-            /* ========= CASE 2: APP ========= */
-            elseif (!empty($validated['library_images']) && is_array($validated['library_images'])) {
+                        /* ========= CASE 2: APP ========= */
+            elseif (array_key_exists('library_images', $validated)) {
 
-               $images= $validated['library_images'] = $this->moveTempFileToPublic( $validated['library_images'],'img','upload/library_images');
+                // Existing images from DB
+                $oldImages = $existingBranch->library_images ?? [];
+
+                if (is_string($oldImages)) {
+                    $oldImages = json_decode($oldImages, true) ?? [];
+                }
+
+                // Move temp images & keep existing upload images
+                $images = $this->moveTempFileToPublic(
+                    $validated['library_images'] ?? [],
+                    'img',
+                    'upload/library_images'
+                );
+
+                $images = is_array($images) ? array_values(array_unique($images)) : [];
+
+                // Delete removed images
+                $deletedImages = array_diff($oldImages, $images);
+
+                foreach ($deletedImages as $deleteImage) {
+
+                    if (
+                        !empty($deleteImage) &&
+                        !str_contains($deleteImage, 'http') &&
+                        File::exists(public_path($deleteImage))
+                    ) {
+                        File::delete(public_path($deleteImage));
+                    }
+                }
             }
 
             /* ========= FINAL ========= */
             $validated['library_images'] = !empty($images) ? $images : null;
+
            
 
            $validated['library_id'] = $libraryId;
