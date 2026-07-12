@@ -742,10 +742,26 @@ class LearnerLifecycleService
         $addedByName = $this->transactionAddedByName($transaction);
         $updatedByName = $this->updatedByName($transaction->updated_by ?? null) ?: $addedByName;
         
+        $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
+            ->where('learner_id', $detail->learner_id)
+            ->min('id');
+        $operation = optional(getLearnerOperation($detail->id))->operation;
+        $planStatus =getPlanStatusDetails($detail->plan_end_date);
+         if($operation == 'closeSeat'){
+            $mainstatus='Closed';
+        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+            $mainstatus='Deleted';
+        }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
+            $mainstatus='Upcoming';
+        }elseif($planStatus['diff_extend_day'] < 0){
+            $mainstatus='Expired';
+        }else{
+            $mainstatus='Active';
+        }
 
         return [
             'id' => (int) $transaction->id,
-            'status'=>$learner?->status==1 ? 'Active' : 'Inactive',
+            'status'=>$mainstatus ?? '',
             'frozen_status'=>$learner?->frozen_status,
             'learner_detail_id' => (int) ($transaction->learner_detail_id ?? 0),
             'transaction_ref' => (string) ($transaction->transaction_id ?? ''),
