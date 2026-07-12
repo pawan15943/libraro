@@ -2053,6 +2053,7 @@ class LearnerService
             'plan_start_date' => $detail->plan_start_date,
             'plan_end_date' => $detail->plan_end_date,
             'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id)),
+            'frozen_status'=>$learner->frozen_status,
             'pending_amount' => (string) ($transaction->pending_amount ?? 0),
            'pending_payment_overdue' => $transaction->due_date && $transaction->due_date < date('Y-m-d'),
            'due_date'=>$transaction->due_date,
