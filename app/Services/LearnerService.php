@@ -1101,6 +1101,7 @@ class LearnerService
                 'mainstatus'=>$mainstatus,
                 'next_plan'=>alreadyRenewed($learner->id) ? 1 : 0 ,
                 'frozen_status'=>$learner->frozen_status,
+                'freez_date'=>$detail->freeze_start_date,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'locker'=>$learner->locker_no ? 'Yes' : 'No' ,
                 'locker_no'=>(string)$learner->locker_no ?? '',
@@ -1456,6 +1457,7 @@ class LearnerService
             'learners.profile_picture',
             'learners.branch_id',
             'learners.frozen_status',
+            'learner_detail.freeze_start_date',
             'learners.sended_message_type',
 
             'learner_detail.seat_no',
@@ -1618,6 +1620,7 @@ class LearnerService
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
                 'frozen_status'=>$learner->frozen_status,
+                'freeze_date'=>$learner->freeze_start_date,
                 'deleted_at'=>$learner->deleted_at ?? '',
                 'transaction_id'=>$learner->transaction_id ?? '',
                 'receipt_url' => $learner->receipt_transaction_id
