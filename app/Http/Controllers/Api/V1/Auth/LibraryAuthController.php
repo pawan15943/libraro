@@ -1310,7 +1310,7 @@ class LibraryAuthController extends Controller
                         }
 
                         // 🔥 CASE 2: PERMANENT IMAGE (uploads)
-                        elseif (str_contains($path, 'uploads/')) {
+                        elseif (str_contains($path, 'upload/')) {
 
                             // ✅ just allow (no fail)
                             return;
