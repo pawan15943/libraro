@@ -1350,7 +1350,7 @@ class DashboardService
             'mobile' => '',
             'image_resource' =>"",
             'banner_link' =>"",
-            'progress_percentage' =>'',
+            'progress_percentage' =>0,
             'branch_id'=>''
         ]];
 
@@ -1375,7 +1375,7 @@ class DashboardService
                 'mobile' => $this->dashboardMobile($learner->mobile),
                 'image_resource' =>"",
                 'banner_link' =>"",
-                'progress_percentage' =>'',
+                'progress_percentage' =>0,
                 'branch_id'=>''
             ];
         }
@@ -1402,7 +1402,7 @@ class DashboardService
                     'mobile' => '',
                     'image_resource' =>"",
                     'banner_link' =>"",
-                     'progress_percentage' =>'',
+                     'progress_percentage' =>0,
                     'branch_id'=>''
                     
                 ];
@@ -1431,7 +1431,7 @@ class DashboardService
                     'mobile' => '',
                     'image_resource' =>"",
                     'banner_link' =>"",
-                    'progress_percentage' =>'',
+                    'progress_percentage' =>0,
                     'branch_id'=>''
                 ];
             }
@@ -1467,7 +1467,7 @@ class DashboardService
             'mobile' => '',
             'image_resource' =>"",
             'banner_link' =>"",
-            'progress_percentage' =>'',
+            'progress_percentage' =>0,
             'branch_id'=>getCurrentBranch()
         ];
          $banners[] = [
@@ -1483,7 +1483,7 @@ class DashboardService
             'mobile' => '',
             'image_resource' =>asset('public/img/slider/topbanner.jpeg'),
             'banner_link' =>"",
-            'progress_percentage' =>'',
+            'progress_percentage' =>0,
             'branch_id'=>''
             
         ];
