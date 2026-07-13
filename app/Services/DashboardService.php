@@ -1351,7 +1351,7 @@ class DashboardService
             'image_resource' =>"",
             'banner_link' =>"",
             'progress_percentage' =>0,
-            'branch_id'=>''
+            'branch_id'=>getCurrentBranch()
         ]];
 
         $learners = Learner::query()
@@ -1376,7 +1376,7 @@ class DashboardService
                 'image_resource' =>"",
                 'banner_link' =>"",
                 'progress_percentage' =>0,
-                'branch_id'=>''
+               'branch_id'=>getCurrentBranch()
             ];
         }
 
@@ -1403,7 +1403,7 @@ class DashboardService
                     'image_resource' =>"",
                     'banner_link' =>"",
                      'progress_percentage' =>0,
-                    'branch_id'=>''
+                    'branch_id'=>getCurrentBranch()
                     
                 ];
             }
@@ -1432,7 +1432,7 @@ class DashboardService
                     'image_resource' =>"",
                     'banner_link' =>"",
                     'progress_percentage' =>0,
-                    'branch_id'=>''
+                   'branch_id'=>getCurrentBranch()
                 ];
             }
         }
@@ -1484,7 +1484,7 @@ class DashboardService
             'image_resource' =>asset('public/img/slider/topbanner.jpeg'),
             'banner_link' =>"",
             'progress_percentage' =>0,
-            'branch_id'=>''
+            'branch_id'=>getCurrentBranch()
             
         ];
          $banners[] = [
