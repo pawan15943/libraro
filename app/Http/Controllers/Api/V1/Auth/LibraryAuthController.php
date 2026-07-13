@@ -1383,6 +1383,14 @@ class LibraryAuthController extends Controller
             ], 200);
         }
 
+        if($validated['hour'] < getBranchShiftTiming()){
+             return response()->json([
+                'status' => false,
+                'message' => 'Branch Operating hour can not be greater then shift hour.'
+            ], 200);
+            
+        }
+
         $branchCount = Branch::where('library_id', $libraryId)->count();
 
         /* Require 1 MONTH only when it does not already exist for the library. */

@@ -2603,4 +2603,49 @@ if (!function_exists('isCloseSeat')) {
     }
 }
 
+if (!function_exists('getBranchShiftTiming')) {
+function getBranchShiftTiming()
+{
+    $branchId=getCurrentBranch();
+    $planTypes = PlanType::where('branch_id', $branchId)
+        ->whereNotNull('start_time')
+        ->whereNotNull('end_time')
+        ->get();
+
+    if ($planTypes->isEmpty()) {
+        return [
+            'min_time'      => null,
+            'max_time'      => null,
+            'total_hours'   => 0,
+            'total_minutes' => 0,
+        ];
+    }
+
+    $minStart = null;
+    $maxEnd   = null;
+
+    foreach ($planTypes as $planType) {
+
+        $start = Carbon\Carbon::parse($planType->start_time);
+        $end   = Carbon\Carbon::parse($planType->end_time);
+
+        if ($end->lessThanOrEqualTo($start)) {
+            $end->addDay(); // Overnight shift
+        }
+
+        $minStart = $minStart ? min($minStart, $start) : $start;
+        $maxEnd   = $maxEnd ? max($maxEnd, $end) : $end;
+    }
+
+    $totalMinutes = $minStart->diffInMinutes($maxEnd);
+
+    return [
+        'min_time'      => $minStart->format('H:i:s'),
+        'max_time'      => $maxEnd->format('H:i:s'),
+        'total_hours'   => round($totalMinutes / 60, 2),
+        'total_minutes' => $totalMinutes,
+    ];
+}
+}
+
 require_once __DIR__ . '/privacy_helper.php';
