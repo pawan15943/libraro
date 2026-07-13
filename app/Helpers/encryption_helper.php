@@ -2613,39 +2613,26 @@ function getBranchShiftTiming()
         ->get();
 
     if ($planTypes->isEmpty()) {
-        return [
-            'min_time'      => null,
-            'max_time'      => null,
-            'total_hours'   => 0,
-            'total_minutes' => 0,
-        ];
+        return 0;
     }
 
     $minStart = null;
     $maxEnd   = null;
 
     foreach ($planTypes as $planType) {
-
         $start = Carbon::parse($planType->start_time);
         $end   = Carbon::parse($planType->end_time);
 
         if ($end->lessThanOrEqualTo($start)) {
-            $end->addDay(); // Overnight shift
+            $end->addDay();
         }
 
         $minStart = $minStart ? min($minStart, $start) : $start;
         $maxEnd   = $maxEnd ? max($maxEnd, $end) : $end;
     }
 
-    $totalMinutes = $minStart->diffInMinutes($maxEnd);
-
-    return [
-        'min_time'      => $minStart->format('H:i:s'),
-        'max_time'      => $maxEnd->format('H:i:s'),
-        'total_hours'   => round($totalMinutes / 60, 2),
-        'total_minutes' => $totalMinutes,
-    ];
-}
+    return round($minStart->diffInMinutes($maxEnd) / 60, 2);
+    }
 }
 
 require_once __DIR__ . '/privacy_helper.php';
