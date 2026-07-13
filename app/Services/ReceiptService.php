@@ -22,7 +22,7 @@ class ReceiptService
     {
         $transaction = LearnerTransaction::withoutGlobalScopes()
             ->where('id', $transactionId)
-            ->where('is_paid', 1)
+            // ->where('is_paid', 1)
             ->first();
 
         if (! $transaction) {
