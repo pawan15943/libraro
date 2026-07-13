@@ -2626,8 +2626,8 @@ function getBranchShiftTiming()
 
     foreach ($planTypes as $planType) {
 
-        $start = Carbon\Carbon::parse($planType->start_time);
-        $end   = Carbon\Carbon::parse($planType->end_time);
+        $start = Carbon::parse($planType->start_time);
+        $end   = Carbon::parse($planType->end_time);
 
         if ($end->lessThanOrEqualTo($start)) {
             $end->addDay(); // Overnight shift
