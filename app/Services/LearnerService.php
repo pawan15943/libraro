@@ -727,9 +727,9 @@ class LearnerService
 
                         $sub->select(\DB::raw(1))
                             ->from('plan_types as new_pt')
-                            ->where('new_pt.id', $plan_type_id)
-                            ->whereRaw('existing_pt.start_time < new_pt.end_time')
-                            ->whereRaw('existing_pt.end_time > new_pt.start_time');
+                            ->where('new_pt.id', $plan_type_id);
+                            // ->whereRaw('existing_pt.start_time < new_pt.end_time')
+                            // ->whereRaw('existing_pt.end_time > new_pt.start_time');
                     });
 
                 })

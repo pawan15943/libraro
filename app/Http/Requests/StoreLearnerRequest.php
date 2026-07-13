@@ -159,18 +159,7 @@ class StoreLearnerRequest extends FormRequest
 
         $id_proof_file = null;
 
-        // if ($this->hasFile('id_proof_file')) {
-        //      $file = $this->file('id_proof_file');
-            
-        //     $name = "id_proof_file".time().$file->getClientOriginalName();
-
-        //     $file->move('public/uploade/', $name);
-
-        //     $id_proof_file = 'public/uploade/'.$name;
-        // }
-
-
-      
+   
 
         if ($this->hasFile('id_proof')) {
   
@@ -192,15 +181,7 @@ class StoreLearnerRequest extends FormRequest
 
         $profile_picture = null;
 
-        // if ($this->hasFile('profile_picture')) {
-
-        //     $file = $this->file('profile_picture');
-        //     $name = "profile_picture".time().$file->getClientOriginalName();
-
-        //     $file->move('public/uploade/', $name);
-
-        //     $profile_picture = 'public/uploade/'.$name;
-        // }
+      
          if ($this->hasFile('profile_picture_image')) {
   
             $profile_picture = $this->moveTempFileToPublic(

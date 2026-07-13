@@ -34,10 +34,13 @@ class LibraryLifecycleService
     |--------------------------------------------------------------------------
     */
 
-    if (
-        strtolower($expense->name) == 'other' 
-    ) {
-        $particular = "Other";
+    if (strtolower($expense->name) == 'other') {
+        if($request->remark){
+            $particular = $request->remark;
+        }else{
+            $particular = "Other";
+        }
+        
     }
 
     /*
