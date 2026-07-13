@@ -1472,7 +1472,7 @@ class DashboardService
         ];
          $banners[] = [
             'type' => 'image',
-            'tital' => '',
+            'tital' => 'image',
             'description' => '',
             'birthday_user' => '',
             'seat_no' => '',
@@ -1489,7 +1489,7 @@ class DashboardService
         ];
          $banners[] = [
             'type' => 'profile',
-            'tital' => '',
+            'tital' => 'profile',
             'description' => '',
             'birthday_user' => '',
             'seat_no' => '',
