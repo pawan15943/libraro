@@ -251,12 +251,8 @@ class LearnerOperationService
              $old_pending_refund      = (float) ($learnerTransaction->refund ?? 0);
             $old_total = (float) ($learnerTransaction->total_amount ?? 0);
             $total_difference = $effective - $old_total;
-            $diff_amount = $dto->operation === 'EDIT' && $dto->diffrence_amount === null
-                ? $total_difference
-                : (float) ($dto->diffrence_amount ?? 0);
-            $paid_amount = $dto->operation === 'EDIT'
-                ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount))
-                : $old_price + $diff_amount;
+            $diff_amount =  $dto->diffrence_amount === null ? $total_difference : (float) ($dto->diffrence_amount ?? 0);
+            $paid_amount = ($dto->operation === 'EDIT' || $dto->operation=='CHANGE PLAN')  ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount)) : $old_price + $diff_amount;
             if ((int) $dto->payment_mode !== 3 && $diff_amount > $grossAmount) {
                 throw new Exception("Paid amount not valid");
             }
@@ -295,7 +291,7 @@ class LearnerOperationService
                 // genuinely changed and should still be logged.
                 $has_adjustment = $total_difference != 0.0;
 
-            // Handle difference amount (refund vs pending)
+                // Handle difference amount (refund vs pending)
             } elseif ($diff_amount < 0 || $pending_amount <0 || $total_difference < 0) {
 
                  // refund case: total owed back to the learner given the new (lower) total,
