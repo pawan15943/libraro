@@ -307,6 +307,12 @@ class LearnerOperationService
                 $totalRefundOwed = abs($pending_amount);
                 $refundedNow = abs($diff_amount ?: $total_difference);
 
+                Log::info([
+                    'totalRefundOwed'=>$totalRefundOwed,
+                    'refundedNow'=>$refundedNow,
+                    'totalre'=>$totalRefundOwed + 0.01
+                ]);
+
                 if ($refundedNow > $totalRefundOwed + 0.01) {
                     throw new Exception("Refund amount not valid");
                 }
