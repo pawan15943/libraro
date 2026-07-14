@@ -27,24 +27,6 @@ class DashboardService
             $userType = 'library owner';
         }
 
-        $query = LearnerTransactionActivity::query()
-            ->where('branch_id', $branchId)
-            ->with('learner');
-
-        $transactions = $query->latest()->get()->map(function ($item) {
-            return [
-                'payment_type' => $item->payment_type ?? '',
-                'dr_cr' => $item->dr_cr ?? '',
-                'particular' => $item->particular ?? '',
-                'payment_mode' => $item->payment_mode ?? '',
-                'amount' => $item->amount ?? 0,
-                'transaction_id' => $item->transaction_id ?? '',
-                'created_by' => $item->created_by_name ?? 'System User',
-                'learner_name' => optional($item->learner)->name ?? '',
-                'seat_no' => $this->dashboardSeatNo(optional($item->learner)->seat_no),
-            ];
-        })->values();
-
         return [
             'user' => [
                 'name' => $authUser->name ?? $authUser->library_name ?? '',

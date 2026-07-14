@@ -76,7 +76,7 @@ class HelperService
 
 
 
-    public static function getOperationDetails($operation)
+    public static function getOperationDetails($operation, array $planNames = [], array $planTypeNames = [])
     {
         $details = [
             'message' => '',
@@ -87,17 +87,17 @@ class HelperService
             return $details;
         }
 
-        $userName = $operation->updated_by_name ?? 'System'; 
+        $userName = $operation->updated_by_name ?? 'System';
 
         // Convert updated_at to Carbon instance
         $updatedAt = Carbon::parse($operation->updated_at)->format('d-m-Y h:i:s A');
 
         switch ($operation->operation) {
             case 'renewSeat':
-                
+
                 $details['operation_type']='Renew Seat';
-                $oldPlan = Plan::where('library_id', getLibraryId())->where('id', $operation->old_value)->value('name');
-                $newPlan = Plan::where('id', $operation->new_value)->value('name');
+                $oldPlan = $planNames[$operation->old_value] ?? Plan::where('library_id', getLibraryId())->where('id', $operation->old_value)->value('name');
+                $newPlan = $planNames[$operation->new_value] ?? Plan::where('id', $operation->new_value)->value('name');
 
                 $details['message'] = "Plan renewed successfully. <br>
                 Your plan validity has been updated from <strong>{$oldPlan}</strong> to <strong>{$newPlan}</strong> on {$updatedAt} by {$userName}.";
@@ -105,8 +105,8 @@ class HelperService
 
             case 'learnerUpgrade':
                  $details['operation_type']='Upgrade Seat';
-                $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
-                $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
+                $oldPlanType = $planTypeNames[$operation->old_value] ?? PlanType::where('id', $operation->old_value)->value('name');
+                $newPlanType = $planTypeNames[$operation->new_value] ?? PlanType::where('id', $operation->new_value)->value('name');
 
                 $details['message'] = "Plan upgraded successfully. <br>
                 Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
@@ -138,8 +138,8 @@ class HelperService
 
             case 'changePlan':
                  $details['operation_type']='Change Plan';
-                $oldPlanType = PlanType::where('id', $operation->old_value)->value('name');
-                $newPlanType = PlanType::where('id', $operation->new_value)->value('name');
+                $oldPlanType = $planTypeNames[$operation->old_value] ?? PlanType::where('id', $operation->old_value)->value('name');
+                $newPlanType = $planTypeNames[$operation->new_value] ?? PlanType::where('id', $operation->new_value)->value('name');
 
                 $details['message'] = "Plan type changed successfully. <br>
                 Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";

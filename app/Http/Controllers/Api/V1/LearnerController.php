@@ -16,6 +16,8 @@ use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\LearnerOperationsLog;
+use App\Models\Plan;
+use App\Models\PlanType;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\DashboardService;
@@ -867,8 +869,31 @@ class LearnerController extends Controller
         }
 
         $logs = $query->latest()->paginate((int) $request->input('per_page', 20));
-        $activities = collect($logs->items())
-            ->map(fn ($log) => $this->formatLearnerActivity($log))
+        $logItems = collect($logs->items());
+
+        $updatedByIds = $logItems->pluck('updated_by')->filter()->unique()->values();
+        $updatedByMap = DB::table('library_users')->whereIn('id', $updatedByIds)->pluck('name', 'id')->all();
+        $missingIds = $updatedByIds->diff(array_keys($updatedByMap))->values();
+        if ($missingIds->isNotEmpty()) {
+            $updatedByMap += DB::table('libraries')->whereIn('id', $missingIds)->pluck('library_name', 'id')->all();
+        }
+
+        $planIds = $logItems->whereIn('operation', ['renewSeat'])
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planNames = $planIds->isNotEmpty()
+            ? Plan::whereIn('id', $planIds)->pluck('name', 'id')->all()
+            : [];
+
+        $planTypeIds = $logItems->whereIn('operation', ['learnerUpgrade', 'changePlan'])
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planTypeNames = $planTypeIds->isNotEmpty()
+            ? PlanType::whereIn('id', $planTypeIds)->pluck('name', 'id')->all()
+            : [];
+
+        $activities = $logItems
+            ->map(fn ($log) => $this->formatLearnerActivity($log, $updatedByMap, $planNames, $planTypeNames))
             ->groupBy('group_date_key')
             ->map(function ($items) {
                 $first = $items->first();
@@ -920,10 +945,10 @@ class LearnerController extends Controller
         ]);
     }
 
-    private function formatLearnerActivity($log): array
+    private function formatLearnerActivity($log, array $updatedByMap = [], array $planNames = [], array $planTypeNames = []): array
     {
-        $log->updated_by_name = $this->activityUpdatedByName($log->updated_by);
-        $details = HelperService::getOperationDetails($log);
+        $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
+        $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames);
         $meta = $this->activityMeta($log->operation);
         $createdAt = Carbon::parse($log->created_at);
         $operationType = $details['operation_type'] ?: $meta['label'];
@@ -1076,18 +1101,4 @@ class LearnerController extends Controller
         return $date->format('d M Y');
     }
 
-    private function activityUpdatedByName($updatedBy): string
-    {
-        if (! $updatedBy) {
-            return 'System';
-        }
-
-        $name = DB::table('library_users')->where('id', $updatedBy)->value('name');
-        if ($name) {
-            return (string) $name;
-        }
-
-        return (string) (DB::table('libraries')->where('id', $updatedBy)->value('library_name') ?? 'System');
-    }
-    
 }

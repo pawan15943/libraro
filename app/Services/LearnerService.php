@@ -1457,6 +1457,8 @@ class LearnerService
             'learners.profile_picture',
             'learners.branch_id',
             'learners.frozen_status',
+            'learners.no_expiry',
+            'learners.status as learner_active_status',
             'learner_detail.freeze_start_date',
             'learners.sended_message_type',
 
@@ -1532,32 +1534,156 @@ class LearnerService
         }
 
         /* -----------------------------
+        BATCH PRE-FETCH (avoids N+1 queries per row)
+        ------------------------------*/
+
+        $learnerCollection = $learners->getCollection();
+        $learnerIds = $learnerCollection->pluck('id')->all();
+
+        $latestOps = collect();
+        $detailRowsByLearner = collect();
+        $txByLearner = collect();
+        $plansById = collect();
+        $branchModel = null;
+        $seatMap = [];
+        $extendDay = 0;
+
+        if (!empty($learnerIds)) {
+            $latestOps = DB::table('learner_operations_log')
+                ->select('learner_id', 'operation', 'created_at')
+                ->whereIn('id', function ($sub) use ($learnerIds) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('learner_operations_log')
+                        ->whereIn('learner_id', $learnerIds)
+                        ->groupBy('learner_id');
+                })
+                ->get()
+                ->keyBy('learner_id');
+
+            $detailRowsByLearner = DB::table('learner_detail')
+                ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+                ->whereIn('learner_detail.learner_id', $learnerIds)
+                ->select(
+                    'learner_detail.learner_id',
+                    'learner_detail.status',
+                    'learner_detail.plan_start_date',
+                    'learner_detail.plan_end_date',
+                    'plan_types.day_type_id'
+                )
+                ->get()
+                ->groupBy('learner_id');
+
+            $txByLearner = DB::table('learner_transactions')
+                ->leftJoin('learner_detail as ld', 'ld.id', '=', 'learner_transactions.learner_detail_id')
+                ->whereIn('learner_transactions.learner_id', $learnerIds)
+                ->select(
+                    'learner_transactions.learner_id',
+                    'learner_transactions.pending_amount',
+                    'learner_transactions.refund',
+                    'learner_transactions.due_date',
+                    'ld.payment_mode'
+                )
+                ->get()
+                ->groupBy('learner_id');
+
+            $planIds = $learnerCollection->pluck('plan_id')->filter()->unique()->values();
+            if ($planIds->isNotEmpty()) {
+                $plansById = Plan::whereIn('id', $planIds)
+                    ->select('id', 'plan_id', 'type', 'monthdays')
+                    ->get()
+                    ->keyBy('id');
+            }
+
+            $branchModel = Branch::find($branchId);
+            $extendDay = getExtendDays($branchId);
+            $seatMap = generateSeatNumbers();
+        }
+
+        $today = Carbon::today();
+        $now = now();
+        $todayPlus5 = $today->copy()->addDays(5);
+
+        $userStatusPrecomputed = [];
+        $alreadyRenewedMap = [];
+
+        foreach ($learnerIds as $lid) {
+            $rows = $detailRowsByLearner->get($lid, collect());
+
+            $hasFuturePlan = $rows->contains(function ($r) use ($todayPlus5) {
+                return !empty($r->plan_end_date) && $r->plan_end_date > $todayPlus5->toDateString();
+            });
+
+            $hasPastPlan = $rows->contains(function ($r) use ($todayPlus5) {
+                return !empty($r->plan_end_date) && $r->plan_end_date <= $todayPlus5->toDateString();
+            });
+
+            $futureUnpaidRows = $rows->filter(function ($r) use ($now) {
+                return (int) $r->status === 0
+                    && !empty($r->plan_start_date)
+                    && Carbon::parse($r->plan_start_date)->startOfDay()->gt($now);
+            });
+
+            $hasFutureStart = $futureUnpaidRows->isNotEmpty();
+            $startDetail = $futureUnpaidRows->first();
+            $startFrom = $startDetail
+                ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false)
+                : null;
+
+            $isRenewUpdate = $rows->contains(function ($r) use ($today) {
+                return (int) $r->status === 0
+                    && !empty($r->plan_start_date)
+                    && $r->plan_start_date > $today->toDateString();
+            }) && $rows->count() > 1;
+
+            $hasVip = $rows->contains(function ($r) {
+                return (int) $r->day_type_id === 11 && (int) $r->status === 1;
+            });
+
+            $alreadyRenewedMap[$lid] = $isRenewUpdate;
+
+            $userStatusPrecomputed[$lid] = [
+                'extend_day' => $extendDay,
+                'has_future_plan' => $hasFuturePlan,
+                'has_past_plan' => $hasPastPlan,
+                'is_renew_update' => $isRenewUpdate,
+                'has_future_start' => $hasFutureStart,
+                'start_from' => $startFrom,
+                'has_vip' => $hasVip,
+            ];
+        }
+
+        /* -----------------------------
         FORMAT RESPONSE
         ------------------------------*/
 
-        $learners->getCollection()->transform(function($learner){
+        $learners->getCollection()->transform(function($learner) use (
+            $latestOps, $plansById, $branchModel, $seatMap, $extendDay, $userStatusPrecomputed, $alreadyRenewedMap, $txByLearner
+        ){
 
             $daysLeft = \Carbon\Carbon::parse($learner->plan_end_date)->diffInDays(now(),false);
-                    
-            $operation = DB::table('learner_operations_log')
-            ->where('learner_id', $learner->id)
-            ->orderByDesc('id') // latest operation
-            ->select('operation', 'created_at')
-            ->first();
+
+            $operation = $latestOps->get($learner->id);
             $operationName = $operation->operation ?? null;
-            $planStatus =getPlanStatusDetails($learner->plan_end_date);
+            $planStatus =getPlanStatusDetails($learner->plan_end_date, $extendDay);
             if($operationName == 'closeSeat'){
                     $status='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $status='Deleted';
             }else{
+                    $statusPrecomputed = $userStatusPrecomputed[$learner->id] ?? null;
+                    if ($statusPrecomputed !== null) {
+                        $statusPrecomputed['frozen_status'] = (int) ($learner->frozen_status ?? 0) === 1;
+                        $statusPrecomputed['no_expiry_active'] = (int) ($learner->no_expiry ?? 0) === 1
+                            && (int) ($learner->learner_active_status ?? 0) === 1;
+                    }
+
                     $status = strip_tags(
-                    getUserStatusWithSpan($learner->plan_end_date,$learner->id)
+                    getUserStatusWithSpan($learner->plan_end_date,$learner->id, $statusPrecomputed)
                 );
             }
 
-            
-        
+
+
             if($operationName == 'closeSeat'){
                 $mainstatus='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
@@ -1601,8 +1727,8 @@ class LearnerService
                 'dob'=>$learner->dob,
                 'birth_status'=>$birthStatus,
                 'seat_id' => $learner->seat_no !== null ? (int) $learner->seat_no : 0,
-                'seat_no' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
-                'seat_with_floor' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",
+                'seat_no' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no, $seatMap) : "GEN",
+                'seat_with_floor' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no, $seatMap) : "GEN",
 
                 'profile_picture' => $learner->profile_picture 
                 ? asset($learner->profile_picture) 
@@ -1610,13 +1736,13 @@ class LearnerService
 
                 'plan'=>$learner->plan_name ?? '',
                 'plan_type'=>$learner->plan_type ?? '',
-                'plan_days' => getChargeableDays($learner->plan_id, $learner->plan_start_date, $learner->branch_id)['chargeable_days'] ?? 0,
+                'plan_days' => getChargeableDays($learner->plan_id, $learner->plan_start_date, $learner->branch_id, $plansById->get($learner->plan_id), $branchModel)['chargeable_days'] ?? 0,
                 'plan_end_date'=>$learner->plan_end_date ?? '',
                 'plan_start_date'=>$learner->plan_start_date ?? '',
 
                 'days_left'=>$planStatus['diff_in_days'],
                 'extend_days_left'=>$planStatus['diff_extend_day'],
-                'next_plan'=>alreadyRenewed($learner->id) ? 1 : 0 ,
+                'next_plan'=>alreadyRenewed($learner->id, $alreadyRenewedMap[$learner->id] ?? null) ? 1 : 0 ,
                 'status'=>$status,
                 'mainstatus'=>$mainstatus,
                 'frozen_status'=>$learner->frozen_status,
@@ -1626,8 +1752,8 @@ class LearnerService
                 'receipt_url' => $learner->receipt_transaction_id
                     ? URL::signedRoute('receipt.signed', ['transactionId' => $learner->receipt_transaction_id])
                     : '',
-             
-                'payment'=>learnerTransactionStatus($learner->id),
+
+                'payment'=>learnerTransactionStatus($learner->id, $txByLearner->get($learner->id, collect())),
                 'sended_message_type'=>$sended_message_type
                 
                 

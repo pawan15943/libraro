@@ -24,8 +24,12 @@ use Carbon\Carbon;
 
 if (!function_exists('alreadyRenewed')) {
 
-    function alreadyRenewed($learnerId)
+    function alreadyRenewed($learnerId, $precomputedResult = null)
     {
+        if ($precomputedResult !== null) {
+            return $precomputedResult;
+        }
+
         return LearnerDetail::where('learner_id', $learnerId)
             ->where('status', 0)
             ->whereDate('plan_start_date', '>', now())
@@ -229,11 +233,11 @@ if (!function_exists('totalExtra')) {
 
 if (!function_exists('learnerTransactionStatus')) {
 
-    function learnerTransactionStatus($learnerId)
+    function learnerTransactionStatus($learnerId, $precomputedTransactions = null)
     {
         $today = now()->toDateString();
 
-        $transactions = LearnerTransaction::withTrashed()
+        $transactions = $precomputedTransactions ?? LearnerTransaction::withTrashed()
             ->leftJoin('learner_detail as ld', 'ld.id', '=', 'learner_transactions.learner_detail_id')
             ->where('learner_transactions.learner_id', $learnerId)
             // ->where('learner_transactions.pending_amount', '>', 0)
@@ -444,11 +448,11 @@ if (!function_exists('getPlanPrice')) {
 
 if (!function_exists('getEndDate')) {
 
-    function getEndDate($plan_id, $planStartDate,$branch_id = null)
+    function getEndDate($plan_id, $planStartDate,$branch_id = null, $planData = null, $branch = null)
     {
         $planStartDate = \Carbon\Carbon::parse($planStartDate);
 
-        $planData = Plan::where('id', $plan_id)
+        $planData = $planData ?? Plan::where('id', $plan_id)
             ->select('plan_id', 'type', 'monthdays')
             ->first();
 
@@ -459,10 +463,10 @@ if (!function_exists('getEndDate')) {
         $type      = strtoupper($planData->type);
         $duration  = (int) ($planData->plan_id ?? 1);
         $monthdays = $planData->monthdays;
- 
+
         $branchId  = $branch_id ?? getCurrentBranch();
 
-        $branch = Branch::find($branchId);
+        $branch = $branch ?? Branch::find($branchId);
        
 
         /*
@@ -644,7 +648,7 @@ if (!function_exists('getBillingCyclePrice')) {
     }
 }
 if (!function_exists('getChargeableDays')) {
-    function getChargeableDays($plan_id, $planStartDate, $branch_id = null)
+    function getChargeableDays($plan_id, $planStartDate, $branch_id = null, $planData = null, $branch = null)
     {
         if (!$planStartDate) {
             return null;
@@ -654,7 +658,7 @@ if (!function_exists('getChargeableDays')) {
         $startDate = Carbon::parse($planStartDate);
 
         // Calculate end date (handles fixed billing internally)
-        $endDate = getEndDate($plan_id, $startDate ,$branchId);
+        $endDate = getEndDate($plan_id, $startDate ,$branchId, $planData, $branch);
 
         if (!$endDate) {
             return null;
@@ -663,7 +667,7 @@ if (!function_exists('getChargeableDays')) {
         // Chargeable days (inclusive)
         $chargeableDays = $startDate->diffInDays($endDate) + 1;
 
-        $branch = Branch::select('fixed_billing_date')
+        $branch = $branch ?? Branch::select('fixed_billing_date')
         ->where('id', $branchId)
         ->first();
 
@@ -759,9 +763,9 @@ if (!function_exists('countWithoutSeatNo')) {
 }
 //in top
 if (!function_exists('getUserStatusWithSpan')) {
-    function getUserStatusWithSpan($plan_end_date, $learner_id)
+    function getUserStatusWithSpan($plan_end_date, $learner_id, $precomputed = null)
     {
-        $extendDay = getExtendDays();
+        $extendDay = $precomputed['extend_day'] ?? getExtendDays();
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
 
@@ -769,33 +773,48 @@ if (!function_exists('getUserStatusWithSpan')) {
         $inextendDate = $endDate->copy()->addDays($extendDay);
         $diffExtendDay = $today->diffInDays($inextendDate, false);
 
-        $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
-            ->exists();
-        $hasPastPlan = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
-            ->exists();
-
-        $is_renew_update = alreadyRenewed($learner_id); 
-        $start_date = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_start_date',  '>', now())->where('status', 0)
-            ->exists();
-        $isfuture_booking = $start_date && !$hasPastPlan;
-        $startDetail = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
-        if ($startDetail) {
-            $start_date = Carbon::parse($startDetail->plan_start_date);
-
-            $startfrom = $today->diffInDays($start_date, false);
+        if ($precomputed !== null) {
+            $hasFuturePlan = $precomputed['has_future_plan'];
+            $hasPastPlan = $precomputed['has_past_plan'];
+            $is_renew_update = $precomputed['is_renew_update'];
+            $isfuture_booking = $precomputed['has_future_start'] && !$hasPastPlan;
+            $startfrom = $precomputed['start_from'];
+            $isFrozen = $precomputed['frozen_status'];
+            $isNonExpiryActive = $precomputed['no_expiry_active'];
+            $isVip = $precomputed['has_vip'];
         } else {
-            $startfrom = null;
+            $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
+                ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
+                ->exists();
+            $hasPastPlan = LearnerDetail::where('learner_id', $learner_id)
+                ->where('plan_end_date', '<=', $today->copy()->addDays(5))
+                ->exists();
+
+            $is_renew_update = alreadyRenewed($learner_id);
+            $start_date = LearnerDetail::where('learner_id', $learner_id)
+                ->where('plan_start_date',  '>', now())->where('status', 0)
+                ->exists();
+            $isfuture_booking = $start_date && !$hasPastPlan;
+            $startDetail = LearnerDetail::where('learner_id', $learner_id)
+                ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
+            if ($startDetail) {
+                $start_date = Carbon::parse($startDetail->plan_start_date);
+
+                $startfrom = $today->diffInDays($start_date, false);
+            } else {
+                $startfrom = null;
+            }
+
+            $isFrozen = Learner::where('id', $learner_id)->where('frozen_status', 1)->exists();
+            $isNonExpiryActive = Learner::where('id', $learner_id)->where('no_expiry', 1)->where('status',1)->exists();
+            $isVip = has_vip($learner_id);
         }
 
-        if (Learner::where('id', $learner_id)->where('frozen_status', 1)->exists()) {
+        if ($isFrozen) {
             return '<span class="text-success">Frozen</span>';
-        }elseif (Learner::where('id', $learner_id)->where('no_expiry', 1)->where('status',1)->exists()) {
+        }elseif ($isNonExpiryActive) {
             return '<span class="text-success">Non-Expired</span>';
-        }elseif(has_vip($learner_id)){
+        }elseif($isVip){
             return '<span class="text-success">VIP</span>';
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
@@ -820,9 +839,9 @@ if (!function_exists('getUserStatusWithSpan')) {
 //with name
 if (!function_exists('getPlanStatusDetails')) {
 
-    function getPlanStatusDetails($plan_end_date)
+    function getPlanStatusDetails($plan_end_date, $extendDaysOverride = null)
     {
-        $extendDay = getExtendDays(); // assume integer
+        $extendDay = $extendDaysOverride ?? getExtendDays(); // assume integer
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
 
@@ -884,10 +903,14 @@ if (!function_exists('getUserStatusDetails')) {
     }
 }
 if (!function_exists('has_vip')) {
-    function has_vip($learner_id)
+    function has_vip($learner_id, $precomputedResult = null)
     {
+        if ($precomputedResult !== null) {
+            return $precomputedResult;
+        }
+
         return LearnerDetail::leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
-            ->where('plan_types.day_type_id', 11)  
+            ->where('plan_types.day_type_id', 11)
             ->where('learner_detail.status', 1)
             ->where('learner_detail.learner_id', $learner_id)
             ->exists();
@@ -1384,13 +1407,13 @@ if (!function_exists('shortFloorName')) {
 }
 
 if (!function_exists('getSeatDisplayShortFloorName')) {
-    function getSeatDisplayShortFloorName($mainSeatNo)
+    function getSeatDisplayShortFloorName($mainSeatNo, $seatMap = null)
     {
         if (empty($mainSeatNo)) {
             return null;
         }
 
-        $seatMap = collect(generateSeatNumbers());
+        $seatMap = $seatMap !== null ? collect($seatMap) : collect(generateSeatNumbers());
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
 
         if (!$seat) {
