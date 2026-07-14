@@ -714,29 +714,9 @@ class LearnerService
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
-             // future booking and non expired seat check
-            $exists_future = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
-                ->where('learner_detail.branch_id', $branchId)
-                ->where('learner_detail.seat_no', $seat_no)
-                ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
-                ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
-                ->where('learner_detail.plan_end_date', '>=', $start_date->format('Y-m-d'))
-                ->where(function ($query) use ($plan_type_id) {
-
-                    $query->whereExists(function ($sub) use ($plan_type_id) {
-
-                        $sub->select(\DB::raw(1))
-                            ->from('plan_types as new_pt')
-                            ->where('new_pt.id', $plan_type_id);
-                            // ->whereRaw('existing_pt.start_time < new_pt.end_time')
-                            // ->whereRaw('existing_pt.end_time > new_pt.start_time');
-                    });
-
-                })
-                ->exists();
-
-            if ($exists_future && $data['learner_data']['no_expiry'] == 1) {
-                throw new \Exception('This seat already has a future booking that overlaps with the selected time.');
+             // non-expiry (VIP) occupant check: that seat is permanently held and can't be re-booked
+            if (seatHeldByNonExpiryLearner($branchId, $seat_no, $plan_type_id, $start_date, $endDate)) {
+                throw new \Exception('This seat is already assigned to a non-expiring plan and cannot be booked.');
             }
             
            if (!empty($data['seat_no'])) {

@@ -2018,6 +2018,32 @@ if (!function_exists('normalizeTimeRange')) {
     }
 }
 
+// Blocks booking a seat that is already assigned (now or in a future overlapping slot)
+// to a no_expiry (never-expiring/VIP) learner — that occupant never vacates the seat.
+if (!function_exists('seatHeldByNonExpiryLearner')) {
+    function seatHeldByNonExpiryLearner(int $branchId, int $seatNo, int $planTypeId, $startDate, $endDate, ?int $excludeLearnerId = null): bool
+    {
+        return LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
+            ->join('learners', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learner_detail.branch_id', $branchId)
+            ->where('learner_detail.seat_no', $seatNo)
+            ->where('learners.no_expiry', 1)
+            ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
+            ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
+            ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId))
+            ->where(function ($query) use ($planTypeId) {
+                $query->whereExists(function ($sub) use ($planTypeId) {
+                    $sub->select(\DB::raw(1))
+                        ->from('plan_types as new_pt')
+                        ->where('new_pt.id', $planTypeId)
+                        ->whereRaw('existing_pt.start_time < new_pt.end_time')
+                        ->whereRaw('existing_pt.end_time > new_pt.start_time');
+                });
+            })
+            ->exists();
+    }
+}
+
 //for all operation book,edit,renew,upgrade,changeplan/platype,reactive
 
 if (!function_exists('checkAvailability')) {

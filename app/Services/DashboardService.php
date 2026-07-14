@@ -459,6 +459,72 @@ class DashboardService
         return $this->duePaymentList($branchId, 5);
     }
 
+    /**
+     * Branch-wide pending-payment financial summary (see Api\V1\LearnerController::pendingPayment).
+     */
+    public function pendingPaymentSummary(int $branchId): array
+    {
+        $today = Carbon::today()->toDateString();
+
+        $transactionBase = DB::table('learner_transactions as lt')
+            ->join('learners', 'learners.id', '=', 'lt.learner_id')
+            ->leftJoin('learner_detail as ld', 'ld.id', '=', 'lt.learner_detail_id')
+            ->where('lt.branch_id', $branchId)
+            ->where('learners.branch_id', $branchId)
+            ->whereNull('learners.deleted_at')
+            ->when(Schema::hasColumn('learner_transactions', 'deleted_at'), function ($query) {
+                $query->whereNull('lt.deleted_at');
+            });
+
+        $activeDues = (clone $transactionBase)
+            ->where('learners.status', 1)
+            ->where('lt.pending_amount', '>', 0)
+            ->selectRaw(
+                "SUM(CASE WHEN COALESCE(ld.payment_mode, 0) = 3 THEN lt.pending_amount ELSE 0 END) as pay_later_amount,
+                 SUM(CASE WHEN COALESCE(ld.payment_mode, 0) != 3 AND (lt.due_date IS NULL OR lt.due_date >= ?) THEN lt.pending_amount ELSE 0 END) as pending_payment_amount,
+                 SUM(CASE WHEN COALESCE(ld.payment_mode, 0) != 3 AND lt.due_date IS NOT NULL AND lt.due_date < ? THEN lt.pending_amount ELSE 0 END) as non_expired_due_amount",
+                [$today, $today]
+            )
+            ->first();
+
+        $expiredLearnerDue = (clone $transactionBase)
+            ->where('learners.status', 0)
+            ->sum('lt.pending_amount');
+
+        $adjustedPendingAmount = (clone $transactionBase)->sum('lt.sattle_amount');
+        $extraPaidAmount = (clone $transactionBase)->sum('lt.refund');
+
+        $receivedPendingAmount = DB::table('learner_transaction_activity')
+            ->where('branch_id', $branchId)
+            ->where('payment_type', 'PENDING')
+            ->where('dr_cr', 'Cr')
+            ->sum('amount');
+
+        $pendingPaymentAmount = (float) ($activeDues->pending_payment_amount ?? 0);
+        $payLaterAmount = (float) ($activeDues->pay_later_amount ?? 0);
+        $nonExpiredDueAmount = (float) ($activeDues->non_expired_due_amount ?? 0);
+        $totalPendingAmount = $pendingPaymentAmount + $payLaterAmount + $nonExpiredDueAmount;
+        $expiredLearnerDueAmount = (float) $expiredLearnerDue;
+        $adjustedPendingAmount = (float) $adjustedPendingAmount;
+        $extraPaidAmount = (float) $extraPaidAmount;
+
+        $finalDue = max(0, ($totalPendingAmount + $expiredLearnerDueAmount) - $adjustedPendingAmount - $extraPaidAmount);
+
+        return [
+            'total_pending_amount' => (string) $totalPendingAmount,
+            'total_pending_breakdown' => [
+                'pending_payment' => (string) $pendingPaymentAmount,
+                'pay_later' => (string) $payLaterAmount,
+                'non_expired_due' => (string) $nonExpiredDueAmount,
+            ],
+            'received_pending_amount' => (string) $receivedPendingAmount,
+            'adjusted_pending_amount' => (string) $adjustedPendingAmount,
+            'extra_paid_amount' => (string) $extraPaidAmount,
+            'expired_learner_due_amount' => (string) $expiredLearnerDueAmount,
+            'final_due' => (string) $finalDue,
+        ];
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Expired Members- in extension period and in about to expire period

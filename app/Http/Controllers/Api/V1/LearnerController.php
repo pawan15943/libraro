@@ -138,6 +138,52 @@ class LearnerController extends Controller
         }
     }
 
+    public function pendingPayment(Request $request, LearnerService $service, DashboardService $dashboardService)
+    {
+        try {
+            $request->validate([
+                'search' => 'nullable|string',
+                'plan_type_id' => 'nullable',
+                'plan_type_id.*' => 'integer|exists:plan_types,id',
+                'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
+                'sort_order' => 'nullable|in:asc,desc',
+            ]);
+
+            if ($request->has('page_no')) {
+                $request->merge([
+                    'page' => $request->page_no
+                ]);
+            }
+
+            $filters = [
+                'search' => $request->search,
+                'status' => 'pending_payment',
+                'plan_type_id' => is_array($request->plan_type_id)
+                    ? $request->plan_type_id
+                    : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
+                'sort_by' => $request->sort_by,
+                'sort_order' => $request->sort_order,
+            ];
+
+            $data = $service->getLearnersList($filters);
+
+           
+            return response()->json([
+                'status' => true,
+                'list_count' => $data->total(),
+                'data' => $data->items(),
+                'summary' => $dashboardService->pendingPaymentSummary(getCurrentBranch()),
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function listByType(Request $request, LearnerService $service, DashboardService $dashboardService)
     {
         $validated = $request->validate([
