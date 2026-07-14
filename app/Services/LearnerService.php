@@ -26,6 +26,8 @@ use Auth;
 
 class LearnerService
 {
+    private array $seatMapPrecomputed = [];
+
     public function __construct(private TransactionActivityService $transactionActivityService)
     {
     }
@@ -715,7 +717,7 @@ class LearnerService
             | 4. Seat Availability
             ---------------------------------------------------------*/
              // non-expiry (VIP) occupant check: that seat is permanently held and can't be re-booked
-            if (seatHeldByNonExpiryLearner($branchId, $seat_no, $plan_type_id, $start_date, $endDate)) {
+            if (($seat_no != 0 || !is_null($seat_no)) && seatHeldByNonExpiryLearner($branchId, $seat_no, $plan_type_id, $start_date, $endDate)) {
                 throw new \Exception('This seat is already assigned to a non-expiring plan and cannot be booked.');
             }
             
@@ -1791,13 +1793,17 @@ class LearnerService
             ->orderBy('plan_type_id')
             ->get();
 
+        $learnerIds = $bookingDetails->pluck('learner_id')->filter()->unique()->values();
+
         $transactions = LearnerTransaction::withTrashed()
-            ->whereIn('learner_id', $bookingDetails->pluck('learner_id')->filter()->unique()->values())
+            ->whereIn('learner_id', $learnerIds)
             ->selectRaw('learner_id, SUM(pending_amount) as pending_amount, SUM(refund) as extra_amount ,MIN(due_date) as due_date')
             ->groupBy('learner_id')
             ->whereNull('deleted_at')
             ->get()
             ->keyBy('learner_id');
+
+        $this->seatMapPrecomputed = $this->buildSeatMapPrecomputed($learnerIds, $bookingDetails);
 
         $numberedDetails = $bookingDetails
             ->filter(fn ($detail) => ! empty($detail->seat_no))
@@ -1819,6 +1825,69 @@ class LearnerService
             'numbered' => $numbered,
             'general' => $general,
         ];
+    }
+
+    /**
+     * Batches the per-learner lookups that getUserStatusWithSpan()/seatPlanTypeStatus()
+     * would otherwise run one-by-one (was ~9 queries per occupied seat).
+     */
+    private function buildSeatMapPrecomputed($learnerIds, $bookingDetails): array
+    {
+        if ($learnerIds->isEmpty()) {
+            return [];
+        }
+
+        $extendDay = getExtendDays();
+        $today = Carbon::today();
+        $futureThreshold = $today->copy()->addDays(5)->toDateString();
+        $nowDateTime = now()->toDateTimeString();
+
+        $allDetailRows = LearnerDetail::whereIn('learner_id', $learnerIds)
+            ->select('learner_id', 'status', 'plan_start_date', 'plan_end_date')
+            ->get()
+            ->groupBy('learner_id');
+
+        $vipLearnerIds = LearnerDetail::leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->where('plan_types.day_type_id', 11)
+            ->where('learner_detail.status', 1)
+            ->whereIn('learner_detail.learner_id', $learnerIds)
+            ->distinct()
+            ->pluck('learner_detail.learner_id')
+            ->flip();
+
+        $learnerAttrs = $bookingDetails->groupBy('learner_id');
+
+        $precomputed = [];
+
+        foreach ($learnerIds as $learnerId) {
+            $rows = $allDetailRows->get($learnerId, collect());
+
+            $hasFuturePlan = $rows->contains(fn ($row) => (int) $row->status === 0
+                && $row->plan_end_date > $futureThreshold);
+
+            $hasPastPlan = $rows->contains(fn ($row) => $row->plan_end_date <= $futureThreshold);
+
+            $futureStartRows = $rows->filter(fn ($row) => (int) $row->status === 0
+                && $row->plan_start_date > $nowDateTime);
+
+            $startDetail = $futureStartRows->first();
+
+            $learner = optional($learnerAttrs->get($learnerId))->first()?->learner;
+
+            $precomputed[$learnerId] = [
+                'extend_day' => $extendDay,
+                'has_future_plan' => $hasFuturePlan,
+                'has_past_plan' => $hasPastPlan,
+                'is_renew_update' => $futureStartRows->isNotEmpty() && $rows->count() > 1,
+                'has_future_start' => $futureStartRows->isNotEmpty(),
+                'start_from' => $startDetail ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false) : null,
+                'frozen_status' => (int) ($learner->frozen_status ?? 0) === 1,
+                'no_expiry_active' => (int) ($learner->no_expiry ?? 0) === 1 && (int) ($learner->status ?? 0) === 1,
+                'has_vip' => $vipLearnerIds->has($learnerId),
+            ];
+        }
+
+        return $precomputed;
     }
 
     private function sortSeatMapByPlanTypeStatus(array $floors, string $status): array
@@ -2111,11 +2180,11 @@ class LearnerService
         $transaction = $transactions->get($detail->learner_id);
         $pendingAmount = (float) ($transaction->pending_amount ?? 0);
         $extraAmount = (float) ($transaction->extra_amount ?? 0);
-        $planStatus = getPlanStatusDetails($detail->plan_end_date);
-        $isNonExpiry = Learner::where('id', $detail->learner_id)
-            ->where('no_expiry', 1)
-            ->where('status', 1)
-            ->exists();
+        $extendDay = $this->seatMapPrecomputed[$detail->learner_id]['extend_day'] ?? null;
+        $planStatus = getPlanStatusDetails($detail->plan_end_date, $extendDay);
+        // learner is already eager-loaded on $detail (LearnerDetail::with('learner')) — no query needed.
+        $isNonExpiry = (int) ($detail->learner->no_expiry ?? 0) === 1
+            && (int) ($detail->learner->status ?? 0) === 1;
 
         if ($isNonExpiry) {
             return 'non expire';
@@ -2148,7 +2217,8 @@ class LearnerService
     {
         $learner = $detail->learner;
         $transaction = $transactions->get($detail->learner_id);
-        $planStatus = getPlanStatusDetails($detail->plan_end_date);
+        $precomputed = $this->seatMapPrecomputed[$detail->learner_id] ?? null;
+        $planStatus = getPlanStatusDetails($detail->plan_end_date, $precomputed['extend_day'] ?? null);
 
         return [
             'learner_id' => $learner->id,
@@ -2158,7 +2228,7 @@ class LearnerService
             'profile_image' => $learner->profile_picture ? asset($learner->profile_picture) : '',
             'plan_start_date' => $detail->plan_start_date,
             'plan_end_date' => $detail->plan_end_date,
-            'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id)),
+            'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id, $precomputed)),
             'frozen_status'=>$learner->frozen_status,
             'freeze_date'=>$detail->freeze_start_date ?? '',
             'pending_amount' => (string) ($transaction->pending_amount ?? 0),
