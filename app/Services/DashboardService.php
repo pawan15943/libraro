@@ -14,7 +14,6 @@ use App\Models\LibraryTransaction;
 use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\Subscription;
-use Illuminate\Support\Facades\Schema;
 
 class DashboardService
 {
@@ -61,22 +60,17 @@ class DashboardService
 
         $today = Carbon::today()->toDateString();
 
-        return DB::table('notifications')
+        $unread = DB::table('notifications')
             ->where('notifiable_id', $user->id)
             ->where('guard', 'library')
             ->where('status', 1)
             ->whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)
-            ->select(
-                'batch_id',
-                'guard',
-                'data',
-                DB::raw('MIN(read_at) as read_at')
-            )
+            ->select('batch_id', 'guard', 'data', DB::raw('MIN(read_at) as read_at'))
             ->groupBy('batch_id', 'guard', 'data')
-            ->havingRaw('MIN(read_at) IS NULL')
-            ->get()
-            ->count();
+            ->havingRaw('MIN(read_at) IS NULL');
+
+        return DB::query()->fromSub($unread, 'unread_notifications')->count();
     }
 
     /*
@@ -101,46 +95,30 @@ class DashboardService
             $baseQuery->whereYear('date', (int) $resolvedValue);
         }
 
-        $collection = (clone $baseQuery)->where('dr_cr', 'Cr')->sum('amount');
+        // Single pass over the filtered rows instead of 7 separate SUM(...) round trips
+        // (collection/total_cr were literally duplicate queries before this merge).
+        $totals = $baseQuery->selectRaw("
+                SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
+                SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr,
+                SUM(CASE WHEN dr_cr = 'Cr' AND payment_type IN ('TOKEN MONEY', 'MISCELLANEOUS') THEN amount ELSE 0 END) as other_amt,
+                SUM(CASE WHEN payment_type = 'EXPENSE' THEN amount ELSE 0 END) as expense_amt,
+                SUM(CASE WHEN payment_type = 'PENDING' THEN amount ELSE 0 END) as pending_amt,
+                SUM(CASE WHEN payment_type = 'REFUND' OR (payment_type = 'CHANGE PLAN' AND dr_cr = 'Dr') THEN amount ELSE 0 END) as refund_amt
+            ")
+            ->first();
 
-        // $collection = $query ->where(function($q) {
-        //         $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
-        //         ->orWhere(function($sub) {
-        //             $sub->where('payment_type', 'CHANGE PLAN')
-        //                 ->where('dr_cr', 'Cr');
-        //         });
-        //     })->sum('amount');
-
-        $today_other_amt = (clone $baseQuery)
-            ->whereIn('payment_type', ['TOKEN MONEY', 'MISCELLANEOUS'])
-            ->where('dr_cr', 'Cr')
-            ->sum('amount');
-
-        $todayExpense = (clone $baseQuery)->where('payment_type', 'EXPENSE')->sum('amount');
-        $today_pending = (clone $baseQuery)->where('payment_type', 'PENDING')->sum('amount');
-        $today_refund = (clone $baseQuery)->where(function($q) {
-            $q->where('payment_type', 'REFUND')
-            ->orWhere(function($sub) {
-                $sub->where('payment_type', 'CHANGE PLAN')
-                    ->where('dr_cr', 'Dr');
-            });
-        })
-        ->sum('amount');
-
-        $total_cr = (clone $baseQuery)->where('dr_cr', 'Cr')->sum('amount');
-        $total_dr = (clone $baseQuery)->where('dr_cr', 'Dr')->sum('amount');
-           
-        $todayBalance = $total_cr-$total_dr;
+        $totalCr = (float) ($totals->total_cr ?? 0);
+        $totalDr = (float) ($totals->total_dr ?? 0);
 
         return [
             'type' => $type,
             'value' => (string) $resolvedValue,
-            'collection' => (string) $collection,
-            'other_income' => (string)$today_other_amt ?? 0,
-            'expense' => (string)$todayExpense ?? 0,
-            'refund' =>(string)$today_refund ?? 0,
-            'pending_payment' => (string)$today_pending ?? 0,
-            'balance' => (string) $todayBalance
+            'collection' => (string) $totalCr,
+            'other_income' => (string) ($totals->other_amt ?? 0),
+            'expense' => (string) ($totals->expense_amt ?? 0),
+            'refund' => (string) ($totals->refund_amt ?? 0),
+            'pending_payment' => (string) ($totals->pending_amt ?? 0),
+            'balance' => (string) ($totalCr - $totalDr)
         ];
     }
 
@@ -155,9 +133,6 @@ class DashboardService
        
         $totalSeats =  Hour::where('branch_id', $branchId)->value('seats');
 
-         $extend_day = getExtendDays();
-        
-       
         $booked_seats=LearnerDetail::whereNull('deleted_at')->distinct('seat_no')->where('status', 1)->whereNotNull('seat_no')->count('seat_no');
       
         // available slot
@@ -218,14 +193,17 @@ class DashboardService
 
     private function onlineBookings(int $branchId): array
     {
-        $bookings = Booking::where('branch_id', $branchId)
-            ->with([
-                'plan:id,name',
-                'planType:id,name'
-            ])
-            ->where('type','qr_seat_book')
-            ->select('id','seat_no','name','mobile','plan_id','plan_type_id','payment_screenshot','profile_picture','plan_start_date','status')
-            ->latest()
+        $bookings = Booking::where('bookings.branch_id', $branchId)
+            ->where('bookings.type', 'qr_seat_book')
+            ->leftJoin('plans', 'plans.id', '=', 'bookings.plan_id')
+            ->leftJoin('plan_types', 'plan_types.id', '=', 'bookings.plan_type_id')
+            ->select(
+                'bookings.id', 'bookings.seat_no', 'bookings.name', 'bookings.mobile',
+                'bookings.payment_screenshot', 'bookings.profile_picture',
+                'bookings.plan_start_date', 'bookings.status', 'bookings.created_at',
+                'plans.name as plan_name', 'plan_types.name as plan_type_name'
+            )
+            ->orderByDesc('bookings.created_at')
             ->limit(5)
             ->get();
 
@@ -238,8 +216,8 @@ class DashboardService
                 'seat_no' => $this->dashboardSeatNo($booking->seat_no),
                 'name' => $booking->name,
                 'mobile' => $this->dashboardMobile($booking->mobile),
-                'plan_name' => $booking->plan?->name ?? '',
-                'plan_type_name' => $booking->planType?->name ?? '',
+                'plan_name' => $booking->plan_name ?? '',
+                'plan_type_name' => $booking->plan_type_name ?? '',
                 'plan_start_date' => $booking->plan_start_date ?? '',
                 
                 'payment_status' => $isPaid ? 'paid' : 'unpaid',
@@ -368,9 +346,9 @@ class DashboardService
             ->where('learners.branch_id', $branchId)
             ->whereNull('learners.deleted_at')
             ->where('learner_transactions.pending_amount', '>', 0)
-            ->when(Schema::hasColumn('learner_transactions', 'deleted_at'), function ($query) {
-                $query->whereNull('learner_transactions.deleted_at');
-            })
+            // learner_transactions always has deleted_at (LearnerTransaction uses SoftDeletes) —
+            // no need for a Schema::hasColumn() introspection query on every call.
+            ->whereNull('learner_transactions.deleted_at')
             ->select(
                 'learners.id as learner_id',
                 'learners.profile_picture',
@@ -472,9 +450,7 @@ class DashboardService
             ->where('lt.branch_id', $branchId)
             ->where('learners.branch_id', $branchId)
             ->whereNull('learners.deleted_at')
-            ->when(Schema::hasColumn('learner_transactions', 'deleted_at'), function ($query) {
-                $query->whereNull('lt.deleted_at');
-            });
+            ->whereNull('lt.deleted_at');
 
         $activeDues = (clone $transactionBase)
             ->where('learners.status', 1)
@@ -1428,20 +1404,33 @@ class DashboardService
             ];
         }
 
-        if (Schema::hasColumn('libraries', 'dob')) {
-            $owner = Library::query()
-                ->where('id', $libraryId)
-                ->whereMonth('dob', $today->month)
-                ->whereDay('dob', $today->day)
-                ->select('name', 'library_name')
-                ->first();
+        // One information_schema round trip instead of two separate Schema::hasColumn() calls.
+        $dobColumns = collect(DB::select(
+            "SELECT TABLE_NAME as table_name FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'dob' AND TABLE_NAME IN ('libraries', 'library_users')"
+        ))->pluck('table_name')->all();
 
-            if ($owner) {
+        $librariesHasDob = in_array('libraries', $dobColumns, true);
+        $libraryUsersHasDob = in_array('library_users', $dobColumns, true);
+
+        // Single Library fetch reused for both the owner-birthday check and the subscription lookup below
+        // (previously two separate queries against the same table).
+        $library = Library::query()
+            ->select(array_filter([
+                'id', 'library_name', 'library_owner', 'library_type',
+                $librariesHasDob ? 'dob' : null,
+            ]))
+            ->find($libraryId);
+
+        if ($librariesHasDob && $library && !empty($library->dob)) {
+            $ownerDob = Carbon::parse($library->dob);
+
+            if ($ownerDob->month === $today->month && $ownerDob->day === $today->day) {
                 $banners[] = [
                     'type' => 'birthday_wishes',
                     'tital' => 'Wish you happy birthay',
                     'description' => '',
-                    'birthday_user' => (string) ($owner->name ?? $owner->library_name ?? ''),
+                    'birthday_user' => (string) ($library->library_owner ?? $library->library_name ?? ''),
                     'seat_no' => '',
                     'subscription_type' => '',
                     'subscription_status' => '',
@@ -1452,12 +1441,12 @@ class DashboardService
                     'banner_link' =>"",
                      'progress_percentage' =>0,
                     'branch_id'=>getCurrentBranch()
-                    
+
                 ];
             }
         }
 
-        if (Schema::hasColumn('library_users', 'dob')) {
+        if ($libraryUsersHasDob) {
             $users = LibraryUser::query()
                 ->where('library_id', $libraryId)
                 ->whereMonth('dob', $today->month)
@@ -1485,7 +1474,6 @@ class DashboardService
             }
         }
 
-        $library = Library::query()->select('library_type')->find($libraryId);
         $subscriptionName = '';
         if ($library && !empty($library->library_type)) {
             $subscriptionName = (string) (Subscription::where('id', $library->library_type)->value('name') ?? '');
