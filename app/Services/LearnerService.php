@@ -716,12 +716,13 @@ class LearnerService
             /* ---------------------------------------------------------
             | 4. Seat Availability
             ---------------------------------------------------------*/
-             // non-expiry (VIP) occupant check: that seat is permanently held and can't be re-booked
-            if (($seat_no != 0 && !is_null($seat_no)) && seatHeldByNonExpiryLearner($branchId, $seat_no, $plan_type_id, $start_date, $endDate)) {
-                throw new \Exception('This seat is already assigned to a non-expiring plan and cannot be booked.');
+             // future booking and non expired seat check
+            $exists_future= seatHeldByFuture($branchId, $seat_no, $plan_type_id, $start_date, $endDate);
+            if (($seat_no != 0 && !is_null($seat_no)) && $exists_future && $data['learner_data']['no_expiry']==1) {
+                throw new \Exception('This seat is already assigned to a future booked.');
             }
             
-           if (!empty($data['seat_no'])) {
+           if (!empty($data['seat_no']) || $seat_no != 0) {
                 $result = checkAvailability($branchId,$seat_no,$learnerId,$plan_type_id, $plan_id, $start_date);
 
                  if ($result['error']) {

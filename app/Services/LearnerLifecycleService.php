@@ -96,7 +96,7 @@ class LearnerLifecycleService
         $totalOtherPaid = (float) $transactions->sum('token_money') + (float) $transactions->sum('miscellaneous');
         $configuredTokenMoney = (float) token_money();
         $paidTokenMoney = (float) $transactions->sum('token_money');
-        $tokenPayment = $configuredTokenMoney == 0.0 ? $paidTokenMoney : $configuredTokenMoney;
+        $tokenPayment = $paidTokenMoney;
         $miscellaneousPayment = (float) $transactions->sum('miscellaneous');
         $totalOtherPayment = $tokenPayment + $miscellaneousPayment;
         $totalPendingAmount = (float) $transactions->sum('pending_amount');

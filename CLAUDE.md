@@ -81,6 +81,10 @@ Razorpay SDK (`razorpay/razorpay`) handles online payments (seat booking, plan r
 
 Blade views + Vue 3 components built via `laravel-vite-plugin`/Vite, Bootstrap 5. `resources/` holds views/assets; there's no SPA — Vue is used for islands of interactivity within Blade pages. `yajra/laravel-datatables-oracle` backs server-side DataTables listings (check controllers for `DataTables::of(...)` patterns before writing new listing/filtering endpoints by hand).
 
+### API documentation
+
+`docs/API.md` is the source-of-truth reference for every `routes/api/v1.php` (and `routes/api.php`) endpoint's request payload and response shape, with datatypes — hand-written by reading each controller's validation rules and response construction, since this codebase has no OpenAPI/Resource layer to generate it from. Any change to a route, its controller's validation rules, or its response structure **must** update the matching section in `docs/API.md` in the same PR.
+
 ### Known repo quirks
 
 - `app/Http/Controllers/BranchController copy.php` and `LibraryController copy.php` are stray backup files (note the space in the filename) — don't confuse them with the real controllers.
