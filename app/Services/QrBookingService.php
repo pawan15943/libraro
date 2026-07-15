@@ -222,8 +222,12 @@ class QrBookingService
 
             if (!empty($seat_no) && $seat_no !=0) {
 
-                if (seatHeldByFuture(getCurrentBranch(), $seat_no, $plan_type_id, $start_date, $endDate, $learnerId ?? null)) {
-                    throw new \Exception('This seat is already assigned to a non-expiring plan and cannot be booked.');
+                $noExpiry = (int) ($request->input('no_expiry') ?? 0) === 1;
+
+                if (seatHeldByFuture(getCurrentBranch(), $seat_no, $plan_type_id, $start_date, $endDate, $learnerId ?? null, $noExpiry)) {
+                    throw new \Exception($noExpiry
+                        ? 'This seat is already assigned to a future booking and cannot be given a non-expiring plan.'
+                        : 'This seat is already booked for the selected date and time.');
                 }
 
                 $check = checkAvailability(

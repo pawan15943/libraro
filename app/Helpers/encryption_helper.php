@@ -2018,15 +2018,30 @@ if (!function_exists('normalizeTimeRange')) {
     }
 }
 
-// Blocks booking a seat that is already assigned (now or in a future overlapping slot)
-// to a no_expiry (never-expiring/VIP) learner — that occupant never vacates the seat.
+// Checks whether $seatNo already has a booking that hasn't started yet ("future" booking)
+// which collides with the one about to be booked.
+// - Normal plans: only a genuine collision blocks — same date range AND same time-of-day
+//   slot as the existing future booking. A future booking in a different slot/date range
+//   is left alone and the new booking is allowed.
+// - Non-expiring ($noExpiry) plans never vacate the seat once started, so any future
+//   booking that starts after the new plan's start date is a guaranteed future collision
+//   regardless of time-of-day slot, and must be blocked outright.
 if (!function_exists('seatHeldByFuture')) {
-    function seatHeldByFuture(int $branchId, int $seatNo, int $planTypeId, $startDate, $endDate, ?int $excludeLearnerId = null): bool
+    function seatHeldByFuture(int $branchId, int $seatNo, int $planTypeId, $startDate, $endDate, ?int $excludeLearnerId = null, bool $noExpiry = false): bool
     {
-        return LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
-            ->join('learners', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
+            ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+            ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId));
+
+        if ($noExpiry) {
+            return (clone $query)
+                ->where('learner_detail.plan_start_date', '>', $startDate->format('Y-m-d'))
+                ->exists();
+        }
+
+        return $query
             ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
             ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
             ->where(function ($query) use ($planTypeId) {

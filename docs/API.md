@@ -2174,6 +2174,8 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`. Manages bookings cre
 | status | string \| boolean | "true" (string) on success, false with HTTP 500 on exception; also 403 if lacking "QR Seat Booking"/"General Seat Booking" permission |
 | message | string | success message from `QrBookingService::verifyBooking`, or exception message on failure |
 
+Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on that seat that haven't started yet. A normal plan is rejected only if its date range AND time-of-day slot actually overlap an existing future booking — a different slot/date is allowed. When `no_expiry=1`, the booking is treated as occupying the seat indefinitely from `plan_start_date` onward, so it is rejected if the seat has *any* future booking starting after that date, regardless of time-of-day slot.
+
 ### `POST /api/v1/qr-bookings/delete`
 **Controller:** `QrBookingController@destroy`
 **Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
@@ -2240,7 +2242,7 @@ All under `/api/v1/library/learners/*` (route prefix). Middleware: `auth:library
 | status | boolean | |
 | message | string | |
 
-Note: when `no_expiry=1`, the seat-conflict check treats the booking as occupying the seat indefinitely from `plan_start_date` onward (not just through the plan's own computed end date), so it is rejected if the seat has *any* future booking starting after that date, not only ones overlapping the plan's initial billing cycle.
+Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on that seat that haven't started yet. A normal plan is rejected only if its date range AND time-of-day slot actually overlap an existing future booking — a different slot/date is allowed. When `no_expiry=1`, the booking is treated as occupying the seat indefinitely from `plan_start_date` onward (not just through the plan's own computed end date), so it is rejected if the seat has *any* future booking starting after that date, not only ones overlapping the plan's initial billing cycle.
 
 ### `GET|POST /api/v1/library/learners/seat-status`
 **Controller:** `LearnerController@seatStatus`
