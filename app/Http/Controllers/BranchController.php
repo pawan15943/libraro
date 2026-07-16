@@ -375,17 +375,22 @@ class BranchController extends Controller
              'upi_id'=>'nullable',
             'token_money'=>'nullable',
             'extend_days'=>'nullable',
-            'longitude'=>'required',
-            'latitude'=>'required',
+            'longitude'=>'nullable',
+            'latitude'=>'nullable',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'fixed_billing_date'=>'nullable|integer|min:1|max:31',
         ]);
-        
-       
+
+        $branch = $id ? Branch::find($id) : null;
+
+        if (!$branch) {
+            return redirect()->back()->with('error', 'Branch not found.');
+        }
+
         if ($request->hasFile('library_images')) {
             $uploadedFiles = [];
-            
+
             foreach ($request->file('library_images') as $file) {
                 $library_imageNewName = "library_img_" . uniqid() . '.' . $file->getClientOriginalExtension();
                 $destinationFolder = public_path('upload/library_images');
@@ -396,24 +401,24 @@ class BranchController extends Controller
                 $uploadedFiles[] = 'upload/library_images/' . $library_imageNewName;
             }
         } else {
-            $uploadedFiles = []; 
+            $uploadedFiles = [];
         }
-        
+
         // Retrieve existing images from database
-        $existingImages = json_decode($library->library_images ?? '[]', true);
-        
+        $existingImages = json_decode($branch->library_images ?? '[]', true);
+
         // Handle deleted images
         $deletedImages = $request->input('deleted_images', []);
         $remainingImages = array_diff($existingImages, $deletedImages);
-        
+
         // Merge new and remaining images
         $finalImages = array_merge($remainingImages, $uploadedFiles);
-        
+
         // Update only if images exist
         if (!empty($finalImages)) {
             $validated['library_images'] = json_encode($finalImages);
         } else {
-            unset($validated['library_images']); 
+            unset($validated['library_images']);
         }
         if ($request->hasFile('library_logo')) {
             $library_logo = $request->file('library_logo');
@@ -432,14 +437,7 @@ class BranchController extends Controller
         }
         
         $featuresJson = (isset($request->features) && $validated['features']) ? json_encode($validated['features']) : null;
-        
-      
-        $branch = $id ? Branch::find($id) : null;
-        
 
-        if (!$branch) {
-            return redirect()->back()->with('error', 'Branch not found.');
-        }
         $branch->update($validated);
 
         return redirect()->route('branch.list')->with('success', 'Profile updated successfully!');

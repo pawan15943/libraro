@@ -175,7 +175,7 @@
                             @endforeach
                         </select>
                         @error('state_id')
-                        <span class="invalid-feedback" role="alert">
+                        <span class="invalid-feedback d-block" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                         @enderror
@@ -185,10 +185,10 @@
                         <label for="cityid">City <span>*</span></label>
                         <select name="city_id" id="city_id" class="form-select @error('city_id') is-invalid @enderror">
                             <option value="">Select City</option>
-                           
+
                         </select>
                         @error('city_id')
-                        <span class="invalid-feedback" role="alert">
+                        <span class="invalid-feedback d-block" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                         @enderror
@@ -479,9 +479,9 @@
                     <div class="col-lg-12">
                         <div class="preview" id="preview">
                             @if(old('library_logo'))
-                            <img src="{{ asset('storage/app/public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                            <img src="{{ asset('public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                             @elseif(isset($branch) && $branch->library_logo)
-                            <img src="{{ asset('storage/app/public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                            <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
                             @else
                             <!-- Show empty preview or placeholder -->
                             <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
@@ -562,7 +562,14 @@ $(document).ready(function () {
     let selectedCity = "{{ old('city_id', $branch->city_id ?? '') }}";
 
     if (initialState) {
-        loadCities(initialState, selectedCity);
+        // Deferred: layouts/library.blade.php initializes the global `cityChoices`
+        // Choices.js instance in its own DOMContentLoaded handler, which is
+        // registered *after* this one (it renders below @yield('content')).
+        // Calling loadCities() synchronously here would run before that handler,
+        // finding cityChoices still null and silently no-op'ing.
+        setTimeout(function () {
+            loadCities(initialState, selectedCity);
+        }, 0);
     }
 
 });

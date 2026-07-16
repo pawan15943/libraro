@@ -400,7 +400,14 @@ class MasterController extends Controller
                 ]);
             }
         }
-      
+
+        if ($request->databasemodel == 'Hour' && $request->hour < getBranchShiftTiming()) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Branch Operating hour can not be less then shift hour.'
+            ]);
+        }
+
         if ($request->databasemodel == 'Floor') {
 
             $existing_total = Floor::where('branch_id', $request->branch_id)->sum('total_seats');
