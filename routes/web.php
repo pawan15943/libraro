@@ -75,7 +75,6 @@ Route::get('/email/verify', [LibraryController::class, 'emailVerification'])->na
 Route::post('/verify-otp', [LibraryController::class, 'verifyOtp'])->name('verify.otp');
 Route::get('library/choose-plan-price', [LibraryController::class, 'getSubscriptionPrice'])->name('subscriptions.getSubscriptionPrice');
 Route::get('cityGetStateWise', [MasterController::class, 'stateWiseCity'])->name('cityGetStateWise');
-Route::get('library/create', [LibraryController::class, 'create'])->name('library.create');
 Route::post('library/store', [LibraryController::class, 'store'])->name('library.store');
 Route::post('/fee/generate-receipt', [Controller::class, 'generateReceipt'])->name('fee.generateReceipt');
 Route::post('/learner/receipt/download', [ReceiptController::class, 'learnerDownload'])->name('learner.receipt.download');
@@ -415,6 +414,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 // Routes for superadmin and admin users
 Route::middleware(['auth:web'])->group(function () {
   Route::post('library/storedata', [AdminController::class, 'libraryStore'])->name('library.storedata');
+  Route::get('library/create', [LibraryController::class, 'create'])->name('library.create');
 
   Route::post('library/verify/otp', [AdminController::class, 'libraryVerify'])->name('library.verify.otp');
   Route::get('/home', [DashboardController::class, 'index'])->name('home'); // Admin or superadmin home

@@ -125,13 +125,35 @@ if (!function_exists('decryptData')) {
 if (!function_exists('getBranch')) {
     function getBranch()
     {
-        return Branch::where('id', getCurrentBranch())->first();
+        static $cache = [];
+
+        $id = getCurrentBranch();
+        if ($id === null) {
+            return null;
+        }
+
+        if (!array_key_exists($id, $cache)) {
+            $cache[$id] = Branch::where('id', $id)->first();
+        }
+
+        return $cache[$id];
     }
 }
 if (!function_exists('getLibrary')) {
     function getLibrary()
     {
-        return Library::where('id', getLibraryId())->first();
+        static $cache = [];
+
+        $id = getLibraryId();
+        if ($id === null) {
+            return null;
+        }
+
+        if (!array_key_exists($id, $cache)) {
+            $cache[$id] = Library::where('id', $id)->first();
+        }
+
+        return $cache[$id];
     }
 }
 

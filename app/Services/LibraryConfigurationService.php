@@ -561,7 +561,7 @@ class LibraryConfigurationService
                 /* NEW CHECK: SAME NAME + SAME TIME */
                 $duplicateNameTime = PlanType::withoutGlobalScopes()
                     ->where('branch_id', $branchId)
-                    ->where('name', $row['custom_plan_type'])
+                    ->where('name', $row['custom_plan_type'] ?? null)
                     ->where('start_time', $row['start_time'])
                     ->where('end_time', $row['end_time'])
                     ->first();

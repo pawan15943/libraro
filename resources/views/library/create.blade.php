@@ -6,7 +6,7 @@
 <div class="row">
     <div class="d-flex bradcrumb">
         <h4>Add Library Plan</h4>
-        
+
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
@@ -22,7 +22,6 @@
             @csrf
             <div class="row g-4">
                 <!-- Library Name -->
-                <input type="hidden" value="12345678" name="password">
                 <div class="col-lg-12">
                     <div class="form-group">
                         <label>Library Name<sup class="text-danger">*</sup></label>
@@ -64,7 +63,7 @@
                     </div>
                 </div>
 
-              
+
                 <!-- Address -->
                 <div class="col-lg-12">
                     <div class="form-group">
@@ -80,10 +79,10 @@
                 </div>
 
                 <!-- State -->
-                
+
                 <h6 class="mt-5">Library Owner Info :</h6>
                 <div class="row g-4">
-        
+
                     <div class="col-lg-12">
                         <label for="">Owner Name </label>
                         <input type="text" class="form-control char-only @error('library_owner') is-invalid @enderror no-validate" name="library_owner" value="{{ old('library_owner') }}">
@@ -112,7 +111,7 @@
                         @enderror
                     </div>
                     <input type="hidden" name="terms" value="1">
-               
+
             </div>
 
             <div class="row mt-3">

@@ -23,7 +23,7 @@ class RegisterLibrary
         return DB::transaction(function () use ($data) {
 
           
-            $password = trim($data['password']);
+            $password = trim($data['password'] ?? '') ?: Str::password(16);
             $data['original_password'] = $password;
             $data['password'] = bcrypt($password);
             

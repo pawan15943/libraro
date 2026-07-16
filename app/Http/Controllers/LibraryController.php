@@ -288,7 +288,7 @@ class LibraryController extends Controller
             'library_type'   => 'nullable|string|max:255',
             'library_owner'  => 'nullable|string|max:255',
             'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200',
-            'password'       => 'required|string|min:8',
+            'password'       => 'nullable|string|min:8',
             'terms'          => 'accepted',
             'library_owner_email'=> 'nullable|email|max:255',
             'library_owner_contact' => 'nullable|digits:10',

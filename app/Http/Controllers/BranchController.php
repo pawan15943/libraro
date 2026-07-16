@@ -838,31 +838,43 @@ class BranchController extends Controller
         $floorses = $request->input('floors', []);
 
         /* =========================
+        DUPLICATE BRANCH NAME
+        ========================= */
+        $validator->after(function ($validator) use ($existingBranch) {
+            if ($existingBranch) {
+                $validator->errors()->add(
+                    'name',
+                    'This branch name already exists in this library.'
+                );
+            }
+        });
+
+        /* =========================
         MONTH PLAN REQUIRED
         ========================= */
-       
-        if ($existingBranch || $branchCount == 0){
-          
+        if ($branchCount == 0){
+
+
             $validator->after(function ($validator) use ($plans) {
                 $hasMonthPlan = false;
-            
+
 
                 foreach ($plans ?? [] as $plan) {
-                
+
                     if (strtoupper($plan) === '1 MONTH') {
                         $hasMonthPlan = true;
                         break;
                     }
                 }
-            
+
                 if ($hasMonthPlan == false ) {
-            
+
                     $validator->errors()->add(
                         'plans',
                         '1 MONTH plan is required.'
                     );
                 }
-                
+
             });
         }
 

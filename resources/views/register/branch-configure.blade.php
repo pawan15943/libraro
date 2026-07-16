@@ -642,12 +642,14 @@
     $('#branchUpdate').on('submit', function(e) {
         e.preventDefault();
 
-        // Clear previous errors
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').remove();
-        $('.form-error').remove();
-
         let form = this;
+
+        // Clear previous errors (scoped to this form only — other forms on the
+        // page, e.g. the global seat-booking popup, reuse the same field names)
+        $(form).find('.is-invalid').removeClass('is-invalid');
+        $(form).find('.invalid-feedback').remove();
+        $(form).find('.form-error').remove();
+
         let formData = new FormData(form);
 
         $.ajax({
@@ -693,7 +695,7 @@
 
                         // 🔹 Special handling for multi-select plans[]
                         if (key === 'plans') {
-                            $field = $('[name="plans[]"]');
+                            $field = $(form).find('[name="plans[]"]');
                             $errorTarget = $field.closest('.col-lg-6'); // show error OUTSIDE select
                         } else {
                             // floors.0.from → floors[0][from]
@@ -701,7 +703,7 @@
                                 .replace(/\.(\d+)\./g, '[$1][')
                                 .replace(/\./g, ']');
 
-                            $field = $('[name="' + fieldName + '"]');
+                            $field = $(form).find('[name="' + fieldName + '"]');
                             $errorTarget = $field.parent();
                         }
 
@@ -734,6 +736,14 @@
                         ${xhr.responseJSON.message}
                     </div>`
                     );
+                }
+
+                // Make sure the error is actually visible, not just added off-screen
+                let $errorTarget = $(form).find('.form-error, .is-invalid').first();
+                if ($errorTarget.length) {
+                    $('html, body').animate({
+                        scrollTop: $errorTarget.offset().top - 100
+                    }, 300);
                 }
             },
 
