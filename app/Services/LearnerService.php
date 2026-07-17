@@ -1430,6 +1430,18 @@ class LearnerService
         }
 
         /* -----------------------------
+        JOIN DATE FILTER
+        ------------------------------*/
+
+        if (!empty($filters['from_date'])) {
+            $query->whereDate('learner_detail.join_date', '>=', $filters['from_date']);
+        }
+
+        if (!empty($filters['to_date'])) {
+            $query->whereDate('learner_detail.join_date', '<=', $filters['to_date']);
+        }
+
+        /* -----------------------------
         SELECT
         ------------------------------*/
 

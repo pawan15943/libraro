@@ -102,6 +102,8 @@ class LearnerController extends Controller
                 'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
                 'sort_order' => 'nullable|in:asc,desc',
+                'from_date' => 'nullable|date',
+                'to_date' => 'nullable|date|after_or_equal:from_date',
             ]);
 
             // map page_no to page
@@ -119,6 +121,8 @@ class LearnerController extends Controller
                     : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
                 'sort_by' => $request->sort_by,
                 'sort_order' => $request->sort_order,
+                'from_date' => $request->from_date,
+                'to_date' => $request->to_date,
             ];
 
             $data = $service->getLearnersList($filters);
@@ -147,6 +151,8 @@ class LearnerController extends Controller
                 'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
                 'sort_order' => 'nullable|in:asc,desc',
+                'from_date' => 'nullable|date',
+                'to_date' => 'nullable|date|after_or_equal:from_date',
             ]);
 
             if ($request->has('page_no')) {
@@ -163,6 +169,8 @@ class LearnerController extends Controller
                     : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
                 'sort_by' => $request->sort_by,
                 'sort_order' => $request->sort_order,
+                'from_date' => $request->from_date,
+                'to_date' => $request->to_date,
             ];
 
             $data = $service->getLearnersList($filters);

@@ -1444,11 +1444,16 @@ class LibraryAuthController extends Controller
             }
             DB::commit();
 
+            $isShiftAdded = isset($response['branch_id'])
+                && PlanType::withoutGlobalScopes()->where('branch_id', $response['branch_id'])->exists();
+
             return response()->json([
                 'status' => true,
                 'message' => 'Branch and shifts configured successfully.',
+                'branch_id' => (int) ($response['branch_id'] ?? 0),
+                'is_shift_added' => $isShiftAdded,
             ]);
-       
+
         } catch (\Exception $e) {
 
             DB::rollBack();

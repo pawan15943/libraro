@@ -697,6 +697,8 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | |
 | message | string | |
+| branch_id | integer | id of the created/updated branch, 0 if missing |
+| is_shift_added | boolean | true if the branch has any shift (plan_type) records |
 
 **Notes:** Also mounted at `POST library/branch/store` (same controller method, alias route — see below). Accepts nested `branch_detail`, `branch_master`, `plan`, `floors`, `features` objects/arrays which are flattened into the fields above before validation.
 
@@ -712,6 +714,8 @@ Identical to `POST library/branch/configure` above — this is a second route al
 |---|---|---|
 | status | boolean | |
 | message | string | |
+| branch_id | integer | id of the created/updated branch, 0 if missing |
+| is_shift_added | boolean | true if the branch has any shift (plan_type) records |
 
 ### `POST /api/v1/library/shift/configure`
 **Controller:** `LibraryAuthController@shiftConfigure`
@@ -2290,6 +2294,8 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | sort_by | string | no | enum: seat_no\|name\|expire_date\|gen |
 | sort_order | string | no | enum: asc\|desc |
 | search | string | no | not validated, read directly |
+| from_date | string (date) | no | filters on `learner_detail.join_date >=` |
+| to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
 | page_no | integer | no | not validated; mapped internally to `page` |
 
 **Response**
@@ -2382,6 +2388,8 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | plan_type_id.* | integer | no | exists:plan_types,id |
 | sort_by | string | no | enum: seat_no\|name\|expire_date\|gen |
 | sort_order | string | no | enum: asc\|desc |
+| from_date | string (date) | no | filters on `learner_detail.join_date >=` |
+| to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
 | page_no | integer | no | not validated; mapped internally to `page` |
 
 **Response**
