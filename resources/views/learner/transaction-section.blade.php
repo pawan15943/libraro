@@ -230,6 +230,9 @@
                         <h5 class="text-primary fw-bold mb-0">Subscription Summary</h5>
                         <span class="subscription-status-badge {{ strtolower($subscription['status'] ?? '') }}">{{ $subscription['status'] ?? 'NA' }}</span>
                     </div>
+                    @if(!empty($subscription['transaction_ref']))
+                        <div class="detail-row"><span>Txn No.</span><strong>{{ $subscription['transaction_ref'] }}</strong></div>
+                    @endif
                     <div class="detail-row"><span>Plan</span><strong>{{ $subscription['plan'] ?? 'NA' }}</strong></div>
                     <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? '') }} - {{ $dateFmt($subscription['plan_end_date'] ?? '') }}{{ $shiftTimeFmt($currentDetail?->planType) }}</strong></div>
                     <div class="detail-row"><span>Locker</span><strong>{{ $subscription['locker'] ?? 'No' }} | Price : {{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>

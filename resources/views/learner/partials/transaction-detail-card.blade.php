@@ -31,6 +31,9 @@
 
     <div class="collapse" id="{{ $collapseId }}">
         <div class="transaction-history-body">
+            @if(!empty($transaction['transaction_ref']))
+                <div class="detail-row"><span>Txn No.</span><strong>{{ $transaction['transaction_ref'] }}</strong></div>
+            @endif
             <div class="detail-row"><span>Plan</span><strong>{{ $transaction['plan'] ?? 'NA' }} / {{ $transaction['plan_type'] ?? 'NA' }}</strong></div>
             <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($transaction['plan_start_date'] ?? '') }} - {{ $dateFmt($transaction['plan_end_date'] ?? '') }}</strong></div>
 
