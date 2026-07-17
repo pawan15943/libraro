@@ -209,7 +209,6 @@
                             <option value="">Choose</option>
                             <option value="1">Online</option>
                             <option value="2">Offline</option>
-                            <option value="3">Paylater</option>
                         </select>
                     </div>
                 </div>
@@ -482,6 +481,15 @@
                         <label>Pending Refund Amt.</label>
                         <input type="text" placeholder="Enter Amount" class="form-control digit-only pendingRefund" maxlength='4'>
                     </div>
+                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
+                        <label>Payment Mode</label>
+                        <select class="form-control refundPaymentMode">
+                            <option value="">Select Payment Mode</option>
+                            <option value="1">Online</option>
+                            <option value="2">Offline</option>
+                            <option value="3">Pay Later</option>
+                        </select>
+                    </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
                         <textarea class="form-control refundRemark" cols="30" rows="3"></textarea>
@@ -537,8 +545,9 @@
 
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
+                const paymentMode = $('.refundPaymentMode').val();
 
-                
+
                 if (isRefund && (refundValue === "" || isNaN(refundAmount) || refundAmount < 0 || refundAmount > paybleRefund)) {
                     Swal.showValidationMessage('Please enter a valid refund amount');
                     return false;
@@ -547,17 +556,22 @@
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
+                if (isRefund && !paymentMode) {
+                    Swal.showValidationMessage('Please choose payment mode');
+                    return false;
+                }
 
                 return {
                     isRefund: isRefund,
                     paybleRefund: $('.paybleRefund').val(),
                     refundAmount: refundAmount,
                     pendingRefund: $('.pendingRefund').val(),
+                    paymentMode: paymentMode,
                     remark: remark,
                 };
             }
         }).then((result) => {
-            
+
             if (result.isConfirmed) {
                 $.ajax({
                     url: url,
@@ -565,6 +579,7 @@
                     data: {
                         _token: '{{ csrf_token() }}',
                         learnerDetail: learnerDetail,
+                        payment_mode: result.value.paymentMode,
                         isRefund: result.value.isRefund ? 1 : 0,
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
@@ -764,6 +779,15 @@
                         <label>Pending Refund Amt.</label>
                         <input type="text" placeholder="Enter Amount" class="form-control pendingRefund digit-only" maxlength="4" >
                     </div>
+                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
+                        <label>Payment Mode</label>
+                        <select class="form-control refundPaymentMode">
+                            <option value="">Select Payment Mode</option>
+                            <option value="1">Online</option>
+                            <option value="2">Offline</option>
+                            <option value="3">Pay Later</option>
+                        </select>
+                    </div>
                     <div class="col-lg-12 refundAmountDiv" style="display:none;">
                         <label>Remark</label>
                         <textarea class="form-control refundRemark" cols="30" rows="3" style="height:auto !important;"></textarea>
@@ -802,7 +826,8 @@
                 let refundAmount = parseFloat(refundValue);
                 const remark = $('.refundRemark').val();
                 const pendingRefund = parseFloat($('.pendingRefund').val()) || 0;
-              
+                const paymentMode = $('.refundPaymentMode').val();
+
                  // ⭐ REQUIRED VALIDATION — at least ONE must be selected
                 if (!isRefund && !withoutRefundSelected) {
                     Swal.showValidationMessage('Please select one from Refund or Without Refund');
@@ -816,12 +841,17 @@
                     Swal.showValidationMessage('Please enter a valid pending refund amount');
                     return false;
                 }
+                if (isRefund && !paymentMode) {
+                    Swal.showValidationMessage('Please choose payment mode');
+                    return false;
+                }
 
                 return {
                     isRefund: isRefund,
                     paybleRefund: $('.paybleRefund').val(),
                     refundAmount: refundAmount,
                     pendingRefund: $('.pendingRefund').val(),
+                    paymentMode: paymentMode,
                     remark: remark,
                     learner_id: learner_id,
                 };
@@ -835,6 +865,7 @@
                         _token: '{{ csrf_token() }}',
                         learner_id: result.value.learner_id,
                         learnerDetail: learnerDetail,
+                        payment_mode: result.value.paymentMode,
                         isRefund: result.value.isRefund ? 1 : 0,
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
@@ -3067,17 +3098,17 @@
 
             for (const fieldName in changes) {
                 const { oldValue, newValue } = changes[fieldName];
-                const swap_old_value=$('#swap_old_value').val();
-                if(swap_old_value=='swapseat'){
-                    swap_old_value='General';
-                }
-               
+
                 if (formId === 'reactive') {
                     if (fieldName === 'seat_id') {
                         logFieldChange(learnerId, formId, fieldName, oldValue, newValue);
                     }
-                }else if(formId === 'swapseat'){
-                    logFieldChange(learnerId, formId, fieldName, swap_old_value, newValue);
+                } else if (formId === 'swapseat') {
+                    // LearnerSeatSwapService already logs this operation server-side (inside
+                    // the same DB transaction as the swap itself) with an accurate
+                    // old/new seat value. Logging it again here races that insert - both
+                    // fire on the same 'submit' tick and can hit the unique
+                    // (learner_id, operation, created_at) index in the same second.
                 } else {
                     // For other operations, log changes for all fields
                     logFieldChange(learnerId, formId, fieldName, oldValue, newValue);

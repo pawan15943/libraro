@@ -2642,6 +2642,18 @@ class LearnerController extends Controller
             ]);
 
 
+            // learner_id + operation + created_at is unique; if another log write for the
+            // same learner/operation lands in the same second, nudge ours forward instead
+            // of throwing (mirrors LearnerOperationLogService::log()).
+            $createdAt = now();
+            while (DB::table('learner_operations_log')
+                ->where('learner_id', $validatedData['learner_id'])
+                ->where('operation', $validatedData['operation'])
+                ->where('created_at', $createdAt->format('Y-m-d H:i:s'))
+                ->exists()) {
+                $createdAt = $createdAt->copy()->addSecond();
+            }
+
             DB::table('learner_operations_log')->insert([
                 'learner_id' => $validatedData['learner_id'],
                 'learner_detail_id' => $learner_detail_id,
@@ -2652,7 +2664,7 @@ class LearnerController extends Controller
                 'updated_by' => $updated_user,
                 'operation' => $validatedData['operation'],
                 'branch_id' =>  getCurrentBranch(),
-                'created_at' => now(),
+                'created_at' => $createdAt,
             ]);
 
             Log::info('Data inserted successfully');
