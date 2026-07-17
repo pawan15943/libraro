@@ -25,6 +25,18 @@
         }
         return ucwords(strtolower(str_replace('_', ' ', $text)));
     };
+    $shiftTimeFmt = function ($planType) {
+        if (!$planType || !$planType->start_time || !$planType->end_time) {
+            return '';
+        }
+        try {
+            $start = \Carbon\Carbon::parse($planType->start_time)->format('g a');
+            $end = \Carbon\Carbon::parse($planType->end_time)->format('g a');
+            return " ({$start} to {$end})";
+        } catch (\Throwable $e) {
+            return '';
+        }
+    };
     $transactionBreakdown = function ($transaction) {
         $total = (float) ($transaction->total_amount ?? 0);
         $locker = (float) ($transaction->locker_amount ?? 0);
@@ -73,6 +85,7 @@
     .metric strong, .payment-box strong { display: block; font-size: 1.25rem; margin-top: 4px; color: #111; }
     .metric .pending, .payment-box .pending { color: #d60000; }
     .metric .received, .payment-box .received { color: #4dae3c; }
+    .metric .refund { color: #07156f; }
     .section-title { color: #686868; font-weight: 700; margin: 22px 0 10px; }
     .payment-card { border: 1px solid #e3e6eb; border-radius: 8px; background: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
     .payment-icon { width: 44px; height: 44px; border-radius: 50%; background: #dbffd1; display: grid; place-items: center; color: #55bd39; flex: 0 0 auto; }
@@ -81,6 +94,10 @@
     .payment-card small { color: #777; }
     .payment-card .amount { margin-left: auto; text-align: right; font-weight: 800; color: #4dae3c; }
     .payment-card .amount.debit { color: #d60000; }
+    .payment-card-action { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f6; color: #111; text-decoration: none; flex: 0 0 auto; }
+    .subscription-status-badge { background: #d9ffc9; color: #188000; border-radius: 5px; padding: 5px 12px; font-size: .78rem; font-weight: 700; }
+    .subscription-status-badge.expired, .subscription-status-badge.closed, .subscription-status-badge.deleted { background: #ffe7e7; color: #d60000; }
+    .subscription-status-badge.upcoming { background: #eef1ff; color: #07156f; }
     .detail-panel { border: 1px solid #dfe3ea; border-radius: 8px; background: #fff; padding: 20px; }
     .detail-row { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; font-size: .92rem; }
     .detail-row span { color: #666; }
@@ -170,12 +187,12 @@
             <div class="amount-panel">
                 <h5>Total Amount Received</h5>
                 <div class="main-amount">{{ $fmt($apiOverview['total_amount_received'] ?? $summary['received_amount']) }}</div>
-                <p class="text-muted small mb-0">Final amount received from this learner, including subscription and other payments.</p>
+                <p class="text-muted small mb-0">This is the final amount received from this learner, including all pending and refunded amounts.</p>
                 <div class="metric-grid">
                     <div class="metric"><span>Total Amt.</span><strong>{{ $fmt($apiOverview['total_amount'] ?? $summary['total_amount']) }}</strong></div>
                     <div class="metric"><span>Pending Amt.</span><strong class="pending">{{ $fmt($apiOverview['pending_amount'] ?? $summary['pending_amount']) }}</strong></div>
                     <div class="metric"><span>Extra Amt.</span><strong class="received">{{ $fmt($apiOverview['extra_amount'] ?? $summary['extra_amount']) }}</strong></div>
-                    <div class="metric"><span>Refund Amt.</span><strong class="pending">{{ $fmt($apiOverview['refund_amount'] ?? $summary['refund_amount']) }}</strong></div>
+                    <div class="metric"><span>Refund Amt.</span><strong class="refund">{{ $fmt($apiOverview['refund_amount'] ?? $summary['refund_amount']) }}</strong></div>
                 </div>
             </div>
 
@@ -184,102 +201,74 @@
                 <div class="payment-card">
                     <div class="payment-icon"><i class="fa-solid fa-calendar-days"></i></div>
                     <div>
-                        <h6>{{ $dateFmt($apiOverview['next_due_date'] ?? $summary['next_due_date']) }}</h6>
-                        <small>{{ $modeLabel($currentDetail?->payment_mode) }}</small>
+                        <h6>{{ $apiOverview['next_due_date'] ?? $summary['next_due_date'] }}</h6>
+                        <small>(Subscription + Carryforward) - Extra Amt.</small>
                     </div>
-                    <div class="amount pending">{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</div>
+                    <div class="amount">{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</div>
                 </div>
             @endif
 
-            <div class="section-title">Last 3 Transactions</div>
-            @forelse($activities->take(3) as $activity)
-                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel])
-            @empty
+            <div class="section-title">Last Subscription Transaction</div>
+            @if($apiOverview['last_transactions'] ?? null)
+                @include('learner.partials.transaction-detail-card', ['transaction' => $apiOverview['last_transactions'], 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel, 'typeLabel' => $typeLabel, 'learner' => $learner, 'collapseId' => 'overview-last-transaction'])
+            @else
                 <div class="payment-card text-muted">No transaction recorded.</div>
-            @endforelse
+            @endif
         </div>
 
         <div class="tab-pane fade" id="subscription">
-            <div class="detail-panel mb-3">
-                <h5 class="text-primary fw-bold mb-3">Active Subscription details</h5>
-                <div class="detail-row"><span>Plan</span><strong>{{ $currentDetail?->plan?->name ?? 'NA' }}</strong></div>
-                <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($currentDetail?->plan_start_date) }} - {{ $dateFmt($currentDetail?->plan_end_date) }}</strong></div>
-                <div class="detail-row"><span>Locker</span><strong>{{ ($latestTransaction?->locker_amount ?? 0) > 0 ? 'Yes : Price '.$fmt($latestTransaction->locker_amount) : 'No' }}</strong></div>
-                <div class="detail-row"><span>Plan Price</span><strong>{{ $fmt(($latestTransaction?->total_amount ?? 0) - ($latestTransaction?->locker_amount ?? 0) + ($latestTransaction?->discount_amount ?? 0)) }}</strong></div>
-                <div class="detail-row"><span>Discount</span><strong>{{ $fmt($latestTransaction?->discount_amount ?? 0) }}</strong></div>
-                <div class="detail-row"><span>Total Payable</span><strong>{{ $fmt($latestTransaction?->total_amount ?? 0) }}</strong></div>
-            </div>
-
-            <div class="metric-grid mb-3">
+            <div class="metric-grid mb-3" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="payment-box"><span>Total Payment</span><strong>{{ $fmt($summary['total_amount']) }}</strong></div>
                 <div class="payment-box"><span>Received Amt.</span><strong class="received">{{ $fmt($summary['received_amount']) }}</strong></div>
                 <div class="payment-box"><span>Pending Amt.</span><strong class="pending">{{ $fmt($summary['pending_amount']) }}</strong></div>
-                <div class="payment-box"><span>Plans</span><strong>{{ $transactions->count() }}</strong></div>
             </div>
 
-            <div class="section-title">Subscription Summary</div>
-            @forelse($apiSubscription as $subscription)
-                @php
-                    $collapseId = 'subscription-detail-'.$subscription['id'];
-                    $isPending = (float) ($subscription['pending_amount'] ?? 0) > 0;
-                @endphp
-                <div class="transaction-history-card">
-                    <button class="transaction-history-main" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $collapseId }}" aria-expanded="false" aria-controls="{{ $collapseId }}">
-                        <span class="payment-icon"><i class="fa-solid fa-arrow-down"></i></span>
-                        <span class="transaction-history-title">
-                            <h6>Subscription Payment</h6>
-                            <small>{{ $subscription['payment_mode'] ?? 'NA' }} &bull; {{ $dateFmt($subscription['paid_date'] ?? '') }}</small>
-                        </span>
-                        <span class="transaction-history-amount {{ $isPending ? 'pending' : '' }}">
-                            {{ $fmt($subscription['total_paid_amount'] ?? 0) }}
-                            @if($isPending)<small class="d-block text-danger">Due {{ $fmt($subscription['pending_amount']) }}</small>@endif
-                        </span>
-                        <span class="transaction-chevron"><i class="fa-solid fa-chevron-down"></i></span>
-                    </button>
-                    <div class="collapse" id="{{ $collapseId }}">
-                        <div class="transaction-history-body">
-                            <div class="detail-row"><span>Plan</span><strong>{{ $subscription['plan'] ?? 'NA' }} / {{ $subscription['plan_type'] ?? 'NA' }}</strong></div>
-                            <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? '') }} - {{ $dateFmt($subscription['plan_end_date'] ?? '') }}</strong></div>
-                            <div class="transaction-breakdown">
-                                <div><span>Plan Price</span><strong>{{ $fmt($subscription['plan_price'] ?? 0) }}</strong></div>
-                                <div><span>Locker</span><strong>{{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>
-                                <div><span>Discount</span><strong>{{ $fmt($subscription['discount_amount'] ?? 0) }}</strong></div>
-                                <div><span>Total Amt.</span><strong>{{ $fmt($subscription['total_amount'] ?? 0) }}</strong></div>
-                            </div>
-                            <div class="transaction-actions">
-                                @if(!empty($subscription['subscription_download_receipt_link']))
-                                    <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
-                                @endif
-                                @if(!empty($subscription['edit_url']))
-                                    <a href="{{ $subscription['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                                @endif
-                                @if(!empty($subscription['delete_url']))
-                                    <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <input type="hidden" name="learner_id" value="{{ $learner->id }}">
-                                        <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
-                                    </form>
-                                @endif
-                            </div>
-                        </div>
+            @php $subscription = $apiSubscription->first(); @endphp
+            @if($subscription)
+                <div class="detail-panel mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="text-primary fw-bold mb-0">Subscription Summary</h5>
+                        <span class="subscription-status-badge {{ strtolower($subscription['status'] ?? '') }}">{{ $subscription['status'] ?? 'NA' }}</span>
+                    </div>
+                    <div class="detail-row"><span>Plan</span><strong>{{ $subscription['plan'] ?? 'NA' }}</strong></div>
+                    <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? '') }} - {{ $dateFmt($subscription['plan_end_date'] ?? '') }}{{ $shiftTimeFmt($currentDetail?->planType) }}</strong></div>
+                    <div class="detail-row"><span>Locker</span><strong>{{ $subscription['locker'] ?? 'No' }} | Price : {{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>
+                    <div class="detail-row"><span>Plan Price</span><strong>{{ $fmt($subscription['plan_price'] ?? 0) }}</strong></div>
+                    <div class="detail-row"><span>Discount (in Amount)</span><strong>{{ $fmt($subscription['discount_amount'] ?? 0) }}</strong></div>
+                    <div class="detail-row"><span class="fw-bold text-dark">Total Payable</span><strong>{{ $fmt($subscription['total_amount'] ?? 0) }}</strong></div>
+
+                    <div class="transaction-actions">
+                        @if(!empty($subscription['subscription_download_receipt_link']))
+                            <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
+                        @endif
+                        @if(!empty($subscription['edit_url']))
+                            <a href="{{ $subscription['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                        @endif
+                        @if(!empty($subscription['delete_url']))
+                            <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="learner_id" value="{{ $learner->id }}">
+                                <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        @endif
                     </div>
                 </div>
-            @empty
+            @else
                 <div class="payment-card text-muted">No subscription activity recorded.</div>
-            @endforelse
+            @endif
         </div>
 
         <div class="tab-pane fade" id="otherPayment">
-            <div class="metric-grid mb-3">
-                <div class="payment-box"><span>Total Payment</span><strong>{{ $fmt(($latestTransaction?->token_money ?? 0) + ($latestTransaction?->miscellaneous ?? 0) + $summary['refund_amount']) }}</strong></div>
-                <div class="payment-box"><span>Received Amt.</span><strong class="received">{{ $fmt(($latestTransaction?->token_money ?? 0) + ($latestTransaction?->miscellaneous ?? 0)) }}</strong></div>
-                <div class="payment-box"><span>Pending Amt.</span><strong class="pending">{{ $fmt($summary['extra_amount']) }}</strong></div>
-                <div class="payment-box"><span>Entries</span><strong>{{ $otherActivities->count() }}</strong></div>
+            @php $otherPaymentSummary = $tabData['other_payment']['summary'] ?? []; @endphp
+            <div class="metric-grid mb-3" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="payment-box"><span>Total Payment</span><strong>{{ $fmt($otherPaymentSummary['total_payment'] ?? 0) }}</strong></div>
+                <div class="payment-box"><span>Received Amt.</span><strong class="received">{{ $fmt($otherPaymentSummary['received_amount'] ?? 0) }}</strong></div>
+                <div class="payment-box"><span>Pending Amt.</span><strong class="pending">{{ $fmt($otherPaymentSummary['pending_amount'] ?? 0) }}</strong></div>
             </div>
             <div class="section-title">Payment Summary</div>
-            @forelse($otherActivities as $activity)
-                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel])
+            @forelse($apiOtherPayments as $activity)
+                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt])
             @empty
                 <div class="payment-card text-muted">No other payment recorded.</div>
             @endforelse
@@ -299,90 +288,24 @@
                     @forelse($apiAllTransactions as $transaction)
                         @php
                             $relatedActivities = collect($transaction['activity'] ?? []);
-                            $primaryActivity = $relatedActivities->first();
                             $isPending = (float) ($transaction['pending_amount'] ?? 0) > 0;
-                            $hasOther = false;
                             $hasRefund = (float) ($transaction['extra_amount'] ?? 0) > 0 || $relatedActivities->contains(fn ($activity) => strtoupper((string) ($activity['payment_type'] ?? '')) === 'REFUND');
                             $filterTags = collect(['all'])
                                 ->when(!$isPending, fn ($items) => $items->push('paid'))
                                 ->when($isPending, fn ($items) => $items->push('pending'))
-                                ->when($hasOther, fn ($items) => $items->push('other'))
                                 ->when($hasRefund, fn ($items) => $items->push('refund'))
                                 ->implode(' ');
-                            $collapseId = 'transaction-detail-'.$transaction['id'];
-                            $title = $primaryActivity['transaction_type'] ?? 'Subscription Payment';
-                            $amountClass = $isPending ? 'pending' : '';
                         @endphp
-
-                        <div class="transaction-history-card" data-transaction-card data-tags="{{ $filterTags }}">
-                            <button class="transaction-history-main" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $collapseId }}" aria-expanded="false" aria-controls="{{ $collapseId }}">
-                                <span class="payment-icon {{ $hasRefund ? 'debit' : '' }}">
-                                    <i class="fa-solid fa-arrow-{{ $hasRefund ? 'up' : 'down' }}"></i>
-                                </span>
-                                <span class="transaction-history-title">
-                                    <h6>{{ $transaction['transaction_type'] ?? 'NA' }}</h6>
-                                    <small>{{ $modeLabel($primaryActivity['payment_mode'] ?? $transaction['payment_mode'] ?? '') }} &bull; {{ $dateFmt($transaction['paid_date'] ?? '') }}</small>
-                                </span>
-                                <span class="transaction-history-amount {{ $amountClass }}">
-                                    {{ $fmt($transaction['total_paid_amount'] ?? 0) }}
-                                    @if($isPending)
-                                        <small class="d-block text-danger">Due {{ $fmt($transaction['pending_amount'] ?? 0) }}</small>
-                                    @endif
-                                </span>
-                                <span class="transaction-chevron"><i class="fa-solid fa-chevron-down"></i></span>
-                            </button>
-
-                            <div class="collapse" id="{{ $collapseId }}">
-                                <div class="transaction-history-body">
-                                    <div class="detail-row"><span>Plan</span><strong>{{ $transaction['plan'] ?? 'NA' }} / {{ $transaction['plan_type'] ?? 'NA' }}</strong></div>
-                                    <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($transaction['plan_start_date'] ?? '') }} - {{ $dateFmt($transaction['plan_end_date'] ?? '') }}</strong></div>
-
-                                    <div class="transaction-breakdown">
-                                        <div><span>Plan Price</span><strong>{{ $fmt($transaction['plan_price'] ?? 0) }}</strong></div>
-                                        <div><span>Locker</span><strong>{{ $fmt($transaction['locker_amount'] ?? 0) }}</strong></div>
-                                        <div><span>Discount</span><strong>{{ $fmt($transaction['discount_amount'] ?? 0) }}</strong></div>
-                                        <div><span>Total Amt.</span><strong>{{ $fmt($transaction['total_amount'] ?? 0) }}</strong></div>
-                                    </div>
-
-                                    <div class="transaction-body-row">
-                                        <div><span>Final Payable Amt.</span><strong>{{ $fmt($transaction['final_payable_amount'] ?? 0) }}</strong></div>
-                                        <div><span>Paid Amt.</span><strong class="text-success">{{ $fmt($transaction['total_paid_amount'] ?? 0) }}</strong></div>
-                                        <div><span>Pending / Extra Amt.</span><strong class="{{ $isPending ? 'text-danger' : 'text-primary' }}">{{ $isPending ? $fmt($transaction['pending_amount'] ?? 0) : $fmt($transaction['extra_amount'] ?? 0) }}</strong></div>
-                                    </div>
-
-                                    @if($relatedActivities->isNotEmpty())
-                                        <div class="activity-mini-list">
-                                            <h6>Activity</h6>
-                                            @foreach($relatedActivities as $activity)
-                                                <div class="activity-mini-item">
-                                                    <span>{{ $typeLabel($activity['payment_type'] ?? $activity['payment_type'] ?? '') }} &bull; {{ $modeLabel($activity['payment_mode'] ?? '') }}</span>
-                                                    <strong class="{{ strtolower((string) ($activity['dr_cr'] ?? '')) === 'dr' ? 'text-danger' : 'text-success' }}">{{ $fmt($activity['paid_amount'] ?? 0) }}</strong>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endif
-
-                                    <div class="transaction-actions">
-                                        @if(!empty($transaction['subscription_download_receipt_link']))
-                                            <a href="{{ $transaction['subscription_download_receipt_link'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
-                                        @else
-                                            <span class="text-muted" data-bs-toggle="tooltip" data-bs-title="Receipt unavailable"><i class="fa-solid fa-download"></i></span>
-                                        @endif
-                                        @if(!empty($transaction['edit_url']))
-                                            <a href="{{ $transaction['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                                        @endif
-                                        @if(!empty($transaction['delete_url']))
-                                            <form method="POST" action="{{ $transaction['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <input type="hidden" name="learner_id" value="{{ $learner->id }}">
-                                                <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        @include('learner.partials.transaction-detail-card', [
+                            'transaction' => $transaction,
+                            'fmt' => $fmt,
+                            'dateFmt' => $dateFmt,
+                            'modeLabel' => $modeLabel,
+                            'typeLabel' => $typeLabel,
+                            'learner' => $learner,
+                            'collapseId' => 'transaction-detail-'.$transaction['id'],
+                            'cardAttrs' => 'data-transaction-card data-tags="'.$filterTags.'"',
+                        ])
                     @empty
                         <div class="transaction-empty">No transaction recorded.</div>
                     @endforelse
@@ -407,28 +330,12 @@
                         <i class="fa-solid fa-arrow-{{ $isDebit ? 'up' : 'down' }}"></i>
                     </span>
                     <div>
-                        <h6>{{ $typeLabel($activity['particular'] ?? $activity['payment_type'] ?? '') }}</h6>
-                        <small>{{ $modeLabel($activity['payment_mode'] ?? '') }} &bull; {{ $dateFmt($activity['transaction_date'] ?? '') }} &bull; Added by {{ $activity['added_by'] ?? 'System User' }}</small>
+                        <h6>{{ strtoupper($activity['payment_type'] ?: ($activity['particular'] ?? 'Transaction')) }}</h6>
+                        <small>Received by : {{ $activity['added_by_name'] ?? $activity['added_by'] ?? '' }} &bull; {{ $activity['payment_mode'] ?? '' }}</small>
                     </div>
                     <div class="amount {{ $isDebit ? 'debit' : '' }}">
                         {{ $fmt($activity['paid_amount'] ?? 0) }}
-                        <div class="transaction-actions mt-2">
-                            @if(!empty($activity['download_receipt_url']))
-                                <a href="{{ $activity['download_receipt_url'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download"><i class="fa-solid fa-download"></i></a>
-                            @else
-                                <span class="text-muted" data-bs-toggle="tooltip" data-bs-title="Download unavailable"><i class="fa-solid fa-download"></i></span>
-                            @endif
-                            @if(!empty($activity['edit_url']))
-                                <a href="{{ $activity['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
-                            @endif
-                            @if(!empty($activity['delete_url']))
-                                <form method="POST" action="{{ $activity['delete_url'] }}" onsubmit="return confirm('Delete this activity?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
-                                </form>
-                            @endif
-                        </div>
+                        <small class="d-block text-muted fw-normal">{{ $dateFmt($activity['transaction_date'] ?? '') }}</small>
                     </div>
                 </div>
             @empty
