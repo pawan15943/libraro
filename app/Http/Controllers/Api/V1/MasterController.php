@@ -2043,7 +2043,7 @@ class MasterController extends Controller
         // ✅ Check shifts / plan types
         $hasShifts = PlanType::withoutGlobalScopes()->where('branch_id', $id)->exists();
 
-        if ($hasShifts) {
+        if ($hasShifts && $hasLearners) {
             return response()->json([
                 'status' => false,
                 'message' => 'Cannot delete branch. Shifts are configured.'
@@ -2053,7 +2053,7 @@ class MasterController extends Controller
         // ✅ Check hours
         $hasHours =Hour::withoutGlobalScopes()->where('branch_id', $id)->exists();
 
-        if ($hasHours) {
+        if ($hasHours && $hasLearners) {
             return response()->json([
                 'status' => false,
                 'message' => 'Cannot delete branch. Hours data exists.'
@@ -2075,6 +2075,23 @@ class MasterController extends Controller
         // ✅ delete logo
         if (!empty($branch->library_logo) && !str_contains($branch->library_logo, 'uploads/')) {
             Storage::disk('public')->delete($branch->library_logo);
+        }
+
+        // ✅ delete hour record(s) for this branch
+        Hour::withoutGlobalScopes()->where('branch_id', $id)->delete();
+
+        // ✅ delete shifts (plan types) for this branch, but only the ones with no
+        // learner attached (active or historical) so learner history keeps its shift name.
+        $shifts = PlanType::withoutGlobalScopes()->where('branch_id', $id)->get();
+        foreach ($shifts as $shift) {
+            $hasShiftLearners = LearnerDetail::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('plan_type_id', $shift->id)
+                ->exists();
+
+            if (!$hasShiftLearners) {
+                $shift->delete();
+            }
         }
 
         // ✅ finally delete branch

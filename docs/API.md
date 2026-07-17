@@ -920,8 +920,10 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 **Response**
 | Field | Type | Notes |
 |---|---|---|
-| status | boolean | false if branch not found, or if learners/shifts/hours exist for the branch |
+| status | boolean | false if branch not found, or if learners exist for the branch |
 | message | string | |
+
+**Notes:** On successful delete, the branch's `Hour` record(s) are also (soft-)deleted, and each of its shifts (`PlanType`) is (soft-)deleted only if no `LearnerDetail` (active or trashed) references it — shifts with historical learner data are left in place so learner history keeps its shift name.
 
 ---
 
@@ -1864,6 +1866,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | data.selected_branch.uuid | string | |
 | data.selected_branch.branch_qr_value | string | |
 | data.selected_branch.branch_qr_svg | string | raw SVG markup |
+| data.selected_branch.is_shift_added | boolean | true if the selected branch has any shift (plan_type) records |
 
 ### `POST /api/v1/library/dashboard`
 **Controller:** `LibraryController@dashboard`

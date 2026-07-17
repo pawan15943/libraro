@@ -61,6 +61,9 @@ class LibraryController extends Controller
       $branchQrSvg = $branchQrValue
          ? (string) QrCode::size(650)->generate($branchQrValue)
          : '';
+      $isShiftAdded = $selectedBranch
+         ? PlanType::withoutGlobalScopes()->where('branch_id', $selectedBranch->id)->exists()
+         : false;
 
       // Active plan with subscription name
       $activePlan = LibraryTransaction::where('library_transactions.library_id', $libraryId)
@@ -174,6 +177,7 @@ class LibraryController extends Controller
                     'uuid' => $selectedBranch->uuid ?? '',
                     'branch_qr_value' => $branchQrValue,
                     'branch_qr_svg' => $branchQrSvg,
+                    'is_shift_added' => $isShiftAdded,
                 ],
               
          ]
