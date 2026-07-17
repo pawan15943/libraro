@@ -23,32 +23,9 @@ if($customer->locker_no){
     $locker_read='readonly';
 }
 
-
-if(Route::currentRouteName() == 'learner.change.plan'){
-    $paymentType='CHANGE PLAN';
-    $route=route('learners.update.changePlan', $customer->id);
-    $ids='changePlan';
-    $start_date = \Carbon\Carbon::parse($customer->plan_start_date)->format('Y-m-d');
-}else{
-    $paymentType='UPGRADE';
-    $route=route('learner.upgrade.renew.store');
-    $ids='learnerUpgrade';
-    $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
-}
-
-// diffrence_amount is submitted signed (negative = refund, positive = pay) to match
-// LearnerOperationService's CHANGE PLAN branch, but is shown to the user as a plain
-// positive magnitude - the sign is tracked separately via data-sign.
-$oldDiff = old('diffrence_amount');
-$diffSign = ($oldDiff !== null && $oldDiff !== '' && (float) $oldDiff < 0) ? -1 : 1;
-$diffAbs = ($oldDiff !== null && $oldDiff !== '') ? abs((float) $oldDiff) : '';
-$diffLabel = $diffSign < 0 ? 'Amount to Refund' : 'Amount to pay';
-
-$oldPending = old('pending_amount');
-$pendingSign = ($oldPending !== null && $oldPending !== '' && (float) $oldPending < 0) ? -1 : 1;
-$pendingAbs = ($oldPending !== null && $oldPending !== '') ? abs((float) $oldPending) : '';
-$pendingLabel = $pendingSign < 0 ? 'Pending Refund Amount' : 'Pending Amount';
-$whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When do you want to pay this amount';
+$route=route('learner.upgrade.renew.store');
+$ids='learnerUpgrade';
+$start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 
 @endphp
 
@@ -89,22 +66,14 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
             </div>
 
             <div class="form-input mb-4">
-                <h4 class="inner-heading">
-                    @if(Route::currentRouteName() == 'learner.change.plan')
-                    Change Plan
-                    @else
-                    Upgrade Plan
-                    @endif
-                </h4>
+                <h4 class="inner-heading">Upgrade Plan</h4>
                 <div class="tip text-danger">
                     @if(Route::currentRouteName() == 'learner.renew.plan')
                     <b>Note:</b> You can renew your plan 5 days before it expires or during the extended period. Plan and shift changes are not allowed.
-                    @elseif(Route::currentRouteName() == 'learner.change.plan')
-                    <b>Note:</b> You can change the learner's plan & plan type (shift) within 7 days of seat booking. After that, use the upgrade plan option for any changes.
                     @else
                     <b>Note:</b> You can upgrade your plan & plan type (shift) 5 days before it expires or during the extended period.
                     @endif
-                    
+
                 </div>
 
                 <form action="{{$route}}" method="POST" enctype="multipart/form-data" id="{{$ids}}">
@@ -114,12 +83,12 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                     <input type="hidden" name="learner_detail" value="{{$customer->learner_detail_id }}">
                     <input type="hidden" name="learner_id" value="{{ $customer->id}}" >
                     <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
-                    <input type="hidden" name="library_id" value="{{ $customer->library_id}}">  
-                    <input type="hidden" name="payment_type" value="{{ $paymentType}}" id="payment_type_operation">
+                    <input type="hidden" name="library_id" value="{{ $customer->library_id}}">
+                    <input type="hidden" name="payment_type" value="UPGRADE" id="payment_type_operation">
                     <input type="hidden" id="start_date10" value="{{$start_date}}">
-                    
+
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
-                    
+
                     <div class="row g-4">
                         <div class="col-lg-4">
                             <label>Plan <span>*</span></label>
@@ -129,7 +98,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <option value="{{ $value->id }}" {{ old('plan_id', $customer->plan_id) == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
                                 @endforeach
                             </select>
-                           
+
                             @error('plan_id')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -145,12 +114,12 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 </option>
                                 @endforeach
                             </select>
-                           
+
                             @error('plan_type_id')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-                   
+
                         <div class="col-lg-4">
                             <label>Plan Price <span>*</span></label>
                             <input id="plan_price10" class="form-control @error('plan_price_id') is-invalid @enderror" value="{{ old('plan_price_id', $customer->plan_price_id) }}"  name="plan_price_id" readonly>
@@ -159,7 +128,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             @enderror
                         </div>
 
-                       
+
                     </div>
                     <h4 class="mt-4 mb-3">Your plan Addon's
                             <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i>
@@ -171,7 +140,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
                                 <label>Locker?</label>
                                 <select name="locker" id="toggleFieldCheckbox10" class="form-control">
-                                  
+
                                     <option value="no" {{ old('locker', $hasLocker) === 'no' ? 'selected' : '' }}>No</option>
                                     <option value="yes" {{ old('locker', $hasLocker) === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
                                 </select>
@@ -199,14 +168,14 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <option value="">Select Discount Type</option>
                                     <option value="amount" {{ old('discountType', $selectedDiscountType) == 'amount' ? 'selected' : '' }}>Amount</option>
                                     <option value="percentage" {{ old('discountType', $selectedDiscountType) == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                                    
+
                                 </select>
                             </div>
 
                             <div class="col-lg-6">
                                 <label>Discount Amount ( <span id="typeVal10">INR / %</span> )</label>
-                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"  
-                              
+                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"
+
                                 value="{{ old('discount_amount', currentTransaction($customer->learner_detail_id)->discount_amount ?? 0) }}"
                                 readonly>
                                 @error('discount_amount')
@@ -214,64 +183,28 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 @enderror
                             </div>
                             @endif
-                            
+
                         </div>
                     </div>
 
                     <div class="row g-4">
-                        @if($paymentType=='CHANGE PLAN')
-                        <div class="col-lg-4">
-                            <label for="">Previous paid Amount <span>*</span></label>
-                            <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
-                                name="previous_amount" id="previous_amount10"
-                                value="{{ (float) currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
-                            @error('previous_amount')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        @endif
                         <div class="col-lg-4">
                              <label for="">Previous Pending Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending10" value="{{ old('previous_pending', totalPending($customer->id)) }}" readonly>
                         </div>
                         <div class="col-lg-4">
-                            <label>New Total Amount <span>*</span></label>
-                            <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
+                            <label>Total Amount <span>*</span></label>
+                            <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}">
                             @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                             <span id="chargeable_days10" class="text-info"></span>
                         </div>
-                        @if($paymentType=='CHANGE PLAN')
-                         <div class="col-lg-4">
-                            <label id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span>*</span></label>
-                            <select id="refund_pay_timing10" name="" class="form-control form-select " required>
-                                <option value="">Select</option>
-                                <option value="now">Now</option>
-                                <option value="later">Later</option>
-                            </select>
-
-                        </div>
                         <div class="col-lg-4">
-                            <label for="diffrence_amount10" id="diffrence_amount_label10">{{ $diffLabel }} <span>*</span></label>
-                            <input type="text" class="form-control @error('diffrence_amount') is-invalid @enderror"
-                                name="diffrence_amount" id="diffrence_amount10" data-sign="{{ $diffSign }}" value="{{ $diffAbs }}"    placeholder="0.00">
-                            @error('diffrence_amount')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-
-                        </div>
-                        @endif
-                        <div class="col-lg-4">
-                            <label for="pending_amt10">{{ $pendingLabel }} <span>*</span></label>
-                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ $pendingAbs }}"  readonly>
+                            <label for="pending_amt10">Pending Amount <span>*</span></label>
+                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
-                        
 
                         <div class="col-lg-4">
                             <label for="">Choose Due Date</label>
@@ -280,7 +213,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-                        
+
                         <div class="col-lg-4">
                             <label>Payment Mode <span>*</span></label>
                             <select name="payment_mode" id="payment_mode10" class="form-control form-select @error('payment_mode') is-invalid @enderror">
@@ -295,18 +228,10 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                         </div>
                     </div>
                     <div class="button-list mt-4">
-                        @if(Route::currentRouteName() == 'learner.change.plan' && !$today->greaterThanOrEqualTo($oneWeekLater))
-                       
-                        <button type="submit" class="btn btn-primary btn-block button w-25" >Update Seat Info</button>
-                        @else  
-                        
-                            @if($planDetails['diff_in_days'] <= 5 && $planDetails['diff_extend_day']>= 0 && !$is_renew && !$isalreadyRenew)
-                                <button type="submit" class="btn btn-primary btn-block button w-25" >{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}</button>
-
-                            {{-- <input type="submit" class="btn btn-primary btn-block button w-25" value="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}"> --}}
-                            @else
-                            <p class="text-danger"><b>*</b>Button is available when you renew your Seat Booking</p>
-                            @endif
+                        @if($planDetails['diff_in_days'] <= 5 && $planDetails['diff_extend_day']>= 0 && !$is_renew && !$isalreadyRenew)
+                            <button type="submit" class="btn btn-primary btn-block button w-25" >{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}</button>
+                        @else
+                        <p class="text-danger"><b>*</b>Button is available when you renew your Seat Booking</p>
                         @endif
                     </div>
                 </form>
@@ -329,47 +254,8 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const formId = "{{ $ids }}"; // Dynamically injected form ID
-        const formElement = document.getElementById(formId);
-
-        if (formId === 'learnerUpgrade') {
-            handleFormChanges('learnerUpgrade', {{ $customer->id }});
-        } else if (formId === 'renewSeat') {
-            handleFormChanges('renewSeat', {{ $customer->id }});
-        }
-        else if (formId === 'changePlan'){
-            handleFormChanges('changePlan', {{ $customer->id }});
-
-            // Amount to Refund/pay and Pending are derived from the plan already selected on
-            // this page, so compute them immediately on load too - not just after the user
-            // re-touches a field - otherwise the page shows 0.00 even though a real
-            // refund/due already exists. Skip when old('diffrence_amount') repopulated the
-            // field already (validation-failure redirect), so we don't clobber that value.
-            if (!$('#diffrence_amount10').val()) {
-                calculatePaidAmount();
-                const $diffField = $('#diffrence_amount10');
-                const sign = parseFloat($diffField.attr('data-sign')) || 1;
-                const absVal = Math.abs(parseFloat($diffField.val()) || 0);
-                calculatePending(sign * absVal);
-            }
-
-            // The diffrence_amount field only ever displays a positive magnitude to the
-            // user; re-apply the tracked sign (negative = refund) right before submit so
-            // LearnerOperationService still receives the signed value it expects.
-            formElement.addEventListener('submit', function() {
-                const diffField = document.getElementById('diffrence_amount10');
-                if (diffField) {
-                    const sign = parseFloat(diffField.getAttribute('data-sign')) || 1;
-                    const absVal = Math.abs(parseFloat(diffField.value) || 0);
-                    diffField.value = (sign * absVal).toFixed(2);
-                }
-            });
-        }
+        handleFormChanges('learnerUpgrade', {{ $customer->id }});
     });
 </script>
-
-
-
-
 
 @endsection

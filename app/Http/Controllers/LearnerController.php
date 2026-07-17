@@ -398,7 +398,9 @@ class LearnerController extends Controller
             $locker_amt=0;
         }
 
-        return view('learner.changePlanUpgrade', compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
+        $view = $routeName === 'learner.change.plan' ? 'learner.changePlanUpgrade' : 'learner.upgradePlan';
+
+        return view($view, compact('customer',  'available_seat', 'showButton', 'is_renew', 'filteredPlanTypes', 'isalreadyRenew','hasLocker','discountAmount','selectedDiscountType','today','locker_amt','oneWeekLater'));
     }
    
     //renew and learner  Upgrade

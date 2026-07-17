@@ -1341,12 +1341,13 @@
                 pendingAmount = totalDifference - paidNow;
                 overLimit = paidNow > totalDifference;
             }
+            $('#pending_amt10').val(Math.abs(pendingAmount).toFixed(2));
         } else {
+            // RENEW / UPGRADE / REACTIVE keep their original display untouched.
             pendingAmount = effectivePaid - paid_val;
             overLimit = paid_val > effectivePaid;
+            $('#pending_amt10').val(pendingAmount);
         }
-
-        $('#pending_amt10').val(Math.abs(pendingAmount).toFixed(2));
 
         if (overLimit) {
             $('#pending_amt_error').html('High price not allowed.' + pendingAmount);
