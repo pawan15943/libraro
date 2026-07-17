@@ -394,7 +394,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label for="">Location Longitude <span>*</span></label>
-                        <input type="text" class="form-control digit-only  @error('longitude') is-invalid @enderror no-validate" name="longitude" value="{{ old('longitude', $branch->longitude ?? '') }}">
+                        <input type="text" class="form-control digit-only  @error('longitude') is-invalid @enderror" name="longitude" value="{{ old('longitude', $branch->longitude ?? '') }}">
                         @error('longitude')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
@@ -404,7 +404,7 @@
 
                     <div class="col-lg-6">
                         <label for="">Location Latitude <span>*</span></label>
-                        <input type="text" class="form-control digit-only @error('latitude') is-invalid @enderror no-validate" name="latitude" value="{{ old('latitude', $branch->latitude ?? '') }}">
+                        <input type="text" class="form-control digit-only @error('latitude') is-invalid @enderror" name="latitude" value="{{ old('latitude', $branch->latitude ?? '') }}">
                         @error('latitude')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>

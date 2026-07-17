@@ -10,6 +10,20 @@ if($customer->locker_no){
 }else{
     $locker_read='readonly';
 }
+
+// diffrence_amount is submitted signed (negative = refund, positive = pay) to match
+// LearnerOperationService's EDIT branch, but is shown to the user as a plain positive
+// magnitude - the sign is tracked separately via data-sign.
+$oldDiff = old('diffrence_amount');
+$diffSign = ($oldDiff !== null && $oldDiff !== '' && (float) $oldDiff < 0) ? -1 : 1;
+$diffAbs = ($oldDiff !== null && $oldDiff !== '') ? abs((float) $oldDiff) : '';
+$diffLabel = $diffSign < 0 ? 'Amount to Refund' : 'Amount to pay';
+
+$oldPending = old('pending_amount');
+$pendingSign = ($oldPending !== null && $oldPending !== '' && (float) $oldPending < 0) ? -1 : 1;
+$pendingAbs = ($oldPending !== null && $oldPending !== '') ? abs((float) $oldPending) : '';
+$pendingLabel = $pendingSign < 0 ? 'Pending Refund Amount' : 'Pending Amount';
+$whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When do you want to pay this amount';
 @endphp
 
 
@@ -24,7 +38,7 @@ if($customer->locker_no){
 
 <div class="row g-4">
     <div class="col-lg-9 order-2 order-md-1">
-        <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
+        <form id="editPlanForm" action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <input id="edit_seat" type="hidden" name="seat_no" value="{{ old('seat_no', $customer->seat_no) }}">
@@ -79,33 +93,33 @@ if($customer->locker_no){
                     </div>
                 </div>
                 <div class="form-input mb-4">
-                    <h4 class="inner-heading">Update Plan Duration</h4>
+                    <h4 class="inner-heading">Current Plan Info</h4>
                     <p class="text-danger">⚠️ Warning: Changing the start date will also affect the plan end date. Please ensure you update it carefully and with full understanding of its impact.</p>
                     <div class="row g-4">
 
-                        <div class="col-lg-6">
-                            <label for=""> Plan <span>*</span></label>
-
-                            <select class="form-select" name="plan_id" disabled >
-                                <option value="{{ $customer->plan_name }}" selected>{{ $customer->plan_name }}</option>
-                            </select>
-
+                        <div class="col-lg-4">
+                            <label for="">Plan <span>*</span></label>
+                            <input type="text" class="form-control" value="{{ $customer->plan_name }}" readonly>
                             @error('plan_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <label for="">Plan Type <span>*</span></label>
-                            <select class="form-select" name="plan_id" disabled>
-                                <option value="{{ $customer->plan_type_id }}" selected>{{ $customer->plan_type_name }}</option>
-                            </select>
-
+                            <input type="text" class="form-control" value="{{ $customer->plan_type_name }}" readonly>
+                        </div>
+                        <div class="col-lg-4">
+                            <label>Plan Price <span>*</span></label>
+                            <input id="plan_price10" class="form-control @error('plan_price_id') is-invalid @enderror" value="{{ old('plan_price_id', $customer->plan_price_id) }}"  name="plan_price_id" readonly>
+                            @error('plan_price_id')
+                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
                         </div>
                         <div class="col-lg-6">
                             <label for="plan_start_date">Plan Start Date</label>
-                            <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror" 
+                            <input type="date" class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
                                 name="plan_start_date" value="{{ old('plan_start_date', $customer->plan_start_date) }}" id="start_date10">
                             @error('plan_start_date')
                                 <span class="invalid-feedback" role="alert">
@@ -116,19 +130,12 @@ if($customer->locker_no){
 
                         <div class="col-lg-6">
                             <label for="plan_end_date">Plan End Date</label>
-                            <input type="date" class="form-control datepicker @error('plan_end_date') is-invalid @enderror" 
+                            <input type="date" class="form-control datepicker @error('plan_end_date') is-invalid @enderror"
                                 name="plan_end_date" value="{{ old('plan_end_date', $customer->plan_end_date) }}" id="plan_end_date_edit" readonly>
                             @error('plan_end_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-4">
-                            <label>Plan Price <span>*</span></label>
-                            <input id="plan_price10" class="form-control @error('plan_price_id') is-invalid @enderror" value="{{ old('plan_price_id', $customer->plan_price_id) }}"  name="plan_price_id" readonly>
-                            @error('plan_price_id')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
                         <h4 class="mt-4 mb-3">Your plan Addon's
@@ -189,7 +196,7 @@ if($customer->locker_no){
                         </div>
 
                         <div class="col-lg-4">
-                            <label for="">Last paid Amount <span>*</span></label>
+                            <label for="">Previous paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
                                 name="previous_amount" id="previous_amount10"
                                 value="{{ currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
@@ -208,22 +215,31 @@ if($customer->locker_no){
                             @enderror
                             <span id="chargeable_days10" class="text-info"></span>
                         </div>
+                          <div class="col-lg-4">
+                            <label id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span>*</span></label>
+                            <select id="refund_pay_timing10" name="" class="form-control form-select " required>
+                                <option value="">Select</option>
+                                <option value="now">Now</option>
+                                <option value="later">Later</option>
+                            </select>
+                        </div>
                         <div class="col-lg-4">
-                            <label for="diffrence_amount10">Diffrence Amount <span>*</span></label>
+                            <label for="diffrence_amount10" id="diffrence_amount_label10">{{ $diffLabel }} <span>*</span></label>
                             <input type="text" class="form-control @error('diffrence_amount') is-invalid @enderror"
-                                name="diffrence_amount" id="diffrence_amount10"  value="{{ old('diffrence_amount') }}"    placeholder="0.00">
+                                name="diffrence_amount" id="diffrence_amount10" data-sign="{{ $diffSign }}" value="{{ $diffAbs }}"    placeholder="0.00">
                             @error('diffrence_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
-                                
+
                         </div>
                         <div class="col-lg-4">
-                            <label for="pending_amt10">Pending Amount <span>*</span></label>
-                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
+                            <label for="pending_amt10">{{ $pendingLabel }} <span>*</span></label>
+                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ $pendingAbs }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
+                      
                         <div class="col-lg-4">
                             <label for="">Choose Due Date</label>
                             <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
@@ -231,7 +247,7 @@ if($customer->locker_no){
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-                        
+
                         <div class="col-lg-4">
                             <label>Payment Mode <span>*</span></label>
                             <select name="payment_mode" id="payment_mode10" class="form-control form-select @error('payment_mode') is-invalid @enderror">
@@ -275,6 +291,31 @@ if($customer->locker_no){
 
 <script>
 $(document).ready(function () {
+
+    // Amount to Refund/pay and Pending are derived from the plan/price already on this page,
+    // so compute them immediately on load too - not just after the user touches start
+    // date/locker/discount - otherwise the page shows 0.00 even though a real refund/due
+    // already exists. Skip when old('diffrence_amount') repopulated the field already
+    // (validation-failure redirect), so we don't clobber that value.
+    if (!$('#diffrence_amount10').val()) {
+        calculatePaidAmount();
+        const $diffField = $('#diffrence_amount10');
+        const sign = parseFloat($diffField.attr('data-sign')) || 1;
+        const absVal = Math.abs(parseFloat($diffField.val()) || 0);
+        calculatePending(sign * absVal);
+    }
+
+    // The diffrence_amount field only ever displays a positive magnitude to the user;
+    // re-apply the tracked sign (negative = refund) right before submit so
+    // LearnerOperationService still receives the signed value it expects.
+    document.getElementById('editPlanForm').addEventListener('submit', function () {
+        const diffField = document.getElementById('diffrence_amount10');
+        if (diffField) {
+            const sign = parseFloat(diffField.getAttribute('data-sign')) || 1;
+            const absVal = Math.abs(parseFloat(diffField.value) || 0);
+            diffField.value = (sign * absVal).toFixed(2);
+        }
+    });
 
     $("#plan_start_date_edit").on("change", function () {
 

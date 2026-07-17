@@ -1261,20 +1261,46 @@
         const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
 
         if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
+            // CHANGE PLAN and EDIT share the exact same diff/pending/refund math in
+            // LearnerOperationService, so both get the same "show positive, submit signed" UI.
             const previous_amount = parseFloat($('#previous_amount10').val()) || 0;
             const difference = autoPaid - previous_amount;
-            $('#diffrence_amount10').val(difference.toFixed(2));
 
-            if (difference < 0) {
-                $('label[for="diffrence_amount10"]').text("Refund Amount *");
-            } else {
-                $('label[for="diffrence_amount10"]').text("Difference Amount *");
+            const sign = difference < 0 ? -1 : 1;
+            $('#diffrence_amount10')
+                .attr('data-sign', sign)
+                .attr('data-full-diff', difference)
+                .val(Math.abs(difference).toFixed(2));
+            $('#diffrence_amount_label10').text((difference < 0 ? "Amount to Refund" : "Amount to pay") + " *");
+
+            // Pay Later ignores the diffrence amount and defers the whole gap (see
+            // LearnerOperationService), so keep Pending in sync even though the
+            // diffrence field is hidden and can't fire its own 'input' event.
+            if ($('#refund_pay_timing10').val() === 'later') {
+                applyPayLaterPending(difference);
             }
         } else {
             // For RENEW / UPGRADE -> always fresh total, no difference calc
             $('#diffrence_amount10').val('');
         }
     }
+    // Pay Later (CHANGE PLAN) mirrors LearnerOperationService: pending_amount = effective -
+    // old_price, i.e. the raw old-vs-new total difference, with diffrence_amount ignored
+    // entirely - unlike the "Now" path, which nets the entered diffrence_amount against effective.
+    function applyPayLaterPending(difference) {
+        $('#pending_amt10').val(Math.abs(difference).toFixed(2));
+        $('#pending_amt_error').html('');
+        $('#due_date10').attr('readonly', difference == 0);
+
+        if (difference < 0) {
+            $('#pending_amt10').prev('label').text("Pending Refund Amount *");
+            $('#refund_pay_timing_label10').text("When do you want to refund this amount *");
+        } else {
+            $('#pending_amt10').prev('label').text("Pending Amount *");
+            $('#refund_pay_timing_label10').text("When do you want to pay this amount *");
+        }
+    }
+
     function calculatePending(paid_val) {
         const planPrice = parseFloat($('#plan_price10').val()) || 0;
         const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
@@ -1292,18 +1318,37 @@
 
         const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending;
 
-        
+
         let pendingAmount;
+        let overLimit = false;
         const paymentType = $('input[name="payment_type"]').val();
         if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
-            pendingAmount = effectivePaid - paid_val - previous_amount10;
+            // Mirrors LearnerOperationService (same branch handles both CHANGE PLAN and EDIT):
+            // the new total is compared against what was already paid - previous_pending
+            // belonged to the old, now-superseded transaction and isn't carried forward.
+            // diffrence_amount (paid_val) only settles part of that gap right now; whatever's
+            // left over is the pending/pending-refund amount.
+            const newTotal = planPrice + lockerAmount - discountAmount;
+            const totalDifference = newTotal - previous_amount10;
+
+            if (totalDifference < 0) {
+                const totalRefundOwed = Math.abs(totalDifference);
+                const refundedNow = Math.min(Math.abs(paid_val), totalRefundOwed);
+                pendingAmount = -(totalRefundOwed - refundedNow);
+                overLimit = Math.abs(paid_val) > totalRefundOwed;
+            } else {
+                const paidNow = Math.max(0, paid_val);
+                pendingAmount = totalDifference - paidNow;
+                overLimit = paidNow > totalDifference;
+            }
         } else {
             pendingAmount = effectivePaid - paid_val;
+            overLimit = paid_val > effectivePaid;
         }
-    
-        $('#pending_amt10').val(pendingAmount);
-    
-        if ((paid_val > effectivePaid)) {
+
+        $('#pending_amt10').val(Math.abs(pendingAmount).toFixed(2));
+
+        if (overLimit) {
             $('#pending_amt_error').html('High price not allowed.' + pendingAmount);
             $('#due_date10').attr('readonly', true);
         }else{
@@ -1313,15 +1358,15 @@
             $('#due_date10').attr('readonly', false);
         }
         else{
-            
+
             $('#due_date10').attr('readonly', true);
         }
         if (pendingAmount < 0) {
         $('#pending_amt10').prev('label').text("Pending Refund Amount *");
-        
+        $('#refund_pay_timing_label10').text("When do you want to refund this amount *");
         } else {
             $('#pending_amt10').prev('label').text("Pending Amount *");
-        
+            $('#refund_pay_timing_label10').text("When do you want to pay this amount *");
         }
         calculatePaylaterVisibilityForOperationForm(pendingAmount);
 
@@ -1908,7 +1953,46 @@
     });
 
     $('#diffrence_amount10').on('input', function () {
-        calculatePending($(this).val());  
+        const paymentType = $('input[name="payment_type"]').val();
+        if (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') {
+            const sign = parseFloat($(this).attr('data-sign')) || 1;
+            const absVal = Math.abs(parseFloat($(this).val()) || 0);
+            calculatePending(sign * absVal);
+        } else {
+            calculatePending($(this).val());
+        }
+    });
+
+    // Now -> Payment Mode restricted to Online/Offline, Amount to pay/refund field shown.
+    // Later -> Payment Mode restricted to Pay Later only, Amount to pay/refund field hidden
+    // and the full difference is folded into Pending/Pending Refund Amount instead (Pay
+    // Later ignores diffrence_amount server-side, see LearnerOperationService).
+    $('#refund_pay_timing10').on('change', function () {
+        const timing = $(this).val();
+        const $paymentMode = $('#payment_mode10');
+        const $diffField = $('#diffrence_amount10');
+        const $diffCol = $diffField.closest('.col-lg-4');
+
+        if (timing === 'later') {
+            if ($paymentMode.length) {
+                $paymentMode.html('<option value="3" selected>Pay Later</option>');
+            }
+            $diffCol.hide();
+            const fullDiff = parseFloat($diffField.attr('data-full-diff')) || 0;
+            applyPayLaterPending(fullDiff);
+        } else if (timing === 'now') {
+            if ($paymentMode.length) {
+                $paymentMode.html(
+                    '<option value="">Select Payment Mode</option>' +
+                    '<option value="1">Online</option>' +
+                    '<option value="2">Offline</option>'
+                );
+            }
+            $diffCol.show();
+            const sign = parseFloat($diffField.attr('data-sign')) || 1;
+            const absVal = Math.abs(parseFloat($diffField.val()) || 0);
+            calculatePending(sign * absVal);
+        }
     });
 
     $('#start_date10').on('change', function(event) {

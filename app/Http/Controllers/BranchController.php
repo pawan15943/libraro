@@ -9,6 +9,7 @@ use App\Models\Hour;
 use App\Models\Library;
 use App\Models\LibraryUser;
 use App\Models\Plan;
+use App\Models\PlanType;
 use App\Models\State;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryService;
@@ -375,8 +376,8 @@ class BranchController extends Controller
              'upi_id'=>'nullable',
             'token_money'=>'nullable',
             'extend_days'=>'nullable',
-            'longitude'=>'nullable',
-            'latitude'=>'nullable',
+            'longitude'=>'required',
+            'latitude'=>'required',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'fixed_billing_date'=>'nullable|integer|min:1|max:31',
@@ -894,10 +895,14 @@ class BranchController extends Controller
         );
 
         if ($response['status'] === true) {
-           
+
+            $hasShift = PlanType::withoutGlobalScopes()
+                ->where('branch_id', $response['branch_id'])
+                ->exists();
+
             return response()->json([
                 'status'   => true,
-                'redirect' => route('library.home'),
+                'redirect' => $hasShift ? route('library.home') : route('library.configration'),
                 'message'  => $response['message']
             ]);
         }

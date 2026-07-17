@@ -97,21 +97,31 @@
 </div>
 
 @else
+@php
+// Computed once per page load — these are branch/library-level settings,
+// not per-learner, so they were previously being re-queried on every use
+// (including once per row inside the loop below).
+$hiddenFields = toggleHideField();
+$currentBranchName = getCurrentBranchName();
+$isNotificationActive = notificationActive();
+$isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
+$isTextNotificationActive = $isNotificationActive && textNotificationActive();
+@endphp
 <div class="row">
     <div class="col-lg-12 text-end">
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
 
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
-        
+
         @can('has-permission', 'Export Library Seats')
-        @if(!in_array('22', toggleHideField()))
+        @if(!in_array('22', $hiddenFields))
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Export Learners Data to CSV"><i class="fa-solid fa-file-export"></i></a>
         @endif
         @endcan
 
         @can('has-permission', 'Import Library Seats')
-        @if(!in_array('11', toggleHideField()))
+        @if(!in_array('11', $hiddenFields))
         <a href="{{ route('library.upload.form') }}" class="btn btn-primary export bg-4" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Import Learners Data to Portal"><i class="fa-solid fa-file-import"></i></a>
         @endif
         @endcan
@@ -194,7 +204,7 @@
 </div>
 @endcan
 
-@if(!in_array('24', toggleHideField()))
+@if(!in_array('24', $hiddenFields))
 <div class="col-lg-12 mb-4" id="countsContainer">
     <div class="records">
 
@@ -229,8 +239,18 @@
 @php
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
-// $transaction = $value->latestTransaction;
-$transaction = learnerTransaction($value->id, $learner_detail_id);
+// Batched in LearnerController::learnerList() / LearnerService::buildLearnerListRowContext()
+// to avoid the N+1 queries each of these used to run per row.
+$rowContextData = $rowContext[$learner_detail_id] ?? [];
+$transaction = $rowContextData['transaction'] ?? null;
+$totalPendingAmt = $rowContextData['total_pending'] ?? 0;
+$totalExtraAmt = $rowContextData['total_extra'] ?? 0;
+$paylaterFlag = $rowContextData['paylater'] ?? false;
+$hasPendingAmtFlag = $rowContextData['has_pending_amt'] ?? false;
+$paybleRefundAmt = $rowContextData['payble_refund'] ?? 0;
+$overdueFlag = $rowContextData['overdue'] ?? false;
+$isRenewUpdateFlag = $rowContextData['is_renew_update'] ?? false;
+$statusPrecomputed = $rowContextData['status_precomputed'] ?? null;
 
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
@@ -245,8 +265,9 @@ $due_date = null;
 
 $today = \Carbon\Carbon::now();
 $threeDaysAfterStart = \Carbon\Carbon::parse($value->plan_start_date)->addDays(3);
-$operation = optional(getLearnerOperation($learner_detail_id))->operation;
-$operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
+$operationRow = $rowContextData['operation'] ?? null;
+$operation = optional($operationRow)->operation;
+$operationDate = optional($operationRow)->created_at;
 $learner_id=$value->id;
 @endphp
 
@@ -269,7 +290,7 @@ $learner_id=$value->id;
                 @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                 <span class="extended"> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                 @else
-                {!! getUserStatusWithSpan($value->plan_end_date,$learner_id) !!}
+                {!! getUserStatusWithSpan($value->plan_end_date,$learner_id,$statusPrecomputed) !!}
                 @endif
 
 
@@ -298,11 +319,11 @@ $learner_id=$value->id;
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
 
                         <!-- To Handle Paylater & Pending Amount Icon -->
-                        @if(paylater($learner_detail_id) || pending_amt($learner_detail_id))
+                        @if($paylaterFlag || $hasPendingAmtFlag)
                         <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due</a></li>
                         @endif
 
-                        @if(overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)?->pending_amount))
+                        @if($overdueFlag)
                         <li>
                             <a class="" target="_blank"
                                 data-bs-placement="bottom"
@@ -314,14 +335,14 @@ $learner_id=$value->id;
                                     'Your due date was ' . \Carbon\Carbon::parse($due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
                                     'If you have already made the payment, kindly ignore this message.' . "\n\n" .
                                     'For any assistance, feel free to contact our support team.' . "\n\n" .
-                                    '– Team ' . getCurrentBranchName()
+                                    '– Team ' . $currentBranchName
                                 ) }}">
                                     <i class="fa-solid fa-business-time"></i>
                             </a>
                         </li>
                         @endif
-                      
-                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0  && !alreadyRenewed($learner_id) && $value->frozen_status != 1)
+
+                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0  && !$isRenewUpdateFlag && $value->frozen_status != 1)
                             @can('has-permission','Renew Seat')
                             <li>
                                 <a class="renew_extend w-auto px-2" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>
@@ -336,8 +357,8 @@ $learner_id=$value->id;
 
                             @can('has-permission', 'WhatsApp Notification')
 
-                                @if(notificationActive())
-                                    @if(wabaNotificationActive())
+                                @if($isNotificationActive)
+                                    @if($isWabaNotificationActive)
                                         <li>
                                             <a target="_blank" href="javascript:;"
                                                 data-bs-toggle="modal" class="open-waba"
@@ -349,7 +370,7 @@ $learner_id=$value->id;
                                         </li>
                                     @endif
 
-                                    @if(textNotificationActive())
+                                    @if($isTextNotificationActive)
                                         <li>
                                             <a target="_blank" href="javascript:;" data-bs-toggle="modal"
                                                 data-learner_id="{{$learner_id}}" class="open-text"
@@ -363,15 +384,15 @@ $learner_id=$value->id;
 
                                     @if($planStatus['class']=='extedned')
                                         <li>
-                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName) }}">
                                                 <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                             </a>
                                         </li>
                                     @else
-                                    
+
                                         <li>
-                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}">
+                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName) }}">
                                                 <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
 
                                             </a>
@@ -399,13 +420,13 @@ $learner_id=$value->id;
 
 
                         @can('has-permission', 'Change Plan')
-                            @if(!in_array('14', toggleHideField()) && !$today->greaterThanOrEqualTo($oneWeekLater) && $value->frozen_status != 1)
+                            @if(!in_array('14', $hiddenFields) && !$today->greaterThanOrEqualTo($oneWeekLater) && $value->frozen_status != 1)
                             <li><a href="{{route('learner.change.plan',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Change Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li>
                             @endif
 
                         @endcan
                         <!---ID Card generate-->
-                        {{-- @if(!in_array('15', toggleHideField()))
+                        {{-- @if(!in_array('15', $hiddenFields))
 
                         <li data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card">
                         <form action="{{ route('generateIdCard') }}" method="POST" enctype="multipart/form-data">
@@ -418,7 +439,7 @@ $learner_id=$value->id;
                         @endif --}}
 
                         @can('has-permission', 'Genrate ID Card')
-                            @if(!in_array('15', toggleHideField()))
+                            @if(!in_array('15', $hiddenFields))
                             <li><a target="_blank" href="{{ route('idCard',  $learner_detail_id) }}" class="" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Genrate ID Card"><i class="fa-solid fa-id-card-clip"></i> </a></li>
                             @endif
                         @endcan
@@ -426,7 +447,7 @@ $learner_id=$value->id;
                         <!-- (&& $planStatus['diff_extend_day'] <= 5) we remove this block -->
                         @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0 )
                             @can('has-permission', 'Upgrade Seat Plan' )
-                                @if(!in_array('13', toggleHideField()) && $value->frozen_status != 1)
+                                @if(!in_array('13', $hiddenFields) && $value->frozen_status != 1)
                                 <li><a href="{{route('learners.upgrade',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Upgrade Plan"><i class="fa-solid fa-circle-up"></i></a></li>
                                 @endif
                             @endcan
@@ -435,8 +456,8 @@ $learner_id=$value->id;
                         <!-- Close Seat -->
 
                         @can('has-permission', 'Close Seat')
-                            @if(!in_array('16', toggleHideField()) && $value->frozen_status != 1) 
-                            <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{$value->id}}" data-learnerDetail="{{ $learner_detail_id }}" data-learner_detail_id="{{$learner_detail_id}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Close Plan" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
+                            @if(!in_array('16', $hiddenFields) && $value->frozen_status != 1) 
+                            <li><a href="javascript:void(0);" class="link-close-plan" data-id="{{$value->id}}" data-learnerDetail="{{ $learner_detail_id }}" data-learner_detail_id="{{$learner_detail_id}}" data-payblerefund="{{ $paybleRefundAmt }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Close Plan" data-plan_end_date="{{$value->plan_end_date}}"><i class="fas fa-times"></i></a></li>
                             @endif
                         @endcan
                     @endif
@@ -455,19 +476,19 @@ $learner_id=$value->id;
                             <i class="fa-solid fa-wallet"></i>
                         </a>
                     </li>
-                    @if (totalPending($learner_id) > 0 || totalExtra($learner_id) > 0)
+                    @if ($totalPendingAmt > 0 || $totalExtraAmt > 0)
                         
                     
                     <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Settlement" class="settlement-learner"><i class="fa-solid fa-scale-balanced"></i></a></li>
                     @endif
                     @can('has-permission', 'Gift Days')
-                    @if(!in_array('33', toggleHideField()) && $value->frozen_status != 1)
+                    @if(!in_array('33', $hiddenFields) && $value->frozen_status != 1)
                     <li><a href="javascript:;" class="giftDaysBtn" data-learner_id="{{$learner_id}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Gift Days"><i class="fa-solid fa-gift"></i></a></li>
                     @endif
                     @endcan
 
                     @can('has-permission', 'Freez Days')
-                    @if(!in_array('34', toggleHideField()))
+                    @if(!in_array('34', $hiddenFields))
                     <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" > 
                         @if($value->frozen_status == 1)
                         <i class="fa-solid fa-pause" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Unfreeze Plan"></i>
@@ -487,7 +508,7 @@ $learner_id=$value->id;
                     <!-- Deletr Seat -->
 
                     @can('has-permission', 'Edit Seat')
-                    @if(!in_array('17', toggleHideField()) && $value->frozen_status != 1)
+                    @if(!in_array('17', $hiddenFields) && $value->frozen_status != 1)
                     
                     <li><a href="{{route('learners.edit',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
                     <li><a href="{{route('learners.edit.plan',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Plan Details"><i class="fa-solid fa-calendar-days"></i></a></li>
@@ -495,7 +516,7 @@ $learner_id=$value->id;
                     @endcan
 
                     @can('has-permission', 'Delete Seat')
-                    <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-payblerefund="{{ paybleRefund($learner_detail_id) }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
+                    <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-payblerefund="{{ $paybleRefundAmt }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                     @endcan
                     {{-- @can('has-permission', 'Delete Seat')
                         @if($today->lessThanOrEqualTo($threeDaysAfterStart))
@@ -504,7 +525,7 @@ $learner_id=$value->id;
                     @endcan --}}
                     <li>
                         <a target="_blank"
-                            href="https://wa.me/+91{{ $value->mobile }}?text={{ whatsappReceiptMessage($value) }}">
+                            href="https://wa.me/+91{{ $value->mobile }}?text={{ whatsappReceiptMessage($value, $transaction, $currentBranchName) }}">
                             <i class="fa-solid fa-receipt"
                                 data-bs-toggle="tooltip"
                                 data-bs-title="Send Receipt"></i>
@@ -529,7 +550,7 @@ $learner_id=$value->id;
                         <span class="extended">Closed</span>
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
-                        @elseif(has_non_expired($value->id) && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension'))
+                        @elseif((int) $value->no_expiry === 1 && (int) $value->status === 1 && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension'))
                          <span class="actives">Active</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
@@ -567,26 +588,26 @@ $learner_id=$value->id;
                         <span>Payment Status</span>
 
                         <div class="d-flex g-1">
-                            @if(paylater($learner_detail_id) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount!=0)
+                            @if($paylaterFlag && $transaction?->pending_amount!=0)
                             <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    PayLater  {{ rtrim(rtrim(number_format(   (totalPending($learner_id)), 2, '.', ''), '0'), '.') }}
+                                    PayLater  {{ rtrim(rtrim(number_format(   ($totalPendingAmt), 2, '.', ''), '0'), '.') }}
                                 </span>
                             </a> &nbsp;<a href="javascript:;" class="open-transaction-modal" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-                            @elseif(!empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount) && learnerTransaction($learner_id,$learner_detail_id)->pending_amount==0)
+                            @elseif(!empty($transaction?->pending_amount) && $transaction?->pending_amount==0)
                             <span class="payment" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Fully Paid</span>
 
 
-                            @elseif(empty(learnerTransaction($learner_id,$learner_detail_id)->pending_amount))
+                            @elseif(empty($transaction?->pending_amount))
                             <span></span>
 
-                            @elseif( pending_amt($learner_detail_id))
+                            @elseif( $hasPendingAmtFlag)
                             <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
-                                 @if( !empty($due_date) && overdue($learner_id, learnerTransaction($learner_id, $learner_detail_id)->pending_amount))
-                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Due {{ rtrim(rtrim(number_format(   (totalPending($learner_id)), 2, '.', ''), '0'), '.') }} ({{date('j M', strtotime($due_date))}})</span>
+                                 @if( !empty($due_date) && $overdueFlag)
+                                <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Due {{ rtrim(rtrim(number_format(   ($totalPendingAmt), 2, '.', ''), '0'), '.') }} ({{date('j M', strtotime($due_date))}})</span>
                                 @else
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
-                                    Due {{ rtrim(rtrim(number_format((totalPending($learner_id)), 2, '.', ''), '0'), '.') }} ({{ !empty($due_date) ? date('j M', strtotime($due_date)) : ''}})
+                                    Due {{ rtrim(rtrim(number_format(($totalPendingAmt), 2, '.', ''), '0'), '.') }} ({{ !empty($due_date) ? date('j M', strtotime($due_date)) : ''}})
 
                                 </span>
 
@@ -594,11 +615,11 @@ $learner_id=$value->id;
                             </a> &nbsp;<a href="javascript:;" class="open-transaction-modal" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                             @endif
 
-                            @if (learnerTransaction($learner_id,$learner_detail_id)->id)
+                            @if ($transaction?->id)
                             <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank">
                                 @csrf
                                 <input type="hidden" name="learner_id" value="{{$learner_id}}">
-                                <input type="hidden" name="id" value="{{(learnerTransaction($learner_id,$learner_detail_id)->id ?? 0)}}">
+                                <input type="hidden" name="id" value="{{($transaction->id ?? 0)}}">
                                 <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
                                 <input type="hidden" name="type" value="learner">
                                 <button type="submit" class="noLoader">

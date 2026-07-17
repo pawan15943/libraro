@@ -2274,18 +2274,24 @@ if (!function_exists('getStatusFromBranch')) {
     }
 }
 if (!function_exists('whatsappReceiptMessage')) {
-    function whatsappReceiptMessage($learner)
+    function whatsappReceiptMessage($learner, $transaction = null, $branchName = null)
     {
-        $transaction = learnerTransaction($learner->id, $learner->learner_detail_id);
+        // Accepts precomputed $transaction/$branchName so list views can batch
+        // these instead of hitting the DB per row. Also skips makeTinyUrl()'s
+        // blocking external HTTP call — receipt.view is already a short route,
+        // and shortening it per-row was adding a synchronous network round trip
+        // (up to 5s each) to every row of the learner list.
+        $transaction = $transaction ?? learnerTransaction($learner->id, $learner->learner_detail_id);
+        $branchName = $branchName ?? getCurrentBranchName();
+
         $receiptUrl = null;
         if ($transaction) {
             $receiptUrl = route('receipt.view', ['transactionId' => $transaction->id]);
         }
-        
-        $shortUrl   = makeTinyUrl($receiptUrl);
+
         return rawurlencode(
             "Dear {$learner->name},\n\n"
-                . "Welcome to " . getCurrentBranchName() . ". We are pleased to have you with us.\n\n"
+                . "Welcome to " . $branchName . ". We are pleased to have you with us.\n\n"
 
                 . "*Learner Information*\n"
                 . "Name: {$learner->name}\n"
@@ -2303,11 +2309,11 @@ if (!function_exists('whatsappReceiptMessage')) {
                 . "Pending Amount: ₹{$transaction->pending_amount}/-\n\n"
 
                 . "*Download Payment Receipt*\n"
-                . "{$shortUrl}\n\n"
+                . "{$receiptUrl}\n\n"
 
                 . "For any assistance, please feel free to contact us.\n\n"
                 . "Regards,\n"
-                . getCurrentBranchName()
+                . $branchName
         );
     }
 }

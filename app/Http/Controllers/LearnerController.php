@@ -1997,7 +1997,9 @@ class LearnerController extends Controller
 
         $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, $perPage = 15, $paginate = true);
 
-        return view('learner.learner', compact('learners'));
+        $rowContext = $this->learnerService->buildLearnerListRowContext($learners->getCollection());
+
+        return view('learner.learner', compact('learners', 'rowContext'));
     }
     public function learnerSearch(Request $request)
     {

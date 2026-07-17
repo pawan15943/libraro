@@ -36,6 +36,20 @@ if(Route::currentRouteName() == 'learner.change.plan'){
     $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 }
 
+// diffrence_amount is submitted signed (negative = refund, positive = pay) to match
+// LearnerOperationService's CHANGE PLAN branch, but is shown to the user as a plain
+// positive magnitude - the sign is tracked separately via data-sign.
+$oldDiff = old('diffrence_amount');
+$diffSign = ($oldDiff !== null && $oldDiff !== '' && (float) $oldDiff < 0) ? -1 : 1;
+$diffAbs = ($oldDiff !== null && $oldDiff !== '') ? abs((float) $oldDiff) : '';
+$diffLabel = $diffSign < 0 ? 'Amount to Refund' : 'Amount to pay';
+
+$oldPending = old('pending_amount');
+$pendingSign = ($oldPending !== null && $oldPending !== '' && (float) $oldPending < 0) ? -1 : 1;
+$pendingAbs = ($oldPending !== null && $oldPending !== '') ? abs((float) $oldPending) : '';
+$pendingLabel = $pendingSign < 0 ? 'Pending Refund Amount' : 'Pending Amount';
+$whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When do you want to pay this amount';
+
 @endphp
 
 
@@ -207,7 +221,7 @@ if(Route::currentRouteName() == 'learner.change.plan'){
                     <div class="row g-4">
                         @if($paymentType=='CHANGE PLAN')
                         <div class="col-lg-4">
-                            <label for="">Last paid Amount <span>*</span></label>
+                            <label for="">Previous paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
                                 name="previous_amount" id="previous_amount10"
                                 value="{{ (float) currentTransaction($customer->learner_detail_id)->paid_amount }}" readonly>
@@ -223,31 +237,42 @@ if(Route::currentRouteName() == 'learner.change.plan'){
                             <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending10" value="{{ old('previous_pending', totalPending($customer->id)) }}" readonly>
                         </div>
                         <div class="col-lg-4">
-                            <label>Total Amount <span>*</span></label>
+                            <label>New Total Amount <span>*</span></label>
                             <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
                             @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                             <span id="chargeable_days10" class="text-info"></span>
                         </div>
+                         <div class="col-lg-4">
+                            <label id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span>*</span></label>
+                            <select id="refund_pay_timing10" name="" class="form-control form-select " required>
+                                <option value="">Select</option>
+                                <option value="now">Now</option>
+                                <option value="later">Later</option>
+                            </select>
+
+                        </div>
                         @if($paymentType=='CHANGE PLAN')
                         <div class="col-lg-4">
-                            <label for="diffrence_amount10">Diffrence Amount <span>*</span></label>
+                            <label for="diffrence_amount10" id="diffrence_amount_label10">{{ $diffLabel }} <span>*</span></label>
                             <input type="text" class="form-control @error('diffrence_amount') is-invalid @enderror"
-                                name="diffrence_amount" id="diffrence_amount10"  value="{{ old('diffrence_amount') }}"    placeholder="0.00">
+                                name="diffrence_amount" id="diffrence_amount10" data-sign="{{ $diffSign }}" value="{{ $diffAbs }}"    placeholder="0.00">
                             @error('diffrence_amount')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
-                             
+
                         </div>
                         @endif
                         <div class="col-lg-4">
-                            <label for="pending_amt10">Pending Amount <span>*</span></label>
-                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ old('pending_amount') }}"  readonly>
+                            <label for="pending_amt10">{{ $pendingLabel }} <span>*</span></label>
+                            <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ $pendingAbs }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
+                        
+
                         <div class="col-lg-4">
                             <label for="">Choose Due Date</label>
                             <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
@@ -314,6 +339,31 @@ if(Route::currentRouteName() == 'learner.change.plan'){
         }
         else if (formId === 'changePlan'){
             handleFormChanges('changePlan', {{ $customer->id }});
+
+            // Amount to Refund/pay and Pending are derived from the plan already selected on
+            // this page, so compute them immediately on load too - not just after the user
+            // re-touches a field - otherwise the page shows 0.00 even though a real
+            // refund/due already exists. Skip when old('diffrence_amount') repopulated the
+            // field already (validation-failure redirect), so we don't clobber that value.
+            if (!$('#diffrence_amount10').val()) {
+                calculatePaidAmount();
+                const $diffField = $('#diffrence_amount10');
+                const sign = parseFloat($diffField.attr('data-sign')) || 1;
+                const absVal = Math.abs(parseFloat($diffField.val()) || 0);
+                calculatePending(sign * absVal);
+            }
+
+            // The diffrence_amount field only ever displays a positive magnitude to the
+            // user; re-apply the tracked sign (negative = refund) right before submit so
+            // LearnerOperationService still receives the signed value it expects.
+            formElement.addEventListener('submit', function() {
+                const diffField = document.getElementById('diffrence_amount10');
+                if (diffField) {
+                    const sign = parseFloat(diffField.getAttribute('data-sign')) || 1;
+                    const absVal = Math.abs(parseFloat(diffField.value) || 0);
+                    diffField.value = (sign * absVal).toFixed(2);
+                }
+            });
         }
     });
 </script>
