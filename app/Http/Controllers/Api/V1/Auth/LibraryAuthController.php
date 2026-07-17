@@ -1383,7 +1383,7 @@ class LibraryAuthController extends Controller
             ], 200);
         }
 
-        if($validated['hour'] < getBranchShiftTiming()){
+        if($validated['hour'] < getBranchShiftTiming($branchId)){
              return response()->json([
                 'status' => false,
                 'message' => 'Branch Operating hour can not be less then shift hour.'

@@ -2694,9 +2694,16 @@ if (!function_exists('isCloseSeat')) {
 }
 
 if (!function_exists('getBranchShiftTiming')) {
-function getBranchShiftTiming()
+function getBranchShiftTiming($branchId = false)
 {
-    $branchId=getCurrentBranch();
+    if ($branchId === false) {
+        $branchId = getCurrentBranch();
+    }
+
+    if (!$branchId) {
+        return 0;
+    }
+
     $planTypes = PlanType::where('branch_id', $branchId)
         ->whereNotNull('start_time')
         ->whereNotNull('end_time')
