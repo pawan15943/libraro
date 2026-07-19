@@ -156,7 +156,7 @@ class LearnerOperationRequest extends FormRequest
             ],
 
             'user_id' => 'nullable|exists:learners,id',
-             'learner_id'=>'required|exists:learners,id',
+            'learner_id'=>'required|exists:learners,id',
 
             'discountType' => 'nullable|in:amount,percentage',
 

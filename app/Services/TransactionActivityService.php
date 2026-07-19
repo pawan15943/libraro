@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class TransactionActivityService
 {
@@ -17,6 +18,19 @@ class TransactionActivityService
             (float) ($data['paid_amount'] ?? 0)
         );
         $effectivePaid = $billing['total_amount'];
+
+        Log::info('learnerTransactionAddUpdate: input', [
+            'learner_id' => $data['learner_id'] ?? null,
+            'branchId' => $data['branchId'] ?? null,
+            'learner_detail_id' => $data['learner_detail_id'] ?? null,
+            'payment_type' => $data['payment_type'] ?? null,
+            'planPrice' => $data['planPrice'] ?? null,
+            'locker' => $data['locker'] ?? null,
+            'discount' => $data['discount'] ?? null,
+            'paid_amount_in' => $data['paid_amount'] ?? null,
+            'billing' => $billing,
+            'effectivePaid' => $effectivePaid,
+        ]);
 
         $transactionDate =
             $data['transaction_date']
@@ -36,6 +50,14 @@ class TransactionActivityService
         $pendingPaid = min($paidAmount, $oldPendingTotal);
         $remainingForNewPlan = $paidAmount - $pendingPaid;
         $remainingPendingPayment = $pendingPaid;
+
+        Log::info('learnerTransactionAddUpdate: old pending found', [
+            'old_pending_transaction_ids' => $pendingTransactions->pluck('id', 'pending_amount')->toArray(),
+            'oldPendingTotal' => $oldPendingTotal,
+            'paidAmount' => $paidAmount,
+            'pendingPaid' => $pendingPaid,
+            'remainingForNewPlan' => $remainingForNewPlan,
+        ]);
 
         foreach ($pendingTransactions as $tran) {
             if ($remainingPendingPayment <= 0) {
@@ -65,6 +87,12 @@ class TransactionActivityService
         $newPlanPending = max(0, $effectivePaid - $newPlanPaid);
         $newPlanExtra = max(0, $remainingForNewPlan - $effectivePaid);
 
+        Log::info('learnerTransactionAddUpdate: new plan split', [
+            'newPlanPaid' => $newPlanPaid,
+            'newPlanPending' => $newPlanPending,
+            'newPlanExtra' => $newPlanExtra,
+        ]);
+
         $learnerTransaction = LearnerTransaction::create([
             'learner_id' => $data['learner_id'],
             'library_id' => $data['library_id'],
@@ -80,6 +108,14 @@ class TransactionActivityService
             'is_paid' => $data['is_paid'] ?? 0,
             'due_date' => $data['due_date'] ?? null,
             'transaction_id' => transaction_id(),
+        ]);
+
+        Log::info('learnerTransactionAddUpdate: created new transaction row', [
+            'new_transaction_id' => $learnerTransaction->id,
+            'new_transaction_paid_amount' => $learnerTransaction->paid_amount,
+            'new_transaction_pending_amount' => $learnerTransaction->pending_amount,
+            'will_log_pending_activity' => $pendingPaid > 0,
+            'will_log_new_plan_activity' => $remainingForNewPlan > 0,
         ]);
 
          // Pending payment activity

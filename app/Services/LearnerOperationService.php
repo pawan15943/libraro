@@ -339,7 +339,6 @@ class LearnerOperationService
                 (float) ($dto->paid_amount ?? 0)
             );
 
-            $paid_amount=$billing['paid_amount'];
             if ($dto->payment_mode == 3) {
                 // Paylater: nothing is actually collected now, so pending must reflect the
                 // full effective amount — not effective minus whatever paid_amount the app
@@ -348,6 +347,14 @@ class LearnerOperationService
                 $pending = $effective;
                 $pending_refund=0;
             } else {
+                // Don't use BillingAmountService::totals()'s capped paid_amount here: it only
+                // knows this one plan's own total, so if the learner is also carrying forward
+                // an old pending balance in the same payment (paid_amount > this plan's total),
+                // it mislabels the overflow as extra_amount/refund. The real split across old
+                // pending transactions first, then this new plan, happens downstream in
+                // TransactionActivityService::learnerTransactionAddUpdate() — it needs the raw,
+                // uncapped paid_amount to do that split correctly.
+                $paid_amount = (float) ($dto->paid_amount ?? 0);
                 $pending = $billing['pending_amount'];
                 $pending_refund=$billing['extra_amount'];
             }
@@ -361,6 +368,14 @@ class LearnerOperationService
             if((int) $dto->payment_mode !== 3 && $dto->paid_amount > ($grossAmount+$oldPending)){
                 throw new Exception("Paid amount not valid");
             }
+
+            Log::info('calculateBilling: RENEW/UPGRADE/REACTIVE paid_amount', [
+                'dto_paid_amount' => $dto->paid_amount,
+                'billing_totals_capped_paid_amount' => $billing['paid_amount'],
+                'paid_amount_used' => $paid_amount,
+                'oldPending' => $oldPending,
+                'effective' => $effective,
+            ]);
         }
 
         
