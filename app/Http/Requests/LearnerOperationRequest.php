@@ -4,9 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use App\Models\Learner;
 use App\Models\PlanType;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class LearnerOperationRequest extends FormRequest
 {
@@ -17,6 +19,12 @@ class LearnerOperationRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        Log::info('LearnerOperationRequest raw input', [
+            'all' => $this->except(['profile_picture_image', 'id_proof']),
+            'route' => optional($this->route())->getName() ?? $this->path(),
+            'method' => $this->method(),
+        ]);
+
         $data = [];
 
         if ($this->exists('discountType')) {
@@ -55,6 +63,18 @@ class LearnerOperationRequest extends FormRequest
         if ($data !== []) {
             $this->merge($data);
         }
+    }
+
+    protected function failedValidation(ValidatorContract $validator)
+    {
+        Log::warning('LearnerOperationRequest validation failed', [
+            'all' => $this->except(['profile_picture_image', 'id_proof']),
+            'errors' => $validator->errors()->toArray(),
+            'route' => optional($this->route())->getName() ?? $this->path(),
+            'method' => $this->method(),
+        ]);
+
+        parent::failedValidation($validator);
     }
 
     private function normalizeMoneyInput($value, $emptyValue = null)
