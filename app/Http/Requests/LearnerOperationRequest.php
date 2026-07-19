@@ -105,6 +105,10 @@ class LearnerOperationRequest extends FormRequest
          
         $isEditLearner = $this->payment_type === 'EDITLEARNER';
         $isEditOperation = $this->payment_type === 'EDIT';
+        // RENEW never uses seat_no (LearnerOperationService keeps the learner's
+        // existing seat for every operation except REACTIVE), so a malformed/
+        // display-string seat_no from the app shouldn't block a renewal.
+        $isRenew = ($this->payment_type ?? 'RENEW') === 'RENEW';
         return [
 
             'plan_start_date' => 'nullable|date',
@@ -194,7 +198,10 @@ class LearnerOperationRequest extends FormRequest
 
             'locker_amount'=>'nullable|numeric|min:0',
 
-            'seat_no'=>'nullable|numeric',
+            'seat_no' => [
+                'nullable',
+                Rule::when(! $isRenew, ['numeric']),
+            ],
             'learner_detail'=>'nullable',
            
             'payment_type'=>'nullable|in:RENEW,UPGRADE,CHANGE PLAN,EDIT,REACTIVE,EDITLEARNER',
