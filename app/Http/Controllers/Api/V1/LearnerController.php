@@ -39,6 +39,9 @@ class LearnerController extends Controller
         try {
 
             $processData = $request->prepareData();
+            Log::info([
+                'processData'=>$processData
+            ]);
 
             $result = $service->processLearnerStore($processData);
 

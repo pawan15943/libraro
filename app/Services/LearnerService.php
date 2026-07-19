@@ -704,7 +704,9 @@ class LearnerService
             $plan_id = $data['plan_id'];
             $plan_type_id = $data['plan_type_id'];
             $seat_no = $data['seat_no'];
-            
+            Log::info([
+                'seat_no'=>$seat_no
+            ]);
             $start_date = Carbon::parse($data['start_date']);
 
             $endDate = getEndDate($plan_id, $start_date,$branchId);
