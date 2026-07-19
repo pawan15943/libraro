@@ -53,7 +53,7 @@ class LoggerMiddleware
                 'ip_address' => $request->ip(),
                 'created_at' => now(),
                 'action' => 'edit', // Adjust action as necessary
-                'request_body' => json_encode($request->all()),
+                'request_body' => substr(json_encode($request->all()), 0, 255),
             ]);
 
             // Log::info('Action successfully logged');

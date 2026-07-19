@@ -241,6 +241,9 @@ class LearnerController extends Controller
 
     public function process(LearnerOperationRequest $request, LearnerOperationService $service)
     {
+        Log::info(
+            ['renew requedt'=>$request]
+        );
         $permission = $this->permissionForLearnerOperation((string) $request->operation);
 
         if ($permission && $denied = $this->denyWithoutAppPermission($permission)) {
