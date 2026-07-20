@@ -834,6 +834,11 @@ class QrEntryController extends Controller
             
                 $planPrice = (float) $request->input('plan_price_id', 0);
                 $locker = (float) $request->input('locker_amount', 0);
+
+                if (\App\Services\BillingAmountService::discountExceedsPayable($planPrice, $locker, $request->discount_type, (float) ($request->discount_amount ?? 0))) {
+                    return redirect()->back()->with('error', 'Discount cannot be more than the total payable amount.')->withInput();
+                }
+
                 if ($request->discount_type == 'amount') {
                     $discount = $request->discount_amount;
                 } elseif ($request->discount_type == 'percentage') {

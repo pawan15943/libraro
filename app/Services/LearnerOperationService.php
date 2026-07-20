@@ -233,8 +233,20 @@ class LearnerOperationService
         $lockerAmount = $this->resolveLockerInput($dto, $customer);
         [$discountType, $discountAmount] = $this->resolveDiscountInput($dto, $customer);
 
+        // CHANGE PLAN/EDIT can silently carry an old discount forward when the
+        // request doesn't touch discount fields at all (see resolveDiscountInput) —
+        // only enforce the payable-amount cap when the discount is actually being
+        // entered/changed in this request, so a carried-over value from before
+        // this restriction existed can't suddenly block an unrelated update.
+        $discountKeysPresent = ($dto->discount_type_present ?? false) || ($dto->discount_amount_present ?? false);
+        $isCarriedOverDiscount = ! $discountKeysPresent && in_array($dto->operation, ['CHANGE PLAN', 'EDIT'], true);
+
+        if (! $isCarriedOverDiscount && BillingAmountService::discountExceedsPayable((float) $dto->plan_price, $lockerAmount, $discountType, $discountAmount)) {
+            throw new Exception('Discount cannot be more than the total payable amount.');
+        }
+
         $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$lockerAmount,$discountType,$discountAmount,$dto->paid_amount ?? 0
-          
+
         );
      
        

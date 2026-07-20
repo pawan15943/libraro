@@ -81,6 +81,10 @@ class QrBookingService
 
                 $paid_amount = (float) $request->paid_amount;
 
+                if (BillingAmountService::discountExceedsPayable($planPrice, $locker, $request->discount_type, (float) ($request->discount_amount ?? 0))) {
+                    throw new \Exception('Discount cannot be more than the total payable amount.');
+                }
+
                 $billing = BillingAmountService::calculate(
                     $planPrice,
                     $locker,

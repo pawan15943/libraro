@@ -745,6 +745,10 @@ class LearnerService
             $locker = (float) ($data['locker_amount'] ?? 0);
             $paid_amount = (float) ($data['paid_amount'] ?? 0);
 
+            if (BillingAmountService::discountExceedsPayable($planPrice, $locker, $data['discount_type'] ?? null, (float) ($data['discount_amount'] ?? 0))) {
+                throw new \Exception('Discount cannot be more than the total payable amount.');
+            }
+
             $billing = BillingAmountService::calculate(
                 $planPrice,
                 $locker,
@@ -756,7 +760,7 @@ class LearnerService
             $discount = $billing['discount_amount'];
             $effectivePaid = $billing['total_amount'];
             $pending_amount = $billing['pending_amount'];
-        
+
 
             $payment_mode = $data['payment_mode'];
 
