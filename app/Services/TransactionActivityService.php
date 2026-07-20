@@ -144,6 +144,21 @@ class TransactionActivityService
                 'amount' => $remainingForNewPlan,
                 'dr_cr' => $data['dr_cr'] ?? 'Cr',
             ]);
+        } elseif ($pendingPaid <= 0 && (int) ($data['payment_mode'] ?? null) === 3) {
+            // Paylater: nothing is actually collected now, so both amounts above are 0
+            // and neither branch fires — leaving no audit trail for the booking. Still
+            // log an activity (amount 0, PAYLATER) so the booking shows up, mirroring
+            // the paylater handling already in LearnerOperationService::learnerTransactionUpdate().
+            $this->learnerTransactionActivity([
+                'branchId' => $data['branchId'],
+                'learner_id' => $data['learner_id'],
+                'learner_transaction_id' => $learnerTransaction->id,
+                'particular' => $data['particular'] ?? 'Paid By Trans',
+                'payment_type' => $data['payment_type'],
+                'payment_mode' => $data['payment_mode'],
+                'amount' => 0,
+                'dr_cr' => $data['dr_cr'] ?? 'Cr',
+            ]);
         }
 
         return $learnerTransaction;
