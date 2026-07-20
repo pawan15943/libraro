@@ -283,7 +283,7 @@ if($customer->locker_no){
                             </div>
                             <div class="col-lg-4">
                                 <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="start_date10" value="{{ old('plan_start_date', now()->format('Y-m-d')) }}">
+                                <input type="date" class="form-control @error('plan_start_date') is-invalid @enderror" placeholder="Plan Starts On" name="plan_start_date" id="start_date10" min="{{ \Carbon\Carbon::parse($customer->plan_end_date)->format('Y-m-d') }}" value="{{ old('plan_start_date', now()->lt(\Carbon\Carbon::parse($customer->plan_end_date)) ? \Carbon\Carbon::parse($customer->plan_end_date)->format('Y-m-d') : now()->format('Y-m-d')) }}">
                                 @error('plan_start_date')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

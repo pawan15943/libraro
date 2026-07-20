@@ -64,8 +64,13 @@ class LearnerOperationService
                  $start_date = Carbon::parse($lastDetail->plan_start_date);
                  
              }elseif($dto->operation=='REACTIVE'){
-                $start_date =$start_date = $dto->start_date
+                $start_date = $dto->start_date
                 ? Carbon::parse($dto->start_date) : Carbon::now();
+
+                $oldEndDate = Carbon::parse($lastDetail->plan_end_date);
+                if ($start_date->lt($oldEndDate)) {
+                    throw new Exception("Start date cannot be before the last plan's end date (".$oldEndDate->format('d-m-Y').").");
+                }
              } elseif($dto->operation == 'EDIT'){
                 $start_date = $dto->start_date
                     ? Carbon::parse($dto->start_date)
