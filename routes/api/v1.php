@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\QrBookingController;
 use App\Http\Controllers\Api\V1\DemoBookingController;
 use App\Http\Controllers\Api\V1\LibraryReferralController;
 use App\Http\Controllers\Api\V1\FeedbackController;
+use App\Http\Controllers\Api\V1\SuggestionController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 
@@ -197,6 +198,9 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     Route::get('library/feedback', [FeedbackController::class, 'show']);
     Route::post('library/feedback/save', [FeedbackController::class, 'save']);
+
+    Route::get('library/suggestions', [SuggestionController::class, 'index']);
+    Route::post('library/suggestions/save', [SuggestionController::class, 'save']);
 
 });
 

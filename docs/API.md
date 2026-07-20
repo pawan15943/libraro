@@ -32,14 +32,15 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 15. [Message Templates](#message-templates)
 16. [Dashboard & Finance](#dashboard--finance)
 17. [Feedback](#feedback)
-18. [Upload](#upload)
-19. [Referral](#referral)
-20. [Receipt / ID Card Links](#receipt--id-card-links)
-21. [QR Bookings](#qr-bookings)
-22. [Learners](#learners)
-23. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
-24. [System / Cron (internal use)](#system--cron-internal-use)
-25. [Learner Auth (inactive)](#learner-auth-inactive)
+18. [Suggestions](#suggestions)
+19. [Upload](#upload)
+20. [Referral](#referral)
+21. [Receipt / ID Card Links](#receipt--id-card-links)
+22. [QR Bookings](#qr-bookings)
+23. [Learners](#learners)
+24. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
+25. [System / Cron (internal use)](#system--cron-internal-use)
+26. [Learner Auth (inactive)](#learner-auth-inactive)
 
 ---
 
@@ -2046,6 +2047,50 @@ One feedback record per library. `POST library/feedback/save` creates it on firs
 | message | string | "Feedback submitted successfully", "Feedback updated successfully", validation-error message (422), or exception message (500) |
 | data | object | the created/updated `feedback` row |
 | data.attachment | string\|null | full URL (`asset('public/'.attachment)`) or null |
+
+---
+
+## Suggestions
+
+Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
+
+Reads/writes the `suggestions` table (originally designed for learner-submitted suggestions — `library_id`+`learner_id` both required — but `learner_id` was made nullable via migration `2026_07_20_000003` so these can be submitted by the library owner via this endpoint; `learner_id` is left null here). Unlike Feedback, multiple suggestions per library are allowed — every `save` call creates a new row. The Figma "New Suggestion" screen's category cards (New Feature, UI Design, Performance, Security, Accessibility, Other) are **not** persisted — there's no category column on this table, so that selection is UI-only for now. `status` and `response` are admin-managed fields, not settable through this endpoint.
+
+### `GET /api/v1/library/suggestions`
+**Controller:** `SuggestionController@index`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| None — no request body | | | |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data[] | array | the library's `suggestions` rows, newest first |
+| data[].attachment | string\|null | full URL (`asset('public/'.attachment)`) or null |
+
+### `POST /api/v1/library/suggestions/save`
+**Controller:** `SuggestionController@save`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload** (multipart/form-data if sending `attachment` as a direct file)
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| title | string | Yes | max:255 |
+| description | string | No | nullable |
+| attachment | file\|string | No | nullable. Same upload convention as `library_logo`/Feedback: either send the file directly (mimes:jpg,jpeg,png,pdf; max:2048 = 2MB), or upload it first via `POST /api/v1/upload/temp-images` and pass the returned `temp_path`/`url` string here. Moved into `public/upload/suggestions/` via `LibraryConfigurationService::moveTempFileToPublic()`. |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | "Suggestion submitted successfully", validation-error message (422), or exception message (500) |
+| data | object | the created `suggestions` row |
+| data.attachment | string\|null | full URL or null |
 
 ---
 
