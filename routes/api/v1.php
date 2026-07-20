@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\LibraryController;
 use App\Http\Controllers\Api\V1\QrBookingController;
 use App\Http\Controllers\Api\V1\DemoBookingController;
 use App\Http\Controllers\Api\V1\LibraryReferralController;
+use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 
@@ -21,7 +22,8 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
     Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
     Route::get('master/static-data', [MasterController::class, 'getStaticMasters']);
-    
+    Route::get('feedback/features', [MasterController::class, 'features']);
+
      // Library login
     Route::post('library/login', [LibraryAuthController::class, 'login']);
     Route::post('library/register', [LibraryAuthController::class, 'register']);
@@ -192,7 +194,10 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
 
     // Route::post('library/finance/monthly', [LibraryController::class, 'monthlyFinancial']);
     Route::post('library/finance/dashboardfinancial', [LibraryController::class, 'dashboardFinancial']);
-   
+
+    Route::get('library/feedback', [FeedbackController::class, 'show']);
+    Route::post('library/feedback/save', [FeedbackController::class, 'save']);
+
 });
 
 });

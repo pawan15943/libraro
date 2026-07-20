@@ -29,13 +29,14 @@
                 <div class="row g-4">
                     
                     <div class="col-lg-6">
-                        <label for="">Feedback Type <span>*</span></label>
-                        <select name="feedback_type" class="form-select @error('feedback_type') is-invalid @enderror">
+                        <label for="">Choose Feature <span>*</span></label>
+                        <select name="feedback_feature_id" class="form-select @error('feedback_feature_id') is-invalid @enderror">
                             <option value="">Select</option>
-                            <option value="1">Product</option>
-                            <option value="2">Service</option>
+                            @foreach($feedback_features as $feedback_feature)
+                            <option value="{{ $feedback_feature->id }}">{{ $feedback_feature->name }}</option>
+                            @endforeach
                         </select>
-                        @error('feedback_type')
+                        @error('feedback_feature_id')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>

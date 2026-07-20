@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use App\Helpers\ReferralHelper;
 use App\Models\Branch;
+use App\Models\FeedbackFeature;
 use App\Models\LibraryReferral;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryLifecycleService;
@@ -1906,7 +1907,8 @@ class LibraryController extends Controller
     public function libraryfeedback()
     {
         $is_feedback=Feedback::where('library_id', getLibraryId())->exists();
-        return view('library.feedback',compact('is_feedback')); // Adjust the view path as needed
+        $feedback_features = FeedbackFeature::select('id','name')->get();
+        return view('library.feedback',compact('is_feedback','feedback_features')); // Adjust the view path as needed
     }
 
     public function sendSuccessfulEmail($library)
@@ -1928,7 +1930,7 @@ class LibraryController extends Controller
     {
      
         $validatedData = $request->validate([
-            'feedback_type' => 'required',
+            'feedback_feature_id' => 'required|integer|exists:feedback_features,id',
             'rating' => 'required|integer|min:1|max:5',
             'description' => 'required|string',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

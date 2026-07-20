@@ -185,6 +185,30 @@ class MasterController extends Controller
         ]);
     }
 
+    public function features()
+    {
+        try {
+            $features = DB::table('feedback_features')->whereNull('deleted_at')->select('id', 'name', 'image')->get()
+                ->map(function ($item) {
+                    $item->image = $item->image
+                        ? url('public/' . $item->image)
+                        : null;
+                    return $item;
+                });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Features fetched successfully',
+                'data' => $features,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function paymentTypeList()
     {
         $paymentTypes = [

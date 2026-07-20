@@ -31,14 +31,15 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 14. [Exam CRUD](#exam-crud)
 15. [Message Templates](#message-templates)
 16. [Dashboard & Finance](#dashboard--finance)
-17. [Upload](#upload)
-18. [Referral](#referral)
-19. [Receipt / ID Card Links](#receipt--id-card-links)
-20. [QR Bookings](#qr-bookings)
-21. [Learners](#learners)
-22. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
-23. [System / Cron (internal use)](#system--cron-internal-use)
-24. [Learner Auth (inactive)](#learner-auth-inactive)
+17. [Feedback](#feedback)
+18. [Upload](#upload)
+19. [Referral](#referral)
+20. [Receipt / ID Card Links](#receipt--id-card-links)
+21. [QR Bookings](#qr-bookings)
+22. [Learners](#learners)
+23. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
+24. [System / Cron (internal use)](#system--cron-internal-use)
+25. [Learner Auth (inactive)](#learner-auth-inactive)
 
 ---
 
@@ -251,6 +252,26 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 | data.expenses | array | list of `{id, name}` from `expenses` table |
 | data.exams | array | list of `{id, name}` from `exams` table |
 | data.libraryUserRoles | array | list of `{name, guard_name}` roles with `guard_name = library_user` |
+
+### `GET /api/v1/feedback/features`
+**Controller:** `MasterController@features`
+**Auth:** `api_key`, `throttle:60,1`
+
+Reads the `feedback_features` table — a lookup list of selectable features for the feedback form's "Choose Feature" field (distinct from the `features` table used in `master/static-data`, which lists library amenities). Rows are managed manually (no admin CRUD/API for this table yet).
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| None — no request body | | | |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data[].id | integer | |
+| data[].name | string | |
+| data[].image | string\|null | full URL (`url('public/'.image)`) or null |
 
 ### `GET /api/v1/states`
 **Controller:** `MasterController@getStates`
@@ -1979,6 +2000,52 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | |
 | data | object | opaque — built by `DashboardService::dashboardFinancialData()`, not constructed in this controller |
+
+---
+
+## Feedback
+
+Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
+
+One feedback record per library. `POST library/feedback/save` creates it on first call and updates the same row on every subsequent call for that library (no `id` field needed — the existing record for the authenticated library, if any, is looked up via `library_id`). Since the public site's testimonials (`SiteController@home`, `@searchLibrary`, `@libraryManagmentLandingPage`) query the `feedback` table live (`withoutGlobalScopes()->where('rating','>',4)`), any create/update through this endpoint is reflected on the public site immediately with no separate sync step.
+
+### `GET /api/v1/library/feedback`
+**Controller:** `FeedbackController@show`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| None — no request body | | | |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | "Feedback fetched successfully" or "No feedback submitted yet" |
+| data | object\|null | the library's `feedback` row, or null if none submitted yet |
+| data.attachment | string\|null | full URL (`asset('public/'.attachment)`) or null |
+
+### `POST /api/v1/library/feedback/save`
+**Controller:** `FeedbackController@save`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload** (multipart/form-data if sending `attachment` as a direct file)
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| feedback_feature_id | integer | Yes | exists:feedback_features,id — the feature the feedback is about, selected from `GET /api/v1/feedback/features` |
+| rating | integer | No | nullable; min:1, max:5 |
+| description | string | Yes | |
+| attachment | file\|string | No | nullable. Same upload convention as `library_logo`: either send the file directly (mimes:jpg,jpeg,png,pdf; max:2048 = 2MB), or upload it first via `POST /api/v1/upload/temp-images` and pass the returned `temp_path`/`url` string here. Either form is moved into `public/upload/feedback/` via `LibraryConfigurationService::moveTempFileToPublic()`, replacing/deleting any previous attachment. |
+| recommend | boolean | No | nullable |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | "Feedback submitted successfully", "Feedback updated successfully", validation-error message (422), or exception message (500) |
+| data | object | the created/updated `feedback` row |
+| data.attachment | string\|null | full URL (`asset('public/'.attachment)`) or null |
 
 ---
 
