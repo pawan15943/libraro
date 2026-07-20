@@ -89,6 +89,11 @@ class StoreLearnerRequest extends FormRequest
             'date',
                 function ($attribute, $value, $fail) {
 
+                    if ((int) $this->input('payment_mode') === 3 && empty($value)) {
+                        $fail('Due date is required when payment mode is Pay Later.');
+                        return;
+                    }
+
                     $planPrice = (float) $this->input('plan_price_id', 0);
                     $paid = (float) $this->input('paid_amount', 0);
                     $locker = (float) $this->input('locker_amount', 0);

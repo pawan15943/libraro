@@ -207,7 +207,11 @@ class LearnerOperationRequest extends FormRequest
             'payment_type'=>'nullable|in:RENEW,UPGRADE,CHANGE PLAN,EDIT,REACTIVE,EDITLEARNER',
             'previous_pending'=>'nullable|min:0',
             'pending_amount'=>'nullable',
-            'due_date'=>'nullable|date',
+            'due_date'=>[
+                'nullable',
+                'date',
+                Rule::requiredIf(fn () => (int) $this->payment_mode === 3),
+            ],
              'diffrence_amount' => [
                     'nullable',
                 ],

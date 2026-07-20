@@ -2054,7 +2054,7 @@ One feedback record per library. `POST library/feedback/save` creates it on firs
 
 Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
-Reads/writes the `suggestions` table (originally designed for learner-submitted suggestions — `library_id`+`learner_id` both required — but `learner_id` was made nullable via migration `2026_07_20_000003` so these can be submitted by the library owner via this endpoint; `learner_id` is left null here). Unlike Feedback, multiple suggestions per library are allowed — every `save` call creates a new row. The Figma "New Suggestion" screen's category cards (New Feature, UI Design, Performance, Security, Accessibility, Other) are **not** persisted — there's no category column on this table, so that selection is UI-only for now. `status` and `response` are admin-managed fields, not settable through this endpoint.
+Reads/writes the `suggestions` table (originally designed for learner-submitted suggestions — `library_id`+`learner_id` both required — but `learner_id` was made nullable via migration `2026_07_20_000003` so these can be submitted by the library owner via this endpoint; `learner_id` is left null here). Unlike Feedback, multiple suggestions per library are allowed — every `save` call creates a new row. The Figma "New Suggestion" screen's category cards (New Feature, UI Design, Performance, Security, Accessibility, Other) map to the free-text `suggestion_feature` column (added via migration `2026_07_20_000004`) — the client sends whichever card label was selected as plain text; there's no lookup table backing it (unlike Feedback's `feedback_feature_id`). `status` and `response` are admin-managed fields, not settable through this endpoint.
 
 ### `GET /api/v1/library/suggestions`
 **Controller:** `SuggestionController@index`
@@ -2081,6 +2081,7 @@ Reads/writes the `suggestions` table (originally designed for learner-submitted 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | title | string | Yes | max:255 |
+| suggestion_feature | string | Yes | max:255; the selected category card label (e.g. "New Feature", "UI Design", "Performance", "Security", "Accessibility", "Other") — free text, not validated against a fixed list |
 | description | string | No | nullable |
 | attachment | file\|string | No | nullable. Same upload convention as `library_logo`/Feedback: either send the file directly (mimes:jpg,jpeg,png,pdf; max:2048 = 2MB), or upload it first via `POST /api/v1/upload/temp-images` and pass the returned `temp_path`/`url` string here. Moved into `public/upload/suggestions/` via `LibraryConfigurationService::moveTempFileToPublic()`. |
 

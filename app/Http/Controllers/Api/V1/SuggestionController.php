@@ -35,6 +35,7 @@ class SuggestionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
+            'suggestion_feature' => 'required|string|max:255',
             'description' => 'nullable|string',
             'attachment' => [
                 'nullable',

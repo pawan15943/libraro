@@ -397,7 +397,7 @@ class LearnerOperationService
 
         
 
-        if($pending>0 && empty($dto->due_date) && (int) $dto->payment_mode !== 3){
+        if($pending>0 && empty($dto->due_date)){
             throw new Exception("Due date required");
         }
 
