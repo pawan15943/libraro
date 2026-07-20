@@ -1523,23 +1523,25 @@ class DashboardService
             'branch_id'=>getCurrentBranch()
             
         ];
-         $banners[] = [
-            'type' => 'profile',
-            'tital' => 'profile',
-            'description' => '',
-            'birthday_user' => '',
-            'seat_no' => '',
-            'subscription_type' => '',
-            'subscription_status' => '',
-            'days_in_left' => '',
-            'dob' => '',
-            'mobile' => '',
-            'image_resource' =>"",
-            'banner_link' =>"",
-            'progress_percentage' =>(int) round(getProfileCompletionPercentage()),
-            'branch_id'=>getCurrentBranch()
-            
-        ];
+        if (!isLibraryProfileComplete()) {
+            $banners[] = [
+                'type' => 'profile',
+                'tital' => 'profile',
+                'description' => '',
+                'birthday_user' => '',
+                'seat_no' => '',
+                'subscription_type' => '',
+                'subscription_status' => '',
+                'days_in_left' => '',
+                'dob' => '',
+                'mobile' => '',
+                'image_resource' =>"",
+                'banner_link' =>"",
+                'progress_percentage' =>(int) round(getProfileCompletionPercentage()),
+                'branch_id'=>getCurrentBranch()
+
+            ];
+        }
 
         return collect($banners)
             ->filter(fn ($banner) => !empty($banner['tital']))

@@ -1914,6 +1914,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | status | boolean | |
 | message | string | |
 | data.unread_count | integer | |
+| data.profile_link | object\|null | `null` once branch profile completion is >= 85% (`isLibraryProfileComplete()`) |
 | data.profile_link.id | integer | current branch id |
 | data.profile_link.notification_type | string | constant: "important" |
 | data.profile_link.title | string | constant: "Complete Profile" |

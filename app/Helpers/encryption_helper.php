@@ -1203,6 +1203,13 @@ if (!function_exists('getProfileCompletionPercentage')) {
     }
 }
 
+if (!function_exists('isLibraryProfileComplete')) {
+    function isLibraryProfileComplete()
+    {
+        return getProfileCompletionPercentage() >= 85;
+    }
+}
+
 if (!function_exists('cleanNull')) {
 
     function cleanNull($array)
