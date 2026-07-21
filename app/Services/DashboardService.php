@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\Branch;
 use App\Models\Hour;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -1385,6 +1386,31 @@ class DashboardService
             ->select('name', 'seat_no','dob','mobile')
             ->get();
 
+        $branch = Branch::query()->select('id', 'name', 'founder_day')->find($branchId);
+
+        if ($branch && !empty($branch->founder_day)) {
+            $founderDay = Carbon::parse($branch->founder_day);
+
+            if ($founderDay->month === $today->month && $founderDay->day === $today->day) {
+                $banners[] = [
+                    'type' => 'founder_day_wishes',
+                    'tital' => "Happy Founder's Day",
+                    'description' => '',
+                    'birthday_user' => (string) ($branch->name ?? ''),
+                    'seat_no' => '',
+                    'subscription_type' => '',
+                    'subscription_status' => '',
+                    'days_in_left' => '',
+                    'dob' => '',
+                    'mobile' => '',
+                    'image_resource' =>"",
+                    'banner_link' =>"",
+                    'progress_percentage' =>0,
+                    'branch_id'=>getCurrentBranch()
+                ];
+            }
+        }
+
         foreach ($learners as $learner) {
             $banners[] = [
                 'type' => 'birthday_wishes',
@@ -1490,39 +1516,6 @@ class DashboardService
             $daysLeft = (string) max(0, Carbon::today()->diffInDays(Carbon::parse($latestPlan->end_date), false));
         }
 
-        $banners[] = [
-            'type' => 'subscription',
-            'tital' => 'subscription',
-            'description' => '',
-            'birthday_user' => '',
-            'seat_no' => '',
-            'subscription_type' => $subscriptionName,
-            'subscription_status' => $subscriptionStatus,
-            'days_in_left' => $daysLeft,
-            'dob' => '',
-            'mobile' => '',
-            'image_resource' =>"",
-            'banner_link' =>"",
-            'progress_percentage' =>0,
-            'branch_id'=>getCurrentBranch()
-        ];
-         $banners[] = [
-            'type' => 'image',
-            'tital' => 'image',
-            'description' => '',
-            'birthday_user' => '',
-            'seat_no' => '',
-            'subscription_type' => '',
-            'subscription_status' => '',
-            'days_in_left' => '',
-            'dob' => '',
-            'mobile' => '',
-            'image_resource' =>asset('public/img/slider/topbanner.jpeg'),
-            'banner_link' =>"",
-            'progress_percentage' =>0,
-            'branch_id'=>getCurrentBranch()
-            
-        ];
         if (!isLibraryProfileComplete()) {
             $banners[] = [
                 'type' => 'profile',
@@ -1542,6 +1535,39 @@ class DashboardService
 
             ];
         }
+         $banners[] = [
+            'type' => 'image',
+            'tital' => 'image',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => '',
+            'subscription_status' => '',
+            'days_in_left' => '',
+            'dob' => '',
+            'mobile' => '',
+            'image_resource' =>asset('public/img/slider/topbanner.jpeg'),
+            'banner_link' =>"",
+            'progress_percentage' =>0,
+            'branch_id'=>getCurrentBranch()
+
+        ];
+        $banners[] = [
+            'type' => 'subscription',
+            'tital' => 'subscription',
+            'description' => '',
+            'birthday_user' => '',
+            'seat_no' => '',
+            'subscription_type' => $subscriptionName,
+            'subscription_status' => $subscriptionStatus,
+            'days_in_left' => $daysLeft,
+            'dob' => '',
+            'mobile' => '',
+            'image_resource' =>"",
+            'banner_link' =>"",
+            'progress_percentage' =>0,
+            'branch_id'=>getCurrentBranch()
+        ];
 
         return collect($banners)
             ->filter(fn ($banner) => !empty($banner['tital']))

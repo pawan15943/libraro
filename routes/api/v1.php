@@ -157,6 +157,8 @@ Route::middleware(['auth:library_api','api_key','throttle:60,1'])->group(functio
         Route::post('/list', [LearnerController::class,'index']);
         Route::post('/list-by-type', [LearnerController::class,'listByType']);
         Route::post('/pending-payment', [LearnerController::class, 'pendingPayment']);
+        Route::post('/expired', [LearnerController::class, 'expiredList']);
+        Route::post('/extended', [LearnerController::class, 'extendedList']);
         Route::post('/activity', [LearnerController::class, 'activity']);
         Route::get('/status-list', [LearnerController::class,'statusList']);
         Route::post('/detail', [LearnerController::class,'show']);

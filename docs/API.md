@@ -2543,6 +2543,52 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | summary.expired_learner_due_amount | string | |
 | summary.final_due | string | |
 
+### `POST /api/v1/library/learners/expired`
+**Controller:** `LearnerController@expiredList`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| search | string | no | |
+| plan_type_id | integer or array | no | |
+| plan_type_id.* | integer | no | exists:plan_types,id |
+| sort_by | string | no | enum: seat_no\|name\|expire_date\|gen |
+| sort_order | string | no | enum: asc\|desc |
+| from_date | string (date) | no | filters on `learner_detail.join_date >=` |
+| to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
+| page_no | integer | no | not validated; mapped internally to `page` |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| list_count | integer | |
+| data[] | array | same learner list item shape as `list` endpoint, filtered to status=expired |
+
+### `POST /api/v1/library/learners/extended`
+**Controller:** `LearnerController@extendedList`
+**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| search | string | no | |
+| plan_type_id | integer or array | no | |
+| plan_type_id.* | integer | no | exists:plan_types,id |
+| sort_by | string | no | enum: seat_no\|name\|expire_date\|gen |
+| sort_order | string | no | enum: asc\|desc |
+| from_date | string (date) | no | filters on `learner_detail.join_date >=` |
+| to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
+| page_no | integer | no | not validated; mapped internally to `page` |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| list_count | integer | |
+| data[] | array | same learner list item shape as `list` endpoint, filtered to status=extended |
+
 ### `POST /api/v1/library/learners/activity`
 **Controller:** `LearnerController@activity`
 **Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
