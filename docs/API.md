@@ -2372,7 +2372,7 @@ All under `/api/v1/library/learners/*` (route prefix). Middleware: `auth:library
 | locker_no | numeric | no | required if `toggleFieldCheckbox=yes` |
 | sended_message_type | string | no | enum: whatsapp\|text\|both\|no |
 | no_expiry | integer | yes | enum: 0,1 |
-| due_date | string (date) | no | required if pending amount > 0 (custom rule) |
+| due_date | string (date) | no | required if payment_mode=3 (paylater) or pending amount > 0 (custom rule) |
 | seat_no | integer | conditional | required unless `general_seat=yes` |
 
 **Response**

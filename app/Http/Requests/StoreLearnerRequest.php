@@ -85,13 +85,11 @@ class StoreLearnerRequest extends FormRequest
 
             'no_expiry'=>'required|in:0,1',
             'due_date' => [
-            'nullable',
-            'date',
-                function ($attribute, $value, $fail) {
-
-                    if ((int) $this->input('payment_mode') === 3 && empty($value)) {
-                        $fail('Due date is required when payment mode is Pay Later.');
-                        return;
+                'nullable',
+                'date',
+                Rule::requiredIf(function () {
+                    if ((int) $this->input('payment_mode') === 3) {
+                        return true;
                     }
 
                     $planPrice = (float) $this->input('plan_price_id', 0);
@@ -100,12 +98,9 @@ class StoreLearnerRequest extends FormRequest
                     $discount = (float) $this->input('discount_amount', 0);
 
                     $total = $planPrice + $locker - $discount;
-                    $pending = $total - $paid;
 
-                    if ($pending > 0 && empty($value)) {
-                        $fail('Due date is required if there is pending amount.');
-                    }
-                }
+                    return ($total - $paid) > 0;
+                }),
             ],
 
         ];
@@ -115,6 +110,13 @@ class StoreLearnerRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function messages()
+    {
+        return [
+            'due_date.required' => 'Due date is required when payment mode is Pay Later or there is a pending amount.',
+        ];
     }
 
     public function withValidator($validator)
