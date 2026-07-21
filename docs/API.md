@@ -520,19 +520,19 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 **Controller:** `LibraryController@guidelines`
 **Auth:** `api_key`, `throttle:60,1`
 
-Reads the plain `guidelines` table (`guideline_type`, `question`, `answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Unlike `faq` (array of `{question, answer}` objects), this returns data as a key-value map — `question` is the object key, `answer` is the value — grouped one level deeper by `guideline_type`.
+Reads the plain `guidelines` table (`guideline_type`, `question`, `answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Returns a flat array of `{title, description}` objects (`question` → `title`, `answer` → `description`); `guideline_type` is not included in the response.
 
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| guideline_type | string | No | nullable, max:255; when given, response `data` is flattened to just that type's key-value map instead of being grouped by type |
+| guideline_type | string | No | nullable, max:255; when given, filters rows to that type only |
 
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
 | message | string | |
-| data | object | when `guideline_type` is omitted: `{ [guideline_type]: { [question]: answer } }`; when given: `{ [question]: answer }` for that type only (empty object `{}` if the type has no rows) |
+| data | array | `[{ title, description }, ...]` — `title` is the question, `description` is the answer; empty array `[]` if no rows match |
 
 ---
 

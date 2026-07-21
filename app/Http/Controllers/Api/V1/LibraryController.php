@@ -1280,14 +1280,12 @@ class LibraryController extends Controller
             $query->where('guideline_type', $validated['guideline_type']);
         }
 
-        $grouped = [];
-        foreach ($query->get() as $row) {
-            $grouped[$row->guideline_type][$row->question] = (string) $row->answer;
-        }
-
-        $data = !empty($validated['guideline_type'])
-            ? ($grouped[$validated['guideline_type']] ?? [])
-            : $grouped;
+        $data = $query->get()->map(function ($row) {
+            return [
+                'title' => $row->question,
+                'description' => (string) $row->answer,
+            ];
+        })->values();
 
         return response()->json([
             'status' => true,
