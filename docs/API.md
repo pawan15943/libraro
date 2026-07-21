@@ -516,6 +516,24 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 | data.items[].question | string | |
 | data.items[].answer | string | |
 
+### `GET /api/v1/library/guidelines`
+**Controller:** `LibraryController@guidelines`
+**Auth:** `api_key`, `throttle:60,1`
+
+Reads the plain `guidelines` table (`guideline_type`, `question`, `answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Unlike `faq` (array of `{question, answer}` objects), this returns data as a key-value map — `question` is the object key, `answer` is the value — grouped one level deeper by `guideline_type`.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| guideline_type | string | No | nullable, max:255; when given, response `data` is flattened to just that type's key-value map instead of being grouped by type |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data | object | when `guideline_type` is omitted: `{ [guideline_type]: { [question]: answer } }`; when given: `{ [question]: answer }` for that type only (empty object `{}` if the type has no rows) |
+
 ---
 
 ## Public — Demo Bookings

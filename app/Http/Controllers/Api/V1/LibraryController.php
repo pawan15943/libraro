@@ -1266,6 +1266,36 @@ class LibraryController extends Controller
         ]);
     }
 
+    public function guidelines(Request $request)
+    {
+        $validated = $request->validate([
+            'guideline_type' => 'nullable|string|max:255',
+        ]);
+
+        $query = DB::table('guidelines')
+            ->select('guideline_type', 'question', 'answer')
+            ->orderBy('id', 'asc');
+
+        if (!empty($validated['guideline_type'])) {
+            $query->where('guideline_type', $validated['guideline_type']);
+        }
+
+        $grouped = [];
+        foreach ($query->get() as $row) {
+            $grouped[$row->guideline_type][$row->question] = (string) $row->answer;
+        }
+
+        $data = !empty($validated['guideline_type'])
+            ? ($grouped[$validated['guideline_type']] ?? [])
+            : $grouped;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Guidelines fetched successfully',
+            'data' => $data,
+        ]);
+    }
+
     public function faq()
     {
         return response()->json([
