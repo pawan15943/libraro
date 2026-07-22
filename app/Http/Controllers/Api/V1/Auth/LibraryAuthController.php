@@ -1383,6 +1383,18 @@ class LibraryAuthController extends Controller
             ], 200);
         }
 
+        /* ================= BRANCH COUNT (PLAN) VALIDATION ================= */
+        if (!$branchId) {
+            $branchValidation = branchCountValidation();
+
+            if ($branchValidation['success']) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => $branchValidation['message']
+                ], 200);
+            }
+        }
+
         if($validated['hour'] < getBranchShiftTiming($branchId)){
              return response()->json([
                 'status' => false,

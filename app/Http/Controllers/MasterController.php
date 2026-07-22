@@ -77,8 +77,10 @@ class MasterController extends Controller
             'name' => 'required|string|max:255',
             'monthly_fees' => 'required|numeric|min:0',
             'yearly_fees' => 'nullable|numeric|min:0',
+            'max_seats' => 'nullable|integer|min:0',
+            'max_branches' => 'nullable|integer|min:0',
         ]);
-        Subscription::create($request->all());
+        Subscription::create($validated);
         return redirect()->back()->with('success', 'Subscription created successfully');
     }
     public function subscriptionMasterUpdate(Request $request, $id)
@@ -87,6 +89,8 @@ class MasterController extends Controller
             'name' => 'required|string|max:255',
             'monthly_fees' => 'required|numeric|min:0',
             'yearly_fees' => 'nullable|numeric|min:0',
+            'max_seats' => 'nullable|integer|min:0',
+            'max_branches' => 'nullable|integer|min:0',
         ]);
 
         $subscription = Subscription::findOrFail($id);

@@ -740,7 +740,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | branch_id | integer | id of the created/updated branch, 0 if missing |
 | is_shift_added | boolean | true if the branch has any shift (plan_type) records |
 
-**Notes:** Also mounted at `POST library/branch/store` (same controller method, alias route — see below). Accepts nested `branch_detail`, `branch_master`, `plan`, `floors`, `features` objects/arrays which are flattened into the fields above before validation.
+**Notes:** Also mounted at `POST library/branch/store` (same controller method, alias route — see below). Accepts nested `branch_detail`, `branch_master`, `plan`, `floors`, `features` objects/arrays which are flattened into the fields above before validation. Enforces the library's subscription plan limits: creating a new branch (no `branch_id`) is rejected with `status: false` (HTTP 200) if the library is already at its plan's max branch count, and `seats` (summed across all branches, including this one) is rejected if it would exceed the plan's max seat count. Both limits are `NULL` (unlimited) on plans that don't set them (e.g. Premium seats).
 
 ### `POST /api/v1/library/branch/store`
 **Controller:** `LibraryAuthController@configure`

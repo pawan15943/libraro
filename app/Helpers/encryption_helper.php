@@ -1152,13 +1152,51 @@ if (!function_exists('branchCountValidation')) {
     {
         $library = Library::findOrFail(getLibraryId());
         $branch_count = Branch::where('library_id', getLibraryId())->count();
-        $message = "You cannot add more branches. You already have $branch_count branches.";
-        $limits = [1 => 1, 2 => 2, 3 => 4]; // library_type => max branches
-        $maxAllowed = $limits[$library->library_type] ?? 0;
+
+        // NULL = unlimited branches for this plan
+        $maxAllowed = Subscription::where('id', $library->library_type)->value('max_branches');
+
+        $blocked = $branch_count > 0 && !is_null($maxAllowed) && $branch_count >= $maxAllowed;
+
+        $message = $blocked
+            ? "Your current plan allows a maximum of {$maxAllowed} branch(es). Please upgrade your plan to add more branches."
+            : "You cannot add more branches. You already have $branch_count branches.";
 
         return [
-            'success' => $branch_count > 0 && $branch_count >= $maxAllowed,
+            'success' => $blocked,
             'branch_count' => $branch_count,
+            'max_allowed' => $maxAllowed,
+            'message' => $message
+        ];
+    }
+}
+
+if (!function_exists('seatCountValidation')) {
+    function seatCountValidation($newSeats, $excludeBranchId = null)
+    {
+        $library = Library::findOrFail(getLibraryId());
+
+        // NULL = unlimited seats for this plan
+        $maxAllowed = Subscription::where('id', $library->library_type)->value('max_seats');
+
+        $existingSeats = (int) Hour::withoutGlobalScopes()
+            ->where('library_id', getLibraryId())
+            ->when($excludeBranchId, function ($query) use ($excludeBranchId) {
+                $query->where('branch_id', '!=', $excludeBranchId);
+            })
+            ->sum('seats');
+
+        $projectedSeats = $existingSeats + (int) $newSeats;
+
+        $blocked = !is_null($maxAllowed) && $projectedSeats > $maxAllowed;
+
+        $message = "Your current plan allows a maximum of {$maxAllowed} seats across all branches. "
+            . "You are trying to configure {$projectedSeats} seats in total. Please upgrade your plan to add more seats.";
+
+        return [
+            'success' => $blocked,
+            'existing_seats' => $existingSeats,
+            'projected_seats' => $projectedSeats,
             'max_allowed' => $maxAllowed,
             'message' => $message
         ];

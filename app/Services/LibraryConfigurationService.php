@@ -141,7 +141,16 @@ class LibraryConfigurationService
                     );
                 }
             }
-           
+
+            /* =========================
+            SEAT COUNT (PLAN) VALIDATION
+            ========================= */
+            $seatValidation = seatCountValidation($seats, $existingBranch->id ?? null);
+
+            if ($seatValidation['success']) {
+                throw new \Exception($seatValidation['message']);
+            }
+
 
             /* =========================
             FLOOR VALIDATION

@@ -94,9 +94,15 @@ class BranchController extends Controller
     {
         
         $validation = branchCountValidation();
-       
+
        if ($validation['success']) {
             return back()->withInput()->with('error', $validation['message']);
+        }
+
+        $seatValidation = seatCountValidation($request->input('seats'));
+
+        if ($seatValidation['success']) {
+            return back()->withInput()->with('error', $seatValidation['message']);
         }
 
         $validated = $request->validate([
@@ -104,7 +110,7 @@ class BranchController extends Controller
             'display_name' => 'nullable|string|max:255',
             'email' => 'required|email',
             'mobile' => 'required|digits:10',
-           
+
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'locker_amount'=>'required',

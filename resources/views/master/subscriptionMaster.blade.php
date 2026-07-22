@@ -53,6 +53,20 @@
                 <small class="text-danger">{{ $message }}</small>
             @enderror
         </div>
+        <div class="col-lg-4">
+            <label for="max_seats">Max Seats <small class="text-muted">(leave blank for unlimited)</small></label>
+            <input type="text" class="form-control digit-only" name="max_seats" value="{{ old('max_seats', $subscription->max_seats ?? '') }}">
+            @error('max_seats')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+        <div class="col-lg-4">
+            <label for="max_branches">Max Branches <small class="text-muted">(leave blank for unlimited)</small></label>
+            <input type="text" class="form-control digit-only" name="max_branches" value="{{ old('max_branches', $subscription->max_branches ?? '') }}">
+            @error('max_branches')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
         {{-- <div class="col-lg-4">
             <label for="discount">Discount</label>
             <input type="text" class="form-control digit-only"  name="discount" value="{{ old('discount', $subscription->discount ?? '') }}">
@@ -97,6 +111,8 @@
                         <th>Subscription Name</th>
                         <th>Monthly Price</th>
                         <th>Yearly Price</th>
+                        <th>Max Seats</th>
+                        <th>Max Branches</th>
                         <th>No. of Permission</th>
                         <th>Subscription Status</th>
                         <th>Action</th>
@@ -115,6 +131,8 @@
                         <td>{{$value->name}}</td>
                         <td>{{$value->monthly_fees}}</td>
                         <td>{{$value->yearly_fees}}</td>
+                        <td>{{$value->max_seats ?? 'Unlimited'}}</td>
+                        <td>{{$value->max_branches ?? 'Unlimited'}}</td>
                         <td>{{$permisssionsCount}} [ <a href="{{ route('planwise.permissions', $value->id) }}">View</a> | <a href="{{ route('subscriptions.permissions') }}">Edit</a> ]</td>
                         @if($value->deleted_at==null)
                         <td>Active</td>
