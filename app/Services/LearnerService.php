@@ -1410,12 +1410,76 @@ class LearnerService
 
                 case 'pending_payment':
 
-                    $query->whereExists(function ($q) {
-                        $q->select(\DB::raw(1))
-                            ->from('learner_transactions')
-                            ->whereColumn('learner_transactions.learner_id', 'learners.id')
-                            ->where('learner_transactions.pending_amount', '>', 0);
-                    });
+                    $dueFilter = $filters['due_filter'] ?? 'all';
+                    $today = Carbon::today()->toDateString();
+
+                    switch ($dueFilter) {
+
+                        case 'pending':
+                            // Active learner with an outstanding due.
+                            $query->where('learners.status', 1)
+                                ->whereExists(function ($q) {
+                                    $q->select(\DB::raw(1))
+                                        ->from('learner_transactions')
+                                        ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->where('learner_transactions.pending_amount', '>', 0);
+                                });
+                        break;
+
+                        case 'expired':
+                            // Expired learner with an outstanding due.
+                            $query->where('learners.status', 0)
+                                ->whereExists(function ($q) {
+                                    $q->select(\DB::raw(1))
+                                        ->from('learner_transactions')
+                                        ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->where('learner_transactions.pending_amount', '>', 0);
+                                });
+                        break;
+
+                        case 'overdue':
+                            // Outstanding due whose due date has passed, active or expired.
+                            $query->whereExists(function ($q) use ($today) {
+                                $q->select(\DB::raw(1))
+                                    ->from('learner_transactions')
+                                    ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->where('learner_transactions.pending_amount', '>', 0)
+                                    ->whereNotNull('learner_transactions.due_date')
+                                    ->whereDate('learner_transactions.due_date', '<', $today);
+                            });
+                        break;
+
+                        case 'adjusted':
+                            // Learner with a settled/adjusted amount.
+                            $query->whereExists(function ($q) {
+                                $q->select(\DB::raw(1))
+                                    ->from('learner_transactions')
+                                    ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->where('learner_transactions.sattle_amount', '>', 0);
+                            });
+                        break;
+
+                        case 'received':
+                            // Learner who has had a pending due received/collected.
+                            $query->whereExists(function ($q) {
+                                $q->select(\DB::raw(1))
+                                    ->from('learner_transaction_activity')
+                                    ->whereColumn('learner_transaction_activity.learner_id', 'learners.id')
+                                    ->where('learner_transaction_activity.payment_type', 'PENDING')
+                                    ->where('learner_transaction_activity.dr_cr', 'Cr');
+                            });
+                        break;
+
+                        case 'all':
+                        default:
+                            $query->whereExists(function ($q) {
+                                $q->select(\DB::raw(1))
+                                    ->from('learner_transactions')
+                                    ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->where('learner_transactions.pending_amount', '>', 0);
+                            });
+                        break;
+                    }
 
                 break;
 

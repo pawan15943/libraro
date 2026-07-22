@@ -150,6 +150,7 @@ class LearnerController extends Controller
         try {
             $request->validate([
                 'search' => 'nullable|string',
+                'filter' => 'nullable|in:all,pending,adjusted,overdue,expired,received',
                 'plan_type_id' => 'nullable',
                 'plan_type_id.*' => 'integer|exists:plan_types,id',
                 'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
@@ -167,6 +168,7 @@ class LearnerController extends Controller
             $filters = [
                 'search' => $request->search,
                 'status' => 'pending_payment',
+                'due_filter' => $request->filter ?? 'all',
                 'plan_type_id' => is_array($request->plan_type_id)
                     ? $request->plan_type_id
                     : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),

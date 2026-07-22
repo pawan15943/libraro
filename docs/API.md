@@ -2519,6 +2519,7 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | search | string | no | |
+| filter | string | no | enum: all\|pending\|adjusted\|overdue\|expired\|received; default `all`. See tab semantics below |
 | plan_type_id | integer or array | no | |
 | plan_type_id.* | integer | no | exists:plan_types,id |
 | sort_by | string | no | enum: seat_no\|name\|expire_date\|gen |
@@ -2527,12 +2528,20 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
 | page_no | integer | no | not validated; mapped internally to `page` |
 
+`filter` tab semantics (mirrors the Pending Dues screen tabs):
+- `all` — any learner with `learner_transactions.pending_amount > 0` (default, same as previous unfiltered behavior)
+- `pending` — active learner (`learners.status = 1`) with `pending_amount > 0`
+- `expired` — expired learner (`learners.status = 0`) with `pending_amount > 0`
+- `overdue` — `pending_amount > 0` and `due_date` has passed, active or expired
+- `adjusted` — learner with `learner_transactions.sattle_amount > 0`
+- `received` — learner with a `learner_transaction_activity` row where `payment_type = PENDING` and `dr_cr = Cr`
+
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
 | list_count | integer | |
-| data[] | array | same learner list item shape as `list` endpoint, filtered to status=pending_payment |
+| data[] | array | same learner list item shape as `list` endpoint, filtered to status=pending_payment and further narrowed by `filter` |
 | summary.total_pending_amount | string | |
 | summary.total_pending_breakdown.pending_payment | string | |
 | summary.total_pending_breakdown.pay_later | string | |
