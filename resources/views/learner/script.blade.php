@@ -1078,6 +1078,16 @@
         }
     }
 
+    // Renew/Upgrade/Change-Plan/Reactive forms use #payment_mode10, except reactive.blade.php
+    // which reuses the plain #payment_mode id (see calculatePaylaterVisibilityForOperationForm).
+    function getOperationPaymentMode() {
+        let $paymentMode = $('#payment_mode10');
+        if (!$paymentMode.length) {
+            $paymentMode = $('#payment_mode');
+        }
+        return $paymentMode.val();
+    }
+
     function calculatePendingAmount() {
         const planPrice = parseFloat($('#plan_price_id').val()) || 0;
         const paidAmount = parseFloat($('#paid_amount').val()) || 0;
@@ -1107,9 +1117,10 @@
 
         calculatePaylaterVisibility(pendingAmount);
 
-    
 
-        if (pendingAmount > 0) {
+
+        // Pay Later always needs a due date, regardless of pending amount.
+        if (pendingAmount > 0 || $('#seatAllotmentForm select[name="payment_mode"]').val() === '3') {
             $('#due_date').removeAttr('readonly');
         } else {
             $('#due_date').attr('readonly', true);
@@ -1321,7 +1332,8 @@
     function applyPayLaterPending(difference) {
         $('#pending_amt10').val(Math.abs(difference).toFixed(2));
         $('#pending_amt_error').html('');
-        $('#due_date10').attr('readonly', difference == 0);
+        // Pay Later always needs a due date, regardless of pending amount.
+        $('#due_date10').attr('readonly', difference == 0 && getOperationPaymentMode() !== '3');
 
         if (difference < 0) {
             $('#pending_amt10').prev('label').text("Pending Refund Amount *");
@@ -1386,7 +1398,8 @@
         }else{
             $('#pending_amt_error').html('');
         }
-        if(pendingAmount != 0){
+        // Pay Later always needs a due date, regardless of pending amount.
+        if(pendingAmount != 0 || getOperationPaymentMode() === '3'){
             $('#due_date10').attr('readonly', false);
         }
         else{
@@ -1678,7 +1691,25 @@
         // Initial state check
         toggleDiscountAmount();
         toggleIdProofFile();
-  
+
+    });
+
+    // Unlock the due date the moment Pay Later is picked, even if there's no pending amount.
+    $(document).on('change', '#seatAllotmentForm select[name="payment_mode"]', function() {
+        calculatePendingAmount();
+    });
+
+    // Same fix for Renew/Upgrade/Change-Plan/Reactive forms (due_date10).
+    $(document).on('change', '#payment_mode10, #payment_mode', function() {
+        if (!$('#due_date10').length) {
+            return;
+        }
+        if (getOperationPaymentMode() === '3') {
+            $('#due_date10').removeAttr('readonly');
+        } else {
+            var currentPending = parseFloat($('#pending_amt10').val()) || 0;
+            $('#due_date10').attr('readonly', currentPending === 0);
+        }
     });
   
      // Book Learner Seat Form 
@@ -1754,6 +1785,10 @@
         if (payment_mode === '3') {
             if (pendingFromUi !== 0) {
                 errors.pending_amt = 'For Pay Later, pending amount must not be sent from request.';
+            }
+
+            if (!due_date) {
+                errors.due_date = 'Due Date is required when Payment Mode is Pay Later.';
             }
         } else {
             if (paidAmountRaw === '' || isNaN(paid_amount)) {
@@ -2380,6 +2415,12 @@
 
         }
 
+        var renewPaymentMode = $(this).find('select[name="payment_mode"]').val();
+        var renewDueDate = $(this).find('input[name="due_date"]').val();
+        if (renewPaymentMode === '3' && !renewDueDate) {
+            errors.due_date2 = 'Due Date is required when Payment Mode is Pay Later.';
+        }
+
         if (Object.keys(errors).length > 0) {
             $(".is-invalid").removeClass("is-invalid");
             $(".invalid-feedback").remove();
@@ -2701,6 +2742,9 @@
 
          // If user manually updates paid_amount in RENEW, update pending as well
         $('#new_plan_price2').on('input', calculatePendingAmountRenew);
+
+        // Unlock the due date the moment Pay Later is picked, even if there's no pending amount.
+        $(document).on('change', '#upgradeForm select[name="payment_mode"]', calculatePendingAmountRenew);
 
         // If user manually updates paid_amount in RENEW upgrade, update pending as well
         $('#new_plan_price').on('input', calculatePendingAmountRenewUpgrade);
@@ -3276,9 +3320,10 @@
             $('#pending_amt2').html('');
         }
 
-       
 
-        if (pendingAmount > 0) {
+
+        // Pay Later always needs a due date, regardless of pending amount.
+        if (pendingAmount > 0 || $('#upgradeForm select[name="payment_mode"]').val() === '3') {
             $('#due_date2').removeAttr('readonly');
         } else {
             $('#due_date2').attr('readonly', true);
