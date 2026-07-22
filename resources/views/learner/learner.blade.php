@@ -356,51 +356,67 @@ $learner_id=$value->id;
                             <!-- Sent Mail -->
 
                             @can('has-permission', 'WhatsApp Notification')
+                                @php
+                                    $sendPref = $value->sended_message_type ?? 'no';
 
+                                    if ($planStatus['class']=='extedned') {
+                                        $reminderMessage = "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
+                                    } else {
+                                        $reminderMessage = "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
+                                    }
+
+                                    $freeWabaLink = "https://wa.me/+91{$value->mobile}?text=" . rawurlencode($reminderMessage);
+                                    $freeTextLink = "sms:+91{$value->mobile}?body=" . rawurlencode($reminderMessage);
+                                @endphp
+
+                                {{-- Free (no-API) reminder icon(s) — driven by the learner's own "Send Reminders Via" choice --}}
+                                @if($sendPref == 'whatsapp')
+                                    <li>
+                                        <a class="w-auto px-2" target="_blank" href="{{ $freeWabaLink }}">
+                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                        </a>
+                                    </li>
+                                @elseif($sendPref == 'text')
+                                    <li>
+                                        <a class="w-auto px-2" href="{{ $freeTextLink }}">
+                                            <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
+                                        </a>
+                                    </li>
+                                @elseif($sendPref == 'both')
+                                    <li class="dropdown d-inline-block">
+                                        <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder">
+                                            <i class="fa fa-comment-dots"></i>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" target="_blank" href="{{ $freeWabaLink }}"><i class="fab fa-whatsapp"></i> Send via WhatsApp</a></li>
+                                            <li><a class="dropdown-item" href="{{ $freeTextLink }}"><i class="fa fa-message"></i> Send via Text</a></li>
+                                        </ul>
+                                    </li>
+                                @endif
+
+                                {{-- Paid (Twilio-backed) reminder icon(s) — additive, only while the library has active credits --}}
                                 @if($isNotificationActive)
-                                    @if($isWabaNotificationActive)
+                                    @if($isWabaNotificationActive && in_array($sendPref, ['whatsapp', 'both']))
                                         <li>
                                             <a target="_blank" href="javascript:;"
                                                 data-bs-toggle="modal" class="open-waba"
 
                                                 data-learner_id="{{$learner_id}}"
-                                                data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders">
-                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                                data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders (Paid)">
+                                                <i class="fab fa-whatsapp" style="color:#25D366" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder (Paid)"></i>
                                             </a>
                                         </li>
                                     @endif
 
-                                    @if($isTextNotificationActive)
+                                    @if($isTextNotificationActive && in_array($sendPref, ['text', 'both']))
                                         <li>
                                             <a target="_blank" href="javascript:;" data-bs-toggle="modal"
                                                 data-learner_id="{{$learner_id}}" class="open-text"
-                                                data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders">
-                                                <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
+                                                data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders (Paid)">
+                                                <i class="fa fa-message" style="color:#0d6efd" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder (Paid)"></i>
                                             </a>
                                         </li>
                                     @endif
-
-                                @else
-
-                                    @if($planStatus['class']=='extedned')
-                                        <li>
-                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName) }}">
-                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-
-                                            </a>
-                                        </li>
-                                    @else
-
-                                        <li>
-                                            <a class="w-auto px-2" target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName) }}">
-                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-
-                                            </a>
-                                        </li>
-
-                                    @endif
-
-                                    {{-- <li><a href="https://web.whatsapp.com/send?phone=91{{$value->mobile}}&text=Hey!%20🌟%0A%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0A%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'whatsapp')" class="whatsapp w-auto px-2" data-bs-toggle="tooltip" data-bs-placement="bottom" data-original-title="Send WhatsApp Reminder"><i class="fa-brands fa-whatsapp pe-1"></i> Send Reminder</a></li> --}}
                                 @endif
                             @endcan
 

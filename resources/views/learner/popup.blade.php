@@ -180,18 +180,22 @@
                                     </optgroup> --}}
                                 </select>
                             </div>
-                            @if(notificationActive())
                             <div class="col-lg-6">
                                 <label for="">Send Reminders Via (Optional)</label>
                                 <select id="sended_message_type" class="form-select" name="sended_message_type">
                                     <option value="">Select Type</option>
+                                    @if($hasFreeWaba ?? false)
                                     <option value="whatsapp">WhatsApp Message Only</option>
+                                    @endif
+                                    @if($hasFreeText ?? false)
                                     <option value="text">Text Message Only</option>
+                                    @endif
+                                    @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
                                     <option value="both">Both (WhatsApp & Text Message)</option>
+                                    @endif
                                     <option value="no">No</option>
                                 </select>
                             </div>
-                            @endif
                             <div class="col-lg-6">
                                 <label for="">No Expiry Seat (Optional)</label>
                                 <select name="no_expiry" id="no_expiry" class="form-select">

@@ -84,6 +84,22 @@ if($customer->locker_no){
                     <h4 class="inner-heading">Learner Other Info</h4>
                     <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
                     <div class="row g-4">
+                        <div class="col-lg-6">
+                            <label for="sended_message_type_edit">Send Reminders Via (Optional)</label>
+                            <select id="sended_message_type_edit" class="form-select" name="sended_message_type">
+                                <option value="">Select Type</option>
+                                @if($hasFreeWaba ?? false)
+                                <option value="whatsapp" {{ old('sended_message_type', $customer->sended_message_type) == 'whatsapp' ? 'selected' : '' }}>WhatsApp Message Only</option>
+                                @endif
+                                @if($hasFreeText ?? false)
+                                <option value="text" {{ old('sended_message_type', $customer->sended_message_type) == 'text' ? 'selected' : '' }}>Text Message Only</option>
+                                @endif
+                                @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
+                                <option value="both" {{ old('sended_message_type', $customer->sended_message_type) == 'both' ? 'selected' : '' }}>Both (WhatsApp & Text Message)</option>
+                                @endif
+                                <option value="no" {{ old('sended_message_type', $customer->sended_message_type) == 'no' ? 'selected' : '' }}>No</option>
+                            </select>
+                        </div>
                         @if(!in_array('8', toggleHideField()))
                             <div class="col-lg-6">
                                 <label for="profile_picture">Upload Profile Photo</label>

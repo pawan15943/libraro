@@ -9,6 +9,7 @@ use App\Models\LearnerDetail;
 use App\Models\Library;
 use App\Models\LibrarySetting;
 use App\Models\LibraryTransaction;
+use App\Models\CustomNotificationTemplate;
 use App\Models\Menu;
 use App\Models\NotificationChannelSetting;
 use App\Models\NotificationTemplate;
@@ -338,7 +339,35 @@ class LoadMenus
                         'operations.name as operation_name'
                     )
                     ->get();
-                
+
+                // Whether a free (is_paid=0) reminder template has content for WhatsApp/Text,
+                // used to decide which options the free "Send Reminders Via" dropdown offers
+                // (operation 11 = "Expired Reminder", the operation the reminder icons use).
+                $reminderOperationId = 11;
+
+                $freeWabaMessage = CustomNotificationTemplate::where('library_id', getLibraryId())
+                    ->where('operation_id', $reminderOperationId)
+                    ->where('type', 'waba')
+                    ->value('template_message')
+                    ?? NotificationTemplate::where('operation_id', $reminderOperationId)
+                        ->where('type', 'waba')
+                        ->where('is_paid', '0')
+                        ->where('is_active', 1)
+                        ->value('template_message');
+
+                $freeTextMessage = CustomNotificationTemplate::where('library_id', getLibraryId())
+                    ->where('operation_id', $reminderOperationId)
+                    ->where('type', 'text')
+                    ->value('template_message')
+                    ?? NotificationTemplate::where('operation_id', $reminderOperationId)
+                        ->where('type', 'text')
+                        ->where('is_paid', '0')
+                        ->where('is_active', 1)
+                        ->value('template_message');
+
+                $hasFreeWaba = trim((string) $freeWabaMessage) !== '';
+                $hasFreeText = trim((string) $freeTextMessage) !== '';
+
                 // for dropdown year and month
                 $dates = LearnerDetail::withTrashed()->select('plan_start_date', 'plan_end_date')->get();
 
@@ -367,7 +396,9 @@ class LoadMenus
                 $wabaTemplates ='';
                 $textTemplates ='';
                 $months='';
-               
+                $hasFreeWaba = false;
+                $hasFreeText = false;
+
             }
         
             $exams=DB::table('exams')->get();
@@ -412,6 +443,8 @@ class LoadMenus
             View::share('wabaTemplates', $wabaTemplates);
             View::share('textTemplates', $textTemplates);
             View::share('months', $months);
+            View::share('hasFreeWaba', $hasFreeWaba);
+            View::share('hasFreeText', $hasFreeText);
           
           
         }

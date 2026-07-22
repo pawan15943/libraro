@@ -24,6 +24,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSentController;
 use App\Http\Controllers\QrEntryController;
@@ -274,6 +275,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
     Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
     Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');
+
+    Route::get('message-templates', [MessageTemplateController::class, 'index'])->name('message.templates');
+    Route::post('message-templates/update', [MessageTemplateController::class, 'update'])->name('message.templates.update');
 
     Route::get('notifications/subscription', [NotificationSentController::class, 'index'])->name('notifications.subscription');
     Route::post('notifications/subscription/purchase', [NotificationSentController::class, 'purchase'])->name('notifications.subscription.purchase');
