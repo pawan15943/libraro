@@ -176,6 +176,10 @@ class LearnerController extends Controller
                 'to_date' => $request->to_date,
             ];
 
+            Log::info([
+                'filter pending'=>$filters
+            ]);
+
             $data = $service->getLearnersList($filters);
 
            
