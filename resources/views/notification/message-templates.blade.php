@@ -35,9 +35,7 @@
 <div class="container-fluid mt-4">
     <h4 class="mb-3">Message Templates</h4>
 
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
+   
 
     @if ($errors->any())
         <div class="alert alert-danger">
