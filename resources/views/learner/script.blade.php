@@ -2284,7 +2284,8 @@
                 $('#learner_name').text(html.name);
                 $('#learner_mobilepop').text(html.mobile);
                 // $('#learner_email').text(html.email);
-            
+                $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
+
             }
         });
         // Show the second modal
@@ -2321,7 +2322,8 @@
                     $('#learner_name').text(html.name);
                     $('#learner_mobilepop').text(html.mobile);
                     // $('#learner_email').text(html.email);
-                
+                    $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
+
                 }
             });
         //learner detail fetch end

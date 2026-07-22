@@ -1580,7 +1580,7 @@ class LearnerService
             $learners = $query
                 ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 1 ELSE 0 END ASC')
                 ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) '.$sortOrder)
-                ->paginate(20);
+                ->paginate(10);
         } elseif ($sortBy === 'gen') {
             // Dedicated general-seat sort (DB general seat = NULL).
             // asc: general first, desc: general last.
@@ -1588,17 +1588,17 @@ class LearnerService
                 $learners = $query
                     ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 0 ELSE 1 END ASC')
                     ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) ASC')
-                    ->paginate(20);
+                    ->paginate(10);
             } else {
                 $learners = $query
                     ->orderByRaw('CASE WHEN learner_detail.seat_no IS NULL OR learner_detail.seat_no = "" THEN 1 ELSE 0 END ASC')
                     ->orderByRaw('CAST(learner_detail.seat_no AS UNSIGNED) DESC')
-                    ->paginate(20);
+                    ->paginate(10);
             }
         } else {
             $learners = $query
                 ->orderBy($sortColumn, $sortOrder)
-                ->paginate(20);
+                ->paginate(10);
         }
 
         /* -----------------------------

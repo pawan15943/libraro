@@ -64,7 +64,7 @@
 
             <form method="POST" action="{{ route('message.templates.update') }}">
                 @csrf
-                @foreach ($wabaTemplates as $index => $template)
+                @foreach ($wabaMessageTemplates as $index => $template)
                     <div class="msg-tpl-card">
                         <label class="form-label text-muted">{{ $template->template_name }}</label>
                         <input type="hidden" name="templates[{{ $index }}][operation_id]" value="{{ $template->operation_id }}">
@@ -78,7 +78,7 @@
                     </div>
                 @endforeach
 
-                @if ($wabaTemplates->isEmpty())
+                @if ($wabaMessageTemplates->isEmpty())
                     <p class="text-muted">No WhatsApp templates available yet.</p>
                 @else
                     <button type="submit" class="btn btn-primary px-5">Save</button>
@@ -92,7 +92,7 @@
 
             <form method="POST" action="{{ route('message.templates.update') }}">
                 @csrf
-                @foreach ($textTemplates as $index => $template)
+                @foreach ($textMessageTemplates as $index => $template)
                     <div class="msg-tpl-card">
                         <label class="form-label text-muted">{{ $template->template_name }}</label>
                         <input type="hidden" name="templates[{{ $index }}][operation_id]" value="{{ $template->operation_id }}">
@@ -106,7 +106,7 @@
                     </div>
                 @endforeach
 
-                @if ($textTemplates->isEmpty())
+                @if ($textMessageTemplates->isEmpty())
                     <p class="text-muted">No text templates available yet.</p>
                 @else
                     <button type="submit" class="btn btn-primary px-5">Save</button>

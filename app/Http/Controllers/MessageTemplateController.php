@@ -46,8 +46,8 @@ class MessageTemplateController extends Controller
         }
 
         return view('notification.message-templates', [
-            'wabaTemplates' => $waba,
-            'textTemplates' => $text,
+            'wabaMessageTemplates' => $waba,
+            'textMessageTemplates' => $text,
         ]);
     }
 

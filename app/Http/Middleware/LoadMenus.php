@@ -393,9 +393,9 @@ class LoadMenus
                 $diffInExtensionDays='';
                 $inExtension_lib='';
                 $lib_extenday='';
-                $wabaTemplates ='';
-                $textTemplates ='';
-                $months='';
+                $wabaTemplates = collect();
+                $textTemplates = collect();
+                $months=[];
                 $hasFreeWaba = false;
                 $hasFreeText = false;
 

@@ -396,26 +396,46 @@ $learner_id=$value->id;
 
                                 {{-- Paid (Twilio-backed) reminder icon(s) — additive, only while the library has active credits --}}
                                 @if($isNotificationActive)
-                                    @if($isWabaNotificationActive && in_array($sendPref, ['whatsapp', 'both']))
-                                        <li>
-                                            <a target="_blank" href="javascript:;"
-                                                data-bs-toggle="modal" class="open-waba"
-
-                                                data-learner_id="{{$learner_id}}"
-                                                data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders (Paid)">
-                                                <i class="fab fa-whatsapp" style="color:#25D366" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder (Paid)"></i>
+                                    @if($sendPref == 'both' && $isWabaNotificationActive && $isTextNotificationActive)
+                                        <li class="dropdown d-inline-block">
+                                            <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder (Paid)">
+                                                <i class="fa fa-ellipsis-v"></i>
                                             </a>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item open-waba" href="javascript:;" data-bs-toggle="modal" data-learner_id="{{$learner_id}}" data-bs-target="#wabaSendModel">
+                                                        <i class="fab fa-whatsapp" style="color:#25D366"></i> Send via WhatsApp
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item open-text" href="javascript:;" data-bs-toggle="modal" data-learner_id="{{$learner_id}}" data-bs-target="#textSendModel">
+                                                        <i class="fa fa-envelope" style="color:#0d6efd"></i> Send via Text
+                                                    </a>
+                                                </li>
+                                            </ul>
                                         </li>
-                                    @endif
+                                    @else
+                                        @if($isWabaNotificationActive && in_array($sendPref, ['whatsapp', 'both']))
+                                            <li>
+                                                <a target="_blank" href="javascript:;"
+                                                    data-bs-toggle="modal" class="open-waba"
 
-                                    @if($isTextNotificationActive && in_array($sendPref, ['text', 'both']))
-                                        <li>
-                                            <a target="_blank" href="javascript:;" data-bs-toggle="modal"
-                                                data-learner_id="{{$learner_id}}" class="open-text"
-                                                data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders (Paid)">
-                                                <i class="fa fa-message" style="color:#0d6efd" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder (Paid)"></i>
-                                            </a>
-                                        </li>
+                                                    data-learner_id="{{$learner_id}}"
+                                                    data-bs-target="#wabaSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="WhatsApp Reminders (Paid)">
+                                                    <i class="fab fa-whatsapp" style="color:#25D366" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder (Paid)"></i>
+                                                </a>
+                                            </li>
+                                        @endif
+
+                                        @if($isTextNotificationActive && in_array($sendPref, ['text', 'both']))
+                                            <li>
+                                                <a target="_blank" href="javascript:;" data-bs-toggle="modal"
+                                                    data-learner_id="{{$learner_id}}" class="open-text"
+                                                    data-bs-target="#textSendModel" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Text Message Reminders (Paid)">
+                                                    <i class="fa fa-message" style="color:#0d6efd" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder (Paid)"></i>
+                                                </a>
+                                            </li>
+                                        @endif
                                     @endif
                                 @endif
                             @endcan

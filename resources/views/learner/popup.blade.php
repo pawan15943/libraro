@@ -448,6 +448,13 @@
                                     <option value="3">Pay Later</option>
                                 </select>
                             </div>
+                            <div class="col-lg-6">
+                                <label for="">No Expiry Seat (Optional)</label>
+                                <select name="no_expiry" id="no_expiry_renew" class="form-select">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes, Make it non expired seat.</option>
+                                </select>
+                            </div>
                         </div>
                        
                         <div class="row g-3 mt-2">
