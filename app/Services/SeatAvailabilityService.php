@@ -20,7 +20,7 @@ class SeatAvailabilityService
 
     /**
      * @param  int|string  $newSeatId  Seat being checked (same as web: new_seat_id)
-     * @param  int|string  $userId Learner id (same as web: user_id)
+     * @param  int|string  $userId  Learner id (same as web: user_id)
      * @param  int|string  $planTypeId  Plan type id (same as web: plan_type_id)
      * @return int 0 = not available, 1 = available to swap, 2 = future booking clash
      */
@@ -202,6 +202,61 @@ class SeatAvailabilityService
         }
 
         return $out;
+    }
+
+    /**
+     * A seat is "available" for a given plan type (shift) when it has no currently active
+     * booking (learner_detail.status = 1, learner.status = 1) whose plan type's time range
+     * overlaps that shift, and the seat still has free daily hour capacity left.
+     *
+     * @return array<int, Collection<int, PlanType>> seat number (1..$totalSeats) => available plan types for that seat
+     */
+    public function getAvailablePlanTypesMap(int $branchId, int $totalSeats): array
+    {
+        if ($totalSeats < 1) {
+            return [];
+        }
+
+        $totalHour = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
+        $planTypes = PlanType::get();
+
+        $seatNos = range(1, $totalSeats);
+
+        $bookings = LearnerDetail::withoutGlobalScopes()
+            ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+            ->join('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->where('learner_detail.branch_id', $branchId)
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->whereIn('learner_detail.seat_no', $seatNos)
+            ->select('learner_detail.seat_no as batch_seat_no', 'learner_detail.hour', 'plan_types.start_time', 'plan_types.end_time')
+            ->get();
+
+        $bookingsBySeat = $bookings->groupBy(fn ($row) => (int) $row->batch_seat_no);
+
+        $map = [];
+
+        foreach ($seatNos as $seatNo) {
+            $seatBookings = $bookingsBySeat->get($seatNo) ?? new Collection;
+
+            if ($totalHour !== null && $seatBookings->sum('hour') >= $totalHour) {
+                $map[$seatNo] = new Collection;
+
+                continue;
+            }
+
+            $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings) {
+                foreach ($seatBookings as $booking) {
+                    if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                        return false;
+                    }
+                }
+
+                return true;
+            })->values();
+        }
+
+        return $map;
     }
 
     /**

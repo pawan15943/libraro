@@ -394,7 +394,7 @@ Reads the `feedback_features` table — a lookup list of selectable features for
 |---|---|---|
 | status | boolean | |
 | message | string | |
-| data | array | list of seat objects `{original_seat, display, main, floor, floor_name, is_future: boolean, is_future_text: string, ...}` filtered to available seats |
+| data | array | list of seat objects `{original_seat, display, main, floor, floor_name, is_future: boolean, is_future_text: string, plantype: array<{id, name}>, ...}` — a seat is included only if it has at least one plan type (shift) with no overlapping active booking and remaining daily hour capacity; `plantype` lists those available shifts |
 
 ### `GET /api/v1/library/payment-types`
 **Controller:** `MasterController@paymentTypeList`
