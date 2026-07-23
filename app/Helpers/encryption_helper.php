@@ -1190,8 +1190,8 @@ if (!function_exists('seatCountValidation')) {
 
         $blocked = !is_null($maxAllowed) && $projectedSeats > $maxAllowed;
 
-        $message = "Your current plan allows a maximum of {$maxAllowed} seats across all branches. "
-            . "You are trying to configure {$projectedSeats} seats in total. Please upgrade your plan to add more seats.";
+        $message = "Your current plan allows maximum {$maxAllowed} seats in this branches"
+            . "Please upgrade your plan to add more seats.";
 
         return [
             'success' => $blocked,
