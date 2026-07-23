@@ -2571,21 +2571,13 @@ class MasterController extends Controller
             ->flip();
 
         $allSeats = collect(generateSeatNumbers());
-
-        $shiftHours = DB::table('plan_types')
-            ->where('branch_id', $branch_id)
-            ->whereNull('deleted_at')
-            ->pluck('slot_hours');
-
+    
         $newAvailableSeat = collect();
 
         for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
             $usedHours = $usedSeats[$seatNo] ?? 0;
-            $remainingHours = $totalHour - $usedHours;
 
-            $hasFittingShift = $shiftHours->contains(fn ($slotHours) => $slotHours <= $remainingHours);
-
-            if ($remainingHours > 0 && $hasFittingShift) {
+            if ($usedHours < $totalHour) {
                 $seatInfo = $allSeats->firstWhere('main', $seatNo);
                 $isFuture = $futureSeats->has((int) $seatNo);
 
