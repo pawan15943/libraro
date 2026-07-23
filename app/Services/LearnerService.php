@@ -1555,7 +1555,6 @@ class LearnerService
                 SELECT learner_transactions.id
                 FROM learner_transactions
                 WHERE learner_transactions.learner_detail_id = learner_detail.id
-                AND learner_transactions.is_paid = 1
                 ORDER BY learner_transactions.id DESC
                 LIMIT 1
             ) as receipt_transaction_id')
