@@ -2528,7 +2528,6 @@ class MasterController extends Controller
             ], 500);
         }
     }
-
     public function getSeat(Request $request)
     {
         // $validated = $request->validate([
@@ -2622,6 +2621,100 @@ class MasterController extends Controller
             
         ]);
     }
+
+    // public function getSeat(Request $request)
+    // {
+    //     // $validated = $request->validate([
+    //     //     'branch_id' => 'required|exists:branches,id',
+    //     // ]);
+
+    //     $branch_id =getCurrentBranch();
+
+    //     $totalSeats = Hour::withoutGlobalScopes()
+    //         ->where('branch_id', $branch_id)
+    //         ->value('seats');
+
+    //     $totalHour = Hour::withoutGlobalScopes()
+    //         ->where('branch_id', $branch_id)
+    //         ->value('hour');
+
+    //     $usedSeats = LearnerDetail::withoutGlobalScopes()
+    //         ->select('seat_no', DB::raw('SUM(hour) as used_hours'))
+    //         ->where('branch_id', $branch_id)
+    //         ->whereNotNull('seat_no')
+    //         ->where('status', 1)
+    //         ->groupBy('seat_no')
+    //         ->pluck('used_hours', 'seat_no');
+
+    //     $futureSeats = LearnerDetail::withoutGlobalScopes()
+    //         ->where('branch_id', $branch_id)
+    //         ->whereNotNull('seat_no')
+    //         ->whereDate('plan_start_date', '>', now()->toDateString())
+    //         ->whereNull('deleted_at')
+    //         ->whereNotExists(function ($query) {
+    //             $query->select(DB::raw(1))
+    //                 ->from('learner_detail as previous_detail')
+    //                 ->whereColumn('previous_detail.learner_id', 'learner_detail.learner_id')
+    //                 ->whereColumn('previous_detail.id', '!=', 'learner_detail.id')
+    //                 ->whereNull('previous_detail.deleted_at');
+    //         })
+    //         ->pluck('seat_no')
+    //         ->map(fn ($seatNo) => (int) $seatNo)
+    //         ->unique()
+    //         ->flip();
+
+    //     $allSeats = collect(generateSeatNumbers());
+    
+    //     $newAvailableSeat = collect();
+
+    //     for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+    //         $usedHours = $usedSeats[$seatNo] ?? 0;
+
+    //         if ($usedHours < $totalHour) {
+    //             $seatInfo = $allSeats->firstWhere('main', $seatNo);
+    //             $isFuture = $futureSeats->has((int) $seatNo);
+
+    //             $seatInfo = $seatInfo ?? [
+    //                 'original_seat' => $seatNo,
+    //                 'display' => (string) $seatNo,
+    //             ];
+
+    //             $displaySeatNo = $seatInfo['floor'] ?? $seatNo;
+    //             $seatInfo['display'] = 'Seat No - ' . $displaySeatNo;
+    //             $seatInfo['is_future'] = $isFuture;
+    //             $seatInfo['is_future_text'] = $isFuture ? 'future booked' : '';
+
+    //             $newAvailableSeat->push($seatInfo);
+    //         }
+    //     }
+
+    //     $search = trim((string) $request->input('search', ''));
+
+    //     if ($search !== '') {
+    //         $newAvailableSeat = $newAvailableSeat->filter(function ($seat) use ($search) {
+    //             if (is_numeric($search)) {
+    //                 $seatNo = (int) $search;
+
+    //                 return (int) ($seat['main'] ?? 0) === $seatNo
+    //                     || (int) ($seat['floor'] ?? 0) === $seatNo
+    //                     || (int) ($seat['original_seat'] ?? 0) === $seatNo;
+    //             }
+
+    //             $needle = strtolower($search);
+
+    //             return str_contains(strtolower((string) ($seat['display'] ?? '')), $needle)
+    //                 || str_contains(strtolower((string) ($seat['floor_name'] ?? '')), $needle);
+    //         });
+    //     }
+        
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'message' => 'Available seats fetched successfully',
+    //         'data' => $newAvailableSeat->values(),
+            
+    //     ]);
+    // }
 
     private function isPlanPriceUsed(int $libraryId, ?int $branchId, int $planId, int $planTypeId): bool
     {
