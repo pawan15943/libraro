@@ -111,7 +111,8 @@
                         </div>
                         <div class="col-lg-12">
                             <label for="">Password <span>*</span></label>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" name="password">
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" minlength="8">
+                            <small class="text-secondary">Must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.</small>
                             @error('password')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>

@@ -29,6 +29,7 @@ use App\Models\Suggestion;
 use App\Models\TempOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use App\Notifications\VerifyEmail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Mail;
@@ -289,16 +290,23 @@ class LibraryController extends Controller
             'library_type'   => 'nullable|string|max:255',
             'library_owner'  => 'nullable|string|max:255',
             'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200',
-            'password'       => 'nullable|string|min:8',
+            'password'       => [
+                'required',
+                'string',
+                Password::min(8)->mixedCase()->numbers()->symbols(),
+            ],
             'terms'          => 'accepted',
             'library_owner_email'=> 'nullable|email|max:255',
             'library_owner_contact' => 'nullable|digits:10',
             'referral_code' => 'nullable|string|max:100',
             'referral_type' => 'nullable|in:code,qr,link',
         ];
-        
 
-        return Validator::make($request->all(), $rules);
+        $messages = [
+            'password.required' => 'Please enter a password.',
+        ];
+
+        return Validator::make($request->all(), $rules, $messages);
     }
 
    public function sendVerificationEmail($library)
