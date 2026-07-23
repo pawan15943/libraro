@@ -405,7 +405,7 @@ class LibraryController extends Controller
             'message' => 'Notifications fetched successfully',
             'data' => [
                 'unread_count' => $unreadCount,
-                'profile_link' => isLibraryProfileComplete() ? [] : [
+                'profile_link' =>  [
                         'id'=>(int) getCurrentBranch(),
                         'notification_type'=>'important',
                         'title' =>'Complete Profile',

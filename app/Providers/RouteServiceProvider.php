@@ -28,6 +28,18 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // library_api requests authenticate on the "library_api" guard, not the
+        // default "web" guard, so $request->user() is always null for them and
+        // throttle:60,1 falls back to keying by route+IP — meaning every library
+        // account behind the same public/NAT IP shared one 60-req/min bucket,
+        // causing frequent "Too Many Attempts" on high-traffic endpoints like
+        // the dashboard and learner list. Key by the actual authenticated user.
+        RateLimiter::for('library_api', function (Request $request) {
+            return Limit::perMinute(120)->by(
+                $request->user('library_api')?->id ?: $request->ip()
+            );
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
