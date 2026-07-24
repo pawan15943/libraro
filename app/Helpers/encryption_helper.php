@@ -175,9 +175,9 @@ if (!function_exists('getLibraryData')) {
         $library_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)
             ->where('is_paid', 1)
             ->orderBy('created_at', 'DESC')
-            ->with('subscription')
+            ->with('subscriptionPlan')
             ->first();
-        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscription')->get();
+        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscriptionPlan')->get();
 
         return (object) [
             'library' => $library,
@@ -202,9 +202,9 @@ if (!function_exists('getLibraryDataFromId')) {
         $library_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)
             ->where('is_paid', 1)
             ->orderBy('created_at', 'DESC')
-            ->with('subscription')
+            ->with('subscriptionPlan')
             ->first();
-        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscription')->get();
+        $library_all_transaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $library->id)->with('subscriptionPlan')->get();
 
         return (object) [
             'library' => $library,
