@@ -247,7 +247,7 @@ class SeatAvailabilityService
 
             $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings) {
                 foreach ($seatBookings as $booking) {
-                    if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+                    if (self::rangesOverlap($booking->start_time, $booking->end_time, $planType->start_time, $planType->end_time)) {
                         return false;
                     }
                 }
@@ -278,7 +278,7 @@ class SeatAvailabilityService
 
         $statusArray = [];
         foreach ($bookings as $booking) {
-            if ($booking->start_time < $planType->end_time && $booking->end_time > $planType->start_time) {
+            if (self::rangesOverlap($booking->start_time, $booking->end_time, $planType->start_time, $planType->end_time)) {
                 $statusArray[] = 0;
             } else {
                 $statusArray[] = 1;
@@ -319,17 +319,62 @@ class SeatAvailabilityService
                 continue;
             }
 
-            $timeOverlap = (
-                $futureStartTime < $customerEndTime &&
-                $futureEndTime > $customerStartTime
-            );
-
-            if ($timeOverlap) {
+            if (self::rangesOverlap($futureStartTime, $futureEndTime, $customerStartTime, $customerEndTime)) {
                 $status = 2;
                 break;
             }
         }
 
         return (int) $status;
+    }
+
+    /**
+     * Converts a "H:i" (or "H:i:s") time string to minutes since midnight.
+     */
+    private static function toMinutes(string $time): int
+    {
+        $parts = explode(':', $time);
+
+        return ((int) ($parts[0] ?? 0)) * 60 + ((int) ($parts[1] ?? 0));
+    }
+
+    /**
+     * Normalizes a [start, end) shift range to minutes since midnight, pushing end past
+     * midnight (+1440) whenever end <= start — e.g. a "20:00"-"00:00" or "20:00"-"08:00"
+     * overnight shift — so the range keeps its real duration instead of collapsing to zero
+     * or negative width.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private static function normalizeRange(string $start, string $end): array
+    {
+        $startMinutes = self::toMinutes($start);
+        $endMinutes = self::toMinutes($end);
+
+        if ($endMinutes <= $startMinutes) {
+            $endMinutes += 1440;
+        }
+
+        return [$startMinutes, $endMinutes];
+    }
+
+    /**
+     * Whether two daily-recurring shift ranges overlap, correctly handling ranges that cross
+     * midnight (e.g. a night shift "20:00"-"08:00" against a "20:00"-"00:00" booking) by
+     * comparing the normalized range against the other range shifted by a full day in both
+     * directions.
+     */
+    private static function rangesOverlap(string $startA, string $endA, string $startB, string $endB): bool
+    {
+        [$startA, $endA] = self::normalizeRange($startA, $endA);
+        [$startB, $endB] = self::normalizeRange($startB, $endB);
+
+        foreach ([-1440, 0, 1440] as $offset) {
+            if ($startA < $endB + $offset && $endA > $startB + $offset) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
