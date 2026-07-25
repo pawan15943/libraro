@@ -20,6 +20,7 @@ use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LearnerDeleteController;
+use App\Http\Controllers\LibraryAdminController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
 use App\Http\Controllers\LibraryUserController;
@@ -455,6 +456,26 @@ Route::middleware(['auth:web'])->group(function () {
     Route::get('library/show/{id?}', [LibraryController::class, 'showLibrary'])->name('library.show');
     Route::delete('library/learners/delete/{id?}', [LibraryController::class, 'destroyLearners'])->name('library.learners.destroy');
     Route::delete('library/masters/delete/{id?}', [LibraryController::class, 'destroyAllMasters'])->name('library.masters.destroy');
+
+    Route::get('library/{id}/branches', [LibraryAdminController::class, 'branches'])->name('library.branches');
+
+    Route::get('library/branch/{branchId}/plans', [LibraryAdminController::class, 'branchPlans'])->name('library.branch.plans');
+    Route::post('library/branch/{branchId}/plans/save', [LibraryAdminController::class, 'saveBranchPlan'])->name('library.branch.plans.save');
+    Route::delete('library/branch/plans/{planId}/delete', [LibraryAdminController::class, 'deleteBranchPlan'])->name('library.branch.plans.delete');
+
+    Route::get('library/branch/{branchId}/plan-types', [LibraryAdminController::class, 'branchPlanTypes'])->name('library.branch.plantypes');
+    Route::post('library/branch/{branchId}/plan-types/save', [LibraryAdminController::class, 'saveBranchPlanType'])->name('library.branch.plantypes.save');
+    Route::delete('library/branch/plan-types/{planTypeId}/delete', [LibraryAdminController::class, 'deleteBranchPlanType'])->name('library.branch.plantypes.delete');
+
+    Route::get('library/branch/{branchId}/prices', [LibraryAdminController::class, 'branchPrices'])->name('library.branch.prices');
+    Route::post('library/branch/{branchId}/prices/save', [LibraryAdminController::class, 'saveBranchPrice'])->name('library.branch.prices.save');
+    Route::delete('library/branch/prices/{priceId}/delete', [LibraryAdminController::class, 'deleteBranchPrice'])->name('library.branch.prices.delete');
+
+    Route::get('library/branch/{branchId}/seat-hour', [LibraryAdminController::class, 'branchSeatHour'])->name('library.branch.seatHour');
+    Route::post('library/branch/{branchId}/seat-hour/save', [LibraryAdminController::class, 'saveBranchSeatHour'])->name('library.branch.seatHour.save');
+
+    Route::get('library/branch/{branchId}/edit', [LibraryAdminController::class, 'editBranch'])->name('library.branch.edit');
+    Route::put('library/branch/{branchId}/update', [LibraryAdminController::class, 'updateBranch'])->name('library.branch.update');
     Route::get('create/notification', [NotificationController::class, 'create'])->name('create.notification');
     Route::get('edit/notification/{id?}', [NotificationController::class, 'edit'])->name('notifications.edit');
     Route::post('/notifications/send', [NotificationController::class, 'send'])->name('notifications.send');

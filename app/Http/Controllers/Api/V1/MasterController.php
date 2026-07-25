@@ -18,6 +18,7 @@ use App\Models\Scopes\LibraryScope;
 use App\Models\State;
 use App\Models\Subscription;
 use App\Services\PlanService;
+use App\Services\SeatAvailabilityService;
 use Illuminate\Http\Request;
 use DB;
 use Illuminate\Validation\Rule;

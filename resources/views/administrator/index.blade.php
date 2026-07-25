@@ -155,7 +155,11 @@
                                 <li><a href="{{route('library.show',$value->id)}}" data-bs-toggle="tooltip" data-bs-title="View Library Details" data-bs-placement="bottom"><i class="fas fa-eye"></i></a>
                                 </li>
 
-                               
+                                <!-- View Branches -->
+                                <li><a href="{{route('library.branches',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="View Branches"><i class="fas fa-building"></i></a>
+                                </li>
+
+
                                 <!-- Upgrde Plan-->
                                 {{-- <li><a href="{{route('library.upgrade',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Upgrade Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li> --}}
 
