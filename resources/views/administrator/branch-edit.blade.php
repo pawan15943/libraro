@@ -25,9 +25,12 @@
 </div>
 @endif
 
-<form method="POST" action="{{ route('library.branch.update', $branch->id) }}" enctype="multipart/form-data">
+<form method="POST" action="{{ route('library.branch.update', $branch->id) }}" enctype="multipart/form-data" id="branchUpdate">
     @csrf
     @method('PUT')
+
+    <div class="row mb-4 g-4">
+    <div class="col-lg-8">
 
     <div class="card p-3 mb-4">
         <h5>Branch Details</h5>
@@ -163,21 +166,6 @@
     </div>
 
     <div class="card p-3 mb-4">
-        <h5>Library Logo</h5>
-        <div class="row g-4">
-            <div class="col-lg-4">
-                @if($branch->library_logo)
-                <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail" style="max-width:150px;">
-                @endif
-            </div>
-            <div class="col-lg-8">
-                <input type="file" class="form-control" name="library_logo" accept="image/jpeg,image/png,image/webp">
-                <small class="text-muted">JPG, PNG or WEBP, up to 2MB.</small>
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
         <h5>Library Gallery</h5>
         <div class="row g-4">
             @php $existingImages = $branch->library_images ?? []; @endphp
@@ -203,8 +191,103 @@
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">Update Branch</button>
+    </div>
+    <!-- /col-lg-8 -->
+
+    <!-- Sidebar for Library Logo and Submit -->
+    <div class="col-lg-4">
+        <div class="card stick p-3">
+            <h5 class="mb-4">Library Logo</h5>
+            <div class="row g-4">
+                <div class="col-lg-12">
+                    <div class="preview" id="preview">
+                        @if($branch->library_logo)
+                        <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        @else
+                        <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
+                        <p class="text-muted text-center">No logo uploaded</p>
+                        @endif
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p class="status-message" id="statusMessage"></p>
+                    <label class="upload-lable">Library Logo (Optional)
+                        <input type="file" class="form-control d-none no-validate @error('library_logo') is-invalid @enderror" name="library_logo" id="fileInput" accept="image/jpeg, image/png, image/webp">
+                        @error('library_logo')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    </label>
+                    <small class="text-info d-block" style="font-size: .8rem;">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
+                    <div id="logoUploadError" class="text-danger mt-2"></div>
+                    <small class="text-information">Upload a logo to display it in your account and on receipts.</small>
+                </div>
+
+                <div class="col-lg-12">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    <!-- /row -->
 </form>
+
+<script>
+$(document).ready(function () {
+    const maxLogoSize = 2 * 1024 * 1024; // 2 MB
+
+    $('#fileInput').on('change', function (event) {
+        let file = event.target.files[0];
+        let validTypes = ["image/jpeg", "image/png", "image/webp"];
+        let statusMessage = $('#statusMessage');
+        let preview = $('#preview');
+        let progressBar = $('#progressBar');
+
+        statusMessage.text('').removeClass('success error');
+        $('#logoUploadError').html('');
+        progressBar.width('0');
+
+        if (!file) return;
+
+        if (!validTypes.includes(file.type)) {
+            statusMessage.text('Invalid file format. Only JPG, PNG, JPEG, WEBP allowed.').addClass('error');
+            return;
+        }
+        if (file.size > maxLogoSize) {
+            $('#logoUploadError').html('Image size should not exceed 2 MB.');
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            preview.html('<img src="' + e.target.result + '" alt="Preview" class="preview">');
+
+            let progress = 0;
+            let interval = setInterval(function () {
+                progress += 20;
+                progressBar.width(progress + '%');
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    statusMessage.text('Upload Successful!').addClass('success');
+                }
+            }, 200);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $('#branchUpdate').on('submit', function () {
+        const fileInput = $('#fileInput')[0];
+        if (fileInput.files.length > 0 && fileInput.files[0].size > maxLogoSize) {
+            $('#logoUploadError').html('Image size should not exceed 2 MB.');
+            return false;
+        }
+    });
+});
+</script>
 
 <script>
 document.getElementById('state_id').addEventListener('change', function () {

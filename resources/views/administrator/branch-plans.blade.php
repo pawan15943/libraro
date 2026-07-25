@@ -30,35 +30,48 @@
 
 <div class="card p-3 mb-4">
     <div class="d-flex justify-content-between align-items-center">
-        <h5 class="m-0" id="planFormTitle">Add Plan</h5>
+        <h5 class="m-0" id="planFormTitle">{{ old('id') ? 'Edit Plan' : 'Add Plan' }}</h5>
         <button type="button" class="btn btn-sm btn-primary" id="togglePlanForm"><i class="fa-solid fa-plus"></i> Add Plan</button>
     </div>
 
-    <form id="planForm" method="POST" action="{{ route('library.branch.plans.save', $branch->id) }}" class="mt-3" style="display:none;">
+    <form id="planForm" method="POST" action="{{ route('library.branch.plans.save', $branch->id) }}" class="mt-3" style="{{ $errors->any() ? '' : 'display:none;' }}">
         @csrf
-        <input type="hidden" name="id" id="plan_id_field" value="">
+        <input type="hidden" name="id" id="plan_id_field" value="{{ old('id') }}">
         <div class="row g-4">
             <div class="col-lg-4">
                 <label>Type <span>*</span></label>
-                <select class="form-select" name="type" id="plan_type" required>
+                <select class="form-select @error('type') is-invalid @enderror" name="type" id="plan_type" required>
                     <option value="">Select Type</option>
-                    <option value="MONTH">MONTH</option>
-                    <option value="YEAR">YEAR</option>
-                    <option value="DAY">DAY</option>
-                    <option value="WEEK">WEEK</option>
+                    <option value="MONTH" @selected(old('type') == 'MONTH')>MONTH</option>
+                    <option value="YEAR" @selected(old('type') == 'YEAR')>YEAR</option>
+                    <option value="DAY" @selected(old('type') == 'DAY')>DAY</option>
+                    <option value="WEEK" @selected(old('type') == 'WEEK')>WEEK</option>
                 </select>
+                @error('type')
+                <span class="invalid-feedback d-block">{{ $message }}</span>
+                @enderror
             </div>
             <div class="col-lg-4">
                 <label>Plan (digits) <span>*</span></label>
-                <input type="number" min="1" class="form-control" name="plan_id" id="plan_number" required placeholder="Ex: 1 for 1 Month">
+                <input type="number" min="1" class="form-control @error('plan_id') is-invalid @enderror" name="plan_id" id="plan_number" value="{{ old('plan_id') }}" required placeholder="Ex: 1 for 1 Month">
+                @error('plan_id')
+                <span class="invalid-feedback d-block">{{ $message }}</span>
+                @enderror
             </div>
             <div class="col-lg-4">
                 <label>Monthly Days</label>
-                <input type="number" min="1" class="form-control" name="monthdays" id="plan_monthdays" placeholder="Leave blank for calendar-wise">
+                <select class="form-select @error('monthdays') is-invalid @enderror" name="monthdays" id="plan_monthdays">
+                    <option value="" @selected(old('monthdays') === null)>Calendar-wise (automatic)</option>
+                    <option value="28" @selected(old('monthdays') == 28)>28 days</option>
+                    <option value="30" @selected(old('monthdays') == 30)>30 days</option>
+                </select>
+                @error('monthdays')
+                <span class="invalid-feedback d-block">{{ $message }}</span>
+                @enderror
             </div>
         </div>
         <div class="mt-3">
-            <button type="submit" class="btn btn-primary" id="savePlanBtn">Add Plan</button>
+            <button type="submit" class="btn btn-primary" id="savePlanBtn">{{ old('id') ? 'Update Plan' : 'Add Plan' }}</button>
         </div>
     </form>
 </div>

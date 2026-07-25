@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 
 // Superadmin-side management of a library's branches (and their Plans, Plan Types,
 // Plan Prices, Seats/Hours, and profile edit) - reached from the Library List's
@@ -70,10 +71,20 @@ class LibraryAdminController extends Controller
         $branch = $this->resolveBranchForAdmin($branchId);
 
         $validated = $request->validate([
-            'id' => 'nullable|integer',
+            'id' => [
+                'nullable',
+                Rule::exists('plans', 'id')->where(fn ($q) => $q->where('library_id', $branch->library_id)),
+            ],
             'type' => 'required|in:MONTH,YEAR,DAY,WEEK',
-            'plan_id' => 'required|integer|min:1',
-            'monthdays' => 'nullable|integer|min:1',
+            'plan_id' => [
+                'required',
+                'integer',
+                'min:1',
+                Rule::unique('plans', 'plan_id')
+                    ->where(fn ($q) => $q->where('library_id', $branch->library_id)->where('type', $request->type))
+                    ->ignore($request->id),
+            ],
+            'monthdays' => 'nullable|in:28,30',
         ]);
 
         $data = [
@@ -107,12 +118,17 @@ class LibraryAdminController extends Controller
     {
         $branch = $this->resolveBranchForAdmin($branchId);
 
+        $monthlyPlan = Plan::withoutGlobalScopes()
+            ->where('library_id', $branch->library_id)
+            ->where('plan_id', 1)
+            ->where('type', 'MONTH')
+            ->first();
+
         // Named branchPlanTypes (not "planTypes"): AppServiceProvider registers a
         // global View::composer('*', ...) that unconditionally injects a $planTypes
         // variable (scoped by getLibraryId(), always null for the superadmin/web
         // guard) into every view, silently overwriting a same-named variable here.
-        $branchPlanTypes = PlanType::withoutGlobalScopes()
-            ->withTrashed()
+        $branchPlanTypesQuery = PlanType::withoutGlobalScopes()
             ->where('branch_id', $branchId)
             ->select('plan_types.*')
             ->selectSub(function ($query) use ($branchId) {
@@ -122,47 +138,182 @@ class LibraryAdminController extends Controller
                     ->where('learner_detail.status', 1)
                     ->where('learner_detail.branch_id', $branchId);
             }, 'active_learners_count')
-            ->orderByDesc('id')
-            ->get();
+            ->orderBy('id');
 
-        return view('administrator.branch-plan-types', compact('branch', 'branchPlanTypes'));
+        if ($monthlyPlan) {
+            // PlanPrice has its own global 'branch' scope keyed off getCurrentBranch(),
+            // which is null for the superadmin/web guard - must bypass it here too.
+            $branchPlanTypesQuery->with(['price' => fn ($query) => $query->withoutGlobalScopes()
+                ->where('plan_id', $monthlyPlan->id)]);
+        }
+
+        $branchPlanTypes = $branchPlanTypesQuery->get();
+        $operatingHour = DB::table('hour')->where('branch_id', $branchId)->first();
+
+        return view('administrator.branch-plan-types', compact('branch', 'branchPlanTypes', 'monthlyPlan', 'operatingHour'));
     }
 
-    public function saveBranchPlanType(Request $request, $branchId)
+    private const DAY_TYPE_NAMES = [
+        1 => 'Full Day',
+        2 => 'First Half',
+        3 => 'Second Half',
+        8 => 'All Day',
+        9 => 'Full Night',
+        10 => 'Reserved',
+        11 => 'VIP',
+    ];
+
+    // Mirrors the tenant onboarding wizard (LibraryConfigurationService::shiftConfigure()):
+    // saves a whole batch of shifts in one submit, each shift's PlanType + PlanPrice created/
+    // updated together, and any existing PlanType left out of the submission gets removed -
+    // but reimplemented here scoped by an explicit $branchId rather than session state, since
+    // that service resolves branch/library from getCurrentBranch()/getLibraryId() (null for
+    // the superadmin/web guard).
+    public function saveBranchPlanTypes(Request $request, $branchId)
     {
         $branch = $this->resolveBranchForAdmin($branchId);
 
         $validated = $request->validate([
-            'id' => 'nullable|integer',
-            'name' => 'required|string|max:100',
-            'start_time' => 'required',
-            'end_time' => 'required',
-            'slot_hours' => 'required|integer|min:1|max:24',
+            'plan_types' => 'required|array|min:1',
+            'plan_types.*.plan_type_id' => 'nullable|integer',
+            'plan_types.*.day_type_id' => 'required',
+            'plan_types.*.custom_plan_type' => 'nullable|string|max:100',
+            'plan_types.*.start_time' => 'required|date_format:H:i',
+            'plan_types.*.end_time' => 'required|date_format:H:i',
+            'plan_types.*.slot_hours' => 'required|numeric|min:1',
+            'plan_types.*.price' => 'required|numeric|min:0',
         ]);
 
-        if (!empty($validated['id']) && $this->branchHasActiveLearnersForPlanType($branchId, $validated['id'])) {
-            return back()->with('error', 'This plan type cannot be edited because active learners are assigned to it.')->withInput();
+        foreach ($validated['plan_types'] as $index => $row) {
+            if ((string) $row['day_type_id'] === '0' && empty($row['custom_plan_type'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Custom plan type name is required.',
+                    'errors' => ["plan_types.$index.custom_plan_type" => ['Custom plan type name is required.']],
+                ], 422);
+            }
         }
 
-        $data = [
-            'library_id' => $branch->library_id,
-            'branch_id' => $branchId,
-            'name' => $validated['name'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'slot_hours' => $validated['slot_hours'],
-        ];
+        $monthlyPlan = Plan::withoutGlobalScopes()
+            ->where('library_id', $branch->library_id)
+            ->where('plan_id', 1)
+            ->where('type', 'MONTH')
+            ->first();
 
-        if (!empty($validated['id'])) {
-            $planType = PlanType::withoutGlobalScopes()->withTrashed()
+        if (!$monthlyPlan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This library has no "1 Month" plan yet - add one on the Plans page before setting shift prices.',
+            ], 422);
+        }
+
+        $operatingHour = DB::table('hour')->where('branch_id', $branchId)->first();
+
+        DB::beginTransaction();
+        try {
+            $survivedIds = [];
+
+            foreach ($validated['plan_types'] as $row) {
+                $dayTypeId = (int) $row['day_type_id'];
+
+                if (in_array($dayTypeId, [10, 11], true) && $operatingHour && $row['slot_hours'] != $operatingHour->hour) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Reserved and VIP shifts must span the full operating hours (' . $operatingHour->hour . ').',
+                    ], 422);
+                }
+
+                $existingId = $row['plan_type_id'] ?? null;
+
+                if ($existingId && $this->branchHasActiveLearnersForPlanType($branchId, $existingId)) {
+                    // Active-learner shifts are read-only in the form (disabled inputs), so
+                    // just carry the existing row forward untouched instead of erroring.
+                    $survivedIds[] = (int) $existingId;
+                    continue;
+                }
+
+                $name = $dayTypeId === 0 ? $row['custom_plan_type'] : (self::DAY_TYPE_NAMES[$dayTypeId] ?? $row['custom_plan_type']);
+                $price = $dayTypeId === 11 ? 0 : $row['price'];
+
+                $data = [
+                    'library_id' => $branch->library_id,
+                    'branch_id' => $branchId,
+                    'day_type_id' => $dayTypeId,
+                    'name' => $name,
+                    'start_time' => $row['start_time'],
+                    'end_time' => $row['end_time'],
+                    'slot_hours' => $row['slot_hours'],
+                    'image' => 'public/img/booked.png',
+                ];
+
+                $planType = $existingId
+                    ? PlanType::withoutGlobalScopes()->withTrashed()->where('branch_id', $branchId)->find($existingId)
+                    : null;
+
+                if ($planType) {
+                    $planType->update($data);
+                } else {
+                    $planType = PlanType::create($data);
+                }
+
+                $survivedIds[] = $planType->id;
+
+                $priceRow = PlanPrice::withoutGlobalScopes()->withTrashed()
+                    ->where('branch_id', $branchId)
+                    ->where('plan_id', $monthlyPlan->id)
+                    ->where('plan_type_id', $planType->id)
+                    ->first();
+
+                if ($priceRow) {
+                    if ($priceRow->trashed()) {
+                        $priceRow->restore();
+                    }
+                    $priceRow->update(['price' => $price]);
+                } else {
+                    PlanPrice::create([
+                        'library_id' => $branch->library_id,
+                        'branch_id' => $branchId,
+                        'plan_id' => $monthlyPlan->id,
+                        'plan_type_id' => $planType->id,
+                        'price' => $price,
+                    ]);
+                }
+            }
+
+            $toRemove = PlanType::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
-                ->findOrFail($validated['id']);
-            $planType->update($data);
-        } else {
-            PlanType::create($data);
+                ->whereNotIn('id', $survivedIds)
+                ->get();
+
+            foreach ($toRemove as $planType) {
+                if ($this->branchHasActiveLearnersForPlanType($branchId, $planType->id)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Cannot remove \"{$planType->name}\" - active learners are assigned to it.",
+                    ], 422);
+                }
+
+                PlanPrice::withoutGlobalScopes()->where('plan_type_id', $planType->id)->delete();
+                $planType->delete();
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save shifts: ' . $e->getMessage(),
+            ], 500);
         }
 
-        return redirect()->route('library.branch.plantypes', $branchId)->with('success', 'Plan type saved successfully.');
+        return response()->json([
+            'status' => true,
+            'message' => 'Shifts saved successfully.',
+            'redirect' => route('library.branch.plantypes', $branchId),
+        ]);
     }
 
     public function deleteBranchPlanType($planTypeId)
@@ -176,6 +327,7 @@ class LibraryAdminController extends Controller
             ], 422);
         }
 
+        PlanPrice::withoutGlobalScopes()->where('plan_type_id', $planType->id)->delete();
         $planType->delete();
 
         return response()->json(['status' => true, 'message' => 'Plan type deleted successfully.']);

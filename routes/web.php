@@ -464,7 +464,7 @@ Route::middleware(['auth:web'])->group(function () {
     Route::delete('library/branch/plans/{planId}/delete', [LibraryAdminController::class, 'deleteBranchPlan'])->name('library.branch.plans.delete');
 
     Route::get('library/branch/{branchId}/plan-types', [LibraryAdminController::class, 'branchPlanTypes'])->name('library.branch.plantypes');
-    Route::post('library/branch/{branchId}/plan-types/save', [LibraryAdminController::class, 'saveBranchPlanType'])->name('library.branch.plantypes.save');
+    Route::post('library/branch/{branchId}/plan-types/save', [LibraryAdminController::class, 'saveBranchPlanTypes'])->name('library.branch.plantypes.save');
     Route::delete('library/branch/plan-types/{planTypeId}/delete', [LibraryAdminController::class, 'deleteBranchPlanType'])->name('library.branch.plantypes.delete');
 
     Route::get('library/branch/{branchId}/prices', [LibraryAdminController::class, 'branchPrices'])->name('library.branch.prices');
