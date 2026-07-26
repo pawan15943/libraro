@@ -737,7 +737,7 @@ class LearnerLifecycleService
         $extra = (float) ($transaction->refund ?? 0);
         $learner = null;
         if($detail){
-            $learner=Learner::where('id',$detail->learner_id)->select('status','locker_no','frozen_status')->first();
+            $learner=Learner::withTrashed()->where('id',$detail->learner_id)->select('status','locker_no','frozen_status','deleted_at')->first();
         }
         $addedByName = $this->transactionAddedByName($transaction);
         $updatedByName = $this->updatedByName($transaction->updated_by ?? null) ?: $addedByName;
@@ -749,7 +749,7 @@ class LearnerLifecycleService
         $planStatus =getPlanStatusDetails($detail->plan_end_date);
          if($operation == 'closeSeat'){
             $mainstatus='Closed';
-        }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
+        }elseif($operation == 'deleteSeat' && $learner?->deleted_at !=null){
             $mainstatus='Deleted';
         }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
             $mainstatus='Upcoming';
