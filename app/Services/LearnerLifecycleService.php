@@ -1239,6 +1239,16 @@ class LearnerLifecycleService
             $detail->save();
             Learner::where('id', $detail->learner_id)->update(['frozen_status' => 1]);
 
+            $this->operationLogService->log(
+                $learnerId,
+                (int) $detail->id,
+                'freezePlan',
+                'freeze_start_date',
+                null,
+                $detail->freeze_start_date,
+                'Plan frozen'
+            );
+
             return ['ok' => true, 'message' => 'Plan frozen successfully!'];
         }
 

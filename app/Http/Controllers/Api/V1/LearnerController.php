@@ -1052,8 +1052,10 @@ class LearnerController extends Controller
             ? PlanType::whereIn('id', $planTypeIds)->pluck('name', 'id')->all()
             : [];
 
+        $seatMap = generateSeatNumbers();
+
         $activities = $logItems
-            ->map(fn ($log) => $this->formatLearnerActivity($log, $updatedByMap, $planNames, $planTypeNames))
+            ->map(fn ($log) => $this->formatLearnerActivity($log, $updatedByMap, $planNames, $planTypeNames, $seatMap))
             ->groupBy('group_date_key')
             ->map(function ($items) {
                 $first = $items->first();
@@ -1105,10 +1107,10 @@ class LearnerController extends Controller
         ]);
     }
 
-    private function formatLearnerActivity($log, array $updatedByMap = [], array $planNames = [], array $planTypeNames = []): array
+    private function formatLearnerActivity($log, array $updatedByMap = [], array $planNames = [], array $planTypeNames = [], array $seatMap = []): array
     {
         $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
-        $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames);
+        $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
         $meta = $this->activityMeta($log->operation);
         $createdAt = Carbon::parse($log->created_at);
         $operationType = $details['operation_type'] ?: $meta['label'];
@@ -1118,12 +1120,12 @@ class LearnerController extends Controller
             'learner_id' => (int) $log->learner_id,
             // 'learner_detail_id' => $log->learner_detail_id ? (int) $log->learner_detail_id : null,
             'learner_name' => optional($log->learner)->name ?? '',
-            'seat_no' => optional($log->learner)->seat_no ?? '',
+            'seat_no' => HelperService::formatSeatDisplay(optional($log->learner)->seat_no, $seatMap),
             // 'operation_key' => (string) $log->operation,
             'operation_type' => $operationType,
             'filter_key' => $meta['filter_key'],
             'color_code' => $meta['color_code'],
-            'title' => $operationType . ' successfully',
+            'title' => $operationType,
             'message' => trim(strip_tags(str_replace('<br>', ' ', $details['message']))),
             'message_html' => $details['message'],
             'field_updated' => (string) ($log->field_updated ?? ''),
@@ -1178,6 +1180,8 @@ class LearnerController extends Controller
             'delete' => ['deleteSeat'],
             'restore' => ['restoreSeat'],
             'reactive' => ['reactive'],
+            'freeze_plan' => ['freezePlan'],
+            'gift_day' => ['giftDays'],
             'all' => [],
             'all_day' => [],
         ];
@@ -1232,13 +1236,15 @@ class LearnerController extends Controller
         $map = [
             'renewSeat' => ['label' => 'Renew Seat', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
             'renewDelete' => ['label' => 'Renew Delete', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
-            'learnerUpgrade' => ['label' => 'Upgrade Seat', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
+            'learnerUpgrade' => ['label' => 'Plan Upgraded', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
             'changePlan' => ['label' => 'Change Plan', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
-            'swapseat' => ['label' => 'Swap Seat', 'filter_key' => 'swap', 'color_code' => '#D633E9'],
+            'swapseat' => ['label' => 'Seat Swapped', 'filter_key' => 'swap', 'color_code' => '#D633E9'],
             'reactive' => ['label' => 'Reactive Seat', 'filter_key' => 'reactive', 'color_code' => '#22C55E'],
-            'closeSeat' => ['label' => 'Close Seat', 'filter_key' => 'close_plan', 'color_code' => '#F97316'],
+            'closeSeat' => ['label' => 'Seat Closed', 'filter_key' => 'close_plan', 'color_code' => '#F97316'],
             'deleteSeat' => ['label' => 'Delete Seat', 'filter_key' => 'delete', 'color_code' => '#DC2626'],
             'restoreSeat' => ['label' => 'Restore Seat', 'filter_key' => 'restore', 'color_code' => '#14B8A6'],
+            'freezePlan' => ['label' => 'Plan Frozen', 'filter_key' => 'freeze_plan', 'color_code' => '#0EA5E9'],
+            'giftDays' => ['label' => 'Added Gift Days', 'filter_key' => 'gift_day', 'color_code' => '#14B8A6'],
         ];
 
         return $map[$operation] ?? [

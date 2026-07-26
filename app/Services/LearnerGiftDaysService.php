@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\DB;
 
 class LearnerGiftDaysService
 {
+    public function __construct(private LearnerOperationLogService $operationLogService)
+    {
+    }
+
     public function getTotalGiftDays(int $learnerId): int
     {
         $total = DB::table('learner_gift_days')
@@ -74,6 +78,16 @@ class LearnerGiftDaysService
                 $student->save();
             }
 
+            $this->operationLogService->log(
+                $learnerId,
+                (int) $student->id,
+                'giftDays',
+                'total_gift_days',
+                0,
+                $newGiftDays,
+                'Gift days added'
+            );
+
             return [
                 'ok' => true,
                 'message' => $newGiftDays.' Gift Days added successfully',
@@ -104,6 +118,16 @@ class LearnerGiftDaysService
         }
 
         $student->save();
+
+        $this->operationLogService->log(
+            $learnerId,
+            (int) $student->id,
+            'giftDays',
+            'total_gift_days',
+            $oldTotal,
+            $newGiftDays,
+            'Gift days updated'
+        );
 
         return [
             'ok' => true,

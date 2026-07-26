@@ -76,7 +76,7 @@ class HelperService
 
 
 
-    public static function getOperationDetails($operation, array $planNames = [], array $planTypeNames = [])
+    public static function getOperationDetails($operation, array $planNames = [], array $planTypeNames = [], array $seatMap = [])
     {
         $details = [
             'message' => '',
@@ -104,12 +104,11 @@ class HelperService
                 break;
 
             case 'learnerUpgrade':
-                 $details['operation_type']='Upgrade Seat';
+                $details['operation_type'] = 'Plan Upgraded';
                 $oldPlanType = $planTypeNames[$operation->old_value] ?? PlanType::where('id', $operation->old_value)->value('name');
                 $newPlanType = $planTypeNames[$operation->new_value] ?? PlanType::where('id', $operation->new_value)->value('name');
 
-                $details['message'] = "Plan upgraded successfully. <br>
-                Your plan type has been updated from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong> on {$updatedAt} by {$userName}.";
+                $details['message'] = "{$oldPlanType} → {$newPlanType}";
                 break;
 
             case 'reactive':
@@ -119,15 +118,16 @@ class HelperService
                 break;
 
             case 'swapseat':
-                 $details['operation_type']='Swap Seat';
-                $details['message'] = "Seat swapped successfully. <br>
-                Seat number has been changed from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
+                $details['operation_type'] = 'Seat Swapped';
+                $oldSeat = self::formatSeatDisplay($operation->old_value, $seatMap);
+                $newSeat = self::formatSeatDisplay($operation->new_value, $seatMap);
+
+                $details['message'] = "Seat {$oldSeat} → {$newSeat}";
                 break;
 
             case 'closeSeat':
-                 $details['operation_type']='Close Seat';
-                $details['message'] = "Seat closed successfully. <br>
-                Plan end has been updated from <strong>{$operation->old_value}</strong> to <strong>{$operation->new_value}</strong> on {$updatedAt} by {$userName}.";
+                $details['operation_type'] = 'Seat Closed';
+                $details['message'] = 'Learner left the library, Seat is available now.';
                 break;
 
             case 'deleteSeat':
@@ -149,6 +149,22 @@ class HelperService
              $details['message'] = "Seat restored successfully. <br>
                 Seat number <strong>{$operation->new_value}</strong> has been restored on {$updatedAt}.";
                 break;
+
+            case 'freezePlan':
+                $details['operation_type'] = 'Plan Frozen';
+                $details['message'] = 'Plan Frozen on ' . Carbon::parse($operation->new_value)->format('d M Y');
+                break;
+
+            case 'giftDays':
+                $details['operation_type'] = 'Added Gift Days';
+                $added = (int) $operation->new_value - (int) $operation->old_value;
+                $details['message'] = 'Added ' . $added . ' gift days';
+                break;
+
+            case 'edit':
+                self::fillEditOperationDetails($details, $operation);
+                break;
+
             default:
              $details['operation_type']='';
                 $details['message'] = "Operation performed successfully.";
@@ -156,6 +172,79 @@ class HelperService
         }
 
         return $details;
+    }
+
+    /**
+     * The 'edit' log stores a full before/after snapshot of learner + plan-detail
+     * fields together (see LearnerOperationService::logOperation). Diff the two to
+     * tell "profile" edits (learner fields) apart from "plan detail" edits
+     * (locker/plan/date fields) and build a short "which fields changed" summary.
+     */
+    private static function fillEditOperationDetails(array &$details, $operation): void
+    {
+        $fieldLabels = [
+            'name' => 'Name', 'email' => 'Email', 'mobile' => 'Mobile No',
+            'dob' => 'DOB', 'father_name' => 'Father Name', 'address' => 'Address',
+            'remark' => 'Remark', 'alternate_mobile' => 'Alternate Mobile',
+            'id_proof_name' => 'ID Proof', 'id_proof_number' => 'ID Proof Number',
+            'exam_id' => 'Exam', 'no_expiry' => 'Non-Expiry', 'locker_no' => 'Locker',
+            'seat_no' => 'Seat No', 'plan_id' => 'Plan', 'plan_type_id' => 'Plan Type',
+            'plan_price_id' => 'Plan Price', 'plan_start_date' => 'Plan Start Date',
+            'plan_end_date' => 'Plan End Date',
+        ];
+
+        $old = json_decode((string) $operation->old_value, true) ?: [];
+        $new = json_decode((string) $operation->new_value, true) ?: [];
+
+        $changedProfileFields = [];
+        foreach (($new['learner'] ?? []) as $field => $value) {
+            if (($old['learner'][$field] ?? null) != $value) {
+                $changedProfileFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            }
+        }
+
+        $changedDetailFields = [];
+        foreach (($new['detail'] ?? []) as $field => $value) {
+            if (($old['detail'][$field] ?? null) != $value) {
+                $changedDetailFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            }
+        }
+
+        $isPlanDetailsOnly = !empty($changedDetailFields) && empty($changedProfileFields);
+        $details['operation_type'] = $isPlanDetailsOnly ? 'Plan Details Updated' : 'Learner Profile Updated';
+
+        $changedFields = array_values(array_unique($isPlanDetailsOnly
+            ? $changedDetailFields
+            : array_merge($changedProfileFields, $changedDetailFields)));
+
+        if (empty($changedFields)) {
+            $details['message'] = 'Details updated successfully.';
+        } elseif (count($changedFields) > 3) {
+            $shown = array_slice($changedFields, 0, 2);
+            $details['message'] = implode(', ', $shown) . ', ' . (count($changedFields) - 2) . '+ fields are updated.';
+        } else {
+            $details['message'] = implode(', ', $changedFields) . ' updated.';
+        }
+    }
+
+    /**
+     * Formats a raw seat number as "{floor seat no} {Floor Name}" (e.g. "12 First
+     * Floor") using the branch's seat map from generateSeatNumbers(), falling back
+     * to the plain seat number when there's no floor to attach.
+     */
+    public static function formatSeatDisplay($seatNo, array $seatMap = []): string
+    {
+        if (empty($seatNo)) {
+            return '';
+        }
+
+        $seat = collect($seatMap)->firstWhere('main', (int) $seatNo);
+
+        if ($seat && !empty($seat['floor_name'])) {
+            return $seat['floor'] . ' ' . $seat['floor_name'];
+        }
+
+        return (string) $seatNo;
     }
 
 
