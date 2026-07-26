@@ -791,6 +791,16 @@ class LearnerOperationService
         
         $learner = Learner::findOrFail($dto->learner_id);
 
+        // Snapshot before mutating so an 'edit' activity log entry can be written below -
+        // this method is called directly for EDITLEARNER (bypasses process()/logOperation(),
+        // which only run for EDIT/CHANGE PLAN/etc), so without this, profile-only edits
+        // (name, email, mobile, ...) never produced any activity log entry at all.
+        $beforeLearner = $learner->only([
+            'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
+            'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
+            'no_expiry', 'locker_no', 'seat_no',
+        ]);
+
         if($learner->trashed()){
             $learner->restore();
         }
@@ -910,6 +920,31 @@ class LearnerOperationService
                 ->latest('id')
                 ->first()
                 ?->update(['exam_id' => $dto->exam_id]);
+        }
+
+        // Only log here for the EDITLEARNER entrypoint (LearnerController::learnerUpdate
+        // calls this method directly and returns, skipping process()/logOperation()).
+        // process() itself also calls updateLearner() as one step of EDIT/CHANGE PLAN/
+        // RENEW/UPGRADE/REACTIVE, but those already get an 'edit'/etc log entry from
+        // logOperation() afterwards - logging here too would duplicate it.
+        if ($dto->operation === 'EDITLEARNER') {
+            $afterLearner = $learner->fresh()->only([
+                'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
+                'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
+                'no_expiry', 'locker_no', 'seat_no',
+            ]);
+
+            if ($afterLearner != $beforeLearner) {
+                $this->operationLogService->log(
+                    (int) $dto->learner_id,
+                    $detail ? (int) $detail->id : null,
+                    'edit',
+                    'learner_and_plan',
+                    ['learner' => $beforeLearner],
+                    ['learner' => $afterLearner],
+                    'EDITLEARNER completed'
+                );
+            }
         }
     }
 

@@ -47,6 +47,7 @@ use App\Services\ReceiptService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
+use App\Helpers\HelperService;
 
 
 class LearnerController extends Controller
@@ -2261,11 +2262,7 @@ class LearnerController extends Controller
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 
-        $learnerlog = DB::table('learner_operations_log')
-            ->select('learner_id', 'created_at', DB::raw('MAX(operation) as operation'))
-            ->where('learner_id', $customerId)
-            ->groupBy('learner_id', 'created_at')
-            ->get();
+        $learnerlog = $this->buildLearnerActivityLog($customerId);
 
         if ($request->expectsJson() || $request->has('id')) {
             return response()->json($customer);
@@ -2811,13 +2808,68 @@ class LearnerController extends Controller
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 
-        $learnerlog = DB::table('learner_operations_log')
-            ->select('learner_id', 'created_at', DB::raw('MAX(operation) as operation'))
-            ->where('learner_id', $customerId)
-            ->groupBy('learner_id', 'created_at')
-            ->get();
+        $learnerlog = $this->buildLearnerActivityLog($customerId);
 
         return view('learner.profile', compact('customer', 'available_seat', 'renew_detail', 'seat_history', 'transaction', 'all_transactions', 'learner_request', 'learnerlog'));
+    }
+
+    /**
+     * Shared by show() (library-staff facing) and learnerProfile() (learner's own
+     * self-service page) - both used to build $learnerlog with a lossy
+     * `SELECT MAX(operation) ... GROUP BY created_at` query that discarded
+     * field_updated/old_value/new_value, so the activity list had nothing to render
+     * beyond a bare operation name. This mirrors Api\V1\LearnerController::activity()'s
+     * formatting (same HelperService::getOperationDetails() call) so web and the
+     * mobile app show identical messages for the same log rows.
+     */
+    private function buildLearnerActivityLog(int $customerId, int $limit = 50)
+    {
+        $logs = DB::table('learner_operations_log')
+            ->where('learner_id', $customerId)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        if ($logs->isEmpty()) {
+            return collect();
+        }
+
+        $updatedByIds = $logs->pluck('updated_by')->filter()->unique()->values();
+        $updatedByMap = DB::table('library_users')->whereIn('id', $updatedByIds)->pluck('name', 'id')->all();
+        $missingIds = $updatedByIds->diff(array_keys($updatedByMap))->values();
+        if ($missingIds->isNotEmpty()) {
+            $updatedByMap += DB::table('libraries')->whereIn('id', $missingIds)->pluck('library_name', 'id')->all();
+        }
+
+        $planIds = $logs->where('operation', 'renewSeat')
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planNames = $planIds->isNotEmpty()
+            ? Plan::whereIn('id', $planIds)->pluck('name', 'id')->all()
+            : [];
+
+        $planTypeIds = $logs->whereIn('operation', ['learnerUpgrade', 'changePlan'])
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planTypeNames = $planTypeIds->isNotEmpty()
+            ? PlanType::whereIn('id', $planTypeIds)->pluck('name', 'id')->all()
+            : [];
+
+        $seatMap = generateSeatNumbers();
+
+        return $logs->map(function ($log) use ($updatedByMap, $planNames, $planTypeNames, $seatMap) {
+            $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
+            $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
+            $createdAt = Carbon::parse($log->created_at);
+
+            return [
+                'date' => $createdAt->format('d M Y'),
+                'time' => $createdAt->format('h:i A'),
+                'operation_type' => $details['operation_type'],
+                'message' => $details['message'],
+            ];
+        })->values();
     }
 
     public function learnerRequest()

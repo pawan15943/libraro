@@ -289,25 +289,23 @@
         @endif
 
         @if($learnerlog->count() >0)
-        <div class="seat-activity d-none">
+        <div class="seat-activity">
             <h5 class="py-4">All Activity Logs:</h5>
             <ul class="activity-log">
-                @foreach($learnerlog as $key => $value)
+                @foreach($learnerlog as $item)
                 <li>
-                    <p>{{ \Carbon\Carbon::parse($value->created_at)->format('Y-m-d') }} :
-                        @if($value->operation=='learnerUpgrade')
-                        Seat Upgrade
-                        @elseif($value->operation=='swapseat')
-                        Seat Swapped
-                        @elseif($value->operation=='renewSeat')
-                        Seat Renew
-                        @elseif($value->operation=='reactive')
-                        Reactive
-                        @elseif($value->operation=='closeSeat')
-                        Close Seat
-                        @endif
-
-                    </p>
+                    <div class="d-flex">
+                        <div class="icon"></div>
+                        <div class="detials">
+                            <p class="m-0">
+                                @if($item['operation_type'])
+                                <strong>{{ $item['operation_type'] }}</strong> -
+                                @endif
+                                {!! $item['message'] !!}
+                            </p>
+                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> {{ $item['date'] }} {{ $item['time'] }}</span>
+                        </div>
+                    </div>
                 </li>
                 @endforeach
 

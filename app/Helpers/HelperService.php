@@ -217,9 +217,13 @@ class HelperService
             'id_proof_name' => 'ID Proof', 'id_proof_number' => 'ID Proof Number',
             'exam_id' => 'Exam', 'no_expiry' => 'Non-Expiry', 'locker_no' => 'Locker',
             'seat_no' => 'Seat No', 'plan_id' => 'Plan', 'plan_type_id' => 'Plan Type',
-            'plan_price_id' => 'Plan Price', 'plan_start_date' => 'Plan Start Date',
-            'plan_end_date' => 'Plan End Date',
+            'plan_price_id' => 'Plan Price',
         ];
+
+        // plan_start_date/plan_end_date move together (changing the start date always
+        // shifts the end date too - see edit-plan.blade.php's warning about this), so
+        // they're reported as one "Plan Dates" change instead of two separate fields.
+        $planDateFields = ['plan_start_date', 'plan_end_date'];
 
         $old = json_decode((string) $operation->old_value, true) ?: [];
         $new = json_decode((string) $operation->new_value, true) ?: [];
@@ -232,10 +236,19 @@ class HelperService
         }
 
         $changedDetailFields = [];
+        $planDatesChanged = false;
         foreach (($new['detail'] ?? []) as $field => $value) {
             if (($old['detail'][$field] ?? null) != $value) {
+                if (in_array($field, $planDateFields, true)) {
+                    $planDatesChanged = true;
+
+                    continue;
+                }
                 $changedDetailFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
             }
+        }
+        if ($planDatesChanged) {
+            $changedDetailFields[] = 'Plan Dates';
         }
 
         // Locker/discount amounts live on the billing/transaction side, not on the
