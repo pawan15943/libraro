@@ -51,6 +51,13 @@ class LearnerOperationService
                     'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',
                     'plan_end_date', 'seat_no',
                 ]),
+                // Snapshot pre-edit locker/discount amounts so the 'edit'/'changePlan' activity
+                // log can surface "Locker Added/Removed" / "Discount Added/Removed" in the
+                // global timeline (previously this was only visible in the billing ledger).
+                'billing' => [
+                    'locker_amount' => (float) (LearnerTransaction::where('learner_id', $customer->id)->latest()->value('locker_amount') ?? 0),
+                    'discount_amount' => (float) (LearnerTransaction::where('learner_id', $customer->id)->latest()->value('discount_amount') ?? 0),
+                ],
             ];
 
             if ($dto->operation == 'EDIT') {
@@ -168,7 +175,7 @@ class LearnerOperationService
                 LearnerDetail::where('learner_id', $dto->learner_id) ->where('id', '!=', $detail->id) ->update(['status' => 0]); 
             }
 
-            $this->logOperation($dto, $detail, $lastDetail, $seat, $beforeOperation);
+            $this->logOperation($dto, $detail, $lastDetail, $seat, $beforeOperation, $billing);
 
             /*send reminder */
             $this->sendReminder($dto->operation,$dto->learner_id);
@@ -1218,7 +1225,7 @@ class LearnerOperationService
         }
     }
 
-    private function logOperation($dto, $detail, $lastDetail, $seat, array $beforeOperation): void
+    private function logOperation($dto, $detail, $lastDetail, $seat, array $beforeOperation, array $billing = []): void
     {
         $operations = [
             'EDIT' => ['edit', 'learner_and_plan'],
@@ -1251,6 +1258,10 @@ class LearnerOperationService
                     'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',
                     'plan_end_date', 'seat_no',
                 ]),
+                'billing' => [
+                    'locker_amount' => (float) ($billing['locker'] ?? 0),
+                    'discount_amount' => (float) ($billing['discount'] ?? 0),
+                ],
             ]],
         };
 

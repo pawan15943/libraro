@@ -1272,6 +1272,16 @@ class LearnerLifecycleService
                 $learnerDetail->status = 1;
                 $learnerDetail->save();
 
+                $this->operationLogService->log(
+                    (int) $learnerDetail->learner_id,
+                    (int) $learnerDetail->id,
+                    'restoreSeat',
+                    'seat_no',
+                    null,
+                    $learnerDetail->seat_no,
+                    'Seat restored'
+                );
+
                 if ($learnerDetail->learner_id) {
                     $learner = Learner::withTrashed()->find($learnerDetail->learner_id);
                     if ($learner) {
@@ -1437,6 +1447,16 @@ class LearnerLifecycleService
         $detail->save();
         Learner::where('id', $detail->learner_id)->update(['frozen_status' => 2]);
 
+        $this->operationLogService->log(
+            $learnerId,
+            (int) $detail->id,
+            'unfreezePlan',
+            'freeze_start_date',
+            $freezeStart,
+            null,
+            'Plan unfrozen'
+        );
+
         return [
             'ok'                => true,
            'message' => $frozenDays > 0
@@ -1564,13 +1584,14 @@ class LearnerLifecycleService
                     //         'new_value' => now()->toISOString(),
                     //     ]);
                     // }
+                    $deletedSeatNo = $detail->seat_no;
                     $detail->update([
                         'status'=>0
                     ]);
                     $detail->delete();
-                    $this->logLearnerOperation($learnerId,null, 'deleteSeat', [
-                            'field_updated' => 'deleted_at',
-                            'old_value' => 'deleteSeat',
+                    $this->logLearnerOperation($learnerId, (int) $detail->id, 'deleteSeat', [
+                            'field_updated' => 'seat_no',
+                            'old_value' => $deletedSeatNo,
                             'new_value' => now()->toISOString(),
                         ]);
                 } else {
