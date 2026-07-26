@@ -1581,19 +1581,31 @@ class DashboardService
             [
                 'tital' => 'Welcome to Libraro',
                 'description' => '',
-                'image' => asset('public/img/slider/last_banner_1.jpeg'),
+                'image' => asset('public/img/slider/last_banner_1.webp'),
                 'link' => '',
             ],
             [
                 'tital' => 'Quick QR Seat Booking',
                 'description' => '',
-                'image' => asset('public/img/slider/last_banner_2.jpeg'),
+                'image' => asset('public/img/slider/last_banner_2.webp'),
                 'link' => '',
             ],
             [
                 'tital' => 'Quick QR Attendance',
                 'description' => '',
-                'image' => asset('public/img/slider/last_banner_3.jpeg'),
+                'image' => asset('public/img/slider/last_banner_3.webp'),
+                'link' => '',
+            ],
+             [
+                'tital' => 'Libraro top features',
+                'description' => '',
+                'image' => asset('public/img/slider/last_banner_4.webp'),
+                'link' => '',
+            ],
+            [
+                'tital' => 'Why fear Libraro is here',
+                'description' => '',
+                'image' => asset('public/img/slider/last_banner_5.webp'),
                 'link' => '',
             ],
         ];
