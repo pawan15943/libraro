@@ -1270,20 +1270,26 @@ class LibraryController extends Controller
     {
         $validated = $request->validate([
             'guideline_type' => 'nullable|string|max:255',
+            'language' => 'nullable|string|in:en,hi',
         ]);
 
+        $language = $validated['language'] ?? 'en';
+
         $query = DB::table('guidelines')
-            ->select('guideline_type', 'question', 'answer')
+            ->select('guideline_type', 'question', 'answer', 'hindi_question', 'hindi_answer')
             ->orderBy('id', 'asc');
 
         if (!empty($validated['guideline_type'])) {
             $query->where('guideline_type', $validated['guideline_type']);
         }
 
-        $data = $query->get()->map(function ($row) {
+        $data = $query->get()->map(function ($row) use ($language) {
+            $title = $language === 'hi' ? ($row->hindi_question ?: $row->question) : $row->question;
+            $description = $language === 'hi' ? ($row->hindi_answer ?: $row->answer) : $row->answer;
+
             return [
-                'title' => $row->question,
-                'description' => (string) $row->answer,
+                'title' => $title,
+                'description' => (string) $description,
             ];
         })->values();
 

@@ -520,19 +520,20 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 **Controller:** `LibraryController@guidelines`
 **Auth:** `api_key`, `throttle:60,1`
 
-Reads the plain `guidelines` table (`guideline_type`, `question`, `answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Returns a flat array of `{title, description}` objects (`question` → `title`, `answer` → `description`); `guideline_type` is not included in the response.
+Reads the plain `guidelines` table (`guideline_type`, `question`, `answer`, `hindi_question`, `hindi_answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Returns a flat array of `{title, description}` objects; `guideline_type` is not included in the response.
 
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | guideline_type | string | No | nullable, max:255; when given, filters rows to that type only |
+| language | string | No | nullable, one of `en`, `hi`; defaults to `en` |
 
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
 | message | string | |
-| data | array | `[{ title, description }, ...]` — `title` is the question, `description` is the answer; empty array `[]` if no rows match |
+| data | array | `[{ title, description }, ...]` — when `language=hi`, `title`/`description` come from `hindi_question`/`hindi_answer` (falling back to `question`/`answer` if the Hindi column is empty for that row); otherwise from `question`/`answer`. Empty array `[]` if no rows match |
 
 ---
 
