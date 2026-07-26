@@ -1606,6 +1606,19 @@ class LearnerController extends Controller
                 ->where('learner_detail.library_id', getLibraryId());
         }
 
+        // Show only one learner_detail row per learner (prefer active detail, else
+        // latest by id) — without this, a learner with multiple matching
+        // learner_detail rows (e.g. several past expired plans) fans out into
+        // duplicate rows in the join. Same rule as fetchLearnerData().
+        $query->whereRaw("
+            learner_detail.id = (
+                SELECT ld2.id
+                FROM learner_detail ld2
+                WHERE ld2.learner_id = learners.id
+                ORDER BY (ld2.status = 1) DESC, ld2.id DESC
+                LIMIT 1
+            )
+        ");
 
         $query->select(
             'plan_types.name as plan_type_name',

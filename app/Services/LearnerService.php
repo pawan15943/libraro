@@ -1248,13 +1248,11 @@ class LearnerService
     {
         $branchId = getCurrentBranch();
 
-       $latestDetail = LearnerDetail::withTrashed() 
-       ->whereIn('learner_id', function ($q) use ($branchId) {
-         $q->select('learner_id') 
-            ->from('learner_detail') 
-            ->where('branch_id', $branchId); 
-            }) 
-       ->selectRaw('COALESCE(MAX(CASE WHEN status = 1 THEN id END), MAX(id)) as id') 
+       // LearnerDetail::withTrashed() already applies the HasBranch global scope
+       // (learner_detail.branch_id = current branch), so no extra learner_id filter
+       // is needed here — it would just re-derive the same branch-restricted set.
+       $latestDetail = LearnerDetail::withTrashed()
+       ->selectRaw('COALESCE(MAX(CASE WHEN status = 1 THEN id END), MAX(id)) as id')
        ->groupBy('learner_id');
 
         $learners = Learner::withTrashed()
