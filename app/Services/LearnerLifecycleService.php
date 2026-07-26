@@ -572,7 +572,7 @@ class LearnerLifecycleService
     private function updatedByName($updatedBy): string
     {
         if (! $updatedBy) {
-            return '';
+            return 'Admin';
         }
 
         if (! is_numeric($updatedBy)) {
@@ -928,7 +928,7 @@ class LearnerLifecycleService
     private function activityAddedByDisplay($createdBy): string
     {
         if ($createdBy === null || trim((string) $createdBy) === '') {
-            return '';
+            return 'Admin';
         }
 
         if (is_numeric($createdBy)) {
