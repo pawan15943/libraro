@@ -108,6 +108,10 @@ class LearnerTransactionActivity extends Model
     {
         return $this->belongsTo(Learner::class, 'learner_id')->withTrashed();
     }
+     public function learnerTransaction()
+    {
+        return $this->belongsTo(LearnerTransaction::class, 'learner_transaction_id')->withTrashed();
+    }
      public function branch()
     {
         return $this->belongsTo(Branch::class, 'branch_id')->withTrashed();

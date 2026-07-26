@@ -55,7 +55,7 @@
                     <h6>Activity</h6>
                     @foreach($relatedActivities as $activity)
                         <div class="activity-mini-item">
-                            <span>{{ $typeLabel($activity['payment_type'] ?? '') }} &bull; {{ $modeLabel($activity['payment_mode'] ?? '') }}</span>
+                            <span>{{ $activity['trxn_message'] ?? $typeLabel($activity['payment_type'] ?? '') }}</span>
                             <strong class="{{ strtolower((string) ($activity['dr_cr'] ?? '')) === 'dr' ? 'text-danger' : 'text-success' }}">{{ $fmt($activity['paid_amount'] ?? 0) }}</strong>
                         </div>
                     @endforeach

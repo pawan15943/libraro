@@ -334,7 +334,7 @@
                     </span>
                     <div>
                         <h6>{{ strtoupper($activity['payment_type'] ?: ($activity['particular'] ?? 'Transaction')) }}</h6>
-                        <small>Received by : {{ $activity['added_by_name'] ?? $activity['added_by'] ?? '' }} &bull; {{ $activity['payment_mode'] ?? '' }}</small>
+                        <small>Received by : {{ $activity['added_by_name'] ?? $activity['added_by'] ?? '' }} &bull; {{ $activity['trxn_message'] ?? '' }}</small>
                     </div>
                     <div class="amount {{ $isDebit ? 'debit' : '' }}">
                         {{ $fmt($activity['paid_amount'] ?? 0) }}

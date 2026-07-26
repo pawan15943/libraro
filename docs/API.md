@@ -3096,8 +3096,8 @@ Activity shape (`formatActivity`):
 | transaction_date | string | |
 | paid_amount | string | |
 | payment_type | string | |
-| payment_mode | string | |
-| particular | string | |
+| trxn_message | string | human-readable message built from payment_type/dr_cr/payment_mode (+ particular for a few sub-cases) — replaces the old raw `payment_mode` field. Covers: seat booking/renew/upgrade/downgrade/change-plan (each with Collected/Refunded, full/Partial, and "with Pay Later" variants), pending-dues collection, reserved/VIP seat booking, closed/soft-deleted seat refunds, restore, locker added/removed, discount removed, and settlement adjustments. See `LearnerLifecycleService::trxnMessage()` for the full mapping. |
+| particular | string | for CHANGE PLAN/EDIT activities, may be 'Locker Added'\|'Locker Removed'\|'Discount Removed' when that edit's only meaningful change was the locker or discount (see `LearnerOperationService::calculateBilling()`); for REFUND activities, 'Close Seat'\|'Delete Seat'\|'Paid By Trans' |
 | dr_cr | string | |
 | added_by | string | |
 | added_by_name | string | |

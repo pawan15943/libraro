@@ -42,7 +42,7 @@ class LearnerLifecycleService
             ->get();
 
         $activities = LearnerTransactionActivity::withoutGlobalScopes()
-            ->with('creator')
+            ->with('creator', 'learnerTransaction')
             ->where('learner_id', $learnerId)
             ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
             ->orderByDesc('id')
@@ -899,6 +899,7 @@ class LearnerLifecycleService
             'paid_amount' => $this->money((float) ($activity->amount ?? 0)),
             'payment_type' => (string) ($activity->payment_type ?? ''),
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
+            'trxn_message' => $this->trxnMessage($activity),
             'particular' => (string) ($activity->particular ?? ''),
             'dr_cr' => (string) ($activity->dr_cr ?? ''),
             'added_by' => $addedBy,
@@ -1044,6 +1045,175 @@ class LearnerLifecycleService
             '3', 'PAYLATER', 'PAY LATER' => 3,
             default => 1,
         };
+    }
+
+    /**
+     * Builds a human-readable transaction message from an activity's payment_type/dr_cr/payment_mode,
+     * replacing the raw payment_mode label previously shown in the transaction module.
+     */
+    private function trxnMessage($activity): string
+    {
+        $type = strtoupper((string) ($activity->payment_type ?? ''));
+        $isRefund = strtoupper((string) ($activity->dr_cr ?? 'Cr')) === 'DR';
+        $particular = strtolower(trim((string) ($activity->particular ?? '')));
+        $modeGroup = $this->messageModeGroup($activity->payment_mode ?? null);
+
+        if ($modeGroup === 'PAYLATER') {
+            return match (true) {
+                in_array($type, ['SEAT ASSIGNMENT', 'SUBSCRIPTION', 'NON-EXPIRED'], true) => 'Seat Booked with Pay Later',
+                $type === 'RENEW' => 'Renew Seat with Pay Later',
+                $type === 'RESERVED' => 'Pending Seat Booked with Pay Later',
+                $type === 'VIP' => 'VIP Seat Booked with Pay Later',
+                $type === 'UPGRADE' => $isRefund ? 'Plan Downgraded with Pay Later' : 'Plan Upgraded with Pay Later',
+                in_array($type, ['CHANGE PLAN', 'CHANGEPLAN'], true) => 'Change Plan with Pay Later',
+                $type === 'REFUND' && $particular === 'close seat' => 'Seat Closed with Pay Later Refund',
+                $type === 'REFUND' && $particular === 'delete seat' => 'Soft-Deleted Seat with Pay Later Refund',
+                default => $this->titleCase($type).' with Pay Later',
+            };
+        }
+
+        $modeLabel = $modeGroup === 'OFFLINE' ? 'Offline' : 'Online';
+
+        // Locker/discount edits are tagged onto the CHANGE PLAN/EDIT activity's particular
+        // field by LearnerOperationService::calculateBilling() (see 'Locker Added'/'Locker
+        // Removed'/'Discount Removed') so they get their own wording instead of the generic
+        // Change Plan/Edit message — checked before the per-type branches below.
+        if ($particular === 'locker added') {
+            return "Collected Added Locker Amount ({$modeLabel})";
+        }
+
+        if ($particular === 'locker removed') {
+            return "Refunded Removed Locker Amount ({$modeLabel})";
+        }
+
+        if ($particular === 'discount removed') {
+            return "Refunded Removed Discount Amount ({$modeLabel})";
+        }
+
+        if (in_array($type, ['SEAT ASSIGNMENT', 'SUBSCRIPTION', 'NON-EXPIRED'], true)) {
+            $partial = $this->isPartialActivity($activity, false);
+
+            return $partial ? "Collected Partial Seat Booking Payment ({$modeLabel})" : "Collected Seat Booking Payment ({$modeLabel})";
+        }
+
+        if ($type === 'RENEW') {
+            $partial = $this->isPartialActivity($activity, false);
+
+            return $partial ? "Collected Partial Renew Seat Payment ({$modeLabel})" : "Collected Renew Seat Payment ({$modeLabel})";
+        }
+
+        // RESERVED = "reserved slot" booking sub-type (day_type_id 10, see StoreLearnerRequest::prepareData) —
+        // treated as a booking still awaiting full settlement, hence the "Pending Seat" wording.
+        if ($type === 'RESERVED') {
+            $partial = $this->isPartialActivity($activity, false);
+
+            return $partial ? "Collected Partial Pending Seat Payment ({$modeLabel})" : "Collected Pending Seat Payment ({$modeLabel})";
+        }
+
+        if ($type === 'VIP') {
+            $partial = $this->isPartialActivity($activity, false);
+
+            return $partial ? "Collected Partial VIP Seat Payment ({$modeLabel})" : "Collected VIP Seat Payment ({$modeLabel})";
+        }
+
+        // UPGRADE (learner.upgrade.renew.store) is billed like RENEW — always a collection today —
+        // but wired bidirectionally in case a downgrade path is ever routed through it.
+        if ($type === 'UPGRADE') {
+            $partial = $this->isPartialActivity($activity, $isRefund);
+
+            if ($isRefund) {
+                return $partial ? "Refunded Partial Plan Downgrade Payment ({$modeLabel})" : "Refunded Plan Downgrade Payment ({$modeLabel})";
+            }
+
+            return $partial ? "Collected Partial Plan Upgrade Payment ({$modeLabel})" : "Collected Plan Upgrade Payment ({$modeLabel})";
+        }
+
+        // CHANGE PLAN (learner.change.plan) is the one that actually swings Cr/Dr based on
+        // whether the new plan costs more (collect) or less (refund) — see LearnerOperationService::calculateBilling().
+        if (in_array($type, ['CHANGE PLAN', 'CHANGEPLAN'], true)) {
+            $partial = $this->isPartialActivity($activity, $isRefund);
+
+            if ($isRefund) {
+                return $partial ? "Refunded Partial Change Plan Payment ({$modeLabel})" : "Refunded Change Plan Payment ({$modeLabel})";
+            }
+
+            return $partial ? "Collected Partial Change Plan Payment ({$modeLabel})" : "Collected Change Plan Payment ({$modeLabel})";
+        }
+
+        if ($type === 'PENDING') {
+            return "Collected Pending Payment ({$modeLabel})";
+        }
+
+        if ($type === 'REFUND') {
+            $partial = $this->isPartialActivity($activity, true);
+
+            if ($particular === 'close seat') {
+                return $partial ? "Refunded Partial Closed Seat Payment ({$modeLabel})" : "Refunded Closed Seat Payment ({$modeLabel})";
+            }
+
+            if ($particular === 'delete seat') {
+                return $partial ? "Refunded Partial Soft-Deleted Seat Payment ({$modeLabel})" : "Refunded Soft-Deleted Seat Payment ({$modeLabel})";
+            }
+
+            return "Refunded Extra Payment ({$modeLabel})";
+        }
+
+        if ($type === 'RESTORE') {
+            return "Restored Deleted Payment ({$modeLabel})";
+        }
+
+        // SETTLED activities (write-off of a stale pending balance vs. a stale refund credit) are
+        // logged identically today — same particular ('SETTLEMENT'), same dr_cr ('Settle') — by
+        // LearnerService::adjustRemainingPending()/adjustRemainingRefund(), so there's no stored
+        // signal yet to tell the two apart. Needs a decision before this can be split into
+        // "Adjusted Pending Amount (Settlement)" vs "Adjusted Extra Paid Amount (Settlement)".
+        if ($type === 'SETTLED') {
+            return 'Adjusted Amount (Settlement)';
+        }
+
+        return ($isRefund ? 'Refunded ' : 'Collected ').$this->titleCase($type)." Payment ({$modeLabel})";
+    }
+
+    /**
+     * Whether the transaction tied to this activity still carries an outstanding balance
+     * (pending amount owed for a collection, or pending refund owed for a downgrade) —
+     * used to pick the "Partial" wording. Falls back to a direct lookup when the
+     * learnerTransaction relation wasn't eager-loaded.
+     */
+    private function isPartialActivity($activity, bool $isRefund): bool
+    {
+        $transaction = $activity->relationLoaded('learnerTransaction')
+            ? $activity->learnerTransaction
+            : LearnerTransaction::withoutGlobalScopes()->find($activity->learner_transaction_id);
+
+        if (! $transaction) {
+            return false;
+        }
+
+        return $isRefund
+            ? (float) ($transaction->refund ?? 0) > 0.009
+            : (float) ($transaction->pending_amount ?? 0) > 0.009;
+    }
+
+    /**
+     * Normalizes the many legacy payment_mode enum values (CASH, MANUAL, OTHER, UPI, etc.)
+     * down to the three buckets the transaction message wording distinguishes between.
+     */
+    private function messageModeGroup($value): string
+    {
+        $mode = strtoupper(trim((string) $value));
+
+        return match (true) {
+            $mode === '' => 'OFFLINE',
+            in_array($mode, ['3', 'PAYLATER', 'PAY LATER'], true) => 'PAYLATER',
+            in_array($mode, ['2', 'OFFLINE', 'CASH', 'MANUAL', 'OTHER'], true) => 'OFFLINE',
+            default => 'ONLINE',
+        };
+    }
+
+    private function titleCase(string $value): string
+    {
+        return ucwords(strtolower(str_replace('_', ' ', $value)));
     }
 
     private function money(float $amount): string

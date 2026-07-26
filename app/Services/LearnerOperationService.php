@@ -267,6 +267,30 @@ class LearnerOperationService
              $old_pending      = (float) ($learnerTransaction->pending_amount ?? 0);
              $old_pending_refund      = (float) ($learnerTransaction->refund ?? 0);
             $old_total = (float) ($learnerTransaction->total_amount ?? 0);
+
+            // Tag the activity's particular when this edit's only meaningful change is the
+            // locker or discount, so the transaction module can show "Locker Added/Removed" /
+            // "Discount Removed" wording instead of the generic Change Plan/Edit message.
+            // $lockerAmount/$discountAmount above already carry the old value forward when the
+            // request didn't touch those fields, so a real add/remove only shows up when the
+            // request actually sent locker/discount keys (see resolveLockerInput/resolveDiscountInput).
+            $lockerKeysPresent = ($dto->locker_present ?? false)
+                || ($dto->locker_no_present ?? false)
+                || ($dto->locker_amount_present ?? false);
+            $discountKeysPresent = ($dto->discount_type_present ?? false)
+                || ($dto->discount_amount_present ?? false);
+            $oldLockerAmount = (float) ($learnerTransaction->locker_amount ?? 0);
+            $oldDiscountAmount = (float) ($learnerTransaction->discount_amount ?? 0);
+
+            $editParticular = null;
+            if ($lockerKeysPresent && $oldLockerAmount <= 0.009 && $lockerAmount > 0.009) {
+                $editParticular = 'Locker Added';
+            } elseif ($lockerKeysPresent && $oldLockerAmount > 0.009 && $lockerAmount <= 0.009) {
+                $editParticular = 'Locker Removed';
+            } elseif ($discountKeysPresent && $oldDiscountAmount > 0.009 && $discountAmount <= 0.009) {
+                $editParticular = 'Discount Removed';
+            }
+
             $total_difference = $effective - $old_total;
             $diff_amount =  $dto->diffrence_amount === null ? $total_difference : (float) ($dto->diffrence_amount ?? 0);
             $paid_amount = ($dto->operation === 'EDIT' || $dto->operation=='CHANGE PLAN')  ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount)) : $old_price + $diff_amount;
@@ -414,7 +438,8 @@ class LearnerOperationService
             'activityamount'=>$activityamount,
             'has_adjustment'=>$has_adjustment ?? true,
             'pending_refund'=>$pending_refund,
-            'dr_cr'=>$dr_cr
+            'dr_cr'=>$dr_cr,
+            'particular'=>$editParticular ?? null,
         ];
     }
 
@@ -914,6 +939,7 @@ class LearnerOperationService
             'pending_refund'=>$billing['pending_refund'],
             'total_amount'=>$billing['total_amount'],
             'pending'=>$billing['pending'],
+            'particular'=>$billing['particular'] ?? null,
 
         ];
         if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
