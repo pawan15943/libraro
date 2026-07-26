@@ -166,16 +166,21 @@ class HelperService
 
             case 'freezePlan':
                 $details['operation_type'] = 'Plan Frozen';
-                $details['message'] = 'Plan Frozen on ' . Carbon::parse($operation->new_value)->format('d M Y');
+                $frozenOn = self::safeParseDate($operation->new_value);
+                $details['message'] = $frozenOn
+                    ? 'Plan Frozen on ' . $frozenOn->format('d M Y')
+                    : 'Plan Frozen.';
                 break;
 
             case 'unfreezePlan':
                 $details['operation_type'] = 'Plan Unfrozen';
                 // old_value is the freeze start date; frozen days are derived from the gap
                 // to this log row's own timestamp, since freeze_start_date is cleared by the time this renders.
-                $frozenSince = Carbon::parse($operation->old_value);
-                $frozenDays = $frozenSince->diffInDays(Carbon::parse($operation->created_at ?? $operation->updated_at));
-                $details['message'] = 'Plan Unfrozen on ' . $updatedAt . " ({$frozenDays} frozen day(s) added)";
+                $frozenSince = self::safeParseDate($operation->old_value);
+                $unfrozenAt = self::safeParseDate($operation->created_at ?? $operation->updated_at);
+                $frozenDays = ($frozenSince && $unfrozenAt) ? $frozenSince->diffInDays($unfrozenAt) : null;
+                $details['message'] = 'Plan Unfrozen on ' . $updatedAt
+                    . ($frozenDays !== null ? " ({$frozenDays} frozen day(s) added)" : '');
                 break;
 
             case 'giftDays':
@@ -269,6 +274,27 @@ class HelperService
             $details['message'] = implode(', ', $shown) . ', ' . (count($changedFields) - 2) . '+ fields are updated.';
         } else {
             $details['message'] = implode(', ', $changedFields) . ' updated.';
+        }
+    }
+
+    /**
+     * Tolerates legacy activity-log rows whose date value got JSON-encoded with
+     * literal wrapping quotes (a past bug in LearnerOperationLogService::stringValue()
+     * for Carbon values) — strips them before parsing, and returns null instead of
+     * throwing when the value still isn't a valid date.
+     */
+    private static function safeParseDate(?string $value): ?Carbon
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $value = trim($value, " \t\n\r\0\x0B\"");
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Exception $e) {
+            return null;
         }
     }
 

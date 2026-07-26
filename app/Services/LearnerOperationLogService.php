@@ -69,6 +69,14 @@ class LearnerOperationLogService
             return null;
         }
 
+        // Dates (e.g. $detail->freeze_start_date, a live Carbon instance right after
+        // `= now()`) are objects too — catch them before the generic object branch,
+        // otherwise json_encode() wraps them in literal quotes ("2026-...Z") that
+        // Carbon::parse() can't read back on the render side.
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s.u');
+        }
+
         if (is_array($value) || is_object($value)) {
             return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
