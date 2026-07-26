@@ -222,7 +222,8 @@ class HelperService
 
         // plan_start_date/plan_end_date move together (changing the start date always
         // shifts the end date too - see edit-plan.blade.php's warning about this), so
-        // they're reported as one "Plan Dates" change instead of two separate fields.
+        // they're excluded from the generic changed-fields list and reported below
+        // with their actual old/new date values instead.
         $planDateFields = ['plan_start_date', 'plan_end_date'];
 
         $old = json_decode((string) $operation->old_value, true) ?: [];
@@ -247,9 +248,6 @@ class HelperService
                 $changedDetailFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
             }
         }
-        if ($planDatesChanged) {
-            $changedDetailFields[] = 'Plan Dates';
-        }
 
         // Locker/discount amounts live on the billing/transaction side, not on the
         // learner or plan-detail rows, so they're diffed separately here and folded
@@ -273,21 +271,43 @@ class HelperService
             }
         }
 
-        $isPlanDetailsOnly = !empty($changedDetailFields) && empty($changedProfileFields);
+        $isPlanDetailsOnly = (!empty($changedDetailFields) || $planDatesChanged) && empty($changedProfileFields);
         $details['operation_type'] = $isPlanDetailsOnly ? 'Plan Details Updated' : 'Learner Profile Updated';
 
         $changedFields = array_values(array_unique($isPlanDetailsOnly
             ? $changedDetailFields
             : array_merge($changedProfileFields, $changedDetailFields)));
 
-        if (empty($changedFields)) {
-            $details['message'] = 'Details updated successfully.';
-        } elseif (count($changedFields) > 3) {
-            $shown = array_slice($changedFields, 0, 2);
-            $details['message'] = implode(', ', $shown) . ', ' . (count($changedFields) - 2) . '+ fields are updated.';
-        } else {
-            $details['message'] = implode(', ', $changedFields) . ' updated.';
+        $messageParts = [];
+
+        if (!empty($changedFields)) {
+            if (count($changedFields) > 3) {
+                $shown = array_slice($changedFields, 0, 2);
+                $messageParts[] = implode(', ', $shown) . ', ' . (count($changedFields) - 2) . '+ fields are updated.';
+            } else {
+                $messageParts[] = implode(', ', $changedFields) . ' updated.';
+            }
         }
+
+        // Show the actual old/new start & end dates instead of a bare "Plan Dates
+        // updated." label - the dates themselves are what a viewer of the activity
+        // log actually wants to see.
+        if ($planDatesChanged) {
+            $oldStart = self::safeParseDate($old['detail']['plan_start_date'] ?? null);
+            $newStart = self::safeParseDate($new['detail']['plan_start_date'] ?? null);
+            $oldEnd = self::safeParseDate($old['detail']['plan_end_date'] ?? null);
+            $newEnd = self::safeParseDate($new['detail']['plan_end_date'] ?? null);
+
+            $messageParts[] = sprintf(
+                'Plan start date changed from %s to %s (end date: %s to %s).',
+                $oldStart ? $oldStart->format('d M Y') : '-',
+                $newStart ? $newStart->format('d M Y') : '-',
+                $oldEnd ? $oldEnd->format('d M Y') : '-',
+                $newEnd ? $newEnd->format('d M Y') : '-'
+            );
+        }
+
+        $details['message'] = !empty($messageParts) ? implode(' ', $messageParts) : 'Details updated successfully.';
     }
 
     /**
