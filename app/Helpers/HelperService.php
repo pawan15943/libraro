@@ -207,9 +207,13 @@ class HelperService
         $learnerName = $operation->learner_name ?? optional($operation->learner ?? null)->name ?? 'Learner';
         $seatNo = $operation->learner_seat_no ?? optional($operation->learner ?? null)->seat_no ?? null;
 
+        // Uses <b>, not <strong> - bold like the rest of the message, but
+        // messageHighlights() only extracts <strong> spans, so this seat/learner
+        // prefix is excluded from message_highlights (unlike the real changed
+        // values/dates in the message body, which should still surface there).
         $seatLine = $seatNo
-            ? "<strong>Seat No. {$seatNo} : {$learnerName}</strong><br>"
-            : "<strong>{$learnerName}</strong><br>";
+            ? "<b>Seat No. {$seatNo} : {$learnerName}</b><br>"
+            : "<b>{$learnerName}</b><br>";
 
         $details['message'] = $seatLine . $details['message'];
 
