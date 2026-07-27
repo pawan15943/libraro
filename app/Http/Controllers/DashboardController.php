@@ -1678,6 +1678,7 @@ class DashboardController extends Controller
                 'operation_type' => $details['operation_type'] ?: $meta['label'],
                 'color_code' => $meta['color_code'],
                 'message' => $details['message'],
+                'message_highlights' => HelperService::messageHighlights($details['message']),
                 'learner_name' => optional($log->learner)->name ?? 'Learner',
                 'seat' => HelperService::formatSeatDisplay(optional($log->learner)->seat_no, $seatMap) ?: 'General',
                 'updated_by_name' => $log->updated_by_name,

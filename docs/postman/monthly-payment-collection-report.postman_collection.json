@@ -1,0 +1,180 @@
+{
+  "info": {
+    "_postman_id": "5f3a7b1e-2c4d-4e9a-9b3a-1c8b6e7d4a02",
+    "name": "Library Monthly Revenue Report (App)",
+    "description": "Auth + the app-facing Monthly Revenue / Payment Collection Report API (POST /api/v1/library/reports/monthly-payment-collection), mirroring the web Monthly Revenue Report grouped by date for the mobile app screen.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Library Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('Saved token to collection variable: token');",
+                  "} else if (res && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    console.log('Saved token to collection variable: token');",
+                  "} else {",
+                  "    console.warn('No token found in login response');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "app-version", "value": "1.0.0" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{library_email}}", "type": "text" },
+                { "key": "password", "value": "{{library_password}}", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/library/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "library", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Monthly Revenue Report - Current Month (default)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-api-key", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "app-version", "value": "1.0.0" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/library/reports/monthly-payment-collection",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "library", "reports", "monthly-payment-collection"]
+            },
+            "description": "No filters sent -> defaults to the current calendar month, page 1, per_page 20."
+          }
+        },
+        {
+          "name": "Monthly Revenue Report - Custom Date Range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-api-key", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "app-version", "value": "1.0.0" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "start_date", "value": "2026-07-01", "type": "text" },
+                { "key": "end_date", "value": "2026-07-27", "type": "text" },
+                { "key": "page", "value": "1", "type": "text" },
+                { "key": "per_page", "value": "20", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/library/reports/monthly-payment-collection",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "library", "reports", "monthly-payment-collection"]
+            }
+          }
+        },
+        {
+          "name": "Monthly Revenue Report - Month & Year",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-api-key", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "app-version", "value": "1.0.0" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "month", "value": "6", "type": "text" },
+                { "key": "year", "value": "2026", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/library/reports/monthly-payment-collection",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "library", "reports", "monthly-payment-collection"]
+            }
+          }
+        },
+        {
+          "name": "Monthly Revenue Report - Paginated (page 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-api-key", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "app-version", "value": "1.0.0" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "month", "value": "7", "type": "text" },
+                { "key": "year", "value": "2026", "type": "text" },
+                { "key": "page", "value": "2", "type": "text" },
+                { "key": "per_page", "value": "5", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/library/reports/monthly-payment-collection",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "library", "reports", "monthly-payment-collection"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1/library" },
+    { "key": "api_key", "value": "" },
+    { "key": "device_type", "value": "android" },
+    { "key": "device_id", "value": "test-device-001" },
+    { "key": "library_email", "value": "" },
+    { "key": "library_password", "value": "" },
+    { "key": "token", "value": "" }
+  ]
+}

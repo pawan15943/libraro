@@ -114,7 +114,7 @@ class HelperService
                 $oldPlanType = $planTypeNames[$oldTypeId] ?? ($oldTypeId ? PlanType::where('id', $oldTypeId)->value('name') : null);
                 $newPlanType = $planTypeNames[$newTypeId] ?? ($newTypeId ? PlanType::where('id', $newTypeId)->value('name') : null);
 
-                $details['message'] = "{$oldPlanType} → {$newPlanType}";
+                $details['message'] = "Plan upgraded from <strong>{$oldPlanType}</strong> to <strong>{$newPlanType}</strong>";
                 break;
 
             case 'reactive':
@@ -128,7 +128,7 @@ class HelperService
                 $oldSeat = self::formatSeatDisplay($operation->old_value, $seatMap);
                 $newSeat = self::formatSeatDisplay($operation->new_value, $seatMap);
 
-                $details['message'] = "Seat {$oldSeat} → {$newSeat}";
+                $details['message'] = "Seat <strong>{$oldSeat}</strong> to <strong>{$newSeat}</strong>";
                 break;
 
             case 'closeSeat':
@@ -168,7 +168,7 @@ class HelperService
                 $details['operation_type'] = 'Plan Frozen';
                 $frozenOn = self::safeParseDate($operation->new_value);
                 $details['message'] = $frozenOn
-                    ? 'Plan Frozen on ' . $frozenOn->format('d M Y')
+                    ? 'Plan Frozen on <strong>' . $frozenOn->format('d M Y') . '</strong>'
                     : 'Plan Frozen.';
                 break;
 
@@ -179,18 +179,18 @@ class HelperService
                 $frozenSince = self::safeParseDate($operation->old_value);
                 $unfrozenAt = self::safeParseDate($operation->created_at ?? $operation->updated_at);
                 $frozenDays = ($frozenSince && $unfrozenAt) ? $frozenSince->diffInDays($unfrozenAt) : null;
-                $details['message'] = 'Plan Unfrozen on ' . $updatedAt
-                    . ($frozenDays !== null ? " ({$frozenDays} frozen day(s) added)" : '');
+                $details['message'] = 'Plan Unfrozen on <strong>' . $updatedAt . '</strong>'
+                    . ($frozenDays !== null ? " (<strong>{$frozenDays}</strong> frozen day(s) added)" : '');
                 break;
 
             case 'giftDays':
                 $details['operation_type'] = 'Added Gift Days';
                 $added = (int) $operation->new_value - (int) $operation->old_value;
-                $details['message'] = 'Added ' . $added . ' gift days';
+                $details['message'] = 'Added <strong>' . $added . ' gift days</strong>';
                 break;
 
             case 'edit':
-                self::fillEditOperationDetails($details, $operation);
+                self::fillEditOperationDetails($details, $operation, $planNames, $planTypeNames, $seatMap);
                 break;
 
             default:
@@ -208,16 +208,21 @@ class HelperService
      * tell "profile" edits (learner fields) apart from "plan detail" edits
      * (locker/plan/date fields) and build a short "which fields changed" summary.
      */
-    private static function fillEditOperationDetails(array &$details, $operation): void
-    {
+    private static function fillEditOperationDetails(
+        array &$details,
+        $operation,
+        array $planNames = [],
+        array $planTypeNames = [],
+        array $seatMap = []
+    ): void {
         $fieldLabels = [
-            'name' => 'Name', 'email' => 'Email', 'mobile' => 'Mobile No',
+            'name' => 'Name', 'email' => 'Email', 'mobile' => 'Mobile Number',
             'dob' => 'DOB', 'father_name' => 'Father Name', 'address' => 'Address',
             'remark' => 'Remark', 'alternate_mobile' => 'Alternate Mobile',
             'id_proof_name' => 'ID Proof', 'id_proof_number' => 'ID Proof Number',
             'exam_id' => 'Exam', 'no_expiry' => 'Non-Expiry', 'locker_no' => 'Locker',
             'seat_no' => 'Seat No', 'plan_id' => 'Plan', 'plan_type_id' => 'Plan Type',
-            'plan_price_id' => 'Plan Price',
+            'plan_price_id' => 'Plan Price', 'profile_picture' => 'Profile Photo',
         ];
 
         // plan_start_date/plan_end_date move together (changing the start date always
@@ -229,14 +234,39 @@ class HelperService
         $old = json_decode((string) $operation->old_value, true) ?: [];
         $new = json_decode((string) $operation->new_value, true) ?: [];
 
-        $changedProfileFields = [];
+        $hasProfileChange = false;
+        $profileChangeLines = [];
+
         foreach (($new['learner'] ?? []) as $field => $value) {
-            if (($old['learner'][$field] ?? null) != $value) {
-                $changedProfileFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            $oldValue = $old['learner'][$field] ?? null;
+
+            if ($oldValue == $value) {
+                continue;
+            }
+
+            $hasProfileChange = true;
+
+            // Profile photo has no meaningful value to display - just report the action.
+            if ($field === 'profile_picture') {
+                $profileChangeLines[] = empty($value) ? 'Profile Photo Removed.' : 'Profile Photo Uploaded.';
+                continue;
+            }
+
+            if ($field === 'seat_no') {
+                $oldSeat = self::formatSeatDisplay($oldValue, $seatMap);
+                $newSeat = self::formatSeatDisplay($value, $seatMap);
+                $profileChangeLines[] = "Seat <strong>{$oldSeat}</strong> to <strong>{$newSeat}</strong> updated.";
+                continue;
+            }
+
+            $label = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            $line = self::formatValueChange($label, $oldValue, $value);
+            if ($line) {
+                $profileChangeLines[] = $line;
             }
         }
 
-        $changedDetailFields = [];
+        $detailChangeLines = [];
         $planDatesChanged = false;
         foreach (($new['detail'] ?? []) as $field => $value) {
             $oldFieldValue = $old['detail'][$field] ?? null;
@@ -257,8 +287,35 @@ class HelperService
                 continue;
             }
 
-            if ($oldFieldValue != $value) {
-                $changedDetailFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            if ($oldFieldValue == $value) {
+                continue;
+            }
+
+            if ($field === 'plan_id') {
+                $oldPlan = $planNames[$oldFieldValue] ?? ($oldFieldValue ? Plan::where('id', $oldFieldValue)->value('name') : null) ?? $oldFieldValue;
+                $newPlan = $planNames[$value] ?? ($value ? Plan::where('id', $value)->value('name') : null) ?? $value;
+                $detailChangeLines[] = "Plan <strong>{$oldPlan}</strong> to <strong>{$newPlan}</strong> updated.";
+                continue;
+            }
+
+            if ($field === 'plan_type_id') {
+                $oldType = $planTypeNames[$oldFieldValue] ?? ($oldFieldValue ? PlanType::where('id', $oldFieldValue)->value('name') : null) ?? $oldFieldValue;
+                $newType = $planTypeNames[$value] ?? ($value ? PlanType::where('id', $value)->value('name') : null) ?? $value;
+                $detailChangeLines[] = "Plan Type <strong>{$oldType}</strong> to <strong>{$newType}</strong> updated.";
+                continue;
+            }
+
+            if ($field === 'seat_no') {
+                $oldSeat = self::formatSeatDisplay($oldFieldValue, $seatMap);
+                $newSeat = self::formatSeatDisplay($value, $seatMap);
+                $detailChangeLines[] = "Seat <strong>{$oldSeat}</strong> to <strong>{$newSeat}</strong> updated.";
+                continue;
+            }
+
+            $label = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            $line = self::formatValueChange($label, $oldFieldValue, $value);
+            if ($line) {
+                $detailChangeLines[] = $line;
             }
         }
 
@@ -276,31 +333,20 @@ class HelperService
             }
 
             if ($oldAmount <= 0.009 && $newAmount > 0.009) {
-                $changedDetailFields[] = "{$label} Added";
+                $detailChangeLines[] = "{$label} <strong>{$newAmount}</strong> added.";
             } elseif ($oldAmount > 0.009 && $newAmount <= 0.009) {
-                $changedDetailFields[] = "{$label} Removed";
+                $detailChangeLines[] = "{$label} <strong>{$oldAmount}</strong> removed.";
             } else {
-                $changedDetailFields[] = "{$label} Changed";
+                $detailChangeLines[] = "{$label} <strong>{$newAmount}</strong> updated.";
             }
         }
 
-        $isPlanDetailsOnly = (!empty($changedDetailFields) || $planDatesChanged) && empty($changedProfileFields);
+        $isPlanDetailsOnly = (!empty($detailChangeLines) || $planDatesChanged) && !$hasProfileChange;
         $details['operation_type'] = $isPlanDetailsOnly ? 'Plan Details Updated' : 'Learner Profile Updated';
 
-        $changedFields = array_values(array_unique($isPlanDetailsOnly
-            ? $changedDetailFields
-            : array_merge($changedProfileFields, $changedDetailFields)));
-
-        $messageParts = [];
-
-        if (!empty($changedFields)) {
-            if (count($changedFields) > 3) {
-                $shown = array_slice($changedFields, 0, 2);
-                $messageParts[] = implode(', ', $shown) . ', ' . (count($changedFields) - 2) . '+ fields are updated.';
-            } else {
-                $messageParts[] = implode(', ', $changedFields) . ' updated.';
-            }
-        }
+        $messageParts = $isPlanDetailsOnly
+            ? $detailChangeLines
+            : array_merge($profileChangeLines, $detailChangeLines);
 
         // Show the actual old/new start & end dates instead of a bare "Plan Dates
         // updated." label - the dates themselves are what a viewer of the activity
@@ -312,7 +358,7 @@ class HelperService
             $newEnd = self::safeParseDate($new['detail']['plan_end_date'] ?? null);
 
             $messageParts[] = sprintf(
-                'Plan start date changed from %s to %s (end date: %s to %s).',
+                'Plan start date changed from <strong>%s</strong> to <strong>%s</strong> (end date: <strong>%s</strong> to <strong>%s</strong>).',
                 $oldStart ? $oldStart->format('d M Y') : '-',
                 $newStart ? $newStart->format('d M Y') : '-',
                 $oldEnd ? $oldEnd->format('d M Y') : '-',
@@ -321,6 +367,32 @@ class HelperService
         }
 
         $details['message'] = !empty($messageParts) ? implode(' ', $messageParts) : 'Details updated successfully.';
+    }
+
+    /**
+     * Builds a single "{Label}: <strong>{value}</strong> added/updated/removed." line
+     * for a before/after field diff - shared by the profile and plan-detail buckets in
+     * fillEditOperationDetails() so both real values (not just field names) show up in
+     * the activity message, e.g. "Mobile Number: <strong>9024517905</strong> updated."
+     */
+    private static function formatValueChange(string $label, $oldValue, $newValue): ?string
+    {
+        $oldEmpty = $oldValue === null || $oldValue === '';
+        $newEmpty = $newValue === null || $newValue === '';
+
+        if ($oldEmpty && $newEmpty) {
+            return null;
+        }
+
+        if ($oldEmpty) {
+            return "{$label}: <strong>{$newValue}</strong> added.";
+        }
+
+        if ($newEmpty) {
+            return "{$label}: <strong>{$oldValue}</strong> removed.";
+        }
+
+        return "{$label}: <strong>{$newValue}</strong> updated.";
     }
 
     /**
@@ -409,6 +481,21 @@ class HelperService
         }
 
         return $date->format('d M Y');
+    }
+
+    /**
+     * Pulls the <strong>...</strong> values out of an activity message_html (e.g.
+     * seat numbers, changed field values, plan names) into a plain array, so the
+     * mobile app / frontend can bold them without having to parse HTML themselves.
+     */
+    public static function messageHighlights(string $messageHtml): array
+    {
+        preg_match_all('/<strong>(.*?)<\/strong>/is', $messageHtml, $matches);
+
+        return array_values(array_map(
+            fn ($value) => html_entity_decode(trim(strip_tags($value))),
+            $matches[1] ?? []
+        ));
     }
 }
 

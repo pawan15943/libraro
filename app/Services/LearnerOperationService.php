@@ -45,7 +45,7 @@ class LearnerOperationService
                 'learner' => $customer->only([
                     'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
                     'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
-                    'no_expiry', 'locker_no', 'seat_no',
+                    'no_expiry', 'locker_no', 'seat_no', 'profile_picture',
                 ]),
                 'detail' => $lastDetail->only([
                     'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',
@@ -798,7 +798,7 @@ class LearnerOperationService
         $beforeLearner = $learner->only([
             'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
             'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
-            'no_expiry', 'locker_no', 'seat_no',
+            'no_expiry', 'locker_no', 'seat_no', 'profile_picture',
         ]);
 
         if($learner->trashed()){
@@ -931,7 +931,7 @@ class LearnerOperationService
             $afterLearner = $learner->fresh()->only([
                 'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
                 'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
-                'no_expiry', 'locker_no', 'seat_no',
+                'no_expiry', 'locker_no', 'seat_no', 'profile_picture',
             ]);
 
             if ($afterLearner != $beforeLearner) {
@@ -1287,7 +1287,7 @@ class LearnerOperationService
                 'learner' => Learner::withTrashed()->findOrFail($dto->learner_id)->only([
                     'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
                     'alternate_mobile', 'id_proof_name', 'id_proof_number', 'exam_id',
-                    'no_expiry', 'locker_no', 'seat_no',
+                    'no_expiry', 'locker_no', 'seat_no', 'profile_picture',
                 ]),
                 'detail' => $detail->only([
                     'plan_id', 'plan_type_id', 'plan_price_id', 'plan_start_date',

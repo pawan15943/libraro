@@ -2683,7 +2683,8 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | data[].items[].color_code | string | |
 | data[].items[].title | string | |
 | data[].items[].message | string | plain text |
-| data[].items[].message_html | string | |
+| data[].items[].message_html | string | field values wrapped in `<strong>` tags, e.g. "Seat <strong>1</strong> to <strong>5</strong>", "Mobile Number: <strong>9024517905</strong> updated." |
+| data[].items[].message_highlights[] | string | the values inside `<strong>` tags in message_html, extracted into a plain array (e.g. `["1", "5"]`) so the client can bold them without parsing HTML |
 | data[].items[].field_updated | string | |
 | data[].items[].old_value | string | |
 | data[].items[].new_value | string | |
