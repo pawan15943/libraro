@@ -197,11 +197,17 @@ use Carbon\Carbon;
                 </li>
                 <li><span>Trxn. Id</span><a href="#" class="d-block">{{ $data->transaction_id ?? 'N/A' }}</a></li>
 
+                @if($data->payment_type === 'EXPENSE')
+                <li><span>Expense</span>
+                    <p class="truncate">Library Expense</p>
+                </li>
+                @else
                 <li><span>Seat Info</span>
                     <p class="truncate">{{ $data->learner->seat_no ?? 'GENERAL' }} :
                         {{ $data->learner->name ?? '' }}
                     </p>
                 </li>
+                @endif
                 <li><span>Trxn. Type</span>
                     <p>{{ $data->payment_type ?? '' }}</p>
                 </li>
