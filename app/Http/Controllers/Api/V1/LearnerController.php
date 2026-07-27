@@ -1126,7 +1126,6 @@ class LearnerController extends Controller
             'color_code' => $meta['color_code'],
             'title' => $operationType,
             'message' => trim(strip_tags(str_replace('<br>', ' ', $details['message']))),
-            'message_html' => $details['message'],
             'message_highlights' => HelperService::messageHighlights($details['message']),
             'field_updated' => (string) ($log->field_updated ?? ''),
             'old_value' => (string) ($log->old_value ?? ''),
