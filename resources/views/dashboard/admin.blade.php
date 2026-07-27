@@ -588,9 +588,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @foreach($recent_activitys as $value)
                     @php
                     $operationDetails = HelperService::getOperationDetails($value);
+                    $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
+                    $activityLearnerName = $value->learner?->name ?? 'Learner';
                     @endphp
 
                     <li class="">
+                        <strong>{{ $activityLearnerName }} (Seat {{ $activitySeat }}):</strong>
                         {!! $operationDetails['message'] !!}
                     </li>
                     @endforeach

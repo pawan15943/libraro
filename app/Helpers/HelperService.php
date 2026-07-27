@@ -239,12 +239,25 @@ class HelperService
         $changedDetailFields = [];
         $planDatesChanged = false;
         foreach (($new['detail'] ?? []) as $field => $value) {
-            if (($old['detail'][$field] ?? null) != $value) {
-                if (in_array($field, $planDateFields, true)) {
-                    $planDatesChanged = true;
+            $oldFieldValue = $old['detail'][$field] ?? null;
 
-                    continue;
+            if (in_array($field, $planDateFields, true)) {
+                // The "before" snapshot is a raw DB string while the "after" snapshot
+                // is a Carbon instance that got JSON-serialized in a different format
+                // (see LearnerOperationService::updateDetail(), which always reassigns
+                // plan_start_date/plan_end_date on every EDIT, even when unchanged) -
+                // a raw string comparison here would flag a date change on every edit,
+                // e.g. a locker-only update. Parse both sides before comparing.
+                $oldDate = self::safeParseDate($oldFieldValue !== null ? (string) $oldFieldValue : null);
+                $newDate = self::safeParseDate($value !== null ? (string) $value : null);
+                if ($oldDate?->format('Y-m-d H:i:s') !== $newDate?->format('Y-m-d H:i:s')) {
+                    $planDatesChanged = true;
                 }
+
+                continue;
+            }
+
+            if ($oldFieldValue != $value) {
                 $changedDetailFields[] = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
             }
         }
