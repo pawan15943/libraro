@@ -2842,13 +2842,6 @@ class LearnerController extends Controller
             $updatedByMap += DB::table('libraries')->whereIn('id', $missingIds)->pluck('library_name', 'id')->all();
         }
 
-        $planIds = $logs->where('operation', 'renewSeat')
-            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
-            ->filter()->unique()->values();
-        $planNames = $planIds->isNotEmpty()
-            ? Plan::whereIn('id', $planIds)->pluck('name', 'id')->all()
-            : [];
-
         $planTypeIds = $logs->whereIn('operation', ['learnerUpgrade', 'changePlan'])
             ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
             ->filter()->unique()->values();
@@ -2858,9 +2851,19 @@ class LearnerController extends Controller
 
         $seatMap = generateSeatNumbers();
 
-        return $logs->map(function ($log) use ($updatedByMap, $planNames, $planTypeNames, $seatMap) {
+        // buildLearnerActivityLog() reads learner_operations_log via the raw query
+        // builder (plain stdClass rows, no ->learner relation), unlike the other
+        // getOperationDetails() callers - so the learner is fetched once here and
+        // attached to every row instead.
+        $learner = Learner::withTrashed()->find($customerId);
+        $learnerName = optional($learner)->name ?? 'Learner';
+        $learnerSeatNo = optional($learner)->seat_no;
+
+        return $logs->map(function ($log) use ($updatedByMap, $planTypeNames, $seatMap, $learnerName, $learnerSeatNo) {
             $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
-            $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
+            $log->learner_name = $learnerName;
+            $log->learner_seat_no = $learnerSeatNo;
+            $details = HelperService::getOperationDetails($log, $planTypeNames, $seatMap);
             $createdAt = Carbon::parse($log->created_at);
 
             return [

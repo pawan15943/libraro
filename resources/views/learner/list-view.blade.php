@@ -75,6 +75,10 @@
                             $learner_detail=App\Models\LearnerDetail::withTrashed()->where('id',$data->learner_detail_id)->with(['plan','planType'])->first();
                            
                             $operation = DB::table('learner_operations_log')->where('learner_id',$data->learner_id)->where('learner_detail_id',$data->learner_detail_id)->where('operation',$data->operation)->whereDate('created_at',$data->operation_date)->first();
+                            if ($operation) {
+                                $operation->learner_name = $learner->name ?? 'Learner';
+                                $operation->learner_seat_no = $learner->seat_no ?? null;
+                            }
                             $operationDetails = HelperService::getOperationDetails($operation);
                             
                            

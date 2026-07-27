@@ -1042,13 +1042,6 @@ class LearnerController extends Controller
             $updatedByMap += DB::table('libraries')->whereIn('id', $missingIds)->pluck('library_name', 'id')->all();
         }
 
-        $planIds = $logItems->whereIn('operation', ['renewSeat'])
-            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
-            ->filter()->unique()->values();
-        $planNames = $planIds->isNotEmpty()
-            ? Plan::whereIn('id', $planIds)->pluck('name', 'id')->all()
-            : [];
-
         $planTypeIds = $logItems->whereIn('operation', ['learnerUpgrade', 'changePlan'])
             ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
             ->filter()->unique()->values();
@@ -1059,7 +1052,7 @@ class LearnerController extends Controller
         $seatMap = generateSeatNumbers();
 
         $activities = $logItems
-            ->map(fn ($log) => $this->formatLearnerActivity($log, $updatedByMap, $planNames, $planTypeNames, $seatMap))
+            ->map(fn ($log) => $this->formatLearnerActivity($log, $updatedByMap, $planTypeNames, $seatMap))
             ->groupBy('group_date_key')
             ->map(function ($items) {
                 $first = $items->first();
@@ -1111,10 +1104,12 @@ class LearnerController extends Controller
         ]);
     }
 
-    private function formatLearnerActivity($log, array $updatedByMap = [], array $planNames = [], array $planTypeNames = [], array $seatMap = []): array
+    private function formatLearnerActivity($log, array $updatedByMap = [], array $planTypeNames = [], array $seatMap = []): array
     {
         $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
-        $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
+        $log->learner_name = optional($log->learner)->name ?? 'Learner';
+        $log->learner_seat_no = optional($log->learner)->seat_no;
+        $details = HelperService::getOperationDetails($log, $planTypeNames, $seatMap);
         $meta = HelperService::activityMeta($log->operation);
         $createdAt = Carbon::parse($log->created_at);
         $operationType = $details['operation_type'] ?: $meta['label'];
