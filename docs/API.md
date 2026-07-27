@@ -2021,6 +2021,52 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | status | boolean | |
 | data | object | opaque — built by `DashboardService::dashboardFinancialData()`, not constructed in this controller |
 
+### `POST /api/v1/library/reports/monthly-payment-collection`
+**Controller:** `ReportController@monthlyPaymentCollection` (new `App\Http\Controllers\Api\V1\ReportController`)
+**Auth:** `auth:library_api`, `api_key`, `throttle:library_api`
+**Permission:** `Monthly Revenue Report` (via `denyWithoutAppPermission`, mirrors the web `@can('has-permission','Monthly Revenue Report')` check) — 403 with `status:false` if missing.
+
+App equivalent of the web Monthly Revenue Report (`GET /library/monthly/payment/collection`, `ReportController@monthlyPaymentCollection` web controller / `resources/views/report/monthly_payment_collection.blade.php`). Same filtering and totals logic (queries `learner_transaction_activity` left-joined to `learners`, scoped to `getCurrentBranch()`), reshaped into a JSON list grouped by date for the mobile "Monthly Revenue Report" screen, with array-based pagination over the date groups (this endpoint has no CSV export — that stays web-only via `ReportController@exportMonthlyPayment`).
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| start_date | date | No | nullable; used with `end_date` for a custom range |
+| end_date | date | No | nullable; after_or_equal:start_date |
+| month | integer | No | nullable; between 1–12; used with `year` when no date range given |
+| year | integer | No | nullable; digits:4 |
+| page | integer | No | nullable; min:1; default 1 (paginates `data.report`, i.e. date groups, not individual transactions) |
+| per_page | integer | No | nullable; min:1, max:100; default 20 |
+
+If neither `start_date`/`end_date` nor `month`/`year` is given, defaults to the current calendar month.
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | "Monthly revenue report fetched successfully", or a validation-error message (422) |
+| data.filters.start_date | string | resolved `Y-m-d` start of the effective range |
+| data.filters.end_date | string | resolved `Y-m-d` end of the effective range |
+| data.summary.total_collection | string | sum of `dr_cr='Cr'` rows in range |
+| data.summary.total_expense | string | sum of `dr_cr='Dr'` rows where `payment_type='EXPENSE'` |
+| data.summary.total_refund | string | sum of `dr_cr='Dr'` rows where `payment_type='REFUND'` |
+| data.summary.net_profit_loss | string | `total_collection - total_expense - total_refund` (same formula as the web "Grand Total") |
+| data.report[].date | string | `Y-m-d` |
+| data.report[].date_display | string | `d/m/Y`, matches the web table's date format |
+| data.report[].day_balance | string | that date's Cr sum minus Dr sum |
+| data.report[].transactions[].seat_no | string | `'EXPENSE'` for expense rows, else the learner's `seat_no` or `'GEN'` |
+| data.report[].transactions[].name | string | `'EXPENSE'` for expense rows, else the learner's name |
+| data.report[].transactions[].amount | string | unsigned row amount |
+| data.report[].transactions[].dr_cr | string | `Cr` or `Dr` |
+| data.report[].transactions[].transaction | string | the row's `particular` for expense rows (e.g. "ELECTRICITY BILL..."), else `payment_type` — mirrors the web table's "Transaction" column |
+| data.report[].transactions[].payment_type | string | raw `payment_type` value (e.g. `SEAT ASSIGNMENT`, `EXPENSE`, `REFUND`) |
+| data.report[].transactions[].payment_mode | string | raw `payment_mode` value (e.g. `ONLINE`, `OFFLINE`) |
+| data.pagination.current_page | integer | paginates date groups |
+| data.pagination.per_page | integer | |
+| data.pagination.total | integer | total date groups in range |
+| data.pagination.last_page | integer | |
+| data.pagination.has_more | boolean | |
+
 ---
 
 ## Feedback

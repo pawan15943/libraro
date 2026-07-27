@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\SuggestionController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\Api\V1\ReportController;
 
 
 
@@ -198,6 +199,8 @@ Route::middleware(['auth:library_api','api_key','throttle:library_api'])->group(
 
     // Route::post('library/finance/monthly', [LibraryController::class, 'monthlyFinancial']);
     Route::post('library/finance/dashboardfinancial', [LibraryController::class, 'dashboardFinancial']);
+
+    Route::post('library/reports/monthly-payment-collection', [ReportController::class, 'monthlyPaymentCollection']);
 
     Route::get('library/feedback', [FeedbackController::class, 'show']);
     Route::post('library/feedback/save', [FeedbackController::class, 'save']);
