@@ -244,7 +244,7 @@ class DashboardController extends Controller
             $todayBalance = $total_cr-$total_dr;
            
          
-            $recent_activitys=LearnerOperationsLog::with('learner:id,name,seat_no')
+            $recent_activitys=LearnerOperationsLog::with(['learner' => fn ($q) => $q->withoutGlobalScopes()->select('id','name','seat_no')])
                 ->where('branch_id',getCurrentBranch())
                 ->where('created_at', '>=', Carbon::now()->subDays(5))
                 ->latest()

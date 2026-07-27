@@ -1000,7 +1000,11 @@ class LearnerController extends Controller
 
         $query = LearnerOperationsLog::query()
             ->where('branch_id', getCurrentBranch())
-            ->with('learner');
+            // withoutGlobalScopes(): Learner's own 'branch' scope (HasBranch) filters
+            // by the *currently logged-in* user's branch, which can silently null out
+            // the relation here (e.g. a learner later moved to another branch) even
+            // though this log row is already correctly branch-scoped above.
+            ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
 
         if (! empty($operations)) {
             $query->whereIn('operation', $operations);

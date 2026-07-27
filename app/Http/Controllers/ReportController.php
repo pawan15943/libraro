@@ -540,7 +540,7 @@ class ReportController extends Controller
 
 
         $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
-            ->with('learner');
+            ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
        
 
         // Filter by operation from the logs table
