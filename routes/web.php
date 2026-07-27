@@ -259,6 +259,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     Route::get('pending/payment/report', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
     Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');
+    Route::get('activities', [DashboardController::class, 'allActivities'])->name('activities.all');
     Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report');
     Route::get('payment/collection/report', [ReportController::class, 'paymentCollection'])->name('payment.collection.report');
     Route::get('partial/payment/collection/report', [ReportController::class, 'partialPaymentCollection'])->name('partial.payment.collection.report');

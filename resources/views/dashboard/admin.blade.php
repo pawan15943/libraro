@@ -582,7 +582,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             
             @can('has-permission', 'Recent Activity')
             <div class="col-lg-4">
-                <h4 class="my-4">Recent Activity</h4>
+                <div class="d-flex justify-content-between align-items-center my-4">
+                    <h4 class="mb-0">Recent Activity</h4>
+                    <a href="{{ route('activities.all') }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i></a>
+                </div>
                 <ul class="activity contents">
                     @if($recent_activitys->count() > 0)
                     @foreach($recent_activitys as $value)
@@ -1469,7 +1472,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             function updateAllViewLinks(year, month, dateRange) {
                 // Select all "View All" links and update them based on the filters
                 $('.viewall').each(function() {
-                    var currentUrl = $(this).attr('href');
+                    var $link = $(this);
+
+                    // Cache the original href (before any filters are appended) so
+                    // repeated calls (e.g. changing the year, then the month) rebuild
+                    // from the pristine URL instead of piling params onto each other.
+                    var baseUrl = $link.data('baseHref');
+                    if (baseUrl === undefined) {
+                        baseUrl = $link.attr('href');
+                        $link.data('baseHref', baseUrl);
+                    }
 
                     // Construct the additional query parameters
                     var queryParams = [];
@@ -1477,9 +1489,17 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     if (month) queryParams.push(`month=${month}`);
                     if (dateRange) queryParams.push(`date_range=${dateRange}`);
 
-                    // Append the query parameters to the existing URL
-                    var updatedUrl = currentUrl + (queryParams.length ? '&' + queryParams.join('&') : '');
-                    $(this).attr('href', updatedUrl);
+                    if (!queryParams.length) {
+                        $link.attr('href', baseUrl);
+                        return;
+                    }
+
+                    // Some "View All" links already carry a query string (e.g. ?type=x),
+                    // others don't (e.g. the Activities link) - pick the right separator
+                    // instead of always assuming '&', which produced invalid URLs like
+                    // ".../activities&year=2026" (a 404, since there's no leading '?').
+                    var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+                    $link.attr('href', baseUrl + separator + queryParams.join('&'));
                 });
             }
 

@@ -2119,7 +2119,11 @@ class LibraryController extends Controller
 
         'id'           => 'nullable|exists:learner_transaction_activity,id',
 
-        'expense_id'   => 'required|integer|exists:expenses,id',
+        'expense_id'   => ['required', function ($attribute, $value, $fail) {
+            if ($value !== 'other' && !Expense::where('id', $value)->exists()) {
+                $fail('The selected expense name is invalid.');
+            }
+        }],
 
         'amount'       => 'required|numeric|min:1',
 

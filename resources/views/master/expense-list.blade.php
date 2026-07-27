@@ -22,12 +22,13 @@
                         </div>
                         <div class="col-lg-6">
                             <label>Expense Name <span>*</span></label>
-                            <select class="form-select" name="expense_id">
+                            <select class="form-select" name="expense_id" id="expenseNameSelect">
                                 <option value="">Choose</option>
                                 @foreach($data as $key => $value)
                                 <option value="{{$value->id}}">{{$value->name}}</option>
                                 @endforeach
-                               
+                                <option value="other">Other</option>
+
                             </select>
 
                         </div>
@@ -44,7 +45,7 @@
                                 <option value="3">Pay Later</option>
                             </select>
                         </div>
-                        <div class="col-lg-12">
+                        <div class="col-lg-12" id="remarkGroup" style="display:none;">
                             <label>Remark</label>
                             <textarea name="remark" class="form-control" style="height: 100px !important;" placeholder="Enter expense description"></textarea>
                         </div>
@@ -179,6 +180,18 @@
         }
     });
 
+    function expenseToggleRemark() {
+        var selectedText = $('#expenseNameSelect option:selected').text().trim().toLowerCase();
+        if (selectedText === 'other') {
+            $('#remarkGroup').show();
+        } else {
+            $('#remarkGroup').hide();
+            $('#remarkGroup textarea').val('');
+        }
+    }
+
+    $(document).on('change', '#expenseNameSelect', expenseToggleRemark);
+
     $(document).on('submit', '#expenseForm', function (e) {
         e.preventDefault();
         var $btn = $('#expenseForm button[type="submit"]');
@@ -211,6 +224,7 @@
                     $('#expenseForm')[0].reset();
                     document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
                     $('#expense_id').val('');
+                    expenseToggleRemark();
                     refreshExpensePage(expenseGetFilterParams({ page: 1 }));
                 } else if (response.errors) {
                     $.each(response.errors, function (key, value) {
@@ -252,6 +266,7 @@
         $('[name="amount"]').val(expense.amount);
         $('[name="payment_mode"]').val(expense.payment_mode);
         $('[name="remark"]').val(expense.remark);
+        expenseToggleRemark();
         $('#expenseModal').modal('show');
     });
 </script>

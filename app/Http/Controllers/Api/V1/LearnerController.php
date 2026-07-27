@@ -1115,7 +1115,7 @@ class LearnerController extends Controller
     {
         $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
         $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
-        $meta = $this->activityMeta($log->operation);
+        $meta = HelperService::activityMeta($log->operation);
         $createdAt = Carbon::parse($log->created_at);
         $operationType = $details['operation_type'] ?: $meta['label'];
 
@@ -1140,7 +1140,7 @@ class LearnerController extends Controller
             'time' => $createdAt->format('h:i A'),
             // 'created_at' => $createdAt->toDateTimeString(),
             'date' => $createdAt->format('d M Y'),
-            'date_label' => $this->activityDateLabel($createdAt),
+            'date_label' => HelperService::activityDateLabel($createdAt),
             'group_date_key' => $createdAt->toDateString(),
         ];
     }
@@ -1233,43 +1233,6 @@ class LearnerController extends Controller
         }
 
         return array_values(array_unique($selected));
-    }
-
-    private function activityMeta(?string $operation): array
-    {
-        $map = [
-            'renewSeat' => ['label' => 'Renew Seat', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
-            'renewDelete' => ['label' => 'Renew Delete', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
-            'learnerUpgrade' => ['label' => 'Plan Upgraded', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
-            'changePlan' => ['label' => 'Change Plan', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
-            'swapseat' => ['label' => 'Seat Swapped', 'filter_key' => 'swap', 'color_code' => '#D633E9'],
-            'reactive' => ['label' => 'Reactive Seat', 'filter_key' => 'reactive', 'color_code' => '#22C55E'],
-            'closeSeat' => ['label' => 'Seat Closed', 'filter_key' => 'close_plan', 'color_code' => '#F97316'],
-            'deleteSeat' => ['label' => 'Delete Seat', 'filter_key' => 'delete', 'color_code' => '#DC2626'],
-            'restoreSeat' => ['label' => 'Restore Seat', 'filter_key' => 'restore', 'color_code' => '#14B8A6'],
-            'freezePlan' => ['label' => 'Plan Frozen', 'filter_key' => 'freeze_plan', 'color_code' => '#0EA5E9'],
-            'unfreezePlan' => ['label' => 'Plan Unfrozen', 'filter_key' => 'freeze_plan', 'color_code' => '#0EA5E9'],
-            'giftDays' => ['label' => 'Added Gift Days', 'filter_key' => 'gift_day', 'color_code' => '#14B8A6'],
-        ];
-
-        return $map[$operation] ?? [
-            'label' => ucwords(str_replace(['_', '-'], ' ', (string) $operation)),
-            'filter_key' => (string) $operation,
-            'color_code' => '#6B7280',
-        ];
-    }
-
-    private function activityDateLabel(Carbon $date): string
-    {
-        if ($date->isToday()) {
-            return 'Today';
-        }
-
-        if ($date->isYesterday()) {
-            return 'Yesterday';
-        }
-
-        return $date->format('d M Y');
     }
 
 }

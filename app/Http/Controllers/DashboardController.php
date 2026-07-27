@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\HelperService;
 use App\Models\CustomerDetail;
 use App\Models\Customers;
 use App\Models\Hour;
@@ -26,6 +27,7 @@ use App\Models\Learner;
 use App\Models\LearnerOperationsLog;
 use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
+use App\Models\Plan;
 use App\Models\PlanType;
 use App\Models\Subscription;
 use Log;
@@ -1589,6 +1591,102 @@ class DashboardController extends Controller
     public function howToUse(){
         $howtoUseContent = DB::table('how-to-use')->get();
         return view('library.how-to-use', compact('howtoUseContent'));
+    }
+
+    /**
+     * Full "All Activities" page linked from the dashboard's Recent Activity widget -
+     * same branch-wide learner_operations_log feed and HelperService formatting used
+     * by the mobile Api\V1\LearnerController::activity() endpoint, so web and app show
+     * identical activity text.
+     */
+    public function allActivities(Request $request)
+    {
+        $operationOptions = [
+            'edit' => 'Learner / Plan Edited',
+            'renewSeat' => 'Renew Seat',
+            'learnerUpgrade' => 'Plan Upgraded',
+            'changePlan' => 'Change Plan',
+            'swapseat' => 'Seat Swapped',
+            'reactive' => 'Reactive Seat',
+            'closeSeat' => 'Seat Closed',
+            'deleteSeat' => 'Delete Seat',
+            'restoreSeat' => 'Restore Seat',
+            'freezePlan' => 'Plan Frozen',
+            'unfreezePlan' => 'Plan Unfrozen',
+            'giftDays' => 'Added Gift Days',
+        ];
+
+        $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
+            ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
+
+        if ($request->filled('operation')) {
+            $query->where('operation', $request->input('operation'));
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->input('date'));
+        } else {
+            // year/month come from the dashboard's own filter (see updateAllViewLinks()
+            // in dashboard/admin.blade.php), which this "View All" link is reached from.
+            if ($request->filled('year')) {
+                $query->whereYear('created_at', $request->input('year'));
+            }
+
+            if ($request->filled('month')) {
+                $query->whereMonth('created_at', $request->input('month'));
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('learner', function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('mobile', 'LIKE', "%{$search}%")
+                    ->orWhere('seat_no', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $logs = $query->latest()->paginate(20)->withQueryString();
+        $logItems = collect($logs->items());
+
+        $updatedByIds = $logItems->pluck('updated_by')->filter()->unique()->values();
+        $updatedByMap = DB::table('library_users')->whereIn('id', $updatedByIds)->pluck('name', 'id')->all();
+        $missingIds = $updatedByIds->diff(array_keys($updatedByMap))->values();
+        if ($missingIds->isNotEmpty()) {
+            $updatedByMap += DB::table('libraries')->whereIn('id', $missingIds)->pluck('library_name', 'id')->all();
+        }
+
+        $planIds = $logItems->where('operation', 'renewSeat')
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planNames = $planIds->isNotEmpty() ? Plan::whereIn('id', $planIds)->pluck('name', 'id')->all() : [];
+
+        $planTypeIds = $logItems->whereIn('operation', ['learnerUpgrade', 'changePlan'])
+            ->flatMap(fn ($log) => [$log->old_value, $log->new_value])
+            ->filter()->unique()->values();
+        $planTypeNames = $planTypeIds->isNotEmpty() ? PlanType::whereIn('id', $planTypeIds)->pluck('name', 'id')->all() : [];
+
+        $seatMap = generateSeatNumbers();
+
+        $activities = $logItems->map(function ($log) use ($updatedByMap, $planNames, $planTypeNames, $seatMap) {
+            $log->updated_by_name = $updatedByMap[$log->updated_by] ?? 'System';
+            $details = HelperService::getOperationDetails($log, $planNames, $planTypeNames, $seatMap);
+            $meta = HelperService::activityMeta($log->operation);
+            $createdAt = Carbon::parse($log->created_at);
+
+            return [
+                'operation_type' => $details['operation_type'] ?: $meta['label'],
+                'color_code' => $meta['color_code'],
+                'message' => $details['message'],
+                'learner_name' => optional($log->learner)->name ?? 'Learner',
+                'seat' => HelperService::formatSeatDisplay(optional($log->learner)->seat_no, $seatMap) ?: 'General',
+                'updated_by_name' => $log->updated_by_name,
+                'time' => $createdAt->format('h:i A'),
+                'date_header' => HelperService::activityDateLabel($createdAt) . ' — ' . $createdAt->format('d M Y'),
+            ];
+        })->groupBy('date_header');
+
+        return view('dashboard.activities', compact('activities', 'logs', 'operationOptions'));
     }
 
 

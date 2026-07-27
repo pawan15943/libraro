@@ -19,28 +19,30 @@ class LibraryLifecycleService
     |--------------------------------------------------------------------------
     */
 
-    $expense = Expense::find($request->expense_id);
+    if ($request->expense_id === 'other') {
 
-    if (!$expense) {
+        $particular = $request->remark ?: 'Other';
 
-        throw new \Exception('Expense not found');
-    }
+    } else {
 
-    $particular = $expense->name;
+        $expense = Expense::find($request->expense_id);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Other Expense Remark
-    |--------------------------------------------------------------------------
-    */
+        if (!$expense) {
 
-    if (strtolower($expense->name) == 'other') {
-        if($request->remark){
-            $particular = $request->remark;
-        }else{
-            $particular = "Other";
+            throw new \Exception('Expense not found');
         }
-        
+
+        $particular = $expense->name;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Other Expense Remark
+        |--------------------------------------------------------------------------
+        */
+
+        if (strtolower($expense->name) == 'other') {
+            $particular = $request->remark ?: 'Other';
+        }
     }
 
     /*

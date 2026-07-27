@@ -364,10 +364,52 @@ class HelperService
         return (string) $seatNo;
     }
 
+    /**
+     * Shared by the mobile activity API (Api\V1\LearnerController::activity()) and
+     * the web "All Activities" page so both render identical labels/colors for the
+     * same operation.
+     */
+    public static function activityMeta(?string $operation): array
+    {
+        $map = [
+            'renewSeat' => ['label' => 'Renew Seat', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
+            'renewDelete' => ['label' => 'Renew Delete', 'filter_key' => 'renew', 'color_code' => '#10B7D9'],
+            'learnerUpgrade' => ['label' => 'Plan Upgraded', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
+            'changePlan' => ['label' => 'Change Plan', 'filter_key' => 'modify', 'color_code' => '#E19A00'],
+            'swapseat' => ['label' => 'Seat Swapped', 'filter_key' => 'swap', 'color_code' => '#D633E9'],
+            'reactive' => ['label' => 'Reactive Seat', 'filter_key' => 'reactive', 'color_code' => '#22C55E'],
+            'closeSeat' => ['label' => 'Seat Closed', 'filter_key' => 'close_plan', 'color_code' => '#F97316'],
+            'deleteSeat' => ['label' => 'Delete Seat', 'filter_key' => 'delete', 'color_code' => '#DC2626'],
+            'restoreSeat' => ['label' => 'Restore Seat', 'filter_key' => 'restore', 'color_code' => '#14B8A6'],
+            'freezePlan' => ['label' => 'Plan Frozen', 'filter_key' => 'freeze_plan', 'color_code' => '#0EA5E9'],
+            'unfreezePlan' => ['label' => 'Plan Unfrozen', 'filter_key' => 'freeze_plan', 'color_code' => '#0EA5E9'],
+            'giftDays' => ['label' => 'Added Gift Days', 'filter_key' => 'gift_day', 'color_code' => '#14B8A6'],
+            'edit' => ['label' => 'Edit', 'filter_key' => 'edit', 'color_code' => '#6366F1'],
+        ];
 
+        return $map[$operation] ?? [
+            'label' => ucwords(str_replace(['_', '-'], ' ', (string) $operation)),
+            'filter_key' => (string) $operation,
+            'color_code' => '#6B7280',
+        ];
+    }
 
-    
-   
+    /**
+     * "Today" / "Yesterday" / "d M Y" section heading used to group activity feed
+     * items by day - shared by the mobile activity API and the web "All Activities" page.
+     */
+    public static function activityDateLabel(Carbon $date): string
+    {
+        if ($date->isToday()) {
+            return 'Today';
+        }
+
+        if ($date->isYesterday()) {
+            return 'Yesterday';
+        }
+
+        return $date->format('d M Y');
+    }
 }
 
 
