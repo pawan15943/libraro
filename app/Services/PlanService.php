@@ -29,6 +29,7 @@ class PlanService
                 ->where('learner_detail.status', 1)
                 ->where('learners.branch_id', $branchId)
                 ->where('learner_detail.branch_id', $branchId)
+                ->whereNull('learner_detail.deleted_at')
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
 
             // Step 2: Retrieve all plan types

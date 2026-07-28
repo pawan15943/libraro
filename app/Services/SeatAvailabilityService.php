@@ -228,6 +228,7 @@ class SeatAvailabilityService
             ->where('learner_detail.branch_id', $branchId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
+            ->whereNull('learner_detail.deleted_at')
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->select('learner_detail.seat_no as batch_seat_no', 'learner_detail.hour', 'plan_types.start_time', 'plan_types.end_time')
             ->get();
