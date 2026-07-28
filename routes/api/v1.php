@@ -208,6 +208,9 @@ Route::middleware(['auth:library_api','api_key','throttle:library_api'])->group(
     Route::get('library/suggestions', [SuggestionController::class, 'index']);
     Route::post('library/suggestions/save', [SuggestionController::class, 'save']);
 
+    Route::get('library/toggle-features/list', [MasterController::class, 'toggleFeatureList']);
+    Route::post('library/toggle-features/update', [MasterController::class, 'updateToggleFeature']);
+
 });
 
 });

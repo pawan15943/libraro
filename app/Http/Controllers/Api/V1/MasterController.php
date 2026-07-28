@@ -2716,5 +2716,73 @@ class MasterController extends Controller
             ->where('plan_type_id', $planTypeId)
             ->exists();
     }
-    
+
+    // ✅ Show toggle-feature list (current hide/show state)
+    public function toggleFeatureList(Request $request)
+    {
+        if ($denied = $this->denyWithoutAppPermission('Manage Feature Toggles')) {
+            return $denied;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Toggle features fetched successfully',
+            'data' => $this->buildToggleFeatureData(),
+        ]);
+    }
+
+    // ✅ Update toggle-feature hide/show state (bulk save, same as web toggle switches)
+    public function updateToggleFeature(Request $request)
+    {
+        if ($denied = $this->denyWithoutAppPermission('Manage Feature Toggles')) {
+            return $denied;
+        }
+
+        $validated = $request->validate([
+            'hidden_ids' => 'nullable|array',
+            'hidden_ids.*' => 'integer|exists:toggle_features,id',
+        ]);
+
+        $branch = Branch::where('id', getCurrentBranch())->first();
+
+        if (!$branch) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Branch not found',
+            ], 404);
+        }
+
+        $branch->hide_field = !empty($validated['hidden_ids']) ? json_encode(array_values($validated['hidden_ids'])) : null;
+        $branch->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Updated successfully',
+            'data' => $this->buildToggleFeatureData(),
+        ]);
+    }
+
+    // Common builder reused by both the list (show) and update APIs above.
+    private function buildToggleFeatureData(): array
+    {
+        $hiddenIds = toggleHideField() ?? [];
+
+        $features = DB::table('toggle_features')->orderBy('category')->orderBy('id')->get();
+
+        $grouped = $features->groupBy('category')->map(function ($items) use ($hiddenIds) {
+            return $items->map(function ($item) use ($hiddenIds) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'description' => $item->description,
+                    'is_hidden' => in_array($item->id, $hiddenIds),
+                ];
+            })->values();
+        });
+
+        return [
+            'hidden_ids' => array_values($hiddenIds),
+            'categories' => $grouped,
+        ];
+    }
 }

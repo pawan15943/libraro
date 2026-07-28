@@ -35,12 +35,13 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 18. [Suggestions](#suggestions)
 19. [Upload](#upload)
 20. [Referral](#referral)
-21. [Receipt / ID Card Links](#receipt--id-card-links)
-22. [QR Bookings](#qr-bookings)
-23. [Learners](#learners)
-24. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
-25. [System / Cron (internal use)](#system--cron-internal-use)
-26. [Learner Auth (inactive)](#learner-auth-inactive)
+21. [Toggle Features](#toggle-features)
+22. [Receipt / ID Card Links](#receipt--id-card-links)
+23. [QR Bookings](#qr-bookings)
+24. [Learners](#learners)
+25. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
+26. [System / Cron (internal use)](#system--cron-internal-use)
+27. [Learner Auth (inactive)](#learner-auth-inactive)
 
 ---
 
@@ -2243,6 +2244,53 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | false with HTTP 422 if redemption not eligible (e.g. <30 points, max limit reached, wallet/library not found) |
 | message | string | |
+
+---
+
+## Toggle Features
+
+Middleware: `auth:library_api`, `api_key`, `throttle:library_api`. Both endpoints additionally require the `Manage Feature Toggles` app permission (checked via `denyWithoutAppPermission`, HTTP 403 if missing).
+
+API equivalent of the web "Toggle feature" page (`master.hide_field` view / `MasterController@toggleFeature` + `@updateHidefield`). `toggle_features` is a static lookup table (id, name, category, description) seeding every hideable option across the app (booking form fields, menu items, buttons, dashboard widgets, learner-contact privacy masking, etc). The actual on/off state is per-branch: `branches.hide_field` stores a JSON array of the `toggle_features.id` values currently hidden for the active branch (resolved via `getCurrentBranch()`). Both endpoints share one private builder, `MasterController::buildToggleFeatureData()`, so the shape returned by the list (show) endpoint and the shape returned after an update are identical.
+
+### `GET /api/v1/library/toggle-features/list`
+**Controller:** `MasterController@toggleFeatureList`
+**Auth:** `auth:library_api`, `api_key`, `throttle:library_api`, permission `Manage Feature Toggles`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| — | — | — | None — no request body |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data.hidden_ids | integer[] | `toggle_features.id` values currently hidden for the active branch |
+| data.categories | object | keyed by `toggle_features.category` (e.g. `Booking Form`, `Menu`, `Button`, `Dashboard`, `Option`, `Other`, `Privacy`) |
+| data.categories.{category}[].id | integer | `toggle_features.id` |
+| data.categories.{category}[].name | string | |
+| data.categories.{category}[].description | string\|null | |
+| data.categories.{category}[].is_hidden | boolean | whether this feature is currently hidden for the active branch |
+
+### `POST /api/v1/library/toggle-features/update`
+**Controller:** `MasterController@updateToggleFeature`
+**Auth:** `auth:library_api`, `api_key`, `throttle:library_api`, permission `Manage Feature Toggles`
+
+Bulk replace, same as the web switches: send the complete set of `toggle_features.id` that should be hidden — this overwrites `branches.hide_field` entirely, it is not a single-key delta.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| hidden_ids | integer[] | No | nullable array; each value must exist in `toggle_features.id`. Omit or send `[]`/null to clear all (show everything). |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | false with HTTP 404 if the active branch can't be resolved, HTTP 422 on validation failure |
+| message | string | |
+| data | object | same shape as the list endpoint's `data`, reflecting the state immediately after the save |
 
 ---
 
