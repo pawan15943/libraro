@@ -2661,6 +2661,7 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | operation_type | mixed | no | fallback alias of activity_type |
 | per_page | integer | no | min:1, max:100, default 20 |
 | page_no | integer | no | min:1; mapped internally to `page` |
+| learner_id | integer | no | exists:learners,id; when passed, only that learner's activity is returned |
 
 **Response**
 | Field | Type | Notes |

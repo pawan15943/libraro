@@ -981,6 +981,7 @@ class LearnerController extends Controller
             'operation_type' => 'nullable',
             'per_page' => 'nullable|integer|min:1|max:100',
             'page_no' => 'nullable|integer|min:1',
+            'learner_id' => 'nullable|integer|exists:learners,id',
         ]);
 
         if ($validator->fails()) {
@@ -1008,6 +1009,10 @@ class LearnerController extends Controller
 
         if (! empty($operations)) {
             $query->whereIn('operation', $operations);
+        }
+
+        if ($request->filled('learner_id')) {
+            $query->where('learner_id', $request->learner_id);
         }
 
         if ($request->filled('date')) {
