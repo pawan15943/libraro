@@ -40,6 +40,32 @@ class LearnerService
 
             /*
             |--------------------------------------------------------------------------
+            | 0️⃣ HEAL SOFT-DELETED ROWS LEFT WITH A STALE status = 1
+            |--------------------------------------------------------------------------
+            | Deleting a learner/seat should always set status = 0, but a few code paths
+            | historically soft-deleted the row without doing so first. Since deleted_at
+            | is set, the row is invisible to normal Eloquent queries — but any raw SQL
+            | or withoutGlobalScopes() query that checks status alone (without deleted_at)
+            | would still treat it as active. Force it back to 0 here every run.
+            |--------------------------------------------------------------------------
+            */
+
+            DB::statement("
+                UPDATE learner_detail
+                SET status = 0
+                WHERE deleted_at IS NOT NULL
+                AND status != 0
+            ");
+
+            DB::statement("
+                UPDATE learners
+                SET status = 0
+                WHERE deleted_at IS NOT NULL
+                AND status != 0
+            ");
+
+            /*
+            |--------------------------------------------------------------------------
             | 1️⃣ DEACTIVATE ONLY EXPIRED NORMAL DETAILS
             |--------------------------------------------------------------------------
             */
@@ -50,6 +76,7 @@ class LearnerService
                 SET ld.status = 0
                 WHERE l.no_expiry = 0
                 AND ld.status = 1
+                AND ld.deleted_at IS NULL
             ");
 
 
@@ -63,27 +90,30 @@ class LearnerService
             | - Only ONE active per learner
             |--------------------------------------------------------------------------
             */
-           DB::statement(" 
-           UPDATE learner_detail ld 
-           JOIN ( 
-            SELECT ld1.id FROM learner_detail ld1 
-                JOIN branches b ON b.id = ld1.branch_id 
-                    JOIN ( 
-                        SELECT learner_id, MAX(plan_start_date) as latest_start 
-                            FROM learner_detail ld2 
-                                JOIN learners l2 ON l2.id = ld2.learner_id 
-                                JOIN branches b2 ON b2.id = ld2.branch_id WHERE l2.no_expiry = 0 
+           DB::statement("
+           UPDATE learner_detail ld
+           JOIN (
+            SELECT ld1.id FROM learner_detail ld1
+                JOIN branches b ON b.id = ld1.branch_id
+                    JOIN (
+                        SELECT learner_id, MAX(plan_start_date) as latest_start
+                            FROM learner_detail ld2
+                                JOIN learners l2 ON l2.id = ld2.learner_id
+                                JOIN branches b2 ON b2.id = ld2.branch_id WHERE l2.no_expiry = 0
                                 AND ld2.plan_start_date <= ?
-                                AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) > ? 
+                                AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) > ?
+                                AND ld2.deleted_at IS NULL
+                                AND l2.deleted_at IS NULL
                                 AND NOT EXISTS (
                                     SELECT 1 FROM learner_operations_log closed_op
                                     WHERE closed_op.learner_detail_id = ld2.id
                                     AND closed_op.operation = 'closeSeat'
                                 )
-                                GROUP BY learner_id ) 
-                                latest 
+                                GROUP BY learner_id )
+                                latest
                                 ON latest.learner_id = ld1.learner_id AND latest.latest_start = ld1.plan_start_date
-                WHERE NOT EXISTS (
+                WHERE ld1.deleted_at IS NULL
+                AND NOT EXISTS (
                     SELECT 1 FROM learner_operations_log closed_op
                     WHERE closed_op.learner_detail_id = ld1.id
                     AND closed_op.operation = 'closeSeat'
@@ -105,10 +135,12 @@ class LearnerService
                 UPDATE learners l
                 SET l.status = 1
                 WHERE l.no_expiry = 0
+                AND l.deleted_at IS NULL
                 AND EXISTS (
                     SELECT 1 FROM learner_detail ld
                     WHERE ld.learner_id = l.id
                     AND ld.status = 1
+                    AND ld.deleted_at IS NULL
                     AND NOT EXISTS (
                         SELECT 1 FROM learner_operations_log closed_op
                         WHERE closed_op.learner_detail_id = ld.id
@@ -125,6 +157,7 @@ class LearnerService
                     SELECT 1 FROM learner_detail ld
                     WHERE ld.learner_id = l.id
                     AND ld.status = 1
+                    AND ld.deleted_at IS NULL
                 )
             ");
 
