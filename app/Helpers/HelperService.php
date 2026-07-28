@@ -6,6 +6,7 @@ use App\Models\Hour;
 use App\Models\Library;
 use App\Models\LearnerDetail;
 use App\Models\LibraryTransaction;
+use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Seat;
@@ -190,7 +191,7 @@ class HelperService
                 break;
 
             case 'edit':
-                self::fillEditOperationDetails($details, $operation);
+                self::fillEditOperationDetails($details, $operation, $seatMap);
                 break;
 
             default:
@@ -224,38 +225,34 @@ class HelperService
      */
     private static function fillEditOperationDetails(
         array &$details,
-        $operation
+        $operation,
+        array $seatMap = []
     ): void {
-        // Short, lowercase names used to build the "X, Y, Z, N+ fields are updated."
-        // summary sentence for a pure profile edit (see design: "Email, mobile no,
-        // profile, 5+ fields are updated.").
-        $shortLabels = [
-            'name' => 'name', 'email' => 'email', 'mobile' => 'mobile no',
-            'dob' => 'DOB', 'father_name' => 'father name', 'address' => 'address',
-            'remark' => 'remark', 'alternate_mobile' => 'alternate mobile',
-            'id_proof_name' => 'ID proof', 'id_proof_number' => 'ID proof number',
-            'exam_id' => 'exam', 'no_expiry' => 'non-expiry', 'locker_no' => 'locker',
-            'seat_no' => 'seat', 'profile_picture' => 'profile',
-        ];
-
-        // Title-case labels used for the "Plan Details Updated" line, e.g. "Locker
-        // Added | Discount Removed | Plan Start Date Changes".
+        // Title-case labels for every learner/plan-detail field, used to build a real
+        // "{Label}: <strong>{value}</strong> added/updated/removed." sentence per
+        // changed field - e.g. "Mobile Number: <strong>9024517905</strong> updated.",
+        // "Profile Photo Uploaded.", "Seat <strong>1</strong> to <strong>5</strong> updated."
         $fieldLabels = [
-            'plan_id' => 'Plan', 'plan_type_id' => 'Plan Type', 'seat_no' => 'Seat',
-            'locker_no' => 'Locker', 'plan_price_id' => 'Plan Price',
+            'name' => 'Name', 'email' => 'Email', 'mobile' => 'Mobile Number',
+            'dob' => 'DOB', 'father_name' => 'Father Name', 'address' => 'Address',
+            'remark' => 'Remark', 'alternate_mobile' => 'Alternate Mobile',
+            'id_proof_name' => 'ID Proof', 'id_proof_number' => 'ID Proof Number',
+            'exam_id' => 'Exam', 'no_expiry' => 'Non-Expiry', 'locker_no' => 'Locker',
+            'seat_no' => 'Seat No', 'plan_id' => 'Plan', 'plan_type_id' => 'Plan Type',
+            'plan_price_id' => 'Plan Price', 'profile_picture' => 'Profile Photo',
         ];
 
         // plan_start_date/plan_end_date move together (changing the start date always
         // shifts the end date too - see edit-plan.blade.php's warning about this), so
         // they're excluded from the generic changed-fields list and reported below
-        // as a single "Plan Start Date Changes" entry instead.
+        // with their actual old/new date values instead.
         $planDateFields = ['plan_start_date', 'plan_end_date'];
 
         $old = json_decode((string) $operation->old_value, true) ?: [];
         $new = json_decode((string) $operation->new_value, true) ?: [];
 
         $hasProfileChange = false;
-        $profileFieldNames = [];
+        $profileChangeLines = [];
 
         foreach (($new['learner'] ?? []) as $field => $value) {
             $oldValue = $old['learner'][$field] ?? null;
@@ -265,7 +262,25 @@ class HelperService
             }
 
             $hasProfileChange = true;
-            $profileFieldNames[] = $shortLabels[$field] ?? strtolower(str_replace('_', ' ', $field));
+
+            // Profile photo has no meaningful value to display - just report the action.
+            if ($field === 'profile_picture') {
+                $profileChangeLines[] = empty($value) ? 'Profile Photo Removed.' : 'Profile Photo Uploaded.';
+                continue;
+            }
+
+            if ($field === 'seat_no') {
+                $oldSeat = self::formatSeatDisplay($oldValue, $seatMap);
+                $newSeat = self::formatSeatDisplay($value, $seatMap);
+                $profileChangeLines[] = "Seat <strong>{$oldSeat}</strong> to <strong>{$newSeat}</strong> updated.";
+                continue;
+            }
+
+            $label = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            $line = self::formatValueChange($label, $oldValue, $value);
+            if ($line) {
+                $profileChangeLines[] = $line;
+            }
         }
 
         $detailChangeLines = [];
@@ -293,11 +308,32 @@ class HelperService
                 continue;
             }
 
-            if (!isset($fieldLabels[$field])) {
+            if ($field === 'plan_id') {
+                $oldPlan = $oldFieldValue ? Plan::where('id', $oldFieldValue)->value('name') : null;
+                $newPlan = $value ? Plan::where('id', $value)->value('name') : null;
+                $detailChangeLines[] = "Plan <strong>{$oldPlan}</strong> to <strong>{$newPlan}</strong> updated.";
                 continue;
             }
 
-            $detailChangeLines[] = self::formatShortChange($fieldLabels[$field], $oldFieldValue, $value);
+            if ($field === 'plan_type_id') {
+                $oldType = $oldFieldValue ? PlanType::where('id', $oldFieldValue)->value('name') : null;
+                $newType = $value ? PlanType::where('id', $value)->value('name') : null;
+                $detailChangeLines[] = "Plan Type <strong>{$oldType}</strong> to <strong>{$newType}</strong> updated.";
+                continue;
+            }
+
+            if ($field === 'seat_no') {
+                $oldSeat = self::formatSeatDisplay($oldFieldValue, $seatMap);
+                $newSeat = self::formatSeatDisplay($value, $seatMap);
+                $detailChangeLines[] = "Seat <strong>{$oldSeat}</strong> to <strong>{$newSeat}</strong> updated.";
+                continue;
+            }
+
+            $label = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
+            $line = self::formatValueChange($label, $oldFieldValue, $value);
+            if ($line) {
+                $detailChangeLines[] = $line;
+            }
         }
 
         // Locker/discount amounts live on the billing/transaction side, not on the
@@ -313,81 +349,67 @@ class HelperService
                 continue;
             }
 
-            $detailChangeLines[] = self::formatShortChange($label, $oldAmount > 0.009 ? $oldAmount : null, $newAmount > 0.009 ? $newAmount : null);
+            if ($oldAmount <= 0.009 && $newAmount > 0.009) {
+                $detailChangeLines[] = "{$label}: <strong>{$newAmount}</strong> added.";
+            } elseif ($oldAmount > 0.009 && $newAmount <= 0.009) {
+                $detailChangeLines[] = "{$label}: <strong>{$oldAmount}</strong> removed.";
+            } else {
+                $detailChangeLines[] = "{$label}: <strong>{$newAmount}</strong> updated.";
+            }
         }
 
-        if ($planDatesChanged) {
-            $detailChangeLines[] = 'Plan Start Date Changes';
-        }
-
-        $isPlanDetailsOnly = (!empty($detailChangeLines)) && !$hasProfileChange;
+        $isPlanDetailsOnly = (!empty($detailChangeLines) || $planDatesChanged) && !$hasProfileChange;
         $details['operation_type'] = $isPlanDetailsOnly ? 'Plan Details Updated' : 'Learner Profile Updated';
 
-        if ($isPlanDetailsOnly) {
-            $details['message'] = implode(' | ', $detailChangeLines);
+        $messageParts = $isPlanDetailsOnly
+            ? $detailChangeLines
+            : array_merge($profileChangeLines, $detailChangeLines);
 
-            return;
+        // Show the actual old/new start & end dates instead of a bare "Plan Dates
+        // updated." label - the dates themselves are what a viewer of the activity
+        // log actually wants to see.
+        if ($planDatesChanged) {
+            $oldStart = self::safeParseDate($old['detail']['plan_start_date'] ?? null);
+            $newStart = self::safeParseDate($new['detail']['plan_start_date'] ?? null);
+            $oldEnd = self::safeParseDate($old['detail']['plan_end_date'] ?? null);
+            $newEnd = self::safeParseDate($new['detail']['plan_end_date'] ?? null);
+
+            $messageParts[] = sprintf(
+                'Plan start date changed from <strong>%s</strong> to <strong>%s</strong> (end date: <strong>%s</strong> to <strong>%s</strong>).',
+                $oldStart ? $oldStart->format('d M Y') : '-',
+                $newStart ? $newStart->format('d M Y') : '-',
+                $oldEnd ? $oldEnd->format('d M Y') : '-',
+                $newEnd ? $newEnd->format('d M Y') : '-'
+            );
         }
 
-        if (!$hasProfileChange && empty($detailChangeLines)) {
-            $details['message'] = 'Details updated successfully.';
-
-            return;
-        }
-
-        $details['message'] = self::summarizeChangedFields($profileFieldNames);
-
-        if (!empty($detailChangeLines)) {
-            $details['message'] .= ' ' . implode(' | ', $detailChangeLines);
-        }
+        $details['message'] = !empty($messageParts) ? implode(' ', $messageParts) : 'Details updated successfully.';
     }
 
     /**
-     * Builds the "X, Y, Z, N+ fields are updated." summary sentence used for the
-     * "Learner Profile Updated" activity line - names the first 3 changed fields and
-     * folds the rest into a "N+ fields" count rather than listing every field.
+     * Builds a single "{Label}: <strong>{value}</strong> added/updated/removed." line
+     * for a before/after field diff - shared by the profile and plan-detail buckets in
+     * fillEditOperationDetails() so both real values (not just field names) show up in
+     * the activity message, e.g. "Mobile Number: <strong>9024517905</strong> updated."
      */
-    private static function summarizeChangedFields(array $fieldNames): string
+    private static function formatValueChange(string $label, $oldValue, $newValue): ?string
     {
-        $total = count($fieldNames);
+        $oldEmpty = $oldValue === null || $oldValue === '' || $oldValue === false;
+        $newEmpty = $newValue === null || $newValue === '' || $newValue === false;
 
-        if ($total === 0) {
-            return 'Details updated successfully.';
+        if ($oldEmpty && $newEmpty) {
+            return null;
         }
 
-        if ($total <= 3) {
-            $sentence = implode(', ', $fieldNames) . ($total === 1 ? ' is updated.' : ' are updated.');
-
-            return ucfirst($sentence);
+        if ($oldEmpty) {
+            return "{$label}: <strong>{$newValue}</strong> added.";
         }
 
-        $shown = array_slice($fieldNames, 0, 3);
-        $remaining = $total - 3;
-        $sentence = implode(', ', $shown) . ", {$remaining}+ fields are updated.";
-
-        return ucfirst($sentence);
-    }
-
-    /**
-     * Builds a short "{Label} Added/Removed/Changed" tag for a before/after field
-     * diff - used by the "Plan Details Updated" activity line, which shows which
-     * fields changed without the actual values (see design: "Locker Added | Discount
-     * Removed | Plan Start Date Changes").
-     */
-    private static function formatShortChange(string $label, $oldValue, $newValue): string
-    {
-        $oldEmpty = $oldValue === null || $oldValue === '';
-        $newEmpty = $newValue === null || $newValue === '';
-
-        if ($oldEmpty && !$newEmpty) {
-            return "{$label} Added";
+        if ($newEmpty) {
+            return "{$label}: <strong>{$oldValue}</strong> removed.";
         }
 
-        if (!$oldEmpty && $newEmpty) {
-            return "{$label} Removed";
-        }
-
-        return "{$label} Changed";
+        return "{$label}: <strong>{$newValue}</strong> updated.";
     }
 
     /**
