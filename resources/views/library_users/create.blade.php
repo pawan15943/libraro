@@ -63,11 +63,11 @@
                     </div>
                     <div class="col-lg-6">
                         <label>Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" autocomplete="off" value="{{ old('password', $editUser->original_password ?? '') }}">
+                        <input type="password" name="password" class="form-control" autocomplete="off" value="{{ old('password') }}">
                     </div>
                     <div class="col-lg-6">
                         <label>Confirm Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password_confirmation" class="form-control" autocomplete="off" value="{{ old('password_confirmation', $editUser->original_password ?? '') }}">
+                        <input type="password" name="password_confirmation" class="form-control" autocomplete="off" value="{{ old('password_confirmation') }}">
                     </div>
                 </div>
 

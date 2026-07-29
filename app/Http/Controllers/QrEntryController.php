@@ -579,11 +579,11 @@ class QrEntryController extends Controller
 
             if ($validated['payment_mode'] === 'online') {
                 return redirect()
-                    ->route('booking.payment.qr', $booking->id)
+                    ->to(\Illuminate\Support\Facades\URL::signedRoute('booking.payment.qr', ['id' => $booking->id]))
                     ->with('success', 'Booking created! Please complete your payment.');
             } else {
                 return redirect()
-                    ->route('booking.offline.details', $booking->id)
+                    ->to(\Illuminate\Support\Facades\URL::signedRoute('booking.offline.details', ['id' => $booking->id]))
                     ->with('success', 'Booking created! Please visit the branch to pay.');
             }
 
@@ -621,7 +621,14 @@ class QrEntryController extends Controller
         $booking = Booking::with('branch')->findOrFail($bookingId);
 
         $branch=Branch::where('id',$booking->branch_id)->first();
-        $upiId   = $branch->upi_id ?? 'heenamehandi94145';  // fallback UPI if branch has none
+
+        if (empty($branch->upi_id)) {
+            return redirect()
+                ->to(\Illuminate\Support\Facades\URL::signedRoute('booking.offline.details', ['id' => $booking->id]))
+                ->with('error', 'Online payment is not set up for this branch yet. Please pay offline at the branch.');
+        }
+
+        $upiId   = $branch->upi_id;
         $payee   = $branch->name ?? 'Library';           // dynamic payee name
         $amount  = $booking->total_amount;                        // dynamic amount
         $currency = 'INR';
@@ -634,8 +641,9 @@ class QrEntryController extends Controller
         
 
         $qrCode = QrCode::size(300)->generate($upiLink);
+        $uploadScreenshotUrl = \Illuminate\Support\Facades\URL::signedRoute('booking.upload.screenshot', ['id' => $booking->id]);
         // Assume branch has a payment_qr field
-        return view('qrcode.payment_qr', compact('booking','qrCode','upiLink'));
+        return view('qrcode.payment_qr', compact('booking','qrCode','upiLink','uploadScreenshotUrl'));
     }
 
     public function showOfflineDetails($bookingId)
@@ -692,7 +700,7 @@ class QrEntryController extends Controller
             }
         }
          return redirect()
-                ->route('booking.offline.details', $booking->id)
+                ->to(\Illuminate\Support\Facades\URL::signedRoute('booking.offline.details', ['id' => $booking->id]))
                 ->with('success', 'Payment screenshot uploaded. Please wait for confirmation.');
 
         
@@ -701,6 +709,9 @@ class QrEntryController extends Controller
     {
         
         $customer = Booking::with(['branch', 'plan', 'planType']) // eager load relations
+            ->whereHas('branch', function ($query) {
+                $query->where('library_id', getLibraryId());
+            })
             ->findOrFail($id);
         $plans = Plan::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
 
@@ -1257,7 +1268,9 @@ class QrEntryController extends Controller
     }
     public function destroy($id)
     {
-        $booking = Booking::findOrFail($id);
+        $booking = Booking::whereHas('branch', function ($query) {
+            $query->where('library_id', getLibraryId());
+        })->findOrFail($id);
         $booking->delete();
 
         return response()->json(['success' => true]);

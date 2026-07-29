@@ -82,7 +82,7 @@ class BranchController extends Controller
     }
     public function branchForm($id = null)
     {
-        $branch = $id ? Branch::findOrFail($id) : null;
+        $branch = $id ? Branch::where('library_id', getLibraryId())->findOrFail($id) : null;
         $states = State::where('is_active', 1)->get();
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();
@@ -452,7 +452,7 @@ class BranchController extends Controller
 
     public function destroy($id)
     {
-        $branch = Branch::findOrFail($id);
+        $branch = Branch::where('library_id', getLibraryId())->findOrFail($id);
 
         // Ensure there is more than one branch in the same library
         $multipleBranches = Branch::where('library_id', $branch->library_id)->count() > 1;
@@ -472,7 +472,7 @@ class BranchController extends Controller
 
     public function branchConfigurForm($id = null)
     {
-        $branch = $id ? Branch::findOrFail($id) : null;
+        $branch = $id ? Branch::where('library_id', getLibraryId())->findOrFail($id) : null;
         $states = State::where('is_active', 1)->get();
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();

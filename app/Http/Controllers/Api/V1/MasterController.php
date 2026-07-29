@@ -1646,7 +1646,6 @@ class MasterController extends Controller
             ====================== */
             if (!empty($validated['password'])) {
                 $data['password'] = bcrypt($validated['password']);
-                $data['original_password'] = $validated['password'];
             }
 
            /* ======================
@@ -1730,7 +1729,7 @@ class MasterController extends Controller
 
         $user = LibraryUser::where('id', $request->library_user_id)
             ->where('library_id', $libraryId)
-            ->select( 'id','name','email','mobile','branch_id','profile_picture','original_password')
+            ->select( 'id','name','email','mobile','branch_id','profile_picture')
             ->first();
           
         if (!$user) {
@@ -1770,7 +1769,6 @@ class MasterController extends Controller
                 'can_delete' =>true,
                 'status' => $user->status ? 'Active' : 'Inactive',
                 'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
-               'password'=>$user->original_password,
             ]
         ]);
     }

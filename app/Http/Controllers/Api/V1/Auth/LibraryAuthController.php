@@ -246,8 +246,7 @@ class LibraryAuthController extends Controller
         // Generate new OTP
         $otp = rand(100000, 999999);
 
-        $library->email_otp = 123456;
-        // $library->email_otp = $otp;
+        $library->email_otp = $otp;
         $library->save();
 
         // Send email again
@@ -746,7 +745,6 @@ class LibraryAuthController extends Controller
         }
 
         $user->password = Hash::make($request->password);
-        $user->original_password = $request->password;
         $user->save();
 
         DB::table('password_resets')->where('email', $request->email)->delete();
@@ -897,7 +895,6 @@ class LibraryAuthController extends Controller
         }
 
         $user->password = Hash::make($request->password);
-        $user->original_password = $request->password;
         $user->save();
 
         return response()->json([

@@ -41,7 +41,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 
 
-Route::prefix('leads')->name('leads.')->group(function () {
+Route::prefix('leads')->name('leads.')->middleware('auth:web')->group(function () {
     Route::get('/', [LeadContactController::class, 'index'])->name('index');
     
 
@@ -79,7 +79,6 @@ Route::get('library/choose-plan-price', [LibraryController::class, 'getSubscript
 Route::get('cityGetStateWise', [MasterController::class, 'stateWiseCity'])->name('cityGetStateWise');
 Route::post('library/store', [LibraryController::class, 'store'])->name('library.store');
 Route::post('/fee/generate-receipt', [Controller::class, 'generateReceipt'])->name('fee.generateReceipt');
-Route::post('/learner/receipt/download', [ReceiptController::class, 'learnerDownload'])->name('learner.receipt.download');
 Route::get('library-managment-software', [SiteController::class, 'libraryManagmentLandingPage'])->name('library.managment.software');
 Route::post('lead/store', [SiteController::class, 'leadstore'])->name('lead.store');
 Route::get('about-us', [SiteController::class, 'aboutUs'])->name('about-us');
@@ -107,14 +106,13 @@ Route::get('/branch/{uuid}/book-seat', [QrEntryController::class, 'bookSeat'])->
 Route::get('/branch/{uuid}/renew-seat', [QrEntryController::class, 'renewSeat'])->name('renew.form');
 Route::post('/get-plan-price', [QrEntryController::class, 'getPlanPrice'])->name('get.plan.price');
 Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->name('booking.store');
-Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->name('booking.payment.qr');
-Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->name('booking.offline.details');
+Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->middleware('signed')->name('booking.payment.qr');
+Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->middleware('signed')->name('booking.offline.details');
 Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
 Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
-Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->name('booking.upload.screenshot');
+Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->middleware('signed')->name('booking.upload.screenshot');
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
-Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
 Route::get('/qr/attendance/link', [AttendanceController::class, 'showLink'])->name('qr.attendance.link');
 Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'])->name('store.scan.attendance');
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
@@ -128,7 +126,6 @@ Route::get('/attendance/instructions/pdf', [AttendanceController::class, 'downlo
 Route::get('/find-my-library', function () {
       return view('site.find-my-library');
     });
-Route::get('/receipt/{transactionId}', [LearnerController::class, 'viewReceipt'])->name('receipt.view');
 Route::get('/receipt/signed/{transactionId}', [LearnerController::class, 'viewReceipt'])
     ->middleware('signed')
     ->name('receipt.signed');
@@ -151,7 +148,9 @@ Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDays
 // Routes for library users with 'auth:library' guard
 Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
  
+  Route::post('/learner/receipt/download', [ReceiptController::class, 'learnerDownload'])->name('learner.receipt.download');
   Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
+  Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
   Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
   Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');

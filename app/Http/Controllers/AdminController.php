@@ -110,7 +110,7 @@ class AdminController extends Controller
         // Hash the password
         $validated['password'] = Hash::make($validated['password']);
         $validated['original_password'] = $validated['password'];
-        
+
         // Store the validated data in the Library model
         $library = Library::create($validated);
 

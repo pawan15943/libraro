@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Branch;
 use App\Models\CustomerDetail;
 use App\Models\Customers;
 use App\Models\Expense;
@@ -57,14 +58,20 @@ class ReportController extends Controller
       
    
         foreach ($monthlyRevenues as $monthlyRevenue) {
-           $totals_monthly = LearnerTransactionActivity::selectRaw("
+           $totalsQuery = LearnerTransactionActivity::selectRaw("
                 SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
                 SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr
             ")
-            ->where('branch_id', getCurrentBranch())
-            ->whereYear('date', $monthlyRevenue->year)->whereMonth('date', $monthlyRevenue->month)
-            ->first();
-            
+            ->whereYear('date', $monthlyRevenue->year)->whereMonth('date', $monthlyRevenue->month);
+
+            if (getCurrentBranch() != 0) {
+                $totalsQuery->where('branch_id', getCurrentBranch());
+            } else {
+                $totalsQuery->whereIn('branch_id', Branch::where('library_id', getLibraryId())->pluck('id'));
+            }
+
+            $totals_monthly = $totalsQuery->first();
+
 
             // Prepare the report data
             $reportData[] = [
@@ -99,7 +106,7 @@ class ReportController extends Controller
             ->where('monthly_expense.year',  $year)
             ->where('monthly_expense.month', $month)
             ->get();
-        $library_revenue = LearnerDetail::withoutGlobalScopes()
+        $library_revenue_query = LearnerDetail::withoutGlobalScopes()
         ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
         ->where('learner_detail.is_paid', 1)
         ->where('learner_detail.library_id',getLibraryId())
@@ -111,8 +118,13 @@ class ReportController extends Controller
             SUM(plan_price_id) as total_revenue,
             SUM(plan_price_id / plans.plan_id) as monthly_revenue
         ')
-        ->groupBy('year', 'month')
-        ->first();
+        ->groupBy('year', 'month');
+
+        if (getCurrentBranch() != 0) {
+            $library_revenue_query->where('learner_detail.branch_id', getCurrentBranch());
+        }
+
+        $library_revenue = $library_revenue_query->first();
            
      
         $expenses = Expense::get();
@@ -149,6 +161,8 @@ class ReportController extends Controller
         $expenseIdsToDelete = array_diff($existingExpenseIds, $validatedData['expense_id']);
         if (!empty($expenseIdsToDelete)) {
             DB::table('monthly_expense')
+                ->where('library_id', getLibraryId())
+                ->where('branch_id', getCurrentBranch())
                 ->where('year', $year)
                 ->where('month', $month)
                 ->whereIn('expense_id', $expenseIdsToDelete)
@@ -239,8 +253,12 @@ class ReportController extends Controller
          
         $learners = $this->fetchlearnerData( $filters,$query);
        // Get the unique years and month
-       $minStartDate =LearnerDetail::min('plan_start_date');
-       $maxEndDate =LearnerDetail::max('plan_end_date');
+       $rangeQuery = LearnerDetail::where('library_id', getLibraryId());
+       if (getCurrentBranch() != 0) {
+           $rangeQuery->where('branch_id', getCurrentBranch());
+       }
+       $minStartDate = (clone $rangeQuery)->min('plan_start_date');
+       $maxEndDate = (clone $rangeQuery)->max('plan_end_date');
    
        $start = Carbon::parse($minStartDate)->startOfMonth();
        $end = Carbon::parse($maxEndDate)->startOfMonth();
@@ -484,7 +502,7 @@ class ReportController extends Controller
 
         $query = LearnerTransaction::withoutGlobalScopes()
             ->leftJoin('learners', 'learner_transactions.learner_id', '=', 'learners.id')
-           ->where('learner_transactions.branch_id', getCurrentBranch())
+           ->where('learner_transactions.library_id', getLibraryId())
            ->whereNotNull('learner_transactions.due_date')
             ->select(
                 'learner_transactions.due_date',
@@ -505,7 +523,9 @@ class ReportController extends Controller
             $query->whereMonth('learner_transactions.due_date', $month);
         }
 
-       
+        if (getCurrentBranch() != 0) {
+            $query->where('learner_transactions.branch_id', getCurrentBranch());
+        }
 
         $learners = $query->get();
 
@@ -524,14 +544,22 @@ class ReportController extends Controller
             'status' => $request->get('status'),
             'search' => $request->get('search'),
         ];
+        $bindings = [getLibraryId()];
+        $branchFilterSql = '';
+        if (getCurrentBranch() != 0) {
+            $branchFilterSql = ' AND branch_id = ?';
+            $bindings[] = getCurrentBranch();
+        }
+
         $data = DB::select("
-            SELECT DISTINCT 
-                YEAR(created_at) as year, 
-                MONTH(created_at) as month 
+            SELECT DISTINCT
+                YEAR(created_at) as year,
+                MONTH(created_at) as month
             FROM learner_operations_log
-            WHERE branch_id = ?
+            WHERE library_id = ?
+            $branchFilterSql
             ORDER BY year DESC, month ASC
-        ", [getCurrentBranch()]);
+        ", $bindings);
 
         $collection = collect($data);
 
@@ -539,9 +567,13 @@ class ReportController extends Controller
         $months = $collection->pluck('month')->unique()->values();
 
 
-        $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
+        $query = LearnerOperationsLog::query()
             ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
-       
+
+        if (getCurrentBranch() != 0) {
+            $query->where('branch_id', getCurrentBranch());
+        }
+
 
         // Filter by operation from the logs table
         if (!empty($filters['operation'])) {
@@ -581,29 +613,45 @@ class ReportController extends Controller
     }
 
     public function attendanceReport(Request $request){
+        $bindings = [getLibraryId()];
+        $branchFilterSql = '';
+        if (getCurrentBranch() != 0) {
+            $branchFilterSql = ' AND branch_id = ?';
+            $bindings[] = getCurrentBranch();
+        }
+
         $data = DB::select("
-            SELECT DISTINCT 
-                YEAR(date) as year, 
-                MONTH(date) as month 
+            SELECT DISTINCT
+                YEAR(date) as year,
+                MONTH(date) as month
             FROM attendances
-            WHERE branch_id = ?
+            WHERE library_id = ?
+            $branchFilterSql
             ORDER BY year DESC, month ASC
-        ", [getCurrentBranch()]);
+        ", $bindings);
 
         $collection = collect($data);
 
         $dynamicyears = $collection->pluck('year')->unique()->values();
         $dynamicmonths = $collection->pluck('month')->unique()->values();
-       
+
         $year = $request->year ?? date('Y');
         $month = $request->month ?? date('m');
         $daymonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $learners = Learner::where('branch_id',getCurrentBranch())->where('status',1)->get();
 
-       $attendanceRecords = Attendance::where('branch_id', getCurrentBranch())
-        ->where('branch_id', getCurrentBranch())
-        ->whereYear('date', $year)
-        ->whereMonth('date', $month)
+        $learnersQuery = Learner::where('library_id', getLibraryId())->where('status', 1);
+        $attendanceQuery = Attendance::where('library_id', getLibraryId())
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month);
+
+        if (getCurrentBranch() != 0) {
+            $learnersQuery->where('branch_id', getCurrentBranch());
+            $attendanceQuery->where('branch_id', getCurrentBranch());
+        }
+
+        $learners = $learnersQuery->get();
+
+       $attendanceRecords = $attendanceQuery
         ->get()
         ->groupBy('learner_id');
         
@@ -695,7 +743,11 @@ class ReportController extends Controller
                 'learners.name',
                 'learners.seat_no'
             )
-            ->where('learner_transaction_activity.branch_id', getCurrentBranch())
+            ->when(getCurrentBranch() != 0, function ($q) {
+                $q->where('learner_transaction_activity.branch_id', getCurrentBranch());
+            }, function ($q) {
+                $q->whereIn('learner_transaction_activity.branch_id', Branch::where('library_id', getLibraryId())->pluck('id'));
+            })
             ->orderBy('learner_transaction_activity.date', 'asc')
             ->get();
 
@@ -747,7 +799,11 @@ public function exportMonthlyPayment(Request $request)
             'learner_transaction_activity.date',
             [$fromDate->toDateString(), $toDate->toDateString()]
         )
-        ->where('learner_transaction_activity.branch_id', getCurrentBranch())
+        ->when(getCurrentBranch() != 0, function ($q) {
+            $q->where('learner_transaction_activity.branch_id', getCurrentBranch());
+        }, function ($q) {
+            $q->whereIn('learner_transaction_activity.branch_id', Branch::where('library_id', getLibraryId())->pluck('id'));
+        })
         ->select(
             'learner_transaction_activity.*',
             'learners.name',

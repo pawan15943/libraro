@@ -3458,7 +3458,8 @@ class LearnerController extends Controller
                 'pending_amount' => number_format($pending, 2, '.', ''),
                 'paid_date' => $paidDate,
                 'payment_mode' => $paymentModeRaw,
-                'receipt_url' => $canReceipt ? route('receipt.view', ['transactionId' => $t->id]) : null,
+                // 'receipt_url' => $canReceipt ? route('receipt.view', ['transactionId' => $t->id]) : null,
+                'receipt_url' => $canReceipt ? \Illuminate\Support\Facades\URL::signedRoute('receipt.signed', ['transactionId' => $t->id]) : null,
             ];
         })->values();
 

@@ -38,11 +38,13 @@ class ReceiptController extends Controller
         $txnId = (int) $validated['id'];
         $transaction = \App\Models\LearnerTransaction::withoutGlobalScopes()
             ->where('id', $txnId)
+            ->where('library_id', getLibraryId())
             ->first();
 
         if (! $transaction && !empty($validated['learner_id'])) {
             $transaction = \App\Models\LearnerTransaction::withoutGlobalScopes()
                 ->where('learner_id', (int) $validated['learner_id'])
+                ->where('library_id', getLibraryId())
                 ->orderByDesc('id')
                 ->first();
         }

@@ -57,7 +57,7 @@ class LibraryUserController extends Controller
 
         if ($id) {
             // ✅ Load roles as well for edit mode
-            $editUser = LibraryUser::findOrFail($id);
+            $editUser = LibraryUser::where('library_id', getLibraryId())->findOrFail($id);
             $editUser->load('roles');
         }
 
@@ -103,15 +103,21 @@ class LibraryUserController extends Controller
         
 
         DB::beginTransaction();
-       
+
         try {
+            // Guard against updating a staff account that belongs to another library
+            if ($request->filled('id')) {
+                LibraryUser::where('library_id', getLibraryId())->findOrFail($request->id);
+            }
+
             $data = $request->only('name', 'email', 'mobile');
 
             if ($request->filled('branch')) {
                 $data['branch_id'] = $request->branch;
             }
+            // $data['library_id'] = auth()->guard('library')->id();
 
-            $data['library_id'] = auth()->guard('library')->id();
+            $data['library_id'] = getLibraryId();
 
             if ($request->filled('password')) {
                 $data['password'] = bcrypt($request->password);
@@ -122,8 +128,8 @@ class LibraryUserController extends Controller
                 $filePath = $file->store('user_profile_picture', 'public');
                 $data['profile_picture'] = $filePath;
             }
-          
-      
+
+
             // Create or update LibraryUser
             $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
 
@@ -159,7 +165,7 @@ class LibraryUserController extends Controller
         
     public function editPermissions($id)
     {
-        $user = LibraryUser::with('permissions')->findOrFail($id);
+        $user = LibraryUser::with('permissions')->where('library_id', getLibraryId())->findOrFail($id);
 
         $subscription = Subscription::find(auth()->user()->library_type);
         $groupedPermissions = collect();
@@ -174,7 +180,7 @@ class LibraryUserController extends Controller
 
     public function updatePermissions(Request $request, $id)
     {
-        $user = LibraryUser::findOrFail($id);
+        $user = LibraryUser::where('library_id', getLibraryId())->findOrFail($id);
         $user->permissions()->sync($request->permissions); 
     
         return redirect()->route('library-users.index')->with('success', 'Permissions updated successfully.');
@@ -185,7 +191,7 @@ class LibraryUserController extends Controller
      
      public function toggleStatus($id)
      {
-         $user = LibraryUser::findOrFail($id);
+         $user = LibraryUser::where('library_id', getLibraryId())->findOrFail($id);
          $user->status = !$user->status;
          $user->save();
      

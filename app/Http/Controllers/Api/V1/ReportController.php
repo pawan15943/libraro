@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\LearnerTransactionActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -59,7 +60,11 @@ class ReportController extends Controller
                 'learner_transaction_activity.date',
                 [$fromDate->toDateString(), $toDate->toDateString()]
             )
-            ->where('learner_transaction_activity.branch_id', getCurrentBranch())
+            ->when(getCurrentBranch() != 0, function ($q) {
+                $q->where('learner_transaction_activity.branch_id', getCurrentBranch());
+            }, function ($q) {
+                $q->whereIn('learner_transaction_activity.branch_id', Branch::where('library_id', getLibraryId())->pluck('id'));
+            })
             ->select(
                 'learner_transaction_activity.*',
                 'learners.name',

@@ -795,7 +795,8 @@ class LearnerLifecycleService
             'updated_date'=> optional($transaction->updated_at)->toDateTimeString() ?? '',
 
             'is_paid' => (int) ($transaction->is_paid ?? 0),
-            'subscription_download_receipt_link' => route('receipt.view', ['transactionId' => $transaction->id]),
+            // 'subscription_download_receipt_link' => route('receipt.view', ['transactionId' => $transaction->id]),
+            'subscription_download_receipt_link' => \Illuminate\Support\Facades\URL::signedRoute('receipt.signed', ['transactionId' => $transaction->id]),
             'edit_url' => url('api/v1/library/learners/transactions/detail'),
             'delete_url' => url('api/v1/library/learners/transactions/delete'),
         ];

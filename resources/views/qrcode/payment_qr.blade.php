@@ -39,7 +39,7 @@
 </style>
 <section class="py-3 online-qr-booking">
     <div class="container">
-        <form action="{{ route('booking.upload.screenshot', $booking->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ $uploadScreenshotUrl }}" method="POST" enctype="multipart/form-data">
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <a href="/"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>

@@ -1086,14 +1086,24 @@ if (!function_exists('totalSeat')) {
 if (!function_exists('getLearnerMonthsAndYears')) {
     function getLearnerMonthsAndYears()
     {
+        $bindings = [getLibraryId()];
+        $branchFilter = '';
+
+        if (getCurrentBranch() != 0 && getCurrentBranch() !== null) {
+            $branchFilter = ' AND branch_id = ?';
+            $bindings[] = getCurrentBranch();
+        }
+
         $data = DB::select("
-            SELECT DISTINCT 
-                YEAR(plan_start_date) as year, 
-                MONTH(plan_start_date) as month 
+            SELECT DISTINCT
+                YEAR(plan_start_date) as year,
+                MONTH(plan_start_date) as month
             FROM learner_detail
-            WHERE plan_start_date IS NOT NULL 
+            WHERE plan_start_date IS NOT NULL
+            AND library_id = ?
+            $branchFilter
             ORDER BY year DESC, month ASC
-        ");
+        ", $bindings);
 
         $collection = collect($data);
 
@@ -2323,7 +2333,7 @@ if (!function_exists('whatsappReceiptMessage')) {
     {
         // Accepts precomputed $transaction/$branchName so list views can batch
         // these instead of hitting the DB per row. Also skips makeTinyUrl()'s
-        // blocking external HTTP call — receipt.view is already a short route,
+        // blocking external HTTP call — the signed receipt route is already short,
         // and shortening it per-row was adding a synchronous network round trip
         // (up to 5s each) to every row of the learner list.
         $transaction = $transaction ?? learnerTransaction($learner->id, $learner->learner_detail_id);
@@ -2331,7 +2341,7 @@ if (!function_exists('whatsappReceiptMessage')) {
 
         $receiptUrl = null;
         if ($transaction) {
-            $receiptUrl = route('receipt.view', ['transactionId' => $transaction->id]);
+            $receiptUrl = \Illuminate\Support\Facades\URL::signedRoute('receipt.signed', ['transactionId' => $transaction->id]);
         }
 
         return rawurlencode(

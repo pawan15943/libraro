@@ -14,12 +14,18 @@ trait LearnerQueryTrait
 
     public function getAllLearnersByLibrary()
     {
-        return Learner::where('branch_id', getCurrentBranch()) 
+        $query = Learner::where('library_id', getLibraryId())
                 ->with([
                     'learnerDetails' => function($query) {
                         $query->with([ 'plan', 'planType']);
                     }
                 ]);
+
+        if (getCurrentBranch() != 0 && getCurrentBranch() !== null) {
+            $query->where('branch_id', getCurrentBranch());
+        }
+
+        return $query;
     }
     
 }
