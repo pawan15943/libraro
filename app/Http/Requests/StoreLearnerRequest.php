@@ -136,6 +136,21 @@ class StoreLearnerRequest extends FormRequest
                 }
             }
 
+            $lockerNo = $this->input('locker_no');
+
+            if ($this->toggleFieldCheckbox === 'yes' && $lockerNo !== null && $lockerNo !== '') {
+
+                $exists = Learner::where('branch_id', getCurrentBranch())
+                    ->where('status', 1)
+                    ->whereNull('deleted_at')
+                    ->where('locker_no', $lockerNo)
+                    ->exists();
+
+                if ($exists) {
+                    $validator->errors()->add('locker_no', 'This locker number is already assigned to another active learner in this branch.');
+                }
+            }
+
         });
     }
 

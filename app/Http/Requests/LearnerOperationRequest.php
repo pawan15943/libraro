@@ -240,4 +240,27 @@ class LearnerOperationRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+
+            $lockerNo = $this->input('locker_no');
+
+            if ($this->locker === 'yes' && $lockerNo !== null && $lockerNo !== '') {
+
+                $exists = Learner::where('branch_id', getCurrentBranch())
+                    ->where('status', 1)
+                    ->whereNull('deleted_at')
+                    ->where('locker_no', $lockerNo)
+                    ->where('id', '!=', $this->learner_id)
+                    ->exists();
+
+                if ($exists) {
+                    $validator->errors()->add('locker_no', 'This locker number is already assigned to another active learner in this branch.');
+                }
+            }
+
+        });
+    }
+
 }

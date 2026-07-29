@@ -101,7 +101,7 @@ class LearnerService
                                 JOIN learners l2 ON l2.id = ld2.learner_id
                                 JOIN branches b2 ON b2.id = ld2.branch_id WHERE l2.no_expiry = 0
                                 AND ld2.plan_start_date <= ?
-                                AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) > ?
+                                AND DATE_ADD(ld2.plan_end_date, INTERVAL b2.extend_days DAY) >= ?
                                 AND ld2.deleted_at IS NULL
                                 AND l2.deleted_at IS NULL
                                 AND NOT EXISTS (

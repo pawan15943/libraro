@@ -89,7 +89,7 @@ class LibraryController extends Controller
         // ---- Case 3: Active Future Booked Learners ----
         $futureLearners = LearnerDetail::where('status', 0)
             ->where('plan_start_date', '<=', $today)
-            ->where('plan_end_date', '>', $today)
+            ->where('plan_end_date', '>=', $today)
             ->pluck('learner_id');
 
         // ---- Merge All Unique Learners ----
@@ -122,7 +122,7 @@ class LibraryController extends Controller
                 // Check if this detail is active today
                 if (
                     $detail->plan_start_date <= $today &&
-                    $planEndDateWithExtension > $today
+                    $planEndDateWithExtension >= $today
                 ) {
                     $activeDetail = $detail;
                     break;
