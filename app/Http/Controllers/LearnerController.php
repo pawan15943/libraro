@@ -137,7 +137,7 @@ class LearnerController extends Controller
         // ---- Case 3: Active Future Booked Learners ----
         $futureLearners = LearnerDetail::where('status', 0)
             ->where('plan_start_date', '<=', $today)
-            ->where('plan_end_date', '>', $today)
+            ->where('plan_end_date', '>=', $today)
             ->pluck('learner_id');
 
         // ---- Merge All Unique Learners ----
@@ -180,7 +180,7 @@ class LearnerController extends Controller
                 $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('status', 1)
                     ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>', $today)
+                    ->where('plan_end_date', '>=', $today)
                     ->exists();
 
                 Learner::where('id', $customerdata->learner_id)
@@ -196,13 +196,13 @@ class LearnerController extends Controller
                 LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('status', 0)
                     ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>', $today)
+                    ->where('plan_end_date', '>=', $today)
                     ->update(['status' => 1]);
 
                 $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
                     ->where('status', 1)
                     ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>', $today)
+                    ->where('plan_end_date', '>=', $today)
                     ->exists();
 
                 // Learner::where('id', $customerdata->learner_id)
