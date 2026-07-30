@@ -117,27 +117,30 @@ class LearnerController extends Controller
         $futureCheckDate = $today->copy()->addDays(5);
         $extend_day = getExtendDays();
         // ---- Case 1: Renewed Learners ----
-        $renewedLearners = LearnerDetail::select('learner_id')
+        $renewedLearners = LearnerDetail::whereNull('deleted_at')
+            ->select('learner_id')
             ->groupBy('learner_id')
             ->havingRaw('
-                SUM(CASE WHEN plan_end_date <= ? THEN 1 ELSE 0 END) > 0 
-                AND 
+                SUM(CASE WHEN plan_end_date <= ? THEN 1 ELSE 0 END) > 0
+                AND
                 SUM(CASE WHEN plan_end_date > ? AND status = 0 THEN 1 ELSE 0 END) > 0
             ', [$today->copy()->addDays(5), $today->copy()->addDays(5)])
             ->pluck('learner_id');
 
         // ---- Case 2: Expired Learners ----
-        $expiredLearners = LearnerDetail::whereDate(
-            DB::raw("DATE_ADD(plan_end_date, INTERVAL $extend_day DAY)"),
-            '<=',
-            $today
-        )
+        $expiredLearners = LearnerDetail::whereNull('deleted_at')
+            ->whereDate(
+                DB::raw("DATE_ADD(plan_end_date, INTERVAL $extend_day DAY)"),
+                '<=',
+                $today
+            )
             ->pluck('learner_id');
 
         // ---- Case 3: Active Future Booked Learners ----
-        $futureLearners = LearnerDetail::where('status', 0)
+        $futureLearners = LearnerDetail::whereNull('deleted_at')
+            ->where('status', 0)
             ->where('plan_start_date', '<=', $today)
-            ->where('plan_end_date', '>=', $today)
+            ->where('plan_end_date', '>', $today)
             ->pluck('learner_id');
 
         // ---- Merge All Unique Learners ----
@@ -147,7 +150,9 @@ class LearnerController extends Controller
             ->unique();
 
 
-        $customerdatas = LearnerDetail::whereIn('learner_id', $learnerIds)->get();
+        $customerdatas = LearnerDetail::whereNull('deleted_at')
+            ->whereIn('learner_id', $learnerIds)
+            ->get();
 
         foreach ($customerdatas as $customerdata) {
             $branchId = $customerdata->branch_id;
@@ -156,61 +161,67 @@ class LearnerController extends Controller
 
             $planEndDateWithExtension = Carbon::parse($customerdata->plan_end_date)->addDays($extend_day);
 
-            $hasFuturePlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+            $hasFuturePlan = LearnerDetail::whereNull('deleted_at')
+                ->where('learner_id', $customerdata->learner_id)
                 ->where('plan_end_date', '>', $futureCheckDate)
                 ->where('status', 0)
                 ->exists();
 
-            $hasPastPlan = LearnerDetail::where('learner_id', $customerdata->learner_id)
+            $hasPastPlan = LearnerDetail::whereNull('deleted_at')
+                ->where('learner_id', $customerdata->learner_id)
                 ->where('plan_end_date', '<', $futureCheckDate)
                 ->exists();
 
             $isRenewed = $hasFuturePlan && $hasPastPlan;
 
             if ($isRenewed) {
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                LearnerDetail::whereNull('deleted_at')
+                    ->where('learner_id', $customerdata->learner_id)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>', $futureCheckDate)
                     ->update(['status' => 1]);
 
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                LearnerDetail::whereNull('deleted_at')
+                    ->where('learner_id', $customerdata->learner_id)
                     ->where('plan_end_date', '<', $today)
                     ->update(['status' => 0]);
 
-                $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                $hasActiveDetail = LearnerDetail::whereNull('deleted_at')
+                    ->where('learner_id', $customerdata->learner_id)
                     ->where('status', 1)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>=', $today)
                     ->exists();
 
-                Learner::where('id', $customerdata->learner_id)
+                Learner::whereNull('deleted_at')
+                    ->where('id', $customerdata->learner_id)
                     ->update(['status' => $hasActiveDetail ? 1 : 0]);
             }
             elseif ($planEndDateWithExtension->lt($today)) {
-                Learner::where('id', $customerdata->learner_id)
+                Learner::whereNull('deleted_at')
+                    ->where('id', $customerdata->learner_id)
                     ->where('status', '!=', 0)
                     ->update(['status' => 0]);
 
                 $customerdata->update(['status' => 0]);
             }  else {
-                LearnerDetail::where('learner_id', $customerdata->learner_id)
+                LearnerDetail::whereNull('deleted_at')
+                    ->where('learner_id', $customerdata->learner_id)
                     ->where('status', 0)
                     ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>=', $today)
+                    ->where('plan_end_date', '>', $today)
                     ->update(['status' => 1]);
 
-                $hasActiveDetail = LearnerDetail::where('learner_id', $customerdata->learner_id)
+                $hasActiveDetail = LearnerDetail::whereNull('deleted_at')
+                    ->where('learner_id', $customerdata->learner_id)
                     ->where('status', 1)
                     ->where('plan_start_date', '<=', $today)
                     ->where('plan_end_date', '>=', $today)
                     ->exists();
 
-                // Learner::where('id', $customerdata->learner_id)
-                //     ->update(['status' => $hasActiveDetail ? 1 : 0]);
-
-                 Learner::where('id', $customerdata->learner_id)
-                    ->where('status', '!=', 1)
-                    ->update(['status' => 1]);
+                Learner::whereNull('deleted_at')
+                    ->where('id', $customerdata->learner_id)
+                    ->update(['status' => $hasActiveDetail ? 1 : 0]);
             }
         }
     }
