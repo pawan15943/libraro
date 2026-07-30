@@ -216,7 +216,7 @@ class LearnerController extends Controller
                     ->where('learner_id', $customerdata->learner_id)
                     ->where('status', 1)
                     ->where('plan_start_date', '<=', $today)
-                    ->where('plan_end_date', '>=', $today)
+                    ->whereRaw("DATE_ADD(plan_end_date, INTERVAL " . (int) $extend_day . " DAY) >= ?", [$today])
                     ->exists();
 
                 Learner::whereNull('deleted_at')
