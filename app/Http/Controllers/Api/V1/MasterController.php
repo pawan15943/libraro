@@ -2760,7 +2760,7 @@ class MasterController extends Controller
         ]);
     }
 
-    // ✅ Check a single feature's show/hide state for the active branch
+    // ✅ Check one feature's (or, without an id, every feature's) show/hide state for the active branch
     public function checkToggleFeature(Request $request)
     {
         if ($denied = $this->denyWithoutAppPermission('Manage Feature Toggles')) {
@@ -2768,25 +2768,48 @@ class MasterController extends Controller
         }
 
         $validated = $request->validate([
-            'id' => 'required|integer|exists:toggle_features,id',
+            'id' => 'nullable|integer|exists:toggle_features,id',
         ]);
 
-        $feature = DB::table('toggle_features')->where('id', $validated['id'])->first();
-
         $hiddenIds = toggleHideField() ?? [];
-        $isHidden = in_array($feature->id, $hiddenIds);
+
+        if (!empty($validated['id'])) {
+            $feature = DB::table('toggle_features')->where('id', $validated['id'])->first();
+            $isHidden = in_array($feature->id, $hiddenIds);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Toggle feature status fetched successfully',
+                'data' => [
+                    'id' => $feature->id,
+                    'name' => $feature->name,
+                    'category' => $feature->category,
+                    'description' => $feature->description,
+                    'is_hidden' => $isHidden,
+                    'is_visible' => !$isHidden,
+                ],
+            ]);
+        }
+
+        // No id given — return the show/hide state for every feature, current-branch permissions applied.
+        $features = DB::table('toggle_features')->orderBy('category')->orderBy('id')->get()
+            ->map(function ($item) use ($hiddenIds) {
+                $isHidden = in_array($item->id, $hiddenIds);
+
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'category' => $item->category,
+                    'description' => $item->description,
+                    'is_hidden' => $isHidden,
+                    'is_visible' => !$isHidden,
+                ];
+            })->values();
 
         return response()->json([
             'status' => true,
             'message' => 'Toggle feature status fetched successfully',
-            'data' => [
-                'id' => $feature->id,
-                'name' => $feature->name,
-                'category' => $feature->category,
-                'description' => $feature->description,
-                'is_hidden' => $isHidden,
-                'is_visible' => !$isHidden,
-            ],
+            'data' => $features,
         ]);
     }
 

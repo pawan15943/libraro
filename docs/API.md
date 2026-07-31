@@ -2300,17 +2300,17 @@ Bulk replace, same as the web switches: send the complete set of `toggle_feature
 **Controller:** `MasterController@checkToggleFeature`
 **Auth:** `auth:library_api`, `api_key`, `throttle:library_api`, permission `Manage Feature Toggles`
 
-Single-field lookup: returns whether one specific `toggle_features.id` is currently shown or hidden for the active branch, without fetching the full categorized list from `/toggle-features/list`.
+Lookup: with `id`, returns whether that one `toggle_features.id` is currently shown or hidden for the active branch. Without `id`, returns the show/hide state for every feature (flat, not grouped by category like `/toggle-features/list`) — useful for a client that just wants a permission-style map of every field's visibility.
 
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| id | integer | Yes | query param; must exist in `toggle_features.id` |
+| id | integer | No | query param; if given, must exist in `toggle_features.id`. Omit to get every feature's state. |
 
-**Response**
+**Response — with `id`**
 | Field | Type | Notes |
 |---|---|---|
-| status | boolean | false with HTTP 422 if `id` is missing or doesn't exist in `toggle_features` |
+| status | boolean | false with HTTP 422 if `id` is given but doesn't exist in `toggle_features` |
 | message | string | |
 | data.id | integer | `toggle_features.id` |
 | data.name | string | |
@@ -2318,6 +2318,13 @@ Single-field lookup: returns whether one specific `toggle_features.id` is curren
 | data.description | string\|null | |
 | data.is_hidden | boolean | whether this feature is currently hidden for the active branch |
 | data.is_visible | boolean | inverse of `is_hidden`, provided for convenience |
+
+**Response — without `id`**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data | array | one entry per `toggle_features` row, ordered by category then id, each shaped like the single-`id` `data` object above |
 
 ---
 
