@@ -2760,6 +2760,36 @@ class MasterController extends Controller
         ]);
     }
 
+    // ✅ Check a single feature's show/hide state for the active branch
+    public function checkToggleFeature(Request $request)
+    {
+        if ($denied = $this->denyWithoutAppPermission('Manage Feature Toggles')) {
+            return $denied;
+        }
+
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:toggle_features,id',
+        ]);
+
+        $feature = DB::table('toggle_features')->where('id', $validated['id'])->first();
+
+        $hiddenIds = toggleHideField() ?? [];
+        $isHidden = in_array($feature->id, $hiddenIds);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Toggle feature status fetched successfully',
+            'data' => [
+                'id' => $feature->id,
+                'name' => $feature->name,
+                'category' => $feature->category,
+                'description' => $feature->description,
+                'is_hidden' => $isHidden,
+                'is_visible' => !$isHidden,
+            ],
+        ]);
+    }
+
     // Common builder reused by both the list (show) and update APIs above.
     private function buildToggleFeatureData(): array
     {

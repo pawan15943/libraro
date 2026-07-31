@@ -2248,7 +2248,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ## Toggle Features
 
-Middleware: `auth:library_api`, `api_key`, `throttle:library_api`. Both endpoints additionally require the `Manage Feature Toggles` app permission (checked via `denyWithoutAppPermission`, HTTP 403 if missing).
+Middleware: `auth:library_api`, `api_key`, `throttle:library_api`. All three endpoints additionally require the `Manage Feature Toggles` app permission (checked via `denyWithoutAppPermission`, HTTP 403 if missing).
 
 API equivalent of the web "Toggle feature" page (`master.hide_field` view / `MasterController@toggleFeature` + `@updateHidefield`). `toggle_features` is a static lookup table (id, name, category, description) seeding every hideable option across the app (booking form fields, menu items, buttons, dashboard widgets, learner-contact privacy masking, etc). The actual on/off state is per-branch: `branches.hide_field` stores a JSON array of the `toggle_features.id` values currently hidden for the active branch (resolved via `getCurrentBranch()`). Both endpoints share one private builder, `MasterController::buildToggleFeatureData()`, so the shape returned by the list (show) endpoint and the shape returned after an update are identical.
 
@@ -2295,6 +2295,29 @@ Bulk replace, same as the web switches: send the complete set of `toggle_feature
 | status | boolean | false with HTTP 404 if the active branch can't be resolved, HTTP 422 on validation failure |
 | message | string | |
 | data | object | same shape as the list endpoint's `data`, reflecting the state immediately after the save |
+
+### `GET /api/v1/library/toggle-features/check`
+**Controller:** `MasterController@checkToggleFeature`
+**Auth:** `auth:library_api`, `api_key`, `throttle:library_api`, permission `Manage Feature Toggles`
+
+Single-field lookup: returns whether one specific `toggle_features.id` is currently shown or hidden for the active branch, without fetching the full categorized list from `/toggle-features/list`.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| id | integer | Yes | query param; must exist in `toggle_features.id` |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | false with HTTP 422 if `id` is missing or doesn't exist in `toggle_features` |
+| message | string | |
+| data.id | integer | `toggle_features.id` |
+| data.name | string | |
+| data.category | string | |
+| data.description | string\|null | |
+| data.is_hidden | boolean | whether this feature is currently hidden for the active branch |
+| data.is_visible | boolean | inverse of `is_hidden`, provided for convenience |
 
 ---
 
