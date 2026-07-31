@@ -2317,7 +2317,6 @@ Lookup: with `id`, returns whether that one `toggle_features.id` is currently sh
 | data.category | string | |
 | data.description | string\|null | |
 | data.is_hidden | boolean | whether this feature is currently hidden for the active branch |
-| data.is_visible | boolean | inverse of `is_hidden`, provided for convenience |
 
 **Response — without `id`**
 | Field | Type | Notes |

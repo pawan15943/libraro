@@ -2775,7 +2775,6 @@ class MasterController extends Controller
 
         if (!empty($validated['id'])) {
             $feature = DB::table('toggle_features')->where('id', $validated['id'])->first();
-            $isHidden = in_array($feature->id, $hiddenIds);
 
             return response()->json([
                 'status' => true,
@@ -2785,8 +2784,7 @@ class MasterController extends Controller
                     'name' => $feature->name,
                     'category' => $feature->category,
                     'description' => $feature->description,
-                    'is_hidden' => $isHidden,
-                    'is_visible' => !$isHidden,
+                    'is_hidden' => in_array($feature->id, $hiddenIds),
                 ],
             ]);
         }
@@ -2794,15 +2792,12 @@ class MasterController extends Controller
         // No id given — return the show/hide state for every feature, current-branch permissions applied.
         $features = DB::table('toggle_features')->orderBy('category')->orderBy('id')->get()
             ->map(function ($item) use ($hiddenIds) {
-                $isHidden = in_array($item->id, $hiddenIds);
-
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
                     'category' => $item->category,
                     'description' => $item->description,
-                    'is_hidden' => $isHidden,
-                    'is_visible' => !$isHidden,
+                    'is_hidden' => in_array($item->id, $hiddenIds),
                 ];
             })->values();
 
