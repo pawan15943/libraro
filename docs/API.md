@@ -2266,12 +2266,17 @@ API equivalent of the web "Toggle feature" page (`master.hide_field` view / `Mas
 |---|---|---|
 | status | boolean | |
 | message | string | |
+| data.screen_title | string | static, `"Show / Hide Features"` |
+| data.search_placeholder | string | static, `"Search Feature"` |
 | data.hidden_ids | integer[] | `toggle_features.id` values currently hidden for the active branch |
-| data.categories | object | keyed by `toggle_features.category` (e.g. `Booking Form`, `Menu`, `Button`, `Dashboard`, `Option`, `Other`, `Privacy`) |
-| data.categories.{category}[].id | integer | `toggle_features.id` |
-| data.categories.{category}[].name | string | |
-| data.categories.{category}[].description | string\|null | |
-| data.categories.{category}[].is_hidden | boolean | whether this feature is currently hidden for the active branch |
+| data.categories | array | one entry per distinct `toggle_features.category` (e.g. `Booking Form`, `Menu`, `Button`, `Dashboard`, `Option`, `Other`, `Privacy`), ordered alphabetically by category name |
+| data.categories[].id | integer | synthetic 1-based index of the category in the ordered list — not a stored category id, `toggle_features.category` is a plain string column |
+| data.categories[].title | string | `toggle_features.category` |
+| data.categories[].display_order | integer | same as `id`, the category's 1-based position in the list |
+| data.categories[].features[].id | integer | `toggle_features.id` |
+| data.categories[].features[].name | string | |
+| data.categories[].features[].description | string\|null | |
+| data.categories[].features[].is_hidden | boolean | whether this feature is currently hidden for the active branch |
 
 ### `POST /api/v1/library/toggle-features/update`
 **Controller:** `MasterController@updateToggleFeature`

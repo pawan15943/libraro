@@ -2767,20 +2767,27 @@ class MasterController extends Controller
 
         $features = DB::table('toggle_features')->orderBy('category')->orderBy('id')->get();
 
-        $grouped = $features->groupBy('category')->map(function ($items) use ($hiddenIds) {
-            return $items->map(function ($item) use ($hiddenIds) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'is_hidden' => in_array($item->id, $hiddenIds),
-                ];
-            })->values();
-        });
+        $categories = $features->groupBy('category')->values()->map(function ($items, $index) use ($hiddenIds) {
+            return [
+                'id' => $index + 1,
+                'title' => $items->first()->category,
+                'display_order' => $index + 1,
+                'features' => $items->map(function ($item) use ($hiddenIds) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'description' => $item->description,
+                        'is_hidden' => in_array($item->id, $hiddenIds),
+                    ];
+                })->values(),
+            ];
+        })->values();
 
         return [
+            'screen_title' => 'Show / Hide Features',
+            'search_placeholder' => 'Search Feature',
             'hidden_ids' => array_values($hiddenIds),
-            'categories' => $grouped,
+            'categories' => $categories,
         ];
     }
 }
