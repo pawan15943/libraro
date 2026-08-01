@@ -281,6 +281,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/store', [LearnerController::class, 'learnerStore'])->name('learners.store');
     Route::post('/generallearner/store', [LearnerController::class, 'generallearnerStore'])->name('genral.learners.store');
     Route::get('/list', [LearnerController::class, 'learnerList'])->name('learners');
+    Route::get('/list/pdf', [LearnerController::class, 'learnerListPdf'])->name('learners.list.pdf');
     Route::get('/search', [LearnerController::class, 'learnerSearch'])->name('learner.search');
     Route::get('/renew-delete', [RenewDeleteController::class, 'index'])->name('create.renew.delete.index');
     Route::get('/renew-delete/{learner}/transaction', [RenewDeleteController::class, 'showTransaction'])->name('create.renew.delete.transaction');
