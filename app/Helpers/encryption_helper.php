@@ -339,6 +339,8 @@ if (!function_exists('getLibraryId')) {
             if ($user instanceof \App\Models\LibraryUser) {
                 $library_id = $user->library_id;
             }
+        } elseif (Auth::guard('learner_api')->check()) {
+            $library_id = Auth::guard('learner_api')->user()->library_id;
         }
 
         return $library_id;
@@ -370,6 +372,8 @@ if (!function_exists('getCurrentBranch')) {
             if ($user instanceof \App\Models\LibraryUser) {
                 $currentBranch = $user->current_branch;
             }
+        } elseif (Auth::guard('learner_api')->check()) {
+            $currentBranch = Auth::guard('learner_api')->user()->branch_id;
         }
 
         return $currentBranch;
@@ -2432,19 +2436,16 @@ if (!function_exists('calculatePlanDays')) {
 
 if (!function_exists('authLibraryId')) {
 
+    /**
+     * Historically library_api-only; now just delegates to getLibraryId()
+     * so it resolves for every guard (library, library_user, learner,
+     * library_api, learner_api). Safe for existing callers — they all live
+     * inside library_api-only routes, where the other guards are never
+     * simultaneously active.
+     */
     function authLibraryId()
     {
-        $user = auth('library_api')->user();
-
-        if ($user instanceof \App\Models\Library) {
-            return $user->id;
-        }
-
-        if ($user instanceof \App\Models\LibraryUser) {
-            return $user->library_id;
-        }
-
-        return null;
+        return getLibraryId();
     }
 }
 

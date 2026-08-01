@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\HasBranch;
 use App\Traits\HasSeatType;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Learner extends Authenticatable
 {
+    use HasApiTokens;
     use Notifiable;
     use HasRoles;
     use HasFactory,SoftDeletes;

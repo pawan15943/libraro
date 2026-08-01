@@ -184,6 +184,21 @@ public function summary($request)
 
     /*
     |--------------------------------------------------------------------------
+    | Learner Self-Scope (learner_api)
+    |--------------------------------------------------------------------------
+    |
+    | When a learner is calling (not staff), hard-lock the query to their own
+    | row regardless of any learner_id/search/learner_name they send — this
+    | runs before the filters below, which can only narrow further, never
+    | broaden past this.
+    */
+
+    if ($callerLearnerId = auth('learner_api')->id()) {
+        $query->where('learners.id', $callerLearnerId);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Learner Filters
     |--------------------------------------------------------------------------
     */

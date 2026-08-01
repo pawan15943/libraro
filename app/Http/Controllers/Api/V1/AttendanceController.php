@@ -51,10 +51,9 @@ class AttendanceController extends Controller
         return $service->attendanceLogs($request);
     }
 
-    // this function not perfact
-    public function qrScanAttendance(Request $request)
+    public function qrScanAttendance(Request $request, AttendanceService $service)
     {
-        
+
         $request->validate([
             'qr' => 'required|string',
         ]);
@@ -92,7 +91,7 @@ class AttendanceController extends Controller
         cache()->put($cacheKey, true, 5);
 
         // ✅ Mark attendance
-        $result = $this->processAttendance($learner->id, $branchId, 'QR');
+        $result = $service->processAttendance($learner->id, $branchId, 'QR');
 
         return response()->json($result, $result['code'] ?? 200);
     }

@@ -41,7 +41,7 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 24. [Learners](#learners)
 25. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
 26. [System / Cron (internal use)](#system--cron-internal-use)
-27. [Learner Auth (inactive)](#learner-auth-inactive)
+27. [Learner App (Self-Service)](#learner-app-self-service)
 
 ---
 
@@ -3514,16 +3514,191 @@ None — no request body
 
 ---
 
-## Learner Auth (inactive)
+## Learner App (Self-Service)
 
-Defined in `routes/api/v1.php` but **commented out** — not currently live:
+Distinct from the staff/library app documented above. These endpoints are used by the learner's own mobile app; every authenticated one is scoped to the calling learner (their own `learner_id`) and cannot see or act on another learner's data. `getLibraryId()`/`getCurrentBranch()` resolve from the `learner_api` guard for these routes.
 
-```php
-// Route::post('learner/login', [LearnerAuthController::class, 'login']);
-// Route::middleware('auth:learner_api')->group(function () {
-//     Route::get('learner/profile', [LearnerAuthController::class, 'profile']);
-//     Route::post('learner/logout', [LearnerAuthController::class, 'logout']);
-// });
-```
+Auth token: obtained from `POST learner/login`, sent as `Authorization: Bearer <token>` on the `learner_api`-guarded routes below. Throttle key `learner_api` is keyed by the authenticated learner (120 req/min), same pattern as `library_api`.
 
-Not documented in detail since these routes emit no live contract. If reactivated, add a section here following the same format as the rest of this document, and remove this notice.
+### `POST /api/v1/learner/book-seat/{uuid}`
+**Controller:** `Api\V1\Learner\LearnerBookingController@store`
+**Auth:** `api_key`, `throttle:60,1` (public — no login required; `{uuid}` is the branch's public QR uuid)
+
+Same field set as the web QR booking form (`QrEntryController::store`) and the underlying `QrBookingService::createBooking()`. Creates a **pending** `Booking` row; staff approves it via the existing `POST qr-bookings/verify` (`QrBookingController@verify`), which turns it into a real `Learner`.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| name | string | yes | max 191 |
+| mobile | integer | yes | 8-15 digits |
+| email | string | no | email format |
+| dob | string (date) | no | |
+| general_seat | string | no | yes\|no |
+| seat_no | integer | required if general_seat=no | |
+| plan_id | integer | yes | exists:plans,id |
+| plan_type_id | integer | yes | exists:plan_types,id |
+| plan_price_id | numeric | yes | |
+| plan_start_date | string (date) | yes | |
+| payment_mode | string | yes | online\|offline |
+| id_proof_name | integer | no | 1=Aadhar, 2=Driving License, 3=Other |
+| id_proof_file | file | no | jpg/jpeg/png/webp/pdf, max 2MB |
+| id_proof_number | string | no | max 150 |
+| address | string | no | max 500 |
+| profile_picture | file | no | jpg/jpeg/png/webp, max 200KB |
+| learner_transaction_id | integer | no | exists:learner_transactions,id — set when this is a renewal booking against an existing learner |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data.booking_id | integer | present on success (201) |
+| data.payment_mode | string | |
+| data.total_amount | number | |
+
+### `POST /api/v1/learner/login`
+**Controller:** `Api\V1\Auth\LearnerAuthController@login`
+**Auth:** `api_key`, `throttle:60,1` (public)
+
+Same credential pair as the web learner login (`Auth\LoginController`, guard `learner`): `learner_no` + `password`.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| learner_no | string | yes | |
+| password | string | yes | |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| token | string | Sanctum bearer token, present on success |
+| user_type | string | `"learner"` |
+| data.learner_id | integer | |
+| data.learner_no | string | |
+| data.name | string | |
+| data.branch_id | integer | |
+| data.library_id | integer | |
+
+### `GET /api/v1/learner/profile`
+**Controller:** `Api\V1\Auth\LearnerAuthController@profile`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Same payload shape as `data.*` below (`detail`) — thin alias kept for post-login profile fetch.
+
+### `POST /api/v1/learner/logout`
+**Controller:** `Api\V1\Auth\LearnerAuthController@logout`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Revokes the current Sanctum token. No request payload. Response: `{status, message}`.
+
+### `POST /api/v1/learner/detail`
+**Controller:** `Api\V1\Learner\LearnerAppController@detail`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Same underlying data as the staff `POST library/learners/detail` (`LearnerService::getLearnerDetails()`), but always scoped to the authenticated learner — no `id` field accepted from the client.
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| data | object | learner profile, latest plan/plan-type, transactions, activity — see `LearnerService::getLearnerDetails()` |
+
+### `POST /api/v1/learner/renew`
+**Controller:** `Api\V1\Learner\LearnerAppController@renew`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Same fields/engine as the staff `POST library/learners/operation` with `payment_type=RENEW` (`LearnerOperationRequest` + `LearnerOperationService::process()`). `learner_id` and `payment_type` are forced server-side from the auth token (`LearnerRenewRequest`) — a learner can only ever renew their own seat.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| plan_id | integer | yes | exists:plans,id (scoped to own library) |
+| plan_type_id | integer | yes | exists:plan_types,id (scoped to own branch) |
+| plan_price_id | numeric | yes | |
+| plan_start_date | string (date) | no | defaults to day after current plan end |
+| paid_amount | numeric | yes | |
+| payment_mode | integer | yes | 1=online, 2=offline, 3=paylater |
+| discountType | string | no | amount\|percentage |
+| discount_amount | numeric | no | required if discountType set |
+| locker | string | no | yes\|no |
+| locker_no | integer | required if locker=yes | |
+| locker_amount | numeric | no | |
+| due_date | string (date) | required if payment_mode=3 | |
+| no_expiry | integer | no | 0\|1 |
+| sended_message_type | string | no | whatsapp\|text\|both\|no |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| success | boolean | from `LearnerOperationService::process()` |
+| message | string | |
+
+### `POST /api/v1/learner/dashboard`
+**Controller:** `Api\V1\Learner\LearnerAppController@dashboard`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+JSON port of the web learner dashboard (`DashboardController::learnerDashboard()`).
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| data.learner_details[] | array | all `LearnerDetail` rows (full plan history) with `plan_name`, `plan_type_name` |
+| data.library_name | string | current branch display name |
+| data.features[] | array | branch's enabled `Feature` rows |
+| data.learner_requests[] | array | rows from `learner_request` table for this learner |
+
+### `POST /api/v1/learner/attendance/summary`
+**Controller:** `Api\V1\AttendanceController@summary` (same controller action as the staff `attendance/summary`)
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Same method as the staff-side summary (`AttendanceService::summary()`) — it now resolves `library_id` for any guard (via `authLibraryId()` → `getLibraryId()`), and when called by a learner it hard-locks the query to that learner's own row before any client-supplied `learner_id`/`search`/`learner_name` filters are applied, so a learner can never see another learner's attendance. Response shape is the same "list" shape as the staff version (one row per learner-per-day); for a learner it's effectively a single-member list.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| date | string (date) | no | single-day shortcut |
+| from_date | string (date) | no | defaults to today |
+| to_date | string (date) | no | must be >= from_date, defaults to today |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| data.summary.total_members | integer | row count (learner × day) — for a learner call this equals total days in range |
+| data.summary.present_members | integer | |
+| data.summary.absent_members | integer | |
+| data.filters.from_date | string | d/m/Y |
+| data.filters.to_date | string | d/m/Y |
+| data.attendance[] | array | one row per (learner, day): `learner_id`, `name`, `seat_no`, `plan_type`, `plan_end_date`, `learner_plan_status`, `shift_timing`, `attendance_date`, `punch_in`, `punch_out`, `duration_in_library`, `attendance_status` |
+
+### `POST /api/v1/learner/attendance/logs`
+**Controller:** `Api\V1\Learner\LearnerAppController@attendanceLogs`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Reuses `AttendanceService::attendanceLogs()` unchanged (same response shape as the staff version, see [Attendance](#attendance-qridmanual)), with `learner_id` forced to the authenticated learner.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| date | string (date) | no | defaults to today, format Y-m-d |
+
+### `POST /api/v1/learner/attendance/qr-scan`
+**Controller:** `Api\V1\AttendanceController@qrScanAttendance`
+**Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
+
+Learner scans the branch's rotating QR code (from `attendance/qr-token`, staff-side) to punch in/out. Moved here from the `library_api` group, where it was previously misconfigured (the endpoint reads `auth()->user()` as the learner, and also had a bug calling an undefined `$this->processAttendance()` — both fixed as part of this change).
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| qr | string | yes | rotating QR token from `attendance/qr-token` |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | string | success\|extension\|expired\|error |
+| message | string | |
+| code | integer | HTTP status echoed in body and as the response code |

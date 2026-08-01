@@ -441,4 +441,170 @@ class QrBookingService
             throw new \Exception($e->getMessage());
         }
     }
+
+    /**
+     * Create a pending self-service seat-booking request against a branch's
+     * public QR (same field set as the web QR booking form, see
+     * QrEntryController::store()). Staff later approves it via verifyBooking().
+     * Used by the learner-app "book seat" API; throws \Exception with a
+     * user-facing message on validation/availability failure.
+     */
+    public function createBooking(array $validated, \App\Models\Branch $branch, array $extra = []): \App\Models\Booking
+    {
+        $planId = $validated['plan_id'];
+        $seatNo = $extra['seat_no'] ?? null;
+        $learnerTransactionId = $extra['learner_transaction_id'] ?? null;
+
+        $startDate = Carbon::parse($validated['plan_start_date'])->addDay();
+        $endDate = getEndDate($planId, $startDate, $branch->id);
+
+        $transaction = $learnerTransactionId
+            ? LearnerTransaction::withoutGlobalScopes()->find($learnerTransactionId)
+            : null;
+        $learnerId = $transaction?->learner_id ?? null;
+
+        if ($seatNo) {
+            $seatCheck = $this->validateSeatForBooking($branch->id, $validated['plan_type_id'], $seatNo, $learnerId);
+
+            if ($seatCheck['error']) {
+                throw new \Exception($seatCheck['message']);
+            }
+        }
+
+        if ($learnerId) {
+            $today = Carbon::today();
+            $expiryLimit = Carbon::today()->addDays(7);
+
+            $activePlan = LearnerDetail::where('learner_id', $learnerId)
+                ->where('status', 1)
+                ->whereDate('plan_start_date', '<=', $today)
+                ->whereDate('plan_end_date', '>=', $today)
+                ->orderBy('plan_end_date', 'desc')
+                ->first();
+
+            $futurePlanExists = LearnerDetail::where('learner_id', $learnerId)
+                ->whereDate('plan_start_date', '>', $today)
+                ->exists();
+
+            if ($futurePlanExists) {
+                throw new \Exception('Renewal already exists. Multiple renewals are not allowed.');
+            }
+
+            if ($activePlan && Carbon::parse($activePlan->plan_end_date)->gt($expiryLimit)) {
+                throw new \Exception('Current plan is active and not eligible for renewal yet.');
+            }
+        }
+
+        if ($transaction) {
+            $password = Learner::where('id', $learnerId)->value('password') ?? Hash::make($validated['mobile']);
+            $totalAmount = $extra['paid_amount'] ?? $validated['plan_price_id'];
+        } else {
+            $password = Hash::make($validated['mobile']);
+            $totalAmount = $validated['plan_price_id'];
+        }
+
+        $profilePicturePath = null;
+        if (!empty($extra['profile_picture_file'])) {
+            $profilePicturePath = $this->moveUploadedBookingFile(
+                $extra['profile_picture_file'],
+                'profile_picture',
+                'upload/profile_picture'
+            );
+        }
+
+        $idProofFilePath = null;
+        if (!empty($extra['id_proof_file'])) {
+            $idProofFilePath = $this->moveUploadedBookingFile(
+                $extra['id_proof_file'],
+                'id_proof_',
+                'upload/id_proof_file'
+            );
+        }
+
+        return Booking::create([
+            'name'            => $validated['name'],
+            'mobile'          => encryptData($validated['mobile']),
+            'email'           => !empty($validated['email']) ? encryptData($validated['email']) : null,
+            'dob'             => $validated['dob'] ?? null,
+            'password'        => $password,
+            'seat_no'         => $seatNo,
+            'branch_id'       => $branch->id,
+            'plan_id'         => $validated['plan_id'],
+            'plan_type_id'    => $validated['plan_type_id'],
+            'plan_price_id'   => $validated['plan_price_id'],
+            'plan_start_date' => $validated['plan_start_date'],
+            'plan_end_date'   => $endDate,
+            'payment_mode'    => $validated['payment_mode'],
+            'status'          => 'pending',
+            'total_amount'    => $totalAmount,
+            'transaction_id'  => $transaction?->id,
+            'type'            => !empty($extra['renewal']) ? 'qr_renew' : 'qr_seat_book',
+            'profile_picture' => $profilePicturePath,
+            'id_proof_name'   => $validated['id_proof_name'] ?? null,
+            'id_proof_file'   => $idProofFilePath,
+            'id_proof_number' => $validated['id_proof_number'] ?? null,
+            'address'         => $validated['address'] ?? null,
+        ]);
+    }
+
+    private function validateSeatForBooking($branchId, $planTypeId, $seatNo, $learnerId = null): array
+    {
+        $totalHour = \App\Models\Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour') ?? 0;
+
+        if ($totalHour === 0) {
+            return ['error' => true, 'message' => 'Total available hours not set.'];
+        }
+
+        $hours = PlanType::where('id', $planTypeId)->value('slot_hours') ?? 0;
+
+        $conflict = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branchId)
+            ->where('learners.seat_no', $seatNo)
+            ->where('learner_detail.plan_type_id', $planTypeId)
+            ->where('learners.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists();
+
+        if ($conflict) {
+            return ['error' => true, 'message' => 'This plan type seat is already booked'];
+        }
+
+        $usedHours = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branchId)
+            ->where('learners.seat_no', $seatNo)
+            ->where('learner_detail.status', 1)
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->sum('hours');
+
+        if (($usedHours + $hours) > $totalHour) {
+            return ['error' => true, 'message' => 'This seat is already reserved for the full library hours.'];
+        }
+
+        $futureConflict = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.branch_id', $branchId)
+            ->where('learners.seat_no', $seatNo)
+            ->where('learner_detail.plan_start_date', '>', Carbon::today())
+            ->when($learnerId, fn ($q) => $q->where('learners.id', '!=', $learnerId))
+            ->exists();
+
+        if ($futureConflict) {
+            return ['error' => true, 'message' => 'This plan conflicts with a future booking.'];
+        }
+
+        return ['error' => false];
+    }
+
+    private function moveUploadedBookingFile($file, string $prefix, string $folder): string
+    {
+        $fileName = $prefix . time() . '.' . $file->getClientOriginalExtension();
+        $destinationFolder = public_path($folder);
+
+        if (!\Illuminate\Support\Facades\File::exists($destinationFolder)) {
+            \Illuminate\Support\Facades\File::makeDirectory($destinationFolder, 0777, true);
+        }
+
+        $file->move($destinationFolder, $fileName);
+
+        return 'public/' . $folder . '/' . $fileName;
+    }
 }

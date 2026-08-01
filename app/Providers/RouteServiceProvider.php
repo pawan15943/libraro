@@ -40,6 +40,13 @@ class RouteServiceProvider extends ServiceProvider
             );
         });
 
+        // Same reasoning as library_api above — key by the authenticated learner.
+        RateLimiter::for('learner_api', function (Request $request) {
+            return Limit::perMinute(120)->by(
+                $request->user('learner_api')?->id ?: $request->ip()
+            );
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\SuggestionController;
 use App\Http\Controllers\IdCardController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\Learner\LearnerAppController;
+use App\Http\Controllers\Api\V1\Learner\LearnerBookingController;
 
 
 
@@ -52,7 +54,14 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/guidelines', [LibraryController::class, 'guidelines']);
     Route::get('library/payment-types', [MasterController::class, 'paymentTypeList']);
     Route::post('demo-bookings/store', [DemoBookingController::class, 'store']);
-    
+
+    // Public learner-app seat booking (guest, pre-login — same fields as the
+    // web QR booking form). Creates a pending Booking for staff to verify.
+    Route::post('learner/book-seat/{uuid}', [LearnerBookingController::class, 'store']);
+
+    // Learner login
+    Route::post('learner/login', [LearnerAuthController::class, 'login']);
+
 });
 
 Route::middleware(['auth:library_api','api_key','throttle:library_api'])->group(function () {
@@ -186,7 +195,6 @@ Route::middleware(['auth:library_api','api_key','throttle:library_api'])->group(
     });
    
     Route::get('/attendance/qr-token', [AttendanceController::class, 'qrToken']);
-    Route::post('/attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
 
     Route::post('/attendance/id-scan', [AttendanceController::class, 'idCardScanAttendance']);
     Route::post('/attendance/manual', [AttendanceController::class, 'manualAttendance']);
@@ -216,9 +224,18 @@ Route::middleware(['auth:library_api','api_key','throttle:library_api'])->group(
 
 });
 
-// Learner login
-// Route::post('learner/login', [LearnerAuthController::class, 'login']);
-// Route::middleware('auth:learner_api')->group(function () {
-//     Route::get('learner/profile', [LearnerAuthController::class, 'profile']);
-//     Route::post('learner/logout', [LearnerAuthController::class, 'logout']);
-// });
+// Learner-app self-service (learner's own device, distinct from the
+// staff/library_api app above). Data is scoped to the authenticated
+// learner via getLibraryId()/getCurrentBranch() (learner_api branch).
+Route::middleware(['auth:learner_api', 'api_key', 'throttle:learner_api'])->prefix('learner')->group(function () {
+    Route::get('profile', [LearnerAuthController::class, 'profile']);
+    Route::post('logout', [LearnerAuthController::class, 'logout']);
+
+    Route::post('detail', [LearnerAppController::class, 'detail']);
+    Route::post('renew', [LearnerAppController::class, 'renew']);
+    Route::post('dashboard', [LearnerAppController::class, 'dashboard']);
+
+    Route::post('attendance/summary', [AttendanceController::class, 'summary']);
+    Route::post('attendance/logs', [LearnerAppController::class, 'attendanceLogs']);
+    Route::post('attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
+});
