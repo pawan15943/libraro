@@ -68,36 +68,9 @@
     </div>
 </div>
 
-@if ( $learners->total()==0)
-
-
-<div class="no-data-found">
-    <script
-        src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
-        type="module"></script>
-
-    <dotlottie-wc
-        src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"
-        style="width: 200px;height: 200px"
-        autoplay
-        loop></dotlottie-wc>
-    <h4>No Learner Added Yet</h4>
-    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button below.</span>
-    <!-- Masters -->
-    <div class="heading-list justify-content-end mb-1">
-        @if(getCurrentBranch() !=0)
-        <a href="javascript:;" class="btn btn-primary export noseat_popup">
-            <i class="fa-solid fa-plus "></i> Book Seat
-        </a>
-        @else
-        <h4>To add Plan Prices, first select your Branch.</h4>
-        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices.</span>
-        @endif
-    </div>
-</div>
-
-@else
 @php
+$hasActiveFilters = request()->filled('search') || request()->filled('plan_id') || request()->filled('status')
+    || request()->filled('seat_no') || request()->filled('payment_filter') || request()->filled('is_paid');
 // Computed once per page load — these are branch/library-level settings,
 // not per-learner, so they were previously being re-queried on every use
 // (including once per row inside the loop below).
@@ -107,12 +80,18 @@ $isNotificationActive = notificationActive();
 $isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
 $isTextNotificationActive = $isNotificationActive && textNotificationActive();
 @endphp
+
 <div class="row">
     <div class="col-lg-12 text-end">
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="filter"><i class="fa-solid fa-filter"></i></a>
 
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
         <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
+
+        <a href="{{ route('learners.list.pdf', request()->query()) }}" class="btn btn-primary export"
+            target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"
+            data-bs-title="Download the currently filtered learner list as a PDF"><i
+                class="fa-solid fa-file-pdf"></i> Download Learner List (PDF)</a>
 
         @can('has-permission', 'Export Library Seats')
         @if(!in_array('22', $hiddenFields))
@@ -155,23 +134,38 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                         <select name="is_paid" id="is_paid" class="form-select">
                             <option value="">Choose Status</option>
                             <option value="1" {{ request()->get('is_paid') == '1' ? 'selected' : '' }}>Paid</option>
-                            <option value="0" {{ request()->get('is_paid') == '0' ? 'selected' : '' }}>Unpaid</option>
-                        </select>
-                    </div> --}}
-                    <!-- Filter By Active/Expired Status -->
-                    <div class="col-lg-2">
-                        <select name="status" id="status" class="form-select">
-                            <option value="">Choose Status</option>
-                            <option value="active" {{ request()->get('status') == 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="expired" {{ request()->get('status') == 'expired' ? 'selected' : '' }}>Expired</option>
-                        </select>
-                    </div>
+                    <option value="0" {{ request()->get('is_paid') == '0' ? 'selected' : '' }}>Unpaid</option>
+                    </select>
+                </div> --}}
+                <!-- Filter By Active/Expired Status -->
+                <div class="col-lg-2">
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Choose Status</option>
+                        <option value="active" {{ request()->get('status') == 'active' ? 'selected' : '' }}>Active
+                        </option>
+                        <option value="expired" {{ request()->get('status') == 'expired' ? 'selected' : '' }}>Expired
+                        </option>
+                        <option value="about_to_expire" {{ request()->get('status') == 'about_to_expire' ? 'selected' : '' }}>About to Expire
+                        </option>
+                        <option value="extended" {{ request()->get('status') == 'extended' ? 'selected' : '' }}>Extended
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Filter By Pending Payment -->
+                <div class="col-lg-2">
+                    <select name="payment_filter" id="payment_filter" class="form-select">
+                        <option value="">Choose Payment</option>
+                        <option value="pending_payment" {{ request()->get('payment_filter') == 'pending_payment' ? 'selected' : '' }}>Pending Payment
+                        </option>
+                    </select>
+                </div>
 
                     <!-- Filter By Seat No -->
                     <div class="col-lg-3">
                         <select name="seat_no" id="seat_search" class="form-select">
                             <option value="">Seat No</option>
-                            @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) 
+                            @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++)
                             <option value="{{ $seatNo }}" {{ request()->get('seat_no') == $seatNo ? 'selected' : '' }}>
                                 {{getSeatDisplayByMainNo($seatNo)}}
                                 </option>
@@ -179,22 +173,19 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                         </select>
                     </div>
 
-                    <!-- Search Button -->
-                    <div class="col-lg-1 align-self-end">
-                        <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Search">
-                            Search
-                        </button>
-                    </div>
-                    <div class="col-lg-1 align-self-end">
-                        <button type="button"
-                            id="clearFilter"
-                            class="btn btn-secondary button"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="bottom"
-                            data-bs-title="Clear Filter">
-                            Clear
-                        </button>
-                    </div>
+                <!-- Search Button -->
+                <div class="col-lg-2 align-self-end">
+                    <button class="btn btn-primary button" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                        data-bs-title="Search">
+                        Search
+                    </button>
+                </div>
+                <div class="col-lg-2 align-self-end">
+                    <button type="button" id="clearFilter" class="btn btn-secondary button" data-bs-toggle="tooltip"
+                        data-bs-placement="bottom" data-bs-title="Clear Filter">
+                        Clear
+                    </button>
+                </div>
 
 
                 </div>
@@ -204,6 +195,35 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
 </div>
 @endcan
 
+@if ( $learners->total()==0)
+<div class="no-data-found">
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
+    <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"
+        style="width: 200px;height: 200px" autoplay loop></dotlottie-wc>
+    @if($hasActiveFilters)
+    <h4>No Learners Found</h4>
+    <span>No learners match the selected filters. Try adjusting or clearing the filters above.</span>
+    @else
+    <h4>No Learner Added Yet</h4>
+    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button
+        below.</span>
+    <!-- Masters -->
+    <div class="heading-list justify-content-end mb-1">
+        @if(getCurrentBranch() !=0)
+        <a href="javascript:;" class="btn btn-primary export noseat_popup">
+            <i class="fa-solid fa-plus "></i> Book Seat
+        </a>
+        @else
+        <h4>To add Plan Prices, first select your Branch.</h4>
+        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to
+            choose the branch before adding plan prices.</span>
+        @endif
+    </div>
+    @endif
+</div>
+
+@else
 @if(!in_array('24', $hiddenFields))
 <div class="col-lg-12 mb-4" id="countsContainer">
     <div class="records">

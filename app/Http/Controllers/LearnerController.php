@@ -1668,6 +1668,18 @@ class LearnerController extends Controller
                     // Only select expired learners or details
                     $query->where('learners.status', 0)
                         ->where('learner_detail.status', 0);
+                } elseif ($filters['status'] === 'about_to_expire') {
+                    // Plan not yet expired but ending within the next 5 days (including today) — same window used on the dashboard
+                    $today = Carbon::today()->format('Y-m-d');
+                    $fiveDaysLater = Carbon::today()->addDays(5)->format('Y-m-d');
+                    $query->where('learner_detail.status', 1)
+                        ->whereBetween('learner_detail.plan_end_date', [$today, $fiveDaysLater]);
+                } elseif ($filters['status'] === 'extended') {
+                    // Plan already expired but still inside the branch's extend-days grace period
+                    $extendDay = getExtendDays();
+                    $query->where('learner_detail.status', 1)
+                        ->where('learner_detail.plan_end_date', '<', Carbon::today()->format('Y-m-d'))
+                        ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extendDay]);
                 }
             } else {
 
@@ -1677,6 +1689,17 @@ class LearnerController extends Controller
                 } else {
                     $query->where('learners.status', $status)->where('learner_detail.status', $detailStatus)->orderByDesc('learner_detail.id');
                 }
+            }
+
+            // Filter by Pending Payment (any status), listing active learners first and expired ones last
+            if (!empty($filters['payment_filter']) && $filters['payment_filter'] === 'pending_payment') {
+                $query->whereExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('learner_transactions')
+                        ->whereColumn('learner_transactions.learner_detail_id', 'learner_detail.id')
+                        ->where('learner_transactions.pending_amount', '>', 0);
+                });
+                $query->orderByRaw('CASE WHEN learner_detail.status = 0 THEN 1 ELSE 0 END ASC');
             }
 
             if (!empty($filters['seat_no'])) {
@@ -2009,6 +2032,7 @@ class LearnerController extends Controller
             'status'  => $request->get('status'),
             'search'  => $request->get('search'),
             'seat_no'  => $request->get('seat_no'),
+            'payment_filter' => $request->get('payment_filter'),
         ];
 
         $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, $perPage = 15, $paginate = true);
@@ -2016,6 +2040,24 @@ class LearnerController extends Controller
         $rowContext = $this->learnerService->buildLearnerListRowContext($learners->getCollection());
 
         return view('learner.learner', compact('learners', 'rowContext'));
+    }
+
+    public function learnerListPdf(Request $request)
+    {
+        $filters = [
+            'plan_id' => $request->get('plan_id'),
+            'is_paid' => $request->get('is_paid'),
+            'status'  => $request->get('status'),
+            'search'  => $request->get('search'),
+            'seat_no'  => $request->get('seat_no'),
+            'payment_filter' => $request->get('payment_filter'),
+        ];
+
+        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, 15, false);
+
+        $pdf = PDF::loadView('learner.learner_list_pdf', compact('learners'))->setPaper('a4', 'landscape');
+
+        return $pdf->download('learner_list_' . date('Y-m-d_His') . '.pdf');
     }
     public function learnerSearch(Request $request)
     {
