@@ -538,7 +538,14 @@ class QrBookingService
             'status'          => 'pending',
             'total_amount'    => $totalAmount,
             'transaction_id'  => $transaction?->id,
-            'type'            => !empty($extra['renewal']) ? 'qr_renew' : 'qr_seat_book',
+            // 'learner_book' marks bookings submitted via the learner app
+            // (createBooking() is only ever called from there — the web QR
+            // form still writes 'qr_seat_book' via its own inline logic in
+            // QrEntryController::store()), so staff can tell app vs
+            // physical-QR-poster origin apart. Renewal type is left as
+            // 'qr_renew' unchanged — it's checked by exact string in
+            // verifyBooking() and QrEntryController's approval flow.
+            'type'            => !empty($extra['renewal']) ? 'qr_renew' : 'learner_book',
             'profile_picture' => $profilePicturePath,
             'id_proof_name'   => $validated['id_proof_name'] ?? null,
             'id_proof_file'   => $idProofFilePath,

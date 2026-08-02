@@ -510,6 +510,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <td>
                                     @if($value->type=='qr_seat_book')
                                     SEAT BOOK
+                                    @elseif($value->type=='learner_book')
+                                    SEAT BOOK (APP)
                                     @elseif($value->type=='qr_renew')
                                     RENEW SEAT
                                     @elseif($value->type=='demo-bookings')

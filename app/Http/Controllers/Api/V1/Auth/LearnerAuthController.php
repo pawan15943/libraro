@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Learner;
 use App\Services\LearnerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -12,8 +13,10 @@ use Illuminate\Support\Facades\Validator;
 class LearnerAuthController extends Controller
 {
     /**
-     * Learner self-service login — same credential pair as the web learner
-     * login (learner_no + password), see Auth\LoginController::login().
+     * Learner self-service login — same identify-by (dob/email/learner_no)
+     * + mobile pattern as the web attendance self-verify flow
+     * (AttendanceController::verifyLearner()), not the learner_no+password
+     * web login.
      */
     public function login(Request $request)
     {

@@ -266,6 +266,7 @@ public function summary($request)
             'plan_types.start_time',
             'plan_types.end_time',
 
+            'learner_detail.plan_start_date',
             'learner_detail.plan_end_date'
         )
 
@@ -335,6 +336,11 @@ public function summary($request)
                 'seat_no' => $learner->seat_no,
 
                 'plan_type' => $learner->plan_type_name,
+
+                'plan_start_date' => $learner->plan_start_date
+                    ? Carbon::parse($learner->plan_start_date)
+                        ->format('Y-m-d')
+                    : null,
 
                 'plan_end_date' => $learner->plan_end_date
                     ? Carbon::parse($learner->plan_end_date)

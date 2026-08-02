@@ -328,10 +328,13 @@ Reads the `feedback_features` table — a lookup list of selectable features for
 **Controller:** `MasterController@getPlanTypeSeatWiseApi`
 **Auth:** `api_key`, `throttle:60,1`
 
+Branch is resolved via `resolveBranchId()` (`uuid` preferred, `branch_id` kept for existing callers) — send one of the two.
+
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| branch_id | integer | yes | must exist in `branches.id` |
+| uuid | string | one of uuid/branch_id | exists:branches,uuid |
+| branch_id | integer | one of uuid/branch_id | exists:branches,id |
 | seat_no | string | no | nullable |
 
 **Response**
@@ -345,12 +348,15 @@ Reads the `feedback_features` table — a lookup list of selectable features for
 **Controller:** `MasterController@getChargeableDaysApi`
 **Auth:** `api_key`, `throttle:60,1`
 
+Branch is resolved via `resolveBranchId()` (`uuid` preferred, `branch_id` kept for existing callers) — send one of the two.
+
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | plan_id | integer | yes | must exist in `plans.id` |
 | plan_start_date | date | yes | |
-| branch_id | integer | yes | must exist in `branches.id` |
+| uuid | string | one of uuid/branch_id | exists:branches,uuid |
+| branch_id | integer | one of uuid/branch_id | exists:branches,id |
 
 **Response**
 | Field | Type | Notes |
@@ -363,12 +369,15 @@ Reads the `feedback_features` table — a lookup list of selectable features for
 **Controller:** `MasterController@getPriceApi`
 **Auth:** `api_key`, `throttle:60,1`
 
+Branch is resolved via `resolveBranchId()` (`uuid` preferred, `branch_id` kept for existing callers) — send one of the two.
+
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | plan_id | integer | yes | must exist in `plans.id` |
-| plan_type_id | integer | yes | must exist in `plan_types.id` scoped to `branch_id` |
-| branch_id | integer | yes | must exist in `branches.id` |
+| plan_type_id | integer | yes | must exist in `plan_types.id` scoped to the resolved branch |
+| uuid | string | one of uuid/branch_id | exists:branches,uuid |
+| branch_id | integer | one of uuid/branch_id | exists:branches,id |
 | plan_start_date | date | no | nullable |
 | locker_amount | numeric | no | nullable |
 | discount_type | string | conditional | nullable; enum: percentage\|amount; required if `discount_value` > 0 |
@@ -385,10 +394,14 @@ Reads the `feedback_features` table — a lookup list of selectable features for
 **Controller:** `MasterController@getSeat`
 **Auth:** `api_key`, `throttle:60,1`
 
+Previously silently broken for any unauthenticated/public caller — it only ever resolved the branch via `getCurrentBranch()` (null with no session guard active), despite living in the public route group. Now accepts `uuid` or `branch_id` explicitly via `resolveBranchId()` (falls back to `getCurrentBranch()` when neither is sent, so existing staff-session callers are unaffected).
+
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| search | string | no | optional query param, not validated; branch resolved via `getCurrentBranch()` helper, not from request |
+| uuid | string | no | exists:branches,uuid; preferred for public/multi-branch callers |
+| branch_id | integer | no | exists:branches,id; falls back to `getCurrentBranch()` (staff session) if both omitted |
+| search | string | no | optional query param, not validated |
 
 **Response**
 | Field | Type | Notes |
@@ -3374,6 +3387,7 @@ Activity shape (`formatActivity`):
 | data.attendance[].name | string | |
 | data.attendance[].seat_no | mixed | |
 | data.attendance[].plan_type | string | |
+| data.attendance[].plan_start_date | string\|null | Y-m-d |
 | data.attendance[].plan_end_date | string\|null | |
 | data.attendance[].learner_plan_status | string\|null | |
 | data.attendance[].shift_timing | string\|null | |
@@ -3524,7 +3538,7 @@ Auth token: obtained from `POST learner/login`, sent as `Authorization: Bearer <
 **Controller:** `Api\V1\Learner\LearnerBookingController@store`
 **Auth:** `api_key`, `throttle:60,1` (public — no login required; `{uuid}` is the branch's public QR uuid)
 
-Same field set as the web QR booking form (`QrEntryController::store`) and the underlying `QrBookingService::createBooking()`. Creates a **pending** `Booking` row; staff approves it via the existing `POST qr-bookings/verify` (`QrBookingController@verify`), which turns it into a real `Learner`.
+Same field set as the web QR booking form (`QrEntryController::store`) and the underlying `QrBookingService::createBooking()`. Creates a **pending** `Booking` row (`type = 'learner_book'`, or `'qr_renew'` when `learner_transaction_id` is present — distinct from the web QR poster flow's own `'qr_seat_book'`/`'qr_renew'`, so staff can tell app vs physical-QR origin apart); staff approves it via the existing `POST qr-bookings/verify` (`QrBookingController@verify`), which turns it into a real `Learner`.
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -3560,13 +3574,14 @@ Same field set as the web QR booking form (`QrEntryController::store`) and the u
 **Controller:** `Api\V1\Auth\LearnerAuthController@login`
 **Auth:** `api_key`, `throttle:60,1` (public)
 
-Same credential pair as the web learner login (`Auth\LoginController`, guard `learner`): `learner_no` + `password`.
+Identify-by pattern (not learner_no+password) — same shape as the web attendance self-verify flow (`AttendanceController::verifyLearner()`): pick an identifier type, supply that value plus the registered mobile number.
 
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| learner_no | string | yes | |
-| password | string | yes | |
+| login_with | string | yes | dob\|email\|learner_no |
+| uid | string | yes | the value for the chosen `login_with` type (e.g. `dd/mm/yyyy` when login_with=dob) |
+| mobile | string | yes | registered mobile, regex `^[5-9]\d{9}$` |
 
 **Response**
 | Field | Type | Notes |
@@ -3580,6 +3595,51 @@ Same credential pair as the web learner login (`Auth\LoginController`, guard `le
 | data.name | string | |
 | data.branch_id | integer | |
 | data.library_id | integer | |
+
+### `POST /api/v1/learner/branch/seat-map`
+**Controller:** `Api\V1\Learner\LearnerBranchController@seatMap`
+**Auth:** `api_key`, `throttle:60,1` (public)
+
+Browse-before-booking seat map for a chosen branch — part of the "pick a library branch → view seat map → pick an available seat → book" flow. Keyed by the branch's public **uuid** (not its numeric id — ids aren't exposed to public/multi-branch callers, same reasoning as the existing QR-uuid booking route). Reuses `LearnerService::getSeatMapDetails()` unchanged (same data the staff dashboard uses, branch id already an explicit param there), but **strips every occupant's PII/financial data** (name, learner_no, pending_amount, due_date, frozen_status, etc.) before returning — that data is safe for the staff-guarded seat-map but must never reach an unauthenticated public endpoint. Only occupancy status (`is_booked`, `plan_type_status`) is exposed per seat/shift.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| uuid | string | yes | exists:branches,uuid |
+| plan_type_id | integer | no | exists:plan_types,id — filter to one shift |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| data.plan_type_status[] | array | static legend `{id, name, color}` |
+| data.numbered[] | array | one row per floor: `floor_id`, `floor_name`, `total_seats`, `available_seats`, `occupied_seats`, `seats[]` |
+| data.numbered[].seats[].plantype[] | array | `{plan_type_id, plan_type_name, plan_type_status, is_booked}` — no `learner` key |
+| data.general[] | array | same shape, for general (non-numbered) seating |
+
+### `POST /api/v1/learner/branch/plans`
+**Controller:** `Api\V1\Learner\LearnerBranchController@plans`
+**Auth:** `api_key`, `throttle:60,1` (public)
+
+Same response shape as the existing public `POST /plans`, just keyed by branch `uuid` (consistent with the other branch-browsing endpoints) instead of requiring the app to already know `library_id` — resolves it from the branch internally.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| uuid | string | yes | exists:branches,uuid |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| data[] | array | `{id, name}` |
+
+For the rest of the branch-browsing form (shift/plan-type picker, price calc, chargeable days, remaining-seat list, and the booking submission itself), reuse the existing **public** endpoints as-is — no learner-specific alias needed. Each now accepts `uuid` **or** `branch_id` (uuid preferred; `branch_id` kept working for existing callers):
+- `POST /shift-plan-types` (`uuid` or `branch_id`, optional `seat_no`) — available plan types/shifts for a branch or seat.
+- `POST /plan-price` (`plan_id`, `plan_type_id`, `uuid` or `branch_id`, ...) — price calc with optional discount.
+- `POST /chargeable-days` (`plan_id`, `plan_start_date`, `uuid` or `branch_id`) — end date + chargeable days.
+- `POST /get-seat` (`uuid` or `branch_id`) — remaining seats with open shifts.
+- `POST /learner/book-seat/{uuid}` (see above) — the booking submission itself; already uuid-keyed from the start, reused unchanged for this flow (no separate `branch_id` variant).
 
 ### `GET /api/v1/learner/profile`
 **Controller:** `Api\V1\Auth\LearnerAuthController@profile`
@@ -3672,7 +3732,7 @@ Same method as the staff-side summary (`AttendanceService::summary()`) — it no
 | data.summary.absent_members | integer | |
 | data.filters.from_date | string | d/m/Y |
 | data.filters.to_date | string | d/m/Y |
-| data.attendance[] | array | one row per (learner, day): `learner_id`, `name`, `seat_no`, `plan_type`, `plan_end_date`, `learner_plan_status`, `shift_timing`, `attendance_date`, `punch_in`, `punch_out`, `duration_in_library`, `attendance_status` |
+| data.attendance[] | array | one row per (learner, day): `learner_id`, `name`, `seat_no`, `plan_type`, `plan_start_date`, `plan_end_date`, `learner_plan_status`, `shift_timing`, `attendance_date`, `punch_in`, `punch_out`, `duration_in_library`, `attendance_status` |
 
 ### `POST /api/v1/learner/attendance/logs`
 **Controller:** `Api\V1\Learner\LearnerAppController@attendanceLogs`

@@ -1,0 +1,372 @@
+{
+  "info": {
+    "name": "Libraro - Learner App",
+    "description": "Learner-facing mobile app API: branch browsing, seat booking, learner login/account, attendance. Two groups: Public (device-type/device-id + X-API-KEY only) and Learner Account (adds Authorization: Bearer <learner_token> from /learner/login).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost/library/public", "description": "Adjust to your local/served URL (no trailing slash)." },
+    { "key": "api_key", "value": "REPLACE_WITH_APP_API_KEY", "description": "Must match APP_API_KEY in .env (sent as X-API-KEY)." },
+    { "key": "device_type", "value": "android" },
+    { "key": "device_id", "value": "postman-test-device-001" },
+    { "key": "branch_uuid", "value": "REPLACE_WITH_BRANCH_UUID" },
+    { "key": "learner_token", "value": "" },
+    { "key": "plan_id", "value": "1" },
+    { "key": "plan_type_id", "value": "1" },
+    { "key": "plan_price_id", "value": "500" }
+  ],
+  "item": [
+    {
+      "name": "Public - Branch Browsing & Booking",
+      "item": [
+        {
+          "name": "Seat map (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_type_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/branch/seat-map",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "branch", "seat-map"]
+            }
+          }
+        },
+        {
+          "name": "Plans (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/branch/plans",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "branch", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Shift / plan types (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"seat_no\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/shift-plan-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "shift-plan-types"]
+            }
+          }
+        },
+        {
+          "name": "Plan price calc (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_id\": {{plan_id}},\n  \"plan_type_id\": {{plan_type_id}},\n  \"plan_start_date\": \"2026-08-10\",\n  \"locker_amount\": 0,\n  \"discount_type\": null,\n  \"discount_value\": 0,\n  \"paid_amount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/plan-price",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "plan-price"]
+            }
+          }
+        },
+        {
+          "name": "Chargeable days (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_id\": {{plan_id}},\n  \"plan_start_date\": \"2026-08-10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chargeable-days",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "chargeable-days"]
+            }
+          }
+        },
+        {
+          "name": "Available seats (by branch uuid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"search\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/get-seat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "get-seat"]
+            }
+          }
+        },
+        {
+          "name": "Book seat (creates pending Booking)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Postman Test Learner", "type": "text" },
+                { "key": "mobile", "value": "9876543210", "type": "text" },
+                { "key": "email", "value": "test@example.com", "type": "text" },
+                { "key": "dob", "value": "2000-01-01", "type": "text" },
+                { "key": "general_seat", "value": "yes", "type": "text" },
+                { "key": "seat_no", "value": "", "type": "text" },
+                { "key": "plan_id", "value": "{{plan_id}}", "type": "text" },
+                { "key": "plan_type_id", "value": "{{plan_type_id}}", "type": "text" },
+                { "key": "plan_price_id", "value": "{{plan_price_id}}", "type": "text" },
+                { "key": "plan_start_date", "value": "2026-08-10", "type": "text" },
+                { "key": "payment_mode", "value": "offline", "type": "text" },
+                { "key": "id_proof_name", "value": "1", "type": "text" },
+                { "key": "id_proof_file", "type": "file", "src": [] },
+                { "key": "id_proof_number", "value": "", "type": "text" },
+                { "key": "address", "value": "123 Test Street", "type": "text" },
+                { "key": "profile_picture", "type": "file", "src": [] },
+                { "key": "learner_transaction_id", "value": "", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/book-seat/{{branch_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "book-seat", "{{branch_uuid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public - Learner Login",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.token) {",
+                  "        pm.collectionVariables.set('learner_token', json.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "device-type", "value": "{{device_type}}" },
+              { "key": "device-id", "value": "{{device_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login_with\": \"learner_no\",\n  \"uid\": \"LN000001\",\n  \"mobile\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Learner Account (auth:learner_api)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{learner_token}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/detail",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "detail"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Renew",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": {{plan_id}},\n  \"plan_type_id\": {{plan_type_id}},\n  \"plan_price_id\": {{plan_price_id}},\n  \"plan_start_date\": \"2026-09-01\",\n  \"paid_amount\": {{plan_price_id}},\n  \"payment_mode\": 1,\n  \"due_date\": \"2026-09-05\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/renew",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "renew"]
+            }
+          }
+        },
+        {
+          "name": "Attendance summary",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_date\": \"2026-08-01\",\n  \"to_date\": \"2026-08-02\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/attendance/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "attendance", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Attendance logs",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-08-02\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/attendance/logs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "attendance", "logs"]
+            }
+          }
+        },
+        {
+          "name": "Attendance QR scan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qr\": \"PASTE_QR_TOKEN_FROM_STAFF_attendance_qr-token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/attendance/qr-scan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "attendance", "qr-scan"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-KEY", "value": "{{api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learner/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learner", "logout"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

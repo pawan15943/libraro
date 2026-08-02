@@ -17,6 +17,7 @@ use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\Learner\LearnerAppController;
 use App\Http\Controllers\Api\V1\Learner\LearnerBookingController;
+use App\Http\Controllers\Api\V1\Learner\LearnerBranchController;
 
 
 
@@ -61,6 +62,15 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
     // Learner login
     Route::post('learner/login', [LearnerAuthController::class, 'login']);
+
+    // Branch browsing (multi-branch app: pick a library branch, view seat
+    // map/plans, then book) — keyed by the branch's public uuid throughout
+    // (same identifier as learner/book-seat/{uuid} above, which already
+    // covers the booking step for this flow — no separate route needed).
+    // shift-plan-types, plan-price, chargeable-days, and get-seat above now
+    // also accept uuid (in addition to branch_id, for existing callers).
+    Route::post('learner/branch/seat-map', [LearnerBranchController::class, 'seatMap']);
+    Route::post('learner/branch/plans', [LearnerBranchController::class, 'plans']);
 
 });
 

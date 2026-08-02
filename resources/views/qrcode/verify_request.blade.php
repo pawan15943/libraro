@@ -403,7 +403,7 @@ span.close-modal {
                                 </span>
                                 @enderror
                             </div>
-                            @if($customer->type=='qr_seat_book')
+                            @if(in_array($customer->type, ['qr_seat_book', 'learner_book']))
                             @if(notificationActive())
                             <div class="col-lg-12">
                                 <label for="">Send Reminders Via (Optional)</label>
@@ -418,7 +418,7 @@ span.close-modal {
                             @endif
                             @endif
                         </div>
-                        @if($customer->type=='qr_seat_book' || $customer->type=='demo-bookings' )
+                        @if(in_array($customer->type, ['qr_seat_book', 'learner_book', 'demo-bookings']))
                         @if(!in_array('7', toggleHideField()))
                         <h4 class="py-4 m-0">Other Optional Fields <i class="fa fa-plus qr_toggleIcon2" style="cursor: pointer;"></i></h4>
 

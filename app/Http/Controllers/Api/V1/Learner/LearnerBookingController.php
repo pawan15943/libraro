@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Services\QrBookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class LearnerBookingController extends Controller
 {
@@ -26,6 +27,11 @@ class LearnerBookingController extends Controller
             ], 404);
         }
 
+        return $this->handleBooking($request, $branch);
+    }
+
+    private function handleBooking(Request $request, Branch $branch)
+    {
         $rules = [
             'name'            => 'required|string|max:191',
             'mobile'          => 'required|integer|digits_between:8,15',
@@ -50,7 +56,7 @@ class LearnerBookingController extends Controller
             'seat_no.required_if' => 'Seat number is required',
         ];
 
-        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules, $messages);
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return response()->json([

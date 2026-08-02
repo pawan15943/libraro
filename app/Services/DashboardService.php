@@ -195,7 +195,7 @@ class DashboardService
     private function onlineBookings(int $branchId): array
     {
         $bookings = Booking::where('bookings.branch_id', $branchId)
-            ->where('bookings.type', 'qr_seat_book')
+            ->whereIn('bookings.type', ['qr_seat_book', 'learner_book'])
             ->leftJoin('plans', 'plans.id', '=', 'bookings.plan_id')
             ->leftJoin('plan_types', 'plan_types.id', '=', 'bookings.plan_type_id')
             ->select(

@@ -379,6 +379,25 @@ if (!function_exists('getCurrentBranch')) {
         return $currentBranch;
     }
 }
+
+if (!function_exists('resolveBranchId')) {
+    /**
+     * Resolve a branch's numeric id from its public uuid (preferred for
+     * public/multi-branch app endpoints, since numeric ids shouldn't be
+     * guessable/enumerable) or a raw branch_id (kept for existing callers
+     * that already pass it). Returns null if neither resolves to a branch.
+     */
+    function resolveBranchId(?string $uuid = null, $branchId = null): ?int
+    {
+        if ($uuid) {
+            $id = \App\Models\Branch::where('uuid', $uuid)->value('id');
+
+            return $id ? (int) $id : null;
+        }
+
+        return $branchId ? (int) $branchId : null;
+    }
+}
 if (!function_exists('generateLearnerCode')) {
  function generateLearnerCode()
     {

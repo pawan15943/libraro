@@ -258,16 +258,25 @@ class MasterController extends Controller
     }
     public function getPlanTypeSeatWiseApi(Request $request, PlanService $service)
     {
-       
+
         $validated = $request->validate([
-            'branch_id'       => 'required|exists:branches,id',
-            'seat_no' => 'nullable',
+            'branch_id' => 'nullable|exists:branches,id',
+            'uuid'      => 'nullable|string|exists:branches,uuid',
+            'seat_no'   => 'nullable',
         ]);
-       
-      
+
+        $branchId = resolveBranchId($validated['uuid'] ?? null, $validated['branch_id'] ?? null);
+
+        if (!$branchId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'branch_id or uuid is required',
+            ], 422);
+        }
+
         $data = $service->getAvailablePlanTypes(
             $validated['seat_no'] ?? null,
-            $validated['branch_id']
+            $branchId
         );
 
         return response()->json([
@@ -281,13 +290,23 @@ class MasterController extends Controller
         $validated = $request->validate([
             'plan_id'         => 'required|exists:plans,id',
             'plan_start_date' => 'required|date',
-            'branch_id'       => 'required|exists:branches,id',
+            'branch_id'       => 'nullable|exists:branches,id',
+            'uuid'            => 'nullable|string|exists:branches,uuid',
         ]);
+
+        $branchId = resolveBranchId($validated['uuid'] ?? null, $validated['branch_id'] ?? null);
+
+        if (!$branchId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'branch_id or uuid is required',
+            ], 200);
+        }
 
         $daysInfo = getChargeableDays(
             $validated['plan_id'],
             $validated['plan_start_date'],
-            $validated['branch_id']
+            $branchId
         );
 
         return response()->json([
@@ -303,16 +322,23 @@ class MasterController extends Controller
             $request->merge(['discount_value' => 0]);
         }
 
-        
+        $branchId = resolveBranchId($request->input('uuid'), $request->input('branch_id'));
+
+        if (!$branchId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'branch_id or uuid is required',
+            ], 200);
+        }
+
         $validated = $request->validate([
             'plan_id'        => 'required|exists:plans,id',
             'plan_type_id' => [
                 'required',
-                Rule::exists('plan_types', 'id')->where(function ($query) use ($request) {
-                    return $query->where('branch_id', $request->branch_id);
+                Rule::exists('plan_types', 'id')->where(function ($query) use ($branchId) {
+                    return $query->where('branch_id', $branchId);
                 }),
             ],
-            'branch_id'      => 'required|exists:branches,id',
             'plan_start_date'=> 'nullable|date',
 
             'locker_amount'  => 'nullable|numeric',
@@ -351,13 +377,13 @@ class MasterController extends Controller
             ],
             'paid_amount'    => 'nullable|numeric'
         ]);
-        
+
 
        $result = $priceService->calculatePrice(
             $validated['plan_id'],
             $validated['plan_type_id'],
             $validated['plan_start_date'] ?? null,
-            $validated['branch_id'],
+            $branchId,
             $validated['locker_amount'] ?? 0,
             $validated['discount_type'] ?? null,
             $validated['discount_value'] ?? 0,
@@ -2529,11 +2555,22 @@ class MasterController extends Controller
     }
     public function getSeat(Request $request, SeatAvailabilityService $seatAvailabilityService)
     {
-        // $validated = $request->validate([
-        //     'branch_id' => 'required|exists:branches,id',
-        // ]);
+        $validated = $request->validate([
+            'branch_id' => 'nullable|exists:branches,id',
+            'uuid'      => 'nullable|string|exists:branches,uuid',
+        ]);
 
-        $branch_id = getCurrentBranch();
+        // Public callers (no library_api/learner_api session) must pass
+        // branch_id/uuid explicitly — getCurrentBranch() only resolves for
+        // an authenticated staff guard.
+        $branch_id = resolveBranchId($validated['uuid'] ?? null, $validated['branch_id'] ?? null) ?? getCurrentBranch();
+
+        if (!$branch_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'branch_id or uuid is required',
+            ], 200);
+        }
 
         $totalSeats = Hour::withoutGlobalScopes()
             ->where('branch_id', $branch_id)
