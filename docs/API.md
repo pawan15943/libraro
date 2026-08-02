@@ -3387,8 +3387,8 @@ Activity shape (`formatActivity`):
 | data.attendance[].name | string | |
 | data.attendance[].seat_no | mixed | |
 | data.attendance[].plan_type | string | |
-| data.attendance[].plan_start_date | string\|null | Y-m-d |
-| data.attendance[].plan_end_date | string\|null | |
+| data.attendance[].plan_start_date | string\|null | Y-m-d — earliest `plan_start_date` across *all* of the learner's `learner_detail` rows (original join date), not just the current active plan |
+| data.attendance[].plan_end_date | string\|null | current active plan's end date |
 | data.attendance[].learner_plan_status | string\|null | |
 | data.attendance[].shift_timing | string\|null | |
 | data.attendance[].attendance_date | string | |

@@ -266,9 +266,15 @@ public function summary($request)
             'plan_types.start_time',
             'plan_types.end_time',
 
-            'learner_detail.plan_start_date',
             'learner_detail.plan_end_date'
         )
+
+        // Earliest plan_start_date across ALL of this learner's learner_detail
+        // rows (their original join date), not just the current active plan.
+        ->addSelect(['first_plan_start_date' => DB::table('learner_detail as ld_first')
+            ->selectRaw('MIN(plan_start_date)')
+            ->whereColumn('ld_first.learner_id', 'learners.id')
+        ])
 
         ->latest('learners.id')
 
@@ -337,8 +343,8 @@ public function summary($request)
 
                 'plan_type' => $learner->plan_type_name,
 
-                'plan_start_date' => $learner->plan_start_date
-                    ? Carbon::parse($learner->plan_start_date)
+                'plan_start_date' => $learner->first_plan_start_date
+                    ? Carbon::parse($learner->first_plan_start_date)
                         ->format('Y-m-d')
                     : null,
 
