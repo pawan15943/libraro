@@ -154,20 +154,12 @@ class LearnerLifecycleService
 
     private function shouldShowRenewOption(int $learnerId): bool
     {
-        if (alreadyRenewed($learnerId)) {
-            return false;
-        }
-
-        $today = Carbon::today();
-
-        return LearnerDetail::where('learner_id', $learnerId)
-            ->where('status', 1)
-            ->whereDate('plan_start_date', '<=', $today)
-            ->whereBetween('plan_end_date', [
-                $today->toDateString(),
-                $today->copy()->addDays(7)->toDateString(),
-            ])
+        $hasQueuedPlan = LearnerDetail::where('learner_id', $learnerId)
+            ->where('status', 0)
+            ->whereDate('plan_start_date', '>', now())
             ->exists();
+
+        return ! $hasQueuedPlan;
     }
 
     public function transactionDetail(int $transactionId): array
