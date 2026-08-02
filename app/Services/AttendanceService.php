@@ -343,11 +343,6 @@ public function summary($request)
 
                 'plan_type' => $learner->plan_type_name,
 
-                'plan_start_date' => $learner->first_plan_start_date
-                    ? Carbon::parse($learner->first_plan_start_date)
-                        ->format('Y-m-d')
-                    : null,
-
                 'plan_end_date' => $learner->plan_end_date
                     ? Carbon::parse($learner->plan_end_date)
                         ->format('Y-m-d')
@@ -446,6 +441,20 @@ public function summary($request)
 
     /*
     |--------------------------------------------------------------------------
+    | Joining Date
+    |--------------------------------------------------------------------------
+    |
+    | Earliest plan_start_date across every learner_detail row for the
+    | learner(s) in this result set (their original join date) — not the
+    | current active plan's start date. With multiple learners in the
+    | result (e.g. a staff bulk view with no learner_id filter), this is
+    | the earliest join date among them.
+    */
+
+    $joiningDate = $learners->pluck('first_plan_start_date')->filter()->min();
+
+    /*
+    |--------------------------------------------------------------------------
     | Final Response
     |--------------------------------------------------------------------------
     */
@@ -466,6 +475,10 @@ public function summary($request)
 
                 'absent_members' => $absentStudents,
             ],
+
+            'joining_date' => $joiningDate
+                ? Carbon::parse($joiningDate)->format('Y-m-d')
+                : null,
 
             'filters' => [
 

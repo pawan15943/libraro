@@ -3380,6 +3380,7 @@ Activity shape (`formatActivity`):
 | data.summary.total_members | integer | |
 | data.summary.present_members | integer | |
 | data.summary.absent_members | integer | |
+| data.joining_date | string\|null | Y-m-d — earliest `plan_start_date` across *all* `learner_detail` rows for the learner(s) in this result (original join date); with multiple learners in the result (no `learner_id` filter), the earliest among them |
 | data.filters.from_date | string | d/m/Y |
 | data.filters.to_date | string | d/m/Y |
 | data.attendance[] | array | one row per learner per date in range |
@@ -3387,7 +3388,6 @@ Activity shape (`formatActivity`):
 | data.attendance[].name | string | |
 | data.attendance[].seat_no | mixed | |
 | data.attendance[].plan_type | string | |
-| data.attendance[].plan_start_date | string\|null | Y-m-d — earliest `plan_start_date` across *all* of the learner's `learner_detail` rows (original join date), not just the current active plan |
 | data.attendance[].plan_end_date | string\|null | current active plan's end date |
 | data.attendance[].learner_plan_status | string\|null | |
 | data.attendance[].shift_timing | string\|null | |
@@ -3730,9 +3730,10 @@ Same method as the staff-side summary (`AttendanceService::summary()`) — it no
 | data.summary.total_members | integer | row count (learner × day) — for a learner call this equals total days in range |
 | data.summary.present_members | integer | |
 | data.summary.absent_members | integer | |
+| data.joining_date | string\|null | Y-m-d — earliest `plan_start_date` across all of this learner's `learner_detail` rows (original join date) |
 | data.filters.from_date | string | d/m/Y |
 | data.filters.to_date | string | d/m/Y |
-| data.attendance[] | array | one row per (learner, day): `learner_id`, `name`, `seat_no`, `plan_type`, `plan_start_date`, `plan_end_date`, `learner_plan_status`, `shift_timing`, `attendance_date`, `punch_in`, `punch_out`, `duration_in_library`, `attendance_status` |
+| data.attendance[] | array | one row per (learner, day): `learner_id`, `name`, `seat_no`, `plan_type`, `plan_end_date`, `learner_plan_status`, `shift_timing`, `attendance_date`, `punch_in`, `punch_out`, `duration_in_library`, `attendance_status` |
 
 ### `POST /api/v1/learner/attendance/logs`
 **Controller:** `Api\V1\Learner\LearnerAppController@attendanceLogs`
