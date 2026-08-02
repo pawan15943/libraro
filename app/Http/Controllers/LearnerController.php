@@ -2055,7 +2055,9 @@ class LearnerController extends Controller
 
         $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, 15, false);
 
-        $pdf = PDF::loadView('learner.learner_list_pdf', compact('learners'))->setPaper('a4', 'landscape');
+        $rowContext = $this->learnerService->buildLearnerListRowContext($learners);
+
+        $pdf = PDF::loadView('learner.learner_list_pdf', compact('learners', 'rowContext'))->setPaper('a4', 'landscape');
 
         return $pdf->download('learner_list_' . date('Y-m-d_His') . '.pdf');
     }

@@ -16,32 +16,39 @@ if (!function_exists('learner_contact_masking_enabled')) {
      */
     function learner_contact_masking_enabled(): bool
     {
+        static $cache = [];
+
         if (!function_exists('toggleHideField')) {
             return false;
         }
 
         $featureId = (int) learner_contact_masking_feature_id();
+        $cacheKey = getCurrentBranch() . ':' . $featureId;
+
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
 
         try {
             $rowExists = DB::table('toggle_features')
                 ->where('id', $featureId)
                 ->exists();
         } catch (\Throwable $e) {
-            return false;
+            return $cache[$cacheKey] = false;
         }
 
         if (!$rowExists) {
-            return false;
+            return $cache[$cacheKey] = false;
         }
 
         $hidden = toggleHideField();
         if (!is_array($hidden)) {
-            return false;
+            return $cache[$cacheKey] = false;
         }
 
         $hiddenIds = array_map('intval', $hidden);
 
-        return in_array($featureId, $hiddenIds, true);
+        return $cache[$cacheKey] = in_array($featureId, $hiddenIds, true);
     }
 }
 

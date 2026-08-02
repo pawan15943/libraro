@@ -23,8 +23,10 @@
 @php
 
 $current_route = Route::currentRouteName();
+$hasActiveFilters = request()->filled('search') || request()->filled('plan_id') || request()->filled('is_paid')
+    || request()->filled('status');
 @endphp
-@if ($learnerHistory->total()==0 && (!request()->has('search') || !request()->has('plan_id') || !request()->has('is_paid') || !request()->has('status')))
+@if ($learnerHistory->total()==0)
  <div class="no-data-found text-center py-5">
         <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
         <dotlottie-wc
@@ -34,7 +36,10 @@ $current_route = Route::currentRouteName();
             loop
         ></dotlottie-wc>
 
-       
+        @if($hasActiveFilters)
+                <h4>No Learners Found</h4>
+                <span>No learners match the selected filters. Try adjusting or clearing the filters above.</span>
+        @else
                 <h4>No Learners in This Category</h4>
                 <span>You don’t have any learners that are expired, deleted, or closed yet.</span>            <div class="heading-list justify-content-end mb-1">
                 @if(getCurrentBranch() !=0)
@@ -46,7 +51,7 @@ $current_route = Route::currentRouteName();
                     <span>Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices.</span>
                 @endif
             </div>
-       
+        @endif
     </div>
 @else
 <div class="row">
@@ -124,11 +129,6 @@ $current_route = Route::currentRouteName();
 
 
 <p><b>{{ $learnerHistory->total() }} Records for {{ $learnerHistory->perPage() }} per page</b></p>
-@if($learnerHistory->total()==0)
-    <div class="no-record-found text-center">
-        <h4>No Record Found</h4>
-    </div>
-@endif
 @foreach($learnerHistory as $key => $value)
 
 @php

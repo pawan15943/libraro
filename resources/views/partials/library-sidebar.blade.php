@@ -2,7 +2,16 @@
 $current_route = Route::currentRouteName();
 $user = getAuthenticatedUser();
 
-
+// Hoisted out of the menu loop below: none of this depends on the loop's $menu,
+// so it was previously re-querying the same two toggle_features lookups once per
+// menu item instead of once per page render.
+$toggleHidden = toggleHideField(); // Dynamic hidden toggle
+$toglleCategory = "Menu";
+$predefinedHidden = DB::table('toggle_features')->where('category', $toglleCategory)->pluck('id')->toArray();
+$finalHidden = array_intersect($toggleHidden, $predefinedHidden);
+$finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
+            ->pluck('name')
+            ->toArray();
 @endphp
 <style>
 /* Optional: rotate submenu arrow when active */
@@ -20,15 +29,8 @@ $user = getAuthenticatedUser();
         @foreach($menus as $menu)
      
             @php
-            
+
             $show = ($menu->name == 'Dashboard' || getLibrary()->status == 1 || (getLibrary()->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
-            $toggleHidden = toggleHideField(); // Dynamic hidden toggle
-            $toglleCategory="Menu";
-            $predefinedHidden =DB::table('toggle_features')->where('category', $toglleCategory)->pluck('id')->toArray();
-            $finalHidden = array_intersect($toggleHidden, $predefinedHidden);
-            $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
-                        ->pluck('name') 
-                        ->toArray();
            // Check if any submenu matches the current route
             $isSubmenuActive = $menu->children->contains(function ($submenu) use ($current_route) {
                 return $current_route == $submenu->url;

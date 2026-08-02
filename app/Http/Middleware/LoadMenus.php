@@ -206,13 +206,17 @@ class LoadMenus
 
            $planTypeCounts = [];
 
-            $planTypes = PlanType::withTrashed()->get(); 
+            $planTypes = PlanType::withTrashed()->get();
+
+            $countsByPlanType = LearnerDetail::where('status', 1)
+                ->whereIn('plan_type_id', $planTypes->pluck('id'))
+                ->selectRaw('plan_type_id, COUNT(*) as aggregate')
+                ->groupBy('plan_type_id')
+                ->pluck('aggregate', 'plan_type_id');
 
             foreach ($planTypes as $planType) {
                 // Count learners with active status assigned to this plan_type_id
-                $count = LearnerDetail::where('status', 1)
-                    ->where('plan_type_id', $planType->id)
-                    ->count();
+                $count = $countsByPlanType[$planType->id] ?? 0;
 
                 // Generate abbreviation like FD, FH, SH, HS1, etc.
                 $words = explode(' ', $planType->name);

@@ -154,62 +154,62 @@ class AttendanceController extends Controller
         return response()->json($result);
     }
 
-public function manualAttendance(Request $request, AttendanceService $service)
-{
-   $request->validate([
-        'learner_id' => 'required|integer|exists:learners,id',
-        'attendance' => 'nullable|integer|in:0,1',
-        'time'       => 'required|date_format:H:i:s',
-        'date'       => 'nullable|date',
-        'time_type'  => 'required|in:in,out',
-    ]);
-
-    $owner = auth()->user();
-
-    $branchId  = $owner->current_branch;
-    $libraryId = auth('library_api')->id();
-   
-
-    $learner = Learner::find($request->learner_id);
-
-    if (!$learner) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Learner not found'
-        ]);
-    }
-
-    if ($learner->branch_id != $branchId) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Learner belongs to another branch'
-        ]);
-    }
-
-    try {
-
-        $service->manualAttendance(
-            $request->learner_id,
-            $request->attendance ?? 1,
-            $request->date ?? today()->toDateString(),
-            $request->time,
-            $request->time_type,
-            $libraryId,
-            $branchId
-        );
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Attendance marked successfully'
+    public function manualAttendance(Request $request, AttendanceService $service)
+    {
+    $request->validate([
+            'learner_id' => 'required|integer|exists:learners,id',
+            'attendance' => 'nullable|integer|in:0,1',
+            'time'       => 'required|date_format:H:i:s',
+            'date'       => 'nullable|date',
+            'time_type'  => 'required|in:in,out',
         ]);
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        throw $e;
-    } catch (\Throwable $e) {
-        return response()->json([
-            'status' => false,
-            'message' => $e->getMessage()
-        ], 500);
+        $owner = auth()->user();
+
+        $branchId  = $owner->current_branch;
+        $libraryId = auth('library_api')->id();
+    
+
+        $learner = Learner::find($request->learner_id);
+
+        if (!$learner) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Learner not found'
+            ]);
+        }
+
+        if ($learner->branch_id != $branchId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Learner belongs to another branch'
+            ]);
+        }
+
+        try {
+
+            $service->manualAttendance(
+                $request->learner_id,
+                $request->attendance ?? 1,
+                $request->date ?? today()->toDateString(),
+                $request->time,
+                $request->time_type,
+                $libraryId,
+                $branchId
+            );
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Attendance marked successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 }

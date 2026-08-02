@@ -2,6 +2,10 @@
 @section('content')
 
 <!-- Content Header (Page header) -->
+@php
+$hasActiveFilters = request()->filled('search') || request()->filled('plan_id') || request()->filled('status')
+    || request()->filled('seat_no') || request()->filled('is_paid');
+@endphp
 @if ( $learners->total()==0)
 <div class="no-data-found">
     <script
@@ -14,6 +18,10 @@
     autoplay
     loop
     ></dotlottie-wc>
+    @if($hasActiveFilters)
+    <h4>No Bookings Found</h4>
+    <span>No future bookings match the selected filters. Try adjusting or clearing the filters above.</span>
+    @else
     <h4>No Future Bookings</h4>
     <span>You haven’t added any learners for upcoming dates. Add learners by clicking the button below.</span>
     <!-- Masters -->
@@ -27,6 +35,7 @@
         <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to choose the branch before adding plan prices.</span>
         @endif
     </div>
+    @endif
 </div>
 @else
 <div class="row">

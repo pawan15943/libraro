@@ -107,8 +107,8 @@
             @forelse($learners as $value)
             @php
                 $planStatus = getPlanStatusDetails($value->plan_end_date);
-                $transaction = learnerTransaction($value->id, $value->learner_detail_id);
-                $pendingAmount = optional($transaction)->pending_amount;
+                $rowContextData = $rowContext[$value->learner_detail_id] ?? [];
+                $pendingAmount = $rowContextData['total_pending'] ?? 0;
 
                 $photoData = null;
                 if (!empty($value->profile_picture) && file_exists(base_path($value->profile_picture))) {
@@ -135,7 +135,7 @@
                 <td>{{ $value->plan_start_date ? date('j M Y', strtotime($value->plan_start_date)) : '' }}</td>
                 <td>{{ $value->plan_end_date ? date('j M Y', strtotime($value->plan_end_date)) : '' }}</td>
                 <td class="status-{{ $planStatus['class'] }}">{{ $planStatus['status'] }}</td>
-                <td>{{ $pendingAmount !== null ? number_format($pendingAmount, 2) : '-' }}</td>
+                <td>{{ number_format($pendingAmount, 2) }}</td>
             </tr>
             @empty
             <tr>

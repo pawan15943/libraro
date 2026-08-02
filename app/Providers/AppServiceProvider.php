@@ -53,37 +53,53 @@ class AppServiceProvider extends ServiceProvider
             $data = compact('breadcrumb', 'pageTitle');
 
             if (getAuthenticatedUser() && function_exists('getLibraryId')) {
-                $data['planTypes'] = PlanType::where('library_id', getLibraryId())->get();
-                $data['plans'] = Plan::where('library_id', getLibraryId())->get();
-                $first_record = Hour::first();
-                $data['totalSeats'] = $first_record ? $first_record->seats : null;
-                $data['total_hour'] = $first_record ? $first_record->hour : null;
+                // This composer fires once per Blade view instance rendered (including every
+                // @include'd partial), so without caching this query block re-runs many times
+                // per single page load. It only depends on the current request's auth/library
+                // state, which doesn't change mid-request, so compute it once and reuse.
+                static $cachedAuthData = null;
 
+                if ($cachedAuthData === null) {
+                    $authData = [
+                        'planTypes' => PlanType::where('library_id', getLibraryId())->get(),
+                        'plans' => Plan::where('library_id', getLibraryId())->get(),
+                    ];
+                    $first_record = Hour::first();
+                    $authData['totalSeats'] = $first_record ? $first_record->seats : null;
+                    $authData['total_hour'] = $first_record ? $first_record->hour : null;
 
-                if (!$first_record) return collect();
+                    if (!$first_record) {
+                        $cachedAuthData = false;
+                    } else {
+                        $totalHour = $first_record->hour;
+                        $totalSeats = $first_record->seats;
 
-                $totalHour = $first_record->hour;
-                $totalSeats = $first_record->seats;
+                        // Step 1: Get used hours for each seat
+                        $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                            ->whereNotNull('seat_no')
+                            ->groupBy('seat_no')->where('status', 1)
+                            ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
 
-                // Step 1: Get used hours for each seat
-                $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
-                    ->whereNotNull('seat_no')
-                    ->groupBy('seat_no')->where('status', 1)
-                    ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
+                        $availableSeats = collect();
 
-                $availableSeats = collect();
+                        // Step 2: Loop through all seat numbers and apply logic
+                        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                            $usedHours = $usedSeats[$seatNo] ?? 0;
 
-                // Step 2: Loop through all seat numbers and apply logic
-                for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-                    $usedHours = $usedSeats[$seatNo] ?? 0;
+                            if ($usedHours < $totalHour) {
+                                $availableSeats->push($seatNo);
+                            }
+                        }
+                        $authData['exams'] = DB::table('exams')->get();
+                        $authData['availableseats'] = $availableSeats;
 
-                    if ($usedHours < $totalHour) {
-                        $availableSeats->push($seatNo);
+                        $cachedAuthData = $authData;
                     }
                 }
-                $exams = DB::table('exams')->get();
-                $data['exams'] = $exams;
-                $data['availableseats'] = $availableSeats;
+
+                if ($cachedAuthData === false) return collect();
+
+                $data = array_merge($data, $cachedAuthData);
             }
 
             $view->with($data);

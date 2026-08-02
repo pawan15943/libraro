@@ -1284,14 +1284,21 @@ if (!function_exists('videoGet')) {
 if (!function_exists('toggleHideField')) {
     function toggleHideField()
     {
-        $branch = Branch::where('id', getCurrentBranch())->select('hide_field')->first();
+        static $cache = [];
+        $branchId = getCurrentBranch();
+
+        if (array_key_exists($branchId, $cache)) {
+            return $cache[$branchId];
+        }
+
+        $branch = Branch::where('id', $branchId)->select('hide_field')->first();
         $hiddenFields = [];
 
         if ($branch && $branch->hide_field) {
             $hiddenFields = json_decode($branch->hide_field, true);
         }
 
-        return $hiddenFields;
+        return $cache[$branchId] = $hiddenFields;
     }
 }
 
