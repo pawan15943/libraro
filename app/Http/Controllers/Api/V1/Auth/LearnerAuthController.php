@@ -18,9 +18,15 @@ class LearnerAuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'learner_no' => 'required|string',
-            'password'   => 'required|string',
-        ]);
+                'login_with' => 'required|in:dob,email,learner_no',
+                'uid'        => 'required',  // learner_no
+                'mobile'     => 'required|regex:/^[5-9]\d{9}$/'
+            ], [
+                'login_with.required' => 'Please choose login type',
+                'uid.required'        => 'This field is required',
+                'mobile.required'     => 'Mobile number is required',
+                'mobile.regex'        => 'Enter valid a mobile number'
+            ]);
 
         if ($validator->fails()) {
             return response()->json([
@@ -28,15 +34,43 @@ class LearnerAuthController extends Controller
                 'message' => $validator->errors()->first(),
             ], 422);
         }
+         $dob = null;
 
-        $learner = Learner::where('learner_no', $request->learner_no)->first();
+        // Safe DOB conversion
+        try {
+            $dob = Carbon::createFromFormat('d/m/Y', $request->uid)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $dob = null;
+        }
+            \Log::info('Attendqance dob', ['dob' => $dob]);
 
-        if (! $learner || ! Hash::check($request->password, $learner->password)) {
+ 
+        $learner = Learner::withoutGlobalScopes()
+        ->where('mobile', encryptData($request->mobile))
+        ->when($request->login_with === 'learner_no' && $request->uid, function ($q) use ($request) {
+            $q->where('learner_no', $request->uid);
+        })
+        ->when($request->login_with === 'dob' && $dob, function ($q) use ($dob) {
+            
+            $q->where('dob', $dob);
+        })
+        ->when(
+            $request->login_with === 'email' &&
+            filter_var($request->uid, FILTER_VALIDATE_EMAIL),
+            function ($q) use ($request) {
+                $q->where('email', encryptData($request->uid));
+            }
+        )->first();
+       
+        
+        if (!$learner) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Invalid learner number or password',
+                'status' => false,
+                'message' => 'Sorry, we couldn’t find your record. Please verify your details and try again.'
             ], 200);
         }
+
+       
 
         if ((int) $learner->status !== 1) {
             return response()->json([

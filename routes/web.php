@@ -351,6 +351,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::delete('/transactions/activity/{activity}', [LearnerController::class, 'destroyTransactionActivity'])->name('learners.transactions.activity.destroy');
     Route::get('pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
+    Route::get('pending-payment/list', [LearnerController::class, 'pendingPaymentList'])->name('learner.pending.payment.list');
 
     Route::get('/seats/view', [DashboardController::class, 'viewSeats'])->name('learners.list.view');
     Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade');

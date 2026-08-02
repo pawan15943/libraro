@@ -47,6 +47,7 @@ use App\Services\ReceiptService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
+use App\Services\DashboardService;
 use App\Helpers\HelperService;
 
 
@@ -3296,6 +3297,39 @@ class LearnerController extends Controller
         $categoryIds = json_decode($data->categories_id, true) ?? [];
         $categories = Category::whereIn('id', $categoryIds)->get();
         return view('learner.blog-details', compact('data', 'categories'));
+    }
+
+    public function pendingPaymentList(Request $request, DashboardService $dashboardService)
+    {
+        $request->validate([
+            'search' => 'nullable|string',
+            'filter' => 'nullable|in:all,pending,adjusted,overdue,expired,received',
+            'plan_type_id' => 'nullable',
+            'plan_type_id.*' => 'integer|exists:plan_types,id',
+            'sort_by' => 'nullable|in:seat_no,name,expire_date,gen',
+            'sort_order' => 'nullable|in:asc,desc',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+        ]);
+
+        $filters = [
+            'search' => $request->search,
+            'status' => 'pending_payment',
+            'due_filter' => $request->filter ?? 'all',
+            'plan_type_id' => is_array($request->plan_type_id)
+                ? $request->plan_type_id
+                : (isset($request->plan_type_id) ? [(int) $request->plan_type_id] : []),
+            'sort_by' => $request->sort_by,
+            'sort_order' => $request->sort_order,
+            'from_date' => $request->from_date,
+            'to_date' => $request->to_date,
+        ];
+
+        $learners = $this->learnerService->getLearnersList($filters);
+        $summary = $dashboardService->pendingPaymentSummary(getCurrentBranch());
+        $planTypes = $this->learnerService->getPlanTypes();
+
+        return view('learner.pending-payment-list', compact('learners', 'summary', 'planTypes'));
     }
 
     public function pendingPayment(Request $request)
