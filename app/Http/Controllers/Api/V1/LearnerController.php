@@ -107,6 +107,7 @@ class LearnerController extends Controller
                 'sort_order' => 'nullable|in:asc,desc',
                 'from_date' => 'nullable|date',
                 'to_date' => 'nullable|date|after_or_equal:from_date',
+                'is_expired_allowed' => 'nullable|boolean',
             ]);
 
             // map page_no to page
@@ -126,6 +127,7 @@ class LearnerController extends Controller
                 'sort_order' => $request->sort_order,
                 'from_date' => $request->from_date,
                 'to_date' => $request->to_date,
+                'is_expired_allowed' => $request->boolean('is_expired_allowed'),
             ];
 
             $data = $service->getLearnersList($filters);

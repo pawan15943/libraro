@@ -1360,12 +1360,19 @@ class LearnerService
                     case 'active':
                         $extendDays = getExtendDays($branchId);
 
-                        $query->where('learner_detail.status',1);
-                            // ->whereDate(
-                            //     'learner_detail.plan_end_date',
-                            //     '>=',
-                            //     now()->subDays($extendDays)
-                            // );
+                        if (!empty($filters['is_expired_allowed'])) {
+                            // Drop the active-only restriction so learner_detail.status
+                            // 0 (expired) is allowed through alongside 1 (active) —
+                            // no other condition, just widen the status check.
+                            $query->whereIn('learner_detail.status', [0, 1]);
+                        } else {
+                            $query->where('learner_detail.status',1);
+                                // ->whereDate(
+                                //     'learner_detail.plan_end_date',
+                                //     '>=',
+                                //     now()->subDays($extendDays)
+                                // );
+                        }
 
                     break;
 
@@ -2176,9 +2183,20 @@ class LearnerService
                 $occupiedSeats = $formattedSeats->filter(fn ($seat) => $seat['seat_status'] !== 'available')->count();
                 $totalSeats = (int) ($floor->total_seats ?? $formattedSeats->count());
 
+                // Seats left over after the configured floors' seat ranges are
+                // exhausted (floor === null) only get the "Outside the floor"
+                // label when floors actually exist for this branch — if the
+                // branch has no floors configured at all, every seat lands in
+                // this same unassigned bucket and should keep the empty string
+                // it always has.
+                $floorName = $floor->name ?? ($seats->first()['floor_name'] ?? '');
+                if ($floor === null && $floors->isNotEmpty()) {
+                    $floorName = 'Outside the floor';
+                }
+
                 return [
                     'floor_id' => $floor->id ?? 0,
-                    'floor_name' => $floor->name ?? ($seats->first()['floor_name'] ?? ''),
+                    'floor_name' => $floorName,
                     'total_seats' => $totalSeats,
                     'available_seats' => max(0, $totalSeats - $occupiedSeats),
                     'occupied_seats' => $occupiedSeats,

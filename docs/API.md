@@ -2573,6 +2573,7 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | from_date | string (date) | no | filters on `learner_detail.join_date >=` |
 | to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
 | page_no | integer | no | not validated; mapped internally to `page` |
+| is_expired_allowed | boolean | no | only affects the `active` status (default when `status` is omitted): when true, drops the `learner_detail.status = 1` restriction so both 0 (expired) and 1 (active) rows are returned, instead of active-only |
 
 **Response**
 | Field | Type | Notes |
@@ -3320,8 +3321,8 @@ Activity shape (`formatActivity`):
 | message | string | |
 | data.plan_type_status[] | array | static list `{id,name,color}` |
 | data.numbered[] | array | one entry per floor |
-| data.numbered[].floor_id | integer | |
-| data.numbered[].floor_name | string | |
+| data.numbered[].floor_id | integer | 0 for the unassigned-seats bucket below |
+| data.numbered[].floor_name | string | "" if the branch has no floors configured at all; if it has floors but the branch's total seat count exceeds what those floors' seat ranges cover, the leftover seats form one extra entry with `floor_name` = "Outside the floor" |
 | data.numbered[].total_seats | integer | |
 | data.numbered[].available_seats | integer | |
 | data.numbered[].occupied_seats | integer | |
