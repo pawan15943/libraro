@@ -824,74 +824,236 @@ public function scan(Request $request)
 
 
     /* ===============================
-       2️⃣ Attendance Summary Page
+       2️⃣ Attendance Summary Page (calendar)
     =============================== */
 public function summary(Request $request, $learner)
 {
-    $learnerId = $learner;
+    $learnerId = (int) $learner;
+    $learnerModel = Learner::findOrFail($learnerId);
+    $learnerName = $learnerModel->name;
 
-      // ✅ DEFAULT: current month
-    if ($request->filled('from_date') && $request->filled('to_date')) {
+    $today = Carbon::today();
 
-        $fromDate = Carbon::parse($request->from_date)->toDateString();
-        $toDate   = Carbon::parse($request->to_date)->toDateString();
-
-    } else {
-
-        $fromDate = Carbon::now()->startOfMonth()->toDateString();
-        $toDate   = Carbon::today()->toDateString();
+    // Joining date = earliest plan_start_date across every learner_detail row
+    // (their original join date, not just the currently active plan).
+    $joiningDateRaw = LearnerDetail::withTrashed()
+        ->where('learner_id', $learnerId)
+        ->min('plan_start_date');
+    $joiningDate = $joiningDateRaw ? Carbon::parse($joiningDateRaw)->startOfDay() : $today->copy();
+    if ($joiningDate->gt($today)) {
+        $joiningDate = $today->copy();
     }
-   
- 
+
+    // Requested month, clamped to [joining month, current month] — no browsing
+    // before the learner joined or past today.
+    $minMonth = $joiningDate->copy()->startOfMonth();
+    $maxMonth = $today->copy()->startOfMonth();
+    $requestedMonth = Carbon::createFromDate(
+        (int) $request->query('year', $today->year),
+        (int) $request->query('month', $today->month),
+        1
+    )->startOfMonth();
+    $displayMonth = $requestedMonth->lt($minMonth) ? $minMonth->copy() : $requestedMonth;
+    $displayMonth = $displayMonth->gt($maxMonth) ? $maxMonth->copy() : $displayMonth;
+
+    $canGoPrev = $displayMonth->gt($minMonth);
+    $canGoNext = $displayMonth->lt($maxMonth);
+
+    // Selected date, clamped to [joiningDate, today]; defaults to today when
+    // today falls inside the displayed month, else the first valid day shown.
+    $selectedDate = $request->query('date')
+        ? Carbon::parse($request->query('date'))->startOfDay()
+        : ($displayMonth->isSameMonth($today) ? $today->copy() : $displayMonth->copy());
+    if ($selectedDate->lt($joiningDate)) {
+        $selectedDate = $joiningDate->copy();
+    }
+    if ($selectedDate->gt($today)) {
+        $selectedDate = $today->copy();
+    }
+
+    // Learner's assigned shift end time — used as the implied checkout when a
+    // learner punched IN but never punched OUT.
+    $activeDetail = LearnerDetail::with('planType')
+        ->where('learner_id', $learnerId)
+        ->where('status', 1)
+        ->latest('id')
+        ->first();
+    $shiftEndTime = $activeDetail?->planType?->end_time;
+
+    $attendanceRows = Attendance::where('learner_id', $learnerId)
+        ->whereYear('date', $displayMonth->year)
+        ->whereMonth('date', $displayMonth->month)
+        ->get()
+        ->keyBy(fn ($row) => Carbon::parse($row->date)->format('Y-m-d'));
+
+    $daysInMonth = $displayMonth->daysInMonth;
+    $startWeekday = $displayMonth->copy()->startOfMonth()->dayOfWeek;
+    $totalCells = (int) (ceil(($startWeekday + $daysInMonth) / 7) * 7);
+
+    $calendarCells = [];
+    $logs = [];
+    $presentCount = 0;
+    $halfCount = 0;
+    $absentCount = 0;
+    $totalMinutes = 0;
+
+    for ($i = 0; $i < $totalCells; $i++) {
+        $cellDate = $displayMonth->copy()->startOfMonth()->addDays($i - $startWeekday);
+        $inMonth = $cellDate->month === $displayMonth->month;
+
+        if (!$inMonth) {
+            $calendarCells[] = [
+                'day' => $cellDate->day,
+                'date' => null,
+                'in_month' => false,
+                'in_range' => false,
+                'status' => 'none',
+                'hours' => null,
+            ];
+            continue;
+        }
+
+        $dateStr = $cellDate->format('Y-m-d');
+        $inRange = $cellDate->between($joiningDate, $today);
+        $status = 'none';
+        $hours = null;
+        $checkIn = null;
+        $checkOut = null;
+        $impliedOut = false;
+
+        if ($inRange) {
+            $row = $attendanceRows->get($dateStr);
+
+            if ($row && $row->in_time) {
+                $checkIn = Carbon::parse($row->in_time);
+                $hasRealOut = $row->out_time && !Carbon::parse($row->out_time)->eq($checkIn);
+
+                if ($hasRealOut) {
+                    $checkOut = Carbon::parse($row->out_time);
+                    $status = 'full';
+                } else {
+                    $status = 'half';
+                    $impliedOut = true;
+
+                    if ($shiftEndTime) {
+                        $checkOut = Carbon::parse($dateStr . ' ' . Carbon::parse($shiftEndTime)->format('H:i:s'));
+                        if ($checkOut->lt($checkIn)) {
+                            $checkOut->addDay();
+                        }
+                    }
+                }
+
+                if ($checkOut) {
+                    $minutes = max(0, $checkIn->diffInMinutes($checkOut));
+                    $hours = round($minutes / 60, 1);
+                    $totalMinutes += $minutes;
+                }
+            } else {
+                $status = 'absent';
+            }
+
+            match ($status) {
+                'full' => $presentCount++,
+                'half' => $halfCount++,
+                'absent' => $absentCount++,
+                default => null,
+            };
+        }
+
+        $calendarCells[] = [
+            'day' => $cellDate->day,
+            'date' => $dateStr,
+            'in_month' => true,
+            'in_range' => $inRange,
+            'status' => $status,
+            'hours' => $hours,
+        ];
+
+        if ($inRange) {
+            $logs[] = [
+                'date' => $dateStr,
+                'day_name' => $cellDate->format('D'),
+                'day_num' => $cellDate->format('d'),
+                'status' => $status,
+                'check_in' => $checkIn?->format('h:i A'),
+                'check_out' => $checkOut?->format('h:i A'),
+                'implied_out' => $impliedOut,
+                'hours' => $hours,
+            ];
+        }
+    }
+
+    $totalHoursLabel = sprintf('%d:%02d', intdiv($totalMinutes, 60), $totalMinutes % 60);
+
+    return view('attendance.summary', [
+        'learnerId' => $learnerId,
+        'learnerName' => $learnerName,
+        'displayMonth' => $displayMonth,
+        'canGoPrev' => $canGoPrev,
+        'canGoNext' => $canGoNext,
+        'prevMonth' => $displayMonth->copy()->subMonth(),
+        'nextMonth' => $displayMonth->copy()->addMonth(),
+        'joiningDate' => $joiningDate->format('Y-m-d'),
+        'today' => $today->format('Y-m-d'),
+        'selectedDate' => $selectedDate->format('Y-m-d'),
+        'calendarCells' => $calendarCells,
+        'logs' => $logs,
+        'presentCount' => $presentCount,
+        'halfCount' => $halfCount,
+        'absentCount' => $absentCount,
+        'totalHoursLabel' => $totalHoursLabel,
+    ]);
+}
+
     /* ===============================
-    1️⃣ SUMMARY FROM attendances
+       Attendance Logs Detail Page (single date)
     =============================== */
-    $attendance = Learner::leftJoin('attendances', 'learners.id', '=', 'attendances.learner_id')
-       ->leftJoin('learner_detail', function ($join) {
-            $join->on('learners.id', '=', 'learner_detail.learner_id')
-                ->where('learner_detail.id', function ($query) {
-                    $query->select('id')
-                        ->from('learner_detail as ld')
-                        ->whereColumn('ld.learner_id', 'learner_detail.learner_id')
-                        ->where('ld.status', 1)
-                        ->orderByDesc('ld.id')
-                        ->limit(1);
-                });
-        })
-        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-        ->where('attendances.learner_id', $learnerId)
-        ->where('learners.status', 1)
-        ->whereBetween('attendances.date', [$fromDate, $toDate])
-        ->select(
-            'learners.id as learner_id',
-            'learners.name',
-            'learners.mobile',
-            'learners.seat_no',
-            'plan_types.name as plan_type_name',
-            'attendances.in_time',
-            'attendances.out_time',
-            'attendances.attendance',
-            'attendances.date'
-        )
+public function logsPage($learner, $date)
+{
+    $learnerId = (int) $learner;
+    $learnerModel = Learner::findOrFail($learnerId);
+
+    $dateObj = Carbon::parse($date)->startOfDay();
+    $today = Carbon::today();
+
+    $joiningDateRaw = LearnerDetail::withTrashed()
+        ->where('learner_id', $learnerId)
+        ->min('plan_start_date');
+    $joiningDate = $joiningDateRaw ? Carbon::parse($joiningDateRaw)->startOfDay() : $today->copy();
+
+    if ($dateObj->lt($joiningDate) || $dateObj->gt($today)) {
+        abort(404);
+    }
+
+    $attendanceRow = Attendance::where('learner_id', $learnerId)
+        ->whereDate('date', $dateObj->format('Y-m-d'))
+        ->first();
+
+    $punchRows = DB::table('learner_attendance_logs')
+        ->where('learner_id', $learnerId)
+        ->whereDate('punch_datetime', $dateObj->format('Y-m-d'))
+        ->orderBy('punch_datetime')
         ->get();
 
-    /* ===============================
-    2️⃣ COUNTS
-    =============================== */
-    $totalStudents   = $attendance->count();
-    $presentStudents = $attendance->where('attendance', 1)->count();
-    $absentStudents  = $attendance->where('attendance', 0)->count();
-    $learnerName=Learner::where('id',$learnerId)->value('name');
-    return view('attendance.summary', compact(
-        'attendance',
-        'fromDate',
-        'toDate',
-        'learnerId',
-        'totalStudents',
-        'presentStudents',
-        'absentStudents',
-        'learnerName'
-    ));
+    $totalPunches = $punchRows->count();
+    $punches = $punchRows->values()->map(function ($row, $index) use ($totalPunches) {
+        $punchType = ($index === $totalPunches - 1) ? 'OUT' : ($index % 2 === 0 ? 'IN' : 'OUT');
+
+        return [
+            'punch' => $punchType,
+            'time' => Carbon::parse($row->punch_datetime)->format('h:i A'),
+            'source' => $row->source,
+        ];
+    });
+
+    return view('attendance.logs', [
+        'learnerId' => $learnerId,
+        'learnerName' => $learnerModel->name,
+        'date' => $dateObj->format('Y-m-d'),
+        'dateLabel' => $dateObj->format('j M Y'),
+        'punches' => $punches,
+        'attendanceRow' => $attendanceRow,
+    ]);
 }
 
 

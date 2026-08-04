@@ -372,47 +372,24 @@ $learner_id=$value->id;
                         @endif
 
 
-                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
+                        {{-- @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 ) --}}
                             <!-- Sent Mail -->
 
                             @can('has-permission', 'WhatsApp Notification')
                                 @php
                                     $sendPref = $value->sended_message_type ?? 'no';
-
+                                    $seatNo = (!empty($value->seat_no) && $value->seat_no != 0) ? $value->seat_no : 'GEN';
                                     if ($planStatus['class']=='extedned') {
-                                        $reminderMessage = "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
+                                        $reminderMessage = "Dear {$value->name}(Seat No-{$seatNo}),\n\nYour plan expired on".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
                                     } else {
-                                        $reminderMessage = "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
+                                        $reminderMessage = "Dear {$value->name}(Seat No-{$seatNo}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
                                     }
 
                                     $freeWabaLink = "https://wa.me/+91{$value->mobile}?text=" . rawurlencode($reminderMessage);
                                     $freeTextLink = "sms:+91{$value->mobile}?body=" . rawurlencode($reminderMessage);
                                 @endphp
 
-                                {{-- Free (no-API) reminder icon(s) — driven by the learner's own "Send Reminders Via" choice --}}
-                                @if($sendPref == 'whatsapp')
-                                    <li>
-                                        <a class="w-auto px-2" target="_blank" href="{{ $freeWabaLink }}">
-                                            <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
-                                @elseif($sendPref == 'text')
-                                    <li>
-                                        <a class="w-auto px-2" href="{{ $freeTextLink }}">
-                                            <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
-                                        </a>
-                                    </li>
-                                @elseif($sendPref == 'both')
-                                    <li class="dropdown d-inline-block">
-                                        <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder">
-                                            <i class="fa fa-comment-dots"></i>
-                                        </a>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" target="_blank" href="{{ $freeWabaLink }}"><i class="fab fa-whatsapp"></i> Send via WhatsApp</a></li>
-                                            <li><a class="dropdown-item" href="{{ $freeTextLink }}"><i class="fa fa-message"></i> Send via Text</a></li>
-                                        </ul>
-                                    </li>
-                                @endif
+                               
 
                                 {{-- Paid (Twilio-backed) reminder icon(s) — additive, only while the library has active credits --}}
                                 @if($isNotificationActive)
@@ -457,6 +434,31 @@ $learner_id=$value->id;
                                             </li>
                                         @endif
                                     @endif
+                                @else
+                                     {{-- Free (no-API) reminder icon(s) — driven by the learner's own "Send Reminders Via" choice --}}
+                                    @if($sendPref == 'whatsapp')
+                                        <li>
+                                            <a class="w-auto px-2" target="_blank" href="{{ $freeWabaLink }}">
+                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    @elseif($sendPref == 'text')
+                                        <li>
+                                            <a class="w-auto px-2" href="{{ $freeTextLink }}">
+                                                <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
+                                            </a>
+                                        </li>
+                                    @elseif($sendPref == 'both')
+                                        <li class="dropdown d-inline-block">
+                                            <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder">
+                                                <i class="fa fa-comment-dots"></i>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" target="_blank" href="{{ $freeWabaLink }}"><i class="fab fa-whatsapp"></i> Send via WhatsApp</a></li>
+                                                <li><a class="dropdown-item" href="{{ $freeTextLink }}"><i class="fa fa-message"></i> Send via Text</a></li>
+                                            </ul>
+                                        </li>
+                                    @endif
                                 @endif
                             @endcan
 
@@ -464,7 +466,7 @@ $learner_id=$value->id;
                             {{-- @can('has-permission', 'Email Notification')
                                 <li><a href="mailto:{{$value->email }}?subject=Library Seat Renewal Reminder&body=Hey!%20🌟%0D%0A%0D%0AJust%20a%20friendly%20reminder:%20Your%20library%20seat%20plan%20will%20expire%20in%205%20days!%20📚✨%0D%0A%0D%0ADon%E2%80%99t%20miss%20out%20on%20the%20chance%20to%20keep%20enjoying%20your%20favorite%20books%20and%20resources.%20Plus,%20renewing%20now%20means%20you%20can%20unlock%20exciting%20rewards!%20🎁" target="_blank" data-id="11" onclick="incrementMessageCount({{ $value->id }}, 'email')" class="message" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders"><i class="fas fa-envelope"></i> Send Reminder</a></li>
                             @endcan --}}
-                        @endif
+                        {{-- @endif --}}
                             <!-- Swap Seat-->
 
                         @can('has-permission', 'Swap Seat')

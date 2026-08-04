@@ -187,40 +187,44 @@ class BranchController extends Controller
         unset($validated['hour'], $validated['seats']); // remove from $validated
         
          // ---------- FLOOR SEAT VALIDATION ----------
+         // Keep original row indexes here (no ->values()) so error keys like
+         // "floors.2.from" line up with the actual floors[2][from] input.
          $floors = collect($request->floors)
         ->filter(fn ($floor) =>
             filled($floor['name']) ||
             filled($floor['from']) ||
             filled($floor['to'])
-        )
-        ->values()
-        ->toArray();
+        );
 
         $validated['display_name']=$validated['display_name'] ?? $validated['name'];
 
        $totalFloorSeats = 0;
 
-        if (!empty($floors)) {
+        if ($floors->isNotEmpty()) {
 
             foreach ($floors as $index => $floor) {
 
-                if (empty($floor['from']) || empty($floor['to'])) {
-                    return back()
-                        ->withInput()
-                        ->with('error', 'Seat range is required for each floor');
+                $rowErrors = [];
+
+                if (empty($floor['from'])) {
+                    $rowErrors["floors.$index.from"] = 'Seat From is required.';
+                }
+
+                if (empty($floor['to'])) {
+                    $rowErrors["floors.$index.to"] = 'Seat To is required.';
+                }
+
+                if (!empty($rowErrors)) {
+                    return back()->withInput()->withErrors($rowErrors);
                 }
 
                 if ($floor['to'] < $floor['from']) {
-                    return back()
-                        ->withInput()
-                        ->with(
-                            'error',
-                            'Seat To must be greater than or equal to Seat From'
-                        );
+                    return back()->withInput()->withErrors([
+                        "floors.$index.to" => 'Seat To must be ≥ Seat From.',
+                    ]);
                 }
 
-                $floorSeatCount = ($floor['to'] - $floor['from']) + 1;
-                $totalFloorSeats += $floorSeatCount;
+                $totalFloorSeats += ($floor['to'] - $floor['from']) + 1;
             }
 
             if ($totalFloorSeats > $seats) {
@@ -228,10 +232,12 @@ class BranchController extends Controller
                     ->withInput()
                     ->with(
                         'error',
-                        "Total floor seats ({$totalFloorSeats}) cannot exceed branch seats ({$seats})"
+                        "Total floor seats ({$totalFloorSeats}) exceed branch seats ({$seats})."
                     );
             }
         }
+
+        $floors = $floors->values()->toArray();
 
         $branchData = collect($validated)->except([
             'plans',
@@ -376,17 +382,21 @@ class BranchController extends Controller
             'library_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:200|dimensions:max_width=250,max_height=250',
             'features' => 'nullable|array', 
             'features.*' => 'integer',
-            'google_map'=>'nullable',
+            'google_map'=>'nullable|required_without_all:longitude,latitude',
             'description'=>'nullable',
             'locker_amount'=>'nullable',
              'upi_id'=>'nullable',
             'token_money'=>'nullable',
             'extend_days'=>'nullable',
-            'longitude'=>'required',
-            'latitude'=>'required',
+            'longitude'=>'nullable|required_without:google_map',
+            'latitude'=>'nullable|required_without:google_map',
              'library_images' => 'nullable|array|max:4',
             'library_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'fixed_billing_date'=>'nullable|integer|min:1|max:31',
+        ], [
+            'google_map.required_without_all' => 'Provide a Google Map Embed URL, or fill both Latitude and Longitude.',
+            'longitude.required_without' => 'Longitude is required (or paste a Google Map Embed URL instead).',
+            'latitude.required_without' => 'Latitude is required (or paste a Google Map Embed URL instead).',
         ]);
 
         $branch = $id ? Branch::find($id) : null;
@@ -883,6 +893,41 @@ class BranchController extends Controller
             });
         }
 
+        /* =========================
+        FLOOR SEAT RANGE VALIDATION
+        ========================= */
+        $validator->after(function ($validator) use ($floorses) {
+
+            $floorRows = collect($floorses)->filter(fn ($floor) =>
+                filled($floor['name'] ?? null) ||
+                filled($floor['from'] ?? null) ||
+                filled($floor['to'] ?? null)
+            );
+
+            foreach ($floorRows as $index => $floor) {
+
+                $name = $floor['name'] ?? null;
+                $from = $floor['from'] ?? null;
+                $to   = $floor['to'] ?? null;
+
+                if ((filled($from) || filled($to)) && empty($name)) {
+                    $validator->errors()->add("floors.$index.name", 'Floor name is required.');
+                }
+
+                if (empty($from)) {
+                    $validator->errors()->add("floors.$index.from", 'Seat From is required.');
+                }
+
+                if (empty($to)) {
+                    $validator->errors()->add("floors.$index.to", 'Seat To is required.');
+                }
+
+                if (filled($from) && filled($to) && $to < $from) {
+                    $validator->errors()->add("floors.$index.to", 'Seat To must be ≥ Seat From.');
+                }
+            }
+        });
+
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
@@ -914,10 +959,10 @@ class BranchController extends Controller
         }
        
 
-        return response()->json($response);
+        return response()->json($response, 400);
 
-        
+
     }
 
-    
+
 }

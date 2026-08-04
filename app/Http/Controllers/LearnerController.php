@@ -3628,6 +3628,57 @@ class LearnerController extends Controller
         return redirect()->back()->with('success', 'Transaction deleted successfully.');
     }
 
+    /**
+     * Web page mirror of the app's "Edit Transaction" screen. Reads via the same
+     * LearnerLifecycleService::transactionDetail() the app API's
+     * transactions/detail endpoint uses.
+     */
+    public function editTransaction($transaction)
+    {
+        try {
+            $detail = $this->learnerLifecycleService->transactionDetail((int) $transaction);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return view('learner.transaction-edit', ['transaction' => $detail]);
+    }
+
+    /**
+     * Updates a single transaction using the same LearnerLifecycleService::updateTransaction()
+     * call and field set (paid_amount, due_date, paid_date, payment_mode) as the
+     * api/v1/library/learners/transactions/detail endpoint, so web and app stay in sync.
+     */
+    public function updateTransaction(Request $request, $transaction)
+    {
+        $validator = Validator::make($request->all(), [
+            'paid_amount' => 'nullable|numeric|min:0',
+            'due_date' => 'nullable|date',
+            'paid_date' => 'nullable|date',
+            'payment_mode' => 'nullable|in:1,2,3',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $this->learnerLifecycleService->updateTransaction((int) $transaction, $validator->validated());
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        }
+
+        $learnerId = LearnerTransaction::withTrashed()->where('id', $transaction)->value('learner_id');
+
+        if ($learnerId) {
+            return redirect()->route('learners.transactions', $learnerId)
+                ->with('success', 'Transaction updated successfully.');
+        }
+
+        return redirect()->route('learners.transactions.edit', $transaction)
+            ->with('success', 'Transaction updated successfully.');
+    }
+
     public function pendingPaymentStore(Request $request)
     {
        

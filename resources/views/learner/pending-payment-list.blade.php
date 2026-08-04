@@ -130,58 +130,111 @@ $queryWithoutFilter = collect(request()->query())->except('filter', 'page')->toA
 
 <div class="row">
     <div class="col-lg-12">
-        <div class="table-responsive bg-white">
-            <table class="table table-bordered align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Seat No</th>
-                        <th>Learner</th>
-                        <th>Plan</th>
-                        <th>Plan End Date</th>
-                        <th>Payment Status</th>
-                        <th>Pending Amount</th>
-                        <th>Due Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($learners as $learner)
-                    <tr>
-                        <td>{{ $learner['seat_no'] }}</td>
-                        <td>
-                            <a href="{{ route('learners.show', $learner['id']) }}">{{ $learner['name'] }}</a>
-                            <div class="small text-muted">UID: {{ $learner['learner_no'] }} | {{ $learner['mobile'] }}</div>
-                        </td>
-                        <td>
-                            {{ $learner['plan'] }}
-                            <div class="small text-muted">{{ $learner['plan_type'] }}</div>
-                        </td>
-                        <td>{{ $learner['plan_end_date'] ? date('j M Y', strtotime($learner['plan_end_date'])) : '' }}</td>
-                        <td>
-                            <span class="badge bg-{{ $learner['payment']['status'] == 'overdue' ? 'danger' : ($learner['payment']['status'] == 'paid' ? 'success' : 'warning') }}">
-                                {{ ucfirst($learner['payment']['status']) }}
-                            </span>
-                        </td>
-                        <td>{{ rtrim(rtrim(number_format((float) $learner['payment']['pending_amount'], 2, '.', ''), '0'), '.') }}</td>
-                        <td>{{ $learner['payment']['due_date'] ? date('j M Y', strtotime($learner['payment']['due_date'])) : '' }}</td>
-                        <td>
-                            @if($learner['transaction_id'])
-                            <a href="{{ route('learner.pending.payment', ['id' => $learner['transaction_id']]) }}" class="btn btn-sm btn-primary">
-                                Pay Due Amount
-                            </a>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">No pending payment records found.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="pp-list">
+            <div class="row g-2 align-items-center pp-row pp-row-head d-none d-md-flex bg-white">
+                <div class="col-md-1"><strong>Seat No</strong></div>
+                <div class="col-md-3"><strong>Learner</strong></div>
+                <div class="col-md-2"><strong>Plan</strong></div>
+                <div class="col-md-1"><strong>Plan End Date</strong></div>
+                <div class="col-md-1"><strong>Status</strong></div>
+                <div class="col-md-1"><strong>Pending Amount</strong></div>
+                <div class="col-md-1"><strong>Due Date</strong></div>
+                <div class="col-md-2 text-end"><strong>Action</strong></div>
+            </div>
+
+            @forelse($learners as $learner)
+            <div class="row g-2 align-items-center pp-row bg-white">
+                <div class="col-6 col-md-1">
+                    <div class="pp-label d-md-none text-muted small">Seat No</div>
+                    <div class="pp-value">{{ $learner['seat_no'] }}</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="pp-label d-md-none text-muted small">Learner</div>
+                    <div class="pp-value">
+                        <a href="{{ route('learners.show', $learner['id']) }}">{{ $learner['name'] }}</a>
+                        <div class="small text-muted">UID: {{ $learner['learner_no'] }} | {{ $learner['mobile'] }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="pp-label d-md-none text-muted small">Plan</div>
+                    <div class="pp-value">
+                        {{ $learner['plan'] }}
+                        <div class="small text-muted">{{ $learner['plan_type'] }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-1">
+                    <div class="pp-label d-md-none text-muted small">Plan End Date</div>
+                    <div class="pp-value">{{ $learner['plan_end_date'] ? date('j M Y', strtotime($learner['plan_end_date'])) : '-' }}</div>
+                </div>
+                <div class="col-6 col-md-1">
+                    <div class="pp-label d-md-none text-muted small">Status</div>
+                    <div class="pp-value">
+                        <span class="badge bg-{{ $learner['payment']['status'] == 'overdue' ? 'danger' : ($learner['payment']['status'] == 'paid' ? 'success' : 'warning') }}">
+                            {{ ucfirst($learner['payment']['status']) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-1">
+                    <div class="pp-label d-md-none text-muted small">Pending Amount</div>
+                    <div class="pp-value">{{ rtrim(rtrim(number_format((float) $learner['payment']['pending_amount'], 2, '.', ''), '0'), '.') }}</div>
+                </div>
+                <div class="col-6 col-md-1">
+                    <div class="pp-label d-md-none text-muted small">Due Date</div>
+                    <div class="pp-value">{{ $learner['payment']['due_date'] ? date('j M Y', strtotime($learner['payment']['due_date'])) : '-' }}</div>
+                </div>
+                <div class="col-12 col-md-2 text-md-end">
+                    @if($learner['transaction_id'])
+                    <a href="{{ route('learner.pending.payment', ['id' => $learner['transaction_id']]) }}" class="btn btn-sm btn-primary w-100 w-md-auto">
+                        Pay Due Amount
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @empty
+            <div class="pp-row bg-white text-center text-muted py-4">
+                No pending payment records found.
+            </div>
+            @endforelse
         </div>
     </div>
 </div>
+
+<style>
+    .pp-row {
+        margin: 0 0 .75rem;
+        padding: .75rem .5rem;
+        border-radius: .5rem;
+        border: 1px solid #e9ecef;
+    }
+    .pp-row-head {
+        background: #f8f9fa !important;
+        font-size: .85rem;
+        text-transform: uppercase;
+        color: #6c757d;
+        border: none;
+        padding-bottom: .5rem;
+        margin-bottom: .5rem;
+    }
+    .pp-value {
+        word-break: break-word;
+    }
+    @media (max-width: 767.98px) {
+        .pp-row {
+            box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        }
+        .pp-row > [class*="col-"] {
+            margin-bottom: .5rem;
+        }
+        .pp-row > [class*="col-"]:last-child {
+            margin-bottom: 0;
+        }
+        .pp-label {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+    }
+</style>
 
 @if($learners->lastPage() > 1)
 <div class="row mt-3">

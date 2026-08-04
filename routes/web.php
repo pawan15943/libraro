@@ -347,6 +347,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/getTransactionDetail', [LearnerController::class, 'getTransactionDetail'])->name('getTransactionDetail');
     Route::get('/transactions-data/{learnerId}', [LearnerController::class, 'learnerTransactionsModalData'])->name('learners.transactions.modal');
     Route::get('/{learner}/transactions', [LearnerController::class, 'learnerTransactionSection'])->name('learners.transactions');
+    Route::get('/transactions/{transaction}/edit', [LearnerController::class, 'editTransaction'])->name('learners.transactions.edit');
+    Route::put('/transactions/{transaction}', [LearnerController::class, 'updateTransaction'])->name('learners.transactions.update');
     Route::delete('/transactions/{transaction}', [LearnerController::class, 'destroyTransaction'])->name('learners.transactions.destroy');
     Route::delete('/transactions/activity/{activity}', [LearnerController::class, 'destroyTransactionActivity'])->name('learners.transactions.activity.destroy');
     Route::get('pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
@@ -379,6 +381,11 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
         '/attendance/{learner}',
         [AttendanceController::class, 'summary']
     )->name('attendance.summary');
+
+    Route::get(
+        '/attendance/{learner}/logs/{date}',
+        [AttendanceController::class, 'logsPage']
+    )->name('attendance.logs.page');
 
     Route::get('demo-users', [DemoUserController::class, 'index'])->name('demo-users.index');
     Route::post('demo-users/store', [DemoUserController::class, 'store'])->name('demo-users.store');

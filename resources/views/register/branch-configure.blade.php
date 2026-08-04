@@ -682,14 +682,7 @@
 
                     $.each(errors, function(key, messages) {
 
-                        // Convert Laravel dot notation to HTML name
-                        // floors.0.from -> floors[0][from]
-                        let fieldName = key
-                            .replace(/\.(\d+)\./g, '[$1][')
-                            .replace(/\./g, ']') + ']';
-
                         // Handle array fields like plans[]
-                        // let $field = $('[name="' + fieldName + '"], [name="' + fieldName.replace(/\]$/, '') + '"]');
                         let $field;
                         let $errorTarget;
 
@@ -698,10 +691,13 @@
                             $field = $(form).find('[name="plans[]"]');
                             $errorTarget = $field.closest('.col-lg-6'); // show error OUTSIDE select
                         } else {
-                            // floors.0.from → floors[0][from]
-                            let fieldName = key
-                                .replace(/\.(\d+)\./g, '[$1][')
-                                .replace(/\./g, ']');
+                            // Convert Laravel dot notation to HTML name
+                            // floors.0.from -> floors[0][from]
+                            let parts = key.split('.');
+                            let fieldName = parts.shift();
+                            parts.forEach(function(part) {
+                                fieldName += '[' + part + ']';
+                            });
 
                             $field = $(form).find('[name="' + fieldName + '"]');
                             $errorTarget = $field.parent();

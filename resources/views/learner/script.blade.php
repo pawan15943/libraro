@@ -1326,6 +1326,7 @@
             $('#diffrence_amount10').val('');
         }
     }
+
     // Pay Later (CHANGE PLAN) mirrors LearnerOperationService: pending_amount = effective -
     // old_price, i.e. the raw old-vs-new total difference, with diffrence_amount ignored
     // entirely - unlike the "Now" path, which nets the entered diffrence_amount against effective.

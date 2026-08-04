@@ -612,7 +612,215 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         </div>
         @endcan
         <!-- End -->
-        
+
+        <!-- Payment Due Members -->
+        @if(getCurrentBranch())
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Payment Due Members <span class="due-count-badge">{{ $pendingDueCount }}</span></h4>
+                </div>
+
+                <div class="payment-due-scroll">
+                    @forelse($pendingDueMembers as $member)
+                    @php
+                        $initials = collect(explode(' ', trim((string) ($member['name'] ?? ''))))
+                            ->filter()
+                            ->map(fn($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+                            ->take(2)
+                            ->implode('');
+                        $avatarColors = ['#f3a6a6', '#8ecae6', '#c9a3d4', '#f6c177', '#a3c9a8'];
+                        $avatarColor = $avatarColors[crc32((string) ($member['name'] ?? 'x')) % count($avatarColors)];
+                        $duePendingAmount = rtrim(rtrim(number_format((float) ($member['payment']['pending_amount'] ?? 0), 2, '.', ''), '0'), '.');
+                        $dueDate = $member['payment']['due_date'] ?? null;
+                    @endphp
+                    <div class="payment-due-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <span class="due-seat-tag">Seat No. {{ $member['seat_no'] ?? 'GEN' }}</span>
+                            @if(!empty($member['mobile']))
+                            <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" class="due-wa-icon" title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            @endif
+                        </div>
+
+                        <div class="due-avatar" style="background-color: {{ $avatarColor }};">
+                            @if(!empty($member['profile_picture']))
+                            <img src="{{ $member['profile_picture'] }}" alt="{{ $member['name'] }}">
+                            @else
+                            {{ $initials ?: '?' }}
+                            @endif
+                        </div>
+
+                        <h6 class="due-name">
+                            <a href="{{ route('learners.show', $member['id']) }}">{{ $member['name'] }}</a>
+                        </h6>
+
+                        <span class="due-badge">
+                            Due {{ $duePendingAmount }}
+                            @if($dueDate)
+                            on {{ date('d M', strtotime($dueDate)) }}
+                            @endif
+                        </span>
+
+                        @if(!empty($member['transaction_id']))
+                        <a href="{{ route('learner.pending.payment', ['id' => $member['transaction_id']]) }}" class="due-pay-btn">Pay Now</a>
+                        @endif
+                    </div>
+                    @empty
+                    <div class="text-muted text-center w-100 py-4">No payment due members found.</div>
+                    @endforelse
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="{{ route('learner.pending.payment.list', ['filter' => 'pending']) }}" class="due-view-all-link">
+                        View All Payment Due Member <i class="fa fa-long-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
+        <!-- End -->
+
+        <style>
+            .due-count-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 26px;
+                height: 26px;
+                padding: 0 8px;
+                border-radius: 50%;
+                background: #e9ecef;
+                color: #495057;
+                font-size: .8rem;
+                font-weight: 600;
+                vertical-align: middle;
+            }
+
+            .payment-due-scroll {
+                display: flex;
+                gap: 14px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 4px 4px 14px;
+                scroll-snap-type: x proximity;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .payment-due-scroll::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .payment-due-scroll::-webkit-scrollbar-thumb {
+                background: #d0d0e6;
+                border-radius: 6px;
+            }
+
+            .payment-due-card {
+                flex: 0 0 auto;
+                scroll-snap-align: start;
+                width: 190px;
+                background: #fde8e8;
+                border-radius: 16px;
+                padding: 14px;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .due-seat-tag {
+                color: #c1121f;
+                font-weight: 600;
+                font-size: .8rem;
+            }
+
+            .due-wa-icon {
+                color: #25d366;
+                background: #fff;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: .8rem;
+            }
+
+            .due-avatar {
+                width: 76px;
+                height: 76px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 1.5rem;
+                color: #1a1a2e;
+                margin: 10px 0 8px;
+                overflow: hidden;
+            }
+
+            .due-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .due-name {
+                margin: 0 0 8px;
+                font-weight: 700;
+                font-size: .95rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+
+            .due-name a {
+                color: #14213d;
+                text-decoration: none;
+            }
+
+            .due-badge {
+                background: #fff;
+                color: #c1121f;
+                font-size: .72rem;
+                font-weight: 600;
+                padding: 4px 10px;
+                border-radius: 20px;
+                margin-bottom: 10px;
+            }
+
+            .due-pay-btn {
+                background: #9b0f1f;
+                color: #fff;
+                border: none;
+                border-radius: 20px;
+                padding: 6px 26px;
+                font-weight: 600;
+                font-size: .85rem;
+                text-decoration: none;
+            }
+
+            .due-pay-btn:hover {
+                background: #7a0c18;
+                color: #fff;
+            }
+
+            .due-view-all-link {
+                color: #0d6e6e;
+                font-weight: 600;
+                text-decoration: none;
+                font-size: .95rem;
+            }
+
+            .due-view-all-link:hover {
+                color: #0a5555;
+            }
+        </style>
+
         @php
             $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');
             $canBook_2 = auth()->user()->can('has-permission', 'This Month Bookings');

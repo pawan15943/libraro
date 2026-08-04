@@ -215,6 +215,17 @@ class LearnerOperationRequest extends FormRequest
              'diffrence_amount' => [
                     'nullable',
                 ],
+
+            // Only meaningful when there's actually something to pay/refund
+            // (CHANGE PLAN / EDIT with a non-zero diffrence_amount).
+            'refund_pay_timing' => [
+                'nullable',
+                'in:now,later',
+                Rule::requiredIf(fn () =>
+                    in_array($this->payment_type, ['CHANGE PLAN', 'EDIT'])
+                    && (float) ($this->diffrence_amount ?? 0) != 0
+                ),
+            ],
             'dob'=>'nullable|date',
 
             'name' => 'nullable|string|max:255',
@@ -237,6 +248,13 @@ class LearnerOperationRequest extends FormRequest
             'no_expiry' => 'nullable|in:0,1',
             'sended_message_type' => 'nullable|in:whatsapp,text,both,no',
 
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'refund_pay_timing.required' => 'Please select whether to pay/refund the amount now or later.',
         ];
     }
 

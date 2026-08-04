@@ -68,8 +68,8 @@
                 @else
                     <span class="text-muted" data-bs-toggle="tooltip" data-bs-title="Receipt unavailable"><i class="fa-solid fa-download"></i></span>
                 @endif
-                @if(!empty($transaction['edit_url']))
-                    <a href="{{ $transaction['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                @if(!empty($transaction['id']))
+                    <a href="{{ route('learners.transactions.edit', $transaction['id']) }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                 @endif
                 @if(!empty($transaction['delete_url']))
                     <form method="POST" action="{{ $transaction['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">

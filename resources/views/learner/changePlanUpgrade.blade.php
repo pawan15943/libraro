@@ -247,12 +247,16 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                         @if($paymentType=='CHANGE PLAN')
                          <div class="col-lg-4">
                             <label id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span>*</span></label>
-                            <select id="refund_pay_timing10" name="" class="form-control form-select " required>
+                            <select id="refund_pay_timing10" name="refund_pay_timing" class="form-control form-select @error('refund_pay_timing') is-invalid @enderror">
                                 <option value="">Select</option>
-                                <option value="now">Now</option>
-                                <option value="later">Later</option>
+                                <option value="now" {{ old('refund_pay_timing') == 'now' ? 'selected' : '' }}>Now</option>
+                                <option value="later" {{ old('refund_pay_timing') == 'later' ? 'selected' : '' }}>Later</option>
                             </select>
-
+                            @error('refund_pay_timing')
+                            <span class="invalid-feedback d-block" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
                         </div>
                         <div class="col-lg-4">
                             <label for="diffrence_amount10" id="diffrence_amount_label10">{{ $diffLabel }} <span>*</span></label>

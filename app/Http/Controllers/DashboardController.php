@@ -253,14 +253,23 @@ class DashboardController extends Controller
                 ->get();
             if(getCurrentBranch()){
                  $qrbookings=Booking::where('branch_id',getCurrentBranch())->with(['plan','planType'])->where('type','!=','demo-bookings')->get();
-          
+
                  $branch=Branch::where('id',getCurrentBranch())->first();
             }else{
                 $qrbookings=null;
                 $branch=null;
             }
-           
-           
+
+            if(getCurrentBranch()){
+                $pendingDueMembers = $this->learnerService->getLearnersList([
+                    'status' => 'pending_payment',
+                    'due_filter' => 'pending',
+                ]);
+            } else {
+                $pendingDueMembers = collect();
+            }
+            $pendingDueCount = method_exists($pendingDueMembers, 'total') ? $pendingDueMembers->total() : $pendingDueMembers->count();
+
             if($is_expire && $user->hasRole('admin')){
                
                 return redirect()->route('library.myplan');
@@ -283,7 +292,7 @@ class DashboardController extends Controller
 
 
                
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch','festival'));
+                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch','festival','pendingDueMembers','pendingDueCount'));
             }else{
              
                 return redirect($redirectUrl);

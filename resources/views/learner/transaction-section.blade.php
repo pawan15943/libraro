@@ -244,8 +244,8 @@
                         @if(!empty($subscription['subscription_download_receipt_link']))
                             <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
                         @endif
-                        @if(!empty($subscription['edit_url']))
-                            <a href="{{ $subscription['edit_url'] }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                        @if(!empty($subscription['id']))
+                            <a href="{{ route('learners.transactions.edit', $subscription['id']) }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                         @endif
                         @if(!empty($subscription['delete_url']))
                             <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">

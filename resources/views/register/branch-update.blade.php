@@ -349,32 +349,49 @@
                     <!-- Floors Container -->
                     <div class="col-lg-12" id="floorWrapper">
 
+                        @foreach(old('floors', [['name' => '', 'from' => '', 'to' => '']]) as $i => $floor)
                         <div class="floor-block border rounded p-3 mb-3">
                             <div class="row g-4 align-items-end">
 
                                 <div class="col-lg-4">
                                     <label>Floor Name </label>
-                                    <input class="form-control" type="text" name="floors[0][name]" placeholder="Floor Name">
+                                    <input class="form-control @error("floors.$i.name") is-invalid @enderror" type="text" name="floors[{{ $i }}][name]" value="{{ $floor['name'] ?? '' }}" placeholder="Floor Name">
+                                    @error("floors.$i.name")
+                                    <span class="invalid-feedback d-block"><strong>{{ $message }}</strong></span>
+                                    @enderror
                                 </div>
 
                                 <div class="col-lg-3">
                                     <label>Seat No From </label>
-                                    <input class="form-control" type="number" name="floors[0][from]" placeholder="1">
+                                    <input class="form-control @error("floors.$i.from") is-invalid @enderror" type="number" name="floors[{{ $i }}][from]" value="{{ $floor['from'] ?? '' }}" placeholder="1">
+                                    @error("floors.$i.from")
+                                    <span class="invalid-feedback d-block"><strong>{{ $message }}</strong></span>
+                                    @enderror
                                 </div>
 
                                 <div class="col-lg-3">
                                     <label>Seat No To </label>
-                                    <input class="form-control" type="number" name="floors[0][to]" placeholder="50">
+                                    <input class="form-control @error("floors.$i.to") is-invalid @enderror" type="number" name="floors[{{ $i }}][to]" value="{{ $floor['to'] ?? '' }}" placeholder="50">
+                                    @error("floors.$i.to")
+                                    <span class="invalid-feedback d-block"><strong>{{ $message }}</strong></span>
+                                    @enderror
                                 </div>
 
                                 <div class="col-lg-2">
+                                    @if($i === 0)
                                     <button type="button" class="btn btn-primary btn-sm mt-2" id="addFloor">
                                         Add Floor
                                     </button>
+                                    @else
+                                    <button type="button" class="btn btn-danger btn-sm remove-floor">
+                                        Remove
+                                    </button>
+                                    @endif
                                 </div>
 
                             </div>
                         </div>
+                        @endforeach
 
                     </div>
 
@@ -388,10 +405,20 @@
                 <h4 class="mb-4">Google Map</h4>
                 <div class="row g-4">
                     <div class="col-lg-12">
-                        <label for="google_map">Google Map Embed URL</label>
-                        <textarea name="google_map" id="google_map" class="form-control no-validate" rows="5" placeholder="Paste Google Map Embed Code here">{{ old('google_map', $branch->google_map ?? '') }}</textarea>
+                        <label for="google_map">Google Map Embed URL <span>*</span></label>
+                        <textarea name="google_map" id="google_map" class="form-control no-validate @error('google_map') is-invalid @enderror" rows="5" placeholder="Paste Google Map Embed Code here">{{ old('google_map', $branch->google_map ?? '') }}</textarea>
+                        @error('google_map')
+                        <span class="invalid-feedback d-block" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
                         <span class="text-info"><b>Note</b>: Your provided library address will be shown to visitors on your listing, so please mention it correctly (Put Map Embed Code).</span>
                     </div>
+
+                    <div class="col-lg-12">
+                        <div class="or-divider"><span>OR</span></div>
+                    </div>
+
                     <div class="col-lg-6">
                         <label for="">Location Longitude <span>*</span></label>
                         <input type="text" class="form-control digit-only  @error('longitude') is-invalid @enderror" name="longitude" value="{{ old('longitude', $branch->longitude ?? '') }}">
@@ -413,6 +440,30 @@
                     </div>
                 </div>
             </div>
+
+            <style>
+                .or-divider {
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    color: #9a9a9a;
+                    font-size: .8rem;
+                    font-weight: 700;
+                    letter-spacing: .05em;
+                    margin: .25rem 0 1rem;
+                }
+
+                .or-divider::before,
+                .or-divider::after {
+                    content: "";
+                    flex: 1;
+                    border-bottom: 1px dashed #d5d5d5;
+                }
+
+                .or-divider span {
+                    padding: 0 1rem;
+                }
+            </style>
 
             <!-- Library Features -->
             <div class="card mt-5">
