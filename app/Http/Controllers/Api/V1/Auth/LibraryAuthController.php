@@ -505,7 +505,7 @@ class LibraryAuthController extends Controller
 
     public function appPermissions()
     {
-        $user = auth('library_api')->user();
+        $user = auth('library_api')->user() ?? auth('library_user_api')->user();
 
         if (! $user instanceof Library && ! $user instanceof LibraryUser) {
             return response()->json([

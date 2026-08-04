@@ -1360,10 +1360,11 @@ class LearnerService
                     case 'active':
                         $extendDays = getExtendDays($branchId);
 
-                        if (!empty($filters['is_expired_allowed'])) {
-                            // Drop the active-only restriction so learner_detail.status
-                            // 0 (expired) is allowed through alongside 1 (active) —
-                            // no other condition, just widen the status check.
+                        if (!empty($filters['is_expired_allowed']) && !empty($filters['search'])) {
+                            // Only widen active-only to also include expired
+                            // (learner_detail.status 0 or 1) when there's an
+                            // actual search term — ignore the flag on a plain
+                            // unfiltered listing request.
                             $query->whereIn('learner_detail.status', [0, 1]);
                         } else {
                             $query->where('learner_detail.status',1);

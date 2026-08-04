@@ -688,7 +688,7 @@ class MasterController extends Controller
     }
 
     public function planEdit(Request $request){
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         
         $validated = $request->validate([
             'id' => [
@@ -731,7 +731,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $validated = $request->validate([
             'id' => [
@@ -816,7 +816,7 @@ class MasterController extends Controller
 
     public function planlist(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         // ✅ Query 1: Fetch plans (optimized with COALESCE)
         $plans = Plan::withoutGlobalScopes()
@@ -858,7 +858,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         // ✅ Validation
         $validated = $request->validate([
@@ -912,7 +912,7 @@ class MasterController extends Controller
 
     public function planStatus(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         $request->validate([
             'id'     => 'required|exists:plans,id',
             // 'status' => 'required|in:active,inactive'
@@ -944,7 +944,7 @@ class MasterController extends Controller
 
   
     public function planTypeEdit(Request $request){
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         
         $validated = $request->validate([
             'id' => [
@@ -984,7 +984,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $validated = $request->validate([
             'id'            => 'nullable|exists:plan_types,id',
@@ -1179,7 +1179,7 @@ class MasterController extends Controller
 
     public function planTypelist(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $validated = $request->validate([
             'branch_id' => [
@@ -1322,7 +1322,7 @@ class MasterController extends Controller
 
     public function planPriceEdit(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         
         $validated = $request->validate([
             'id' => [
@@ -1380,7 +1380,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         $branchId  = $request->branch_id;
 
         $validated = $request->validate([
@@ -1461,7 +1461,7 @@ class MasterController extends Controller
     }
     public function pricelist(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $validated = $request->validate([
             'branch_id' => [
@@ -1521,7 +1521,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-         $libraryId = auth('library_api')->id();
+         $libraryId = getLibraryId();
         $request->validate([
             'id' => 'required|exists:plan_prices,id',
         ]);
@@ -1560,7 +1560,7 @@ class MasterController extends Controller
 
     public function planPriceStatus(Request $request)
     {
-         $libraryId = auth('library_api')->id();
+         $libraryId = getLibraryId();
         $request->validate([
             'id' => 'required|exists:plan_prices,id',
         ]);
@@ -1747,7 +1747,7 @@ class MasterController extends Controller
     public function editLibraryUser(Request $request)
     {
         
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
         $request->validate([
             'library_user_id' => 'required|exists:library_users,id'
         ]);
@@ -1802,7 +1802,7 @@ class MasterController extends Controller
 
     public function libraryUserList()
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $users = LibraryUser::where('library_id', $libraryId)
             ->with('roles:id,name')
@@ -1851,7 +1851,7 @@ class MasterController extends Controller
 
      public function libraryPermissions(Request $request)
     {
-        $library = auth('library_api')->user();
+        $library = getLibrary();
 
         $subscription = Subscription::find($library->library_type);
 
@@ -1916,7 +1916,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $validated = $request->validate([
             'user_id' => [
@@ -1952,7 +1952,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         // ✅ Validate input
         $validated = $request->validate([
@@ -2003,7 +2003,7 @@ class MasterController extends Controller
             return $denied;
         }
 
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         // ✅ Validation
         $validated = $request->validate([
@@ -2190,7 +2190,7 @@ class MasterController extends Controller
 
       public function examlist(Request $request)
     {
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
 
         $exams = Exam::select('id','name','deleted_at')
             ->get()
@@ -2217,7 +2217,7 @@ class MasterController extends Controller
     }
     public function examStore(Request $request)
     {
-        $libraryId = auth('library_api')->id(); // keep if needed, else remove
+        $libraryId = getLibraryId(); // keep if needed, else remove
 
         $validated = $request->validate([
 
@@ -2318,7 +2318,7 @@ class MasterController extends Controller
 
    public function examdelete(Request $request)
     {
-        $libraryId = auth('library_api')->id(); // keep if needed
+        $libraryId = getLibraryId(); // keep if needed
 
         $validated = $request->validate([
             'id' => [

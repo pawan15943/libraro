@@ -167,7 +167,7 @@ class AttendanceController extends Controller
         $owner = auth()->user();
 
         $branchId  = $owner->current_branch;
-        $libraryId = auth('library_api')->id();
+        $libraryId = getLibraryId();
     
 
         $learner = Learner::find($request->learner_id);

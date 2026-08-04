@@ -339,6 +339,8 @@ if (!function_exists('getLibraryId')) {
             if ($user instanceof \App\Models\LibraryUser) {
                 $library_id = $user->library_id;
             }
+        } elseif (Auth::guard('library_user_api')->check()) {
+            $library_id = Auth::guard('library_user_api')->user()->library_id;
         } elseif (Auth::guard('learner_api')->check()) {
             $library_id = Auth::guard('learner_api')->user()->library_id;
         }
@@ -372,6 +374,8 @@ if (!function_exists('getCurrentBranch')) {
             if ($user instanceof \App\Models\LibraryUser) {
                 $currentBranch = $user->current_branch;
             }
+        } elseif (Auth::guard('library_user_api')->check()) {
+            $currentBranch = Auth::guard('library_user_api')->user()->current_branch;
         } elseif (Auth::guard('learner_api')->check()) {
             $currentBranch = Auth::guard('learner_api')->user()->branch_id;
         }

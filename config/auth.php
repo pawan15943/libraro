@@ -55,10 +55,10 @@ return [
             'driver' => 'sanctum',
             'provider' => 'learners',
         ],
-        // 'library_user_api' => [
-        //     'driver' => 'sanctum',
-        //     'provider' => 'library_user',
-        // ],
+        'library_user_api' => [
+            'driver' => 'sanctum',
+            'provider' => 'library_user',
+        ],
     ],
 
 

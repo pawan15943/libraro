@@ -2573,7 +2573,7 @@ Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on t
 | from_date | string (date) | no | filters on `learner_detail.join_date >=` |
 | to_date | string (date) | no | after_or_equal:from_date; filters on `learner_detail.join_date <=` |
 | page_no | integer | no | not validated; mapped internally to `page` |
-| is_expired_allowed | boolean | no | only affects the `active` status (default when `status` is omitted): when true, drops the `learner_detail.status = 1` restriction so both 0 (expired) and 1 (active) rows are returned, instead of active-only |
+| is_expired_allowed | boolean | no | only takes effect when `search` also has a value, and only affects the `active` status (default when `status` is omitted): when true, drops the `learner_detail.status = 1` restriction so both 0 (expired) and 1 (active) rows are returned, instead of active-only. Ignored on a plain unfiltered listing (no `search`) |
 
 **Response**
 | Field | Type | Notes |

@@ -21,7 +21,7 @@ class DashboardService
     public function getDashboardData(int $branchId)
     {
         $branchName = DB::table('branches')->where('id', $branchId)->value('name');
-        $authUser = auth('library_api')->user();
+        $authUser = auth('library_api')->user() ?? auth('library_user_api')->user();
         $userType = 'library user';
         if ($authUser && get_class($authUser) === Library::class) {
             $userType = 'library owner';

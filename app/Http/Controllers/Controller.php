@@ -44,7 +44,7 @@ class Controller extends BaseController
 
     protected function denyWithoutAppPermission(string|array $permission)
     {
-        $user = auth('library_api')->user();
+        $user = auth('library_api')->user() ?? auth('library_user_api')->user();
 
         if (! app(SubscriptionPermissionService::class)->has($user, $permission)) {
             return response()->json([
