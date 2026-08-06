@@ -905,14 +905,25 @@ class LibraryAuthController extends Controller
 
     private function profilePayload($user)
     {
+        $permissions = app(SubscriptionPermissionService::class)->finalPermissions($user)->values();
+
         if ($user instanceof Library) {
+            $branches = Branch::where('library_id', $user->id)
+                ->select('id', 'name')
+                ->get();
+
             return [
+                'id' => $user->id,
+                'name' => $user->library_owner ?? '',
                 'user_type' => 'library',
                 'library_id' => $user->id,
                 'library_name' => $user->library_name ?? '',
                 'email' => $user->email ?? $user->library_email ?? '',
                 'library_mobile' => $user->library_mobile ?? '',
                 'library_owner' => $user->library_owner ?? '',
+                'allowed_branch' => $branches,
+                'permissions' => $permissions,
+                'status' => $user->status ? 'Active' : 'Inactive',
                 'profile_image' => !empty($user->library_logo)
                     ? asset('public/'.$user->library_logo)
                     : asset('public/img/user.png'),
@@ -921,7 +932,14 @@ class LibraryAuthController extends Controller
 
         $library = Library::find($user->library_id);
 
+        $branchIds = $user->branch_id ?? [];
+        $branches = Branch::whereIn('id', $branchIds)
+            ->select('id', 'name')
+            ->get();
+
         return [
+            'id' => $user->id,
+            'name' => $user->name ?? '',
             'user_type' => 'library_user',
             'library_id' => $user->library_id,
             'library_user_id' => $user->id,
@@ -929,6 +947,9 @@ class LibraryAuthController extends Controller
             'email' => $user->email ?? '',
             'library_mobile' => $user->mobile ?? '',
             'library_owner' => $user->name ?? '',
+            'allowed_branch' => $branches,
+            'permissions' => $permissions,
+            'status' => $user->status ? 'Active' : 'Inactive',
             'profile_image' => !empty($user->profile_picture)
                 ? asset('public/'.$user->profile_picture)
                 : asset('public/img/user.png'),

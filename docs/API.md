@@ -621,7 +621,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `GET /api/v1/library/profile`
 **Controller:** `LibraryAuthController@profile`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library_user.active` (see note below), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -633,6 +633,8 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | |
 | message | string | |
+| data.id | integer | unified id — same value as library_id or library_user_id below |
+| data.name | string | library_owner for a Library, name for a LibraryUser |
 | data.user_type | string | enum: library\|library_user |
 | data.library_id | integer | |
 | data.library_user_id | integer | only present when user_type=library_user |
@@ -640,7 +642,23 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | data.email | string | |
 | data.library_mobile | string | |
 | data.library_owner | string | |
+| data.allowed_branch[] | array | library owner: every branch under the library; library_user: only branches in their `branch_id` grant |
+| data.allowed_branch[].id | integer | |
+| data.allowed_branch[].name | string | |
+| data.permissions[] | array | from `SubscriptionPermissionService::finalPermissions()` — the permissions this user actually has (plan ∩ per-staff grant for a LibraryUser) |
+| data.permissions[].id | integer | |
+| data.permissions[].name | string | |
+| data.permissions[].slug | string | |
+| data.status | string | enum: Active\|Inactive, from `libraries.status` / `library_users.status` |
 | data.profile_image | string | URL, falls back to default avatar |
+
+**Note — inactive library_user accounts:** the `library_user.active` middleware runs on every route in this authenticated group (`auth:library_api,library_user_api`), not just this one. If the authenticated user is a `LibraryUser` with `status = 0`, their current Sanctum token is revoked and the request short-circuits with `401 {"status":false,"message":"Unauthenticated."}` before reaching the controller — deactivating a staff member takes effect immediately, not just on their next login.
+
+### `GET /api/v1/user/detail`
+**Controller:** `LibraryAuthController@profile`
+**Auth:** `auth:library_api,library_user_api`, `library_user.active`, `api_key`, `throttle:60,1`
+
+Same route as `GET /api/v1/library/profile` above (identical controller method, identical request/response) — exposed under a shorter, guard-agnostic path for callers that want a generic "current user detail" endpoint rather than a library-namespaced one. See that section for the full response shape and the inactive-account note.
 
 ### `POST /api/v1/library/profile/update`
 **Controller:** `LibraryAuthController@updateProfile`

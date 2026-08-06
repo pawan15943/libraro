@@ -87,5 +87,6 @@ class Kernel extends HttpKernel
         'api_key' => \App\Http\Middleware\ApiKeyMiddleware::class,
         'device.check' => \App\Http\Middleware\CheckDeviceHeader::class,
         'library.owner' => \App\Http\Middleware\LibraryOwnerOnly::class,
+        'library_user.active' => \App\Http\Middleware\EnsureLibraryUserActive::class,
     ];
 }
