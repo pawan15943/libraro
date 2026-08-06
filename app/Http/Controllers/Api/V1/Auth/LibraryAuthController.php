@@ -213,7 +213,7 @@ class LibraryAuthController extends Controller
             'token' => $token,
             'is_email_verified' => 1,
             'is_last_step'      => $is_last_step,
-            'user_type'   => 'library',
+            'user_type'   => 1,
             'data' => [
                 'library_id' => $request->library_id
             ]
@@ -494,12 +494,12 @@ class LibraryAuthController extends Controller
             'token'       => $token,
             'is_email_verified' => 1,
             'is_last_step'      => $is_last_step,
-            'user_type'   => $userType,
+            'user_type'   => $userType === 'library' ? 1 : 2,
             'data'    => [
                     'library_id' => $libraryId,
                     'branch'=>$branches,
                 ]
-            
+
         ],200);
     }
 

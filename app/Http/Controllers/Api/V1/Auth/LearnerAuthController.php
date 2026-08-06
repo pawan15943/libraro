@@ -88,7 +88,7 @@ class LearnerAuthController extends Controller
             'status'    => true,
             'message'   => 'Login successful.',
             'token'     => $token,
-            'user_type' => 'learner',
+            'user_type' => 3,
             'data'      => [
                 'learner_id' => $learner->id,
                 'learner_no' => $learner->learner_no,

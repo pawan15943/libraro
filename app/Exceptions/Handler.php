@@ -9,6 +9,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Session\TokenMismatchException;
 
 class Handler extends ExceptionHandler
 {
@@ -62,6 +63,13 @@ class Handler extends ExceptionHandler
                 'status' => false,
                 'message' => $exception->getMessage() ?: 'Something went wrong',
             ], 200);
+        }
+
+        if (! $request->expectsJson() && $exception instanceof TokenMismatchException) {
+            return redirect()
+                ->back()
+                ->withInput($request->except(['password', 'password_confirmation', '_token']))
+                ->with('session_expired', 'Your session expired. Please try again.');
         }
 
         if (

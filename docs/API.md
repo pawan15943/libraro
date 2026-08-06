@@ -120,9 +120,9 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 | token | string | present only on successful login |
 | is_email_verified | integer | 0 or 1 |
 | is_last_step | integer | 0-3, onboarding step |
-| user_type | string | enum: library\|library_user |
+| user_type | integer | 1=library, 2=library_user |
 | data.library_id | integer | |
-| data.branch[] | array | only populated when user_type=library, else `[]` |
+| data.branch[] | array | only populated when user_type=1 (library), else `[]` |
 | data.branch[].id | integer | |
 | data.branch[].name | string | |
 | data.branch[].uuid | string | |
@@ -172,7 +172,7 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 | token | string | only on success |
 | is_email_verified | integer | 1 on success |
 | is_last_step | integer | 0-2, onboarding step |
-| user_type | string | constant "library" |
+| user_type | integer | constant 1 (library) |
 | data.library_id | integer | |
 
 ### `POST /api/v1/library/forgot-password`
@@ -3590,7 +3590,7 @@ Identify-by pattern (not learner_no+password) — same shape as the web attendan
 | status | boolean | |
 | message | string | |
 | token | string | Sanctum bearer token, present on success |
-| user_type | string | `"learner"` |
+| user_type | integer | constant 3 (learner) |
 | data.learner_id | integer | |
 | data.learner_no | string | |
 | data.name | string | |

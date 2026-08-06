@@ -76,6 +76,10 @@
                 <div class="alert alert-info mb-0 mt-1">
                     {{ session('info') }}
                 </div>
+                @elseif(session('session_expired'))
+                <div class="alert alert-warning mb-0 mt-1">
+                    {{ session('session_expired') }}
+                </div>
                 @elseif($errors->has('error'))
                 <div class="alert alert-danger mb-0 mt-1">
                     {{ $errors->first('error') }}
