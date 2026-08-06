@@ -77,15 +77,15 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 Route::middleware(['auth:library_api,library_user_api','api_key','throttle:library_api'])->group(function () {
     Route::get('app/permissions', [LibraryAuthController::class, 'appPermissions']);
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);
-    Route::post('library/profile/update', [LibraryAuthController::class, 'updateProfile']);
+    Route::post('library/profile/update', [LibraryAuthController::class, 'updateProfile'])->middleware('library.owner');
     Route::post('library/change-password', [LibraryAuthController::class, 'changePassword']);
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
     Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);
-    Route::post('library/branch/configure', [LibraryAuthController::class, 'configure']);
-    Route::post('library/branch/store', [LibraryAuthController::class, 'configure']);
+    Route::post('library/branch/configure', [LibraryAuthController::class, 'configure'])->middleware('library.owner');
+    Route::post('library/branch/store', [LibraryAuthController::class, 'configure'])->middleware('library.owner');
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
     Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
-    Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
+    Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit'])->middleware('library.owner');
     Route::post('library/shift/configure/price', [LibraryAuthController::class, 'getConfigurePrice']);
     Route::post('branch/status', [MasterController::class, 'branchStatus']);
     Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
@@ -100,9 +100,9 @@ Route::middleware(['auth:library_api,library_user_api','api_key','throttle:libra
     Route::post('library/templates/update', [LibraryController::class, 'templateUpdate']);
 
    
-    Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi']);
-    Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi']);
-    Route::get('library/subscriptions', [LibraryController::class, 'subscriptions']);
+    Route::post('library/payment/create-order', [LibraryAuthController::class, 'createOrderApi'])->middleware('library.owner');
+    Route::post('library/payment/verify', [LibraryAuthController::class, 'verifyPaymentApi'])->middleware('library.owner');
+    Route::get('library/subscriptions', [LibraryController::class, 'subscriptions'])->middleware('library.owner');
 
     Route::post('receipt/link', [ReceiptController::class, 'link']);
     Route::post('id-card/link', [IdCardController::class, 'link']);
@@ -147,14 +147,16 @@ Route::middleware(['auth:library_api,library_user_api','api_key','throttle:libra
     Route::post('/planprice/delete', [MasterController::class, 'deletePlanPrice']);
     Route::post('/planprice/status', [MasterController::class, 'planPriceStatus']);
     
-    Route::post('/library/user/permissions', [MasterController::class, 'libraryPermissions']);
-    Route::post('/library/user/add',[MasterController::class,'saveLibraryUser']);
-    Route::post('/library/user/detail',[MasterController::class,'editLibraryUser']);
-    Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
-    Route::get('library_user/roles', [MasterController::class, 'rolesList']);
-    Route::post('/library/user/permissions/update',[MasterController::class,'assignPermissions']);
-    Route::post('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
-    Route::post('/library/user/status', [MasterController::class, 'libraryUserStatus']);
+    Route::middleware('library.owner')->group(function () {
+        Route::post('/library/user/permissions', [MasterController::class, 'libraryPermissions']);
+        Route::post('/library/user/add',[MasterController::class,'saveLibraryUser']);
+        Route::post('/library/user/detail',[MasterController::class,'editLibraryUser']);
+        Route::get('/library/user/list',[MasterController::class,'libraryUserList']);
+        Route::get('library_user/roles', [MasterController::class, 'rolesList']);
+        Route::post('/library/user/permissions/update',[MasterController::class,'assignPermissions']);
+        Route::post('/library/user/delete', [MasterController::class, 'deleteLibraryUser']);
+        Route::post('/library/user/status', [MasterController::class, 'libraryUserStatus']);
+    });
 
     Route::post('exam/list', [MasterController::class, 'examlist']);
     Route::post('exam/store', [MasterController::class, 'examstore']);

@@ -155,18 +155,20 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
   Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
 
-  Route::post('/branch', [BranchController::class, 'store'])->name('branch.store');
-  Route::get('/branch/create', [BranchController::class, 'branchForm'])->name('branch.create');
-  // Edit form
-  Route::get('/branch/{id}/edit', [BranchController::class, 'branchForm'])->name('branch.edit');
-  Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
+  Route::middleware('library.owner')->group(function () {
+    Route::post('/branch', [BranchController::class, 'store'])->name('branch.store');
+    Route::get('/branch/create', [BranchController::class, 'branchForm'])->name('branch.create');
+    // Edit form
+    Route::get('/branch/{id}/edit', [BranchController::class, 'branchForm'])->name('branch.edit');
+    Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
 
-  Route::get('/library-users', [LibraryUserController::class, 'index'])->name('library-users.index');
-  Route::get('/library-users/create/{id?}', [LibraryUserController::class, 'create'])->name('library-users.create');
-  Route::post('/library-users/store', [LibraryUserController::class, 'store'])->name('library-users.store');
-  Route::post('/library-users/toggle-status/{id}', [LibraryUserController::class, 'toggleStatus']);
-  Route::get('library-users/{user}/permissions', [LibraryUserController::class, 'editPermissions'])->name('library-users.permissions');
-  Route::post('library-users/{user}/permissions', [LibraryUserController::class, 'updatePermissions'])->name('library-users.permissions.update');
+    Route::get('/library-users', [LibraryUserController::class, 'index'])->name('library-users.index');
+    Route::get('/library-users/create/{id?}', [LibraryUserController::class, 'create'])->name('library-users.create');
+    Route::post('/library-users/store', [LibraryUserController::class, 'store'])->name('library-users.store');
+    Route::post('/library-users/toggle-status/{id}', [LibraryUserController::class, 'toggleStatus']);
+    Route::get('library-users/{user}/permissions', [LibraryUserController::class, 'editPermissions'])->name('library-users.permissions');
+    Route::post('library-users/{user}/permissions', [LibraryUserController::class, 'updatePermissions'])->name('library-users.permissions.update');
+  });
 
 
   Route::post('/library/master/upload', [Controller::class, 'uploadmastercsv'])->name('library.master.upload');
@@ -191,18 +193,18 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::post('library/learners/log', [LearnerController::class, 'learnerLog'])->name('learner.log');
 
   Route::prefix('library')->group(function () {
-    Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan');
+    Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan')->middleware('library.owner');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
     Route::get('/payment/store', [LibraryController::class, 'payment'])->name('payment.show');
 
     Route::post('/payment/store', [LibraryController::class, 'payment'])->name('payment.store');
-    Route::get('/branch/configure/create', [BranchController::class, 'branchConfigurForm'])->name('branch.configure.create');
-    Route::post('/branch/configure', [BranchController::class, 'branchConfigure'])->name('branch.configure');
+    Route::get('/branch/configure/create', [BranchController::class, 'branchConfigurForm'])->name('branch.configure.create')->middleware('library.owner');
+    Route::post('/branch/configure', [BranchController::class, 'branchConfigure'])->name('branch.configure')->middleware('library.owner');
     Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
     Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
-    Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan');
+    Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan')->middleware('library.owner');
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
 
     Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
@@ -224,12 +226,12 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/planPrice/create/{id?}', [MasterController::class, 'planPriceCreate'])->name('planPrice.create');
     Route::get('/planPrice/list', [MasterController::class, 'planPriceView'])->name('planPrice.index');
     Route::get('/master/account', [LibraryController::class, 'sidebarRedirect'])->name('library.master.account');
-    Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
+    Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment')->middleware('library.owner');
 
-    Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment');
-  
+    Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment')->middleware('library.owner');
+
     Route::get('/profile', [LibraryController::class, 'profile'])->name('profile');
-    Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update');
+    Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update')->middleware('library.owner');
     Route::post('/payment/success', [LibraryController::class, 'handleSuccess'])->name('library.payment.success');
     Route::get('/payment/error', [LibraryController::class, 'handleError'])->name('library.payment.error');
     Route::get('/toggle/feature/list', [MasterController::class, 'toggleFeature'])->name('toggle.feature');

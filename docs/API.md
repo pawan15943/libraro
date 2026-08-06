@@ -644,7 +644,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/profile/update`
 **Controller:** `LibraryAuthController@updateProfile`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -711,7 +711,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/branch/configure`
 **Controller:** `LibraryAuthController@configure`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -758,7 +758,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/branch/store`
 **Controller:** `LibraryAuthController@configure`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 Identical to `POST library/branch/configure` above — this is a second route alias pointing at the same `configure` method.
@@ -826,7 +826,7 @@ Identical to `POST library/branch/configure` above — this is a second route al
 
 ### `POST /api/v1/library/branch/detail`
 **Controller:** `LibraryAuthController@branchDetailEdit`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -897,7 +897,7 @@ Identical to `POST library/branch/configure` above — this is a second route al
 
 ### `POST /api/v1/library/payment/create-order`
 **Controller:** `LibraryAuthController@createOrderApi`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -920,7 +920,7 @@ Identical to `POST library/branch/configure` above — this is a second route al
 
 ### `POST /api/v1/library/payment/verify`
 **Controller:** `LibraryAuthController@verifyPaymentApi`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1544,7 +1544,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/permissions`
 **Controller:** `MasterController@libraryPermissions`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1564,7 +1564,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/add`
 **Controller:** `MasterController@saveLibraryUser`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1587,7 +1587,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/detail`
 **Controller:** `MasterController@editLibraryUser`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1614,7 +1614,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `GET /api/v1/library/user/list`
 **Controller:** `MasterController@libraryUserList`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1640,7 +1640,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `GET /api/v1/library_user/roles`
 **Controller:** `MasterController@rolesList`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1658,7 +1658,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/permissions/update`
 **Controller:** `MasterController@assignPermissions`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1675,7 +1675,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/delete`
 **Controller:** `MasterController@deleteLibraryUser`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1690,7 +1690,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/library/user/status`
 **Controller:** `MasterController@libraryUserStatus`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -1838,7 +1838,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `GET /api/v1/library/subscriptions`
 **Controller:** `LibraryController@subscriptions`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
