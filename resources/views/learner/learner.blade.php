@@ -333,15 +333,17 @@ $learner_id=$value->id;
                             <i class="fa-solid fa-clipboard-user"></i>
                         </a>
                     </li>
+                    {{-- @can('has-permission', 'Activity') --}}
+                    <li>
+                        <a href="{{ route('activities.all', ['learner_id' => $learner_id]) }}" title="View Learner Activity">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </a>
+                    </li>
+                    {{-- @endcan --}}
                     <!-- Edit Seat Info -->
                     @if($planStatus['diff_extend_day'] >= 0)
 
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
-
-                        <!-- To Handle Paylater & Pending Amount Icon -->
-                        @if($paylaterFlag || $hasPendingAmtFlag)
-                        <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2">Pay Due</a></li>
-                        @endif
 
                         @if($overdueFlag)
                         <li>
@@ -394,22 +396,13 @@ $learner_id=$value->id;
                                 {{-- Paid (Twilio-backed) reminder icon(s) — additive, only while the library has active credits --}}
                                 @if($isNotificationActive)
                                     @if($sendPref == 'both' && $isWabaNotificationActive && $isTextNotificationActive)
-                                        <li class="dropdown d-inline-block">
-                                            <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder (Paid)">
-                                                <i class="fa fa-ellipsis-v"></i>
+                                        <li>
+                                            <a href="javascript:;" class="w-auto px-2 open-reminder-chooser"
+                                                data-learner_id="{{$learner_id}}"
+                                                data-bs-toggle="modal" data-bs-target="#sendReminderChooserModal"
+                                                data-bs-placement="bottom" title="" data-original-title="Send Reminder (Paid)">
+                                                <i class="fa fa-ellipsis-v" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder (Paid)"></i>
                                             </a>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item open-waba" href="javascript:;" data-bs-toggle="modal" data-learner_id="{{$learner_id}}" data-bs-target="#wabaSendModel">
-                                                        <i class="fab fa-whatsapp" style="color:#25D366"></i> Send via WhatsApp
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item open-text" href="javascript:;" data-bs-toggle="modal" data-learner_id="{{$learner_id}}" data-bs-target="#textSendModel">
-                                                        <i class="fa fa-envelope" style="color:#0d6efd"></i> Send via Text
-                                                    </a>
-                                                </li>
-                                            </ul>
                                         </li>
                                     @else
                                         @if($isWabaNotificationActive && in_array($sendPref, ['whatsapp', 'both']))
@@ -449,14 +442,14 @@ $learner_id=$value->id;
                                             </a>
                                         </li>
                                     @elseif($sendPref == 'both')
-                                        <li class="dropdown d-inline-block">
-                                            <a class="w-auto px-2 dropdown-toggle" href="javascript:;" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-title="Send Reminder">
-                                                <i class="fa fa-comment-dots"></i>
+                                        <li>
+                                            <a href="javascript:;" class="w-auto px-2 open-reminder-chooser-free"
+                                                data-waba-link="{{ $freeWabaLink }}"
+                                                data-text-link="{{ $freeTextLink }}"
+                                                data-bs-toggle="modal" data-bs-target="#sendReminderChooserFreeModal"
+                                                data-bs-placement="bottom" title="" data-original-title="Send Reminder">
+                                                <i class="fa fa-comment-dots" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
                                             </a>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" target="_blank" href="{{ $freeWabaLink }}"><i class="fab fa-whatsapp"></i> Send via WhatsApp</a></li>
-                                                <li><a class="dropdown-item" href="{{ $freeTextLink }}"><i class="fa fa-message"></i> Send via Text</a></li>
-                                            </ul>
                                         </li>
                                     @endif
                                 @endif

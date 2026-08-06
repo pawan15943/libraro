@@ -26,9 +26,17 @@ $currentMonth = date('m');
         <div class="filter-box">
             <h4 class="mb-3">Filter Box</h4>
 
+            @if($filterLearnerId)
+                <div class="alert alert-info d-flex align-items-center justify-content-between py-2">
+                    <span>Showing activity for <strong>{{ $filterLearnerName ?? ('Learner #'.$filterLearnerId) }}</strong> only.</span>
+                    <a href="{{ route('activity.report', request()->except(['learner_id', 'page'])) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                </div>
+            @endif
+
             <form action="{{ route('activity.report') }}" method="GET">
+                <input type="hidden" name="learner_id" value="{{ $filterLearnerId }}">
                 <div class="row g-4">
-                   
+
                     <div class="col-lg-2">
                             <label for="year">Filter By Year</label>
                             <select id="year" class="form-select " name="year">

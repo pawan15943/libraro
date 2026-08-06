@@ -1628,6 +1628,11 @@ class DashboardController extends Controller
         $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
             ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
 
+        // Scope to a single learner (e.g. opened from the learner list's Activity icon).
+        if ($request->filled('learner_id')) {
+            $query->where('learner_id', $request->input('learner_id'));
+        }
+
         if ($request->filled('operation')) {
             $query->where('operation', $request->input('operation'));
         }
@@ -1693,7 +1698,12 @@ class DashboardController extends Controller
             ];
         })->groupBy('date_header');
 
-        return view('dashboard.activities', compact('activities', 'logs', 'operationOptions'));
+        $filterLearnerId = $request->input('learner_id');
+        $filterLearnerName = !empty($filterLearnerId)
+            ? \App\Models\Learner::withTrashed()->where('id', $filterLearnerId)->value('name')
+            : null;
+
+        return view('dashboard.activities', compact('activities', 'logs', 'operationOptions', 'filterLearnerId', 'filterLearnerName'));
     }
 
 

@@ -1062,8 +1062,12 @@
         }
         if (!$paymentMode.length) return;
 
+        // "Now" is restricted to Online/Offline only (see
+        // syncPaymentModeOptionsForTiming) - Pay Later must never come back,
+        // even when the pending amount happens to be 0.
+        const timing = $('#refund_pay_timing10').val();
         const hasPayLaterOption = $paymentMode.find('option[value="3"]').length > 0;
-        const canShowPayLater = Number(pendingAmount) === 0;
+        const canShowPayLater = timing !== 'now' && Number(pendingAmount) === 0;
 
         if (!canShowPayLater) {
             if ($paymentMode.val() === '3') {
@@ -2035,27 +2039,47 @@
     // Later -> Payment Mode restricted to Pay Later only, Amount to pay/refund field hidden
     // and the full difference is folded into Pending/Pending Refund Amount instead (Pay
     // Later ignores diffrence_amount server-side, see LearnerOperationService).
+    function syncPaymentModeOptionsForTiming(timing) {
+        const $paymentMode = $('#payment_mode10');
+        if (!$paymentMode.length) {
+            return;
+        }
+
+        if (timing === 'later') {
+            $paymentMode.html('<option value="3" selected>Pay Later</option>');
+        } else if (timing === 'now') {
+            // Keep the current selection if it's still valid for "Now"
+            // (Online/Offline) - e.g. on page load after a validation
+            // error redisplay where old('payment_mode') was already 1/2.
+            const currentMode = $paymentMode.val();
+            const preserved = (currentMode === '1' || currentMode === '2') ? currentMode : '';
+            $paymentMode.html(
+                '<option value="">Select Payment Mode</option>' +
+                '<option value="1"' + (preserved === '1' ? ' selected' : '') + '>Online</option>' +
+                '<option value="2"' + (preserved === '2' ? ' selected' : '') + '>Offline</option>'
+            );
+        }
+    }
+
+    // Sync once on load in case refund_pay_timing was already selected via
+    // old() on a validation-error redisplay - otherwise Payment Mode would
+    // keep its full unrestricted option list until the user re-touches
+    // the timing dropdown. Only the option list is synced here; amount
+    // recalculation stays change-only since it's already correct from PHP.
+    syncPaymentModeOptionsForTiming($('#refund_pay_timing10').val());
+
     $('#refund_pay_timing10').on('change', function () {
         const timing = $(this).val();
-        const $paymentMode = $('#payment_mode10');
         const $diffField = $('#diffrence_amount10');
         const $diffCol = $diffField.closest('.col-lg-4');
 
+        syncPaymentModeOptionsForTiming(timing);
+
         if (timing === 'later') {
-            if ($paymentMode.length) {
-                $paymentMode.html('<option value="3" selected>Pay Later</option>');
-            }
             $diffCol.hide();
             const fullDiff = parseFloat($diffField.attr('data-full-diff')) || 0;
             applyPayLaterPending(fullDiff);
         } else if (timing === 'now') {
-            if ($paymentMode.length) {
-                $paymentMode.html(
-                    '<option value="">Select Payment Mode</option>' +
-                    '<option value="1">Online</option>' +
-                    '<option value="2">Offline</option>'
-                );
-            }
             $diffCol.show();
             const sign = parseFloat($diffField.attr('data-sign')) || 1;
             const absVal = Math.abs(parseFloat($diffField.val()) || 0);
@@ -3473,6 +3497,35 @@ function showFormErrors2(errors) {
         field.after('<div class="invalid-feedback">' + value[0] + '</div>');
     });
 }
+
+// Ellipsis icon (learner has both WhatsApp + Text reminders active) opens a
+// chooser modal instead of a dropdown; sync the learner_id onto both choice
+// buttons before Bootstrap shows it (data-bs-toggle/target already open it).
+$(document).on('click', '.open-reminder-chooser', function () {
+    const learnerId = $(this).data('learner_id');
+    // .data() (not .attr()) so jQuery's own data cache stays in sync - the
+    // .open-waba/.open-text handlers below read via $(this).data(...).
+    $('#sendReminderChooserModal').find('.chooser-action').data('learner_id', learnerId);
+});
+
+// Chooser option clicked -> let it close (data-bs-dismiss="modal" on the
+// button), then open the matching send modal once the chooser has fully
+// hidden, so Bootstrap doesn't stack two modal backdrops at once.
+$(document).on('click', '.chooser-action', function () {
+    const targetModal = $(this).data('target-modal');
+
+    $('#sendReminderChooserModal').one('hidden.bs.modal', function () {
+        $(targetModal).modal('show');
+    });
+});
+
+// Free (no-API) "both" reminder icon opens a chooser modal too; the two
+// options are plain wa.me/sms: links, so just point them at this row's
+// already-built links before Bootstrap shows the modal.
+$(document).on('click', '.open-reminder-chooser-free', function () {
+    $('#freeWabaChoiceLink').attr('href', $(this).data('waba-link'));
+    $('#freeTextChoiceLink').attr('href', $(this).data('text-link'));
+});
 
 $(document).on('click', '.open-waba', function () {
 

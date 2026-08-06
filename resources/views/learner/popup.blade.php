@@ -473,6 +473,67 @@
 </div>
 @endcan
 
+<style>
+    .reminder-choice-grid { display: flex; gap: 16px; }
+    .reminder-choice-btn { flex: 1; border: 1px solid #e4e7ed; border-radius: 10px; background: #fff; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: .15s ease; text-decoration: none; color: inherit; }
+    .reminder-choice-btn:hover { border-color: #07156f; box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); }
+    .reminder-choice-icon { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; }
+    .reminder-choice-icon.whatsapp { background: #e7f9ee; color: #25D366; }
+    .reminder-choice-icon.text { background: #e8f0ff; color: #0d6efd; }
+    .reminder-choice-label { font-weight: 700; color: #222; font-size: 1rem; }
+    .reminder-choice-sub { color: #777; font-size: .8rem; text-align: center; }
+</style>
+
+<div class="modal fade" id="sendReminderChooserModal" tabindex="-1" aria-labelledby="sendReminderChooserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title px-2 fs-5" id="sendReminderChooserLabel">Send Reminder</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="reminder-choice-grid">
+                    <button type="button" class="reminder-choice-btn open-waba chooser-action" data-bs-dismiss="modal" data-target-modal="#wabaSendModel">
+                        <span class="reminder-choice-icon whatsapp"><i class="fab fa-whatsapp"></i></span>
+                        <span class="reminder-choice-label">WhatsApp</span>
+                        <span class="reminder-choice-sub">Send reminder via WhatsApp</span>
+                    </button>
+                    <button type="button" class="reminder-choice-btn open-text chooser-action" data-bs-dismiss="modal" data-target-modal="#textSendModel">
+                        <span class="reminder-choice-icon text"><i class="fa-solid fa-message"></i></span>
+                        <span class="reminder-choice-label">Text</span>
+                        <span class="reminder-choice-sub">Send reminder via SMS text</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sendReminderChooserFreeModal" tabindex="-1" aria-labelledby="sendReminderChooserFreeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title px-2 fs-5" id="sendReminderChooserFreeLabel">Send Reminder</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="reminder-choice-grid">
+                    <a href="javascript:;" id="freeWabaChoiceLink" target="_blank" class="reminder-choice-btn" data-bs-dismiss="modal">
+                        <span class="reminder-choice-icon whatsapp"><i class="fab fa-whatsapp"></i></span>
+                        <span class="reminder-choice-label">WhatsApp</span>
+                        <span class="reminder-choice-sub">Send reminder via WhatsApp</span>
+                    </a>
+                    <a href="javascript:;" id="freeTextChoiceLink" class="reminder-choice-btn" data-bs-dismiss="modal">
+                        <span class="reminder-choice-icon text"><i class="fa-solid fa-message"></i></span>
+                        <span class="reminder-choice-label">Text</span>
+                        <span class="reminder-choice-sub">Send reminder via SMS text</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="wabaSendModel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
 

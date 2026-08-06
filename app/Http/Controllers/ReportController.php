@@ -543,6 +543,7 @@ class ReportController extends Controller
             'operation' => $request->get('operation'),
             'status' => $request->get('status'),
             'search' => $request->get('search'),
+            'learner_id' => $request->get('learner_id'),
         ];
         $bindings = [getLibraryId()];
         $branchFilterSql = '';
@@ -607,9 +608,18 @@ class ReportController extends Controller
             });
         }
 
+        // Scope to a single learner (e.g. opened from the learner list's Activity icon).
+        if (!empty($filters['learner_id'])) {
+            $query->where('learner_id', $filters['learner_id']);
+        }
+
         $learners = $query->latest()->get();
-       
-        return view('report.learner_activity', compact('learners','years','months'));
+        $filterLearnerId = $filters['learner_id'];
+        $filterLearnerName = !empty($filterLearnerId)
+            ? \App\Models\Learner::withTrashed()->where('id', $filterLearnerId)->value('name')
+            : null;
+
+        return view('report.learner_activity', compact('learners', 'years', 'months', 'filterLearnerId', 'filterLearnerName'));
     }
 
     public function attendanceReport(Request $request){

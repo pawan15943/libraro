@@ -16,8 +16,16 @@
     </div>
 
     <div class="col-lg-12">
+        @if($filterLearnerId)
+            <div class="alert alert-info d-flex align-items-center justify-content-between py-2">
+                <span>Showing activity for <strong>{{ $filterLearnerName ?? ('Learner #'.$filterLearnerId) }}</strong> only.</span>
+                <a href="{{ route('activities.all', request()->except(['learner_id', 'page'])) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+            </div>
+        @endif
+
         <div class="filter-box mb-4">
             <form action="{{ route('activities.all') }}" method="GET">
+                <input type="hidden" name="learner_id" value="{{ $filterLearnerId }}">
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-4 col-md-6">
                         <label for="search">Search by Name, Mobile or Seat</label>

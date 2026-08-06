@@ -87,13 +87,6 @@
 
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
 
-                        <!-- To Handle Paylater & Pending Amount Icon -->
-                        @if(paylater($value->learner_detail_id) || pending_amt($value->learner_detail_id))
-                        @can('has-permission','Renew Seat')
-                        <li><a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Send Email Reminders" class="payment-learner w-auto px-2" >Pay Due Amount</a></li>
-                        @endcan
-
-                        @endif
                         @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']> 0 )
                             @can('has-permission','Renew Seat')
                             <li><a href="{{route('learner.renew.plan',$value->id)}}" title="Renew Plan" class="w-auto px-2">Renew</a></li>
