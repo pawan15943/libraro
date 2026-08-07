@@ -138,63 +138,69 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 </span>
                             @enderror
                         </div>
-                        <h4 class="mt-4 mb-3">Your plan Addon's
-                                <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i>
-                        </h4>
+                    </div>
+                </div>
 
-                        <div style="display: none;" class="mb-3 idProofFields1">
-                            <div class="row g-4">
-                                @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker == 'yes')))
-                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
-                                    <label>Locker?</label>
-                                    <select name="locker" id="toggleFieldCheckbox10" class="form-control">
-                                    
-                                        <option value="no" {{ old('locker', $hasLocker) === 'no' ? 'selected' : '' }}>No</option>
-                                        <option value="yes" {{ old('locker', $hasLocker) === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
-                                    </select>
-                                </div>
+                <div class="form-input mb-4">
+                    <h4 class="inner-heading">Plan Add-on's</h4>
 
-                                <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
-                                    <label>Locker Amount<span>*</span></label>
-                                    <input type="text" id="locker_amount10" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" placeholder="0.00"  value="{{ old('locker_amount', $locker_amt) }}" readonly>
-                                    @error('locker_amount')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
-                                    <label for="locker_no">Locker No.</label>
-                                    <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{ old('locker_no', $customer->locker_no) }}"  {{$locker_read}}>
-                                    @error('locker_no')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
-                                @endif
-                                @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount) )
-                                <div class="col-lg-6">
-                                    <label>Discount Type</label>
-                                    <select id="discountType10" class="form-control form-select" name="discountType">
-                                        <option value="">Select Discount Type</option>
-                                        <option value="amount" {{ old('discountType', $selectedDiscountType) == 'amount' ? 'selected' : '' }}>Amount</option>
-                                        <option value="percentage" {{ old('discountType', $selectedDiscountType) == 'percentage' ? 'selected' : '' }}>Percentage</option>
-                                        
-                                    </select>
-                                </div>
+                    <div>
+                        <div class="row g-4">
+                            @if(!in_array('3', toggleHideField()) || (in_array('3', toggleHideField()) && ($hasLocker == 'yes')))
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                <label>Locker?</label>
+                                <select name="locker" id="toggleFieldCheckbox10" class="form-control">
 
-                                <div class="col-lg-6">
-                                    <label>Discount Amount ( <span id="typeVal10">INR / %</span> )</label>
-                                    <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"  
-                                
-                                    value="{{ old('discount_amount', currentTransaction($customer->learner_detail_id)->discount_amount ?? 0) }}"
-                                    readonly>
-                                    @error('discount_amount')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                    @enderror
-                                </div>
-                                @endif
-                                
+                                    <option value="no" {{ old('locker', $hasLocker) === 'no' ? 'selected' : '' }}>No</option>
+                                    <option value="yes" {{ old('locker', $hasLocker) === 'yes' ? 'selected' : '' }}>Yes, I Need a Locker</option>
+                                </select>
                             </div>
-                        </div>
 
+                            <div class="col-lg-4 {{ !is_locker() ? 'd-none' : '' }}">
+                                <label>Locker Amount<span>*</span></label>
+                                <input type="text" id="locker_amount10" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" placeholder="0.00"  value="{{ old('locker_amount', $locker_amt) }}" readonly>
+                                @error('locker_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2" >
+                                <label for="locker_no">Locker No.</label>
+                                <input type="text" class="form-control digit-only @error('locker_no') is-invalid @enderror" name="locker_no" id="locker_no10"  placeholder="Enter Locker No." value="{{ old('locker_no', $customer->locker_no) }}"  {{$locker_read}}>
+                                @error('locker_no')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            @endif
+                            @if(!in_array('6', toggleHideField()) || (in_array('6', toggleHideField()) && $discountAmount) )
+                            <div class="col-lg-6">
+                                <label>Discount Type</label>
+                                <select id="discountType10" class="form-control form-select" name="discountType">
+                                    <option value="">Select Discount Type</option>
+                                    <option value="amount" {{ old('discountType', $selectedDiscountType) == 'amount' ? 'selected' : '' }}>Amount</option>
+                                    <option value="percentage" {{ old('discountType', $selectedDiscountType) == 'percentage' ? 'selected' : '' }}>Percentage</option>
+
+                                </select>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <label>Discount Amount ( <span id="typeVal10">INR / %</span> )</label>
+                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0.00" name="discount_amount"
+
+                                value="{{ old('discount_amount', currentTransaction($customer->learner_detail_id)->discount_amount ?? 0) }}"
+                                readonly>
+                                @error('discount_amount')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                            @endif
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-input mb-4">
+                    <h4 class="inner-heading">Payment &amp; Settlement</h4>
+                    <div class="row g-4">
                         <div class="col-lg-4">
                             <label for="">Previous paid Amount <span>*</span></label>
                             <input type="text" class="form-control @error('previous_amount') is-invalid @enderror"
@@ -209,13 +215,13 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
                         <div class="col-lg-4">
                             <label>Total Amount <span>*</span></label>
-                            <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}> 
+                            <input type="text" id="total_amount10" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount"   value="{{ old('paid_amount', optional(currentTransaction($customer->learner_detail_id))->total_amount) }}" {{ (Route::currentRouteName() == 'learner.change.plan' ) ? 'readonly' : '' }}>
                             @error('paid_amount')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                             <span id="chargeable_days10" class="text-info"></span>
                         </div>
-                          <div class="col-lg-4">
+                        <div class="col-lg-4">
                             <label id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span>*</span></label>
                             <select id="refund_pay_timing10" name="refund_pay_timing" class="form-control form-select @error('refund_pay_timing') is-invalid @enderror">
                                 <option value="">Select</option>
@@ -244,7 +250,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             <input type="text" id="pending_amt10" class="form-control" name="pending_amount" placeholder="0" value="{{ $pendingAbs }}"  readonly>
                             <span id="pending_amt_error" class="text-danger"></span>
                         </div>
-                      
+
                         <div class="col-lg-4">
                             <label for="">Choose Due Date</label>
                             <input type="date" id="due_date10" class="form-control duedate  @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date"  readonly>
@@ -265,18 +271,15 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
                         </div>
-
-                        <div class="col-lg-3 mt-4">
-                            <button type="submit" class="btn btn-primary btn-block button">Update Plan</button>
-                        </div>
-
                     </div>
-                    
                 </div>
 
-               
+                <div class="d-flex justify-content-end pt-3 border-top">
+                    <button type="submit" class="btn btn-primary button px-4">Update Plan</button>
+                </div>
+
             </div>
-            
+
         </form>
     </div>
     <div class="col-lg-3 order-1 order-md-2">

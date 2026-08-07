@@ -185,6 +185,16 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Edit Seat Booking Info' => route('learners.edit', $parameters)
             ],
+            'learners.edit.plan' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Edit Plan' => route('learners.edit.plan', $parameters)
+            ],
+            'learners.transactions' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'All Transactions' => route('learners.transactions', ['learner' => request()->route('learner') ?? false])
+            ],
             'learners.swap' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
@@ -450,6 +460,10 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Daily Demo inquiries' => route('demo-users.index'),
             ],
+            'activities.all' => [
+                'Dashboard' => route('library.home'),
+                'All Activities' => route('activities.all'),
+            ],
              'demo-users.create' => [
                 'Dashboard' => route('library.home'),
                 'Daily Demo inquiries' => route('demo-users.index'),
@@ -537,6 +551,7 @@ class AppServiceProvider extends ServiceProvider
             'learners' => 'Learners List',
             'learners.show' => 'Booking Info',
             'learners.edit' => 'Edit Seat Booking Info',
+            'learners.edit.plan' => 'Edit Plan',
             'learners.swap' => 'Swap Seat',
             'learners.upgrade' => 'Upgrade Seat',
             'seats.history' => 'Seat Booking History',
@@ -607,6 +622,8 @@ class AppServiceProvider extends ServiceProvider
             'booking.details' => 'Verify and Allot Seat',
             'demo-users.index' => 'Daily Demo Inquiries',
             'demo-users.create' => 'Add Demo Inquiry',
+            'activities.all' => 'All Activities',
+            'learners.transactions' => 'All Transactions',
 
         ];
 
