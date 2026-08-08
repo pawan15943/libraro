@@ -259,6 +259,7 @@ public function summary($request)
 
             'learners.id as learner_id',
             'learners.name',
+            'learners.profile_picture',
             'learners.mobile',
             'learners.seat_no',
 
@@ -340,7 +341,9 @@ public function summary($request)
                 'name' => $learner->name,
 
                 'seat_no' => $learner->seat_no,
-
+                'profile_picture' => $learner->profile_picture 
+                ? asset($learner->profile_picture) 
+                : '',
                 'plan_type' => $learner->plan_type_name,
 
                 'plan_end_date' => $learner->plan_end_date
