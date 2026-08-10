@@ -57,7 +57,10 @@ class LearnerBranchController extends Controller
         return collect($floors)->map(function ($floor) {
             $floor['seats'] = collect($floor['seats'] ?? [])->map(function ($seat) {
                 $seat['plantype'] = collect($seat['plantype'] ?? [])->map(function ($planType) {
-                    $planType['is_booked'] = $planType['learner'] !== null;
+                    // 'future' carries a learner card (for the staff-side response) but the
+                    // seat has no *current* occupant, so it must not read as booked here.
+                    $planType['is_booked'] = $planType['learner'] !== null
+                        && ($planType['plan_type_status'] ?? null) !== 'future';
                     unset($planType['learner']);
 
                     return $planType;

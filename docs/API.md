@@ -3323,14 +3323,14 @@ Activity shape (`formatActivity`):
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | plan_type_id | integer | no | exists:plan_types,id |
-| plan_type_status | integer | no | enum: 1-8 |
+| plan_type_status | integer | no | enum: 1-9 |
 
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
 | message | string | |
-| data.plan_type_status[] | array | static list `{id,name,color}` |
+| data.plan_type_status[] | array | static list `{id,name,color}`; id 9 = `future` (`#FF8C00`) |
 | data.numbered[] | array | one entry per floor |
 | data.numbered[].floor_id | integer | 0 for the unassigned-seats bucket below |
 | data.numbered[].floor_name | string | "" if the branch has no floors configured at all; if it has floors but the branch's total seat count exceeds what those floors' seat ranges cover, the leftover seats form one extra entry with `floor_name` = "Outside the floor" |
@@ -3346,8 +3346,8 @@ Activity shape (`formatActivity`):
 | seats[].plantype[] | array | see below |
 | plantype[].plan_type_id | integer | |
 | plantype[].plan_type_name | string | |
-| plantype[].plan_type_status | string | enum: booked\|available\|about to expire\|extended\|pending payment\|paylater\|extra paid\|non expire |
-| plantype[].learner | object\|null | see below |
+| plantype[].plan_type_status | string | enum: booked\|available\|about to expire\|extended\|pending payment\|paylater\|extra paid\|non expire\|future — `future` means no current booking but an upcoming (not-yet-started) one overlaps this plan type's time slot |
+| plantype[].learner | object\|null | see below. For `future`, this is the upcoming booking's learner (`learner.status` reads e.g. "Plan Starts in 3 Days"); the seat itself is not currently occupied, so `seats[].seat_status` stays `available` |
 | learner.learner_id | integer | |
 | learner.learner_no | string | |
 | learner.name | string | |
@@ -3626,7 +3626,7 @@ Browse-before-booking seat map for a chosen branch — part of the "pick a libra
 | status | boolean | |
 | data.plan_type_status[] | array | static legend `{id, name, color}` |
 | data.numbered[] | array | one row per floor: `floor_id`, `floor_name`, `total_seats`, `available_seats`, `occupied_seats`, `seats[]` |
-| data.numbered[].seats[].plantype[] | array | `{plan_type_id, plan_type_name, plan_type_status, is_booked}` — no `learner` key |
+| data.numbered[].seats[].plantype[] | array | `{plan_type_id, plan_type_name, plan_type_status, is_booked}` — no `learner` key. `plan_type_status` can be `future` (upcoming, not-yet-started booking overlaps this slot); `is_booked` stays `false` for it since nobody currently occupies the seat |
 | data.general[] | array | same shape, for general (non-numbered) seating |
 
 ### `POST /api/v1/learner/branch/plans`

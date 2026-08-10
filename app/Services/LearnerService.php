@@ -1977,6 +1977,7 @@ class LearnerService
             ['id' => 6, 'name' => 'paylater', 'color' => '#073B5B'],
             ['id' => 7, 'name' => 'extra paid', 'color' => '#00A1C8'],
             ['id' => 8, 'name' => 'non expire', 'color' => '#c8009d'],
+            ['id' => 9, 'name' => 'future', 'color' => '#FF8C00'],
         ];
 
         if ($planTypeId) {
@@ -2010,7 +2011,51 @@ class LearnerService
             ->orderBy('plan_type_id')
             ->get();
 
-        $learnerIds = $bookingDetails->pluck('learner_id')->filter()->unique()->values();
+        // Rows for bookings that haven't started yet (learner_detail.status = 0 until the
+        // daily cron flips it on plan_start_date — see DailyStatusUpdateJob) are otherwise
+        // invisible to $bookingDetails above, which only looks at status = 1. Without this,
+        // a seat/plan-type with no *current* booking but a future one shows as plain
+        // "available" even though it's already reserved from a future date.
+        //
+        // Note: learners.status is NOT required to be 1 here — runDailyUpdate() only sets a
+        // learner's status to 1 once they have an *active* (status = 1) learner_detail row,
+        // so a learner whose only booking is this future one is legitimately status = 0 until
+        // plan_start_date arrives. Requiring status = 1 would exclude every genuine future
+        // booking. We still skip rows explicitly closed via a 'closeSeat' operation, mirroring
+        // the same exclusion the daily cron applies before reactivating a row.
+        $futureBookingDetails = LearnerDetail::withTrashed()
+            ->with(['learner', 'plan', 'planType'])
+            ->where('branch_id', $branchId)
+            ->where('status', 0)
+            ->whereNull('deleted_at')
+            ->where('plan_start_date', '>', now()->toDateTimeString())
+            ->whereHas('learner', function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId)
+                    ->whereNull('deleted_at');
+            })
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('learner_operations_log')
+                    ->whereColumn('learner_operations_log.learner_detail_id', 'learner_detail.id')
+                    ->where('learner_operations_log.operation', 'closeSeat');
+            })
+            ->orderBy('plan_start_date')
+            ->get();
+
+        $futureBySeat = $futureBookingDetails
+            ->filter(fn ($detail) => ! empty($detail->seat_no))
+            ->groupBy(fn ($detail) => (int) $detail->seat_no);
+
+        $futureGeneral = $futureBookingDetails
+            ->filter(fn ($detail) => empty($detail->seat_no))
+            ->values();
+
+        // Future learners need to go through the same batched transaction/precompute lookups
+        // as current ones so formatSeatLearner() can render their card (pending amount, "Plan
+        // Starts in N days", VIP/frozen flags, etc.) without falling back to per-learner queries.
+        $learnerIds = $bookingDetails->pluck('learner_id')
+            ->merge($futureBookingDetails->pluck('learner_id'))
+            ->filter()->unique()->values();
 
         $transactions = LearnerTransaction::withTrashed()
             ->whereIn('learner_id', $learnerIds)
@@ -2020,7 +2065,7 @@ class LearnerService
             ->get()
             ->keyBy('learner_id');
 
-        $this->seatMapPrecomputed = $this->buildSeatMapPrecomputed($learnerIds, $bookingDetails);
+        $this->seatMapPrecomputed = $this->buildSeatMapPrecomputed($learnerIds, $bookingDetails->concat($futureBookingDetails));
 
         $numberedDetails = $bookingDetails
             ->filter(fn ($detail) => ! empty($detail->seat_no))
@@ -2029,8 +2074,8 @@ class LearnerService
         $statusRow = collect($planTypeStatuses)->firstWhere('id', $planTypeStatus);
         $statusName = $statusRow['name'] ?? null;
 
-        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId);
-        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $statusName);
+        $numbered = $this->formatNumberedSeatMap($branchId, $planTypes, $numberedDetails, $transactions, $planTypeId, null, $futureBySeat);
+        $general = $this->formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, $planTypeId, $statusName, $futureGeneral);
 
         if ($statusName) {
             $numbered = $this->sortSeatMapByPlanTypeStatus($numbered, $statusName);
@@ -2145,8 +2190,9 @@ class LearnerService
             ->all();
     }
 
-    private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null)
+    private function formatNumberedSeatMap($branchId, $planTypes, $detailsBySeat, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null, $futureBySeat = null)
     {
+        $futureBySeat = $futureBySeat ?? collect();
         $seatRows = collect(generateSeatNumbers2((int) $branchId));
 
         $floors = Floor::withoutGlobalScopes()
@@ -2158,17 +2204,21 @@ class LearnerService
 
         return $seatRows
             ->groupBy(fn ($seat) => $seat['floor_no'] ?? 0)
-            ->map(function ($seats, $floorNo) use ($planTypes, $detailsBySeat, $transactions, $floors, $planTypeId) {
+            ->map(function ($seats, $floorNo) use ($planTypes, $detailsBySeat, $transactions, $floors, $planTypeId, $futureBySeat) {
                 $floor = $floors->get((int) $floorNo);
 
-                $formattedSeats = $seats->map(function ($seat) use ($planTypes, $detailsBySeat, $transactions) {
+                $formattedSeats = $seats->map(function ($seat) use ($planTypes, $detailsBySeat, $transactions, $futureBySeat) {
                     $seatNo = (int) $seat['main'];
                     $displaySeatNo = !empty($seat['floor_name']) && !empty($seat['floor'])
                         ? (int) $seat['floor']
                         : $seatNo;
                     $seatDetails = $detailsBySeat->get($seatNo, collect());
-                    $plantypes = $this->formatSeatPlanTypes($planTypes, $seatDetails, $transactions);
-                    $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null);
+                    $futureDetails = $futureBySeat->get($seatNo, collect());
+                    $plantypes = $this->formatSeatPlanTypes($planTypes, $seatDetails, $transactions, null, $futureDetails);
+                    // 'future' entries now carry a learner card too (so staff can see who/when),
+                    // but that alone must not flip the seat to "booked" — only a *current*
+                    // occupant (non-future status) should.
+                    $isOccupied = collect($plantypes)->contains(fn ($item) => $item['learner'] !== null && ($item['plan_type_status'] ?? null) !== 'future');
 
                     return [
                         'seat_id' => $seatNo,
@@ -2208,7 +2258,7 @@ class LearnerService
             ->all();
     }
 
-    private function formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null)
+    private function formatGeneralSeatMap($branchId, $planTypes, $bookingDetails, $transactions, ?int $planTypeId = null, ?string $planTypeStatus = null, $futureGeneral = null)
     {
         $generalDetails = $bookingDetails
             ->filter(fn ($detail) => empty($detail->seat_no))
@@ -2226,7 +2276,7 @@ class LearnerService
                 'seat_no' => 'GEN',
                 'seat_status' => 'available',
                 'seat_type' => 'Regular',
-                'plantype' => $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions, $planTypeStatus),
+                'plantype' => $this->formatGeneralSeatPlanTypes($planTypes, $generalDetails, $transactions, $planTypeStatus, $futureGeneral),
             ]];
         } else {
             $seats = $generalDetails
@@ -2282,19 +2332,22 @@ class LearnerService
         ]];
     }
 
-    private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
+    private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null, $futureDetails = null)
     {
         $detailsByPlanType = collect($seatDetails)->groupBy('plan_type_id');
+        $futureDetails = collect($futureDetails)->filter(fn ($detail) => $detail->planType !== null);
 
-        return $planTypes->flatMap(function ($planType) use ($detailsByPlanType, $transactions) {
+        return $planTypes->flatMap(function ($planType) use ($detailsByPlanType, $transactions, $futureDetails) {
             $details = $detailsByPlanType->get($planType->id, collect())->values();
 
             if ($details->isEmpty()) {
+                $futureDetail = $this->firstOverlappingFutureDetail($planType, $futureDetails);
+
                 return [[
                     'plan_type_id' => $planType->id,
                     'plan_type_name' => $planType->name,
-                    'plan_type_status' => 'available',
-                    'learner' => null,
+                    'plan_type_status' => $futureDetail ? 'future' : 'available',
+                    'learner' => $futureDetail ? $this->formatSeatLearner($futureDetail, $transactions) : null,
                 ]];
             }
 
@@ -2312,12 +2365,13 @@ class LearnerService
             ->all();
     }
 
-    private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null)
+    private function formatSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null, $futureDetails = null)
     {
         $detailsByPlanType = collect($seatDetails)->keyBy('plan_type_id');
         $bookedPlanTypes = collect($seatDetails)
             ->pluck('planType')
             ->filter();
+        $futureDetails = collect($futureDetails)->filter(fn ($detail) => $detail->planType !== null);
 
         return $planTypes->filter(function ($planType) use ($detailsByPlanType, $bookedPlanTypes) {
             $detail = $detailsByPlanType->get($planType->id);
@@ -2327,19 +2381,44 @@ class LearnerService
             }
 
             return ! $this->planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes);
-        })->map(function ($planType) use ($detailsByPlanType, $transactions, $planTypeStatus) {
+        })->map(function ($planType) use ($detailsByPlanType, $transactions, $futureDetails) {
             $detail = $detailsByPlanType->get($planType->id);
+            $futureDetail = null;
+
+            if ($detail) {
+                $status = $this->seatPlanTypeStatus($detail, $transactions);
+            } else {
+                $futureDetail = $this->firstOverlappingFutureDetail($planType, $futureDetails);
+                $status = $futureDetail ? 'future' : 'available';
+            }
 
             return [
                 'plan_type_id' => $planType->id,
                 'plan_type_name' => $planType->name,
-                'plan_type_status' => $detail ? $this->seatPlanTypeStatus($detail, $transactions) : 'available',
-                'learner' => $detail ? $this->formatSeatLearner($detail, $transactions) : null,
+                'plan_type_status' => $status,
+                'learner' => $detail
+                    ? $this->formatSeatLearner($detail, $transactions)
+                    : ($futureDetail ? $this->formatSeatLearner($futureDetail, $transactions) : null),
             ];
         })
             ->when($planTypeStatus, fn ($items) => $items->filter(fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus))
             ->values()
             ->all();
+    }
+
+    /**
+     * Earliest future booking (already ordered by plan_start_date at the query in
+     * getSeatMapDetails) whose plan type's daily time range overlaps $planType.
+     */
+    private function firstOverlappingFutureDetail($planType, $futureDetails)
+    {
+        foreach ($futureDetails as $detail) {
+            if ($this->planTypeTimesOverlap($planType, $detail->planType)) {
+                return $detail;
+            }
+        }
+
+        return null;
     }
 
     private function planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes): bool
