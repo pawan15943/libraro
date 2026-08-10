@@ -614,7 +614,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <!-- End -->
 
         <!-- Payment Due Members -->
-        @if(getCurrentBranch())
+        @if(getCurrentBranch() && $pendingDueCount > 0)
         <div class="row mb-4">
             <div class="col-lg-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
