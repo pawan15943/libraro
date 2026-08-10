@@ -484,7 +484,7 @@ class LearnerLifecycleService
             return [];
         }
 
-        $updatedBy = $table === 'learner_transaction_activity'
+        $updatedBy = ($table === 'learner_transaction_activity' && $this->actorColumnAcceptsName($table))
             ? $this->currentActorName()
             : $this->currentUpdatedBy();
 
@@ -493,16 +493,34 @@ class LearnerLifecycleService
 
     private function setUpdatedBy($model): void
     {
-        if (! Schema::hasColumn($model->getTable(), 'updated_by')) {
+        $table = $model->getTable();
+
+        if (! Schema::hasColumn($table, 'updated_by')) {
             return;
         }
 
-        $updatedBy = $model->getTable() === 'learner_transaction_activity'
+        $updatedBy = ($table === 'learner_transaction_activity' && $this->actorColumnAcceptsName($table))
             ? $this->currentActorName()
             : $this->currentUpdatedBy();
 
         if ($updatedBy) {
             $model->updated_by = $updatedBy;
+        }
+    }
+
+    /**
+     * The `learner_transaction_activity.updated_by` column is meant to hold the actor's
+     * display name (varchar), but some environments still have it as the older
+     * int/bigint column and haven't run the migration that widens it. Storing a name
+     * string into an int column blows up with a SQLSTATE[22007] error, so detect the
+     * real column type and fall back to the numeric actor id there.
+     */
+    private function actorColumnAcceptsName(string $table): bool
+    {
+        try {
+            return in_array(Schema::getColumnType($table, 'updated_by'), ['string', 'text'], true);
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 

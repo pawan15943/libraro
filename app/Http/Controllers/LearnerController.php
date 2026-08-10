@@ -3733,7 +3733,7 @@ class LearnerController extends Controller
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
-            'fees'          => 'required|numeric|min:1',
+            'fees'          => 'required|numeric|min:1|max:999',
         ]);
 
         $response = $service->handleLearnerOtherPayment($request);

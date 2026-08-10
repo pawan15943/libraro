@@ -58,7 +58,7 @@ $class=$planDetails['class'];
                             <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror"
                                     data-token="{{ $tokenMoney }}" data-refund="{{$customer->pending_refund}}">
                                 <option value="">Select Payment</option>
-                                @if(!$customer->token_money && $tokenMoney)
+                                @if(!$customer->token_money)
                                 <option value="token_money">Token Money</option>
                                 @endif
                                 @if($customer->pending_refund)
@@ -78,7 +78,7 @@ $class=$planDetails['class'];
                         </div>
                         <div class="col-lg-4">
                             <label for="">Fees <span>*</span></label>
-                            <input type="text" class="form-control @error('fees') is-invalid @enderror" placeholder="Enter Fees" name="fees" id="fees" value="">
+                            <input type="text" class="form-control @error('fees') is-invalid @enderror" placeholder="Enter Fees" name="fees" id="fees" value="" maxlength="3" inputmode="numeric" autocomplete="off">
                             @error('fees')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -142,19 +142,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 $(document).ready(function () {
+    $('#fees').on('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 3);
+    });
+
     $('#payment_type').on('change', function () {
-      
+
         let selected = $(this).val();
         let tokenMoney = $(this).data('token');
         let pending_refund=$(this).data('refund');
-       
-        if (selected === 'token_money') {
-            $('#fees').val(tokenMoney);
+
+        if (selected === 'token_money' && tokenMoney) {
             $('#fees').val(tokenMoney).prop('readonly', true); // ✅ readonly
+        } else if (selected === 'token_money') {
+            $('#fees').val('').prop('readonly', false); // token not set yet, let them enter it
         }else if (selected === 'pending_refund'){
              $('#fees').val(pending_refund).prop('readonly', false); // editable
              $('#fees').val(pending_refund);
-            
+
         } else {
             $('#fees').val(pending_refund).prop('readonly', false); // editable
             $('#fees').val('');
