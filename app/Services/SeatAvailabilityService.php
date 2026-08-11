@@ -209,15 +209,18 @@ class SeatAvailabilityService
      * booking (learner_detail.status = 1, learner.status = 1) whose plan type's time range
      * overlaps that shift, and the seat still has free daily hour capacity left.
      *
+     * @param  int|null  $totalHour  Pass this when the caller already fetched the branch's
+     *                               Hour row (e.g. alongside $totalSeats), to skip a second
+     *                               lookup of the same row.
      * @return array<int, Collection<int, PlanType>> seat number (1..$totalSeats) => available plan types for that seat
      */
-    public function getAvailablePlanTypesMap(int $branchId, int $totalSeats): array
+    public function getAvailablePlanTypesMap(int $branchId, int $totalSeats, ?int $totalHour = null): array
     {
         if ($totalSeats < 1) {
             return [];
         }
 
-        $totalHour = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
+        $totalHour ??= Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
         $planTypes = PlanType::get();
 
         $seatNos = range(1, $totalSeats);

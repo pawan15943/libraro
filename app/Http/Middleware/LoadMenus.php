@@ -17,6 +17,7 @@ use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Seat;
+use App\Services\SeatAvailabilityService;
 use Closure;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
@@ -37,6 +38,10 @@ class LoadMenus
      * request (every page, every AJAX call) down to roughly once per window.
      */
     const CACHE_TTL_SECONDS = 30;
+
+    public function __construct(private SeatAvailabilityService $seatAvailabilityService)
+    {
+    }
 
     /**
      * Handle an incoming request.
@@ -294,44 +299,71 @@ class LoadMenus
         $learnerupdates = DB::table('updates')->whereNull('deleted_at')->where('guard', 'learner')->get();
         $plans = Plan::where('library_id', getLibraryId())->get();
 
-        if (getCurrentBranch() != 0 || getCurrentBranch() != null) {
-            $totalSeats = Hour::where('branch_id', getCurrentBranch())->value('seats');
-            $totalHour = Hour::where('branch_id', getCurrentBranch())->value('hour');
-        } else {
-            $totalSeats = Hour::where('library_id', getLibraryId())->SUM('seats');
-            $totalHour = Hour::where('library_id', getLibraryId())->SUM('hour');
-        }
-        $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
-            ->whereNotNull('seat_no')
-            ->groupBy('seat_no')->where('status', 1)
-            ->pluck('used_hours', 'seat_no'); // [seat_no => used_hours]
-
         $availableSeats = collect();
-        $allSeats = collect(generateSeatNumbers());
-
-        // Step 2: Loop through all seat numbers and apply logic
-        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-            $usedHours = $usedSeats[$seatNo] ?? 0;
-
-            if ($usedHours < $totalHour) {
-                $availableSeats->push($seatNo);
-            }
-        }
         $newAvailableSeats = collect();
 
-        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
-            $usedHours = $usedSeats[$seatNo] ?? 0;
+        if (getCurrentBranch() != 0 || getCurrentBranch() != null) {
+            $branchId = (int) getCurrentBranch();
+            // One row fetch for both columns instead of two separate value() queries —
+            // same query count as the old logic, not more.
+            $branchHour = Hour::where('branch_id', $branchId)->first(['seats', 'hour']);
+            $totalSeats = (int) ($branchHour->seats ?? 0);
 
-            if ($usedHours < $totalHour) {
-                $seatInfo = $allSeats->firstWhere('main', $seatNo);
+            // Same per-seat "is any plan type still bookable" rule the app's
+            // api/v1/get-seat endpoint uses (SeatAvailabilityService::getAvailablePlanTypesMap,
+            // also used by MasterController::getSeat) — plan-type time-slot overlap aware,
+            // not just a raw used-hours sum. Keeps the web's "Choose Seat No" dropdown
+            // (popup/swap/reactive/QR-verify) in sync with what the app shows as available.
+            // $totalHour is passed in so the service skips re-fetching the same Hour row.
+            $availablePlanTypesBySeat = $this->seatAvailabilityService->getAvailablePlanTypesMap(
+                $branchId,
+                $totalSeats,
+                $branchHour->hour ?? null
+            );
+            $allSeats = collect(generateSeatNumbers());
 
-                if ($seatInfo) {
-                    $newAvailableSeats->push($seatInfo);
-                } else {
-                    $newAvailableSeats->push([
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $availablePlanTypes = $availablePlanTypesBySeat[$seatNo] ?? collect();
+
+                if ($availablePlanTypes->isEmpty()) {
+                    continue;
+                }
+
+                $availableSeats->push($seatNo);
+
+                $seatInfo = $allSeats->firstWhere('main', $seatNo) ?? [
+                    'main' => $seatNo,
+                    'display' => $seatNo,
+                ];
+
+                $newAvailableSeats->push($seatInfo);
+            }
+        } else {
+            // "All branches" aggregate view has no single branch to check seat-level
+            // plan-type availability against (seat numbers aren't unique across
+            // branches), so this stays the coarse used-hours estimate it always was.
+            $totalSeats = Hour::where('library_id', getLibraryId())->SUM('seats');
+            $totalHour = Hour::where('library_id', getLibraryId())->SUM('hour');
+
+            $usedSeats = LearnerDetail::select('seat_no', DB::raw('SUM(hour) as used_hours'))
+                ->whereNotNull('seat_no')
+                ->groupBy('seat_no')->where('status', 1)
+                ->pluck('used_hours', 'seat_no');
+
+            $allSeats = collect(generateSeatNumbers());
+
+            for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+                $usedHours = $usedSeats[$seatNo] ?? 0;
+
+                if ($usedHours < $totalHour) {
+                    $availableSeats->push($seatNo);
+
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo) ?? [
                         'main' => $seatNo,
                         'display' => $seatNo,
-                    ]);
+                    ];
+
+                    $newAvailableSeats->push($seatInfo);
                 }
             }
         }
