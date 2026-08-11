@@ -184,7 +184,7 @@ $queryWithoutFilter = collect(request()->query())->except('filter', 'page')->toA
                 </div>
                 <div class="col-12 col-md-2 text-md-end">
                     @if($learner['transaction_id'])
-                    <a href="{{ route('learner.pending.payment', ['id' => $learner['transaction_id']]) }}" class="btn btn-sm btn-primary w-100 w-md-auto">
+                    <a href="javascript:void(0)" data-id="{{ $learner['id'] }}" class="btn btn-sm btn-primary w-100 w-md-auto settlement-learner">
                         Pay Due Amount
                     </a>
                     @endif

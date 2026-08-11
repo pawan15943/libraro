@@ -664,7 +664,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         </span>
 
                         @if(!empty($member['transaction_id']))
-                        <a href="{{ route('learner.pending.payment', ['id' => $member['transaction_id']]) }}" class="due-pay-btn">Pay Now</a>
+                        <a href="javascript:void(0)" data-id="{{ $member['id'] }}" class="due-pay-btn settlement-learner">Pay Now</a>
                         @endif
                     </div>
                     @empty

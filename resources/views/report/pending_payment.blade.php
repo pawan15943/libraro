@@ -196,7 +196,7 @@ $transaction ='';
                             <li>
                                 @if($transaction && $transaction->pending_amount > 0)
                                 
-                                 <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="payment-learner"><i class="fas fa-credit-card"></i></a>
+                                 <a href="javascript:void(0)" data-id="{{ $value->learner_id }}" data-learnerDetail="{{ $value->id }}" class="payment-learner settlement-learner"><i class="fas fa-credit-card"></i></a>
                                 @else
                                  <a href="{{route('learner.other.payment',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner" ><i class="fa-solid fa-money-bill"></i></a>
                                 @endif

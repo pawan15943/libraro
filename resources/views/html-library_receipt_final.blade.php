@@ -168,7 +168,7 @@
             <tr><td class="label">Carryforward / Extra (as of {{ now()->format('d/m/Y') }})</td><td class="val">₹{{ $carry_forward }}</td></tr>
             <tr class="bold"><td>Final Subscription Price</td><td class="val">₹{{ $final_amount }}</td></tr>
             <tr><td class="label">Paid Earlier</td><td class="val green">&#8377;{{ rtrim(rtrim(number_format((float)($paid_earlier ?? 0), 2, '.', ''), '0'), '.') }}</td></tr>
-            <tr><td class="label">Paid Amount ({{ \Carbon\Carbon::parse($invoice_date)->format('d M Y') }} � Cash)</td><td class="val green">&#8377;{{ rtrim(rtrim(number_format((float)($current_paid ?? 0), 2, '.', ''), '0'), '.') }}</td></tr>
+            <tr><td class="label">Paid Amount ({{ \Carbon\Carbon::parse($invoice_date)->format('d M Y') }} � Cash)</td><td class="val green">&#8377;{{ rtrim(rtrim(number_format((float)($current_paid ?? 0), 2, '.', ''), '0'), '.') }}</td></tr>
             <tr class="bold"><td>Pending Amt</td><td class="val red">₹{{ $pending_amount }}</td></tr>
         </table>
     </div>
@@ -180,7 +180,10 @@
         </ul>
     </div>
 
-    <div class="footer">{{ $library_name }} · {{ $learner_no }} · Computer Generated · {{ now()->format('d/m/Y') }}</div>
+    <div class="footer">
+        {{ $library_name }} · {{ $learner_no }} · Computer Generated · {{ now()->format('d/m/Y') }}<br>
+        Website: www.libraro.in · Mobile: +91-8114479678 · Address: 955, Vinoba Bhave Nagar, Kota
+    </div>
 </div>
 </body>
 </html>

@@ -640,7 +640,7 @@ $learner_id=$value->id;
 
                         <div class="d-flex g-1">
                             @if($paylaterFlag && $transaction?->pending_amount!=0)
-                            <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                            <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger d-block settlement-learner">
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">
                                     PayLater  {{ rtrim(rtrim(number_format(   ($totalPendingAmt), 2, '.', ''), '0'), '.') }}
                                 </span>
@@ -653,7 +653,7 @@ $learner_id=$value->id;
                             <span></span>
 
                             @elseif( $hasPendingAmtFlag)
-                            <a href="{{ route('learner.pending.payment', ['id' => $transaction->id]) }}" class="text-danger d-block">
+                            <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger d-block settlement-learner">
                                  @if( !empty($due_date) && $overdueFlag)
                                 <span class="extended" data-bs-title="Popover title" data-bs-content="And here’s some amazing content. It’s very engaging. Right?">Due {{ rtrim(rtrim(number_format(   ($totalPendingAmt), 2, '.', ''), '0'), '.') }} ({{date('j M', strtotime($due_date))}})</span>
                                 @else

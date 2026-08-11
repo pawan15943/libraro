@@ -148,7 +148,7 @@ class AppServiceProvider extends ServiceProvider
 
             'get.learner.attendance' => [
                 'Dashboard' => route('home'),
-                'Daily Attendance Summery' => route('get.learner.attendance')
+                'Daily Attendance Summary' => route('get.learner.attendance')
             ],
             'subscriptions.choosePlan' => [
                 'Dashboard' => route('home'),
@@ -194,6 +194,11 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
                 'All Transactions' => route('learners.transactions', ['learner' => request()->route('learner') ?? false])
+            ],
+            'learners.transactions.edit' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Edit Transaction' => route('learners.transactions.edit', request()->route('transaction') ?? 0)
             ],
             'learners.swap' => [
                 'Dashboard' => route('library.home'),
@@ -312,16 +317,11 @@ class AppServiceProvider extends ServiceProvider
             'plan.create' => [
                 'Dashboard' => route('library.home'),
                 'Plan List' => route('plan.index'),
-                'Add Plan' => route('plan.create'),
+                (request()->route('id') ? 'Edit Plan' : 'Add Plan') => route('plan.create', $parameters),
             ],
             'branch.list' => [
                 'Dashboard' => route('library.home'),
                 'Branch List' => route('branch.list', $parameters),
-            ],
-            'plan.create' => [
-                'Dashboard' => route('library.home'),
-                'Plan List' => route('plan.index'),
-                'Edit Plan' => route('plan.create', $parameters),
             ],
             'learner.other.payment' => [
                 'Dashboard' => route('library.home'),
@@ -542,7 +542,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Library Portal
             'library.home' => 'Library Dashboard',
-            'get.learner.attendance' => 'Daily Attendance Summery',
+            'get.learner.attendance' => 'Daily Attendance Summary',
             'profile' => 'Library Profile',
             'subscriptions.choosePlan' => 'Choose Plan',
             'subscriptions.payment' => 'Make Payment',
@@ -574,9 +574,9 @@ class AppServiceProvider extends ServiceProvider
             'library.feedback' => 'Library Feedback',
             'library.video-training' => 'Video Tutorials',
             'learner.expire' => 'Expired The Learner',
-            'attendance' => 'Add Learner Attendace',
+            'attendance' => 'Add Learner Attendance',
             'plan.index' => 'Plan List',
-            'plan.create' => 'Add Plan',
+            'plan.create' => request()->route('id') ? 'Edit Plan' : 'Add Plan',
 
             // leaner
             'learner.home' => 'Learner Dashboard',
@@ -595,7 +595,6 @@ class AppServiceProvider extends ServiceProvider
             'learner.other.payment' => 'Library Other Payment',
 
             'branch.list' => 'Branche List',
-            'plan.create' => 'Plan List',
             'plantype.index' => 'Plantype | Shifts List',
             'planPrice.index' => 'Plan Type | Shifts Price List',
             'expense.index' => 'Expense List',
@@ -624,6 +623,7 @@ class AppServiceProvider extends ServiceProvider
             'demo-users.create' => 'Add Demo Inquiry',
             'activities.all' => 'All Activities',
             'learners.transactions' => 'All Transactions',
+            'learners.transactions.edit' => 'Edit Transaction',
 
         ];
 
