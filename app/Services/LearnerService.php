@@ -754,6 +754,8 @@ class LearnerService
              // future booking and non expiry seat check
             $noExpiry = (int) ($data['learner_data']['no_expiry'] ?? 0) === 1;
 
+            assertNonExpirySeatEndDateValid($noExpiry, $endDate);
+
             if (($seat_no != 0 && !is_null($seat_no)) && seatHeldByFuture($branchId, $seat_no, $plan_type_id, $start_date, $endDate, null, $noExpiry)) {
                 throw new \Exception($noExpiry
                     ? 'This seat is already assigned to a future booking and cannot be given a non-expiring plan.'

@@ -138,7 +138,17 @@ class LearnerOperationService
                     }
                 }
             }
-          
+
+            // Non-expiry seats must never rely on the branch's extension/grace period —
+            // the resulting end date has to be today or later. $dto->no_expiry is null
+            // when this request isn't touching the flag, so fall back to the learner's
+            // current value in that case.
+            $effectiveNoExpiry = $dto->no_expiry !== null
+                ? ((int) $dto->no_expiry === 1)
+                : ((int) $customer->no_expiry === 1);
+
+            assertNonExpirySeatEndDateValid($effectiveNoExpiry, $endDate);
+
             \Log::info('Learner for end date', ['endDate' => $endDate]);
             /* Billing */
 
@@ -905,6 +915,13 @@ class LearnerOperationService
        
 
         if ($dto->no_expiry !== null) {
+            // Turning no_expiry on directly from the profile-edit screen (EDITLEARNER)
+            // bypasses process()'s plan/end-date flow entirely, so re-check here against
+            // whatever detail this learner currently has.
+            if ((int) $dto->no_expiry === 1 && $detail) {
+                assertNonExpirySeatEndDateValid(true, $detail->plan_end_date);
+            }
+
             $learner->no_expiry = $dto->no_expiry;
         }
 

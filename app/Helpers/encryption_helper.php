@@ -2297,6 +2297,28 @@ if (!function_exists('checkAvailability')) {
     }
 }
 
+//for all operation book,edit,renew,upgrade,changeplan/platype,reactive
+if (!function_exists('assertNonExpirySeatEndDateValid')) {
+    /**
+     * A "No Expiry" (non-expiring) seat must never lean on the branch's extension/grace
+     * period — its plan end date has to land on today or later, not a past date. Call this
+     * right after the operation's final $endDate is known, for any flow that can set
+     * no_expiry = 1 (new booking, renew, upgrade, reactive, change plan, edit).
+     */
+    function assertNonExpirySeatEndDateValid(bool $noExpiry, $endDate): void
+    {
+        if (! $noExpiry) {
+            return;
+        }
+
+        $endDate = $endDate instanceof Carbon ? $endDate : Carbon::parse($endDate);
+
+        if ($endDate->lt(Carbon::today())) {
+            throw new \Exception('non-expiring seat plan end date must be today or a future date, not a past.');
+        }
+    }
+}
+
 if (!function_exists('getStatusFromBranch')) {
     function getStatusFromBranch($plan_end_date, $learner_id, $branchId)
     {

@@ -498,7 +498,11 @@ class LearnerController extends Controller
         }
 
         if($dto->operation == 'EDITLEARNER'){
-            $service->updateLearner($dto);
+            try {
+                $service->updateLearner($dto);
+            } catch (\Throwable $e) {
+                return redirect()->back()->with('error', $e->getMessage());
+            }
 
             return redirect()
                 ->route('learners')

@@ -224,9 +224,11 @@ class QrBookingService
 
             }
 
-            if (!empty($seat_no) && $seat_no !=0) {
+            $noExpiry = (int) ($request->input('no_expiry') ?? 0) === 1;
 
-                $noExpiry = (int) ($request->input('no_expiry') ?? 0) === 1;
+            assertNonExpirySeatEndDateValid($noExpiry, $endDate);
+
+            if (!empty($seat_no) && $seat_no !=0) {
 
                 if (seatHeldByFuture(getCurrentBranch(), $seat_no, $plan_type_id, $start_date, $endDate, $learnerId ?? null, $noExpiry)) {
                     throw new \Exception($noExpiry
