@@ -86,10 +86,10 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
     Route::post('library/branch/store', [LibraryAuthController::class, 'configure'])->middleware('library.owner');
     Route::post('library/shift/configure', [LibraryAuthController::class, 'shiftConfigure']);
     Route::get('library/branch/list', [LibraryAuthController::class, 'branches']);
-    Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit'])->middleware('library.owner');
+    Route::post('library/branch/detail', [LibraryAuthController::class, 'branchDetailEdit']);
     Route::post('library/shift/configure/price', [LibraryAuthController::class, 'getConfigurePrice']);
-    Route::post('branch/status', [MasterController::class, 'branchStatus']);
-    Route::delete('branch/delete', [MasterController::class, 'branchDestroy']);
+    Route::post('branch/status', [MasterController::class, 'branchStatus'])->middleware('library.owner');
+    Route::delete('branch/delete', [MasterController::class, 'branchDestroy'])->middleware('library.owner');
     // Route::post('library/branche-shift/configure/edit', [LibraryAuthController::class, 'branchShiftConfigure']);
     Route::post('library/expense/save', [LibraryController::class, 'expenseSave']); // add + update
     Route::post('library/expense/list', [LibraryController::class, 'expenseList']); // list with filters

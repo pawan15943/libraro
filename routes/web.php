@@ -153,9 +153,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
   Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
-  Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
 
   Route::middleware('library.owner')->group(function () {
+    Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
     Route::post('/branch', [BranchController::class, 'store'])->name('branch.store');
     Route::get('/branch/create', [BranchController::class, 'branchForm'])->name('branch.create');
     // Edit form

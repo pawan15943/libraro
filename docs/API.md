@@ -837,7 +837,7 @@ Identical to `POST library/branch/configure` above — this is a second route al
 
 ### `POST /api/v1/library/branch/detail`
 **Controller:** `LibraryAuthController@branchDetailEdit`
-**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `api_key`, `throttle:60,1` (read-only — both library owner and library_user/staff can view)
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -960,7 +960,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `POST /api/v1/branch/status`
 **Controller:** `MasterController@branchStatus`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |
@@ -975,7 +975,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 
 ### `DELETE /api/v1/branch/delete`
 **Controller:** `MasterController@branchDestroy`
-**Auth:** `auth:library_api`, `api_key`, `throttle:60,1`
+**Auth:** `auth:library_api,library_user_api`, `library.owner` (library owner only — `library_user_api` gets 403), `api_key`, `throttle:60,1`
 
 **Request payload**
 | Field | Type | Required | Notes |

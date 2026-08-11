@@ -16,9 +16,8 @@
 @endphp
 
 <style>
-    .txn-edit-page { max-width: 760px; margin: 0 auto; }
-    .txn-edit-summary { border: 1px solid #dfe3ea; border-radius: 8px; background: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-    .txn-edit-summary .icon { width: 46px; height: 46px; border-radius: 50%; background: #eef1ff; color: #07156f; display: grid; place-items: center; font-weight: 800; }
+    .txn-edit-summary { border: 1px solid #dfe3ea; border-radius: 8px; background: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    .txn-edit-summary .icon { width: 46px; height: 46px; border-radius: 50%; background: #eef1ff; color: #07156f; display: grid; place-items: center; font-weight: 800; flex: 0 0 auto; }
     .txn-edit-summary h5 { margin: 0; color: #07156f; font-weight: 800; }
     .txn-edit-summary small { color: #777; }
     .txn-edit-summary .badge-status { margin-left: auto; background: #d9ffc9; color: #188000; border-radius: 5px; padding: 6px 12px; font-size: .8rem; font-weight: 700; }
@@ -26,14 +25,18 @@
     .txn-edit-form label { color: #555; font-weight: 600; font-size: .86rem; margin-bottom: 6px; }
     .txn-edit-form .form-control[readonly], .txn-edit-form .form-control:disabled { background: #f0f1f5; color: #555; }
     .txn-edit-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    @media (max-width: 575px) {
+        .txn-edit-summary { padding: 14px; gap: 10px; }
+        .txn-edit-summary .badge-status { margin-left: 0; }
+        .txn-edit-form { padding: 16px; }
+        .txn-edit-actions { justify-content: stretch; }
+        .txn-edit-actions .btn { width: 100%; }
+    }
 </style>
 
-<div class="txn-edit-page">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <a href="javascript:history.back()" class="btn btn-light border"><i class="fa-solid fa-arrow-left"></i></a>
-        <h4 class="mb-0 text-primary fw-bold">Edit Transaction</h4>
-        <span></span>
-    </div>
+<div class="row mt-2 mb-4">
+    <div class="col-lg-8 col-xl-6 mx-auto">
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -64,20 +67,20 @@
                 <input type="text" class="form-control" value="{{ $fmt($transaction['plan_price'] ?? 0) }}" readonly>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label>Locker</label>
                 <input type="text" class="form-control" value="{{ $fmt($transaction['locker_amount'] ?? 0) }}" readonly>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label>Discount</label>
                 <input type="text" class="form-control" value="{{ $fmt($transaction['discount_amount'] ?? 0) }}" readonly>
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label>Total Amt.</label>
                 <input type="text" class="form-control" value="{{ $fmt($transaction['total_amount'] ?? 0) }}" readonly>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label for="txn_paid_amount">Paid Amt.*</label>
                 <input type="number" step="0.01" min="0" name="paid_amount" id="txn_paid_amount" class="form-control @error('paid_amount') is-invalid @enderror"
                        value="{{ old('paid_amount', $transaction['total_paid_amount'] ?? 0) }}"
@@ -86,25 +89,25 @@
                 @error('paid_amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label id="txn_pending_amount_label">Pending Amount</label>
                 <input type="text" class="form-control" id="txn_pending_amount_display" value="{{ $fmt($transaction['pending_amount'] ?? 0) }}" readonly>
                 <small class="text-muted">Updates instantly as you change Paid Amt.</small>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label for="txn_due_date">Due Date</label>
                 <input type="date" name="due_date" id="txn_due_date" class="form-control @error('due_date') is-invalid @enderror"
                        value="{{ old('due_date', $dateInput($transaction['due_date'] ?? '')) }}">
                 @error('due_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label for="txn_paid_date">Payment Date*</label>
                 <input type="date" name="paid_date" id="txn_paid_date" class="form-control @error('paid_date') is-invalid @enderror"
                        value="{{ old('paid_date', $dateInput($transaction['paid_date'] ?? '')) }}">
                 @error('paid_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <label for="txn_payment_mode">Payment Mode *</label>
                 @php $currentMode = old('payment_mode', strtoupper((string) ($transaction['payment_mode'] ?? ''))); @endphp
                 <select name="payment_mode" id="txn_payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
@@ -120,6 +123,8 @@
             <button type="submit" class="btn btn-primary px-4">Update</button>
         </div>
     </form>
+
+    </div>
 </div>
 
 <script>

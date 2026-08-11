@@ -215,6 +215,17 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Upgrade Seat' => route('learners.upgrade', $parameters)
             ],
+            'attendance.summary' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Attendance' => route('attendance.summary', request()->route('learner') ?? 0)
+            ],
+            'attendance.logs.page' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Attendance' => route('attendance.summary', request()->route('learner') ?? 0),
+                'Attendance Logs' => route('attendance.logs.page', [request()->route('learner') ?? 0, request()->route('date') ?? '1970-01-01'])
+            ],
             'seats.history' => [
                 'Dashboard' => route('library.home'),
                 'Seat Booking History' => route('seats.history')
@@ -554,6 +565,8 @@ class AppServiceProvider extends ServiceProvider
             'learners.edit.plan' => 'Edit Plan',
             'learners.swap' => 'Swap Seat',
             'learners.upgrade' => 'Upgrade Seat',
+            'attendance.summary' => 'Attendance',
+            'attendance.logs.page' => 'Attendance Logs',
             'seats.history' => 'Seat Booking History',
             'seats.history.show' => 'Detailed Seat History',
             'library.myplan' => 'My Plan',
