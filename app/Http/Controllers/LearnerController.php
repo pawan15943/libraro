@@ -2248,17 +2248,11 @@ class LearnerController extends Controller
     {
 
         $customerId = $request->id ?? $id;
-        $is_renew = $this->learnerService->getRenewalStatus($customerId);
-
-        $today = Carbon::today();
-        $hasFuturePlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
-            ->exists();
-        $hasPastPlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
-            ->exists();
-
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        // Single source of truth for "does this learner already have a queued next
+        // plan" - shared by web and app since both branches of this method (JSON vs
+        // blade, below) render from the same $customer array.
+        $is_renew_update = ! $this->learnerLifecycleService->shouldShowRenewOption($customerId);
+        $is_renew = $is_renew_update ? 1 : 0;
 
 
 
@@ -2797,17 +2791,11 @@ class LearnerController extends Controller
 
         // $learner = LearnerDetail::withoutGlobalScopes()->where('learner_id', getLibraryId())->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
         $customerId = getAuthenticatedUser()->id;
-        $is_renew = $this->learnerService->getRenewalStatus($customerId);
-
-        $today = Carbon::today();
-        $hasFuturePlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)
-            ->exists();
-        $hasPastPlan = LearnerDetail::where('learner_id', $customerId)
-            ->where('plan_end_date', '<=', $today->copy()->addDays(5))
-            ->exists();
-
-        $is_renew_update = $hasFuturePlan && $hasPastPlan;
+        // Single source of truth for "does this learner already have a queued next
+        // plan" - shared by web and app since both branches of this method (JSON vs
+        // blade, below) render from the same $customer array.
+        $is_renew_update = ! $this->learnerLifecycleService->shouldShowRenewOption($customerId);
+        $is_renew = $is_renew_update ? 1 : 0;
 
         $available_seat = $this->learnerService->getAvailableSeats();
         $customer_status = getAuthenticatedUser();

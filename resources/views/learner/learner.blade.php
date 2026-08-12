@@ -270,6 +270,7 @@ $hasPendingAmtFlag = $rowContextData['has_pending_amt'] ?? false;
 $paybleRefundAmt = $rowContextData['payble_refund'] ?? 0;
 $overdueFlag = $rowContextData['overdue'] ?? false;
 $isRenewUpdateFlag = $rowContextData['is_renew_update'] ?? false;
+$canRenewFlag = $rowContextData['can_renew'] ?? true;
 $statusPrecomputed = $rowContextData['status_precomputed'] ?? null;
 
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
@@ -364,7 +365,7 @@ $learner_id=$value->id;
                         </li>
                         @endif
 
-                        @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0  && !$isRenewUpdateFlag && $value->frozen_status != 1)
+                        @if($canRenewFlag && $value->frozen_status != 1)
                             @can('has-permission','Renew Seat')
                             <li>
                                 <a class="renew_extend w-auto px-2" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>

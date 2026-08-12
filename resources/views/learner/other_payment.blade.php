@@ -91,7 +91,6 @@ $class=$planDetails['class'];
                                     <option value="">Select Payment Mode</option>
                                     <option value="Online" >Online</option>
                                     <option value="Offline" >Offline</option>
-                                    <option value="Other" >Pay Later</option>
                                 </select>
                                 @error('payment_mode')
                                 <span class="invalid-feedback" role="alert">

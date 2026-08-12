@@ -30,12 +30,13 @@ if (!function_exists('alreadyRenewed')) {
             return $precomputedResult;
         }
 
+        // Same rule as LearnerLifecycleService::shouldShowRenewOption() (inverted) -
+        // a queued future plan (status 0, plan_start_date in the future) means the
+        // learner has already been renewed, regardless of how many detail rows exist.
         return LearnerDetail::where('learner_id', $learnerId)
             ->where('status', 0)
             ->whereDate('plan_start_date', '>', now())
-            ->count() > 0
-            &&
-            LearnerDetail::where('learner_id', $learnerId)->count() > 1;
+            ->exists();
     }
 }
 

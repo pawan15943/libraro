@@ -152,7 +152,7 @@ class LearnerLifecycleService
         ];
     }
 
-    private function shouldShowRenewOption(int $learnerId): bool
+    public function shouldShowRenewOption(int $learnerId): bool
     {
         $hasQueuedPlan = LearnerDetail::where('learner_id', $learnerId)
             ->where('status', 0)

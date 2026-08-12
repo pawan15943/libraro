@@ -1737,11 +1737,14 @@ class LearnerService
                 ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false)
                 : null;
 
+            // Same rule as LearnerLifecycleService::shouldShowRenewOption() - a queued
+            // future plan (status 0, plan_start_date in the future) means renew is
+            // already used, regardless of how many detail rows exist in total.
             $isRenewUpdate = $rows->contains(function ($r) use ($today) {
                 return (int) $r->status === 0
                     && !empty($r->plan_start_date)
                     && $r->plan_start_date > $today->toDateString();
-            }) && $rows->count() > 1;
+            });
 
             $hasVip = $rows->contains(function ($r) {
                 return (int) $r->day_type_id === 11 && (int) $r->status === 1;
@@ -1937,7 +1940,10 @@ class LearnerService
             $hasPastPlan = $rows->contains(fn ($r) => $r->plan_end_date <= $futureThreshold);
             $futureStartRows = $rows->filter(fn ($r) => (int) $r->status === 0 && $r->plan_start_date > $nowDateTime);
             $startDetail = $futureStartRows->first();
-            $isRenewUpdate = $futureStartRows->isNotEmpty() && $rows->count() > 1;
+            // Same rule as LearnerLifecycleService::shouldShowRenewOption() (inverted) -
+            // a queued future plan (status 0, plan_start_date in the future) means renew
+            // is already used, regardless of how many detail rows exist in total.
+            $isRenewUpdate = $futureStartRows->isNotEmpty();
 
             $context[$detailId] = [
                 'transaction' => $transaction,
@@ -1949,6 +1955,7 @@ class LearnerService
                 'overdue' => $transaction && !empty($transaction->due_date) && Carbon::now()->gt(Carbon::parse($transaction->due_date)),
                 'operation' => $latestOps->get($detailId),
                 'is_renew_update' => $isRenewUpdate,
+                'can_renew' => ! $isRenewUpdate,
                 'status_precomputed' => [
                     'extend_day' => $extendDay,
                     'has_future_plan' => $hasFuturePlan,
@@ -2025,12 +2032,17 @@ class LearnerService
         // plan_start_date arrives. Requiring status = 1 would exclude every genuine future
         // booking. We still skip rows explicitly closed via a 'closeSeat' operation, mirroring
         // the same exclusion the daily cron applies before reactivating a row.
+        //
+        // Compared by DATE, not by exact `now()` datetime: a booking starting *today* is still
+        // status = 0 until DailyStatusUpdateJob runs (07:53 daily) — comparing against the full
+        // current datetime would drop out of both this query (no longer ">") and $bookingDetails
+        // above (status still 0) the moment any time passes today, making it invisible again.
         $futureBookingDetails = LearnerDetail::withTrashed()
             ->with(['learner', 'plan', 'planType'])
             ->where('branch_id', $branchId)
             ->where('status', 0)
             ->whereNull('deleted_at')
-            ->where('plan_start_date', '>', now()->toDateTimeString())
+            ->where('plan_start_date', '>=', now()->toDateString())
             ->whereHas('learner', function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId)
                     ->whereNull('deleted_at');
@@ -2142,7 +2154,8 @@ class LearnerService
                 'extend_day' => $extendDay,
                 'has_future_plan' => $hasFuturePlan,
                 'has_past_plan' => $hasPastPlan,
-                'is_renew_update' => $futureStartRows->isNotEmpty() && $rows->count() > 1,
+                // Same rule as LearnerLifecycleService::shouldShowRenewOption() (inverted).
+                'is_renew_update' => $futureStartRows->isNotEmpty(),
                 'has_future_start' => $futureStartRows->isNotEmpty(),
                 'start_from' => $startDetail ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false) : null,
                 'frozen_status' => (int) ($learner->frozen_status ?? 0) === 1,
@@ -2337,13 +2350,20 @@ class LearnerService
     private function formatGeneralSeatPlanTypes($planTypes, $seatDetails, $transactions, ?string $planTypeStatus = null, $futureDetails = null)
     {
         $detailsByPlanType = collect($seatDetails)->groupBy('plan_type_id');
-        $futureDetails = collect($futureDetails)->filter(fn ($detail) => $detail->planType !== null);
+        // Matched by exact plan_type_id only (no cross-plan-type overlap check) — this function
+        // never treated overlapping-but-different plan types as blocked for current bookings
+        // either, so future bookings stay consistent with that rather than introducing overlap
+        // awareness only on one side.
+        $futureDetailsByPlanType = collect($futureDetails)
+            ->filter(fn ($detail) => $detail->planType !== null)
+            ->unique('plan_type_id')
+            ->keyBy('plan_type_id');
 
-        return $planTypes->flatMap(function ($planType) use ($detailsByPlanType, $transactions, $futureDetails) {
+        return $planTypes->flatMap(function ($planType) use ($detailsByPlanType, $transactions, $futureDetailsByPlanType) {
             $details = $detailsByPlanType->get($planType->id, collect())->values();
 
             if ($details->isEmpty()) {
-                $futureDetail = $this->firstOverlappingFutureDetail($planType, $futureDetails);
+                $futureDetail = $futureDetailsByPlanType->get($planType->id);
 
                 return [[
                     'plan_type_id' => $planType->id,
@@ -2373,24 +2393,40 @@ class LearnerService
         $bookedPlanTypes = collect($seatDetails)
             ->pluck('planType')
             ->filter();
+        // unique() before keyBy() keeps the *first* row per plan type — $futureDetails is
+        // already ordered by plan_start_date ascending, so that's the soonest upcoming one.
         $futureDetails = collect($futureDetails)->filter(fn ($detail) => $detail->planType !== null);
+        $futureDetailsByPlanType = $futureDetails->unique('plan_type_id')->keyBy('plan_type_id');
+        $futureBookedPlanTypes = $futureDetails->pluck('planType')->filter();
 
-        return $planTypes->filter(function ($planType) use ($detailsByPlanType, $bookedPlanTypes) {
+        return $planTypes->filter(function ($planType) use ($detailsByPlanType, $bookedPlanTypes, $futureDetailsByPlanType, $futureBookedPlanTypes) {
             $detail = $detailsByPlanType->get($planType->id);
 
             if ($detail) {
                 return true;
             }
 
-            return ! $this->planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes);
-        })->map(function ($planType) use ($detailsByPlanType, $transactions, $futureDetails) {
+            if ($this->planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes)) {
+                return false;
+            }
+
+            if ($futureDetailsByPlanType->has($planType->id)) {
+                return true;
+            }
+
+            // Only an *exact* plan-type match surfaces as 'future' (with that learner's
+            // card attached) — a different plan type that merely overlaps the future
+            // booking's time slot is dropped here, same as the rule above for current
+            // bookings, so one upcoming reservation doesn't get echoed across every
+            // overlapping shift option (e.g. "Full Day" when only "First Half" is booked).
+            return ! $this->planTypeOverlapsAnyBookedPlanType($planType, $futureBookedPlanTypes);
+        })->map(function ($planType) use ($detailsByPlanType, $transactions, $futureDetailsByPlanType) {
             $detail = $detailsByPlanType->get($planType->id);
-            $futureDetail = null;
+            $futureDetail = $detail ? null : $futureDetailsByPlanType->get($planType->id);
 
             if ($detail) {
                 $status = $this->seatPlanTypeStatus($detail, $transactions);
             } else {
-                $futureDetail = $this->firstOverlappingFutureDetail($planType, $futureDetails);
                 $status = $futureDetail ? 'future' : 'available';
             }
 
@@ -2406,21 +2442,6 @@ class LearnerService
             ->when($planTypeStatus, fn ($items) => $items->filter(fn ($planType) => ($planType['plan_type_status'] ?? null) === $planTypeStatus))
             ->values()
             ->all();
-    }
-
-    /**
-     * Earliest future booking (already ordered by plan_start_date at the query in
-     * getSeatMapDetails) whose plan type's daily time range overlaps $planType.
-     */
-    private function firstOverlappingFutureDetail($planType, $futureDetails)
-    {
-        foreach ($futureDetails as $detail) {
-            if ($this->planTypeTimesOverlap($planType, $detail->planType)) {
-                return $detail;
-            }
-        }
-
-        return null;
     }
 
     private function planTypeOverlapsAnyBookedPlanType($planType, $bookedPlanTypes): bool

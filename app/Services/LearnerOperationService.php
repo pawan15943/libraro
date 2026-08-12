@@ -20,6 +20,7 @@ use App\DTO\LearnerOperationDTO;
 use App\Enums\LearnerOperation;
 use App\Services\PlanService;
 use App\Services\TransactionActivityService;
+use App\Services\LearnerLifecycleService;
 use Exception;
 use Log;
 
@@ -27,7 +28,8 @@ class LearnerOperationService
 {
     public function __construct(
         private TransactionActivityService $transactionActivityService,
-        private LearnerOperationLogService $operationLogService
+        private LearnerOperationLogService $operationLogService,
+        private LearnerLifecycleService $learnerLifecycleService
     )
     {
     }
@@ -41,6 +43,11 @@ class LearnerOperationService
 
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
+
+            if ($dto->operation == 'RENEW' && ! $this->learnerLifecycleService->shouldShowRenewOption($customer->id)) {
+                throw new Exception('This learner already has an upcoming plan queued. Renew is not available until it starts.');
+            }
+
             $beforeOperation = [
                 'learner' => $customer->only([
                     'name', 'email', 'mobile', 'dob', 'father_name', 'address', 'remark',
