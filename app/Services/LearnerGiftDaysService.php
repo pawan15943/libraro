@@ -46,15 +46,18 @@ class LearnerGiftDaysService
             ];
         }
 
+        // Gift days extend the *last* learner_detail entry, not just the currently
+        // active (status = 1) one — a learner with an already-queued future renewal
+        // should have its final plan_end_date pushed out, not the current plan that's
+        // about to end anyway (which the renewal would otherwise silently override).
         $student = LearnerDetail::where('learner_id', $learnerId)
-            ->where('status', 1)
-            ->latest()
+            ->orderByDesc('id')
             ->first();
 
         if (! $student) {
             return [
                 'ok' => false,
-                'message' => 'Active learner detail not found',
+                'message' => 'Learner detail not found',
                 'status_code' => 200,
             ];
         }

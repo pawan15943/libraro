@@ -63,15 +63,15 @@
                     </li>
                     <li>
                         <span>Seat Booked On</span>
-                        <h4>{{ $customer->join_date ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->join_date ? \Carbon\Carbon::parse($customer->join_date)->format('d-m-Y') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Plan Starts On</span>
-                        <h4>{{ $customer->plan_start_date ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->plan_start_date ? \Carbon\Carbon::parse($customer->plan_start_date)->format('d-m-Y') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Plan Ends On</span>
-                        <h4>{{ $customer->plan_end_date ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d-m-Y') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Seat Timings</span>
@@ -88,7 +88,7 @@
                         @if($customer->status==1)
                         <h4 class="text-success">Active</h4>
                         @elseif($customer->plan_end_date)
-                        <h4 class="text-danger">Expired on {{ $customer->plan_end_date }}</h4>
+                        <h4 class="text-danger">Expired on {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d-m-Y') }}</h4>
                         @else
                         <h4>Not Updated Yet</h4>
                         @endif
@@ -144,15 +144,15 @@
                     </li>
                     <li>
                         <span>Seat Created At</span>
-                        <h4>{{ $customer->created_at ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->created_at ? \Carbon\Carbon::parse($customer->created_at)->format('d-m-Y H:i') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Seat Modified At</span>
-                        <h4>{{ $customer->updated_at ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->updated_at ? \Carbon\Carbon::parse($customer->updated_at)->format('d-m-Y H:i') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Seat Deleted At</span>
-                        <h4>{{ $customer->deleted_at ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ $customer->deleted_at ? \Carbon\Carbon::parse($customer->deleted_at)->format('d-m-Y H:i') : 'Not Updated Yet' }}</h4>
                     </li>
                 </ul>
             </div>
@@ -180,7 +180,7 @@
                 <ul>
                     <li>
                         <span>Payment Date</span>
-                        <h4>{{ $transaction->paid_date ?? 'Not Updated Yet' }}</h4>
+                        <h4>{{ isset($transaction->paid_date) && $transaction->paid_date ? \Carbon\Carbon::parse($transaction->paid_date)->format('d-m-Y') : 'Not Updated Yet' }}</h4>
                     </li>
                     <li>
                         <span>Payment Mode</span>
@@ -254,6 +254,7 @@
                                 <th>End Date</th>
                                 <th>Amount</th>
                                 <th>Payment Mode</th>
+                                <th>Transaction ID</th>
                                 <th>Paid On</th>
                                 <th>Action</th>
                             </tr>
@@ -269,8 +270,8 @@
                                     {{$value->plan->name ?? ""}} <br>
                                     <small class="text-success">{{$value->planType->name ?? ""}}</small>
                                 </td>
-                                <td>{{$value->plan_start_date ?? ''}}</td>
-                                <td>{{$value->plan_end_date ?? ''}}</td>
+                                <td>{{ $value->plan_start_date ? \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') : '' }}</td>
+                                <td>{{ $value->plan_end_date ? \Carbon\Carbon::parse($value->plan_end_date)->format('d-m-Y') : '' }}</td>
                                 <td>{{$transactionRenew->total_amount ?? 'NA'}}</td>
                                 <td>
                                     @if($value->payment_mode == 1) Online
@@ -278,11 +279,12 @@
                                     @else Pay Later
                                     @endif
                                 </td>
-                                <td>{{$transactionRenew->paid_date ?? 'NA'}}</td>
+                                <td>{{ $transactionRenew->transaction_id ?? 'NA' }}</td>
+                                <td>{{ $transactionRenew->paid_date ? \Carbon\Carbon::parse($transactionRenew->paid_date)->format('d-m-Y') : 'NA' }}</td>
                                 <td>
                                     <ul class="actionalbls" style="width: 90px;">
                                         @can('has-permission', 'Receipt Generation')
-                                        @if($value->is_paid==1)
+                                        @if($transactionRenew)
                                         <li>
 
                                             <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data">
@@ -339,8 +341,8 @@
 
                                 @endphp
                                 <td>{{ $firstDetail->plan->name ?? 'N/A' }}<br><small>{{ $firstDetail->planType->name ?? 'N/A' }}</small></td>
-                                <td>{{ $firstDetail->plan_start_date ?? 'N/A' }}</td>
-                                <td>{{ $firstDetail->plan_end_date ?? 'N/A' }}</td>
+                                <td>{{ $firstDetail->plan_start_date ? \Carbon\Carbon::parse($firstDetail->plan_start_date)->format('d-m-Y') : 'N/A' }}</td>
+                                <td>{{ $firstDetail->plan_end_date ? \Carbon\Carbon::parse($firstDetail->plan_end_date)->format('d-m-Y') : 'N/A' }}</td>
                                 <td>
                                     <ul class="actionalbls" style="width: 90px;">
                                         @can('has-permission', 'View Seat')
@@ -379,8 +381,8 @@
                                 <td>{{ $learner->mobile }}</td>
                                 <td>{{ $learner->email }}</td>
                                 <td>{{ $detail->plan->name ?? 'N/A' }}</td>
-                                <td>{{ $detail->plan_start_date ?? 'N/A' }}</td>
-                                <td>{{ $detail->plan_end_date ?? 'N/A' }}</td>
+                                <td>{{ $detail->plan_start_date ? \Carbon\Carbon::parse($detail->plan_start_date)->format('d-m-Y') : 'N/A' }}</td>
+                                <td>{{ $detail->plan_end_date ? \Carbon\Carbon::parse($detail->plan_end_date)->format('d-m-Y') : 'N/A' }}</td>
                                 <td>
                                     <ul class="actionalbls" style="width: 90px;">
                                         @can('has-permission', 'View Seat')
@@ -444,8 +446,8 @@
                             <p class="m-0"><i class="fa-solid fa-arrow-turn-down"></i> Request Name
                                 : {{$value->request_name}}</p>
                             <span class="description">Message Send by <b>[Seat Owner]</b> on
-                                {{$value->request_date}}</span>
-                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> {{$value->created_at}}</span>
+                                {{ $value->request_date ? \Carbon\Carbon::parse($value->request_date)->format('d-m-Y') : '' }}</span>
+                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> {{ $value->created_at ? \Carbon\Carbon::parse($value->created_at)->format('d-m-Y H:i') : '' }}</span>
                             <small class="status"> <b>Status : </b>
                                 @if($value->request_status==0)
                                 <span class=" text-danger d-inline">Pending</span>
