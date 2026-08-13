@@ -1153,7 +1153,7 @@ class LearnerService
                 'paid_amount'=>(string) ($transaction->paid_amount ?? '0'),
                 'pending_amount'=>(string) ($transaction->pending_amount ?? '0'),
                 'paid_date'=>$transaction->paid_date ?? '',
-                'payment_mode'=>$this->paymentModeLabel($detail->payment_mode ?? null),
+                'payment_mode'=>$detail->payment_mode,
                  'locker_amount'=>(string) ($transaction->locker_amount ?? '0'),
                 'discount'=>$transaction->discount_amount ?? '0',
                 'token_money'=>(string) ($transaction->token_money ?? '0'),
