@@ -1153,7 +1153,7 @@ class LearnerService
                 'paid_amount'=>(string) ($transaction->paid_amount ?? '0'),
                 'pending_amount'=>(string) ($transaction->pending_amount ?? '0'),
                 'paid_date'=>$transaction->paid_date ?? '',
-                'payment_mode'=>$detail->payment_mode ?? '',
+                'payment_mode'=>$this->paymentModeLabel($detail->payment_mode ?? null),
                  'locker_amount'=>(string) ($transaction->locker_amount ?? '0'),
                 'discount'=>$transaction->discount_amount ?? '0',
                 'token_money'=>(string) ($transaction->token_money ?? '0'),
@@ -1213,7 +1213,7 @@ class LearnerService
                     'plan' => $ld?->plan?->name ?? '',
                     'plan_type' => $ld?->planType?->name ?? '',
                     'transaction_status' => $ld && (int) $ld->payment_mode === 3 ? 'Success' : 'Success',
-                    'payment_mode'=>$payment_mode !== null ? (string) $payment_mode : '',
+                    'payment_mode'=>$this->paymentModeLabel($payment_mode),
                 ];
             }),
 
@@ -1251,6 +1251,20 @@ class LearnerService
           
 
         ];
+    }
+
+    private function paymentModeLabel($value): string
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return '';
+        }
+
+        return match ((int) $value) {
+            1 => 'Online',
+            2 => 'Offline',
+            3 => 'Paylater',
+            default => (string) $value,
+        };
     }
 
     private function downloadReceiptUrl($transaction): string

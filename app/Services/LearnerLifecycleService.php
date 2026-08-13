@@ -35,9 +35,9 @@ class LearnerLifecycleService
             ->orderByDesc('id')
             ->first();
 
-        $transactions = LearnerTransaction::withTrashed()
-            ->with(['learnerDetail.plan', 'learnerDetail.planType'])
+        $transactions = LearnerTransaction::with(['learnerDetail.plan', 'learnerDetail.planType'])
             ->where('learner_id', $learnerId)
+            ->whereNull('deleted_at')
             ->orderByDesc('id')
             ->get();
 

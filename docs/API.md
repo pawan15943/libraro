@@ -2872,7 +2872,7 @@ None — no request body
 | data.payment_information.paid_amount | string | |
 | data.payment_information.pending_amount | string | |
 | data.payment_information.paid_date | string | |
-| data.payment_information.payment_mode | integer\|string | |
+| data.payment_information.payment_mode | string | enum: Online\|Offline\|Paylater |
 | data.payment_information.locker_amount | string | |
 | data.payment_information.discount | string | |
 | data.payment_information.token_money | string | |
@@ -2915,7 +2915,7 @@ None — no request body
 | data.all_transaction[].plan | string | |
 | data.all_transaction[].plan_type | string | |
 | data.all_transaction[].transaction_status | string | always "Success" |
-| data.all_transaction[].payment_mode | string | |
+| data.all_transaction[].payment_mode | string | enum: Online\|Offline\|Paylater |
 | data.all_transaction_activity[].id | integer | |
 | data.all_transaction_activity[].transaction_id | string | |
 | data.all_transaction_activity[].amount | numeric | |
