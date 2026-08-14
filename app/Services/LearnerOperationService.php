@@ -313,7 +313,7 @@ class LearnerOperationService
                 $editParticular = 'Locker Removed';
             } elseif ($discountKeysPresent && $oldDiscountAmount > 0.009 && $discountAmount <= 0.009) {
                 $editParticular = 'Discount Removed';
-            }elseif (!$discountKeysPresent && $discount  && $discountAmount <= 0.009) {
+            }elseif ($discountKeysPresent && $discount ) {
                 $editParticular = 'Discount Added';
             }
             $total_difference = $effective - $old_total;
@@ -323,7 +323,7 @@ class LearnerOperationService
                 throw new Exception("Paid amount not valid");
             }
             $pending_amount =$effective-$paid_amount;
-             if ($dto->payment_mode == 3) {
+            if ($dto->payment_mode == 3) {
                 // CHANGE PLAN and EDIT both modify the same already-billed transaction, so
                 // paylater must be old_price-aware for both — not just EDIT. Otherwise a
                 // CHANGE PLAN done via paylater forgets everything already collected and
