@@ -263,6 +263,7 @@ if (!function_exists('learnerTransactionStatus')) {
         $transactions = $precomputedTransactions ?? LearnerTransaction::withTrashed()
             ->leftJoin('learner_detail as ld', 'ld.id', '=', 'learner_transactions.learner_detail_id')
             ->where('learner_transactions.learner_id', $learnerId)
+            ->whereNull('learner_transactions.deleted_at')
             // ->where('learner_transactions.pending_amount', '>', 0)
             ->select(
                 'learner_transactions.pending_amount',

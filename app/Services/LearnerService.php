@@ -1151,7 +1151,8 @@ class LearnerService
             'payment_information'=>[
                 'total_amount'=>(string) ($transaction->total_amount ?? '0'),
                 'paid_amount'=>(string) ($transaction->paid_amount ?? '0'),
-                'pending_amount'=>(string) ($transaction->pending_amount ?? '0'),
+                // 'pending_amount'=>(string) ($transaction->pending_amount ?? '0'),
+                'pending_amount'=>(string)$total_overall->overall_pending_sum,
                 'paid_date'=>$transaction->paid_date ?? '',
                 'payment_mode'=>$detail->payment_mode,
                  'locker_amount'=>(string) ($transaction->locker_amount ?? '0'),
