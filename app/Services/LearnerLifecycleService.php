@@ -1089,7 +1089,7 @@ class LearnerLifecycleService
         // field by LearnerOperationService::calculateBilling() (see 'Locker Added'/'Locker
         // Removed'/'Discount Removed') so they get their own wording instead of the generic
         // Change Plan/Edit message — checked before the per-type branches below.
-        if (strtolower($particular) === 'locker added') {
+        if ($particular === 'Locker Added') {
             return "Collected Added Locker Amount ({$modeLabel})";
         }
 
