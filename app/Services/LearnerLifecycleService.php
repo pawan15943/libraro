@@ -1079,6 +1079,7 @@ class LearnerLifecycleService
                 in_array($type, ['CHANGE PLAN', 'CHANGEPLAN'], true) => 'Change Plan with Pay Later',
                 $type === 'REFUND' && $particular === 'close seat' => 'Seat Closed with Pay Later Refund',
                 $type === 'REFUND' && $particular === 'delete seat' => 'Soft-Deleted Seat with Pay Later Refund',
+                $type === 'EDIT' =>$particular.' with Pay Later',
                 default => $this->titleCase($type).' with Pay Later',
             };
         }
@@ -1089,15 +1090,15 @@ class LearnerLifecycleService
         // field by LearnerOperationService::calculateBilling() (see 'Locker Added'/'Locker
         // Removed'/'Discount Removed') so they get their own wording instead of the generic
         // Change Plan/Edit message — checked before the per-type branches below.
-        if ($particular === 'Locker Added') {
+        if (strtolower($particular) === 'locker added') {
             return "Collected Added Locker Amount ({$modeLabel})";
         }
 
-        if ($particular === 'locker removed') {
+        if (strtolower($particular) === 'locker removed') {
             return "Refunded Removed Locker Amount ({$modeLabel})";
         }
 
-        if ($particular === 'discount removed') {
+        if (strtolower($particular) === 'discount removed') {
             return "Refunded Removed Discount Amount ({$modeLabel})";
         }
 
