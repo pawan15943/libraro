@@ -313,8 +313,9 @@ class LearnerOperationService
                 $editParticular = 'Locker Removed';
             } elseif ($discountKeysPresent && $oldDiscountAmount > 0.009 && $discountAmount <= 0.009) {
                 $editParticular = 'Discount Removed';
+            }elseif (!$discountKeysPresent && $discount  && $discountAmount <= 0.009) {
+                $editParticular = 'Discount Added';
             }
-
             $total_difference = $effective - $old_total;
             $diff_amount =  $dto->diffrence_amount === null ? $total_difference : (float) ($dto->diffrence_amount ?? 0);
             $paid_amount = ($dto->operation === 'EDIT' || $dto->operation=='CHANGE PLAN')  ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount)) : $old_price + $diff_amount;
