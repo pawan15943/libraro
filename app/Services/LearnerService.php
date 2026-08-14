@@ -1699,6 +1699,7 @@ class LearnerService
             $txByLearner = DB::table('learner_transactions')
                 ->leftJoin('learner_detail as ld', 'ld.id', '=', 'learner_transactions.learner_detail_id')
                 ->whereIn('learner_transactions.learner_id', $learnerIds)
+                ->whereNull('learner_transactions.deleted_at')
                 ->select(
                     'learner_transactions.learner_id',
                     'learner_transactions.pending_amount',
