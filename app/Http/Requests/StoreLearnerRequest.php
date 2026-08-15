@@ -122,6 +122,10 @@ class StoreLearnerRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            $branchId = getCurrentBranch();
+            if (!$branchId || (int) $branchId === 0 || !\App\Models\Branch::where('id', $branchId)->where('library_id', getLibraryId())->where('status', 1)->exists()) {
+                $validator->errors()->add('branch_id', 'No active branch selected or branch is inactive. Please create/select an active branch first.');
+            }
 
             if ($this->email) {
 

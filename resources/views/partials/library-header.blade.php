@@ -1,7 +1,7 @@
 
 @php
 $user = getAuthenticatedUser();
-$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false)) || ($is_renew_comp ?? false);
+$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false) && ($isBranch ?? false)) || ($is_renew_comp ?? false);
 @endphp
 
 @if(!empty($primary_color))

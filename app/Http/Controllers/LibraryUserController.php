@@ -74,31 +74,44 @@ class LibraryUserController extends Controller
         }
 
 
-         $branches=Branch::where('library_id',getLibraryId())->get();
-         $roles=Role::where('guard_name','library_user')->get();
+         $branches = Branch::where('library_id', getLibraryId())->get();
+         if ($branches->isEmpty()) {
+             return redirect()->route('branch.create')->with('error', 'No branch found. Please create a branch first before adding users.');
+         }
+
+         $roles = Role::where('guard_name', 'library_user')->get();
          
-         return view('library_users.create', compact('branches','groupedPermissions','editUser','roles'));
+         return view('library_users.create', compact('branches', 'groupedPermissions', 'editUser', 'roles'));
      }
+
     public function store(Request $request)
     {
+        $activeBranches = Branch::where('library_id', getLibraryId())->where('status', 1)->pluck('id')->toArray();
+        if (empty($activeBranches)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active branch found. Please create and activate a branch first before adding users.',
+            ], 422);
+        }
 
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:library_users,email,' . $request->id,
-                'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
-                'password_confirmation' => $request->id 
-                ? 'nullable|min:6' 
-                : 'required|min:6',
-                'branch' => 'required|array|min:1',
-                'branch.*' => 'integer|exists:branches,id',
-                'mobile' => 'required|digits:10',
-                'role' => 'required|string', 
-                'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
-            ],
-            [
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:library_users,email,' . $request->id,
+            'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
+            'password_confirmation' => $request->id 
+            ? 'nullable|min:6' 
+            : 'required|min:6',
+            'branch' => 'required|array|min:1',
+            'branch.*' => 'integer|in:' . implode(',', $activeBranches),
+            'mobile' => 'required|digits:10',
+            'role' => 'required|string', 
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
+        ],
+        [
             'branch.required' => 'Please select at least one branch.',
             'branch.min' => 'Please select at least one branch.',
-            ]
+            'branch.*.in' => 'The selected branch is invalid or inactive.',
+        ]
         );
         
 

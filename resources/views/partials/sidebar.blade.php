@@ -1,6 +1,6 @@
 @php
 $current_route = Route::currentRouteName();
-$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false)) || ($is_renew_comp ?? false);
+$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false) && ($isBranch ?? false)) || ($is_renew_comp ?? false);
 $showSidebar = true;
 if (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
     if (!$isLibraryActiveAndSetup) {

@@ -44,6 +44,11 @@
                     <div class="col-lg-6">
                         <label>Select Branch <span class="text-danger">*</span></label>
 
+                        @if($branches->isEmpty())
+                        <div class="alert alert-danger mt-1 p-2 small">
+                            <i class="fa fa-exclamation-triangle"></i> No active branch found. <a href="{{ route('branch.create') }}" class="alert-link">Click here to create a branch</a>.
+                        </div>
+                        @else
                         <select name="branch[]" id="my-select" class="form-select" multiple>
                             @php
                             $selectedBranches = $editUser?->branch_id ?? [];
@@ -56,6 +61,7 @@
                             </option>
                             @endforeach
                         </select>
+                        @endif
                     </div>
                     <div class="col-lg-6">
                         <label>Upload Photo </label>

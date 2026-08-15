@@ -143,6 +143,7 @@ class LoadMenus
         $ispaid = $libraryFlags && (int) $libraryFlags->is_paid === 1;
         $iscomp = $libraryFlags && (int) $libraryFlags->status === 1;
         $isProfile = $libraryFlags && (int) $libraryFlags->is_profile === 1;
+        $isBranch = Branch::where('library_id', getLibraryId())->where('status', 1)->exists();
 
         $checkSub = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('status', 1)->exists();
 
@@ -475,6 +476,7 @@ class LoadMenus
             'anyTranLib' => $anyTranLib,
             'ispaid' => $ispaid,
             'isProfile' => $isProfile,
+            'isBranch' => $isBranch,
             'isEmailVeri' => $isEmailVeri,
             'iscomp' => $iscomp,
             'librarydiffInDays' => $librarydiffInDays,

@@ -13,7 +13,7 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
             ->pluck('name')
             ->toArray();
 
-$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false)) || ($is_renew_comp ?? false);
+$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false) && ($isBranch ?? false)) || ($is_renew_comp ?? false);
 @endphp
 <style>
 /* Optional: rotate submenu arrow when active */
