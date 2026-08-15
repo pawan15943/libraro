@@ -1672,6 +1672,7 @@ class MasterController extends Controller
             ====================== */
             if (!empty($validated['password'])) {
                 $data['password'] = bcrypt($validated['password']);
+                $data['original_password'] = $validated['password'];
             }
 
            /* ======================
