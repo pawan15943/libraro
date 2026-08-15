@@ -430,13 +430,9 @@ $learner_id=$value->id;
                                     @endif
                                 @else
                                      {{-- Free (no-API) reminder icon(s) — driven by the learner's own "Send Reminders Via" choice --}}
-                                    @if($sendPref == 'whatsapp')
-                                        <li>
-                                            <a class="w-auto px-2" target="_blank" href="{{ $freeWabaLink }}">
-                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
-                                            </a>
-                                        </li>
-                                    @elseif($sendPref == 'text')
+                                    
+                                    
+                                    @if($sendPref == 'text')
                                         <li>
                                             <a class="w-auto px-2" href="{{ $freeTextLink }}">
                                                 <i class="fa fa-message" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Text Reminder"></i>
@@ -450,6 +446,12 @@ $learner_id=$value->id;
                                                 data-bs-toggle="modal" data-bs-target="#sendReminderChooserFreeModal"
                                                 data-bs-placement="bottom" title="" data-original-title="Send Reminder">
                                                 <i class="fa fa-comment-dots" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li>
+                                            <a class="w-auto px-2" target="_blank" href="{{ $freeWabaLink }}">
+                                                <i class="fab fa-whatsapp" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Send Reminder"></i>
                                             </a>
                                         </li>
                                     @endif

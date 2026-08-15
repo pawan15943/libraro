@@ -233,11 +233,25 @@ $today = Carbon::today();
                                             <small class="text-dark">Seat No.{{ $startSeat }}</small>
 
                                             @else
+                                            @php
+                                                $futureUser = LearnerDetail::where('branch_id', getCurrentBranch())
+                                                    ->where('seat_no', $seatNo)
+                                                    ->where('status', 0)
+                                                    ->where('plan_start_date', '>=', date('Y-m-d'))
+                                                    ->whereNull('deleted_at')
+                                                    ->orderBy('plan_start_date', 'asc')
+                                                    ->first();
+                                            @endphp
                                             <ul>
-
+                                                @if($futureUser)
+                                                <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup"
+                                                        data-bs-target="#seatAllotmentModal2" data-userid="{{ $futureUser->learner_id }}" data-seat_no="{{ $seatNo }}" title="Future booking from {{ $futureUser->plan_start_date }}"><i
+                                                            class="fa-solid fa-check-circle" style="color: #FF8C00 !important;"></i></a></li>
+                                                @else
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="first_popup"
                                                         data-bs-target="#seatAllotmentModal" data-id="{{ $seatNo }}" data-seat_no="{{ $seatNo }}"><i
                                                             class="fa-solid fa-check-circle available "></i></a></li>
+                                                @endif
                                             </ul>
                                             <small class="text-dark">Available </small>
                                             <img src="{{ asset('public/img/available.png') }}" alt="book">
@@ -403,16 +417,29 @@ $today = Carbon::today();
                                             <small class="text-dark">Seat No.{{ $seatNo }}</small>
 
                                             @else
+                                            @php
+                                                $futureUser = LearnerDetail::where('branch_id', getCurrentBranch())
+                                                    ->where('seat_no', $seatNo)
+                                                    ->where('status', 0)
+                                                    ->where('plan_start_date', '>=', date('Y-m-d'))
+                                                    ->whereNull('deleted_at')
+                                                    ->orderBy('plan_start_date', 'asc')
+                                                    ->first();
+                                            @endphp
                                             <ul>
-
+                                                @if($futureUser)
+                                                <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup"
+                                                        data-bs-target="#seatAllotmentModal2" data-userid="{{ $futureUser->learner_id }}" data-seat_no="{{ $seatNo }}" title="Future booking from {{ $futureUser->plan_start_date }}"><i
+                                                            class="fa-solid fa-check-circle" style="color: #FF8C00 !important;"></i></a></li>
+                                                @else
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="first_popup"
                                                         data-bs-target="#seatAllotmentModal" data-id="{{ $seatNo }}" data-seat_no="{{ $seatNo }}"><i
                                                             class="fa-solid fa-check-circle available "></i></a></li>
+                                                @endif
                                             </ul>
                                             <small class="text-dark">Available </small>
                                             <img src="{{ asset('public/img/available.png') }}" alt="book">
                                             <small class="text-dark">Seat No. {{ $seatNo }}</small>
-
 
                                         @endif
                                     </div>
