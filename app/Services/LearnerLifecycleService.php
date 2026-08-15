@@ -106,13 +106,8 @@ class LearnerLifecycleService
         $refundActivityAmount = (float) $activities
             ->filter(fn ($activity) => strtoupper((string) $activity->payment_type) === 'REFUND')
             ->sum('amount');
-        $overviewUsedActivityIds = [];
-        $currentTransactionActivities = $currentTransaction
-            ? $this->activitiesForTransaction($currentTransaction, $activities, $overviewUsedActivityIds)
-                ->reject(fn ($activity) => $this->isOtherPaymentActivity($activity))
-                ->map(fn ($activity) => $this->formatActivity($activity))
-                ->values()
-            : collect();
+        $allTransactions = $this->formatAllTransactions($transactions, $activities, $firstTransactionId);
+        $lastTransaction = $allTransactions->first() ?? null;
 
         return [
             'learner' => $this->formatLearnerForTransactions($dashboard['learner'], $dashboard['currentDetail']),
@@ -127,11 +122,7 @@ class LearnerLifecycleService
                 'is_renew' => $isRenew,
                 'next_due_amount' => $this->money(max(0, $currentSubscriptionAmount + $totalPendingAmount - $totalExtraAmount)),
                 'added_by_name' => $currentTransaction ? $this->transactionAddedByName($currentTransaction) : '',
-                'last_transactions' => $currentTransaction ? (
-                    $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) + [
-                        'activity' => $currentTransactionActivities,
-                    ]
-                ) : null,
+                'last_transactions' => $lastTransaction,
             ],
             'subscription' => [
                 $currentTransaction ? $this->formatSubscriptionTransaction($currentTransaction, 0, 0, 0, $firstTransactionId) : null,
@@ -147,7 +138,7 @@ class LearnerLifecycleService
                 
                 'payments' => $this->formatOtherPayments($transactions, $activities),
             ],
-            'all_transaction' => $this->formatAllTransactions($transactions, $activities, $firstTransactionId),
+            'all_transaction' => $allTransactions,
             'transaction_activity' => $activities->map(fn ($activity) => $this->formatActivity($activity))->values(),
         ];
     }
