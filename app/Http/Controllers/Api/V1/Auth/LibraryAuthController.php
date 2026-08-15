@@ -372,17 +372,21 @@ class LibraryAuthController extends Controller
             ->exists();
 
 
-        $hasBranchSetup = $hasActiveBranch && $hasPlan ;
+        $hasBranchSetup = $hasActiveBranch && $hasPlan && $hasPlanType;
+        // if email verified
+       // payment h  0 but no branch add and no shift add
+       // add branch 1 => if paid but no branch add and no shift add
+       // shift 2 => if paid but and branch add and no shift add
+       // 3 ho to home p bhej dete h
 
-        // if ( (int) $libraryRecord->status !== 1 && $hasBranchSetup && $hasPlanType && $hasPlanPrice ) {
-        //     Library::where('id', $libraryId)->update(['status' => 1]);
-        //     $libraryRecord->status = 1;
-        // }
+       
 
         if (!is_null($libraryRecord->email_verified_at)) {
             if (!$libraryRecord->is_paid && !$hasBranchSetup) {
+                $is_last_step = 0;
+            } elseif ($libraryRecord->is_paid && !$hasBranchSetup) {
                 $is_last_step = 1;
-            } elseif (!$hasBranchSetup) {
+            }elseif ($libraryRecord->is_paid && $hasPlanType) {
                 $is_last_step = 2;
             } else {
                 $is_last_step = 3;
