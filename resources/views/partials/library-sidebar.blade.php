@@ -12,6 +12,8 @@ $finalHidden = array_intersect($toggleHidden, $predefinedHidden);
 $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
             ->pluck('name')
             ->toArray();
+
+$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false)) || ($is_renew_comp ?? false);
 @endphp
 <style>
 /* Optional: rotate submenu arrow when active */
@@ -21,6 +23,7 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
 }
 </style>
 
+@if($isLibraryActiveAndSetup)
 <div class="sidebar scroll">
     <h4><b>Libraro</b> <i class="fa fa-close d-block d-lg-none" id="sidebar_mob"></i></h4>
 
@@ -96,3 +99,4 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
         @endforeach
     </ul>
 </div>
+@endif

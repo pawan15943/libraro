@@ -1,7 +1,7 @@
 
 @php
 $user = getAuthenticatedUser();
-
+$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false)) || ($is_renew_comp ?? false);
 @endphp
 
 @if(!empty($primary_color))
@@ -106,7 +106,9 @@ $user = getAuthenticatedUser();
 <div class="header">
     <div class="d-flex" style="gap:1rem">
         <div class="conatent flex" style="flex: 1;">
+            @if($isLibraryActiveAndSetup)
             <i class="fa fa-bars mr-2" id="sidebar"></i>
+            @endif
            
            
 
