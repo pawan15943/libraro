@@ -386,7 +386,7 @@ class LibraryAuthController extends Controller
                 $is_last_step = 0;
             } elseif ($libraryRecord->is_paid && !$hasBranchSetup) {
                 $is_last_step = 1;
-            }elseif ($libraryRecord->is_paid && $hasPlanType) {
+            }elseif ($libraryRecord->is_paid && !$hasPlanType) {
                 $is_last_step = 2;
             } else {
                 $is_last_step = 3;
