@@ -380,7 +380,7 @@ class LibraryAuthController extends Controller
         // }
 
         if (!is_null($libraryRecord->email_verified_at)) {
-            if (!$libraryRecord->is_paid) {
+            if (!$libraryRecord->is_paid && !$hasBranchSetup) {
                 $is_last_step = 1;
             } elseif (!$hasBranchSetup) {
                 $is_last_step = 2;
