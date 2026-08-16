@@ -71,7 +71,12 @@ class DemoUserController extends Controller
             return redirect()
                 ->route('demo-users.index')
                 ->with('success', 'Booking successful! Please complete payment to confirm your seat.');
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()
+                ->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Throwable $e) {
             Log::error('BOOKING STORE CRASH', [
                 'method' => request()->method(),
                 'url' => request()->fullUrl(),
@@ -80,7 +85,7 @@ class DemoUserController extends Controller
 
             return redirect()
                 ->route('demo-users.index')
-                ->with('error', 'Something went wrong.')
+                ->with('error', $e->getMessage() ?: 'Something went wrong.')
                 ->withInput();
         }
     }

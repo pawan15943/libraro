@@ -19,6 +19,12 @@ $today = Carbon::today();
         transform: translateY(50px);
         transition: transform 0.5s ease, opacity 0.5s ease;
     }
+    i.fa-solid.fa-check-circle.booked.paylater_class,
+    i.fa-solid.fa-check-circle.booked.orange_class,
+    .seat i.fa-check-circle.orange_class,
+    .seat i.fa-check-circle.paylater_class {
+        color: #2E3ECD !important;
+    }
 </style>
 @if(getCurrentBranch() !=0 )
 

@@ -6267,8 +6267,9 @@ span.chip {
     overflow-x: hidden;
 }
 
-i.fa-solid.fa-check-circle.booked.paylater_class {
-    color: blue !important;
+i.fa-solid.fa-check-circle.booked.paylater_class,
+i.fa-solid.fa-check-circle.booked.orange_class {
+    color: #2E3ECD !important;
 }
 
 .capitalise {
@@ -6636,8 +6637,9 @@ ul.reacentActivity li {
     }
 }
 
-i.fa-solid.fa-check-circle.booked.paylater_class {
-    color: #f47e36 !important;
+i.fa-solid.fa-check-circle.booked.paylater_class,
+i.fa-solid.fa-check-circle.booked.orange_class {
+    color: #2E3ECD !important;
 }
 
 

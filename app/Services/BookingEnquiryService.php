@@ -90,8 +90,6 @@ class BookingEnquiryService
         $encryptedMobile = encryptData($validated['mobile']);
         $encryptedEmail = !empty($validated['email']) ? encryptData($validated['email']) : null;
 
-        $this->assertNoDuplicateBooking($encryptedMobile, $encryptedEmail);
-
         $profilePicturePath = null;
         if ($request->hasFile('profile_picture')) {
             $profilePicturePath = $this->fileUploadService->moveTempFileToPublic(
@@ -157,20 +155,5 @@ class BookingEnquiryService
         }
 
         return $normalized;
-    }
-
-    private function assertNoDuplicateBooking(string $encryptedMobile, ?string $encryptedEmail): void
-    {
-        if (Booking::where('mobile', $encryptedMobile)->exists()) {
-            throw ValidationException::withMessages([
-                'mobile' => 'This mobile already has a booking enquiry.',
-            ]);
-        }
-
-        if ($encryptedEmail && Booking::where('email', $encryptedEmail)->exists()) {
-            throw ValidationException::withMessages([
-                'email' => 'This email already has a booking enquiry.',
-            ]);
-        }
     }
 }
