@@ -2092,31 +2092,31 @@ class LearnerController extends Controller
             'is_paid' => $request->get('is_paid'),
             'status'  => $request->get('status'),
             'search'  => $request->get('search'),
+            'seat_no' => $request->get('seat_no'),
         ];
 
-       $latestDetail = LearnerDetail::selectRaw('MAX(id) as id, learner_id')
+        $latestDetail = LearnerDetail::withTrashed()
+            ->selectRaw('MAX(id) as id, learner_id')
             ->groupBy('learner_id');
 
         $query = Learner::withTrashed()
-           ->leftJoinSub($latestDetail, 'latest', function ($join) {
-                    $join->on('learners.id', '=', 'latest.learner_id');
-                })
+            ->leftJoinSub($latestDetail, 'latest', function ($join) {
+                $join->on('learners.id', '=', 'latest.learner_id');
+            })
             ->leftJoin('learner_detail', 'learner_detail.id', '=', 'latest.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where(function ($q) {
                 $q->where('learner_detail.plan_start_date', '<=', date('Y-m-d'))
+                    ->orWhereNull('learner_detail.plan_start_date')
                     ->orWhereNotNull('learners.deleted_at');
             });
 
         if (getCurrentBranch() == 0) {
-            $query->where('learners.library_id', getLibraryId())
-                ->where('learner_detail.library_id', getLibraryId());
+            $query->where('learners.library_id', getLibraryId());
         } else {
             $query->where('learners.branch_id', getCurrentBranch())
-                ->where('learner_detail.branch_id', getCurrentBranch())
-                ->where('learners.library_id', getLibraryId())
-                ->where('learner_detail.library_id', getLibraryId());
+                ->where('learners.library_id', getLibraryId());
         }
 
         $query->select(
@@ -2138,70 +2138,52 @@ class LearnerController extends Controller
             'learner_detail.id as learner_detail_id'
         );
 
+        // Apply dynamic filters if provided
+        if (!empty($filters['plan_id'])) {
+            $query->where('learner_detail.plan_id', $filters['plan_id']);
+        }
 
-        //  Apply dynamic filters if provided
-        if (!empty($filters)) {
+        if (isset($filters['is_paid']) && $filters['is_paid'] !== '') {
+            $query->where('learner_detail.is_paid', $filters['is_paid']);
+        }
 
-            // Filter by Plan ID
-            if (!empty($filters['plan_id'])) {
-                $query->where('learner_detail.plan_id', $filters['plan_id']);
-            }
+        if (!empty($filters['seat_no'])) {
+            $query->where('learner_detail.seat_no', $filters['seat_no']);
+        }
 
-            // Filter by Payment Status
-
-            if (isset($filters['is_paid'])) {
-                $query->where('learner_detail.is_paid', $filters['is_paid']);
-            }
-
-            // If a status filter is provided, apply it and skip the default status conditions
-            if (isset($filters['status'])) {
-                if ($filters['status'] === 'active') {
-                    // Only select active learners and details
-                    $query->where('learners.status', 1)
-                        ->where('learner_detail.status', 1);
-                } elseif ($filters['status'] === 'expired') {
-                    // Only select expired learners or details
-                    $query->where(function ($q) {
-                        $q->where('learner_detail.status', 0)->where('learners.status', 0);
-                    });
-                }
-            } else {
-                // Apply default status conditions if no status filter is provided
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            if ($filters['status'] === 'active') {
+                $query->where('learners.status', 1)
+                    ->whereNull('learners.deleted_at')
+                    ->where('learner_detail.status', 1);
+            } elseif ($filters['status'] === 'expired') {
                 $query->where(function ($q) {
-                    $q->where(function ($statusQuery) {
-                        $statusQuery->where('learners.status', 0)
-                            ->where('learner_detail.status', 0);
-                    })->orWhereNotNull('learners.deleted_at');
-                });
-            }
-            if (!empty($filters['seat_no'])) {
-
-                $query->where('learner_detail.seat_no', $filters['seat_no']);
-            }
-            // Search by Name, Mobile, or Email
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $encryptdata = encryptData($search);
-                $query->where(function ($q) use ($search, $encryptdata) {
-                    $q->where('learners.name', 'LIKE', "%{$search}%")
-                        ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
-                        ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
-                        ->orWhere('learners.email', $encryptdata); // 🔍 Exact match for encrypted email
+                    $q->where('learners.status', 0)
+                        ->orWhereNotNull('learners.deleted_at');
                 });
             }
         } else {
-            // Apply default status conditions if no filters are provided
+            // Default: History shows expired (status = 0), closed (status = 0), and soft-deleted learners
             $query->where(function ($q) {
-                $q->where(function ($statusQuery) {
-                    $statusQuery->where('learners.status', 0)
-                        ->where('learner_detail.status', 0);
-                })->orWhereNotNull('learners.deleted_at');
+                $q->where('learners.status', 0)
+                    ->orWhereNotNull('learners.deleted_at');
             });
         }
 
-        $learnerHistory =   $query->paginate($perPage);
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            $encryptdata = encryptData($search);
+            $query->where(function ($q) use ($search, $encryptdata) {
+                $q->where('learners.name', 'LIKE', "%{$search}%")
+                    ->orWhere('learners.learner_no', 'LIKE', "%{$search}%")
+                    ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
+                    ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
+                    ->orWhere('learner_detail.seat_no', 'LIKE', "%{$search}%")
+                    ->orWhere('learners.email', $encryptdata);
+            });
+        }
 
-
+        $learnerHistory = $query->orderByDesc('learners.id')->paginate($perPage);
 
         return view('learner.learnerHistory', compact('learnerHistory'));
     }
