@@ -2475,8 +2475,6 @@
             success: function(response) {
                
                 if (response.status) {
-                    logFieldChange(user_id, formId, fieldName, oldValue, newValue); 
-                    
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
@@ -3170,16 +3168,10 @@
             for (const fieldName in changes) {
                 const { oldValue, newValue } = changes[fieldName];
 
-                if (formId === 'reactive') {
-                    if (fieldName === 'seat_id') {
-                        logFieldChange(learnerId, formId, fieldName, oldValue, newValue);
-                    }
-                } else if (formId === 'swapseat') {
-                    // LearnerSeatSwapService already logs this operation server-side (inside
-                    // the same DB transaction as the swap itself) with an accurate
-                    // old/new seat value. Logging it again here races that insert - both
-                    // fire on the same 'submit' tick and can hit the unique
-                    // (learner_id, operation, created_at) index in the same second.
+                if (formId === 'swapseat' || formId === 'renewSeat' || formId === 'learnerUpgrade' || formId === 'changePlan' || formId === 'reactive') {
+                    // LearnerOperationService & LearnerSeatSwapService already log these operations
+                    // server-side (inside the same DB transaction) with exact snapshot values.
+                    // Skipping client-side logging prevents duplicate and race-condition log entries.
                 } else {
                     // For other operations, log changes for all fields
                     logFieldChange(learnerId, formId, fieldName, oldValue, newValue);
