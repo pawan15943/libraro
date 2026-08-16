@@ -2315,16 +2315,40 @@ class LearnerController extends Controller
     }
    
 
-    public function getSwapUser($id)
+    public function getSwapUser($id, SeatAvailabilityService $seatAvailability)
     {
-
         $customerId = $id;
-        $firstRecord = Hour::first();
-        $totalHour = $firstRecord ? $firstRecord->hour : null;
-
         $customer = $this->fetchCustomerData($customerId, false, $status = 1, $detailStatus = 1, $perPage = 10, $paginate = false);
 
-        return view('learner.swap', compact('customer'));
+        if (! $customer) {
+            return redirect()->back()->with('error', 'Learner not found.');
+        }
+
+        $branchId = $customer->branch_id ?? getCurrentBranch();
+        $totalSeats = (int) (Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('seats') ?? 0);
+
+        $newAvailableSeats = collect();
+        if ($totalSeats > 0 && ! empty($customer->plan_type_id)) {
+            $codeMap = $seatAvailability->getSwapSeatStatusCodesMap(
+                (int) $customer->id,
+                (int) $customer->plan_type_id,
+                $totalSeats
+            );
+
+            $allSeats = collect(generateSeatNumbers());
+
+            foreach ($codeMap as $seatNo => $code) {
+                if ($code === 1) {
+                    $seatInfo = $allSeats->firstWhere('main', $seatNo) ?? [
+                        'main' => $seatNo,
+                        'display' => 'Seat No - '.$seatNo,
+                    ];
+                    $newAvailableSeats->push($seatInfo);
+                }
+            }
+        }
+
+        return view('learner.swap', compact('customer', 'newAvailableSeats'));
     }
 
     public function seatHistory()

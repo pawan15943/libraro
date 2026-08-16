@@ -606,7 +606,7 @@ $learner_id=$value->id;
                         <span class="extended">Closed</span>
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
-                        @elseif((int) $value->no_expiry === 1 && (int) $value->status === 1 && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension'))
+                        @elseif((int) $value->no_expiry === 1 && (int) $value->status === 1 && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension' || $planStatus['status']=='Extension ends today'))
                          <span class="actives">Active</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>

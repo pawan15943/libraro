@@ -879,7 +879,7 @@ if (!function_exists('getUserStatusWithSpan')) {
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
+            return '<span class="text-danger fs-10 d-block">Extension ends today</span>';
         } elseif ($diffInDays == 0) {
             return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } else {
@@ -908,8 +908,11 @@ if (!function_exists('getPlanStatusDetails')) {
         $status = 'Active';
         $class = 'actives';
 
-        if ($diffInDays < 0 && $diffExtendDay >=0) {
+        if ($diffInDays < 0 && $diffExtendDay > 0) {
             $status = 'In Extension';
+            $class = 'extedned';
+        } elseif ($diffInDays < 0 && $diffExtendDay == 0) {
+            $status = 'Extension ends today';
             $class = 'extedned';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
 
@@ -945,7 +948,7 @@ if (!function_exists('getUserStatusDetails')) {
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="extended">Extension active! (' . abs($diffExtendDay) . ' Days Left)</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return '<span class="extended">Expired today</span>';
+            return '<span class="extended">Extension ends today</span>';
         } elseif ($diffInDays == 0) {
             return '<span class="extended">Expired today</span>';
         } else {
@@ -2375,10 +2378,8 @@ if (!function_exists('getStatusFromBranch')) {
             return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
-        }elseif ($diffInDays < 0 && $diffExtendDay == 0) {
-            return '<span class="text-danger fs-10 d-block">Extension Expires today. </span>';
-        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return ' <span class="text-warning fs-10 d-block">Plan Expires today</span>';
+        } elseif ($diffInDays < 0 && $diffExtendDay == 0) {
+            return '<span class="text-danger fs-10 d-block">Extension ends today</span>';
         } elseif ($diffInDays == 0) {
             return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } else {

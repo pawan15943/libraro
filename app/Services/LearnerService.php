@@ -2552,7 +2552,7 @@ class LearnerService
             return 'about to expire';
         }
 
-        if ($planStatus['status'] === 'In Extension') {
+        if ($planStatus['status'] === 'In Extension' || $planStatus['status'] === 'Extension end today') {
             return 'extended';
         }
 
