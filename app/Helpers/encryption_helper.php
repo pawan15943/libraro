@@ -878,7 +878,7 @@ if (!function_exists('getUserStatusWithSpan')) {
             return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
-        } elseif ($diffInDays == 0) {
+        } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
             return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
         } else {
             return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
