@@ -40,30 +40,21 @@ class LearnerSeatSwapService
             }
 
             $newSeatId = $seatId;
-
-            $first_record = Hour::first();
-            $total_hour = $first_record ? $first_record->hour : null;
-
             $newSeatNo = $seatId;
 
-            $total_cust_hour = Learner::where('library_id', getLibraryId())
-                ->where('seat_no', $newSeatNo)
-                ->where('status', 1)
-                ->sum('hours');
-            $new_seat_remainig = $total_hour - $total_cust_hour;
+            if (! empty($newSeatNo)) {
+                $seatAvailability = app(SeatAvailabilityService::class);
+                $statusCode = $seatAvailability->getSwapSeatStatusCode(
+                    $newSeatNo,
+                    $learnerId,
+                    $customer->plan_type_id
+                );
 
-            if ($seatId && ($customer->hours > $new_seat_remainig)) {
-                throw new Exception('Not available according to your hours.');
-            }
-
-            if (
-                $this->getLearnersByLibrary()->where('learner_detail.seat_no', $newSeatNo)
-                    ->where('plan_type_id', $customer->plan_type_id)
-                    ->where('learners.status', 1)
-                    ->where('learner_detail.status', 1)
-                    ->count() > 0 && $seatId
-            ) {
-                throw new Exception('The new seat is not available for your plan type.');
+                if ($statusCode === 2) {
+                    throw new Exception('Seat is already booked for future, currently not available to swap.');
+                } elseif ($statusCode === 0) {
+                    throw new Exception('The new seat is not available to swap.');
+                }
             }
 
             $data = Learner::findOrFail($learnerId);

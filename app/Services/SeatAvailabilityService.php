@@ -31,10 +31,14 @@ class SeatAvailabilityService
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
             ->where('learner_detail.plan_type_id', $planTypeId)
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->count();
 
         $customer = Learner::where('id', $userId)
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->first();
 
         if (! $customer) {
@@ -47,6 +51,8 @@ class SeatAvailabilityService
         $totalCustHour = (float) Learner::where('library_id', getLibraryId())
             ->where('seat_no', $newSeatId)
             ->where('status', 1)
+            ->whereNull('deleted_at')
+            ->where('id', '!=', $userId)
             ->sum('hours');
 
         $bookings = $this->getLearnersByLibrary()
@@ -54,6 +60,9 @@ class SeatAvailabilityService
             ->where('learner_detail.seat_no', $newSeatId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
 
         $planType = PlanType::where('id', $planTypeId)->first();
@@ -65,12 +74,22 @@ class SeatAvailabilityService
         $futurebookings = $this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $newSeatId)
-            ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+            ->where(function ($q) {
+                $q->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+                    ->orWhere(function ($sub) {
+                        $sub->whereDate('learner_detail.plan_start_date', '>=', Carbon::today())
+                            ->where('learner_detail.status', 0);
+                    });
+            })
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->get(['plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time']);
 
         $customerDetail = LearnerDetail::query()
             ->where('learner_id', $userId)
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->whereNull('learner_detail.deleted_at')
             ->select('plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time')
             ->first();
 
@@ -107,6 +126,7 @@ class SeatAvailabilityService
 
         $customer = Learner::where('id', $userId)
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->first();
 
         if (! $customer) {
@@ -122,6 +142,7 @@ class SeatAvailabilityService
         $customerDetail = LearnerDetail::query()
             ->where('learner_id', $userId)
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->whereNull('learner_detail.deleted_at')
             ->select('plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time')
             ->first();
 
@@ -139,6 +160,9 @@ class SeatAvailabilityService
             ->where('learner_detail.plan_type_id', $planTypeId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->selectRaw('learner_detail.seat_no as s, COUNT(*) as c')
             ->groupBy('learner_detail.seat_no')
             ->pluck('c', 's');
@@ -148,6 +172,8 @@ class SeatAvailabilityService
             ->where('library_id', getLibraryId())
             ->whereIn('seat_no', $seatNos)
             ->where('status', 1)
+            ->whereNull('deleted_at')
+            ->where('id', '!=', $userId)
             ->selectRaw('seat_no, SUM(hours) as h_sum')
             ->groupBy('seat_no')
             ->pluck('h_sum', 'seat_no');
@@ -158,6 +184,9 @@ class SeatAvailabilityService
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->select(
                 'learner_detail.seat_no as batch_seat_no',
                 'learner_detail.plan_type_id',
@@ -171,7 +200,16 @@ class SeatAvailabilityService
         $allFuture = $this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->whereIn('learner_detail.seat_no', $seatNos)
-            ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
+            ->where(function ($q) {
+                $q->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
+                    ->orWhere(function ($sub) {
+                        $sub->whereDate('learner_detail.plan_start_date', '>=', Carbon::today())
+                            ->where('learner_detail.status', 0);
+                    });
+            })
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learners.id', '!=', $userId)
             ->select(
                 'learner_detail.seat_no as batch_seat_no',
                 'learner_detail.plan_start_date',
@@ -306,26 +344,34 @@ class SeatAvailabilityService
             $status = 1;
         }
 
-        foreach ($futurebookings as $fb) {
-            $futureStartDate = Carbon::parse($fb->plan_start_date)->toDateString();
-            $futureEndDate = Carbon::parse($fb->plan_end_date)->toDateString();
+        $isNoExpiry = (int) ($customer->no_expiry ?? 0) === 1;
 
-            $futureStartTime = $fb->start_time;
-            $futureEndTime = $fb->end_time;
-
-            $dateOverlap = (
-                ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
-                ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
-                ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
-            );
-
-            if (! $dateOverlap) {
-                continue;
-            }
-
-            if (self::rangesOverlap($futureStartTime, $futureEndTime, $customerStartTime, $customerEndTime)) {
+        if ($isNoExpiry) {
+            if ($futurebookings->isNotEmpty()) {
                 $status = 2;
-                break;
+            }
+        } else {
+            foreach ($futurebookings as $fb) {
+                $futureStartDate = Carbon::parse($fb->plan_start_date)->toDateString();
+                $futureEndDate = Carbon::parse($fb->plan_end_date)->toDateString();
+
+                $futureStartTime = $fb->start_time;
+                $futureEndTime = $fb->end_time;
+
+                $dateOverlap = (
+                    ($futureStartDate >= $customerStartDate && $futureStartDate <= $customerEndDate) ||
+                    ($futureEndDate >= $customerStartDate && $futureEndDate <= $customerEndDate) ||
+                    ($futureStartDate <= $customerStartDate && $futureEndDate >= $customerEndDate)
+                );
+
+                if (! $dateOverlap) {
+                    continue;
+                }
+
+                if (self::rangesOverlap($futureStartTime, $futureEndTime, $customerStartTime, $customerEndTime)) {
+                    $status = 2;
+                    break;
+                }
             }
         }
 

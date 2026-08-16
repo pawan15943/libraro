@@ -565,7 +565,9 @@ $learner_id=$value->id;
                     @if(!in_array('17', $hiddenFields) && $value->frozen_status != 1)
                     
                     <li><a href="{{route('learners.edit',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Seat Booking Details"><i class="fas fa-edit"></i></a></li>
-                    <li><a href="{{route('learners.edit.plan',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Plan Details"><i class="fa-solid fa-calendar-days"></i></a></li>
+                    @if($today->lessThanOrEqualTo($threeDaysAfterStart))
+                        <li><a href="{{route('learners.edit.plan',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Edit Plan Details"><i class="fa-solid fa-calendar-days"></i></a></li>
+                    @endif
                     @endif
                     @endcan
 
@@ -573,7 +575,7 @@ $learner_id=$value->id;
                     <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{$value->seat_no}}" data-payblerefund="{{ $paybleRefundAmt }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Delete Lerners" class="delete-customer"><i class="fas fa-trash"></i></a></li>
                     @endcan
                     {{-- @can('has-permission', 'Delete Seat')
-                        @if($today->lessThanOrEqualTo($threeDaysAfterStart))
+                    @if($today->lessThanOrEqualTo($threeDaysAfterStart))
                         <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-permanent="1" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Permanent Delete Lerners" class="delete-permanent-customer"><i class="fas fa-trash text-danger"></i></a></li>
                     @endif
                     @endcan --}}
