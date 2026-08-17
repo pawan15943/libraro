@@ -19,10 +19,8 @@ $today = Carbon::today();
         transform: translateY(50px);
         transition: transform 0.5s ease, opacity 0.5s ease;
     }
-    i.fa-solid.fa-check-circle.booked.paylater_class,
-    i.fa-solid.fa-check-circle.booked.orange_class,
-    .seat i.fa-check-circle.orange_class,
-    .seat i.fa-check-circle.paylater_class {
+    i.fa-solid.fa-check-circle.booked.due_pending_class,
+    .seat i.fa-check-circle.due_pending_class {
         color: #2E3ECD !important;
     }
 </style>
@@ -157,13 +155,10 @@ $today = Carbon::today();
                                                 @foreach($usersForSeat as $user)
                                                 @php
                                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
-                                                $pending_amt=pending_amt($user->learner_detail_id);
+                                                $hasDue = pending_amt($user->learner_detail_id);
 
-
-                                                if(overdue($user->id, $pending_amt)){
-                                                    $class='orange_class';
-                                                }elseif(paylater($user->learner_detail_id)){
-                                                    $class='paylater_class';
+                                                if($hasDue){
+                                                    $class='due_pending_class';
                                                 }else{
                                                     $class=$planDetails['class'];
                                                 }
@@ -212,16 +207,12 @@ $today = Carbon::today();
                                             @foreach($usersForSeat as $user)
                                             @php
                                             $planDetails = getPlanStatusDetails($user->plan_end_date);
-                                            $class=$planDetails['class'];
-                                            $pending_amt=pending_amt($user->learner_detail_id);
+                                            $hasDue = pending_amt($user->learner_detail_id);
 
-
-                                            if(overdue($user->id, $pending_amt)){
-                                            $class='orange_class';
-                                            }elseif(paylater($user->learner_detail_id)){
-                                            $class='paylater_class';
+                                            if($hasDue){
+                                                $class='due_pending_class';
                                             }else{
-                                            $class=$planDetails['class'];
+                                                $class=$planDetails['class'];
                                             }
                                             $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                                             @endphp
@@ -341,15 +332,12 @@ $today = Carbon::today();
                                                 @foreach($usersForSeat as $user)
                                                 @php
                                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
-                                                $pending_amt=pending_amt($user->learner_detail_id);
+                                                $hasDue = pending_amt($user->learner_detail_id);
 
-
-                                                if(overdue($user->id, $pending_amt)){
-                                                $class='orange_class';
-                                                }elseif(paylater($user->learner_detail_id)){
-                                                $class='paylater_class';
+                                                if($hasDue){
+                                                    $class='due_pending_class';
                                                 }else{
-                                                $class=$planDetails['class'];
+                                                    $class=$planDetails['class'];
                                                 }
 
                                                 @endphp
@@ -396,16 +384,12 @@ $today = Carbon::today();
                                             @foreach($usersForSeat as $user)
                                             @php
                                             $planDetails = getPlanStatusDetails($user->plan_end_date);
-                                            $class=$planDetails['class'];
-                                            $pending_amt=pending_amt($user->learner_detail_id);
+                                            $hasDue = pending_amt($user->learner_detail_id);
 
-
-                                            if(overdue($user->id, $pending_amt)){
-                                            $class='orange_class';
-                                            }elseif(paylater($user->learner_detail_id)){
-                                            $class='paylater_class';
+                                            if($hasDue){
+                                                $class='due_pending_class';
                                             }else{
-                                            $class=$planDetails['class'];
+                                                $class=$planDetails['class'];
                                             }
                                             $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                                             @endphp

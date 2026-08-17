@@ -6267,6 +6267,7 @@ span.chip {
     overflow-x: hidden;
 }
 
+i.fa-solid.fa-check-circle.booked.due_pending_class,
 i.fa-solid.fa-check-circle.booked.paylater_class,
 i.fa-solid.fa-check-circle.booked.orange_class {
     color: #2E3ECD !important;
@@ -6637,6 +6638,7 @@ ul.reacentActivity li {
     }
 }
 
+i.fa-solid.fa-check-circle.booked.due_pending_class,
 i.fa-solid.fa-check-circle.booked.paylater_class,
 i.fa-solid.fa-check-circle.booked.orange_class {
     color: #2E3ECD !important;
