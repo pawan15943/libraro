@@ -109,7 +109,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @can('has-permission', 'Show Plan Info')
             <div class="col-lg-3">
                 <div class="active-plan-box 
-                    @switch($plan->name)
+                    @switch($plan?->name ?? '')
                         @case('Basic Plan')
                             basic
                             @break
@@ -121,7 +121,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             @break
                     @endswitch">
                     <div class="top-content">
-                        <h4>{{$plan->name}} </h4>
+                        <h4>{{$plan?->name ?? 'Active Plan'}} </h4>
                         <label for="">
                             @if((isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile))
                                 <a href="{{ route('subscriptions.choosePlan') }}" class="text-danger">Upgrade Plan</a>
@@ -138,11 +138,16 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             <li>Total Seat : <a href="{{route('seats')}}">{{$total_seats ?? 0}}</a> </li>
                             <li>Plan Features : <a href="{{route('library.myplan')}}">{{$features_count}}</a> </li>
                             <li>Plan Price :
-                                <a href="{{route('library.transaction')}}">{{$check->amount}}
-                                    @if($check->month==12)
-                                    (Yearly)
+                                <a href="{{route('library.transaction')}}">
+                                    @if(isset($check) && $check)
+                                        {{$check->amount}}
+                                        @if($check->month==12)
+                                        (Yearly)
+                                        @else
+                                        (Monthly)
+                                        @endif
                                     @else
-                                    (Monthly)
+                                        Free / Trial
                                     @endif
                                 </a>
                             </li>

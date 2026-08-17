@@ -864,7 +864,7 @@ if (!function_exists('getUserStatusWithSpan')) {
         if ($isFrozen) {
             return '<span class="text-success">Frozen</span>';
         }elseif ($isNonExpiryActive) {
-            return '<span class="text-success">Non-Expired</span>';
+            return '<span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;">Non-Expired</span>';
         }elseif($isVip){
             return '<span class="text-success">VIP</span>';
         } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {

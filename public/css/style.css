@@ -6273,6 +6273,13 @@ i.fa-solid.fa-check-circle.booked.orange_class {
     color: #2E3ECD !important;
 }
 
+i.fa-solid.fa-check-circle.booked.non_expiry_class,
+.seat i.fa-check-circle.non_expiry_class,
+.non_expired_class,
+span.non-expired-status {
+    color: #c8009d !important;
+}
+
 .capitalise {
     text-transform: capitalize !important;
 }
@@ -6642,6 +6649,13 @@ i.fa-solid.fa-check-circle.booked.due_pending_class,
 i.fa-solid.fa-check-circle.booked.paylater_class,
 i.fa-solid.fa-check-circle.booked.orange_class {
     color: #2E3ECD !important;
+}
+
+i.fa-solid.fa-check-circle.booked.non_expiry_class,
+.seat i.fa-check-circle.non_expiry_class,
+.non_expired_class,
+span.non-expired-status {
+    color: #c8009d !important;
 }
 
 

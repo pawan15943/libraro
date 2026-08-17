@@ -23,6 +23,12 @@ $today = Carbon::today();
     .seat i.fa-check-circle.due_pending_class {
         color: #2E3ECD !important;
     }
+    i.fa-solid.fa-check-circle.booked.non_expiry_class,
+    .seat i.fa-check-circle.non_expiry_class,
+    .non_expired_class,
+    span.non-expired-status {
+        color: #c8009d !important;
+    }
 </style>
 @if(getCurrentBranch() !=0 )
 
@@ -101,7 +107,7 @@ $today = Carbon::today();
                                 @for($seatNo2 = $startSeat; $seatNo2 <= $endSeat && $seatNo <= $total_seats; $seatNo2++)
                                     <div class="seat">
                                         @php
-                                            $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                                            $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learners.no_expiry','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
                                             $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
                                             ->where('status',1)
                                             ->whereDate('plan_start_date', '<=', $today)
@@ -156,9 +162,12 @@ $today = Carbon::today();
                                                 @php
                                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
                                                 $hasDue = pending_amt($user->learner_detail_id);
+                                                $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
 
                                                 if($hasDue){
                                                     $class='due_pending_class';
+                                                }elseif($isNonExpiry){
+                                                    $class='non_expiry_class';
                                                 }else{
                                                     $class=$planDetails['class'];
                                                 }
@@ -208,9 +217,12 @@ $today = Carbon::today();
                                             @php
                                             $planDetails = getPlanStatusDetails($user->plan_end_date);
                                             $hasDue = pending_amt($user->learner_detail_id);
+                                            $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
 
                                             if($hasDue){
                                                 $class='due_pending_class';
+                                            }elseif($isNonExpiry){
+                                                $class='non_expiry_class';
                                             }else{
                                                 $class=$planDetails['class'];
                                             }
@@ -278,7 +290,7 @@ $today = Carbon::today();
                                     @endphp
                                     <div class="seat">
                                         @php
-                                        $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                                        $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->where('learners.seat_no', $seatNo)->select('learners.id','learners.seat_no','learners.no_expiry','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
                                         $sumofhourseat = LearnerDetail::where('seat_no', $seatNo)
                                         ->where('status',1)
                                         ->whereDate('plan_start_date', '<=', $today)
@@ -333,9 +345,12 @@ $today = Carbon::today();
                                                 @php
                                                 $planDetails = getPlanStatusDetails($user->plan_end_date);
                                                 $hasDue = pending_amt($user->learner_detail_id);
+                                                $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
 
                                                 if($hasDue){
                                                     $class='due_pending_class';
+                                                }elseif($isNonExpiry){
+                                                    $class='non_expiry_class';
                                                 }else{
                                                     $class=$planDetails['class'];
                                                 }
@@ -385,9 +400,12 @@ $today = Carbon::today();
                                             @php
                                             $planDetails = getPlanStatusDetails($user->plan_end_date);
                                             $hasDue = pending_amt($user->learner_detail_id);
+                                            $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
 
                                             if($hasDue){
                                                 $class='due_pending_class';
+                                            }elseif($isNonExpiry){
+                                                $class='non_expiry_class';
                                             }else{
                                                 $class=$planDetails['class'];
                                             }
@@ -446,7 +464,7 @@ $today = Carbon::today();
 
                     @if(countWithoutSeatNo() >0)
                     @php
-                    $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
+                    $usersForSeat =Learner::leftJoin('learner_detail','learner_detail.learner_id','=','learners.id')->leftJoin('plan_types','learner_detail.plan_type_id','=','plan_types.id')->where('learners.branch_id',getCurrentBranch())->whereNull('learners.seat_no')->whereNull('learner_detail.seat_no')->select('learners.id','learners.no_expiry','learner_detail.plan_type_id','plan_types.day_type_id','plan_types.image','learner_detail.plan_end_date','learner_detail.id as learner_detail_id','plan_types.name as plan_type_name')->where('learners.status',1)->where('learner_detail.status',1)->get();
 
                     @endphp
                     @foreach($usersForSeat as $user)
@@ -455,7 +473,16 @@ $today = Carbon::today();
 
                         @php
                         $planDetails = getPlanStatusDetails($user->plan_end_date);
-                        $class=$planDetails['class'];
+                        $hasDue = pending_amt($user->learner_detail_id);
+                        $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
+
+                        if($hasDue){
+                            $class='due_pending_class';
+                        }elseif($isNonExpiry){
+                            $class='non_expiry_class';
+                        }else{
+                            $class=$planDetails['class'];
+                        }
                         $dayTypes = [1 => 'FD', 2 => 'FH', 3 => 'SH', 4 => 'H1', 5 => 'H2', 6 => 'H3', 7 => 'H4', 8 => 'AD', 9 => 'FN',10=>'RESERVED',11=>'VIP'];
                         @endphp
 
