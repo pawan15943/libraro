@@ -363,7 +363,7 @@ class Controller extends BaseController
 
 
         $validator = Validator::make($data, [
-            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s]+$/'],
+            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9\s]+$/'],
             'email' => 'nullable|email',
             'plan' => 'required',
             'plan_type' => 'required',

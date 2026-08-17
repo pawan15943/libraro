@@ -346,7 +346,7 @@ $learner_id=$value->id;
 
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
 
-                        @if($overdueFlag)
+                        @if($overdueFlag && ($totalPendingAmt > 0 || ($transaction && (float)($transaction->pending_amount ?? 0) > 0)))
                         <li>
                             <a class="" target="_blank"
                                 data-bs-placement="bottom"
@@ -365,7 +365,7 @@ $learner_id=$value->id;
                         </li>
                         @endif
 
-                        @if($canRenewFlag && $value->frozen_status != 1)
+                        @if($canRenewFlag && $value->frozen_status != 1 && $planStatus['diff_in_days'] <= 5)
                             @can('has-permission','Renew Seat')
                             <li>
                                 <a class="renew_extend w-auto px-2" data-seat_no="{{$value->seat_no}}"  data-user="{{$learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$learner_detail_id}}">Renew</a>

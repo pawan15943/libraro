@@ -2355,7 +2355,7 @@
 
 
     // For those Seats that are in extend period to re-new that  
-    $('.renew_extend').on('click', function(){
+    $(document).on('click', '.renew_extend', function(){
         var user_id = $(this).data('user');
         var seat_no = $(this).data('seat_no');
         var end_date = $(this).data('end_date');
@@ -3315,7 +3315,7 @@
         const lockerAmount = parseFloat($('#locker_amount2').val()) || 0;
         const discountRaw = parseFloat($('#discount_amount3').val()) || 0;
         const discountType = $('#discount_type').val();
-         const previous_pending = parseFloat($('#previous_pending').val()) || 0; 
+        const previous_pending = parseFloat($('#previous_pending').val()) || 0; 
         let discountAmount = 0;
 
         if (discountType === 'percentage') {
@@ -3324,23 +3324,32 @@
             discountAmount = discountRaw;
         }
 
-        const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending;
-        const pendingAmount = effectivePaid-paidAmount;
-       
-        
+        const effectivePaid = planPrice + lockerAmount - discountAmount + previous_pending;
+        const pendingAmount = effectivePaid - paidAmount;
 
-        if(pendingAmount > 0){
+        if (pendingAmount > 0) {
             $('#pending_amt2').html('Pending Amount: ' + pendingAmount);
-        }else if (pendingAmount < 0) {
+        } else if (pendingAmount < 0) {
             $('#pending_amt2').html('High price not allowed.' + pendingAmount);
-        }else{
+        } else {
             $('#pending_amt2').html('');
         }
 
+        // Hide 'Pay Later' mode on partial payment (when paidAmount > 0 and pendingAmount > 0)
+        const $paymentMode = $('#upgradeForm select[name="payment_mode"], #seatAllotmentModal3 select[name="payment_mode"]');
+        const $payLaterOption = $paymentMode.find('option[value="3"]');
 
+        if (paidAmount > 0 && pendingAmount > 0) {
+            $payLaterOption.hide();
+            if ($paymentMode.val() === '3') {
+                $paymentMode.val('');
+            }
+        } else {
+            $payLaterOption.show();
+        }
 
         // Pay Later always needs a due date, regardless of pending amount.
-        if (pendingAmount > 0 || $('#upgradeForm select[name="payment_mode"]').val() === '3') {
+        if (pendingAmount > 0 || $paymentMode.val() === '3') {
             $('#due_date2').removeAttr('readonly');
         } else {
             $('#due_date2').attr('readonly', true);

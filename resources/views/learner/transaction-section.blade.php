@@ -2,68 +2,59 @@
 @section('content')
 
 @php
-    $fmt = fn ($amount) => rtrim(rtrim(number_format((float) ($amount ?? 0), 2, '.', ''), '0'), '.');
-    $dateFmt = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('j M Y') : 'NA';
-    $modeLabel = function ($mode) {
-        if ($mode === null || $mode === '') {
-            return 'NA';
-        }
-        if (is_numeric($mode)) {
-            return match ((int) $mode) {
-                1 => 'Online Payment',
-                2 => 'Offline Payment',
-                3 => 'Pay Later',
-                default => (string) $mode,
-            };
-        }
-        return ucwords(strtolower((string) $mode));
+    $fmt = function ($amount) {
+        return number_format((float) ($amount ?? 0), 0, '.', ',');
     };
-    $typeLabel = function ($value) {
-        $text = trim((string) ($value ?? ''));
-        if ($text === '') {
-            return 'Transaction';
+    $dateFmt = function ($date) {
+        if (! $date) {
+            return '-';
         }
-        return ucwords(strtolower(str_replace('_', ' ', $text)));
-    };
-    $shiftTimeFmt = function ($planType) {
-        if (!$planType || !$planType->start_time || !$planType->end_time) {
-            return '';
-        }
-        try {
-            $start = \Carbon\Carbon::parse($planType->start_time)->format('g a');
-            $end = \Carbon\Carbon::parse($planType->end_time)->format('g a');
-            return " ({$start} to {$end})";
-        } catch (\Throwable $e) {
-            return '';
-        }
-    };
-    $transactionBreakdown = function ($transaction) {
-        $total = (float) ($transaction->total_amount ?? 0);
-        $locker = (float) ($transaction->locker_amount ?? 0);
-        $token = (float) ($transaction->token_money ?? 0);
-        $misc = (float) ($transaction->miscellaneous ?? 0);
-        $discount = (float) ($transaction->discount_amount ?? 0);
 
-        return [
-            'plan_price' => max(0, $total - $locker - $token - $misc + $discount),
-            'locker' => $locker,
-            'discount' => $discount,
-            'total_amount' => $total,
-            'final_payable' => $total + $token + $misc,
-            'paid_amount' => (float) ($transaction->paid_amount ?? 0) + $token + $misc,
-            'pending_or_extra' => (float) ($transaction->pending_amount ?? 0) > 0
-                ? (float) $transaction->pending_amount
-                : (float) ($transaction->refund ?? 0),
-            'pending_or_extra_label' => (float) ($transaction->pending_amount ?? 0) > 0 ? 'Pending Amt.' : 'Extra Amt.',
-            'other_total' => $token + $misc,
-        ];
+        try {
+            return \Carbon\Carbon::parse($date)->format('d M Y');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
+    $dateTimeFmt = function ($date) {
+        if (! $date) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($date)->format('d M Y, h:i A');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
+    $modeLabel = function ($mode) {
+        return match ((string) $mode) {
+            '1' => 'Online',
+            '2' => 'Offline',
+            '3' => 'Pay Later',
+            default => $mode ?: '-',
+        };
+    };
+    $typeLabel = function ($type) {
+        return match (strtoupper((string) $type)) {
+            'SUBSCRIPTION' => 'Seat Booking',
+            'RENEW' => 'Renew Seat',
+            'UPGRADE' => 'Plan Upgrade',
+            'CHANGE PLAN', 'CHANGEPLAN' => 'Change Plan',
+            'TOKEN MONEY' => 'Token Money',
+            'MISCELLANEOUS' => 'Miscellaneous',
+            'REFUND' => 'Refund',
+            'SETTLED' => 'Settled',
+            'RESTORE' => 'Restored',
+            default => $type ?: 'Transaction',
+        };
     };
     $activeStatus = (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive';
     $apiOverview = $tabData['overview'] ?? [];
     $apiSubscription = collect($tabData['subscription'] ?? [])->filter();
     $apiOtherPayments = collect($tabData['other_payment']['payments'] ?? []);
     $apiAllTransactions = collect($tabData['all_transaction'] ?? []);
-    $apiActivities = collect($tabData['transaction_activity'] ?? []);
+    $apiActivities = collect($tabData['transaction_activity'] ?? [])->sortByDesc('id')->values();
 @endphp
 
 <style>
@@ -73,20 +64,17 @@
     .transaction-header h4 { margin: 0; color: #07156f; font-size: 1.2rem; font-weight: 700; }
     .transaction-header p { margin: 3px 0 0; color: #6b7280; font-size: .85rem; }
     .transaction-status { margin-left: auto; background: #d9ffc9; color: #188000; border-radius: 20px; padding: 7px 16px; font-size: .82rem; font-weight: 700; }
-    .transaction-tabs { border-bottom: 1px solid #e5e7eb; gap: 26px; flex-wrap: nowrap; overflow-x: auto; margin-top: 22px; }
-    .transaction-tabs .nav-link { border: 0; color: #777; font-weight: 600; padding: 14px 0 12px; white-space: nowrap; font-size: .93rem; transition: color .15s ease; }
+    .transaction-status.inactive { background: #ffe7e7; color: #d60000; }
+    .transaction-tabs { border-bottom: 1px solid #e7e9f0; margin: 20px 0 16px; display: flex; gap: 8px; }
+    .transaction-tabs .nav-link { color: #6b7280; font-weight: 600; font-size: .92rem; padding: 10px 18px; border: 0; border-bottom: 2px solid transparent; background: transparent; transition: all .15s ease; }
     .transaction-tabs .nav-link:hover { color: #07156f; }
-    .transaction-tabs .nav-link.active { color: #07156f; border-bottom: 3px solid #07156f; background: transparent; }
-    .amount-panel { border: 1px solid #dfe3ea; border-radius: 12px; background: linear-gradient(180deg, #f7f8ff 0%, #fbfbff 100%); padding: 26px 20px; text-align: center; }
-    .amount-panel h5 { color: #5c6373; font-weight: 600; font-size: .92rem; text-transform: uppercase; letter-spacing: .4px; }
-    .amount-panel .main-amount { color: #1b1464; font-size: 2.6rem; line-height: 1; font-weight: 800; margin-top: 6px; }
-    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
-    .metric, .payment-box { border: 1px solid #e9ebf1; border-radius: 10px; padding: 14px; background: #fff; text-align: center; min-height: 82px; transition: box-shadow .15s ease, transform .15s ease; }
-    .metric:hover, .payment-box:hover { box-shadow: 0 4px 14px rgba(17, 24, 63, .06); transform: translateY(-1px); }
-    .metric span, .payment-box span { color: #838a99; font-size: .78rem; }
-    .metric strong, .payment-box strong { display: block; font-size: 1.2rem; margin-top: 5px; color: #171923; }
-    .metric .pending, .payment-box .pending { color: #d60000; }
+    .transaction-tabs .nav-link.active { color: #07156f; border-bottom-color: #07156f; background: transparent; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric, .payment-box { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 16px 18px; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); }
+    .metric span, .payment-box span { display: block; color: #6b7280; font-size: .8rem; margin-bottom: 6px; font-weight: 600; }
+    .metric strong, .payment-box strong { font-size: 1.25rem; font-weight: 800; color: #1e2333; }
     .metric .received, .payment-box .received { color: #4dae3c; }
+    .metric .pending, .payment-box .pending { color: #d60000; }
     .metric .refund { color: #07156f; }
     .section-title { color: #4b5162; font-weight: 700; font-size: .95rem; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
     .section-title::before { content: ''; width: 4px; height: 16px; background: #07156f; border-radius: 2px; display: inline-block; }
@@ -108,10 +96,6 @@
     .detail-row:last-of-type { border-bottom: 0; }
     .detail-row span { color: #6b7280; }
     .detail-row strong { text-align: right; color: #1e2333; }
-    .all-transaction-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 280px); gap: 18px; align-items: start; padding-right: 2px; }
-    .transaction-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .transaction-filter-bar button { border: 1px solid #dce1ea; background: #fff; color: #555; border-radius: 20px; padding: 7px 15px; font-weight: 600; font-size: .82rem; transition: all .15s ease; }
-    .transaction-filter-bar button.active { background: #07156f; border-color: #07156f; color: #fff; }
     .transaction-history-card { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; margin-bottom: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); }
     .transaction-history-main { width: 100%; border: 0; background: #fff; padding: 16px; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 24px; gap: 12px; align-items: center; text-align: left; }
     .transaction-history-title h6 { color: #1e2333; font-weight: 700; margin: 0; font-size: .95rem; }
@@ -135,32 +119,39 @@
     .transaction-actions a, .transaction-actions span, .transaction-actions button { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f6; color: #111; text-decoration: none; border: 0; transition: background .15s ease; }
     .transaction-actions a:hover, .transaction-actions button:hover { background: #e5e8f5; }
     .transaction-actions form { margin: 0; }
-    .all-summary-panel { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 18px; margin-right: 4px; position: sticky; top: 14px; box-shadow: 0 2px 10px rgba(17, 24, 63, .03); min-width: 0; }
-    .all-summary-panel h6 { color: #07156f; font-weight: 800; margin-bottom: 6px; }
-    .all-summary-panel .summary-line { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf0f4; font-size: .9rem; }
-    .all-summary-panel .summary-line:last-child { border-bottom: 0; }
     .activity-mini-list { margin-top: 12px; }
     .activity-mini-list h6 { color: #838a99; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 8px; }
     .activity-mini-item { display: flex; justify-content: space-between; gap: 10px; border-top: 1px dashed #e4e7ed; padding: 9px 0; font-size: .84rem; }
     .transaction-empty { border: 1px dashed #dfe3ea; border-radius: 12px; background: #fbfbfd; padding: 28px; text-align: center; color: #838a99; }
-    .activity-list-card { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 16px; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); transition: box-shadow .15s ease; }
-    .activity-list-card:hover { box-shadow: 0 4px 14px rgba(17, 24, 63, .06); }
-    .activity-list-card h6 { margin: 0; color: #1e2333; font-weight: 700; font-size: .93rem; line-height: 1.35; }
-    .activity-list-card small { color: #838a99; display: block; margin-top: 3px; }
-    .activity-list-card .amount { font-weight: 800; text-align: right; color: #4dae3c; }
-    .activity-list-card .amount.debit { color: #d60000; }
-    @media (max-width: 1100px) {
-        .all-transaction-layout { grid-template-columns: 1fr; }
-        .all-summary-panel { position: static; margin-right: 0; order: -1; }
-    }
+
+    /* Enhanced Activity Tab Styles */
+    .activity-card-enhanced { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); transition: all .2s ease; border-left: 4px solid #4dae3c; }
+    .activity-card-enhanced.is-debit { border-left-color: #d60000; }
+    .activity-card-enhanced:hover { box-shadow: 0 6px 18px rgba(17, 24, 63, .07); transform: translateY(-1px); }
+    .activity-icon-badge { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem; flex: 0 0 auto; }
+    .activity-icon-badge.credit { background: #eafbe7; color: #2e991c; }
+    .activity-icon-badge.debit { background: #ffebeb; color: #d60000; }
+    .activity-content { flex: 1; min-width: 0; }
+    .activity-main-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .activity-title { margin: 0; color: #171923; font-weight: 700; font-size: .96rem; }
+    .activity-amount { font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
+    .activity-amount.credit { color: #2e991c; }
+    .activity-amount.debit { color: #d60000; }
+    .activity-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: .82rem; color: #6b7280; }
+    .activity-meta-item { display: inline-flex; align-items: center; }
+    .activity-badge { padding: 3px 10px; border-radius: 12px; font-size: .75rem; font-weight: 600; display: inline-flex; align-items: center; }
+    .activity-badge.mode-online { background: #eef2ff; color: #3b5bdb; }
+    .activity-badge.mode-offline { background: #f3f4f6; color: #4b5563; }
+    .activity-badge.mode-paylater { background: #fff7ed; color: #c2410c; }
+    .activity-badge.mode-default { background: #f1f3f5; color: #495057; }
+    .activity-receipt-link { display: inline-flex; align-items: center; color: #07156f; font-weight: 600; text-decoration: none; padding: 2px 8px; border-radius: 6px; background: #f0f2ff; transition: background .15s ease; }
+    .activity-receipt-link:hover { background: #e0e4ff; color: #07156f; }
+
     @media (max-width: 768px) {
-        .transaction-header { align-items: flex-start; }
+        .transaction-header { align-items: flex-start; flex-wrap: wrap; }
         .transaction-status { margin-left: 0; }
         .metric-grid { grid-template-columns: repeat(2, 1fr); }
-        .transaction-header { flex-wrap: wrap; }
         .payment-card { align-items: flex-start; }
-        .all-transaction-layout { grid-template-columns: 1fr; }
-        .all-summary-panel { position: static; order: -1; }
         .transaction-history-main { grid-template-columns: 44px minmax(0, 1fr) auto 20px; padding: 12px; }
         .transaction-breakdown { grid-template-columns: repeat(2, 1fr); }
         .transaction-breakdown div:nth-child(2) { border-right: 0; }
@@ -168,8 +159,9 @@
         .transaction-breakdown div:nth-child(odd) { padding-left: 0; }
         .transaction-breakdown div:nth-child(even) { padding-right: 0; }
         .transaction-body-row { grid-template-columns: 1fr; }
-        .activity-list-card { grid-template-columns: 44px minmax(0, 1fr); }
-        .activity-list-card .amount { grid-column: 2; text-align: left; }
+        .activity-card-enhanced { align-items: flex-start; }
+        .activity-main-line { flex-direction: column; align-items: flex-start; gap: 4px; }
+        .activity-amount { font-size: 1rem; }
     }
 </style>
 
@@ -178,30 +170,49 @@
         <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
         <div>
             <h4>{{ $learner->name }}</h4>
-            <p>{{ $learner->learner_no ?? 'NA' }} &bull; Seat {{ $currentDetail?->seat_no ? getSeatDisplayByMainNo($currentDetail->seat_no) : 'GEN' }}</p>
+            <p>{{ $learner->mobile }} &bull; {{ $learner->email ?: 'No email' }} &bull; Seat: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? getSeatDisplayByMainNo($learner->seat_no) : 'General' }}</p>
         </div>
-        <div class="transaction-status">{{ $activeStatus }}</div>
+        <div class="transaction-status {{ $activeStatus === 'Active' ? '' : 'inactive' }}">
+            {{ $activeStatus }}
+        </div>
     </div>
 
-    <ul class="nav nav-tabs transaction-tabs" id="transactionTabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button">Overview</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#subscription" type="button">Subscription</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#otherPayment" type="button">Other Payment</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTransactions" type="button">All Transactions</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button">Activity</button></li>
+    <ul class="nav nav-tabs transaction-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#subscription" type="button" role="tab">Subscription</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#otherPayment" type="button" role="tab">Other Payment</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTransactions" type="button" role="tab">All Transactions</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Activity</button>
+        </li>
     </ul>
 
-    <div class="tab-content pt-3">
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="overview">
-            <div class="amount-panel">
-                <h5>Total Amount Received</h5>
-                <div class="main-amount">{{ $fmt($apiOverview['total_amount_received'] ?? $summary['received_amount']) }}</div>
-                <p class="text-muted small mb-0">This is the final amount received from this learner, including all pending and refunded amounts.</p>
-                <div class="metric-grid">
-                    <div class="metric"><span>Total Amt.</span><strong>{{ $fmt($apiOverview['total_amount'] ?? $summary['total_amount']) }}</strong></div>
-                    <div class="metric"><span>Pending Amt.</span><strong class="pending">{{ $fmt($apiOverview['pending_amount'] ?? $summary['pending_amount']) }}</strong></div>
-                    <div class="metric"><span>Extra Amt.</span><strong class="received">{{ $fmt($apiOverview['extra_amount'] ?? $summary['extra_amount']) }}</strong></div>
-                    <div class="metric"><span>Refund Amt.</span><strong class="refund">{{ $fmt($apiOverview['refund_amount'] ?? $summary['refund_amount']) }}</strong></div>
+            <div class="metric-grid">
+                <div class="metric">
+                    <span>Total Payment</span>
+                    <strong>{{ $fmt($apiOverview['summary']['total_amount'] ?? $summary['total_amount']) }}</strong>
+                </div>
+                <div class="metric">
+                    <span>Received Amt.</span>
+                    <strong class="received">{{ $fmt($apiOverview['summary']['received_amount'] ?? $summary['received_amount']) }}</strong>
+                </div>
+                <div class="metric">
+                    <span>Pending Amt.</span>
+                    <strong class="pending">{{ $fmt($apiOverview['summary']['pending_amount'] ?? $summary['pending_amount']) }}</strong>
+                </div>
+                <div class="metric">
+                    <span>Refund / Extra</span>
+                    <strong class="refund">{{ $fmt($apiOverview['summary']['extra_amount'] ?? $summary['extra_amount']) }}</strong>
                 </div>
             </div>
 
@@ -214,6 +225,34 @@
                         <small>(Subscription + Carryforward) - Extra Amt.</small>
                     </div>
                     <div class="amount">{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</div>
+                    @php
+                        $isRenewableForNextMonth = ($apiOverview['is_renew'] ?? true) && !($apiOverview['next_plan'] ?? 0);
+                        $seatNoForRenew = $currentDetail?->seat_no ?? $learner->seat_no;
+                        $endDateForRenew = $currentDetail?->plan_end_date ?? ($apiOverview['next_due_date'] ?? $summary['next_due_date']);
+                        $detailIdForRenew = $currentDetail?->id;
+                    @endphp
+                    @if($isRenewableForNextMonth)
+                        @can('has-permission', 'Renew Seat')
+                            <a href="javascript:void(0);"
+                               class="renew_extend payment-card-action ms-2"
+                               data-seat_no="{{ $seatNoForRenew }}"
+                               data-user="{{ $learner->id }}"
+                               data-end_date="{{ $endDateForRenew }}"
+                               data-learner_detail="{{ $detailIdForRenew }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-title="Renew Plan for Next Month">
+                                <i class="fa-solid fa-credit-card text-primary"></i>
+                            </a>
+                        @endcan
+                    @else
+                        <span class="payment-card-action ms-2 opacity-50 cursor-not-allowed"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="bottom"
+                              data-bs-title="Already Renewed for Next Month">
+                            <i class="fa-solid fa-credit-card text-muted"></i>
+                        </span>
+                    @endif
                 </div>
             @endif
 
@@ -223,27 +262,29 @@
             @else
                 <div class="payment-card text-muted">No transaction recorded.</div>
             @endif
+
+            <div class="section-title">Recent Activity</div>
+            @forelse(collect($apiOverview['recent_activities'] ?? [])->take(5) as $activity)
+                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt])
+            @empty
+                <div class="payment-card text-muted">No recent activity recorded.</div>
+            @endforelse
         </div>
 
         <div class="tab-pane fade" id="subscription">
-            <div class="metric-grid mb-3" style="grid-template-columns: repeat(3, 1fr);">
-                <div class="payment-box"><span>Total Payment</span><strong>{{ $fmt($summary['total_amount']) }}</strong></div>
-                <div class="payment-box"><span>Received Amt.</span><strong class="received">{{ $fmt($summary['received_amount']) }}</strong></div>
-                <div class="payment-box"><span>Pending Amt.</span><strong class="pending">{{ $fmt($summary['pending_amount']) }}</strong></div>
-            </div>
-
-            @php $subscription = $apiSubscription->first(); @endphp
+            @php $subscription = $apiSubscription->first() ?? []; @endphp
             @if($subscription)
-                <div class="detail-panel mb-3">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h5 class="text-primary fw-bold mb-0">Subscription Summary</h5>
-                        <span class="subscription-status-badge {{ strtolower($subscription['status'] ?? '') }}">{{ $subscription['status'] ?? 'NA' }}</span>
+                <div class="detail-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="m-0 text-dark fw-bold">{{ $subscription['plan_name'] ?? 'Plan' }} ({{ $subscription['plan_type_name'] ?? 'Shift' }})</h5>
+                        <span class="subscription-status-badge {{ strtolower((string) ($subscription['status_badge'] ?? 'active')) }}">
+                            {{ $subscription['status_badge'] ?? 'Active' }}
+                        </span>
                     </div>
-                    @if(!empty($subscription['transaction_ref']))
-                        <div class="detail-row"><span>Txn No.</span><strong>{{ $subscription['transaction_ref'] }}</strong></div>
-                    @endif
-                    <div class="detail-row"><span>Plan</span><strong>{{ $subscription['plan'] ?? 'NA' }}</strong></div>
-                    <div class="detail-row"><span>Duration</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? '') }} - {{ $dateFmt($subscription['plan_end_date'] ?? '') }}{{ $shiftTimeFmt($currentDetail?->planType) }}</strong></div>
+
+                    <div class="detail-row"><span>Start Date</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? null) }}</strong></div>
+                    <div class="detail-row"><span>End Date</span><strong>{{ $dateFmt($subscription['plan_end_date'] ?? null) }}</strong></div>
+                    <div class="detail-row"><span>Seat Number</span><strong>{{ (!empty($subscription['seat_no'])) ? getSeatDisplayByMainNo($subscription['seat_no']) : 'General' }}</strong></div>
                     <div class="detail-row"><span>Locker</span><strong>{{ $subscription['locker'] ?? 'No' }} | Price : {{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>
                     <div class="detail-row"><span>Plan Price</span><strong>{{ $fmt($subscription['plan_price'] ?? 0) }}</strong></div>
                     <div class="detail-row"><span>Discount (in Amount)</span><strong>{{ $fmt($subscription['discount_amount'] ?? 0) }}</strong></div>
@@ -286,72 +327,83 @@
             @endforelse
         </div>
 
+        {{-- All Transactions Tab: Full width clean view without filter bar or summary panel --}}
         <div class="tab-pane fade" id="allTransactions">
-            <div class="all-transaction-layout">
-                <div>
-                    <div class="transaction-filter-bar" data-transaction-filters>
-                        <button type="button" class="active" data-filter="all">All</button>
-                        <button type="button" data-filter="paid">Paid</button>
-                        <button type="button" data-filter="pending">Pending</button>
-                        <button type="button" data-filter="other">Other</button>
-                        <button type="button" data-filter="refund">Refund</button>
-                    </div>
-
-                    @forelse($apiAllTransactions as $transaction)
-                        @php
-                            $relatedActivities = collect($transaction['activity'] ?? []);
-                            $isPending = (float) ($transaction['pending_amount'] ?? 0) > 0;
-                            $hasRefund = (float) ($transaction['extra_amount'] ?? 0) > 0 || $relatedActivities->contains(fn ($activity) => strtoupper((string) ($activity['payment_type'] ?? '')) === 'REFUND');
-                            $filterTags = collect(['all'])
-                                ->when(!$isPending, fn ($items) => $items->push('paid'))
-                                ->when($isPending, fn ($items) => $items->push('pending'))
-                                ->when($hasRefund, fn ($items) => $items->push('refund'))
-                                ->implode(' ');
-                        @endphp
-                        @include('learner.partials.transaction-detail-card', [
-                            'transaction' => $transaction,
-                            'fmt' => $fmt,
-                            'dateFmt' => $dateFmt,
-                            'modeLabel' => $modeLabel,
-                            'typeLabel' => $typeLabel,
-                            'learner' => $learner,
-                            'collapseId' => 'transaction-detail-'.$transaction['id'],
-                            'cardAttrs' => 'data-transaction-card data-tags="'.$filterTags.'"',
-                        ])
-                    @empty
-                        <div class="transaction-empty">No transaction recorded.</div>
-                    @endforelse
-                </div>
-
-                <aside class="all-summary-panel">
-                    <h6>All Transaction</h6>
-                    <div class="summary-line"><span>Total Entries</span><strong>{{ $transactions->count() }}</strong></div>
-                    <div class="summary-line"><span>Received</span><strong class="text-success">{{ $fmt($summary['received_amount']) }}</strong></div>
-                    <div class="summary-line"><span>Pending</span><strong class="text-danger">{{ $fmt($summary['pending_amount']) }}</strong></div>
-                    <div class="summary-line"><span>Other Payment</span><strong>{{ $fmt($transactions->sum('token_money') + $transactions->sum('miscellaneous')) }}</strong></div>
-                    <div class="summary-line"><span>Refund / Extra</span><strong class="text-primary">{{ $fmt($summary['extra_amount']) }}</strong></div>
-                </aside>
-            </div>
+            <div class="section-title">All Transactions ({{ $apiAllTransactions->count() }})</div>
+            @forelse($apiAllTransactions as $transaction)
+                @include('learner.partials.transaction-detail-card', [
+                    'transaction' => $transaction,
+                    'fmt' => $fmt,
+                    'dateFmt' => $dateFmt,
+                    'modeLabel' => $modeLabel,
+                    'typeLabel' => $typeLabel,
+                    'learner' => $learner,
+                    'collapseId' => 'transaction-detail-'.$transaction['id'],
+                ])
+            @empty
+                <div class="transaction-empty">No transaction recorded.</div>
+            @endforelse
         </div>
 
+        {{-- Activity Tab: Enhanced modern UI with latest activity on top --}}
         <div class="tab-pane fade" id="activity">
-            <div class="section-title">Transaction Activity</div>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="section-title my-0">Transaction Activity ({{ $apiActivities->count() }})</div>
+                <small class="text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i>Latest First</small>
+            </div>
+
             @forelse($apiActivities as $activity)
                 @php
                     $isDebit = strtolower((string) ($activity['dr_cr'] ?? '')) === 'dr';
                     $clearMessage = $activity['trxn_message'] ?: $typeLabel($activity['payment_type'] ?? ($activity['particular'] ?? ''));
+                    $mode = $activity['payment_mode'] ?? '';
+                    $modeClass = match(strtolower($mode)) {
+                        'online' => 'mode-online',
+                        'offline' => 'mode-offline',
+                        'pay later' => 'mode-paylater',
+                        default => 'mode-default',
+                    };
+                    $modeIcon = match(strtolower($mode)) {
+                        'online' => 'fa-globe',
+                        'offline' => 'fa-money-bill-wave',
+                        'pay later' => 'fa-business-time',
+                        default => 'fa-credit-card',
+                    };
                 @endphp
-                <div class="activity-list-card">
-                    <span class="payment-icon {{ $isDebit ? 'debit' : '' }}">
-                        <i class="fa-solid fa-arrow-{{ $isDebit ? 'up' : 'down' }}"></i>
-                    </span>
-                    <div>
-                        <h6>{{ $clearMessage }}</h6>
-                        <small>Received by {{ $activity['added_by_name'] ?? $activity['added_by'] ?? 'System' }} &bull; {{ $dateFmt($activity['transaction_date'] ?? '') }}</small>
+                <div class="activity-card-enhanced {{ $isDebit ? 'is-debit' : 'is-credit' }}">
+                    <div class="activity-icon-badge {{ $isDebit ? 'debit' : 'credit' }}">
+                        <i class="fa-solid {{ $isDebit ? 'fa-arrow-up-right-from-square' : 'fa-arrow-down-left' }}"></i>
                     </div>
-                    <div class="amount {{ $isDebit ? 'debit' : '' }}">
-                        {{ $fmt($activity['paid_amount'] ?? 0) }}
-                        <small class="d-block text-muted fw-normal">{{ $isDebit ? 'Refunded' : 'Received' }}</small>
+                    <div class="activity-content">
+                        <div class="activity-main-line">
+                            <h6 class="activity-title">{{ $clearMessage }}</h6>
+                            <div class="activity-amount {{ $isDebit ? 'debit' : 'credit' }}">
+                                <span>{{ $isDebit ? '-' : '+' }} ₹{{ $fmt($activity['paid_amount'] ?? 0) }}</span>
+                            </div>
+                        </div>
+                        <div class="activity-meta-line">
+                            <span class="activity-meta-item">
+                                <i class="fa-regular fa-calendar me-1"></i>{{ $dateFmt($activity['transaction_date'] ?? '') }}
+                            </span>
+                            <span class="activity-meta-item">
+                                <i class="fa-regular fa-user me-1"></i>{{ $activity['added_by_name'] ?? $activity['added_by'] ?? 'Admin' }}
+                            </span>
+                            @if(!empty($mode))
+                                <span class="activity-badge {{ $modeClass }}">
+                                    <i class="fa-solid {{ $modeIcon }} me-1"></i>{{ $mode }}
+                                </span>
+                            @endif
+                            @if(!empty($activity['transaction_id']) && $activity['transaction_id'] !== 'NA')
+                                <span class="activity-meta-item text-muted">
+                                    <i class="fa-solid fa-hashtag me-1"></i>{{ $activity['transaction_id'] }}
+                                </span>
+                            @endif
+                            @if(!empty($activity['download_receipt_url']))
+                                <a href="{{ $activity['download_receipt_url'] }}" target="_blank" class="activity-receipt-link" data-bs-toggle="tooltip" data-bs-title="Download Receipt">
+                                    <i class="fa-solid fa-receipt me-1"></i>Receipt
+                                </a>
+                            @endif
+                        </div>
                     </div>
                 </div>
             @empty
@@ -360,30 +412,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const filterWrap = document.querySelector('[data-transaction-filters]');
-        if (!filterWrap) {
-            return;
-        }
-
-        filterWrap.addEventListener('click', function (event) {
-            const button = event.target.closest('button[data-filter]');
-            if (!button) {
-                return;
-            }
-
-            const filter = button.dataset.filter;
-            filterWrap.querySelectorAll('button').forEach(item => item.classList.remove('active'));
-            button.classList.add('active');
-
-            document.querySelectorAll('[data-transaction-card]').forEach(card => {
-                const tags = (card.dataset.tags || '').split(' ');
-                card.style.display = tags.includes(filter) ? '' : 'none';
-            });
-        });
-    });
-</script>
 
 @endsection

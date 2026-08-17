@@ -24,7 +24,8 @@ if($customer->locker_no){
 }
 
 $route=route('learner.upgrade.renew.store');
-$ids='learnerUpgrade';
+$ids= Route::currentRouteName() == 'learner.renew.plan' ? 'renewSeat' : 'learnerUpgrade';
+$paymentType = Route::currentRouteName() == 'learner.renew.plan' ? 'RENEW' : 'UPGRADE';
 $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format('Y-m-d');
 
 @endphp
@@ -66,7 +67,7 @@ $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format(
             </div>
 
             <div class="form-input mb-4">
-                <h4 class="inner-heading">Upgrade Plan</h4>
+                <h4 class="inner-heading">{{ Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 'Upgrade Plan' }}</h4>
                 <div class="tip text-danger">
                     @if(Route::currentRouteName() == 'learner.renew.plan')
                     <b>Note:</b> You can renew your plan 5 days before it expires or during the extended period. Plan and shift changes are not allowed.
@@ -84,7 +85,7 @@ $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format(
                     <input type="hidden" name="learner_id" value="{{ $customer->id}}" >
                     <input type="hidden" name="user_id" value="{{ $customer->id}}" id="user_id">
                     <input type="hidden" name="library_id" value="{{ $customer->library_id}}">
-                    <input type="hidden" name="payment_type" value="UPGRADE" id="payment_type_operation">
+                    <input type="hidden" name="payment_type" value="{{ $paymentType }}" id="payment_type_operation">
                     <input type="hidden" id="start_date10" value="{{$start_date}}">
 
                     <h4 class="mt-4 mb-3">Current Plan Info</h4>
@@ -254,7 +255,7 @@ $start_date = \Carbon\Carbon::parse($customer->plan_end_date)->addDay()->format(
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        handleFormChanges('learnerUpgrade', {{ $customer->id }});
+        handleFormChanges('{{ $ids }}', {{ $customer->id }});
     });
 </script>
 

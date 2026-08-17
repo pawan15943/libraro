@@ -1968,7 +1968,7 @@ class LearnerService
                 'paylater' => $detailTx->contains(fn ($t) => (int) $t->is_paid === 0),
                 'has_pending_amt' => $detailTx->contains(fn ($t) => $t->pending_amount > 0),
                 'payble_refund' => $detailTx->sum(fn ($t) => (float) ($t->paid_amount ?? 0) + (float) ($t->token_money ?? 0) + (float) ($t->miscellaneous ?? 0)),
-                'overdue' => $transaction && !empty($transaction->due_date) && Carbon::now()->gt(Carbon::parse($transaction->due_date)),
+                'overdue' => $transaction && !empty($transaction->due_date) && ($txByLearner->get($learnerId, collect())->sum('pending_amount') > 0 || ($transaction->pending_amount ?? 0) > 0) && Carbon::now()->gt(Carbon::parse($transaction->due_date)),
                 'operation' => $latestOps->get($detailId),
                 'is_renew_update' => $isRenewUpdate,
                 'can_renew' => ! $isRenewUpdate,
