@@ -2053,8 +2053,7 @@ if (!function_exists('checkSeatAvailability')) {
                 $q->where('learner_detail.plan_start_date', '<=', $endDate)
                     ->where('learner_detail.plan_end_date', '>=', $startDate);
             })
-            // ✅ IGNORE expired plans
-            ->whereDate('learner_detail.plan_end_date', '>=', Carbon::today())
+            ->whereNull('learner_detail.deleted_at')
             ->when($excludeDetailId, function ($q) use ($excludeDetailId) {
                 // Shift update: ignore only the booking row being edited.
                 $q->where('learner_detail.id', '!=', $excludeDetailId);
@@ -2067,6 +2066,8 @@ if (!function_exists('checkSeatAvailability')) {
             ->get([
                 'learner_detail.id',
                 'learner_detail.learner_id',
+                'learner_detail.plan_start_date',
+                'learner_detail.plan_end_date',
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.slot_hours',
@@ -2074,16 +2075,33 @@ if (!function_exists('checkSeatAvailability')) {
             ]);
           
 
-        $alreadyBookedHours = $bookings
-            ->groupBy('learner_id')
-            ->map(fn($rows) => $rows->sum('slot_hours'))
-            ->sum();
+        $startDateStr = Carbon::parse($startDate)->format('Y-m-d');
+        $endDateStr = Carbon::parse($endDate)->format('Y-m-d');
 
-        if (($alreadyBookedHours + (float) $hours) > $totalAllowedHours) {
-            return [
-                'error' => true,
-                'message' => 'Seat hours limit exceeded'
-            ];
+        // Check concurrent seat hours on any active day in the requested date range
+        $checkPoints = collect([$startDateStr]);
+        foreach ($bookings as $b) {
+            $bStart = Carbon::parse($b->plan_start_date)->format('Y-m-d');
+            if ($bStart >= $startDateStr && $bStart <= $endDateStr) {
+                $checkPoints->push($bStart);
+            }
+        }
+
+        foreach ($checkPoints->unique() as $point) {
+            $dailyBookedHours = (float) $bookings
+                ->filter(function ($b) use ($point) {
+                    $bStart = Carbon::parse($b->plan_start_date)->format('Y-m-d');
+                    $bEnd = Carbon::parse($b->plan_end_date)->format('Y-m-d');
+                    return $bStart <= $point && $bEnd >= $point;
+                })
+                ->sum('slot_hours');
+
+            if (($dailyBookedHours + (float) $hours) > $totalAllowedHours) {
+                return [
+                    'error' => true,
+                    'message' => 'Seat hours limit exceeded'
+                ];
+            }
         }
 
         foreach ($bookings as $booking) {
@@ -2204,6 +2222,7 @@ if (!function_exists('checkAvailability')) {
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
             ->where('learner_detail.plan_end_date', '>=', now())
+            ->whereNull('learner_detail.deleted_at')
             ->where(function ($q) use ($startDate, $endDate) {
                 $q->where('plan_start_date', '<=', $endDate)
                   ->where('plan_end_date', '>=', $startDate);
@@ -2213,6 +2232,10 @@ if (!function_exists('checkAvailability')) {
             )
             ->lockForUpdate()
             ->get([
+                'learner_detail.id',
+                'learner_detail.learner_id',
+                'learner_detail.plan_start_date',
+                'learner_detail.plan_end_date',
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.slot_hours',
@@ -2224,12 +2247,33 @@ if (!function_exists('checkAvailability')) {
             return ['error' => true, 'message' => 'Library hours not configured'];
         }
 
-        $alreadyBookedHours = (float) $bookings->sum('slot_hours');
-        if (($alreadyBookedHours + (float) $planType->slot_hours) > $totalAllowedHours) {
-            return [
-                'error' => true,
-                'message' => 'Seat hours limit exceeded'
-            ];
+        $startDateStr = $startDate->format('Y-m-d');
+        $endDateStr = $endDate instanceof Carbon ? $endDate->format('Y-m-d') : Carbon::parse($endDate)->format('Y-m-d');
+
+        // Check concurrent seat hours on any active day in the requested date range
+        $checkPoints = collect([$startDateStr]);
+        foreach ($bookings as $b) {
+            $bStart = Carbon::parse($b->plan_start_date)->format('Y-m-d');
+            if ($bStart >= $startDateStr && $bStart <= $endDateStr) {
+                $checkPoints->push($bStart);
+            }
+        }
+
+        foreach ($checkPoints->unique() as $point) {
+            $dailyBookedHours = (float) $bookings
+                ->filter(function ($b) use ($point) {
+                    $bStart = Carbon::parse($b->plan_start_date)->format('Y-m-d');
+                    $bEnd = Carbon::parse($b->plan_end_date)->format('Y-m-d');
+                    return $bStart <= $point && $bEnd >= $point;
+                })
+                ->sum('slot_hours');
+
+            if (($dailyBookedHours + (float) $planType->slot_hours) > $totalAllowedHours) {
+                return [
+                    'error' => true,
+                    'message' => 'Seat hours limit exceeded'
+                ];
+            }
         }
         
         foreach ($bookings as $booking) {

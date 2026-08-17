@@ -253,8 +253,8 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                         </div>
 
                         <div class="col-lg-4">
-                            <label for="">Choose Due Date</label>
-                            <input type="date" id="due_date10" class="form-control duedate @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date" readonly>
+                            <label for="due_date10">Choose Due Date</label>
+                            <input type="text" id="due_date10" class="form-control duedate @error('due_date') is-invalid @enderror" placeholder="YYYY-MM-DD" name="due_date" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly autocomplete="off">
                             @error('due_date')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                             @enderror
@@ -302,6 +302,15 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr("#due_date10", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                disableMobile: "true",
+                allowInput: true
+            });
+        }
+
         handleFormChanges('changePlan', {{ $customer->id }});
 
         // Amount to Refund/pay and Pending are derived from the plan already selected on

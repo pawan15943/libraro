@@ -1338,7 +1338,18 @@
         $('#pending_amt10').val(Math.abs(difference).toFixed(2));
         $('#pending_amt_error').html('');
         // Pay Later always needs a due date, regardless of pending amount.
-        $('#due_date10').attr('readonly', difference == 0 && getOperationPaymentMode() !== '3');
+        const shouldBeReadonly = (difference == 0 && getOperationPaymentMode() !== '3');
+        if (shouldBeReadonly) {
+            $('#due_date10').attr('readonly', 'readonly').prop('readonly', true);
+            if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                $('#due_date10')[0]._flatpickr.set('clickOpens', false);
+            }
+        } else {
+            $('#due_date10').removeAttr('readonly').prop('readonly', false);
+            if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                $('#due_date10')[0]._flatpickr.set('clickOpens', true);
+            }
+        }
 
         if (difference < 0) {
             $('#pending_amt10').prev('label').text("Pending Refund Amount *");
@@ -1399,17 +1410,23 @@
 
         if (overLimit) {
             $('#pending_amt_error').html('High price not allowed.' + pendingAmount);
-            $('#due_date10').attr('readonly', true);
+            $('#due_date10').attr('readonly', 'readonly').prop('readonly', true);
+            if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                $('#due_date10')[0]._flatpickr.set('clickOpens', false);
+            }
         }else{
             $('#pending_amt_error').html('');
-        }
-        // Pay Later always needs a due date, regardless of pending amount.
-        if(pendingAmount != 0 || getOperationPaymentMode() === '3'){
-            $('#due_date10').attr('readonly', false);
-        }
-        else{
-
-            $('#due_date10').attr('readonly', true);
+            if(pendingAmount != 0 || getOperationPaymentMode() === '3'){
+                $('#due_date10').removeAttr('readonly').prop('readonly', false);
+                if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                    $('#due_date10')[0]._flatpickr.set('clickOpens', true);
+                }
+            } else {
+                $('#due_date10').attr('readonly', 'readonly').prop('readonly', true);
+                if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                    $('#due_date10')[0]._flatpickr.set('clickOpens', false);
+                }
+            }
         }
         if (pendingAmount < 0) {
         $('#pending_amt10').prev('label').text("Pending Refund Amount *");
@@ -1710,10 +1727,23 @@
             return;
         }
         if (getOperationPaymentMode() === '3') {
-            $('#due_date10').removeAttr('readonly');
+            $('#due_date10').removeAttr('readonly').prop('readonly', false);
+            if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                $('#due_date10')[0]._flatpickr.set('clickOpens', true);
+            }
         } else {
             var currentPending = parseFloat($('#pending_amt10').val()) || 0;
-            $('#due_date10').attr('readonly', currentPending === 0);
+            if (currentPending > 0) {
+                $('#due_date10').removeAttr('readonly').prop('readonly', false);
+                if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                    $('#due_date10')[0]._flatpickr.set('clickOpens', true);
+                }
+            } else {
+                $('#due_date10').attr('readonly', 'readonly').prop('readonly', true);
+                if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
+                    $('#due_date10')[0]._flatpickr.set('clickOpens', false);
+                }
+            }
         }
     });
   

@@ -1996,13 +1996,13 @@ class LearnerService
         $planTypeStatuses = [
             ['id' => 1, 'name' => 'booked', 'color' => '#006E89'],
             ['id' => 2, 'name' => 'available', 'color' => '#60B03E'],
-            ['id' => 3, 'name' => 'about to expire', 'color' => '#FF0000'],
+            ['id' => 3, 'name' => 'about to expire', 'color' => '#E38C00'],
             ['id' => 4, 'name' => 'extended', 'color' => '#AB0000'],
             ['id' => 5, 'name' => 'pending payment', 'color' => '#2E3ECD'],
             ['id' => 6, 'name' => 'paylater', 'color' => '#073B5B'],
             ['id' => 7, 'name' => 'extra paid', 'color' => '#00A1C8'],
             ['id' => 8, 'name' => 'non expire', 'color' => '#c8009d'],
-            ['id' => 9, 'name' => 'future', 'color' => '#FF8C00'],
+            ['id' => 9, 'name' => 'future', 'color' => '#C09600'],
         ];
 
         if ($planTypeId) {
