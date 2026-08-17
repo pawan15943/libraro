@@ -160,8 +160,13 @@
                                         @endif
                                         @endcan
 
-                                        <li><a href="{{route('learner.other.payment',$value->learner_detail_id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Other Payment" class="payment-learner"><i class="fa-solid fa-money-bill"></i></a></li>
+                                        @php
+                                            $searchSettlement = app(\App\Services\LearnerService::class)->amountSatelment($value->id);
+                                            $hasSearchSettlement = ((float)($searchSettlement->overall_pending_sum ?? 0) > 0 || (float)($searchSettlement->total_refund_pending ?? 0) > 0 || ($transaction && ((float)($transaction->pending_amount ?? 0) > 0 || (float)($transaction->refund ?? 0) > 0)));
+                                        @endphp
+                                        @if($hasSearchSettlement)
                                         <li><a href="#" data-id="{{$value->id}}" data-learnerDetail="{{ $value->learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Settlement" class="settlement-learner"><i class="fa-solid fa-scale-balanced"></i></a></li>
+                                        @endif
                                         <!-- View Seat Info -->
                                         @can('has-permission', 'View Seat')
                                         <li><a href="{{route('learners.show',$value->id)}}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="View Seat Booking Full Details"><i class="fas fa-eye"></i></a></li>

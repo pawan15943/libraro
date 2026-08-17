@@ -1422,6 +1422,9 @@ class LearnerLifecycleService
         }
 
         if ($freeze) {
+            if (!empty($detail->plan_end_date) && Carbon::parse($detail->plan_end_date)->startOfDay()->lt(Carbon::today())) {
+                return ['ok' => false, 'message' => 'Freeze plan is only allowed for active plans, not during extension period.'];
+            }
             $detail->freeze_start_date = now();
             $detail->save();
             Learner::where('id', $detail->learner_id)->update(['frozen_status' => 1]);

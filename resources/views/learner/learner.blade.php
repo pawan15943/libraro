@@ -276,13 +276,7 @@ $statusPrecomputed = $rowContextData['status_precomputed'] ?? null;
 $oneWeekLater = \Carbon\Carbon::parse($value->plan_start_date)->addWeek();
 
 
-if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
-
-$due_date = $transaction->due_date;
-} else {
-
-$due_date = null;
-}
+$due_date = $rowContextData['due_date'] ?? ($transaction->due_date ?? null);
 
 $today = \Carbon\Carbon::now();
 $threeDaysAfterStart = \Carbon\Carbon::parse($value->plan_start_date)->addDays(3);
@@ -346,16 +340,17 @@ $learner_id=$value->id;
 
                         {{-- <li><a href="{{route('learner.expire',$value->id)}}" title="Custom Seat Expire"><i class="fas fa-calendar"></i></a></li> --}}
 
-                        @if($overdueFlag && ($totalPendingAmt > 0 || ($transaction && (float)($transaction->pending_amount ?? 0) > 0)))
+                        @if($overdueFlag && ($totalPendingAmt > 0 || ($transaction && (float)($transaction->pending_amount ?? 0) > 0)) && !empty($due_date))
                         <li>
                             <a class="" target="_blank"
                                 data-bs-placement="bottom"
                                 data-bs-toggle="tooltip"
                                 data-bs-title="Send Pending Payment Reminder"
                                 href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode(
-                                    'Dear ' . $value->name . "\n\n" .
+                                    'Dear ' . $value->name . ",\n\n" .
                                     'This is a gentle reminder that your library seat payment is still pending.' . "\n\n" .
                                     'Your due date was ' . \Carbon\Carbon::parse($due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
+                                    'Pending Amount: ₹' . number_format($totalPendingAmt > 0 ? $totalPendingAmt : (float)($transaction->pending_amount ?? 0), 2) . "\n\n" .
                                     'If you have already made the payment, kindly ignore this message.' . "\n\n" .
                                     'For any assistance, feel free to contact our support team.' . "\n\n" .
                                     '– Team ' . $currentBranchName
@@ -530,9 +525,7 @@ $learner_id=$value->id;
                             <i class="fa-solid fa-wallet"></i>
                         </a>
                     </li>
-                    @if ($totalPendingAmt > 0 || $totalExtraAmt > 0)
-                        
-                    
+                    @if ($totalPendingAmt > 0 || $totalExtraAmt > 0 || ($transaction && ((float)($transaction->pending_amount ?? 0) > 0 || (float)($transaction->refund ?? 0) > 0)))
                     <li><a href="#" data-id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Settlement" class="settlement-learner"><i class="fa-solid fa-scale-balanced"></i></a></li>
                     @endif
                     @can('has-permission', 'Gift Days')
@@ -543,6 +536,7 @@ $learner_id=$value->id;
 
                     @can('has-permission', 'Freez Days')
                     @if(!in_array('34', $hiddenFields))
+                    @if($value->frozen_status == 1 || $planStatus['diff_in_days'] >= 0)
                     <li><a href="javascript:;" class="freezDaysBtn" data-status="{{$value->frozen_status}}" data-learner_id="{{$learner_id}}" data-learnerDetail="{{ $learner_detail_id }}" > 
                         @if($value->frozen_status == 1)
                         <i class="fa-solid fa-pause" data-bs-placement="bottom" data-bs-toggle="tooltip" data-bs-title="Unfreeze Plan"></i>
@@ -552,6 +546,7 @@ $learner_id=$value->id;
                         @endif 
                         </a>   
                     </li>
+                    @endif
                     @endif
                     @endcan
                     <!-- View Seat Info -->

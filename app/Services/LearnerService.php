@@ -1961,14 +1961,27 @@ class LearnerService
             // is already used, regardless of how many detail rows exist in total.
             $isRenewUpdate = $futureStartRows->isNotEmpty();
 
+            $learnerTx = $txByLearner->get($learnerId, collect());
+            $totalPending = (float) $learnerTx->sum('pending_amount');
+            $totalRefund = (float) $learnerTx->sum('refund');
+            $netPending = max(0, $totalPending - $totalRefund);
+
+            // Find the transaction that has an overdue due_date with pending amount
+            $overdueTx = $detailTx->first(fn ($t) => (float) ($t->pending_amount ?? 0) > 0 && !empty($t->due_date) && $t->due_date < $today->toDateString())
+                ?: $learnerTx->first(fn ($t) => (float) ($t->pending_amount ?? 0) > 0 && !empty($t->due_date) && $t->due_date < $today->toDateString());
+
+            $effectiveDueDate = $overdueTx ? $overdueTx->due_date : ($transaction ? $transaction->due_date : null);
+            $isOverdue = ($netPending > 0 || (float) ($transaction->pending_amount ?? 0) > 0) && !empty($effectiveDueDate) && $effectiveDueDate < $today->toDateString();
+
             $context[$detailId] = [
                 'transaction' => $transaction,
-                'total_pending' => $txByLearner->get($learnerId, collect())->sum('pending_amount'),
-                'total_extra' => $txByLearner->get($learnerId, collect())->sum('refund'),
+                'due_date' => $effectiveDueDate,
+                'total_pending' => $totalPending,
+                'total_extra' => $totalRefund,
                 'paylater' => $detailTx->contains(fn ($t) => (int) $t->is_paid === 0),
                 'has_pending_amt' => $detailTx->contains(fn ($t) => $t->pending_amount > 0),
                 'payble_refund' => $detailTx->sum(fn ($t) => (float) ($t->paid_amount ?? 0) + (float) ($t->token_money ?? 0) + (float) ($t->miscellaneous ?? 0)),
-                'overdue' => $transaction && !empty($transaction->due_date) && ($txByLearner->get($learnerId, collect())->sum('pending_amount') > 0 || ($transaction->pending_amount ?? 0) > 0) && Carbon::now()->gt(Carbon::parse($transaction->due_date)),
+                'overdue' => $isOverdue,
                 'operation' => $latestOps->get($detailId),
                 'is_renew_update' => $isRenewUpdate,
                 'can_renew' => ! $isRenewUpdate,
