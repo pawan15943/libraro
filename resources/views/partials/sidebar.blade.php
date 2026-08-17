@@ -1,15 +1,7 @@
 @php
 $current_route = Route::currentRouteName();
-$isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isProfile ?? false) && ($iscomp ?? false) && ($isBranch ?? false)) || ($is_renew_comp ?? false);
-$showSidebar = true;
-if (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
-    if (!$isLibraryActiveAndSetup) {
-        $showSidebar = false;
-    }
-}
 @endphp
 
-@if($showSidebar)
 <div class="sidebar scroll">
     <h4><b>Libraro</b> <i class="fa fa-close d-block d-md-none" id="sidebar_mob"></i></h4>
 
@@ -88,4 +80,3 @@ if (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
     </ul>
 
 </div>
-@endif
