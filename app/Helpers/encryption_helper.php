@@ -280,11 +280,11 @@ if (!function_exists('learnerTransactionStatus')) {
         $status = 'paid';
         $dueDate = null;
 
-        if ($transactions->isNotEmpty()) {
+        if ($transactions->isNotEmpty() && (float)$totalPending > 0) {
 
             // 🔴 1. Overdue
             $overdueTxn = $transactions->first(function ($txn) use ($today) {
-                return !empty($txn->due_date) && $txn->due_date < $today;
+                return !empty($txn->due_date) && (float)($txn->pending_amount ?? 0) > 0 && $txn->due_date < $today;
             });
 
             if ($overdueTxn) {
@@ -1150,8 +1150,11 @@ if (!function_exists('getLearnerMonthsAndYears')) {
 if (!function_exists('overdue')) {
     function overdue($learner_id, $pending_amt)
     {
+        if ((float)$pending_amt <= 0) {
+            return false;
+        }
         $exists = DB::table('learner_transactions')->where('learner_id', $learner_id)->where('pending_amount', $pending_amt)->first();
-        if ($exists && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($exists->due_date))) {
+        if ($exists && !empty($exists->due_date) && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($exists->due_date))) {
             return true;
         } else {
             return false;
