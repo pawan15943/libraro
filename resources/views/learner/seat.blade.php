@@ -255,7 +255,7 @@ $today = Carbon::today();
                                                 @if($futureUser)
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup"
                                                         data-bs-target="#seatAllotmentModal2" data-userid="{{ $futureUser->learner_id }}" data-seat_no="{{ $seatNo }}" title="Future booking from {{ $futureUser->plan_start_date }}"><i
-                                                            class="fa-solid fa-check-circle" style="color: #FF8C00 !important;"></i></a></li>
+                                                            class="fa-solid fa-check-circle" style="color: #C09600 !important;"></i></a></li>
                                                 @else
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="first_popup"
                                                         data-bs-target="#seatAllotmentModal" data-id="{{ $seatNo }}" data-seat_no="{{ $seatNo }}"><i
@@ -438,7 +438,7 @@ $today = Carbon::today();
                                                 @if($futureUser)
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="second_popup"
                                                         data-bs-target="#seatAllotmentModal2" data-userid="{{ $futureUser->learner_id }}" data-seat_no="{{ $seatNo }}" title="Future booking from {{ $futureUser->plan_start_date }}"><i
-                                                            class="fa-solid fa-check-circle" style="color: #FF8C00 !important;"></i></a></li>
+                                                            class="fa-solid fa-check-circle" style="color: #C09600 !important;"></i></a></li>
                                                 @else
                                                 <li><a href="javascript:;" data-bs-toggle="modal" class="first_popup"
                                                         data-bs-target="#seatAllotmentModal" data-id="{{ $seatNo }}" data-seat_no="{{ $seatNo }}"><i

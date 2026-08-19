@@ -170,7 +170,7 @@
         <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
         <div>
             <h4>{{ $learner->name }}</h4>
-            <p>{{ $learner->mobile }} &bull; {{ $learner->email ?: 'No email' }} &bull; Seat: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? getSeatDisplayByMainNo($learner->seat_no) : 'General' }}</p>
+            <p>{{ $learner->mobile }} &bull; {{ $learner->email ?: 'No email' }} &bull; Seat: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? getSeatDisplayShortFloorName($learner->seat_no) : 'General' }}</p>
         </div>
         <div class="transaction-status {{ $activeStatus === 'Active' ? '' : 'inactive' }}">
             {{ $activeStatus }}
@@ -284,7 +284,7 @@
 
                     <div class="detail-row"><span>Start Date</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? null) }}</strong></div>
                     <div class="detail-row"><span>End Date</span><strong>{{ $dateFmt($subscription['plan_end_date'] ?? null) }}</strong></div>
-                    <div class="detail-row"><span>Seat Number</span><strong>{{ (!empty($subscription['seat_no'])) ? getSeatDisplayByMainNo($subscription['seat_no']) : 'General' }}</strong></div>
+                    <div class="detail-row"><span>Seat Number</span><strong>{{ (!empty($subscription['seat_no'])) ? getSeatDisplayShortFloorName($subscription['seat_no']) : 'General' }}</strong></div>
                     <div class="detail-row"><span>Locker</span><strong>{{ $subscription['locker'] ?? 'No' }} | Price : {{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>
                     <div class="detail-row"><span>Plan Price</span><strong>{{ $fmt($subscription['plan_price'] ?? 0) }}</strong></div>
                     <div class="detail-row"><span>Discount (in Amount)</span><strong>{{ $fmt($subscription['discount_amount'] ?? 0) }}</strong></div>

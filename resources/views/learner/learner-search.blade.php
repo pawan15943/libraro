@@ -67,9 +67,9 @@
                 <div class="seat-no">
 
                    @if($value->seat_no )
-                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                     @else
-                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                    <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                     @endif
                     @if($operation == 'closeSeat')
                     <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
@@ -200,7 +200,8 @@
                             <span class="extended">Closed</span>
                             @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                             <span class="extended">Deleted</span>
-                           
+                            @elseif(!empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isFuture() && (int)($value->status ?? 0) === 0)
+                            <span style="color: #C09600; font-weight: 600;" class="ps-1">Upcoming</span>
                             @else
                             <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }} ps-1">{{$planStatus['status']}}</span>
                             @endif

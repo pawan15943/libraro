@@ -167,7 +167,7 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                             <option value="">Seat No</option>
                             @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++)
                             <option value="{{ $seatNo }}" {{ request()->get('seat_no') == $seatNo ? 'selected' : '' }}>
-                                {{getSeatDisplayByMainNo($seatNo)}}
+                                {{getSeatDisplayShortFloorName($seatNo)}}
                                 </option>
                             @endfor
                         </select>
@@ -296,9 +296,9 @@ $learner_id=$value->id;
             <div class="seat-no">
 
                 @if($value->seat_no )
-                <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                 @else
-                <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                 @endif
                 @if($operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
@@ -603,6 +603,8 @@ $learner_id=$value->id;
                         <span class="extended">Deleted</span>
                         @elseif((int) $value->no_expiry === 1 && (int) $value->status === 1 && ($planStatus['status']=='About to Expire' || $planStatus['status']=='In Extension' || $planStatus['status']=='Extension ends today'))
                          <span class="actives">Active</span>
+                        @elseif((!empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isFuture() && (int)($value->status ?? 0) === 0) || (($statusPrecomputed['has_future_start'] ?? false) && !($statusPrecomputed['has_past_plan'] ?? false)))
+                        <span style="color: #C09600; font-weight: 600;" class="ps-1">Upcoming</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif

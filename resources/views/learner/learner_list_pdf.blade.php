@@ -122,7 +122,7 @@
                 }
             @endphp
             <tr>
-                <td>{{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</td>
+                <td>{{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN' }}</td>
                 <td class="photo-cell">
                     @if($photoData)
                     <img src="{{ $photoData }}" alt="photo">

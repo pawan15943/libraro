@@ -1055,7 +1055,7 @@ class LearnerService
             $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner->deleted_at !=null){
             $mainstatus='Deleted';
-        }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
+        }elseif(($isFirstLearnerDetail || (int)$detail->status === 0) && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
             $mainstatus='Upcoming';
         }elseif($planStatus['diff_extend_day'] < 0){
             $mainstatus='Expired';
@@ -1775,6 +1775,7 @@ class LearnerService
                 'is_renew_update' => $isRenewUpdate,
                 'has_future_start' => $hasFutureStart,
                 'start_from' => $startFrom,
+                'start_date' => $startDetail ? $startDetail->plan_start_date : null,
                 'has_vip' => $hasVip,
             ];
         }
@@ -1815,7 +1816,7 @@ class LearnerService
                 $mainstatus='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
                 $mainstatus='Deleted';
-            }elseif((int) ($learner->learner_detail_id ?? 0) === (int) ($learner->first_learner_detail_id ?? 0) && !empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
+            }elseif(((int) ($learner->learner_detail_id ?? 0) === (int) ($learner->first_learner_detail_id ?? 0) || (int)($learner->status ?? 1) === 0) && !empty($learner->plan_start_date) && Carbon::parse($learner->plan_start_date)->isFuture()){
                 $mainstatus='Upcoming';
             }elseif($planStatus['diff_extend_day'] < 0){
                 $mainstatus='Expired';
@@ -1992,6 +1993,7 @@ class LearnerService
                     'is_renew_update' => $isRenewUpdate,
                     'has_future_start' => $futureStartRows->isNotEmpty(),
                     'start_from' => $startDetail ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false) : null,
+                    'start_date' => $startDetail ? $startDetail->plan_start_date : null,
                     'frozen_status' => (int) ($row->frozen_status ?? 0) === 1,
                     'no_expiry_active' => (int) ($row->no_expiry ?? 0) === 1 && (int) ($row->status ?? 0) === 1,
                     'has_vip' => $vipLearnerIds->has($learnerId),
@@ -2187,6 +2189,7 @@ class LearnerService
                 'is_renew_update' => $futureStartRows->isNotEmpty(),
                 'has_future_start' => $futureStartRows->isNotEmpty(),
                 'start_from' => $startDetail ? $today->diffInDays(Carbon::parse($startDetail->plan_start_date), false) : null,
+                'start_date' => $startDetail ? $startDetail->plan_start_date : null,
                 'frozen_status' => (int) ($learner->frozen_status ?? 0) === 1,
                 'no_expiry_active' => (int) ($learner->no_expiry ?? 0) === 1 && (int) ($learner->status ?? 0) === 1,
                 'has_vip' => $vipLearnerIds->has($learnerId),
@@ -2579,6 +2582,13 @@ class LearnerService
         $precomputed = $this->seatMapPrecomputed[$detail->learner_id] ?? null;
         $planStatus = getPlanStatusDetails($detail->plan_end_date, $precomputed['extend_day'] ?? null);
 
+        $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
+            ->where('learner_id', $learner->id)
+            ->min('id');
+
+        $isFuture = ($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture())
+            || ((int)$detail->status === 0 && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture());
+
         return [
             'learner_id' => $learner->id,
             'learner_no' => $learner->learner_no,
@@ -2587,7 +2597,9 @@ class LearnerService
             'profile_image' => $learner->profile_picture ? asset($learner->profile_picture) : '',
             'plan_start_date' => $detail->plan_start_date,
             'plan_end_date' => $detail->plan_end_date,
-            'status' => strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id, $precomputed)),
+            'status' => $isFuture ? 'Upcoming' : strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id, $precomputed)),
+            'mainstatus' => $isFuture ? 'Upcoming' : null,
+            'message' => $isFuture ? 'Plan start on ' . date('j M Y', strtotime($detail->plan_start_date)) : null,
             'frozen_status'=>$learner->frozen_status,
             'freeze_date'=>$detail->freeze_start_date ?? '',
             'pending_amount' => (string) ($transaction->pending_amount ?? 0),

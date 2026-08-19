@@ -162,7 +162,7 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
               
                 <span style="display: inline-block !important;">
                     
-                    Seat No.: {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no): 'GEN' }} &nbsp;
+                    Seat No.: {{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no): 'GEN' }} &nbsp;
                 </span>
                 
 

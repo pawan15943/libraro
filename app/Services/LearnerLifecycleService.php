@@ -752,7 +752,7 @@ class LearnerLifecycleService
             $mainstatus='Closed';
         }elseif($operation == 'deleteSeat' && $learner?->deleted_at !=null){
             $mainstatus='Deleted';
-        }elseif($isFirstLearnerDetail && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
+        }elseif(($isFirstLearnerDetail || (int)($detail?->status ?? 1) === 0) && !empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->isFuture()){
             $mainstatus='Upcoming';
         }elseif($planStatus['diff_extend_day'] < 0){
             $mainstatus='Expired';
@@ -972,7 +972,7 @@ class LearnerLifecycleService
             'name' => (string) ($learner->name ?? ''),
             'mobile' => (string) ($learner->mobile ?? ''),
             'profile_picture' => $learner->profile_picture ? asset($learner->profile_picture) : '',
-            'seat_no' => $detail?->seat_no ? getSeatDisplayByMainNo($detail->seat_no) : 'GEN',
+            'seat_no' => $detail?->seat_no ? getSeatDisplayShortFloorName($detail->seat_no) : 'GEN',
             'status' => (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive',
         ];
     }

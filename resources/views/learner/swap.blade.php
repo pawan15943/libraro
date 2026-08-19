@@ -52,7 +52,7 @@ $class=$planDetails['class'];
                     <div class="row g-4">
                         <div class="col-lg-6">
                             <label>Old Seat Number</label>
-                            <input class="form-control" value="{{ getSeatDisplayByMainNo($customer->seat_no) ?? 'Gen'}} - {{ $customer->plan_type_name }}" readonly>
+                            <input class="form-control" value="{{ getSeatDisplayShortFloorName($customer->seat_no) ?? 'Gen'}} - {{ $customer->plan_type_name }}" readonly>
                             <input class="form-control" value="{{ $customer->seat_no ?? 'Gen'}} - {{ $customer->plan_type_name }}" type="hidden">
                         </div>
                         <div class="col-lg-6">

@@ -291,7 +291,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
         <div class="seatnumber">
             <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$class}}" style="width:60px; display:block; margin:0 auto;">
             @if($customer->seat_no)
-            <span class="d-block ">Seat No : {{ getSeatDisplayByMainNo($customer->seat_no)}}</span>
+            <span class="d-block ">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no)}}</span>
             @else
             <span class="d-block ">General</span>
             @endif

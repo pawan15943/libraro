@@ -330,7 +330,7 @@
                             @foreach ($seat_history as $learner)
                             <tr>
                                 <td>{{ $learner->name }}<br>
-                                    <small>{{getSeatDisplayByMainNo($learner->seat_no) ?? 'General'}}</small>
+                                    <small>{{getSeatDisplayShortFloorName($learner->seat_no) ?? 'General'}}</small>
                                 </td>
                                 <td>{{ $learner->mobile }}</td>
                                 <td>{{ $learner->email }}</td>
@@ -376,7 +376,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $learner->name }}<br>
-                                    <small>{{getSeatDisplayByMainNo($learner->seat_no) ?? 'General'}}</small>
+                                    <small>{{getSeatDisplayShortFloorName($learner->seat_no) ?? 'General'}}</small>
                                 </td>
                                 <td>{{ $learner->mobile }}</td>
                                 <td>{{ $learner->email }}</td>
@@ -425,7 +425,7 @@
             @endphp
             <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$planDetails['class']}}" style="width:60px; display:block; margin:0 auto;">
             @if($customer->seat_no)
-            <span class="d-block ">Seat No : {{ getSeatDisplayByMainNo($customer->seat_no)}}</span>
+            <span class="d-block ">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no)}}</span>
             @else
             <span class="d-block ">General</span>
             @endif

@@ -38,7 +38,7 @@ $operationDate=optional(getLearnerOperation($learner_detail_id))->created_at;
             <div class="seat-no">
 
                 @if(!empty($learner) && !empty($learner->seat_no))
-                <span>Seat No.: {{ getSeatDisplayByMainNo($learner->seat_no) }}</span>
+                <span>Seat No.: {{ getSeatDisplayShortFloorName($learner->seat_no) }}</span>
                 @else
                 <span>GEN</span>
                 @endif

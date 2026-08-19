@@ -2282,7 +2282,7 @@ class LearnerController extends Controller
             $customer['pending'] = '';
             $customer['overdue'] = '';
         }
-        $customer['floor_seat_no'] = getSeatDisplayByMainNo($customer->seat_no);
+        $customer['floor_seat_no'] = getSeatDisplayShortFloorName($customer->seat_no);
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
@@ -2847,7 +2847,7 @@ class LearnerController extends Controller
             $customer['pending'] = '';
             $customer['overdue'] = '';
         }
-        $customer['floor_seat_no'] = getSeatDisplayByMainNo($customer->seat_no);
+        $customer['floor_seat_no'] = getSeatDisplayShortFloorName($customer->seat_no);
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 

@@ -192,9 +192,9 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
             <div class="seat-no">
 
                 @if($value->seat_no )
-                <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                 @else
-                <span> Seat No. : {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}} </span>
+                <span> Seat No. : {{$value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN'}} </span>
                 @endif
                 @if($operation == 'closeSeat')
                 <span class="extended"> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
@@ -330,7 +330,7 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                         @elseif($operation == 'deleteSeat' && $value->deleted_at !=null)
                         <span class="extended">Deleted</span>
                          @else
-                        <span  style="color: purple;">Upcoming</span>
+                        <span style="color: #C09600; font-weight: 600;">Upcoming</span>
                         @endif
                     </h4>
                     <span>UID : <a href="{{route('learners.show',$value->id)}}">{{$value->learner_no}}</a> &nbsp; | &nbsp; M : <a href="tel:+91-{{$value->mobile}}">+91-{{ display_learner_mobile($value->mobile) }}</a> </span>

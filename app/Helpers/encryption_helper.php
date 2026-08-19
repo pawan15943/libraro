@@ -829,7 +829,8 @@ if (!function_exists('getUserStatusWithSpan')) {
             $hasPastPlan = $precomputed['has_past_plan'];
             $is_renew_update = $precomputed['is_renew_update'];
             $isfuture_booking = $precomputed['has_future_start'] && !$hasPastPlan;
-            $startfrom = $precomputed['start_from'];
+            $startfrom = $precomputed['start_from'] ?? null;
+            $startDate = $precomputed['start_date'] ?? null;
             $isFrozen = $precomputed['frozen_status'];
             $isNonExpiryActive = $precomputed['no_expiry_active'];
             $isVip = $precomputed['has_vip'];
@@ -842,18 +843,17 @@ if (!function_exists('getUserStatusWithSpan')) {
                 ->exists();
 
             $is_renew_update = alreadyRenewed($learner_id);
-            $start_date = LearnerDetail::where('learner_id', $learner_id)
-                ->where('plan_start_date',  '>', now())->where('status', 0)
-                ->exists();
-            $isfuture_booking = $start_date && !$hasPastPlan;
             $startDetail = LearnerDetail::where('learner_id', $learner_id)
-                ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
+                ->where('plan_start_date', '>=', $today->toDateString())->where('status', 0)->select('plan_start_date')->orderBy('plan_start_date')->first();
             if ($startDetail) {
                 $start_date = Carbon::parse($startDetail->plan_start_date);
-
                 $startfrom = $today->diffInDays($start_date, false);
+                $startDate = $startDetail->plan_start_date;
+                $isfuture_booking = !$hasPastPlan;
             } else {
                 $startfrom = null;
+                $startDate = null;
+                $isfuture_booking = false;
             }
 
             $isFrozen = Learner::where('id', $learner_id)->where('frozen_status', 1)->exists();
@@ -867,15 +867,15 @@ if (!function_exists('getUserStatusWithSpan')) {
             return '<span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;">Non-Expired</span>';
         }elseif($isVip){
             return '<span class="text-success">VIP</span>';
-        } elseif ($diffInDays > 0 && !$isfuture_booking && !$is_renew_update) {
-            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
+        } elseif ($isfuture_booking) {
+            $formattedStartDate = !empty($startDate) ? date('j M Y', strtotime($startDate)) : '';
+            return '<span style="color: #C09600;">Plan start on ' . $formattedStartDate . '</span>';
         } elseif ($is_renew_update && $diffInDays==0) {
             return '<span class="text-success">Expires today (1 plan queued,active tomorrow)</span>';
-
-        }elseif ($is_renew_update && $diffInDays!=0) {
+        }elseif ($is_renew_update && $diffInDays!=0 && $diffInDays > 0) {
             return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
-        } elseif ($isfuture_booking) {
-            return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
+        } elseif ($diffInDays > 0) {
+            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
@@ -1512,9 +1512,23 @@ if (!function_exists('shortFloorName')) {
             return '';
         }
 
-        $words = preg_split('/\s+/', $floorName);
-        $shortName = '';
+        // If already short (e.g. GF, FF, SF, B1, 1F, F1)
+        if (mb_strlen($floorName) <= 3 && !preg_match('/\s/', $floorName)) {
+            return strtoupper($floorName);
+        }
 
+        $words = preg_split('/[\s\-_]+/', $floorName);
+        $words = array_values(array_filter($words, fn($w) => $w !== ''));
+
+        if (count($words) === 1) {
+            $word = $words[0];
+            if (mb_strlen($word) <= 3) {
+                return strtoupper($word);
+            }
+            return strtoupper(substr($word, 0, 1));
+        }
+
+        $shortName = '';
         foreach ($words as $word) {
             $shortName .= strtoupper(substr($word, 0, 1));
         }
@@ -2404,23 +2418,26 @@ if (!function_exists('getStatusFromBranch')) {
             ->exists();
         $isfuture_booking = $start_date && !$hasPastPlan;
         $startDetail = LearnerDetail::where('learner_id', $learner_id)
-            ->where('plan_start_date',  '>', now())->where('status', 0)->select('plan_start_date')->first();
+            ->where('plan_start_date', '>=', $today->toDateString())->where('status', 0)->select('plan_start_date')->orderBy('plan_start_date')->first();
         if ($startDetail) {
             $start_date = Carbon::parse($startDetail->plan_start_date);
 
             $startfrom = $today->diffInDays($start_date, false);
+            $startDate = $startDetail->plan_start_date;
         } else {
             $startfrom = null;
+            $startDate = null;
         }
 
         if (Learner::where('id', $learner_id)->where('frozen_status', 1)->exists()) {
             return '<span class="text-success">Frozen</span>';
-        } elseif ($diffInDays > 0 && !$isfuture_booking) {
-            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
+        } elseif ($isfuture_booking) {
+            $formattedStartDate = !empty($startDate) ? date('j M Y', strtotime($startDate)) : '';
+            return '<span style="color: #C09600;">Plan start on ' . $formattedStartDate . '</span>';
         } elseif ($is_renew_update) {
             return '<span class="text-success"> 1 Plan in Queue</span>';
-        } elseif ($isfuture_booking) {
-            return '<span style="color: purple; ">Plan Starts in ' . $startfrom . ' Days</span>';
+        } elseif ($diffInDays > 0) {
+            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension active! ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay == 0) {

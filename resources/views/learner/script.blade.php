@@ -3130,25 +3130,7 @@
                         }
                        
 
-                        var extendDay=html.diffExtendDay;
-                        var message = '';
-                       
-                        // Applying the conditions as per your Laravel blade logic
-                        if(is_renew_update == 1){
-                            message = `<h5 class="text-success">Plan will Expires in ${daysRemaining} days.</h5><p class="text-info">Notice : You have a new plan in the queue. Once your current plan expires, your new plan will automatically activate.</p>`;
-                        }else if (daysRemaining > 0) {
-                            message = `<h5 class="text-success">Plan Expires in ${daysRemaining} days</h5>`;
-                        } else if (daysRemaining < 0 && extendDay > 0) {
-                            message = `<h5 class="text-danger fs-10 d-block">Extend Days are Active Now & Remaining Days are ${Math.abs(extendDay)} days.</h5>`;
-                        } else if (daysRemaining < 0 && extendDay == 0) {
-                            message = `<h5 class="text-danger extedned fs-10 d-block">Seat Expire Today</h5>`;
-                        } else if (daysRemaining == 0 && extendDay > 0) {
-                            message = `<h5 class="text-danger extedned fs-10 d-block">Plan Expires Today. Extend Days Starts Today</h5>`;
-                        }else {
-                            message = `<h5 class="text-warning fs-10 d-block">Plan Expired ${Math.abs(daysRemaining)} days ago</h5>`;
-                        }
-
-                        $('#extendday').html(message);
+                        $('#extendday').html(html.seat_status);
                     }
                 });
             }
