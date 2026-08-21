@@ -883,7 +883,7 @@ if (!function_exists('getUserStatusWithSpan')) {
                 return '<span style="color: #d97706 !important; font-weight: 700;">About to expire ' . $diffInDays . ' days left</span>';
             }
         } elseif ($diffInDays > 0) {
-            return '<span class="text-success">Active</span>';
+            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
