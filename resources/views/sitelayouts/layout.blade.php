@@ -12,14 +12,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
 
-    <title>{{$page->meta_title ?? ''}}</title>
+    @yield('seo')
 
-    {!! !empty($page->meta_og) ? $page->meta_og : '' !!}
-    <meta name="description" content="{{ $page->meta_description ?? '' }}">
+    @if(!View::hasSection('seo'))
+        <title>{{ $meta_title ?? ($page->meta_title ?? 'Libraro - Library Management System') }}</title>
+        <meta name="description" content="{{ $meta_description ?? ($page->meta_description ?? '') }}">
+        <meta name="keywords" content="{{ $meta_keywords ?? ($page->meta_keyword ?? '') }}">
+        <link rel="canonical" href="{{ $canonical_url ?? ($page->canonical ?? url()->current()) }}" />
+        {!! !empty($page->meta_og) ? $page->meta_og : '' !!}
 
-    <meta name="keywords" content="{{$page->meta_keyword ?? ''}}">
-    <link rel="canonical" href="{{$page->canonical ?? ''}}" />
+        @php
+        $schema = !empty($page->page_schema) ? html_entity_decode($page->page_schema) : '';
+        @endphp
 
+        {!! $schema !!}
+    @endif
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-awesome/css/line-awesome.min.css">
@@ -31,17 +38,6 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="{{ asset('public/css/home-style.css')}}">
-
-    <!-- Libraru Schema -->
-
-    @php
-    $schema = !empty($page->page_schema) ? html_entity_decode($page->page_schema) : '';
-    @endphp
-
-    {!! $schema !!}
-
-
-
 </head>
 
 

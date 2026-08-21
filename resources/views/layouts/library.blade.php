@@ -138,7 +138,7 @@
         </div>
 
 
-        @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+        @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
         <div class="right-sidebar">
             <h4> QUICK ACTION</h4>
             <ul>

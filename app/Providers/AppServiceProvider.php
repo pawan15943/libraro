@@ -27,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
         // if (app()->environment(['production'])) {
         //     DB::listen(function ($query) {
         //         \Log::info('SQL', [
@@ -526,15 +527,124 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('learner.home'),
                 'Feedback' => route('learner.feadback'),
             ],
-            'support' => [
-                'Dashboard' => route('learner.home'),
-                'Support' => route('support'),
+            // Blog Module Links
+            'blogs' => [
+                'Dashboard' => route('home'),
+                'Blog Posts Management' => route('blogs'),
             ],
-           
-
-
-
-
+            'add-blog' => [
+                'Dashboard' => route('home'),
+                'Blog Posts Management' => route('blogs'),
+                'Create New Blog Post' => route('add-blog'),
+            ],
+            'blog.edit' => [
+                'Dashboard' => route('home'),
+                'Blog Posts Management' => route('blogs'),
+                'Edit Blog Post' => route('blog.edit', request()->route('id') ?? 0),
+            ],
+            'blog' => [
+                'Home' => route('/'),
+                'Blog' => route('blog'),
+            ],
+            'blog-detail' => [
+                'Home' => route('/'),
+                'Blog' => route('blog'),
+                'Post Detail' => route('blog-detail', request()->route('slug') ?? ''),
+            ],
+            'admin.users' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Users List' => route('admin.users'),
+            ],
+            'admin.users.create' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Add User' => route('admin.users.create'),
+            ],
+            'admin.users.edit' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Edit User' => '#',
+            ],
+            'admin.roles' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Roles' => route('admin.roles'),
+            ],
+            'admin.roles.create' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Add Role' => route('admin.roles.create'),
+            ],
+            'admin.roles.edit' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Edit Role' => '#',
+            ],
+            'admin-permissions' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Admin Permissions' => route('admin-permissions'),
+            ],
+            'admin-permissions.create' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Add Admin Permission' => route('admin-permissions.create'),
+            ],
+            'admin-permissions.edit' => [
+                'Home' => route('home'),
+                'User Management' => route('admin.users'),
+                'Edit Admin Permission' => '#',
+            ],
+            'admin.subscriptions' => [
+                'Home' => route('home'),
+                'Manage Subscriptions' => route('admin.subscriptions'),
+                'Subscriptions List' => route('admin.subscriptions'),
+            ],
+            'subscription.master' => [
+                'Home' => route('home'),
+                'Manage Subscriptions' => route('admin.subscriptions'),
+                'Subscriptions List' => route('admin.subscriptions'),
+            ],
+            'admin.subscriptions.create' => [
+                'Home' => route('home'),
+                'Manage Subscriptions' => route('admin.subscriptions'),
+                'Add Subscription' => route('admin.subscriptions.create'),
+            ],
+            'subscriptions.edit' => [
+                'Home' => route('home'),
+                'Manage Subscriptions' => route('admin.subscriptions'),
+                'Edit Subscription' => '#',
+            ],
+            'permission-categories.index' => [
+                'Home' => route('home'),
+                'Manage Permissions' => route('permissions'),
+                'Categories List' => route('permission-categories.index'),
+            ],
+            'permission-categories.create' => [
+                'Home' => route('home'),
+                'Manage Permissions' => route('permissions'),
+                'Add Category' => route('permission-categories.create'),
+            ],
+            'permission-categories.edit' => [
+                'Home' => route('home'),
+                'Manage Permissions' => route('permissions'),
+                'Edit Category' => '#',
+            ],
+            'permissions' => [
+                'Home' => route('home'),
+                'Permissions List' => route('permissions'),
+            ],
+            'permissions.create' => [
+                'Home' => route('home'),
+                'Permissions List' => route('permissions'),
+                'Add Permission' => route('permissions.create'),
+            ],
+            'permissions.edit' => [
+                'Home' => route('home'),
+                'Permissions List' => route('permissions'),
+                'Edit Permission' => '#',
+            ],
         ];
 
         return $breadcrumbs[$routeName] ?? [];
@@ -637,6 +747,11 @@ class AppServiceProvider extends ServiceProvider
             'activities.all' => 'All Activities',
             'learners.transactions' => 'All Transactions',
             'learners.transactions.edit' => 'Edit Transaction',
+            'blogs' => 'Blog Posts Management',
+            'add-blog' => 'Create New Blog Post',
+            'blog.edit' => 'Edit Blog Post',
+            'blog' => 'Blog & Articles',
+            'blog-detail' => 'Blog Details',
 
         ];
 
