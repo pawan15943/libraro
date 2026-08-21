@@ -19,15 +19,50 @@ $today = Carbon::today();
         transform: translateY(50px);
         transition: transform 0.5s ease, opacity 0.5s ease;
     }
-    i.fa-solid.fa-check-circle.booked.due_pending_class,
-    .seat i.fa-check-circle.due_pending_class {
-        color: #2E3ECD !important;
+
+    /* Extension Seat Icon Styling (Maroon & Blinking) */
+    i.fa-solid.fa-check-circle.booked.extedned,
+    i.fa-solid.fa-check-circle.booked.extended,
+    .seat i.fa-check-circle.extedned,
+    .seat i.fa-check-circle.extended,
+    img.extedned,
+    img.extended,
+    .extedned,
+    .extended {
+        color: #800000 !important;
+        animation: seatBlink 1.2s infinite ease-in-out !important;
     }
+
+    /* Fee Overdue / Due Pending Seat Icon Styling (Blinking) */
+    i.fa-solid.fa-check-circle.booked.due_pending_class,
+    .seat i.fa-check-circle.due_pending_class,
+    .due_pending_class {
+        color: #2E3ECD !important;
+        animation: seatBlink 1.2s infinite ease-in-out !important;
+    }
+
+    /* About to Expire Seat Icon Styling (Amber / Golden Orange) */
+    i.fa-solid.fa-check-circle.booked.aboutToExpire,
+    .seat i.fa-check-circle.aboutToExpire,
+    .aboutToExpire {
+        color: #d97706 !important;
+    }
+
+    /* Non-Expiry Seat Styling */
     i.fa-solid.fa-check-circle.booked.non_expiry_class,
     .seat i.fa-check-circle.non_expiry_class,
     .non_expired_class,
     span.non-expired-status {
         color: #c8009d !important;
+    }
+
+    @keyframes seatBlink {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.25;
+        }
     }
 </style>
 @if(getCurrentBranch() !=0 )
