@@ -2101,16 +2101,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             //     });
             // @endif
 
-            // 3️⃣ Optional: catch JS errors globally
-            window.addEventListener('error', function(e) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'JavaScript Error',
-                    text: e.message || 'An unexpected error occurred.',
-                    footer: `<small>File: ${e.filename}, Line: ${e.lineno}</small>`
-                });
-            });
-
         });
     </script>
 

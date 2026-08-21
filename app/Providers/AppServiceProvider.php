@@ -141,6 +141,14 @@ class AppServiceProvider extends ServiceProvider
 
             // Library Links
             'library.home' => ['Dashboard' => route('library.home')],
+            'list.notification' => [
+                'Dashboard' => route('library.home'),
+                'Notifications List' => route('list.notification')
+            ],
+            'activities.all' => [
+                'Dashboard' => route('library.home'),
+                'Activities Logs' => route('activities.all')
+            ],
             'profile' => [
                 'Dashboard' => route('home'),
                 'Library Profile' => route('profile')
@@ -686,6 +694,8 @@ class AppServiceProvider extends ServiceProvider
             'learner.report' => 'All Learners Report',
             'upcoming.payment.report' => 'Upcoming Payment Report',
             'expired.learner.report' => 'Expired Learners Report',
+            'list.notification' => 'Notifications List',
+            'activities.all' => 'Activities Logs',
             'library.master' => 'Configure Library',
             'learners.reactive' => 'Reactive Learner',
             'learnerHistory' => 'Learner History',

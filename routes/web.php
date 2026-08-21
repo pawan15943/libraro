@@ -275,6 +275,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('feedback/store', [LibraryController::class, 'feedbackStore'])->name('library.feedback.store');
     Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
     Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/unread', [NotificationController::class, 'markAsUnread'])->name('notifications.markAsUnread');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::get('enquiry', [LibraryController::class, 'getEnquiry'])->name('library.enquiry');
     Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
     Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
@@ -551,7 +553,6 @@ Route::middleware(['auth:web'])->group(function () {
 });
 
 Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
-  Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
   Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');
   Route::get('learner/request', [LearnerController::class, 'learnerRequest'])->name('learner.request');

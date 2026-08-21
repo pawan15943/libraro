@@ -1,0 +1,241 @@
+/* ==========================================================================
+   Libraro Header Notification Module Styles (Strictly Scoped)
+   ========================================================================== */
+
+.libraro-header-notification {
+    position: relative;
+    display: inline-block;
+}
+
+/* Bell Trigger Button */
+.libraro-header-notification .notif-bell-btn {
+    position: relative;
+    padding: 0.5rem;
+    color: #18225f;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.libraro-header-notification .notif-bell-btn:hover {
+    color: #34939F;
+    transform: scale(1.05);
+}
+
+.libraro-header-notification .notif-bell-icon {
+    font-size: 1.2rem;
+}
+
+/* Unread Counter Pulse Dot Badge */
+.libraro-header-notification .notif-count-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 10px;
+    height: 10px;
+    background-color: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Dropdown Menu Box */
+.libraro-header-notification .notif-dropdown-menu {
+    width: 360px !important;
+    max-width: 90vw !important;
+    padding: 0 !important;
+    margin-top: 10px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 35px rgba(24, 34, 95, 0.12) !important;
+    overflow: hidden !important;
+    z-index: 1050 !important;
+}
+
+/* Header Panel */
+.libraro-header-notification .notif-dropdown-header {
+    padding: 0.9rem 1.1rem !important;
+    background-color: #18225f !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.libraro-header-notification .notif-dropdown-header,
+.libraro-header-notification .notif-dropdown-header i,
+.libraro-header-notification .notif-header-title {
+    color: #ffffff !important;
+}
+
+.libraro-header-notification .notif-header-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    color: #ffffff !important;
+    margin-bottom: 0 !important;
+    letter-spacing: -0.2px !important;
+}
+
+.libraro-header-notification .notif-header-subtitle {
+    font-size: 0.72rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.libraro-header-notification .notif-mark-read-btn {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.25rem 0.65rem;
+    border-radius: 30px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.libraro-header-notification .notif-mark-read-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+}
+
+/* Notifications Scrollable List */
+.libraro-header-notification .notif-list-container {
+    max-height: 310px;
+    overflow-y: auto;
+}
+
+.libraro-header-notification .notif-item {
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    transition: background-color 0.18s ease;
+}
+
+.libraro-header-notification .notif-item:hover {
+    background-color: #f8fafc;
+}
+
+.libraro-header-notification .notif-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: #e6f5f7;
+    color: #34939F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.libraro-header-notification .notif-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.84rem;
+    color: #18225f;
+    margin-bottom: 0.15rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 210px;
+}
+
+.libraro-header-notification .notif-description {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 230px;
+}
+
+.libraro-header-notification .notif-time {
+    font-size: 0.68rem;
+    color: #34939F;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.libraro-header-notification .notif-unread-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+/* Empty State */
+.libraro-header-notification .notif-empty-box {
+    padding: 1.75rem 1rem;
+    text-align: center;
+    background-color: #fafafa;
+}
+
+.libraro-header-notification .notif-empty-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #e6f5f7;
+    color: #34939F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.6rem;
+    font-size: 1.15rem;
+}
+
+.libraro-header-notification .notif-empty-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #18225f;
+    margin-bottom: 0.15rem;
+}
+
+.libraro-header-notification .notif-empty-text {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+/* Footer Link */
+.libraro-header-notification .notif-dropdown-footer {
+    padding: 0.65rem;
+    text-align: center;
+    background-color: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.libraro-header-notification .notif-footer-link {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #18225f;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.2s ease;
+}
+
+.libraro-header-notification .notif-footer-link:hover {
+    color: #34939F;
+}
