@@ -693,7 +693,6 @@ $learner_id=$value->id;
                     </li>
                 </ul>
             </div>
-            {!! renderAboutToExpireFooter($value->plan_end_date) !!}
         </div>
     </div>
 </div>

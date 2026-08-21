@@ -875,7 +875,13 @@ if (!function_exists('getUserStatusWithSpan')) {
         }elseif ($is_renew_update && $diffInDays!=0 && $diffInDays > 0) {
             return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
-            return '<span class="text-success fw-bold">Active</span>';
+            if ($diffInDays == 0) {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire today</span>';
+            } elseif ($diffInDays == 1) {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire 1 day left</span>';
+            } else {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire ' . $diffInDays . ' days left</span>';
+            }
         } elseif ($diffInDays > 0) {
             return '<span class="text-success">Active</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
@@ -945,42 +951,6 @@ if (!function_exists('getPlanStatusDetails')) {
             'about_to_expire_msg' => $aboutToExpireMsg,
             'plan_ends_text' => 'Plan ends on : ' . $endDate->format('d-m-Y')
         ];
-    }
-}
-
-if (!function_exists('renderAboutToExpireFooter')) {
-    function renderAboutToExpireFooter($plan_end_date)
-    {
-        if (empty($plan_end_date)) {
-            return '';
-        }
-        $today = Carbon::today();
-        $endDate = Carbon::parse($plan_end_date);
-        $diffInDays = $today->diffInDays($endDate, false);
-
-        if ($diffInDays >= 0 && $diffInDays <= 5) {
-            if ($diffInDays == 0) {
-                $daysText = 'About to expire today';
-            } elseif ($diffInDays == 1) {
-                $daysText = 'About to expire 1 day left';
-            } else {
-                $daysText = 'About to expire ' . $diffInDays . ' days left';
-            }
-
-            $dateText = 'Plan ends on : ' . $endDate->format('d-m-Y');
-
-            return '
-            <div class="about-to-expire-footer d-flex align-items-center justify-content-between pt-2.5 mt-2.5" style="border-top: 1px solid #e2e8f0 !important; width: 100%;">
-                <span class="about-expire-left" style="color: #d97706 !important; font-weight: 700 !important; font-family: \'Outfit\', sans-serif !important; font-size: 0.85rem !important;">
-                    ' . $daysText . '
-                </span>
-                <span class="about-expire-right" style="color: #18225f !important; font-weight: 700 !important; font-family: \'Outfit\', sans-serif !important; font-size: 0.85rem !important;">
-                    ' . $dateText . '
-                </span>
-            </div>';
-        }
-
-        return '';
     }
 }
 if (!function_exists('getUserStatusDetails')) {
