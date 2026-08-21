@@ -913,7 +913,6 @@ if (!function_exists('getPlanStatusDetails')) {
         // Default status & class
         $status = 'Active';
         $class = 'actives';
-        $isAboutToExpire = false;
 
         if ($diffInDays < 0 && $diffExtendDay > 0) {
             $status = 'In Extension';
@@ -922,23 +921,11 @@ if (!function_exists('getPlanStatusDetails')) {
             $status = 'Extension ends today';
             $class = 'extedned';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
-            $status = 'Active';
-            $class = 'actives';
-            $isAboutToExpire = true;
+            $status = 'About to Expire';
+            $class = 'aboutToExpire';
         } elseif ($diffExtendDay < 0) {
             $status = 'Expired';
             $class = 'expired';
-        }
-
-        $aboutToExpireMsg = '';
-        if ($isAboutToExpire) {
-            if ($diffInDays == 0) {
-                $aboutToExpireMsg = 'About to expire today';
-            } elseif ($diffInDays == 1) {
-                $aboutToExpireMsg = 'About to expire 1 day left';
-            } else {
-                $aboutToExpireMsg = 'About to expire ' . $diffInDays . ' days left';
-            }
         }
 
         return [
@@ -946,10 +933,7 @@ if (!function_exists('getPlanStatusDetails')) {
             'class' => $class,
             'diff_in_days' => $diffInDays,
             'diff_extend_day' => $diffExtendDay,
-            'extend_days' => $extendDay,
-            'is_about_to_expire' => $isAboutToExpire,
-            'about_to_expire_msg' => $aboutToExpireMsg,
-            'plan_ends_text' => 'Plan ends on : ' . $endDate->format('d-m-Y')
+            'extend_days' => $extendDay
         ];
     }
 }
