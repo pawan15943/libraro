@@ -32,6 +32,30 @@ class AuthServiceProvider extends ServiceProvider
             return true;
         }
 
+        if (Auth::guard('web')->check() || $user instanceof \App\Models\User) {
+            if (method_exists($user, 'hasRole') && ($user->hasRole('superadmin') || $user->hasRole('Super Admin'))) {
+                return true;
+            }
+
+            // Direct check in admin_user_permissions table for admin users
+            $hasAdminPerm = DB::table('admin_user_permissions')
+                ->join('permissions', 'permissions.id', '=', 'admin_user_permissions.permission_id')
+                ->where('admin_user_permissions.user_id', $user->id)
+                ->where('permissions.name', $permissionName)
+                ->exists();
+
+            if ($hasAdminPerm) {
+                return true;
+            }
+
+            // Fallback to Spatie permission check if roles used
+            if (method_exists($user, 'hasPermissionTo') && $user->hasPermissionTo($permissionName)) {
+                return true;
+            }
+
+            return false;
+        }
+
         if (Auth::guard('library')->check()) {
             // For library guard using subscription_permissions
             return $user->subscription &&

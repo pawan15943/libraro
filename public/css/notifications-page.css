@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Libraro Notifications Center Page Styles (Strictly Scoped under .libraro-notifications-center-page)
+   ========================================================================== */
+
+.libraro-notifications-center-page {
+    width: 100%;
+}
+
+/* Header Section */
+.libraro-notifications-center-page .notif-page-header {
+    padding: 0.5rem 0;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.libraro-notifications-center-page .notif-page-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.3rem !important;
+    color: #18225f !important;
+    margin-bottom: 0 !important;
+    letter-spacing: -0.2px !important;
+}
+
+/* Header Top Inline Breadcrumb */
+.libraro-notifications-center-page .notif-top-breadcrumb {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.85rem !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+
+.libraro-notifications-center-page .notif-top-breadcrumb a {
+    color: #34939F !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.libraro-notifications-center-page .notif-top-breadcrumb a:hover {
+    color: #18225f !important;
+}
+
+.libraro-notifications-center-page .notif-top-breadcrumb span {
+    color: #18225f !important;
+    font-weight: 700 !important;
+}
+
+/* Mark All Read Primary Pill Button */
+.libraro-notifications-center-page .notif-mark-all-btn {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    background-color: #18225f !important;
+    border: 1px solid #18225f !important;
+    color: #ffffff !important;
+    border-radius: 30px !important;
+    padding: 0.45rem 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.12) !important;
+}
+
+.libraro-notifications-center-page .notif-mark-all-btn:hover {
+    background-color: #0f1743 !important;
+    border-color: #0f1743 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Filter Navigation Pills */
+.libraro-notifications-center-page .notif-filter-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.libraro-notifications-center-page .notif-filter-pill {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.84rem !important;
+    border-radius: 30px !important;
+    padding: 0.38rem 1.15rem !important;
+    color: #475569 !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.libraro-notifications-center-page .notif-filter-pill:hover {
+    background-color: #e2e8f0 !important;
+    color: #18225f !important;
+}
+
+.libraro-notifications-center-page .notif-filter-pill.active {
+    background-color: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.15) !important;
+}
+
+.libraro-notifications-center-page .notif-filter-pill .badge {
+    font-size: 0.7rem !important;
+    padding: 0.2rem 0.55rem !important;
+}
+
+/* Horizontal Table Card Row Item */
+.libraro-notifications-center-page .notif-row-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 0.85rem 1.25rem !important;
+    margin-bottom: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.libraro-notifications-center-page .notif-row-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.05) !important;
+}
+
+.libraro-notifications-center-page .notif-row-card.unread-item {
+    background-color: #ffffff !important;
+    border-left: 4px solid #18225f !important;
+}
+
+.libraro-notifications-center-page .notif-row-card.read-item {
+    background-color: #f8fafc !important;
+    opacity: 0.88 !important;
+}
+
+/* Left Avatar Box */
+.libraro-notifications-center-page .notif-avatar-circle {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    background-color: #e6f5f7 !important;
+    color: #34939F !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+}
+
+/* Field Column Label & Value */
+.libraro-notifications-center-page .notif-col-label {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    margin-bottom: 0.15rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+}
+
+.libraro-notifications-center-page .notif-col-value {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    color: #18225f !important;
+    margin-bottom: 0 !important;
+}
+
+.libraro-notifications-center-page .notif-col-subtext {
+    font-family: 'Mulish', sans-serif !important;
+    font-size: 0.78rem !important;
+    color: #64748b !important;
+}
+
+/* Action Circle Buttons on Right */
+.libraro-notifications-center-page .notif-icon-action-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    background-color: #e6f5f7 !important;
+    color: #34939F !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.libraro-notifications-center-page .notif-icon-action-btn:hover {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    transform: scale(1.08) !important;
+}
+
+/* Status Text Colors */
+.libraro-notifications-center-page .status-unread-text {
+    color: #ef4444 !important;
+}
+
+.libraro-notifications-center-page .status-read-text {
+    color: #16a34a !important;
+}
+
+/* Empty State Card */
+.libraro-notifications-center-page .notif-page-empty {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 3rem 1.5rem !important;
+    text-align: center !important;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.03) !important;
+}
+
+.libraro-notifications-center-page .notif-empty-illustration {
+    width: 68px !important;
+    height: 68px !important;
+    border-radius: 50% !important;
+    background-color: #e6f5f7 !important;
+    color: #34939F !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 1rem !important;
+    font-size: 1.8rem !important;
+}
+
+.libraro-notifications-center-page .notif-empty-heading {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    color: #18225f !important;
+    font-size: 1.15rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.libraro-notifications-center-page .notif-empty-subtext {
+    font-family: 'Mulish', sans-serif !important;
+    font-size: 0.85rem !important;
+    color: #64748b !important;
+    margin-bottom: 0 !important;
+}

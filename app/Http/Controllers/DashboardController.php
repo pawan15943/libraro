@@ -51,36 +51,98 @@ class DashboardController extends Controller
     }
     public function index()
     {
-        
-        $user=Auth::user();
-      
-        if ($user->hasRole('superadmin')) {
-           
-           $totalregistration=Library::count();
-           $paidregistration=Library::where('is_paid',1)->count();
-           $unpaidregistration=Library::where('is_paid',0)->count();
-           $renewCount=Library::leftJoin('library_transactions','libraries.id','=','library_transactions.library_id')->where('libraries.is_paid',1)->where('end_date','<=',date('Y-m-d'))->count();
-           $plansWithCount = Subscription::withCount([
-            'libraries' => function ($query) {
-                $query->where('status', 1); // Filter active libraries
+        $user = Auth::user() ?? Auth::guard('web')->user();
+
+        if ($user && ($user->hasRole('superadmin') || $user->hasRole('admin'))) {
+            $totalregistration = Library::count();
+            $paidregistration = Library::where('is_paid', 1)->count();
+            $unpaidregistration = Library::where('is_paid', 0)->count();
+            $renewCount = Library::leftJoin('library_transactions', 'libraries.id', '=', 'library_transactions.library_id')
+                ->where('libraries.is_paid', 1)
+                ->where('end_date', '<=', date('Y-m-d'))
+                ->count();
+
+            // Overall Total Revenue from paid library transactions
+            $overallRevenue = DB::table('library_transactions')
+                ->where('is_paid', 1)
+                ->sum('paid_amount');
+
+            // 1. Plan-wise Revenue & Registration Summary
+            $subscriptions = Subscription::withCount([
+                'libraries' => function ($query) {
+                    $query->whereNull('deleted_at');
                 }
             ])->get();
+
+            $planwiseData = [];
+            foreach ($subscriptions as $plan) {
+                $planRevenue = DB::table('libraries')
+                    ->join('library_transactions', 'libraries.id', '=', 'library_transactions.library_id')
+                    ->where('libraries.library_type', $plan->id)
+                    ->where('library_transactions.is_paid', 1)
+                    ->sum('library_transactions.paid_amount');
+
+                $activeLibs = Library::where('library_type', $plan->id)->where('status', 1)->count();
+                $paidLibs = Library::where('library_type', $plan->id)->where('is_paid', 1)->count();
+
+                $planwiseData[] = [
+                    'plan'                => $plan,
+                    'total_registrations' => $plan->libraries_count,
+                    'active_libraries'    => $activeLibs,
+                    'paid_libraries'      => $paidLibs,
+                    'revenue'             => $planRevenue,
+                ];
+            }
+
+            // 2. Monthly Registration Progress for Selected / Current Year
+            $selectedYear = request('year', date('Y'));
+            $monthlyProgressData = DB::table('libraries')
+                ->selectRaw('MONTH(created_at) as month_num, COUNT(*) as count')
+                ->whereYear('created_at', $selectedYear)
+                ->groupBy('month_num')
+                ->pluck('count', 'month_num')
+                ->toArray();
+
+            $monthlyProgress = [];
+            $maxMonthlyCount = max(array_values($monthlyProgressData) ?: [1]);
+            for ($m = 1; $m <= 12; $m++) {
+                $monthName = Carbon::create()->month($m)->format('F');
+                $count = $monthlyProgressData[$m] ?? 0;
+                $percentage = $maxMonthlyCount > 0 ? round(($count / $maxMonthlyCount) * 100) : 0;
+                $monthlyProgress[] = [
+                    'month_num'  => $m,
+                    'month_name' => $monthName,
+                    'count'      => $count,
+                    'percentage' => $percentage,
+                ];
+            }
+
             $today = Carbon::now()->format('Y-m-d');
             $tenDaysLater = Carbon::now()->addDays(10)->format('Y-m-d');
-            $upcoming_registration=Library::with(['library_transactions', 'subscription'])
-            ->whereHas('library_transactions', function($query) use ($today, $tenDaysLater) {
-                $query->whereBetween('end_date', [$today, $tenDaysLater]);
-            })->get();
-            return view('dashboard.administrator',compact('totalregistration','paidregistration','unpaidregistration','renewCount','plansWithCount','upcoming_registration'));
-        }if ($user->hasRole('admin')) {
-           
-            return view('dashboard.admin');
-        }if ($user->hasRole('learner')) {
-           
-        
+            $upcoming_registration = Library::with(['library_transactions', 'subscription'])
+                ->whereHas('library_transactions', function ($query) use ($today, $tenDaysLater) {
+                    $query->whereBetween('end_date', [$today, $tenDaysLater]);
+                })->take(5)->get();
+
+            $recent_registrations = Library::with(['subscription'])->orderBy('id', 'desc')->take(5)->get();
+
+            return view('dashboard.administrator', compact(
+                'totalregistration',
+                'paidregistration',
+                'unpaidregistration',
+                'renewCount',
+                'overallRevenue',
+                'planwiseData',
+                'monthlyProgress',
+                'selectedYear',
+                'upcoming_registration',
+                'recent_registrations'
+            ));
+        }
+
+        if ($user->hasRole('learner')) {
             return view('dashboard.learner');
         }
-       
     }
 
     public function libraryDashboard(Request $request)

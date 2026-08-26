@@ -874,6 +874,14 @@ if (!function_exists('getUserStatusWithSpan')) {
             return '<span class="text-success">Expires today (1 plan queued,active tomorrow)</span>';
         }elseif ($is_renew_update && $diffInDays!=0 && $diffInDays > 0) {
             return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
+        } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
+            if ($diffInDays == 0) {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire today</span>';
+            } elseif ($diffInDays == 1) {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire 1 day left</span>';
+            } else {
+                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire ' . $diffInDays . ' days left</span>';
+            }
         } elseif ($diffInDays > 0) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
@@ -913,7 +921,6 @@ if (!function_exists('getPlanStatusDetails')) {
             $status = 'Extension ends today';
             $class = 'extedned';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
-
             $status = 'About to Expire';
             $class = 'aboutToExpire';
         } elseif ($diffExtendDay < 0) {

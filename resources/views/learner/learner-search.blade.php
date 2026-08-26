@@ -202,6 +202,8 @@
                             <span class="extended">Deleted</span>
                             @elseif(!empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isFuture() && (int)($value->status ?? 0) === 0)
                             <span style="color: #C09600; font-weight: 600;" class="ps-1">Upcoming</span>
+                            @elseif($planStatus['status'] == 'About to Expire')
+                            <span class="actives ps-1">Active</span>
                             @else
                             <span class="{{ $planStatus['class'] == 'expired' ? 'expired' : ($planStatus['class'] == 'extended' ? 'extedned' : 'actives') }} ps-1">{{$planStatus['status']}}</span>
                             @endif

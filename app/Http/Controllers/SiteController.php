@@ -31,10 +31,39 @@ class SiteController extends Controller
     {
         return view('site.about-us');
     }
-    public function blog()
+    public function blog(Request $request)
     {
-        $data = Blog::get();
-        return view('site.blog', compact('data'));
+        $query = Blog::published();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('page_title', 'like', "%{$search}%")
+                  ->orWhere('page_content', 'like', "%{$search}%")
+                  ->orWhere('excerpt', 'like', "%{$search}%")
+                  ->orWhere('tags', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $catId = (int) $request->category;
+            $query->where(function($q) use ($catId) {
+                $q->whereJsonContains('categories_id', $catId)
+                  ->orWhereJsonContains('categories_id', (string) $catId);
+            });
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->tag;
+            $query->where('tags', 'like', "%{$tag}%");
+        }
+
+        $featuredBlog = Blog::published()->featured()->latest('published_at')->first();
+        $data = $query->latest('published_at')->paginate(9)->withQueryString();
+        $categories = Category::all();
+        $popularBlogs = Blog::published()->orderBy('views_count', 'desc')->take(5)->get();
+
+        return view('site.blog', compact('data', 'featuredBlog', 'categories', 'popularBlogs'));
     }
     public function contactUs()
     {
@@ -121,88 +150,109 @@ class SiteController extends Controller
 
     public function createBlog()
     {
-        $categories = Category::get();
+        $categories = Category::all();
         return view('administrator.addBlog', compact('categories'));
     }
 
     public function editBlog($id)
     {
-
-        $categories = Category::get();
+        $categories = Category::all();
         $data = Blog::findOrFail($id);
 
         return view('administrator.addBlog', compact('data', 'categories'));
     }
+
     public function blogStore(Request $request, $id = null)
     {
-
         $data = $request->validate([
-            'page_title' => 'required|string|max:255',
-            'page_slug' => 'required|string|max:255|unique:blogs,page_slug,' . $id,
-            'page_content' => 'required|string',
-            'meta_title' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string',
-            'meta_keyword' => 'nullable|string',
-            'meta_og' => 'nullable|string',
-            'header_image' => $id ? 'nullable|image|mimes:jpg,jpeg,png|max:2048' : 'required|image|mimes:jpg,jpeg,png|max:2048',
-
-            'categories_id' => 'nullable|array', // For the multiple-select dropdown
-            'categories_id.*' => 'nullable|integer|exists:categories,id',
+            'page_title'       => 'required|string|max:255',
+            'page_slug'        => 'required|string|max:255|unique:blogs,page_slug,' . $id,
+            'page_content'     => 'required|string',
+            'excerpt'          => 'nullable|string|max:1000',
+            'meta_title'       => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keyword'     => 'nullable|string|max:500',
+            'meta_og'          => 'nullable|string',
+            'canonical_url'    => 'nullable|url|max:255',
+            'meta_robots'      => 'nullable|string|max:100',
+            'focus_keyword'    => 'nullable|string|max:255',
+            'schema_type'      => 'nullable|string|max:100',
+            'author_name'      => 'nullable|string|max:255',
+            'status'           => 'required|in:published,draft,scheduled',
+            'published_at'     => 'nullable|date',
+            'is_featured'      => 'nullable|boolean',
+            'image_alt'        => 'nullable|string|max:255',
+            'header_image'     => $id ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072' : 'required|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'categories_id'    => 'nullable|array',
+            'categories_id.*'  => 'nullable|integer|exists:categories,id',
         ]);
 
-        // Handle categories
-        $categoryIds = [];
-        if ($request->categories) {
-            $categories = json_decode($request->categories, true);
+        $data['is_featured'] = $request->has('is_featured') ? 1 : 0;
+        $data['author_name'] = $request->author_name ?: 'Libraro Team';
+        $data['meta_robots'] = $request->meta_robots ?: 'index, follow';
+        $data['schema_type'] = $request->schema_type ?: 'BlogPosting';
 
-            foreach ($categories as $categoryName) {
-                if (isset($categoryName['value'])) {
-                    $category = Category::firstOrCreate(['name' => trim($categoryName['value'])]);
-                    $categoryIds[] = $category->id; // Collect the category ID
+        // Auto-calculate reading time
+        $data['reading_time'] = Blog::calculateReadingTime($request->page_content);
+
+        // Handle publication timestamp
+        if ($data['status'] === 'published' && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
+        // Handle categories array from select or tagify
+        $categoryIds = $request->categories_id ?? [];
+        if ($request->categories) {
+            $categoriesDecoded = json_decode($request->categories, true);
+            if (is_array($categoriesDecoded)) {
+                foreach ($categoriesDecoded as $catItem) {
+                    if (isset($catItem['value'])) {
+                        $catModel = Category::firstOrCreate(['name' => trim($catItem['value'])]);
+                        if (!in_array($catModel->id, $categoryIds)) {
+                            $categoryIds[] = $catModel->id;
+                        }
+                    }
                 }
             }
         }
+        $data['categories_id'] = json_encode(array_map('intval', $categoryIds));
 
-        if (!empty($categoryIds)) {
-            $data['categories_id'] = json_encode($categoryIds); // Store all category IDs as a JSON array
-        }
-
-        // Handle tags
+        // Handle tags array
         $tags = [];
         if ($request->tags) {
             $decodedTags = json_decode($request->tags, true);
-
-            foreach ($decodedTags as $tag) {
-                if (isset($tag['value'])) {
-                    $tags[] = $tag['value']; // Add only the tag value to the array
+            if (is_array($decodedTags)) {
+                foreach ($decodedTags as $tagItem) {
+                    if (isset($tagItem['value'])) {
+                        $tags[] = trim($tagItem['value']);
+                    }
                 }
+            } else if (is_string($request->tags)) {
+                $tags = array_map('trim', explode(',', $request->tags));
             }
         }
+        $data['tags'] = json_encode($tags);
 
-        if (!empty($tags)) {
-            $data['tags'] = json_encode($tags); // Save tags as a JSON array like ["tag one", "tag two"]
-        }
-
-
+        // Handle header image upload
         if ($request->hasFile('header_image')) {
             $header_image = $request->file('header_image');
-            $library_logoNewName = "header_image" . time() . '.' . $header_image->getClientOriginalExtension();
-            $header_image->move(public_path('uploads'), $library_logoNewName);
-            $data['header_image'] = 'uploads/' . $library_logoNewName;
+            $imageName = "header_image_" . time() . '.' . $header_image->getClientOriginalExtension();
+            $header_image->move(public_path('uploads'), $imageName);
+            $data['header_image'] = 'uploads/' . $imageName;
         }
 
-        // Save or update the blog
+        // Save or update
         $blog = $id ? Blog::findOrFail($id) : new Blog();
         $blog->fill($data);
         $blog->save();
 
-        $message = $id ? 'Blog updated successfully!' : 'Blog created successfully!';
+        $message = $id ? 'Blog updated successfully with SEO settings!' : 'Blog created successfully with SEO settings!';
         return redirect()->route('blogs')->with('success', $message);
     }
 
     public function listBlog()
     {
-        $blogs = Blog::all();
+        $blogs = Blog::latest()->get();
         return view('administrator.indexblog', compact('blogs'));
     }
 
@@ -288,13 +338,71 @@ class SiteController extends Controller
 
     public function blogDetail($slug)
     {
+        $data = Blog::published()->where('page_slug', $slug)->first();
+        if (!$data) {
+            // Allow draft preview if admin is logged in
+            if (Auth::guard('web')->check()) {
+                $data = Blog::where('page_slug', $slug)->firstOrFail();
+            } else {
+                abort(404);
+            }
+        }
 
-        $data = Blog::where('page_slug', $slug)->first();
-        $data->tags = json_decode($data->tags, true);
-        $categoryIds = json_decode($data->categories_id, true) ?? [];
+        // Increment views count safely
+        $data->increment('views_count');
 
-        $categories = Category::whereIn('id', $categoryIds)->get();
-        return view('site.blog-details', compact('data','categories'));
+        $tagsArray = $data->tags_array;
+        $categories = $data->categories_models;
+
+        $categoryIds = is_array($data->categories_id) ? $data->categories_id : (json_decode($data->categories_id, true) ?? []);
+        $relatedBlogs = Blog::published()
+            ->where('id', '!=', $data->id)
+            ->where(function($q) use ($categoryIds) {
+                foreach ($categoryIds as $catId) {
+                    $q->orWhereJsonContains('categories_id', (int)$catId)
+                      ->orWhereJsonContains('categories_id', (string)$catId);
+                }
+            })
+            ->take(8)
+            ->get();
+
+        if ($relatedBlogs->isEmpty()) {
+            $relatedBlogs = Blog::published()->where('id', '!=', $data->id)->latest('published_at')->take(8)->get();
+        }
+
+        $popularBlogs = Blog::published()->where('id', '!=', $data->id)->orderBy('views_count', 'desc')->take(5)->get();
+        $allCategories = Category::all();
+
+        $jsonLdSchema = $data->json_ld_schema;
+
+        return view('site.blog-details', compact('data', 'categories', 'tagsArray', 'relatedBlogs', 'popularBlogs', 'allCategories', 'jsonLdSchema'));
+    }
+
+    public function blogSitemap()
+    {
+        $blogs = Blog::published()->latest('published_at')->get();
+        
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        
+        $xml .= '<url>';
+        $xml .= '<loc>' . route('blog') . '</loc>';
+        $xml .= '<changefreq>daily</changefreq>';
+        $xml .= '<priority>0.8</priority>';
+        $xml .= '</url>';
+
+        foreach ($blogs as $blog) {
+            $xml .= '<url>';
+            $xml .= '<loc>' . route('blog-detail', ['slug' => $blog->page_slug]) . '</loc>';
+            $xml .= '<lastmod>' . ($blog->updated_at ? $blog->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
+            $xml .= '<changefreq>weekly</changefreq>';
+            $xml .= '<priority>0.7</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200)->header('Content-Type', 'text/xml');
     }
     // public function getLibrariesLocations()
     // {

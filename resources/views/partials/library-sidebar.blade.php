@@ -30,7 +30,8 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
      
             @php
 
-            $show = ($menu->name == 'Dashboard' || getLibrary()->status == 1 || (getLibrary()->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
+            $lib = getLibrary();
+            $show = ($menu->name == 'Dashboard' || optional($lib)->status == 1 || (optional($lib)->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
            // Check if any submenu matches the current route
             $isSubmenuActive = $menu->children->contains(function ($submenu) use ($current_route) {
                 return $current_route == $submenu->url;

@@ -43,63 +43,131 @@ $user = getAuthenticatedUser();
         <!-- old popup position -->
         
         
-        <!--Notifications -->
-      
-        @if(isset($user->unreadNotifications))
-            
-        
-        <div class="notification">
-            <div class="dropdown">
-                @php
-           
-                $guard = null;
-                if (Auth::guard('web')->check()) {
-                $guard = 'web';
-                } elseif (Auth::guard('library')->check()) {
-                $guard = 'library';
-                } elseif (Auth::guard('learner')->check()) {
-                $guard = 'learner';
-                }
-               
-               $unreadNotifications = $user->unreadNotifications->where('data.guard', $guard);
-               
-                @endphp
-                <a class="dropdown-toggle uppercase" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-bell fa-fw"></i>
-                    <!-- Counter - Alerts -->
-                    <span class="badge badge-danger badge-counter">{{ $unreadNotifications->count() }}</span>
-                </a>
-                <ul class="dropdown-menu notificcation">
-                    <li>
-                        <!-- Dropdown - Alerts -->
-                        <div class="dropdown-menu-1" aria-labelledby="alertsDropdown">
-                            <h6 class="dropdown-header">Notification Center</h6>
+        <!-- Notifications Dropdown -->
+        @php
+            $authUser = Auth::guard('learner')->user() ?? Auth::guard('library')->user() ?? Auth::user() ?? getAuthenticatedUser();
+            $unreadNotifications = collect();
+            $unreadCount = 0;
+            if ($authUser) {
+                $unreadNotifications = DB::table('notifications')
+                    ->where('notifiable_id', $authUser->id)
+                    ->whereNull('read_at')
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+                $unreadCount = DB::table('notifications')
+                    ->where('notifiable_id', $authUser->id)
+                    ->whereNull('read_at')
+                    ->count();
+            }
+        @endphp
 
-                            @forelse($unreadNotifications as $notification)
-                            <a class="dropdown-item d-flex align-items-center" data-notification-id="{{ $notification->id }}" href="{{ $notification->data['link'] ?? '#' }}">
-                                <div class="mr-3">
-                                    <div class="icon-circle bg-primary">
-                                        <i class="fas fa-file-alt text-white"></i>
+        <!-- Notifications Dropdown -->
+        @php
+            $authUser = Auth::guard('learner')->user() ?? Auth::guard('library')->user() ?? Auth::user() ?? getAuthenticatedUser();
+            $unreadNotifications = collect();
+            $unreadCount = 0;
+            if ($authUser) {
+                $unreadNotifications = DB::table('notifications')
+                    ->where('notifiable_id', $authUser->id)
+                    ->whereNull('read_at')
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+                $unreadCount = DB::table('notifications')
+                    ->where('notifiable_id', $authUser->id)
+                    ->whereNull('read_at')
+                    ->count();
+            }
+        @endphp
+
+        <div class="notification me-2">
+            <div class="dropdown">
+                <a class="btn btn-link position-relative p-2 text-decoration-none shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #18225f;">
+                    <i class="fas fa-bell fs-5"></i>
+                    @if($unreadCount > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger border border-2 border-white p-1" style="width: 10px; height: 10px;">
+                            <span class="visually-hidden">Unread notifications</span>
+                        </span>
+                    @endif
+                </a>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-0 overflow-hidden mt-2" style="width: 360px; z-index: 1050; background: #ffffff;">
+                    <!-- Dropdown Executive Header -->
+                    <div class="px-3 py-3 text-white d-flex align-items-center justify-content-between" style="background-color: #18225f; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(255,255,255,0.12);">
+                                <i class="fa-solid fa-bell text-white" style="font-size: 13px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold font-outfit text-white" style="font-size: 0.95rem; letter-spacing: -0.2px;">Notifications</h6>
+                                <small class="text-white-50" style="font-size: 11px;">
+                                    {{ $unreadCount > 0 ? $unreadCount . ' unread alert' . ($unreadCount == 1 ? '' : 's') : 'All notifications read' }}
+                                </small>
+                            </div>
+                        </div>
+                        @if($unreadCount > 0)
+                            <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm text-white border-0 font-outfit px-2.5 py-1 rounded-pill" style="font-size: 11px; background: rgba(255, 255, 255, 0.15); transition: background 0.2s ease;">
+                                    <i class="fa-solid fa-check-double me-1" style="font-size: 10px;"></i> Mark all read
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    <!-- Notifications List Group -->
+                    <div class="list-group list-group-flush" style="max-height: 320px; overflow-y: auto;">
+                        @forelse($unreadNotifications as $n)
+                            @php
+                                $nData = json_decode($n->data ?? '{}', true);
+                            @endphp
+                            <a href="{{ $nData['link'] ?? route('list.notification') }}" class="list-group-item list-group-item-action px-3 py-2.5 border-bottom text-decoration-none transition-all" style="background-color: #ffffff;">
+                                <div class="d-flex align-items-start gap-2.5">
+                                    <!-- Icon Box -->
+                                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background-color: #e6f5f7; color: #34939F;">
+                                        <i class="fa-solid fa-envelope-open-text" style="font-size: 14px;"></i>
+                                    </div>
+                                    
+                                    <!-- Content -->
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="d-flex align-items-center justify-content-between gap-1 mb-0.5">
+                                            <div class="fw-bold font-outfit text-truncate" style="color: #18225f; font-size: 13px; max-width: 210px;">
+                                                {{ $nData['title'] ?? 'New Notification' }}
+                                            </div>
+                                            <span class="badge rounded-circle bg-danger p-1 flex-shrink-0" title="Unread" style="width: 6px; height: 6px;"></span>
+                                        </div>
+                                        <div class="text-secondary text-truncate" style="font-size: 11.5px; color: #64748b; line-height: 1.35; max-width: 230px;">
+                                            {{ $nData['description'] ?? '' }}
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 mt-1" style="font-size: 10.5px; color: #34939F; font-weight: 600;">
+                                            <i class="fa-regular fa-clock" style="font-size: 10px;"></i>
+                                            <span>{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <div class="small text-gray-500">{{ $notification->data['title'] ?? 'No Title' }}</div>
-                                </div>
                             </a>
-                            @empty
-                            <a class="dropdown-item text-center small text-gray-500">No new notifications</a>
-                            @endforelse
-                            <a class="dropdown-item text-center small text-gray-500" href="{{route('list.notification')}}">Show All Alerts</a>
-                        </div>
-                    </li>
+                        @empty
+                            <!-- Executive Empty State -->
+                            <div class="text-center py-4 px-3" style="background: #fafafa;">
+                                <div class="mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: #e6f5f7; color: #34939F;">
+                                    <i class="fa-solid fa-bell-slash fs-5"></i>
+                                </div>
+                                <h6 class="fw-bold font-outfit mb-1" style="color: #18225f; font-size: 0.92rem;">All Caught Up!</h6>
+                                <p class="text-muted mb-0 font-outfit" style="font-size: 11px;">You have no unread notifications right now.</p>
+                            </div>
+                        @endforelse
+                    </div>
 
-                </ul>
+                    <!-- Dropdown Executive Footer -->
+                    <div class="p-2.5 text-center border-top" style="background-color: #f8fafc;">
+                        <a href="{{ route('list.notification') }}" class="fw-bold font-outfit text-decoration-none d-inline-flex align-items-center gap-1.5" style="color: #18225f; font-size: 12px; transition: color 0.2s ease;">
+                            <span>View All Notifications</span>
+                            <i class="fa-solid fa-arrow-right-long" style="font-size: 11px;"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
-
         </div>
-        @else
-            
-        @endif
         <div class="profile">
             <div class="dropdown">
                 

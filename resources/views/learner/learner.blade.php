@@ -605,6 +605,8 @@ $learner_id=$value->id;
                          <span class="actives">Active</span>
                         @elseif((!empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isFuture() && (int)($value->status ?? 0) === 0) || (($statusPrecomputed['has_future_start'] ?? false) && !($statusPrecomputed['has_past_plan'] ?? false)))
                         <span style="color: #C09600; font-weight: 600;" class="ps-1">Upcoming</span>
+                        @elseif($planStatus['status'] == 'About to Expire')
+                        <span class="actives ps-1">Active</span>
                         @else
                         <span class="{{$planStatus['class']}} ps-1">{{$planStatus['status']}}</span>
                         @endif

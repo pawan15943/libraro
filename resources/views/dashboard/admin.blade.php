@@ -1296,7 +1296,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     
                                 </div>
                                 <div class="seat-status">
-                                    <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($value->plan_end_date) }} Days</p>
+                                    <p class="text-success fw-bold mb-1">Active</p>
 
                                     @can('has-permission', 'Renew Seat')
                                     <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
@@ -2100,16 +2100,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             //         confirmButtonColor: '#d33'
             //     });
             // @endif
-
-            // 3️⃣ Optional: catch JS errors globally
-            window.addEventListener('error', function(e) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'JavaScript Error',
-                    text: e.message || 'An unexpected error occurred.',
-                    footer: `<small>File: ${e.filename}, Line: ${e.lineno}</small>`
-                });
-            });
 
         });
     </script>

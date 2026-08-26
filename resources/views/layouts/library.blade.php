@@ -32,6 +32,7 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 </head>
@@ -138,7 +139,7 @@
         </div>
 
 
-        @if(getLibrary()->is_paid == 1 && getLibrary()->status == 1)
+        @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
         <div class="right-sidebar">
             <h4> QUICK ACTION</h4>
             <ul>

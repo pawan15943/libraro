@@ -1712,18 +1712,19 @@ button#clearInvalidRecordsButton {
 }
 
 img.extedned,
-.extedned {
-    animation: blink 2s infinite;
-    color: red !important;
+img.extended,
+.extedned,
+.extended {
+    animation: seatBlink 1.2s infinite ease-in-out !important;
+    color: #800000 !important;
 }
 
 td {
     text-align: center !important;
 }
 
-img.extedned,
 .aboutToExpire {
-    color: red ! IMPORTANT;
+    color: #d97706 !important;
 }
 
 p.not-found {

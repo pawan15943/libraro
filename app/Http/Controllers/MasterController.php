@@ -21,7 +21,7 @@ use App\Models\Branch;
 use App\Models\Floor;
 use App\Models\LearnerDetail;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 use Exception;
 use DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -124,59 +124,117 @@ class MasterController extends Controller
     
         return response()->json(['success' => 'Learner deleted successfully.']);
     }
-    public function managePermissions($permissionId = null,$categoryId = null)
+    // ==========================================
+    // PERMISSION CATEGORIES SEPARATE CRUD
+    // ==========================================
+
+    public function permissionCategoriesIndex(Request $request)
     {
-        
-        $subscriptions = Subscription::with('permissions')->get();
-        $permissions =  Permission::get(); 
-        $permission = $permissionId ? Permission::find($permissionId) : null;
-        $category = $categoryId ? PermissionCategory::find($categoryId) : null;
-        $categories = PermissionCategory::all();
-        return view('master.permissions', compact('subscriptions', 'permission','permissions','categories','category'));
+        $query = PermissionCategory::withCount('permissions');
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        $categories = $query->orderBy('id', 'desc')->paginate(15);
+        return view('master.permission_categories.index', compact('categories'));
     }
+
+    public function permissionCategoryCreate()
+    {
+        return view('master.permission_categories.form');
+    }
+
+    public function permissionCategoryEdit($id)
+    {
+        $category = PermissionCategory::findOrFail($id);
+        return view('master.permission_categories.form', compact('category'));
+    }
+
     public function storeOrUpdateCategory(Request $request, $categoryId = null)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            
+            'name' => 'required|string|max:255|unique:permission_categories,name,' . $categoryId,
         ]);
 
         PermissionCategory::updateOrCreate(['id' => $categoryId], $data);
 
-        return redirect()->route('permissions')->with('success', 'Permission Category saved successfully.');
+        return redirect()->route('permission-categories.index')->with('success', 'Permission Category saved successfully.');
+    }
+
+    public function deleteCategory($categoryId)
+    {
+        $category = PermissionCategory::findOrFail($categoryId);
+        Permission::where('permission_category_id', $categoryId)->update(['permission_category_id' => null]);
+        $category->delete();
+
+        return redirect()->route('permission-categories.index')->with('success', 'Permission Category deleted successfully.');
+    }
+
+    // ==========================================
+    // PERMISSIONS SEPARATE CRUD & SEPARATE PAGES
+    // ==========================================
+
+    public function managePermissions(Request $request)
+    {
+        $query = Permission::where('guard_name', 'library')->with('category');
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        $permissions = $query->orderBy('id', 'desc')->get();
+        $categories = PermissionCategory::all();
+        return view('master.permissions.index', compact('permissions', 'categories'));
+    }
+
+    public function permissionCreate()
+    {
+        $categories = PermissionCategory::all();
+        return view('master.permissions.form', compact('categories'));
+    }
+
+    public function permissionEdit($id)
+    {
+        $permission = Permission::findOrFail($id);
+        $categories = PermissionCategory::all();
+        return view('master.permissions.form', compact('permission', 'categories'));
     }
 
     public function storeOrUpdatePermission(Request $request, $permissionId = null)
     {
-     
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-           'permission_category_id' => 'required|exists:permission_categories,id',
-           'slug'=>'nullable|string',
+            'name'                   => 'required|string|max:255',
+            'description'            => 'nullable|string',
+            'permission_category_id' => 'required|exists:permission_categories,id',
+            'slug'                   => 'nullable|string',
+            'guard_name'             => 'required|string',
         ]);
 
-        
-        $exists =  Permission::where('name',$request->name)->where('guard_name',$request->guard_name)->exists();
-      
-        if($exists){
-            $message = $request->name.' Permission is already exists.';
-            return redirect()->route('permissions') ->with('warning', $message);
-        }
+        $slug = $request->slug ?? \Illuminate\Support\Str::slug($request->name);
 
         if ($permissionId) {
-          
             $permission = Permission::findOrFail($permissionId);
-            $permission->update($request->only('name', 'description', 'guard_name', 'permission_category_id','slug'));
+            $permission->update([
+                'name'                   => $request->name,
+                'description'            => $request->description,
+                'permission_category_id' => $request->permission_category_id,
+                'guard_name'             => $request->guard_name,
+                'slug'                   => $slug,
+            ]);
             $message = 'Permission updated successfully.';
         } else {
-            
-            $permission = Permission::create($request->only('name', 'description', 'guard_name', 'permission_category_id','slug'));
-          
-            $message = 'Permission added successfully.';
+            $exists = Permission::where('name', $request->name)->where('guard_name', $request->guard_name)->exists();
+            if ($exists) {
+                return redirect()->route('permissions')->with('warning', $request->name . ' Permission already exists.');
+            }
+            Permission::create([
+                'name'                   => $request->name,
+                'description'            => $request->description,
+                'permission_category_id' => $request->permission_category_id,
+                'guard_name'             => $request->guard_name,
+                'slug'                   => $slug,
+            ]);
+            $message = 'Permission created successfully.';
         }
 
-        return redirect()->route('permissions') ->with('success', $message);
+        return redirect()->route('permissions')->with('success', $message);
     }
 
     public function deletePermission($permissionId)
@@ -184,8 +242,7 @@ class MasterController extends Controller
         $permission = Permission::findOrFail($permissionId);
         $permission->delete();
 
-        return redirect()->route('permissions')
-            ->with('success', 'Permission deleted successfully.');
+        return redirect()->route('permissions')->with('success', 'Permission deleted successfully.');
     }
     public function deleteSubscriptionPermission(Request $request, $permissionId)
     {

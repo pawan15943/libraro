@@ -94,6 +94,7 @@ Route::post('demo-request', [SiteController::class, 'demoRequestStore'])->name('
 Route::post('/store/inquiry', [SiteController::class, 'Inquerystore'])->name('submit.inquiry');
 Route::post('/store-selected-plan', [SiteController::class, 'storeSelectedPlan'])->name('store.selected.plan');
 Route::get('blog/{slug}', [SiteController::class, 'blogDetail'])->name('blog-detail');
+Route::get('blog-sitemap.xml', [SiteController::class, 'blogSitemap'])->name('blog.sitemap');
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
@@ -274,6 +275,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('feedback/store', [LibraryController::class, 'feedbackStore'])->name('library.feedback.store');
     Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
     Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/unread', [NotificationController::class, 'markAsUnread'])->name('notifications.markAsUnread');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::get('enquiry', [LibraryController::class, 'getEnquiry'])->name('library.enquiry');
     Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
     Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
@@ -447,22 +450,29 @@ Route::middleware(['auth:web'])->group(function () {
 
     Route::get('library', [AdminController::class, 'index'])->name('library');
 
-    Route::post('subscriptions/store', [MasterController::class, 'storeSubscription'])->name('subscriptions.store');
-    Route::post('subscriptions/assign-permissions', [MasterController::class, 'assignPermissionsToSubscription'])->name('subscriptions.assignPermissions');
-    Route::get('/subscriptions/{id}/permissions', [MasterController::class, 'getPermissions'])->name('subscriptions.getPermissions');
-
-
+    Route::get('/subscriptions', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsIndex'])->name('admin.subscriptions');
+    Route::get('subscription/master', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsIndex'])->name('subscription.master');
+    Route::get('/subscriptions/create', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsCreate'])->name('admin.subscriptions.create');
+    Route::post('/subscriptions/store/{id?}', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsStore'])->name('subscriptions.store');
+    Route::get('/subscriptions/edit/{id}', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsEdit'])->name('subscriptions.edit');
+    Route::get('/subscription/master/{id}', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsEdit'])->name('subscriptions.edit.legacy');
+    Route::get('/subscriptions/delete/{id}', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsDestroy'])->name('subscriptions.destroy');
+    Route::get('/subscriptions/toggle-status/{id}', [\App\Http\Controllers\SubscriptionManagementController::class, 'subscriptionsToggleStatus'])->name('subscriptions.toggle-status');
     Route::get('subscriptions-permissions', [MasterController::class, 'index'])->name('subscriptions.permissions');
     Route::get('planwise/permissions/{id}', [MasterController::class, 'showPlanwisePermission'])->name('planwise.permissions');
-    Route::get('subscription/master', [MasterController::class, 'subscriptionMaster'])->name('subscription.master');
-    Route::get('/subscription/master/{id}', [MasterController::class, 'subscriptionMasterEdit'])->name('subscriptions.edit');
-    Route::put('/subscriptions/update/{id}', [MasterController::class, 'subscriptionMasterUpdate'])->name('subscriptions.update');
-    Route::get('permissions/{permissionId?}', [MasterController::class, 'managePermissions'])->name('permissions');
+    // Permission Categories Routes
+    Route::get('/permission-categories', [MasterController::class, 'permissionCategoriesIndex'])->name('permission-categories.index');
+    Route::get('/permission-categories/create', [MasterController::class, 'permissionCategoryCreate'])->name('permission-categories.create');
+    Route::post('/permission-categories/store/{id?}', [MasterController::class, 'storeOrUpdateCategory'])->name('permission-categories.store');
+    Route::get('/permission-categories/edit/{id}', [MasterController::class, 'permissionCategoryEdit'])->name('permission-categories.edit');
+    Route::delete('/permission-categories/delete/{id}', [MasterController::class, 'deleteCategory'])->name('permission-categories.delete');
 
-    Route::put('permissions/{permissionId?}', [MasterController::class, 'storeOrUpdatePermission'])->name('permissions.storeOrUpdate');
-    Route::put('permission-categories/storeOrUpdate/{categoryId?}', [MasterController::class, 'storeOrUpdateCategory'])->name('permission-categories.storeOrUpdate');
-
-    Route::delete('permissions/{permissionId}', [MasterController::class, 'deletePermission'])->name('permissions.delete');
+    // Permissions Routes (Separate Add/Edit Pages)
+    Route::get('/permissions', [MasterController::class, 'managePermissions'])->name('permissions');
+    Route::get('/permissions/create', [MasterController::class, 'permissionCreate'])->name('permissions.create');
+    Route::post('/permissions/store/{id?}', [MasterController::class, 'storeOrUpdatePermission'])->name('permissions.store');
+    Route::get('/permissions/edit/{id}', [MasterController::class, 'permissionEdit'])->name('permissions.edit');
+    Route::delete('/permissions/delete/{id}', [MasterController::class, 'deletePermission'])->name('permissions.delete');
     Route::delete('subscriptionPermissions/{permissionId}', [MasterController::class, 'deleteSubscriptionPermission'])->name('subscriptionPermissions.delete');
     Route::get('library/show/{id?}', [LibraryController::class, 'showLibrary'])->name('library.show');
     Route::delete('library/learners/delete/{id?}', [LibraryController::class, 'destroyLearners'])->name('library.learners.destroy');
@@ -518,11 +528,31 @@ Route::middleware(['auth:web'])->group(function () {
 
     Route::get('php', [SiteController::class, 'videoIndex'])->name('videos.index');
     Route::post('videos', [SiteController::class, 'videoStore'])->name('videos.store');
+
+    // User Management Module Routes
+    Route::get('/users', [\App\Http\Controllers\UserManagementController::class, 'usersIndex'])->name('admin.users');
+    Route::get('/users/create', [\App\Http\Controllers\UserManagementController::class, 'usersCreate'])->name('admin.users.create');
+    Route::post('/users/store/{id?}', [\App\Http\Controllers\UserManagementController::class, 'usersStore'])->name('admin.users.store');
+    Route::get('/users/edit/{id}', [\App\Http\Controllers\UserManagementController::class, 'usersEdit'])->name('admin.users.edit');
+    Route::get('/users/delete/{id}', [\App\Http\Controllers\UserManagementController::class, 'usersDestroy'])->name('admin.users.destroy');
+    Route::get('/users/toggle-status/{id}', [\App\Http\Controllers\UserManagementController::class, 'usersToggleStatus'])->name('admin.users.toggle-status');
+
+    Route::get('/roles', [\App\Http\Controllers\UserManagementController::class, 'rolesIndex'])->name('admin.roles');
+    Route::get('/roles/create', [\App\Http\Controllers\UserManagementController::class, 'rolesCreate'])->name('admin.roles.create');
+    Route::post('/roles/store/{id?}', [\App\Http\Controllers\UserManagementController::class, 'rolesStore'])->name('admin.roles.store');
+    Route::get('/roles/edit/{id}', [\App\Http\Controllers\UserManagementController::class, 'rolesEdit'])->name('admin.roles.edit');
+    Route::get('/roles/delete/{id}', [\App\Http\Controllers\UserManagementController::class, 'rolesDestroy'])->name('admin.roles.destroy');
+
+    Route::get('/admin-permissions', [\App\Http\Controllers\UserManagementController::class, 'permissionsIndex'])->name('admin-permissions');
+    Route::get('/admin-permissions/create', [\App\Http\Controllers\UserManagementController::class, 'permissionsCreate'])->name('admin-permissions.create');
+    Route::post('/admin-permissions/store/{id?}', [\App\Http\Controllers\UserManagementController::class, 'permissionsStore'])->name('admin-permissions.store');
+    Route::get('/admin-permissions/edit/{id}', [\App\Http\Controllers\UserManagementController::class, 'permissionsEdit'])->name('admin-permissions.edit');
+    Route::get('/admin-permissions/delete/{id}', [\App\Http\Controllers\UserManagementController::class, 'permissionsDestroy'])->name('admin-permissions.destroy');
+    Route::post('/admin-permissions/assign', [\App\Http\Controllers\UserManagementController::class, 'permissionsAssign'])->name('admin-permissions.assign');
   });
 });
 
 Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
-  Route::get('list/notification', [NotificationController::class, 'show'])->name('list.notification');
   Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');
   Route::get('learner/request', [LearnerController::class, 'learnerRequest'])->name('learner.request');

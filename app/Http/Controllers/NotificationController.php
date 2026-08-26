@@ -130,41 +130,75 @@ class NotificationController extends Controller
         return redirect()->back()->with('success', 'Notification updated successfully!');
     }
 
-    public function show(Request $request){
-        
-        $guard = Auth::guard()->getName(); 
-        $parts = explode('_', $guard);
-        $guard_name = $parts[1]; 
-      
-        $notifications = DB::table('notifications')
-        ->select(
-            'batch_id',
-            'guard',
-            'data',
-            DB::raw('MIN(start_date) as start_date'),
-            DB::raw('MAX(end_date) as end_date'),
-            'created_at'
-        )
-        ->where('notifiable_id', Auth::user()->id)
-        ->where('guard', $guard_name)
-        ->groupBy('batch_id', 'guard', 'data', 'created_at') // Add non-aggregated columns here
-        ->get();
-    
-        return view('notification.show',compact('notifications'));
+    public function show(Request $request)
+    {
+        $user = Auth::user() ?? getAuthenticatedUser();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $filter = $request->get('filter', 'all');
+
+        $query = DB::table('notifications')
+            ->where('notifiable_id', $user->id);
+
+        $totalCount = (clone $query)->count();
+        $unreadCount = (clone $query)->whereNull('read_at')->count();
+        $readCount = (clone $query)->whereNotNull('read_at')->count();
+
+        if ($filter === 'unread') {
+            $query->whereNull('read_at');
+        } elseif ($filter === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        $notifications = $query->orderBy('created_at', 'desc')->get();
+
+        return view('notification.show', compact('notifications', 'filter', 'totalCount', 'unreadCount', 'readCount'));
     }
 
     public function markAsRead(Request $request)
     {
         $notificationId = $request->notification_id;
+        $user = Auth::user() ?? getAuthenticatedUser();
 
-        // Find the notification for the authenticated user
-        $notification = Auth::user()->notifications()->find($notificationId);
-
-        if ($notification && !$notification->read_at) {
-            $notification->markAsRead(); // Use Laravel's built-in method to update the `read_at` column
+        if ($user && $notificationId) {
+            DB::table('notifications')
+                ->where('id', $notificationId)
+                ->where('notifiable_id', $user->id)
+                ->update(['read_at' => now(), 'updated_at' => now()]);
         }
 
         return response()->json(['success' => true]);
+    }
+
+    public function markAsUnread(Request $request)
+    {
+        $notificationId = $request->notification_id;
+        $user = Auth::user() ?? getAuthenticatedUser();
+
+        if ($user && $notificationId) {
+            DB::table('notifications')
+                ->where('id', $notificationId)
+                ->where('notifiable_id', $user->id)
+                ->update(['read_at' => null, 'updated_at' => now()]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $user = Auth::user() ?? getAuthenticatedUser();
+
+        if ($user) {
+            DB::table('notifications')
+                ->where('notifiable_id', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now(), 'updated_at' => now()]);
+        }
+
+        return redirect()->back()->with('success', 'All notifications marked as read!');
     }
 
 }
