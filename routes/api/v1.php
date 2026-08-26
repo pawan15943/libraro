@@ -243,7 +243,7 @@ Route::middleware(['auth:learner_api', 'api_key', 'device.check', 'throttle:lear
     Route::get('profile', [LearnerAuthController::class, 'profile']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);
 
-    Route::post('detail', [LearnerAppController::class, 'detail']);
+    Route::post('detail/view', [LearnerAppController::class, 'detail']);
     Route::post('renew', [LearnerAppController::class, 'renew']);
     Route::post('dashboard', [LearnerAppController::class, 'dashboard']);
 
