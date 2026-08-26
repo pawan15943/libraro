@@ -24,15 +24,26 @@ class LearnerAppController extends Controller
     public function detail(LearnerService $service)
     {
         try {
+            $learnerId = auth('learner_api')->id();
+
+            if (!$learnerId) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthenticated learner session.',
+                ], 401);
+            }
+
+            $data = $service->getLearnerDetails($learnerId);
+
             return response()->json([
                 'status' => true,
-                'data' => $service->getLearnerDetails(auth('learner_api')->id()),
-            ]);
+                'data'   => $data,
+            ], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => $e->getMessage(),
-            ], 404);
+            ], 200);
         }
     }
 
