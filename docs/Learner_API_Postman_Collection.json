@@ -1,0 +1,937 @@
+{
+	"info": {
+		"_postman_id": "c1f72b22-86c2-4b2a-9e11-learner-api-v1",
+		"name": "Libraro Learner API Collection",
+		"description": "Complete Postman collection for Libraro Learner App endpoints. Features automatic bearer token extraction upon successful login.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/library/public",
+			"type": "string"
+		},
+		{
+			"key": "x_api_key",
+			"value": "libraro_secure_2026",
+			"type": "string"
+		},
+		{
+			"key": "learner_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "branch_uuid",
+			"value": "YOUR_BRANCH_UUID",
+			"type": "string"
+		},
+		{
+			"key": "device_type",
+			"value": "android",
+			"type": "string"
+		},
+		{
+			"key": "device_token",
+			"value": "SAMPLE_DEVICE_TOKEN_123",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication & App Config",
+			"item": [
+				{
+					"name": "Get Learner App Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/app-settings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"app-settings"
+							]
+						},
+						"description": "Fetches general learner app settings including app versions, force update, terms, privacy policy, and support contact information."
+					},
+					"response": []
+				},
+				{
+					"name": "Learner Login (Auto-saves Bearer Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.collectionVariables.set('learner_token', jsonData.token);",
+									"    console.log('Learner token automatically saved to learner_token: ' + jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\": \"LN000001\",\n    \"mobile\": \"9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"login"
+							]
+						},
+						"description": "Self-service learner login. Username ('uid'): UID or Email. Password ('mobile'): Registered mobile number. Requires device-type and device-token headers. Enforces single-device login."
+					},
+					"response": []
+				},
+				{
+					"name": "Learner Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\": \"LN000001\",\n    \"mobile\": \"9876543210\",\n    \"new_password\": \"9876543211\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/reset-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"reset-password"
+							]
+						},
+						"description": "Resets learner password / mobile credentials. Requires UID/Email and current mobile number verification."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Public Branch & Seat Discovery",
+			"item": [
+				{
+					"name": "Get Branch Plans",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/branch/plans",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"branch",
+								"plans"
+							]
+						},
+						"description": "Fetch available plans for a specific branch using its public UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Seat Map",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uuid\": \"{{branch_uuid}}\",\n    \"plan_type_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/branch/seat-map",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"branch",
+								"seat-map"
+							]
+						},
+						"description": "Browse branch seat map. Occupants PII/financial data is sanitized for privacy."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Shift Plan Types",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uuid\": \"{{branch_uuid}}\",\n    \"seat_no\": \"101\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/shift-plan-types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"shift-plan-types"
+							]
+						},
+						"description": "Get available shifts/plan types for a branch or specific seat."
+					},
+					"response": []
+				},
+				{
+					"name": "Calculate Plan Price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"uuid\": \"{{branch_uuid}}\",\n    \"plan_start_date\": \"2026-09-01\",\n    \"locker_amount\": 0,\n    \"discount_type\": \"amount\",\n    \"discount_value\": 0,\n    \"paid_amount\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/plan-price",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"plan-price"
+							]
+						},
+						"description": "Calculate pricing, discounts, and breakdown for a seat booking."
+					},
+					"response": []
+				},
+				{
+					"name": "Calculate Chargeable Days",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plan_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/chargeable-days",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"chargeable-days"
+							]
+						},
+						"description": "Calculate chargeable days and calculated plan end date."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Available Seats",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/get-seat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"get-seat"
+							]
+						},
+						"description": "List remaining available seats with open shifts."
+					},
+					"response": []
+				},
+				{
+					"name": "Book Seat (Public Guest Booking)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"mobile\": \"9876543210\",\n    \"email\": \"johndoe@example.com\",\n    \"dob\": \"2000-01-15\",\n    \"general_seat\": \"no\",\n    \"seat_no\": 101,\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"plan_price_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"payment_mode\": \"online\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/book-seat/{{branch_uuid}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"book-seat",
+								"{{branch_uuid}}"
+							]
+						},
+						"description": "Public guest booking endpoint. Creates a pending booking row awaiting staff verification."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Authenticated Learner Self-Service",
+			"item": [
+				{
+					"name": "Get Learner Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"profile"
+							]
+						},
+						"description": "Fetch current learner profile and plan details."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Learner Dashboard",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"dashboard"
+							]
+						},
+						"description": "Fetch learner dashboard data (full plan history, branch features, learner requests)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Learner Detail",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/detail",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"detail"
+							]
+						},
+						"description": "Get detailed history, transaction history, and seat allocations for authenticated learner."
+					},
+					"response": []
+				},
+				{
+					"name": "Attendance Summary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"from_date\": \"2026-08-01\",\n    \"to_date\": \"2026-08-25\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/attendance/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"attendance",
+								"summary"
+							]
+						},
+						"description": "Fetch attendance summary for date range."
+					},
+					"response": []
+				},
+				{
+					"name": "Daily Attendance Logs",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2026-08-25\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/attendance/logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"attendance",
+								"logs"
+							]
+						},
+						"description": "Fetch punch in/out timestamps log for specified date."
+					},
+					"response": []
+				},
+				{
+					"name": "Scan Attendance QR",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"qr\": \"SAMPLE_ROTATING_QR_TOKEN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/attendance/qr-scan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"attendance",
+								"qr-scan"
+							]
+						},
+						"description": "Punch IN or OUT by scanning the library's live rotating attendance QR code."
+					},
+					"response": []
+				},
+				{
+					"name": "Renew Plan / Seat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"plan_price_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"paid_amount\": 1200,\n    \"payment_mode\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/renew",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"renew"
+							]
+						},
+						"description": "Renew current seat/subscription plan. Payment modes: 1=online, 2=offline, 3=paylater."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{learner_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{x_api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "device-type",
+								"value": "{{device_type}}",
+								"type": "text"
+							},
+							{
+								"key": "device-token",
+								"value": "{{device_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/learner/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"learner",
+								"logout"
+							]
+						},
+						"description": "Revoke active Sanctum tokens across all devices and log out."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

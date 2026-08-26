@@ -3582,18 +3582,53 @@ Same field set as the web QR booking form (`QrEntryController::store`) and the u
 | data.payment_mode | string | |
 | data.total_amount | number | |
 
+### `GET /api/v1/learner/app-settings`
+**Controller:** `Api\V1\Auth\LearnerAuthController@setting`
+**Auth:** `api_key`, `throttle:60,1` (public)
+
+Fetches general app configuration, app versions, force update flag, support contact details, social links, and privacy policy URLs for the Learner app. (Also available at `GET /api/v1/learner/settings`).
+
+**Request payload**
+None — no request body
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
+| data.android_version | string | Minimum / target Android app version |
+| data.ios_version | string | Minimum / target iOS app version |
+| data.force_update | boolean | Force app update flag |
+| data.privacy_policy | string | Privacy Policy URL |
+| data.terms_and_conditions | string | Terms and Conditions URL |
+| data.support_email | array\<string\> | Support email addresses |
+| data.support_number | array\<string\> | Support contact numbers |
+| data.web_url | string | Web portal URL |
+| data.youtube | string | YouTube channel URL |
+| data.linkedin | string | LinkedIn page URL |
+| data.instagram | string | Instagram page URL |
+| data.facebook | string | Facebook page URL |
+| data.whatsapp | string | WhatsApp support URL |
+| data.isMaintenance | boolean | App maintenance flag |
+
 ### `POST /api/v1/learner/login`
 **Controller:** `Api\V1\Auth\LearnerAuthController@login`
 **Auth:** `api_key`, `throttle:60,1` (public)
 
-Identify-by pattern (not learner_no+password) — same shape as the web attendance self-verify flow (`AttendanceController::verifyLearner()`): pick an identifier type, supply that value plus the registered mobile number.
+Self-service learner login using Username (`uid`: Learner No or Email) and Password (`mobile`: registered mobile number). Requires `device-type` and `device-token` in request headers. Enforces single-device login by revoking previous tokens.
+
+**Headers**
+| Header | Required | Notes |
+|---|---|---|
+| X-API-KEY | yes | Shared app API key |
+| device-type | yes | e.g. `android` or `ios` |
+| device-token | yes | Unique device token / id |
 
 **Request payload**
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| login_with | string | yes | dob\|email\|learner_no |
-| uid | string | yes | the value for the chosen `login_with` type (e.g. `dd/mm/yyyy` when login_with=dob) |
-| mobile | string | yes | registered mobile, regex `^[5-9]\d{9}$` |
+| uid | string | yes | Learner UID (learner_no) or Email |
+| mobile | string | yes | Registered mobile number, regex `^[5-9]\d{9}$` |
 
 **Response**
 | Field | Type | Notes |
@@ -3601,12 +3636,32 @@ Identify-by pattern (not learner_no+password) — same shape as the web attendan
 | status | boolean | |
 | message | string | |
 | token | string | Sanctum bearer token, present on success |
-| user_type | integer | constant 3 (learner) |
-| data.learner_id | integer | |
-| data.learner_no | string | |
-| data.name | string | |
-| data.branch_id | integer | |
-| data.library_id | integer | |
+
+### `POST /api/v1/learner/reset-password`
+**Controller:** `Api\V1\Auth\LearnerAuthController@resetPassword`
+**Auth:** `api_key`, `device.check`, `throttle:10,1` (public)
+
+Resets the learner's password / registered mobile number using their UID/Email and current mobile number for verification. Revokes all existing sessions upon success.
+
+**Headers**
+| Header | Required | Notes |
+|---|---|---|
+| X-API-KEY | yes | Shared app API key |
+| device-type | yes | e.g. `android` or `ios` |
+| device-token | yes | Unique device token / id |
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| uid | string | yes | Learner UID (learner_no) or Email |
+| mobile | string | yes | Registered current mobile number |
+| new_password | string | yes | New password / mobile number (min 6 characters) |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | |
+| message | string | |
 
 ### `POST /api/v1/learner/branch/seat-map`
 **Controller:** `Api\V1\Learner\LearnerBranchController@seatMap`
@@ -3663,7 +3718,7 @@ Same payload shape as `data.*` below (`detail`) — thin alias kept for post-log
 **Controller:** `Api\V1\Auth\LearnerAuthController@logout`
 **Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
 
-Revokes the current Sanctum token. No request payload. Response: `{status, message}`.
+Revokes all Sanctum tokens across all devices and clears device token mappings for the authenticated learner. No request payload. Response: `{status, message}`.
 
 ### `POST /api/v1/learner/detail`
 **Controller:** `Api\V1\Learner\LearnerAppController@detail`

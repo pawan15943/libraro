@@ -15,13 +15,13 @@ class CheckDeviceHeader
      */
     public function handle($request, Closure $next)
     {
-        $deviceType = $request->header('device-type');
-        $deviceId   = $request->header('device-id');
+        $deviceType  = $request->header('device-type') ?? $request->header('device_type') ?? $request->header('Device-Type');
+        $deviceToken = $request->header('device-token') ?? $request->header('device_token') ?? $request->header('Device-Token');
 
-        if (!$deviceType || !$deviceId) {
+        if (!$deviceType || !$deviceToken) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Device type and device id are required in header',
+                'message' => 'device-type and device-token headers are required in header',
                 'data'    => (object)[]
             ], 400);
         }
