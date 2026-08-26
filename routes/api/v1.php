@@ -22,7 +22,6 @@ use App\Http\Controllers\Api\V1\Learner\LearnerBranchController;
 
 
 
-Route::middleware(['device.check'])->group(function () {
 Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
     Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
@@ -231,8 +230,6 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
     Route::get('library/toggle-features/list', [MasterController::class, 'toggleFeatureList']);
     Route::post('library/toggle-features/update', [MasterController::class, 'updateToggleFeature']);
     Route::get('library/toggle-features/check', [MasterController::class, 'checkToggleFeature']);
-
-});
 
 });
 
