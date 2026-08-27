@@ -13,6 +13,7 @@ use App\Services\LearnerOperationService;
 use App\Services\LearnerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LearnerAppController extends Controller
 {
