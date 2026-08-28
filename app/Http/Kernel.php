@@ -85,6 +85,7 @@ class Kernel extends HttpKernel
         'check.app.version' => \App\Http\Middleware\CheckAppVersion::class,
         'enforce.guard' => \App\Http\Middleware\EnforceSingleGuard::class,
         'api_key' => \App\Http\Middleware\ApiKeyMiddleware::class,
+        'api_security' => \App\Http\Middleware\ApiSecurityMiddleware::class,
         'device.check' => \App\Http\Middleware\CheckDeviceHeader::class,
         'library.owner' => \App\Http\Middleware\LibraryOwnerOnly::class,
         'library_user.active' => \App\Http\Middleware\EnsureLibraryUserActive::class,

@@ -244,6 +244,7 @@ Route::middleware(['auth:learner_api', 'api_key', 'device.check', 'throttle:60,1
    
     Route::post('renew', [LearnerAppController::class, 'renew']);
     Route::post('dashboard', [LearnerAppController::class, 'dashboard']);
+    Route::match(['get', 'post'], 'notifications', [LearnerAppController::class, 'notifications']);
 
     Route::post('attendance/summary', [AttendanceController::class, 'summary']);
     Route::post('attendance/logs', [LearnerAppController::class, 'attendanceLogs']);

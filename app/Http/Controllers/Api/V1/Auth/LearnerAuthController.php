@@ -23,49 +23,57 @@ class LearnerAuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'uid'    => 'required',
-            'mobile' => 'required|regex:/^[5-9]\d{9}$/',
-        ], [
-            'uid.required'    => 'Username (UID or Email) is required',
-            'mobile.required' => 'Mobile number is required',
-            'mobile.regex'    => 'Enter a valid mobile number',
-        ]);
+        $identifierInput = trim($request->input('identifier', $request->input('uid', '')));
+        $passwordInput   = trim($request->input('password', $request->input('mobile', '')));
 
-        if ($validator->fails()) {
+        if (empty($identifierInput) || empty($passwordInput)) {
             return response()->json([
                 'status'  => false,
-                'message' => $validator->errors()->first(),
+                'message' => 'Identifier (UID or Email) and Password (Mobile) are required.',
             ], 422);
         }
 
-        $deviceType = $request->header('device-type') 
+        // Support device credentials from headers or request body deviceInfo
+        $deviceInfo  = $request->input('deviceInfo', []);
+        $deviceType  = $request->header('device-type') 
             ?? $request->header('device_type') 
-            ?? $request->header('Device-Type');
+            ?? $request->header('Device-Type')
+            ?? ($deviceInfo['osVersion'] ?? $request->header('X-Platform', 'android'));
 
         $deviceToken = $request->header('device-token') 
             ?? $request->header('device_token') 
-            ?? $request->header('Device-Token');
+            ?? $request->header('Device-Token')
+            ?? ($deviceInfo['deviceId'] ?? ($deviceInfo['fcmToken'] ?? $request->header('X-Device-Id')));
 
-        if (!$deviceType || !$deviceToken) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'device-type and device-token headers are required.',
-            ], 422);
-        }
-
-        $uidInput = trim($request->uid);
-        $encryptedUid = encryptData($uidInput);
-        $encryptedMobile = encryptData($request->mobile);
+        $encryptedUid    = encryptData($identifierInput);
+        $encryptedMobile = encryptData($passwordInput);
 
         $learner = Learner::withoutGlobalScopes()
-            ->where('mobile', $encryptedMobile)
-            ->where(function ($q) use ($uidInput, $encryptedUid) {
-                $q->where('learner_no', $uidInput)
+            ->where(function ($q) use ($passwordInput, $encryptedMobile) {
+                $q->where('mobile', $encryptedMobile)
+                  ->orWhere('mobile', $passwordInput);
+            })
+            ->where(function ($q) use ($identifierInput, $encryptedUid) {
+                $q->where('learner_no', $identifierInput)
                   ->orWhere('email', $encryptedUid)
-                  ->orWhere('email', $uidInput);
+                  ->orWhere('email', $identifierInput);
             })
             ->first();
+
+        // Fallback for bcrypt hashed password
+        if (!$learner) {
+            $candidate = Learner::withoutGlobalScopes()
+                ->where(function ($q) use ($identifierInput, $encryptedUid) {
+                    $q->where('learner_no', $identifierInput)
+                      ->orWhere('email', $encryptedUid)
+                      ->orWhere('email', $identifierInput);
+                })
+                ->first();
+
+            if ($candidate && $candidate->password && Hash::check($passwordInput, $candidate->password)) {
+                $learner = $candidate;
+            }
+        }
 
         if (!$learner) {
             return response()->json([
@@ -84,27 +92,53 @@ class LearnerAuthController extends Controller
         // Single device login enforcement: revoke all previous tokens for this learner
         $learner->tokens()->delete();
 
-        // Record or update device token mapping
-        \DB::table('device_tokens')->updateOrInsert(
-            [
-                'user_id'   => $learner->id,
-                'user_type' => get_class($learner),
-                'guard_name'=> 'learner_api',
-            ],
-            [
-                'device_id'   => $deviceToken,
-                'device_type' => $deviceType,
-                'updated_at'  => now(),
-                'created_at'  => now(),
-            ]
-        );
+        // Record or update device token mapping if device token provided
+        if ($deviceToken) {
+            \DB::table('device_tokens')->updateOrInsert(
+                [
+                    'user_id'   => $learner->id,
+                    'user_type' => get_class($learner),
+                    'guard_name'=> 'learner_api',
+                ],
+                [
+                    'device_id'   => $deviceToken,
+                    'device_type' => $deviceType,
+                    'updated_at'  => now(),
+                    'created_at'  => now(),
+                ]
+            );
+        }
 
         $token = $learner->createToken('learner_token')->plainTextToken;
+
+        $branch = \App\Models\Branch::where('id', $learner->branch_id)->select('id', 'name', 'library_address as address')->first();
+
+        $nameParts = explode(' ', trim($learner->name ?? ''));
+        $firstName = $nameParts[0] ?? $learner->name;
 
         return response()->json([
             'status'  => true,
             'message' => 'Login successful.',
             'token'   => $token,
+            'data'    => [
+                'accessToken' => $token,
+                'tokenType'   => 'Bearer',
+                'student'     => [
+                    'id'              => (string) $learner->id,
+                    'uid'             => $learner->learner_no ?? '',
+                    'name'            => $firstName,
+                    'fullName'        => strtoupper($learner->name ?? ''),
+                    'email'           => $learner->email ?? '',
+                    'phone'           => $learner->mobile ?? '',
+                    'profileImageUrl' => $learner->profile_image ?? null,
+                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
+                    'library'         => [
+                        'id'      => (string) ($branch?->id ?? ''),
+                        'name'    => $branch?->name ?? '',
+                        'address' => $branch?->address ?? '',
+                    ],
+                ],
+            ],
         ], 200);
     }
 

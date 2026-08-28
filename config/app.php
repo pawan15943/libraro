@@ -33,6 +33,8 @@ return [
 
     'api_key' => env('APP_API_KEY'),
 
+    'hmac_secret' => env('APP_HMAC_SECRET', 'libraro_secret_key_2026'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
