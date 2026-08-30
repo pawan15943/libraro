@@ -24,7 +24,7 @@ class CheckAppVersion
 
         $forceUpdate = (bool) config('app.force_update', false);
         if ($forceUpdate && !empty($version)) {
-            $minVersion = config("app.min_versions.{$platform}", '1.0.0');
+            $minVersion = config("app.min_versions.{$platform}", '1.0.1');
             if ($minVersion && version_compare($version, $minVersion, '<')) {
                 return response()->json([
                     'status'       => false,

@@ -65,7 +65,7 @@ class ApiSecurityMiddleware
                 ], 403);
             }
 
-            $minVersion = config("app.min_versions.{$platform}", '1.0.0');
+            $minVersion = config("app.min_versions.{$platform}", '1.0.1');
             if (version_compare($appVersion, $minVersion, '<')) {
                 return response()->json([
                     'status'       => false,

@@ -38,8 +38,8 @@ return [
     'force_update' => env('APP_FORCE_UPDATE', false),
 
     'min_versions' => [
-        'android' => env('APP_MIN_ANDROID_VERSION', '1.0.0'),
-        'ios'     => env('APP_MIN_IOS_VERSION', '1.0.0'),
+        'android' => env('APP_MIN_ANDROID_VERSION', '1.0.1'),
+        'ios'     => env('APP_MIN_IOS_VERSION', '1.0.1'),
     ],
 
     /*

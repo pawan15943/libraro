@@ -52,7 +52,7 @@
         },
         {
             "key": "app_version",
-            "value": "1.0.0",
+            "value": "1.0.1",
             "type": "string"
         },
         {

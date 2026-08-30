@@ -186,9 +186,9 @@ class LearnerAuthController extends Controller
             'status'  => true,
             'message' => 'Learner settings fetched successfully.',
             'data'    => [
-                'android_version'      => '1.0.0',
-                'ios_version'          => '1.0.0',
-                'force_update'         => false,
+                'android_version'      => config('app.min_versions.android', '1.0.1'),
+                'ios_version'          => config('app.min_versions.ios', '1.0.1'),
+                'force_update'         => (bool) config('app.force_update', false),
                 'privacy_policy'       => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'support_email'        => ['support@libraro.in'],

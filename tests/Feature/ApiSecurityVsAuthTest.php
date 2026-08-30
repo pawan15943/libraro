@@ -22,7 +22,7 @@ class ApiSecurityVsAuthTest extends TestCase
     {
         $nowMs = (int) (microtime(true) * 1000);
         $nonce = 'test_nonce_' . uniqid() . '_' . mt_rand(1000, 9999);
-        $appVer = '1.0.0';
+        $appVer = '1.0.1';
         $platform = 'android';
         $deviceId = 'device_test_123';
 
