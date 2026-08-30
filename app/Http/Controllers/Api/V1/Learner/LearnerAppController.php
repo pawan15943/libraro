@@ -195,7 +195,6 @@ class LearnerAppController extends Controller
                 'student' => [
                     'id'                      => (string) $learner->id,
                     'uid'                     => $learner->learner_no ?? '',
-                    'firstName'               => $firstName,
                     'fullName'                => strtoupper($learner->name ?? ''),
                     'email'                   => $learner->email ?? '',
                     'phone'                   => $learner->mobile ?? '',
