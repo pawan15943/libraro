@@ -378,7 +378,6 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
     "student": {
       "id": "15",
       "uid": "LBR-2026-001",
-      "firstName": "Rahul",
       "fullName": "RAHUL SHARMA",
       "email": "rahul.sharma@example.com",
       "phone": "9876543210",
@@ -393,12 +392,52 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
     },
     "banners": [
       {
-        "id": "ban_01",
-        "type": "image",
-        "title": "Libraro Central Branch",
-        "subtitle": "Track your study sessions and seat status effortlessly",
-        "imageUrl": "https://your-domain.com/public/img/slider/topbanner.jpeg",
-        "actionUrl": null
+        "type": "other_wishes",
+        "tital": "Wish you happy Diwali",
+        "description": "May this festival of lights bring success and joy.",
+        "birthday_user": "",
+        "seat_no": "",
+        "subscription_type": "",
+        "subscription_status": "",
+        "days_in_left": "",
+        "dob": "",
+        "mobile": "",
+        "image_resource": "",
+        "banner_link": "",
+        "progress_percentage": 0,
+        "branch_id": 2
+      },
+      {
+        "type": "birthday_wishes",
+        "tital": "Wish you happy birthay",
+        "description": "",
+        "birthday_user": "RAHUL SHARMA",
+        "seat_no": "A-12",
+        "subscription_type": "",
+        "subscription_status": "",
+        "days_in_left": "",
+        "dob": "2000-01-15",
+        "mobile": "9876543210",
+        "image_resource": "",
+        "banner_link": "",
+        "progress_percentage": 0,
+        "branch_id": 2
+      },
+      {
+        "type": "subscription",
+        "tital": "subscription",
+        "description": "",
+        "birthday_user": "",
+        "seat_no": "A-12",
+        "subscription_type": "Monthly Full Day",
+        "subscription_status": "ACTIVE",
+        "days_in_left": 15,
+        "dob": "",
+        "mobile": "",
+        "image_resource": "",
+        "banner_link": "",
+        "progress_percentage": 50,
+        "branch_id": 2
       }
     ],
     "idCard": {

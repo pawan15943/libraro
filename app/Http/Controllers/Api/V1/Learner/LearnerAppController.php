@@ -131,39 +131,55 @@ class LearnerAppController extends Controller
         $nameParts = explode(' ', trim($learner->name ?? ''));
         $firstName = $nameParts[0] ?? $learner->name;
 
-        // Top Banners (Same as library top banner)
+        // Top Banners (Referencing DashboardService::topBanner)
         $today = Carbon::today();
-        $banners = [];
-
-        // Festival wishes
         $festival = DB::table('india_festivals')
             ->whereDate('festival_date', $today->toDateString())
             ->select('festival_name', 'description')
             ->first();
 
-        if ($festival) {
-            $banners[] = [
-                'id'          => 'ban_festival',
-                'type'        => 'festival',
-                'title'       => 'Wish you happy ' . $festival->festival_name,
-                'subtitle'    => $festival->description ?? 'Have a wonderful and blessed day!',
-                'imageUrl'    => asset('public/img/slider/topbanner.jpeg'),
-                'actionUrl'   => null,
-            ];
-        }
+        $branchId = (int) ($learner->branch_id ?? (function_exists('getCurrentBranch') ? getCurrentBranch() : 0));
+        $seatDisplay = $learner->seat_no ? (string) getSeatDisplayShortFloorName($learner->seat_no) : '';
 
-        // Birthday wishes for the learner
+        // 1. Festival / Other Wishes Banner
+        $banners = [[
+            'type'                => $festival ? 'other_wishes' : '',
+            'tital'               => $festival ? ('Wish you happy ' . $festival->festival_name) : '',
+            'description'         => $festival->description ?? '',
+            'birthday_user'       => '',
+            'seat_no'             => '',
+            'subscription_type'   => '',
+            'subscription_status' => '',
+            'days_in_left'        => '',
+            'dob'                 => '',
+            'mobile'              => '',
+            'image_resource'      => '',
+            'banner_link'         => '',
+            'progress_percentage' => 0,
+            'branch_id'           => $branchId,
+        ]];
+
+        // 2. Birthday Wishes Banner (If today is learner's birthday)
         if (!empty($learner->dob)) {
             try {
                 $dob = Carbon::parse($learner->dob);
                 if ((int) $dob->month === (int) $today->month && (int) $dob->day === (int) $today->day) {
+                    $decryptedMobile = decryptData($learner->mobile);
                     $banners[] = [
-                        'id'          => 'ban_birthday',
-                        'type'        => 'birthday',
-                        'title'       => 'Happy Birthday, ' . $firstName . '! 🎉',
-                        'subtitle'    => 'Wishing you great success in your studies and goals today!',
-                        'imageUrl'    => asset('public/img/slider/topbanner.jpeg'),
-                        'actionUrl'   => null,
+                        'type'                => 'birthday_wishes',
+                        'tital'               => 'Wish you happy birthay',
+                        'description'         => '',
+                        'birthday_user'       => (string) ($learner->name ?? ''),
+                        'seat_no'             => $seatDisplay,
+                        'subscription_type'   => '',
+                        'subscription_status' => '',
+                        'days_in_left'        => '',
+                        'dob'                 => (string) $learner->dob,
+                        'mobile'              => !empty($decryptedMobile) ? (string) $decryptedMobile : (string) $learner->mobile,
+                        'image_resource'      => '',
+                        'banner_link'         => '',
+                        'progress_percentage' => 0,
+                        'branch_id'           => $branchId,
                     ];
                 }
             } catch (\Throwable $e) {
@@ -171,14 +187,30 @@ class LearnerAppController extends Controller
             }
         }
 
-        // Main Library Top Banner
+        // 3. Subscription Banner
+        $subscriptionName = $activeDetail?->plan_name ?? 'No Active Plan';
+        $subscriptionStatus = ($activeDetail && (int) $learner->status === 1) ? 'Active' : 'Inactive';
+        $startDate = !empty($activeDetail?->plan_start_date) ? Carbon::parse($activeDetail->plan_start_date)->startOfDay() : null;
+        $endDate   = !empty($activeDetail?->plan_end_date) ? Carbon::parse($activeDetail->plan_end_date)->startOfDay() : null;
+        $totalDays = ($startDate && $endDate) ? max(1, $startDate->diffInDays($endDate) + 1) : 0;
+        $usedDays  = ($startDate && $endDate) ? min($totalDays, max(0, $startDate->diffInDays($today) + 1)) : 0;
+        $progressPercentage = ($totalDays > 0) ? (int) min(100, round(($usedDays / $totalDays) * 100)) : 0;
+
         $banners[] = [
-            'id'          => 'ban_01',
-            'type'        => 'image',
-            'title'       => optional($branch)->library_name ?? 'Smart Library System',
-            'subtitle'    => 'Track your study sessions and seat status effortlessly',
-            'imageUrl'    => asset('public/img/slider/topbanner.jpeg'),
-            'actionUrl'   => null,
+            'type'                => 'subscription',
+            'tital'               => 'subscription',
+            'description'         => '',
+            'birthday_user'       => '',
+            'seat_no'             => $seatDisplay,
+            'subscription_type'   => $subscriptionName,
+            'subscription_status' => $subscriptionStatus,
+            'days_in_left'        => (string) $daysLeft,
+            'dob'                 => '',
+            'mobile'              => '',
+            'image_resource'      => '',
+            'banner_link'         => '',
+            'progress_percentage' => $progressPercentage,
+            'branch_id'           => $branchId,
         ];
 
         // Unread Notification Count
