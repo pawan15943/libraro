@@ -225,4 +225,84 @@ class ApiSecurityVsAuthTest extends TestCase
                 'state_code' => 'API_SECURITY_FAILED',
             ]);
     }
+
+    /**
+     * Test K: Invalid X-Platform (e.g. androidouu, windows) -> API_SECURITY_FAILED (403)
+     */
+    public function test_k_invalid_platform_returns_api_security_failed()
+    {
+        $headers = $this->generateSignedHeaders('POST', $this->uri, '', [
+            'X-Platform' => 'androidouu'
+        ]);
+        $response = $this->postJson($this->uri, [], $headers);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+            ]);
+    }
+
+    /**
+     * Test L: X-App-Version is optional when force update is false
+     */
+    public function test_l_app_version_is_optional_when_force_update_false()
+    {
+        config(['app.force_update' => false]);
+        $headers = $this->generateSignedHeaders('POST', $this->uri, '[]');
+        unset($headers['X-App-Version']);
+        $response = $this->postJson($this->uri, [], $headers);
+
+        // Security passes, reaches user auth
+        $response->assertStatus(401)
+            ->assertJson([
+                'status'     => false,
+                'state_code' => 'USER_UNAUTHENTICATED',
+            ]);
+    }
+
+    /**
+     * Test M: When force update is true, outdated app version returns 426 Upgrade Required
+     */
+    public function test_m_outdated_app_version_returns_426_when_force_update_true()
+    {
+        config([
+            'app.force_update' => true,
+            'app.min_versions.android' => '2.0.0'
+        ]);
+        $headers = $this->generateSignedHeaders('POST', $this->uri, '', [
+            'X-App-Version' => '1.0.0',
+            'X-Platform'    => 'android'
+        ]);
+        $response = $this->postJson($this->uri, [], $headers);
+
+        $response->assertStatus(426)
+            ->assertJson([
+                'status'       => false,
+                'force_update' => true,
+                'state_code'   => 'APP_UPDATE_REQUIRED',
+            ]);
+    }
+
+    /**
+     * Test N: app-settings API does NOT require X-App-Version even if force_update is true
+     */
+    public function test_n_app_settings_does_not_require_app_version_even_if_force_update_is_true()
+    {
+        config(['app.force_update' => true]);
+        $settingsUri = '/api/v1/learner/app-settings';
+        $headers = [
+            'Accept'       => 'application/json',
+            'X-API-KEY'    => $this->apiKey,
+            'X-Platform'   => 'android',
+            'X-Device-Id'  => 'android-device-test-123',
+        ];
+
+        $response = $this->getJson($settingsUri, $headers);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+            ]);
+    }
 }

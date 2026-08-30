@@ -13,21 +13,33 @@ class CheckAppVersion
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-   public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
-        $version = $request->header('App-Version');
-        $platform = $request->header('Platform'); // e.g., ios or android
+        if ($request->is('api/v1/learner/app-settings', 'api/v1/library/app-settings', '*/app-settings')) {
+            return $next($request);
+        }
 
-        $min = [
-            'android' => '1.0.5',
-            'ios' => '2.0.1',
-        ];
+        $version = $request->header('X-App-Version') ?? $request->header('App-Version');
+        $platform = strtolower(trim((string) ($request->header('X-Platform') ?? $request->header('Platform') ?? '')));
 
-        if (isset($min[$platform]) && version_compare($version, $min[$platform], '<')) {
-            return response()->json([
-                'force_update' => true,
-                'message' => 'Please update your app.'
-            ], 426);
+        $forceUpdate = (bool) config('app.force_update', false);
+        if ($forceUpdate && !empty($version)) {
+            $minVersion = config("app.min_versions.{$platform}", '1.0.0');
+            if ($minVersion && version_compare($version, $minVersion, '<')) {
+                return response()->json([
+                    'status'       => false,
+                    'force_update' => true,
+                    'state_code'   => 'APP_UPDATE_REQUIRED',
+                    'error_code'   => 'APP_UPDATE_REQUIRED',
+                    'message'      => 'Please update your app to the latest version.',
+                    'code'         => 426,
+                    'data'         => [
+                        'current_version' => $version,
+                        'min_version'     => $minVersion,
+                        'platform'        => $platform,
+                    ]
+                ], 426);
+            }
         }
 
         return $next($request);

@@ -35,6 +35,13 @@ return [
 
     'hmac_secret' => env('APP_HMAC_SECRET', '9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3'),
 
+    'force_update' => env('APP_FORCE_UPDATE', false),
+
+    'min_versions' => [
+        'android' => env('APP_MIN_ANDROID_VERSION', '1.0.0'),
+        'ios'     => env('APP_MIN_IOS_VERSION', '1.0.0'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

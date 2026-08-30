@@ -8,45 +8,72 @@
         {
             "key": "base_url",
             "value": "http://localhost/library/public",
-            "description": "Adjust to your local/served URL (no trailing slash)."
+            "type": "string"
+        },
+        {
+            "key": "live_url",
+            "value": "https://librarymanager.in",
+            "type": "string"
         },
         {
             "key": "api_key",
-            "value": "REPLACE_WITH_APP_API_KEY",
-            "description": "Must match APP_API_KEY in .env (sent as X-API-KEY)."
+            "value": "libraro_mobile_api_key_2026",
+            "type": "string"
+        },
+        {
+            "key": "x_api_key",
+            "value": "libraro_mobile_api_key_2026",
+            "type": "string"
         },
         {
             "key": "hmac_secret",
-            "value": "libraro_secret_key_2026",
-            "description": "HMAC secret key matching APP_HMAC_SECRET in .env."
-        },
-        {
-            "key": "device_type",
-            "value": "android"
-        },
-        {
-            "key": "device_id",
-            "value": "postman-test-device-001"
-        },
-        {
-            "key": "branch_uuid",
-            "value": "REPLACE_WITH_BRANCH_UUID"
+            "value": "9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3",
+            "type": "string"
         },
         {
             "key": "learner_token",
-            "value": ""
+            "value": "",
+            "type": "string"
         },
         {
-            "key": "plan_id",
-            "value": "1"
+            "key": "device_id",
+            "value": "android-test-device-001",
+            "type": "string"
         },
         {
-            "key": "plan_type_id",
-            "value": "1"
+            "key": "device_token",
+            "value": "android-test-device-001",
+            "type": "string"
         },
         {
-            "key": "plan_price_id",
-            "value": "500"
+            "key": "device_type",
+            "value": "android",
+            "type": "string"
+        },
+        {
+            "key": "app_version",
+            "value": "1.0.0",
+            "type": "string"
+        },
+        {
+            "key": "x_timestamp",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "x_nonce",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "x_signature",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "branch_uuid",
+            "value": "YOUR_BRANCH_UUID",
+            "type": "string"
         }
     ],
     "event": [
@@ -55,28 +82,37 @@
             "script": {
                 "type": "text/javascript",
                 "exec": [
+                    "// Auto-generate Security Headers & HMAC Signature for every request",
                     "const timestamp = Date.now().toString();",
                     "const nonce = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
                     "    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
                     "    return v.toString(16);",
                     "});",
+                    "",
                     "const method = pm.request.method.toUpperCase();",
                     "const path = pm.request.url.getPathWithQuery();",
-                    "const body = pm.request.body && pm.request.body.raw ? pm.request.body.raw : '';",
-                    "const secret = pm.collectionVariables.get('hmac_secret') || 'libraro_secret_key_2026';",
-                    "const payload = `${method}|${path}|${timestamp}|${nonce}|${body}`;",
+                    "let body = '';",
+                    "if (pm.request.body && pm.request.body.mode === 'raw' && pm.request.body.raw) {",
+                    "    body = pm.request.body.raw;",
+                    "}",
+                    "",
+                    "const secret = pm.collectionVariables.get(\"hmac_secret\") || \"9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3\";",
+                    "const payload = method + \"|\" + path + \"|\" + timestamp + \"|\" + nonce + \"|\" + body;",
                     "const signature = CryptoJS.HmacSHA256(payload, secret).toString(CryptoJS.enc.Hex);",
                     "",
+                    "// Set collection variables so {{x_timestamp}}, {{x_nonce}}, {{x_signature}} resolve automatically",
                     "pm.collectionVariables.set('x_timestamp', timestamp);",
                     "pm.collectionVariables.set('x_nonce', nonce);",
                     "pm.collectionVariables.set('x_signature', signature);",
                     "",
+                    "// Upsert request headers directly",
                     "pm.request.headers.upsert({ key: 'X-Timestamp', value: timestamp });",
                     "pm.request.headers.upsert({ key: 'X-Nonce', value: nonce });",
                     "pm.request.headers.upsert({ key: 'X-Signature', value: signature });",
-                    "pm.request.headers.upsert({ key: 'X-App-Version', value: '1.0.0' });",
+                    "pm.request.headers.upsert({ key: 'X-App-Version', value: pm.collectionVariables.get('app_version') || '1.0.0' });",
                     "pm.request.headers.upsert({ key: 'X-Platform', value: pm.collectionVariables.get('device_type') || 'android' });",
-                    "pm.request.headers.upsert({ key: 'X-Device-Id', value: pm.collectionVariables.get('device_id') || 'd3b07384d113edec' });"
+                    "pm.request.headers.upsert({ key: 'X-Device-Id', value: pm.collectionVariables.get('device_id') || 'android-test-device-001' });",
+                    "pm.request.headers.upsert({ key: 'X-API-KEY', value: pm.collectionVariables.get('api_key') || pm.collectionVariables.get('x_api_key') || '' });"
                 ]
             }
         }

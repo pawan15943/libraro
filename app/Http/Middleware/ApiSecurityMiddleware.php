@@ -24,8 +24,8 @@ class ApiSecurityMiddleware
         $timestamp  = $request->header('X-Timestamp');
         $nonce      = $request->header('X-Nonce');
         $signature  = $request->header('X-Signature');
-        $appVersion = $request->header('X-App-Version');
-        $platform   = $request->header('X-Platform');
+        $appVersion = $request->header('X-App-Version') ?? $request->header('App-Version');
+        $platform   = strtolower(trim((string) ($request->header('X-Platform') ?? $request->header('Platform') ?? '')));
         $deviceId   = $request->header('X-Device-Id') ?? $request->header('device-token') ?? $request->header('device_token');
 
         // 1. API Key Validation
@@ -40,13 +40,56 @@ class ApiSecurityMiddleware
             ], 403);
         }
 
-        // 2. Missing Required Security Headers Check
-        if (!$timestamp || !$nonce || !$signature || !$appVersion || !$platform || !$deviceId) {
+        // 2. Strict Platform Validation (Only 'android' and 'ios' allowed)
+        if (!$platform || !in_array($platform, ['android', 'ios'], true)) {
             return response()->json([
                 'status'     => false,
                 'state_code' => 'API_SECURITY_FAILED',
                 'error_code' => 'API_SECURITY_FAILED',
-                'message'    => 'API request security validation failed: Missing required security headers (X-Timestamp, X-Nonce, X-Signature, X-App-Version, X-Platform, X-Device-Id).',
+                'message'    => "API request security validation failed: Invalid or missing X-Platform header. Supported platforms are 'android' and 'ios'.",
+                'code'       => 403,
+            ], 403);
+        }
+
+        // 3. Force Update & App Version Validation (Exempt app-settings routes so client can fetch initial settings)
+        $isSettingsRoute = $request->is('api/v1/learner/app-settings', 'api/v1/library/app-settings', '*/app-settings');
+        $forceUpdateEnabled = (bool) config('app.force_update', false);
+        if ($forceUpdateEnabled && !$isSettingsRoute) {
+            if (!$appVersion) {
+                return response()->json([
+                    'status'     => false,
+                    'state_code' => 'API_SECURITY_FAILED',
+                    'error_code' => 'API_SECURITY_FAILED',
+                    'message'    => 'API request security validation failed: X-App-Version header is required when force update is enabled.',
+                    'code'       => 403,
+                ], 403);
+            }
+
+            $minVersion = config("app.min_versions.{$platform}", '1.0.0');
+            if (version_compare($appVersion, $minVersion, '<')) {
+                return response()->json([
+                    'status'       => false,
+                    'force_update' => true,
+                    'state_code'   => 'APP_UPDATE_REQUIRED',
+                    'error_code'   => 'APP_UPDATE_REQUIRED',
+                    'message'      => 'Application update required. Please update your app to continue.',
+                    'code'         => 426,
+                    'data'         => [
+                        'current_version' => $appVersion,
+                        'min_version'     => $minVersion,
+                        'platform'        => $platform,
+                    ],
+                ], 426);
+            }
+        }
+
+        // 4. Missing Required Security Headers Check (X-Timestamp, X-Nonce, X-Signature, X-Device-Id)
+        if (!$timestamp || !$nonce || !$signature || !$deviceId) {
+            return response()->json([
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: Missing required security headers (X-Timestamp, X-Nonce, X-Signature, X-Device-Id).',
                 'code'       => 403,
             ], 403);
         }
