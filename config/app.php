@@ -42,6 +42,14 @@ return [
         'ios'     => env('APP_MIN_IOS_VERSION', '1.0.1'),
     ],
 
+    'library_app' => [
+        'force_update' => env('LIBRARY_FORCE_UPDATE', false),
+        'min_versions' => [
+            'android' => env('LIBRARY_MIN_ANDROID_VERSION', '1.0.1'),
+            'ios'     => env('LIBRARY_MIN_IOS_VERSION', '1.0.1'),
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

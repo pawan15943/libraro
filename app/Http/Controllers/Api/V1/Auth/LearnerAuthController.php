@@ -186,9 +186,9 @@ class LearnerAuthController extends Controller
             'status'  => true,
             'message' => 'Learner settings fetched successfully.',
             'data'    => [
-                'android_version'      => config('app.min_versions.android', '1.0.1'),
-                'ios_version'          => config('app.min_versions.ios', '1.0.1'),
-                'force_update'         => (bool) config('app.force_update', false),
+                'android_version'      => (string) config('app.min_versions.android', env('APP_MIN_ANDROID_VERSION', '1.0.1')),
+                'ios_version'          => (string) config('app.min_versions.ios', env('APP_MIN_IOS_VERSION', '1.0.1')),
+                'force_update'         => (bool) config('app.force_update', env('APP_FORCE_UPDATE', false)),
                 'privacy_policy'       => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'support_email'        => ['support@libraro.in'],
@@ -199,7 +199,7 @@ class LearnerAuthController extends Controller
                 'instagram'            => 'https://www.instagram.com/libraro.in/',
                 'facebook'             => 'https://www.facebook.com/libraro.in',
                 'whatsapp'             => 'https://wa.me/+918114479678',
-                'isMaintenance'        => false,
+                'isMaintenance'        => (bool) env('APP_MAINTENANCE', false),
             ]
         ], 200);
     }

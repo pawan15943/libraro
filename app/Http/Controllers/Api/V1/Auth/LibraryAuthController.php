@@ -64,8 +64,10 @@ class LibraryAuthController extends Controller
             'status' => true,
             'message' => 'Settings fetched successfully.',
             'data' => [
-                'app_version' => '1.0',
-                'force_update' => false,
+                'app_version' => (string) config('app.library_app.min_versions.android', env('LIBRARY_MIN_ANDROID_VERSION', '1.0.1')),
+                'android_version' => (string) config('app.library_app.min_versions.android', env('LIBRARY_MIN_ANDROID_VERSION', '1.0.1')),
+                'ios_version' => (string) config('app.library_app.min_versions.ios', env('LIBRARY_MIN_IOS_VERSION', '1.0.1')),
+                'force_update' => (bool) config('app.library_app.force_update', env('LIBRARY_FORCE_UPDATE', false)),
                 'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
