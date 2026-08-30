@@ -84,11 +84,13 @@ class Handler extends ExceptionHandler
                 ->with('branch_error', 'Branch changed. Requested data not found.');
         }
 
-        if ($request->is('api/*') && $exception instanceof AuthenticationException) {
+        if (($request->expectsJson() || $request->is('api/*') || $request->is('api/v1/*')) && $exception instanceof AuthenticationException) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Unauthenticated or invalid session token. Please login again.',
-                'code'    => 401,
+                'status'     => false,
+                'state_code' => 'USER_UNAUTHENTICATED',
+                'error_code' => 'USER_UNAUTHENTICATED',
+                'message'    => 'Unauthenticated or invalid session token. Please login again.',
+                'code'       => 401,
             ], 401);
         }
 
@@ -102,9 +104,11 @@ class Handler extends ExceptionHandler
     {
         if ($request->expectsJson() || $request->is('api/*') || $request->is('api/v1/*')) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Unauthenticated or invalid session token. Please login again.',
-                'code'    => 401,
+                'status'     => false,
+                'state_code' => 'USER_UNAUTHENTICATED',
+                'error_code' => 'USER_UNAUTHENTICATED',
+                'message'    => 'Unauthenticated or invalid session token. Please login again.',
+                'code'       => 401,
             ], 401);
         }
 

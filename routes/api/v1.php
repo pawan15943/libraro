@@ -235,7 +235,7 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 
 // Learner-app self-service (learner's own device, distinct from the
 // staff/library_api app above). Data is scoped to the authenticated
-Route::middleware(['auth:learner_api', 'api_key', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
+Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
     Route::get('profile', [LearnerAuthController::class, 'profile']);
     Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
     Route::post('upload/temp-images', [LearnerAppController::class, 'uploadTempImages']);

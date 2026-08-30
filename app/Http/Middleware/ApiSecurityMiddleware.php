@@ -16,6 +16,11 @@ class ApiSecurityMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $apiKey     = $request->header('X-API-KEY') 
+            ?? $request->header('x-api-key') 
+            ?? $request->header('X-Api-Key') 
+            ?? $request->header('api-key')
+            ?? $request->header('api_key');
         $timestamp  = $request->header('X-Timestamp');
         $nonce      = $request->header('X-Nonce');
         $signature  = $request->header('X-Signature');
@@ -23,35 +28,56 @@ class ApiSecurityMiddleware
         $platform   = $request->header('X-Platform');
         $deviceId   = $request->header('X-Device-Id') ?? $request->header('device-token') ?? $request->header('device_token');
 
-        // 1. Missing Required Headers Check
-        if (!$timestamp || !$nonce || !$signature || !$appVersion || !$platform || !$deviceId) {
+        // 1. API Key Validation
+        $expectedKey = config('app.api_key');
+        if (!$apiKey || (!empty($expectedKey) && trim($apiKey) !== trim($expectedKey))) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Missing required security headers (X-Timestamp, X-Nonce, X-Signature, X-App-Version, X-Platform, X-Device-Id).',
-            ], 400);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: Invalid or missing X-API-KEY header.',
+                'code'       => 403,
+            ], 403);
         }
 
-        // 2. Timestamp Window Check (Prevent Old Replayed Requests — max 5 minutes / 300,000 ms)
+        // 2. Missing Required Security Headers Check
+        if (!$timestamp || !$nonce || !$signature || !$appVersion || !$platform || !$deviceId) {
+            return response()->json([
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: Missing required security headers (X-Timestamp, X-Nonce, X-Signature, X-App-Version, X-Platform, X-Device-Id).',
+                'code'       => 403,
+            ], 403);
+        }
+
+        // 3. Timestamp Window Check (Prevent Old / Future Replayed Requests — max 5 minutes / 300,000 ms)
         $currentTimeMs = (int) (microtime(true) * 1000);
         $requestTimeMs = (int) $timestamp;
 
         if (abs($currentTimeMs - $requestTimeMs) > 300000) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Request timestamp is outside the acceptable 5-minute security window.',
-            ], 401);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: Request timestamp is outside the acceptable 5-minute security window.',
+                'code'       => 403,
+            ], 403);
         }
 
-        // 3. Replay Attack Check (Nonce uniqueness within 5 minutes)
+        // 4. Replay Attack Check (Nonce uniqueness within 5 minutes)
         $cacheKey = "api_nonce:{$nonce}";
         if (Cache::has($cacheKey)) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Duplicate request detected (Nonce replay attack).',
-            ], 401);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: Duplicate request detected (Nonce replay attack).',
+                'code'       => 403,
+            ], 403);
         }
 
-        // 4. HMAC-SHA256 Signature Verification
+        // 5. HMAC-SHA256 Signature Verification
         $secret = config('app.hmac_secret', config('app.api_key', 'libraro_secret_key_2026'));
         $httpMethod = strtoupper($request->method());
         $path = $request->getRequestUri();
@@ -63,9 +89,12 @@ class ApiSecurityMiddleware
 
         if (!hash_equals($expectedSignature, strtolower($signature))) {
             return response()->json([
-                'status'  => false,
-                'message' => 'HMAC signature verification failed. Request may have been tampered with.',
-            ], 401);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: HMAC signature verification failed. Request may have been tampered with.',
+                'code'       => 403,
+            ], 403);
         }
 
         // Lock nonce for 5 minutes

@@ -32,10 +32,13 @@ class CheckDeviceHeader
 
         if (!$deviceType || !$deviceToken) {
             return response()->json([
-                'status'  => false,
-                'message' => 'X-Platform and X-Device-Id (or device-token) headers are required in header',
-                'data'    => (object)[]
-            ], 400);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed: X-Platform and X-Device-Id (or device-token) headers are required.',
+                'code'       => 403,
+                'data'       => (object)[]
+            ], 403);
         }
 
         return $next($request);

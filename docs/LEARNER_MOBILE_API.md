@@ -6,32 +6,86 @@ Comprehensive API reference and architecture guide for the **Libraro Learner Mob
 
 ## 📌 1. Architecture & Middleware Pipeline
 
-Every incoming request to `/api/v1/learner/*` passes through a strict layered middleware security pipeline:
+Every incoming request to `/api/v1/learner/*` passes through a strict two-layer architecture separating **API Security** from **User Authentication**:
 
 ```
-Mobile App Request
-       │
-       ▼
-1. CheckAppVersion           ──► Enforces minimum client version (Returns 426 if outdated)
-       │
-       ▼
-2. ApiKeyMiddleware          ──► Verifies `x-api-key` / `X-API-KEY` against APP_API_KEY (Returns 401)
-       │
-       ▼
-3. ApiSecurityMiddleware     ──► Verifies HMAC-SHA256 signature (`X-Signature`), Nonce uniqueness (`X-Nonce`),
-       │                         and 5-minute timestamp validity (`X-Timestamp`) (Returns 400/401)
-       │
-       ▼
-4. CheckDeviceHeader         ──► Validates `X-Platform` & `X-Device-Id` / `device-token` (Returns 400)
-       │
-       ▼
-5. ThrottleRequests          ──► Rate limiting (60 requests/min, login: 10 requests/min)
-       │
-       ▼
-6. auth:learner_api (Sanctum) ──► Validates Bearer token & enforces single active device session (Returns 401)
-       │
-       ▼
-Controller Action (Business Logic)
+                    API Request
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │ API Security Layer  │  (ApiSecurityMiddleware, ApiKeyMiddleware, CheckDeviceHeader)
+              │                     │
+              │ • X-API-KEY         │
+              │ • X-Timestamp       │
+              │ • X-Nonce           │
+              │ • X-Signature       │
+              │ • X-Device-Id       │
+              │ • X-Platform        │
+              └──────────┬──────────┘
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+           INVALID                 VALID
+              │                     │
+              ▼                     ▼
+     API_SECURITY_FAILED     User Authentication Layer (auth:learner_api / Sanctum)
+     (HTTP 403 Forbidden)          │
+     • STOPS IMMEDIATELY   ┌────────┴────────┐
+                           │                 │
+                       INVALID             VALID
+                           │                 │
+                           ▼                 ▼
+                 USER_UNAUTHENTICATED    Controller
+                 (HTTP 401 Unauthorized) (HTTP 200 OK)
+                 • STOPS IMMEDIATELY     • Business Logic Executed
+```
+
+---
+
+## 🚨 2. Error Response Separation & Specifications
+
+API request security validation and logged-in user authentication are **two distinct layers** with different HTTP status codes, state codes, and payloads:
+
+### Layer 1: API Security Failure (`HTTP 403 Forbidden`)
+Returned when the incoming request itself is untrusted or malformed (API Key, Signature, Nonce, Timestamp, Device ID, or Platform failure).
+
+- **HTTP Status:** `403 Forbidden`
+- **State Code:** `API_SECURITY_FAILED`
+- **JSON Structure:**
+```json
+{
+  "status": false,
+  "state_code": "API_SECURITY_FAILED",
+  "error_code": "API_SECURITY_FAILED",
+  "message": "API request security validation failed: [Reason].",
+  "code": 403
+}
+```
+
+### Layer 2: User Authentication Failure (`HTTP 401 Unauthorized`)
+Returned when the request passed all API security checks, but the user's Bearer token is missing, expired, invalid, or logged out.
+
+- **HTTP Status:** `401 Unauthorized`
+- **State Code:** `USER_UNAUTHENTICATED`
+- **JSON Structure:**
+```json
+{
+  "status": false,
+  "state_code": "USER_UNAUTHENTICATED",
+  "error_code": "USER_UNAUTHENTICATED",
+  "message": "Unauthenticated or invalid session token. Please login again.",
+  "code": 401
+}
+```
+
+### Layer 3: Valid Authenticated Request (`HTTP 200 OK`)
+When both security headers and user authentication are valid, the request proceeds to the controller and returns normal business data:
+```json
+{
+  "status": true,
+  "message": "Operation successful.",
+  "data": { ... }
+}
 ```
 
 ---

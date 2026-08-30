@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Libraro'),
 
     /*
     |--------------------------------------------------------------------------
@@ -33,7 +33,7 @@ return [
 
     'api_key' => env('APP_API_KEY'),
 
-    'hmac_secret' => env('APP_HMAC_SECRET', 'libraro_secret_key_2026'),
+    'hmac_secret' => env('APP_HMAC_SECRET', '9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3'),
 
     /*
     |--------------------------------------------------------------------------

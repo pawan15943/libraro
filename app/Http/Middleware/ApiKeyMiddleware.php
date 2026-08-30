@@ -25,10 +25,12 @@ class ApiKeyMiddleware
 
         if (!$apiKey || empty($expectedKey) || trim($apiKey) !== trim($expectedKey)) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Unauthorized access (Invalid or missing X-API-KEY)',
-                'code'    => 401
-            ], 401);
+                'status'     => false,
+                'state_code' => 'API_SECURITY_FAILED',
+                'error_code' => 'API_SECURITY_FAILED',
+                'message'    => 'API request security validation failed (Invalid or missing X-API-KEY).',
+                'code'       => 403,
+            ], 403);
         }
 
         return $next($request);

@@ -90,4 +90,27 @@ class Kernel extends HttpKernel
         'library.owner' => \App\Http\Middleware\LibraryOwnerOnly::class,
         'library_user.active' => \App\Http\Middleware\EnsureLibraryUserActive::class,
     ];
+
+    /**
+     * The priority-sorted list of middleware.
+     *
+     * Forces API security validation to run BEFORE user authentication.
+     *
+     * @var array<int, class-string|string>
+     */
+    protected $middlewarePriority = [
+        \App\Http\Middleware\ApiKeyMiddleware::class,
+        \App\Http\Middleware\ApiSecurityMiddleware::class,
+        \App\Http\Middleware\CheckDeviceHeader::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\Authenticate::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+        \Illuminate\Session\Middleware\AuthenticateSession::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
+    ];
 }
