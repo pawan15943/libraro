@@ -517,15 +517,15 @@ class LearnerAppController extends Controller
                 $learner->address = $address;
             }
 
-            // Profile Picture add, update, remove handling
+            // Profile Picture add, update, remove handling (matching LearnerOperationService)
             $removeRequested = $request->boolean('remove_profile_picture') 
                 || $request->boolean('remove_image')
                 || $request->input('action') === 'remove_image'
                 || $request->input('profile_picture') === 'remove'
                 || ($request->has('profile_picture') && (is_null($request->input('profile_picture')) || $request->input('profile_picture') === ''));
 
-            $imageFile = $request->file('profile_picture') 
-                ?? $request->file('profile_picture_image') 
+            $imageFile = $request->file('profile_picture_image') 
+                ?? $request->file('profile_picture') 
                 ?? $request->file('image') 
                 ?? $request->file('avatar');
 
@@ -537,8 +537,11 @@ class LearnerAppController extends Controller
 
             if ($imageFile) {
                 // Delete existing old profile picture from disk
-                if ($learner->profile_picture && File::exists(public_path($learner->profile_picture))) {
-                    @File::delete(public_path($learner->profile_picture));
+                if ($learner->profile_picture) {
+                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    if (File::exists($oldPath)) {
+                        @File::delete($oldPath);
+                    }
                 }
                 $newPath = app(FileUploadService::class)->moveTempFileToPublic($imageFile, 'profile_picture', 'upload/profile_picture');
                 if ($newPath) {
@@ -546,16 +549,22 @@ class LearnerAppController extends Controller
                 }
             } elseif ($removeRequested) {
                 // Delete existing profile picture from disk
-                if ($learner->profile_picture && File::exists(public_path($learner->profile_picture))) {
-                    @File::delete(public_path($learner->profile_picture));
+                if ($learner->profile_picture) {
+                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    if (File::exists($oldPath)) {
+                        @File::delete($oldPath);
+                    }
                 }
                 $learner->profile_picture = null;
             } elseif (!empty($imageString) && is_string($imageString) && $imageString !== 'remove') {
                 // String path / temp image path / URL passed
                 $newPath = app(FileUploadService::class)->moveTempFileToPublic($imageString, 'profile_picture', 'upload/profile_picture');
                 if ($newPath) {
-                    if ($learner->profile_picture && $learner->profile_picture !== $newPath && File::exists(public_path($learner->profile_picture))) {
-                        @File::delete(public_path($learner->profile_picture));
+                    if ($learner->profile_picture && $learner->profile_picture !== $newPath) {
+                        $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                        if (File::exists($oldPath)) {
+                            @File::delete($oldPath);
+                        }
                     }
                     $learner->profile_picture = $newPath;
                 }
@@ -737,12 +746,15 @@ class LearnerAppController extends Controller
         ];
 
         // Filter by tab
-        $filtered = match ($tab) {
-            'active'   => $allCards->where('status', 'active'),
-            'upcoming' => $allCards->where('status', 'upcoming'),
-            'expired'  => $allCards->where('status', 'expired'),
-            default    => $allCards,
-        }->values();
+        if ($tab === 'active') {
+            $filtered = $allCards->where('status', 'active')->values();
+        } elseif ($tab === 'upcoming') {
+            $filtered = $allCards->where('status', 'upcoming')->values();
+        } elseif ($tab === 'expired') {
+            $filtered = $allCards->where('status', 'expired')->values();
+        } else {
+            $filtered = $allCards->values();
+        }
 
         $paginated = $filtered->slice(($page - 1) * $limit, $limit)->values();
 
@@ -811,12 +823,16 @@ class LearnerAppController extends Controller
             $paidDate = !empty($tx->paid_date) ? Carbon::parse($tx->paid_date)->format('d/m/Y') : ($tx->created_at ? Carbon::parse($tx->created_at)->format('d/m/Y') : '');
             $amountPaid = (float) ($tx->paid_amount ?? 0);
 
-            $paymentMode = match ((int) ($tx->payment_mode ?? 0)) {
-                1 => 'Online',
-                2 => 'Offline',
-                3 => 'Paylater',
-                default => !empty($tx->payment_mode) ? (string) $tx->payment_mode : 'Online',
-            };
+            $paymentModeCode = (int) ($tx->payment_mode ?? 0);
+            if ($paymentModeCode === 1) {
+                $paymentMode = 'Online';
+            } elseif ($paymentModeCode === 2) {
+                $paymentMode = 'Offline';
+            } elseif ($paymentModeCode === 3) {
+                $paymentMode = 'Paylater';
+            } else {
+                $paymentMode = !empty($tx->payment_mode) ? (string) $tx->payment_mode : 'Online';
+            }
 
             $trxnDisplayId = !empty($tx->transaction_id) ? (string) $tx->transaction_id : (string) $tx->id;
 

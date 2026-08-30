@@ -735,7 +735,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"Rahul Sharma\",\n    \"email\": \"rahul@example.com\",\n    \"mobile\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Suresh Sharma\",\n    \"alternate_mobile\": \"9123456780\",\n    \"address\": \"New Delhi, India\"\n}"
+                            "raw": "{\n    \"name\": \"Rahul Sharma\",\n    \"email\": \"rahul@example.com\",\n    \"mobile\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Suresh Sharma\",\n    \"alternate_mobile\": \"9123456780\",\n    \"address\": \"New Delhi, India\",\n    \"profile_picture\": \"upload/temp/photo_123.jpg\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/profile/update",
@@ -750,7 +750,7 @@
                                 "update"
                             ]
                         },
-                        "description": "Update learner profile information (name, email, mobile, DOB, father name, alternate mobile, address, avatar)."
+                        "description": "Update profile details and avatar. Matches library/learners/operation process:\n- Binary File Upload: Send multipart/form-data with profile_picture_image (file)\n- Temp Path String: Send JSON with profile_picture: 'upload/temp/...'\n- Remove Image: Send remove_profile_picture: true or profile_picture: '' / null"
                     },
                     "response": []
                 },
