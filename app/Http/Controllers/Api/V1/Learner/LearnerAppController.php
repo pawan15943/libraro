@@ -452,41 +452,50 @@ class LearnerAppController extends Controller
      */
     public function uploadTempImages(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'files'           => 'nullable|array',
-            'files.*'         => 'image|mimes:jpg,jpeg,png,webp|max:3072',
-            'file'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
-            'image'           => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => $validator->errors()->first(),
-            ], 422);
-        }
+        // 1. Gather all files sent under any key (file, file[], files, files[], image, profile_picture, etc.)
+        $allFiles = $request->allFiles();
 
         $fileList = [];
-        if ($request->hasFile('files')) {
-            $fileList = $request->file('files');
-        } elseif ($request->hasFile('file')) {
-            $fileList = [$request->file('file')];
-        } elseif ($request->hasFile('image')) {
-            $fileList = [$request->file('image')];
-        } elseif ($request->hasFile('profile_picture')) {
-            $fileList = [$request->file('profile_picture')];
+        foreach ($allFiles as $key => $fileOrArray) {
+            if (is_array($fileOrArray)) {
+                foreach ($fileOrArray as $f) {
+                    if ($f instanceof \Illuminate\Http\UploadedFile) {
+                        $fileList[] = $f;
+                    }
+                }
+            } elseif ($fileOrArray instanceof \Illuminate\Http\UploadedFile) {
+                $fileList[] = $fileOrArray;
+            }
         }
 
         if (empty($fileList)) {
             return response()->json([
                 'status'  => false,
-                'message' => 'No image file provided for upload. Please send "file", "image", "profile_picture", or "files".',
+                'message' => 'No image file provided for upload. Please select a valid file.',
             ], 422);
         }
 
-        $uploadedFiles = [];
+        // 2. Validate each file extension & size (max 3MB)
+        $maxSize = 3072 * 1024; // 3MB
+        foreach ($fileList as $file) {
+            $extension = strtolower((string) $file->getClientOriginalExtension());
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'The file must be an image of type: jpeg, png, jpg, webp.',
+                ], 422);
+            }
 
+            if ($file->getSize() > $maxSize) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'The image size cannot exceed 3MB.',
+                ], 422);
+            }
+        }
+
+        // 3. Store in storage/app/public/temp/
+        $uploadedFiles = [];
         foreach ($fileList as $file) {
             $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('temp', $fileName, 'public');
