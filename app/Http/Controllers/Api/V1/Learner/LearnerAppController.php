@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class LearnerAppController extends Controller
 {
@@ -441,6 +442,68 @@ class LearnerAppController extends Controller
             'message' => $affected > 0 ? 'Notification marked as read successfully.' : 'Notification already marked as read.',
             'data'    => [
                 'unread_count' => $unreadCount,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Upload temporary images for learner profile picture or attachments.
+     * Returns temp_path and url for use in profile/update API.
+     */
+    public function uploadTempImages(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'files'           => 'nullable|array',
+            'files.*'         => 'image|mimes:jpg,jpeg,png,webp|max:3072',
+            'file'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'image'           => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $fileList = [];
+        if ($request->hasFile('files')) {
+            $fileList = $request->file('files');
+        } elseif ($request->hasFile('file')) {
+            $fileList = [$request->file('file')];
+        } elseif ($request->hasFile('image')) {
+            $fileList = [$request->file('image')];
+        } elseif ($request->hasFile('profile_picture')) {
+            $fileList = [$request->file('profile_picture')];
+        }
+
+        if (empty($fileList)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'No image file provided for upload. Please send "file", "image", "profile_picture", or "files".',
+            ], 422);
+        }
+
+        $uploadedFiles = [];
+
+        foreach ($fileList as $file) {
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('temp', $fileName, 'public');
+
+            $uploadedFiles[] = [
+                'temp_path' => $path,
+                'url'       => asset('storage/' . $path),
+            ];
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'File(s) uploaded successfully.',
+            'files'   => $uploadedFiles,
+            'data'    => [
+                'temp_path' => $uploadedFiles[0]['temp_path'] ?? '',
+                'url'       => $uploadedFiles[0]['url'] ?? '',
             ],
         ], 200);
     }

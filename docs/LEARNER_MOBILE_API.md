@@ -555,11 +555,45 @@ Fetch complete details including seat number, active plan, transaction history, 
 
 ---
 
-#### 9. Update Profile & Upload Avatar
+#### 9. Upload Temporary Image (For Avatar / Document)
+Allows the learner to upload an image file first and retrieve temporary file storage path (`temp_path` and `url`) to preview and submit with profile update or other forms.
+
+- **Method:** `POST`
+- **Endpoint:** `/learner/upload/temp-images`
+- **Auth Required:** Yes (`Bearer`)
+- **Content-Type:** `multipart/form-data`
+
+##### Request Parameters (Form-Data):
+| Parameter | Type | Required | Description | Example |
+| :--- | :--- | :---: | :--- | :--- |
+| `file` / `profile_picture` / `image` | `file` | Yes | Image file (jpg, jpeg, png, webp; max 3MB) | binary file |
+| `files` | `array of files` | No | Multiple images support | `[file1, file2]` |
+
+##### Success Response (`200 OK`):
+```json
+{
+  "status": true,
+  "message": "File(s) uploaded successfully.",
+  "files": [
+    {
+      "temp_path": "temp/550e8400-e29b-41d4-a716-446655440000.jpg",
+      "url": "https://your-domain.com/storage/temp/550e8400-e29b-41d4-a716-446655440000.jpg"
+    }
+  ],
+  "data": {
+    "temp_path": "temp/550e8400-e29b-41d4-a716-446655440000.jpg",
+    "url": "https://your-domain.com/storage/temp/550e8400-e29b-41d4-a716-446655440000.jpg"
+  }
+}
+```
+
+---
+
+#### 10. Update Profile & Upload Avatar
 Allows the learner to update their personal details and upload or remove their avatar image.
 
 - **Method:** `POST`
-- **Endpoint:** `/learner/profile/update` (Alternative: `/learner/profile-update`)
+- **Endpoint:** `/learner/profile/update`
 - **Auth Required:** Yes (`Bearer`)
 - **Content-Type:** `multipart/form-data` or `application/json`
 

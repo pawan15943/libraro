@@ -238,6 +238,7 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 Route::middleware(['auth:learner_api', 'api_key', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
     Route::get('profile', [LearnerAuthController::class, 'profile']);
     Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
+    Route::post('upload/temp-images', [LearnerAppController::class, 'uploadTempImages']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);
 
     Route::post('detail', [LearnerAppController::class, 'detail']);

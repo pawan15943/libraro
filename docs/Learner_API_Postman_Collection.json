@@ -696,6 +696,72 @@
                     "response": []
                 },
                 {
+                    "name": "Upload Temporary Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "",
+                                    "description": "Image file (jpg, jpeg, png, webp - max 3MB). Can also use 'image' or 'profile_picture'."
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/upload/temp-images",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "upload",
+                                "temp-images"
+                            ]
+                        },
+                        "description": "Uploads a photo to temporary storage and returns temp_path and url. Pass the returned temp_path to profile/update API."
+                    },
+                    "response": []
+                },
+                {
                     "name": "Update Learner Profile",
                     "request": {
                         "method": "POST",
