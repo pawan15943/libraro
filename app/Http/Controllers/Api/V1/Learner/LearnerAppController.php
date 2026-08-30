@@ -89,10 +89,22 @@ class LearnerAppController extends Controller
                 'learner_detail.*',
                 'plans.name as plan_name',
                 'plan_types.name as plan_type_name',
-                'plan_types.slot as shift_time'
+                'plan_types.start_time',
+                'plan_types.end_time'
             )
             ->orderBy('learner_detail.id', 'DESC')
             ->first();
+
+        $shiftTime = 'N/A';
+        if ($activeDetail && !empty($activeDetail->start_time) && !empty($activeDetail->end_time)) {
+            try {
+                $start = Carbon::parse($activeDetail->start_time)->format('h:i A');
+                $end = Carbon::parse($activeDetail->end_time)->format('h:i A');
+                $shiftTime = "{$start} - {$end}";
+            } catch (\Throwable $e) {
+                $shiftTime = "{$activeDetail->start_time} - {$activeDetail->end_time}";
+            }
+        }
 
         $branch = Branch::where('id', $learner->branch_id)
             ->select('id', 'name as library_name', 'features', 'library_address as address')
@@ -202,7 +214,7 @@ class LearnerAppController extends Controller
                     'status'         => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
                     'planName'       => $activeDetail?->plan_name ?? 'No Active Plan',
                     'planType'       => $activeDetail?->plan_type_name ?? 'N/A',
-                    'shiftTime'      => $activeDetail?->shift_time ?? 'N/A',
+                    'shiftTime'      => $shiftTime,
                     'planStartDate'  => $activeDetail?->plan_start_date ?? '',
                     'planExpiryDate' => $activeDetail?->plan_end_date ?? '',
                     'daysLeft'       => $daysLeft,
