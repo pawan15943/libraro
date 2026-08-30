@@ -707,6 +707,64 @@
                     }
                 },
                 {
+                    "name": "Profile Update",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Student Name\",\n    \"email\": \"student@example.com\",\n    \"phone\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Father Name\",\n    \"address\": \"123 Main Street\",\n    \"profile_picture\": \"temp/profile_123.jpg\",\n    \"remove_profile_picture\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/profile/update",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "profile",
+                                "update"
+                            ]
+                        },
+                        "description": "Learner profile update API. Supports updating name, email, mobile/phone, dob, father_name, address, and profile picture (add, update, or remove)."
+                    }
+                },
+                {
                     "name": "Detail",
                     "request": {
                         "method": "POST",
@@ -858,6 +916,191 @@
                                 "v1",
                                 "learner",
                                 "notifications"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Notifications Mark Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": \"all\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/notifications/read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "notifications",
+                                "read"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Subscriptions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/subscriptions?page=1&limit=20&tab=all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "subscriptions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "tab",
+                                    "value": "all"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Transactions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/transactions?page=1&limit=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "transactions"
                             ],
                             "query": [
                                 {

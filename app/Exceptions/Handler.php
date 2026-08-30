@@ -84,7 +84,31 @@ class Handler extends ExceptionHandler
                 ->with('branch_error', 'Branch changed. Requested data not found.');
         }
 
+        if ($request->is('api/*') && $exception instanceof AuthenticationException) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated or invalid session token. Please login again.',
+                'code'    => 401,
+            ], 401);
+        }
+
         return parent::render($request, $exception);
+    }
+
+    /**
+     * Convert an authentication exception into a response.
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        if ($request->expectsJson() || $request->is('api/*') || $request->is('api/v1/*')) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated or invalid session token. Please login again.',
+                'code'    => 401,
+            ], 401);
+        }
+
+        return redirect()->guest(route('login.library'));
     }
 
     /**

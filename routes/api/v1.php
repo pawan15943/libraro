@@ -235,16 +235,20 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 
 // Learner-app self-service (learner's own device, distinct from the
 // staff/library_api app above). Data is scoped to the authenticated
-// learner via getLibraryId()/getCurrentBranch() (learner_api branch).
 Route::middleware(['auth:learner_api', 'api_key', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
     Route::get('profile', [LearnerAuthController::class, 'profile']);
+    Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);
 
     Route::post('detail', [LearnerAppController::class, 'detail']);
-   
     Route::post('renew', [LearnerAppController::class, 'renew']);
     Route::post('dashboard', [LearnerAppController::class, 'dashboard']);
+
     Route::match(['get', 'post'], 'notifications', [LearnerAppController::class, 'notifications']);
+    Route::post('notifications/read', [LearnerAppController::class, 'markNotificationRead']);
+
+    Route::match(['get', 'post'], 'subscriptions', [LearnerAppController::class, 'subscriptions']);
+    Route::match(['get', 'post'], 'transactions', [LearnerAppController::class, 'transactions']);
 
     Route::post('attendance/summary', [AttendanceController::class, 'summary']);
     Route::post('attendance/logs', [LearnerAppController::class, 'attendanceLogs']);

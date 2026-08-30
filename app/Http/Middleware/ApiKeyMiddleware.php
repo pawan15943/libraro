@@ -15,13 +15,19 @@ class ApiKeyMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-         $apiKey = $request->header('X-API-KEY');
+        $apiKey = $request->header('X-API-KEY') 
+            ?? $request->header('x-api-key') 
+            ?? $request->header('X-Api-Key') 
+            ?? $request->header('api-key')
+            ?? $request->header('api_key');
 
-        if (!$apiKey || $apiKey !== config('app.api_key')) {
+        $expectedKey = config('app.api_key');
+
+        if (!$apiKey || empty($expectedKey) || trim($apiKey) !== trim($expectedKey)) {
             return response()->json([
-                'status' => false,
-                'message' => 'Unauthorized access',
-                'code'=>401
+                'status'  => false,
+                'message' => 'Unauthorized access (Invalid or missing X-API-KEY)',
+                'code'    => 401
             ], 401);
         }
 

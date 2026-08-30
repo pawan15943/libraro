@@ -696,6 +696,65 @@
                     "response": []
                 },
                 {
+                    "name": "Update Learner Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Rahul Sharma\",\n    \"email\": \"rahul@example.com\",\n    \"mobile\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Suresh Sharma\",\n    \"alternate_mobile\": \"9123456780\",\n    \"address\": \"New Delhi, India\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/profile/update",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "profile",
+                                "update"
+                            ]
+                        },
+                        "description": "Update learner profile information (name, email, mobile, DOB, father name, alternate mobile, address, avatar)."
+                    },
+                    "response": []
+                },
+                {
                     "name": "Get Learner Dashboard",
                     "request": {
                         "method": "POST",
@@ -800,6 +859,265 @@
                             ]
                         },
                         "description": "Get detailed history, transaction history, and seat allocations for authenticated learner."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/notifications?page=1&limit=20&tab=all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "notifications"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "tab",
+                                    "value": "all"
+                                }
+                            ]
+                        },
+                        "description": "Fetch notifications list supporting tabs ('all', 'active', 'expired'), unread counts, and attachment URLs."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mark Notification Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"id\": \"all\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/notifications/read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "notifications",
+                                "read"
+                            ]
+                        },
+                        "description": "Mark a single notification by UUID or all notifications ('all') as read for the authenticated learner."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Subscriptions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/subscriptions?page=1&limit=20&tab=all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "subscriptions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "tab",
+                                    "value": "all"
+                                }
+                            ]
+                        },
+                        "description": "Fetch learner's seat subscriptions and membership plans with tab filtering ('all', 'active', 'upcoming', 'expired'), progress bars, days used, and receipt links."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Payment Transactions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/transactions?page=1&limit=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "transactions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "Fetch payment transactions history with status badges ('SUCCESS', 'PENDING', 'FAILED') and receipt download URLs."
                     },
                     "response": []
                 },
@@ -1092,7 +1410,17 @@
                     },
                     "response": []
                 }
-            ]
+            ],
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{learner_token}}",
+                        "type": "string"
+                    }
+                ]
+            }
         }
     ],
     "event": [

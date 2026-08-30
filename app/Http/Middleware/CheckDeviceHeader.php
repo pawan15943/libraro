@@ -17,20 +17,23 @@ class CheckDeviceHeader
     {
         $deviceInfo  = $request->input('deviceInfo', []);
 
-        $deviceType  = $request->header('device-type') 
+        $deviceType  = $request->header('X-Platform')
+            ?? $request->header('Platform')
+            ?? $request->header('device-type') 
             ?? $request->header('device_type') 
             ?? $request->header('Device-Type')
-            ?? ($deviceInfo['osVersion'] ?? $request->header('X-Platform'));
+            ?? ($deviceInfo['osVersion'] ?? null);
 
-        $deviceToken = $request->header('device-token') 
+        $deviceToken = $request->header('X-Device-Id')
+            ?? $request->header('device-token') 
             ?? $request->header('device_token') 
             ?? $request->header('Device-Token')
-            ?? ($deviceInfo['deviceId'] ?? ($deviceInfo['fcmToken'] ?? $request->header('X-Device-Id')));
+            ?? ($deviceInfo['deviceId'] ?? ($deviceInfo['fcmToken'] ?? null));
 
         if (!$deviceType || !$deviceToken) {
             return response()->json([
                 'status'  => false,
-                'message' => 'device-type and device-token headers are required in header',
+                'message' => 'X-Platform and X-Device-Id (or device-token) headers are required in header',
                 'data'    => (object)[]
             ], 400);
         }

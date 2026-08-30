@@ -35,15 +35,18 @@ class LearnerAuthController extends Controller
 
         // Support device credentials from headers or request body deviceInfo
         $deviceInfo  = $request->input('deviceInfo', []);
-        $deviceType  = $request->header('device-type') 
+        $deviceType  = $request->header('X-Platform')
+            ?? $request->header('Platform')
+            ?? $request->header('device-type') 
             ?? $request->header('device_type') 
             ?? $request->header('Device-Type')
-            ?? ($deviceInfo['osVersion'] ?? $request->header('X-Platform', 'android'));
+            ?? ($deviceInfo['osVersion'] ?? 'android');
 
-        $deviceToken = $request->header('device-token') 
+        $deviceToken = $request->header('X-Device-Id')
+            ?? $request->header('device-token') 
             ?? $request->header('device_token') 
             ?? $request->header('Device-Token')
-            ?? ($deviceInfo['deviceId'] ?? ($deviceInfo['fcmToken'] ?? $request->header('X-Device-Id')));
+            ?? ($deviceInfo['deviceId'] ?? ($deviceInfo['fcmToken'] ?? null));
 
         $encryptedUid    = encryptData($identifierInput);
         $encryptedMobile = encryptData($passwordInput);
@@ -126,7 +129,6 @@ class LearnerAuthController extends Controller
                 'student'     => [
                     'id'              => (string) $learner->id,
                     'uid'             => $learner->learner_no ?? '',
-                    'name'            => $firstName,
                     'fullName'        => strtoupper($learner->name ?? ''),
                     'email'           => $learner->email ?? '',
                     'phone'           => $learner->mobile ?? '',
