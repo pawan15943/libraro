@@ -231,7 +231,8 @@ class LearnerAppController extends Controller
                     'fullName'                => strtoupper($learner->name ?? ''),
                     'email'                   => $learner->email ?? '',
                     'phone'                   => $learner->mobile ?? '',
-                    'profileImageUrl'         => $learner->profile_image ?? null,
+                    
+                    'profileImageUrl'         => $learner->profile_picture ? asset($learner->profile_picture) : null,
                     'status'                  => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
                     'unreadNotificationCount' => $unreadCount,
                     'library'                 => [

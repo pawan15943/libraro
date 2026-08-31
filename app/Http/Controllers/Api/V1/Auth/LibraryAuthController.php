@@ -64,10 +64,10 @@ class LibraryAuthController extends Controller
             'status' => true,
             'message' => 'Settings fetched successfully.',
             'data' => [
-                'app_version' => (string) config('app.library_app.min_versions.android', env('LIBRARY_MIN_ANDROID_VERSION', '1.0.1')),
-                'android_version' => (string) config('app.library_app.min_versions.android', env('LIBRARY_MIN_ANDROID_VERSION', '1.0.1')),
-                'ios_version' => (string) config('app.library_app.min_versions.ios', env('LIBRARY_MIN_IOS_VERSION', '1.0.1')),
-                'force_update' => (bool) config('app.library_app.force_update', env('LIBRARY_FORCE_UPDATE', false)),
+                'app_version'     => (string) config('app.min_versions.android', '1.0.0'),
+                'android_version' => (string) config('app.min_versions.android', '1.0.0'),
+                'ios_version'     => (string) config('app.min_versions.ios', '1.0.0'),
+                'force_update'    => (bool) config('app.force_update', false),
                 'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
@@ -79,7 +79,7 @@ class LibraryAuthController extends Controller
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
-                'isMaintenance'=>false,
+                'isMaintenance' => (bool) config('app.maintenance', env('APP_MAINTENANCE', false)),
                 // 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
