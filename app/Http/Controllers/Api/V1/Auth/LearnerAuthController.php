@@ -200,7 +200,7 @@ class LearnerAuthController extends Controller
                 'instagram'            => 'https://www.instagram.com/libraro.in/',
                 'facebook'             => 'https://www.facebook.com/libraro.in',
                 'whatsapp'             => 'https://wa.me/+918114479678',
-                'isMaintenance'        => filter_var(config('app.maintenance', env('APP_MAINTENANCE', false)), FILTER_VALIDATE_BOOLEAN),
+                'isMaintenance'        => filter_var(env('APP_MAINTENANCE') ?? config('app.is_maintenance', false), FILTER_VALIDATE_BOOLEAN),
             ]
         ], 200);
     }

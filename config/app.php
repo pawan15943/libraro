@@ -42,7 +42,7 @@ return [
         'ios'     => env('LIBRARY_MIN_IOS_VERSION', '1.0.0'),
     ],
 
-    'maintenance' => filter_var(env('APP_MAINTENANCE', false), FILTER_VALIDATE_BOOLEAN),
+    'is_maintenance' => filter_var(env('APP_MAINTENANCE', false), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------

@@ -79,7 +79,7 @@ class LibraryAuthController extends Controller
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
-                'isMaintenance' => filter_var(config('app.maintenance', env('APP_MAINTENANCE', false)), FILTER_VALIDATE_BOOLEAN),
+                'isMaintenance' => filter_var(env('APP_MAINTENANCE') ?? config('app.is_maintenance', false), FILTER_VALIDATE_BOOLEAN),
                 // 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
