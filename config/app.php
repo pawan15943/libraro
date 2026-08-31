@@ -35,14 +35,14 @@ return [
 
     'hmac_secret' => env('APP_HMAC_SECRET', '9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3'),
 
-    'force_update' => env('LIBRARY_FORCE_UPDATE', false),
+    'force_update' => filter_var(env('LIBRARY_FORCE_UPDATE', false), FILTER_VALIDATE_BOOLEAN),
 
     'min_versions' => [
         'android' => env('LIBRARY_MIN_ANDROID_VERSION', '1.0.0'),
         'ios'     => env('LIBRARY_MIN_IOS_VERSION', '1.0.0'),
     ],
 
-    'maintenance' => env('APP_MAINTENANCE', false),
+    'maintenance' => filter_var(env('APP_MAINTENANCE', false), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------

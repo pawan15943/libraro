@@ -67,7 +67,7 @@ class LibraryAuthController extends Controller
                 'app_version'     => (string) config('app.min_versions.android', '1.0.0'),
                 'android_version' => (string) config('app.min_versions.android', '1.0.0'),
                 'ios_version'     => (string) config('app.min_versions.ios', '1.0.0'),
-                'force_update'    => (bool) config('app.force_update', false),
+                'force_update'    => filter_var(config('app.force_update', false), FILTER_VALIDATE_BOOLEAN),
                 'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
@@ -79,7 +79,7 @@ class LibraryAuthController extends Controller
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
-                'isMaintenance' => (bool) config('app.maintenance', env('APP_MAINTENANCE', false)),
+                'isMaintenance' => filter_var(config('app.maintenance', env('APP_MAINTENANCE', false)), FILTER_VALIDATE_BOOLEAN),
                 // 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
