@@ -1091,7 +1091,15 @@ class LearnerService
         }
         
 
+        $branchModel = Branch::where('id', $learner->branch_id)->first();
+
         return [
+
+            'library' => [
+                'id'      => (string) ($branchModel?->id ?? ''),
+                'name'    => (string) ($branchModel?->display_name ?? ($branchModel?->name ?? '')),
+                'address' => (string) ($branchModel?->library_address ?? ''),
+            ],
 
             'personal_info'=>[
                 'id'=>(string) $learner->id,

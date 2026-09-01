@@ -102,12 +102,24 @@ class LearnerAppController extends Controller
                 'remark'           => (string) ($otherDetails['remark'] ?? ''),
             ];
 
+            // Clean library info to match the mobile specification
+            $branch = Branch::where('id', $learner->branch_id ?? ($personalInfo['branch_id'] ?? null))
+                ->select('id', 'name', 'display_name', 'library_address as address')
+                ->first();
+
+            $cleanedLibrary = [
+                'id'      => (string) ($branch?->id ?? ''),
+                'name'    => (string) ($branch?->display_name ?? ($branch?->name ?? '')),
+                'address' => (string) ($branch?->address ?? ''),
+            ];
+
             return response()->json([
                 'status' => true,
                 'data'   => [
                     'personal_info' => $cleanedPersonalInfo,
-                    'plan_info'   => $cleanedDetailInfo,
+                    'plan_info'     => $cleanedDetailInfo,
                     'other_details' => $cleanedOtherDetails,
+                    'library'       => $cleanedLibrary,
                 ],
             ], 200);
         } catch (\Throwable $e) {
