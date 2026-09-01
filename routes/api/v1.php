@@ -59,12 +59,11 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     // web QR booking form). Creates a pending Booking for staff to verify.
     Route::post('learner/book-seat/{uuid}', [LearnerBookingController::class, 'store']);
 
-    // Learner app settings, branch browsing, login & reset-password
+    // Learner app settings, branch browsing, login
     Route::middleware(['device.check'])->group(function () {
         Route::get('learner/app-settings', [LearnerAuthController::class, 'setting']);
        
         Route::post('learner/login', [LearnerAuthController::class, 'login'])->middleware('throttle:10,1');
-        Route::post('learner/reset-password', [LearnerAuthController::class, 'resetPassword'])->middleware('throttle:10,1');
 
         Route::post('learner/branch/seat-map', [LearnerBranchController::class, 'seatMap']);
         Route::post('learner/branch/plans', [LearnerBranchController::class, 'plans']);
@@ -236,7 +235,7 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 // Learner-app self-service (learner's own device, distinct from the
 // staff/library_api app above). Data is scoped to the authenticated
 Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
-    Route::get('profile', [LearnerAuthController::class, 'profile']);
+    Route::post('reset-password', [LearnerAuthController::class, 'resetPassword'])->middleware('throttle:10,1');
     Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
     Route::post('upload/temp-images', [LearnerAppController::class, 'uploadTempImages']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);

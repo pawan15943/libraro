@@ -362,21 +362,7 @@ Authenticates a learner using their **UID (Learner No)** or **Email**, with thei
   "data": {
     "accessToken": "1|abcdef1234567890...",
     "tokenType": "Bearer",
-    "student": {
-      "id": "15",
-      "uid": "LBR-2026-001",
-      "name": "Rahul",
-      "fullName": "RAHUL SHARMA",
-      "email": "rahul.sharma@example.com",
-      "phone": "9876543210",
-      "profileImageUrl": "https://your-domain.com/upload/profile_picture/avatar.jpg",
-      "status": "ACTIVE",
-      "library": {
-        "id": "2",
-        "name": "Libraro Central Branch",
-        "address": "Plot 45, Sector 5, City Center"
-      }
-    }
+   
   }
 }
 ```
@@ -388,14 +374,12 @@ Allows a learner to change their login mobile / password.
 
 - **Method:** `POST`
 - **Endpoint:** `/learner/reset-password`
-- **Auth Required:** No
+- **Auth Required:** Yes
 - **Rate Limit:** 10 requests / minute
 
 ##### Request Body (`application/json`):
 | Field | Type | Required | Description | Example |
-| :--- | :--- | :---: | :--- | :--- |
-| `uid` | `string` | **Yes** | Learner UID or registered Email | `"LBR-2026-001"` |
-| `mobile` | `string` | **Yes** | Current registered mobile | `"9876543210"` |
+| `old_password` | `string` | **Yes** | old mobile / password (min 6 characters) | `"9876500000"` |
 | `new_password` | `string` | **Yes** | New mobile / password (min 6 characters) | `"9876500000"` |
 
 ##### Response (`200 OK`):
@@ -429,21 +413,8 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
   "status": true,
   "message": "Home dashboard data fetched successfully.",
   "data": {
-    "student": {
-      "id": "15",
-      "uid": "LBR-2026-001",
-      "fullName": "RAHUL SHARMA",
-      "email": "rahul.sharma@example.com",
-      "phone": "9876543210",
-      "profileImageUrl": "https://your-domain.com/upload/profile_picture/avatar.jpg",
-      "status": "ACTIVE",
-      "unreadNotificationCount": 2,
-      "library": {
-        "id": "2",
-        "name": "Libraro Central Branch",
-        "address": "Plot 45, Sector 5, City Center"
-      }
-    },
+
+    "unreadNotificationCount": 2,
     "banners": [
       {
         "type": "other_wishes",
@@ -494,8 +465,11 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
         "branch_id": 2
       }
     ],
+   
     "idCard": {
-      "uid": "LBR-2026-001",
+       "id": "15",
+      "learner_no": "LBR-2026-001",
+       "fullName": "RAHUL SHARMA",
       "status": "ACTIVE",
       "planName": "Monthly Full Day",
       "planType": "Full Day Slot",
@@ -503,11 +477,18 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
       "planStartDate": "2026-08-01",
       "planExpiryDate": "2026-08-31",
       "daysLeft": 1,
+      "extend_days":5,
+       "profileImageUrl": "https://your-domain.com/upload/profile_picture/avatar.jpg",
       "pendingPayment": {
         "hasPending": false,
         "amount": 0,
         "dueDate": "",
-        "formattedNotice": "No Pending Payment"
+       
+      },
+      "library": {
+        "id": "2",
+        "name": "Libraro Central Branch",
+        "address": "Plot 45, Sector 5, City Center"
       },
       "qrPayload": "LIBRARO:UID:LBR-2026-001|NAME:RAHUL SHARMA|PLAN:Monthly Full Day|EXP:1788134400"
     }
@@ -520,9 +501,6 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
 #### 8. Learner Profile & Complete Details
 Fetch complete details including seat number, active plan, transaction history, locker allocation, and uploaded ID proofs.
 
-##### Quick Profile:
-- **Method:** `GET`
-- **Endpoint:** `/learner/profile`
 
 ##### Full Detailed Profile:
 - **Method:** `POST`
@@ -534,19 +512,19 @@ Fetch complete details including seat number, active plan, transaction history, 
   "status": true,
   "data": {
     "personal_info": {
+       "id": "15",
       "learner_no": "LBR-2026-001",
-      "seat_id": 12,
-      "seat_no": "A-12",
-      "seat_with_floor": "1F - A-12",
       "name": "Rahul Sharma",
       "mobile": "9876543210",
       "email": "rahul.sharma@example.com",
-      "birth_status": false,
       "dob": "2000-01-15",
       "father_name": "Suresh Sharma",
       "profile_picture": "https://your-domain.com/upload/profile_picture/avatar.jpg"
     },
     "detail_info": {
+      "seat_id": 12,
+      "seat_no": "A-12",
+      "seat_with_floor": "1F - A-12",
       "plan": "Monthly Full Day",
       "plan_type": "Full Day Slot",
       "plan_id": 1,
@@ -578,22 +556,7 @@ Fetch complete details including seat number, active plan, transaction history, 
       },
       "total_gift_days": 0
     },
-    "payment_information": {
-      "total_amount": "1200",
-      "paid_amount": "1200",
-      "pending_amount": "0",
-      "paid_date": "2026-08-01",
-      "payment_mode": "Online",
-      "locker_amount": "0",
-      "discount": "0",
-      "token_money": "0",
-      "miscellaneous": "0",
-      "pending_refund": "0",
-      "due_date": "",
-      "transaction": "TXN_987654",
-      "transaction_id": 102,
-      "download_receipt_url": "https://your-domain.com/receipt/download/102"
-    },
+  
     "other_details": {
       "alternate_mobile": "9876543211",
       "id_proof_id": "1",
@@ -605,7 +568,6 @@ Fetch complete details including seat number, active plan, transaction history, 
     }
   }
 }
-```
 
 ---
 
@@ -620,23 +582,21 @@ Allows the learner to upload an image file first and retrieve temporary file sto
 ##### Request Parameters (Form-Data):
 | Parameter | Type | Required | Description | Example |
 | :--- | :--- | :---: | :--- | :--- |
-| `file` / `profile_picture` / `image` | `file` | Yes | Image file (jpg, jpeg, png, webp; max 3MB) | binary file |
-| `files` | `array of files` | No | Multiple images support | `[file1, file2]` |
+| `files` / `profile_picture` / `image` | `file` | Yes | Image file (jpg, jpeg, png, webp; max 3MB) | binary file | | `array of files` | No | Multiple images support | `[file1, file2]` |
 
 ##### Success Response (`200 OK`):
 ```json
 {
   "status": true,
   "message": "File(s) uploaded successfully.",
-  "files": [
-    {
-      "temp_path": "temp/550e8400-e29b-41d4-a716-446655440000.jpg",
-      "url": "https://your-domain.com/storage/temp/550e8400-e29b-41d4-a716-446655440000.jpg"
-    }
-  ],
+  
   "data": {
-    "temp_path": "temp/550e8400-e29b-41d4-a716-446655440000.jpg",
-    "url": "https://your-domain.com/storage/temp/550e8400-e29b-41d4-a716-446655440000.jpg"
+    "files": [
+      {
+        "temp_path": "temp/550e8400-e29b-41d4-a716-446655440000.jpg",
+        "url": "https://your-domain.com/storage/temp/550e8400-e29b-41d4-a716-446655440000.jpg"
+      }
+    ],
   }
 }
 ```
@@ -662,7 +622,7 @@ Allows the learner to update their personal details and upload or remove their a
 | `alternate_mobile` | `string` | No | 10-digit alternate phone | `"9123456780"` |
 | `address` | `string` | No | Address text | `"New Delhi, India"` |
 | `profile_picture` | `file\|string` | No | Image file upload (jpg, png, webp) or image path | `avatar.jpg` |
-| `remove_profile_picture`| `boolean` | No | Pass `1` or `true` to delete existing photo | `false` |
+
 
 ##### Success Response (`200 OK`):
 ```json
@@ -672,17 +632,16 @@ Allows the learner to update their personal details and upload or remove their a
   "data": {
     "student": {
       "id": "15",
-      "uid": "LBR-2026-001",
+      "learner_no": "LBR-2026-001",
       "name": "Rahul Sharma",
       "email": "rahul@example.com",
-      "phone": "9876543210",
+      "mobile": "9876543210",
       "dob": "2000-01-15",
-      "fatherName": "Suresh Sharma",
-      "alternateMobile": "9123456780",
+      "father_name": "Suresh Sharma",
+      "alternate_mobile": "9123456780",
       "address": "New Delhi, India",
-      "profile_picture": "upload/profile_picture/65e89a_photo.jpg",
-      "profile_picture_url": "https://your-domain.com/upload/profile_picture/65e89a_photo.jpg",
-      "profileImageUrl": "https://your-domain.com/upload/profile_picture/65e89a_photo.jpg"
+      "profile_picture": "https://your-domain.com/upload/profile_picture/avatar.jpg"
+      
     }
   }
 }
@@ -704,7 +663,7 @@ Retrieve learner database notifications supporting the 3 UI tabs (**All**, **Act
 ##### Query / Body Parameters:
 | Parameter | Type | Required | Description | Example |
 | :--- | :--- | :---: | :--- | :--- |
-| `tab` | `string` | No | Active UI tab filter: `all`, `active`, `expired` (Default: `all`) | `"active"` |
+
 | `page` | `integer`| No | Current page number (Default: `1`) | `1` |
 | `limit` | `integer`| No | Items per page (Default: `20`) | `20` |
 
@@ -714,65 +673,30 @@ Retrieve learner database notifications supporting the 3 UI tabs (**All**, **Act
   "status": true,
   "message": "Notifications retrieved successfully.",
   "data": {
-    "current_tab": "all",
-    "totalUnread": 1,
-    "unread_count": 1,
-    "counts": {
-      "all": 5,
-      "active": 4,
-      "expired": 1,
-      "unread": 1
-    },
+
     "notifications": [
       {
         "id": "e4f8b912-3a5c-4d8e-9f1a-bc0123456789",
-        "batch_id": 981245,
+        
         "title": "NEET main exam is scheduled on 26-05-2026",
         "description": "NEET main exam is scheduled on 26-05-2026. View schedule and download details.",
         "message": "NEET main exam is scheduled on 26-05-2026. View schedule and download details.",
         "notification_type": "exam",
-        "type": "exam",
+       
         "is_read": false,
-        "isRead": false,
-        "read_at": null,
-        "status": "active",
-        "is_active": true,
-        "start_date": "2026-02-10",
-        "end_date": "2026-05-26",
+      
         "date_time": "10-02-2026 12:05:20",
-        "createdAt": "2026-02-10T12:05:20.000000Z",
-        "attachment": {
+       
+        "attachment": [{
           "has_attachment": true,
           "url": "https://your-domain.com/upload/attachments/exam_schedule.pdf",
           "name": "exam_schedule.pdf"
         },
-        "link": "https://your-domain.com/upload/attachments/exam_schedule.pdf",
-        "image": null
+        ]
+     
       },
       {
-        "id": "a1b2c3d4-e5f6-7a8b-9c0d-ef1234567890",
-        "batch_id": 981240,
-        "title": "Library Wi-Fi Maintenance",
-        "description": "High-speed optical fiber line upgrade completed.",
-        "message": "High-speed optical fiber line upgrade completed.",
-        "notification_type": "maintenance",
-        "type": "maintenance",
-        "is_read": true,
-        "isRead": true,
-        "read_at": "12-02-2026 09:30:00",
-        "status": "active",
-        "is_active": true,
-        "start_date": "2026-02-01",
-        "end_date": "2026-02-28",
-        "date_time": "01-02-2026 08:00:00",
-        "createdAt": "2026-02-01T08:00:00.000000Z",
-        "attachment": {
-          "has_attachment": false,
-          "url": null,
-          "name": null
-        },
-        "link": null,
-        "image": null
+       
       }
     ],
     "pagination": {
@@ -786,29 +710,7 @@ Retrieve learner database notifications supporting the 3 UI tabs (**All**, **Act
 }
 ```
 
----
 
-#### 12. Mark Notification(s) as Read
-Mark a single notification or all notifications as read for the authenticated learner.
-
-- **Method:** `POST`
-- **Endpoint:** `/learner/notifications/read` (or `/learner/notifications/mark-read`)
-- **Auth Required:** Yes (`Bearer`)
-
-##### Request Body (`application/json`):
-| Field | Type | Required | Description | Example |
-| :--- | :--- | :---: | :--- | :--- |
-| `id` | `string` | **Yes** | Notification UUID to mark as read, or `"all"` to mark all | `"e4f8b912-3a5c-4d8e-9f1a-bc0123456789"` or `"all"` |
-
-##### Success Response (`200 OK`):
-```json
-{
-  "status": true,
-  "message": "Notification marked as read successfully.",
-  "data": {
-    "unread_count": 0
-  }
-}
 ```
 
 ---

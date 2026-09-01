@@ -108,7 +108,7 @@ class LearnerAppController extends Controller
         }
 
         $branch = Branch::where('id', $learner->branch_id)
-            ->select('id', 'name as library_name', 'features', 'library_address as address')
+            ->select('id', 'name as library_name', 'features', 'library_address as address', 'extend_days')
             ->first();
 
         // Pending Payment Status
@@ -221,43 +221,39 @@ class LearnerAppController extends Controller
             ->whereNull('read_at')
             ->count();
 
+        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+        $profileImageUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+
         return response()->json([
             'status'  => true,
             'message' => 'Home dashboard data fetched successfully.',
             'data'    => [
-                'student' => [
-                    'id'                      => (string) $learner->id,
-                    'uid'                     => $learner->learner_no ?? '',
-                    'fullName'                => strtoupper($learner->name ?? ''),
-                    'email'                   => $learner->email ?? '',
-                    'phone'                   => $learner->mobile ?? '',
-                    
-                    'profileImageUrl'         => $learner->profile_picture ? asset($learner->profile_picture) : null,
-                    'status'                  => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
-                    'unreadNotificationCount' => $unreadCount,
-                    'library'                 => [
+                'unreadNotificationCount' => $unreadCount,
+                'banners'                 => $banners,
+                'idCard'                  => [
+                    'id'              => (string) $learner->id,
+                    'learner_no'      => $learner->learner_no ?? '',
+                    'fullName'        => strtoupper($learner->name ?? ''),
+                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
+                    'planName'        => $activeDetail?->plan_name ?? 'No Active Plan',
+                    'planType'        => $activeDetail?->plan_type_name ?? 'N/A',
+                    'shiftTime'       => $shiftTime,
+                    'planStartDate'   => $activeDetail?->plan_start_date ?? '',
+                    'planExpiryDate'  => $activeDetail?->plan_end_date ?? '',
+                    'daysLeft'        => $daysLeft,
+                    'extend_days'     => $extendDays,
+                    'profileImageUrl' => $profileImageUrl,
+                    'pendingPayment'  => [
+                        'hasPending'      => $hasPending,
+                        'amount'          => $pendingAmount,
+                        'dueDate'         => $dueDate,
+                    ],
+                    'library'         => [
                         'id'      => (string) ($branch?->id ?? ''),
                         'name'    => $branch?->library_name ?? '',
                         'address' => $branch?->address ?? '',
                     ],
-                ],
-                'banners' => $banners,
-                'idCard'  => [
-                    'uid'            => $learner->learner_no ?? '',
-                    'status'         => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
-                    'planName'       => $activeDetail?->plan_name ?? 'No Active Plan',
-                    'planType'       => $activeDetail?->plan_type_name ?? 'N/A',
-                    'shiftTime'      => $shiftTime,
-                    'planStartDate'  => $activeDetail?->plan_start_date ?? '',
-                    'planExpiryDate' => $activeDetail?->plan_end_date ?? '',
-                    'daysLeft'       => $daysLeft,
-                    'pendingPayment' => [
-                        'hasPending'      => $hasPending,
-                        'amount'          => $pendingAmount,
-                        'dueDate'         => $dueDate,
-                        'formattedNotice' => $formattedNotice,
-                    ],
-                    'qrPayload'      => $qrPayload,
+                    'qrPayload'       => $qrPayload,
                 ],
             ],
         ], 200);
@@ -337,6 +333,15 @@ class LearnerAppController extends Controller
                 $isExpired = !empty($notif->end_date) && Carbon::parse($notif->end_date)->startOfDay()->lt(Carbon::parse($today));
                 $attachmentUrl = $data['link'] ?? ($data['image'] ?? ($data['attachment'] ?? null));
 
+                $attachmentArray = [];
+                if (!empty($attachmentUrl)) {
+                    $attachmentArray[] = [
+                        'has_attachment' => true,
+                        'url'            => $attachmentUrl,
+                        'name'           => basename($attachmentUrl),
+                    ];
+                }
+
                 return [
                     'id'                => (string) $notif->id,
                     'batch_id'          => $notif->batch_id ?? null,
@@ -354,11 +359,7 @@ class LearnerAppController extends Controller
                     'end_date'          => $notif->end_date ?? null,
                     'date_time'         => Carbon::parse($notif->created_at)->format('d-m-Y H:i:s'),
                     'createdAt'         => Carbon::parse($notif->created_at)->toISOString(),
-                    'attachment'        => [
-                        'has_attachment' => !empty($attachmentUrl),
-                        'url'            => $attachmentUrl,
-                        'name'           => !empty($attachmentUrl) ? basename($attachmentUrl) : null,
-                    ],
+                    'attachment'        => $attachmentArray,
                     'link'              => $data['link'] ?? null,
                     'image'             => $data['image'] ?? null,
                 ];
@@ -510,10 +511,8 @@ class LearnerAppController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'File(s) uploaded successfully.',
-            'files'   => $uploadedFiles,
             'data'    => [
-                'temp_path' => $uploadedFiles[0]['temp_path'] ?? '',
-                'url'       => $uploadedFiles[0]['url'] ?? '',
+                'files' => $uploadedFiles,
             ],
         ], 200);
     }
@@ -705,20 +704,17 @@ class LearnerAppController extends Controller
                 'message' => 'Profile updated successfully.',
                 'data'    => [
                     'student' => [
-                        'id'                  => (string) $learner->id,
-                        'uid'                 => $learner->learner_no ?? '',
-                        'name'                => $learner->name,
-                        'email'               => $learner->email ?? '',
-                        'phone'               => $learner->mobile ?? '',
-                        'dob'                 => $learner->dob ?? '',
-                        'fatherName'          => $learner->father_name ?? '',
-                        'alternateMobile'     => $learner->alternate_mobile ?? '',
-                        'address'             => $learner->address ?? '',
-                        'profile_picture'     => $learner->profile_picture ?? null,
-                        'profile_picture_url' => $profilePictureUrl,
-                        'profileImageUrl'     => $profilePictureUrl,
+                        'id'               => (string) $learner->id,
+                        'learner_no'       => $learner->learner_no ?? '',
+                        'name'             => $learner->name ?? '',
+                        'email'            => !empty($learner->email) ? (string) $learner->email : '',
+                        'mobile'           => !empty($learner->mobile) ? (string) $learner->mobile : '',
+                        'dob'              => $learner->dob ?? '',
+                        'father_name'      => $learner->father_name ?? '',
+                        'alternate_mobile' => $learner->alternate_mobile ?? '',
+                        'address'          => $learner->address ?? '',
+                        'profile_picture'  => $profilePictureUrl,
                     ],
-                    'learner_details' => $learnerDetails,
                 ],
             ], 200);
 

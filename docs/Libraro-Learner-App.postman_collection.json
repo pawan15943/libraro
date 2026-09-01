@@ -691,12 +691,20 @@
             },
             "item": [
                 {
-                    "name": "Profile",
+                    "name": "Learner Reset Password",
                     "request": {
-                        "method": "GET",
+                        "method": "POST",
                         "header": [
                             {
+                                "key": "Authorization",
+                                "value": "Bearer {{learner_token}}"
+                            },
+                            {
                                 "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
                                 "value": "application/json"
                             },
                             {
@@ -728,8 +736,12 @@
                                 "value": "{{api_key}}"
                             }
                         ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"old_password\": \"9876543210\",\n    \"new_password\": \"9876500000\"\n}"
+                        },
                         "url": {
-                            "raw": "{{base_url}}/api/v1/learner/profile",
+                            "raw": "{{base_url}}/api/v1/learner/reset-password",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -737,7 +749,7 @@
                                 "api",
                                 "v1",
                                 "learner",
-                                "profile"
+                                "reset-password"
                             ]
                         }
                     }

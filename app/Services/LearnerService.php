@@ -1094,6 +1094,7 @@ class LearnerService
         return [
 
             'personal_info'=>[
+                'id'=>(string) $learner->id,
                 'learner_no'=>$learner->learner_no,
                 'seat_id' => $learner->seat_no !== null ? (int) $learner->seat_no : 0,
                 'seat_no'=>$learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no) : "GEN",

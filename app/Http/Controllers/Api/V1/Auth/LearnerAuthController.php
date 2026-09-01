@@ -126,38 +126,8 @@ class LearnerAuthController extends Controller
             'data'    => [
                 'accessToken' => $token,
                 'tokenType'   => 'Bearer',
-                'student'     => [
-                    'id'              => (string) $learner->id,
-                    'uid'             => $learner->learner_no ?? '',
-                    'fullName'        => strtoupper($learner->name ?? ''),
-                    'email'           => $learner->email ?? '',
-                    'phone'           => $learner->mobile ?? '',
-                    
-                    'profileImageUrl' => $learner->profile_picture ? asset($learner->profile_picture) : null,
-                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
-                    'library'         => [
-                        'id'      => (string) ($branch?->id ?? ''),
-                        'name'    => $branch?->name ?? '',
-                        'address' => $branch?->address ?? '',
-                    ],
-                ],
             ],
         ], 200);
-    }
-
-    public function profile(Request $request, LearnerService $service)
-    {
-        try {
-            return response()->json([
-                'status' => true,
-                'data'   => $service->getLearnerDetails(auth('learner_api')->id()),
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => $e->getMessage(),
-            ], 404);
-        }
     }
 
     public function logout(Request $request)
@@ -208,12 +178,10 @@ class LearnerAuthController extends Controller
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'uid'          => 'required',
-            'mobile'       => 'required',
+            'old_password' => 'required',
             'new_password' => 'required|min:6',
         ], [
-            'uid.required'          => 'Username (UID or Email) is required.',
-            'mobile.required'       => 'Current mobile number is required.',
+            'old_password.required' => 'Current password / mobile number is required.',
             'new_password.required' => 'New password / mobile number is required.',
             'new_password.min'      => 'New password must be at least 6 characters.',
         ]);
@@ -225,27 +193,29 @@ class LearnerAuthController extends Controller
             ], 422);
         }
 
-        $uidInput      = trim($request->uid);
-        $currentMobile = trim($request->mobile ?? $request->old_mobile);
-        $newPassword   = trim($request->new_password ?? $request->password ?? $request->new_mobile);
-
-        $encryptedUid    = encryptData($uidInput);
-        $encryptedMobile = encryptData($currentMobile);
-
-        $learner = Learner::withoutGlobalScopes()
-            ->where('mobile', $encryptedMobile)
-            ->where(function ($q) use ($uidInput, $encryptedUid) {
-                $q->where('learner_no', $uidInput)
-                  ->orWhere('email', $encryptedUid)
-                  ->orWhere('email', $uidInput);
-            })
-            ->first();
+        $learner = auth('learner_api')->user() ?? $request->user('learner_api');
 
         if (!$learner) {
             return response()->json([
                 'status'  => false,
-                'message' => 'No learner record found matching the provided UID/Email and Mobile number.',
-            ], 200);
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $oldPassword = trim($request->old_password);
+        $newPassword = trim($request->new_password);
+
+        $decryptedMobile = decryptData($learner->mobile);
+        $matchesCurrent = ($decryptedMobile == $oldPassword) 
+            || ($learner->mobile == $oldPassword)
+            || ($learner->password && Hash::check($oldPassword, $learner->password))
+            || (Schema::hasColumn('learners', 'original_password') && $learner->original_password == $oldPassword);
+
+        if (!$matchesCurrent) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'The old password / mobile number provided is incorrect.',
+            ], 422);
         }
 
         if ((int) $learner->status !== 1) {
