@@ -123,6 +123,41 @@ if (!function_exists('decryptData')) {
         return $decrypted;
     }
 }
+
+if (!function_exists('generateLearnerQrPayload')) {
+    function generateLearnerQrPayload($libraryId, $learnerNo)
+    {
+        $data = json_encode([
+            'lib_id' => (string)$libraryId,
+            'l_no'   => (string)$learnerNo,
+            'time'   => time()
+        ]);
+
+        return encryptData($data);
+    }
+}
+
+if (!function_exists('decryptLearnerQrPayload')) {
+    function decryptLearnerQrPayload($encryptedPayload)
+    {
+        try {
+            $decryptedRaw = decryptData(trim((string)$encryptedPayload));
+            if (!$decryptedRaw) {
+                return null;
+            }
+
+            $decoded = json_decode($decryptedRaw, true);
+            if (is_array($decoded) && isset($decoded['l_no'])) {
+                return $decoded;
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
 if (!function_exists('getBranch')) {
     function getBranch()
     {

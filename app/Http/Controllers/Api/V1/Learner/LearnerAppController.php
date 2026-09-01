@@ -188,8 +188,8 @@ class LearnerAppController extends Controller
         $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
         $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
 
-        // QR Code Payload for 3D ID Card
-        $qrPayload = "LIBRARO:UID:{$learner->learner_no}|NAME:{$learner->name}|PLAN:" . ($activeDetail?->plan_name ?? 'N/A') . "|EXP:" . ($expiryDate ? $expiryDate->timestamp : 0);
+        // QR Code Payload for 3D ID Card (AES Encrypted with Library ID & Learner No)
+        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no);
 
         // Name split
         $nameParts = explode(' ', trim($learner->name ?? ''));

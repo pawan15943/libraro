@@ -115,8 +115,15 @@ class AttendanceController extends Controller
 
         $branchId = $owner->current_branch;
 
-        // ✅ Decode learner QR
-        $learnerNo = trim($request->qr);
+        // ✅ Decode learner QR (AES Decrypt payload or fallback to plain learner_no)
+        $qrPayload = trim($request->qr);
+        $decryptedData = decryptLearnerQrPayload($qrPayload);
+
+        if ($decryptedData && isset($decryptedData['l_no'])) {
+            $learnerNo = $decryptedData['l_no'];
+        } else {
+            $learnerNo = $qrPayload;
+        }
 
         $learner = Learner::where('learner_no', $learnerNo)->first();
 
@@ -124,7 +131,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Learner not found'
-            ], );
+            ], 404);
         }
 
         // ✅ Security: same branch
