@@ -32,7 +32,8 @@ class LearnerAppController extends Controller
     public function detail(LearnerService $service)
     {
         try {
-            $learnerId = auth('learner_api')->id();
+            $learner = auth('learner_api')->user();
+            $learnerId = $learner?->id;
 
             if (!$learnerId) {
                 return response()->json([
@@ -103,14 +104,22 @@ class LearnerAppController extends Controller
             ];
 
             // Clean library info to match the mobile specification
-            $branch = Branch::where('id', $learner->branch_id ?? ($personalInfo['branch_id'] ?? null))
-                ->select('id', 'name', 'display_name', 'library_address as address')
-                ->first();
+            $libraryRaw = $raw['library'] ?? [];
+            if (empty($libraryRaw['id']) && !empty($learner?->branch_id)) {
+                $branch = Branch::where('id', $learner->branch_id)
+                    ->select('id', 'name', 'display_name', 'library_address as address')
+                    ->first();
+                $libraryRaw = [
+                    'id'      => (string) ($branch?->id ?? ''),
+                    'name'    => (string) ($branch?->display_name ?? ($branch?->name ?? '')),
+                    'address' => (string) ($branch?->address ?? ''),
+                ];
+            }
 
             $cleanedLibrary = [
-                'id'      => (string) ($branch?->id ?? ''),
-                'name'    => (string) ($branch?->display_name ?? ($branch?->name ?? '')),
-                'address' => (string) ($branch?->address ?? ''),
+                'id'      => (string) ($libraryRaw['id'] ?? ''),
+                'name'    => (string) ($libraryRaw['name'] ?? ''),
+                'address' => (string) ($libraryRaw['address'] ?? ''),
             ];
 
             return response()->json([
