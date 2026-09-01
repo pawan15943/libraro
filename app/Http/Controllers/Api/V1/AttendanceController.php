@@ -68,14 +68,19 @@ class AttendanceController extends Controller
             ], 401);
         }
 
-        // ✅ Validate Branch QR (your existing logic)
+        // ✅ Validate Branch QR or Learner Encrypted QR (Permanent ID Card QR)
         $branchId = AttendanceService::validateQrToken($request->qr);
 
         if (!$branchId) {
-            return response()->json([
-                'status' => false,
-                'message' => 'QR expired or invalid'
-            ], 403);
+            $decryptedLearnerQr = decryptLearnerQrPayload($request->qr);
+            if ($decryptedLearnerQr && isset($decryptedLearnerQr['l_no'])) {
+                $branchId = $learner->branch_id;
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'QR expired or invalid'
+                ], 403);
+            }
         }
 
         // ✅ Duplicate protection
