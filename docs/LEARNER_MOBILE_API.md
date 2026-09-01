@@ -521,7 +521,7 @@ Fetch complete details including seat number, active plan, transaction history, 
       "father_name": "Suresh Sharma",
       "profile_picture": "https://your-domain.com/upload/profile_picture/avatar.jpg"
     },
-    "detail_info": {
+    "plan_info": {
       "seat_id": 12,
       "seat_no": "A-12",
       "seat_with_floor": "1F - A-12",

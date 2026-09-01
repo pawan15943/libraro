@@ -41,11 +41,74 @@ class LearnerAppController extends Controller
                 ], 401);
             }
 
-            $data = $service->getLearnerDetails($learnerId);
+            $raw = $service->getLearnerDetails($learnerId);
+
+            $personalInfo = $raw['personal_info'] ?? [];
+            $detailInfo   = $raw['detail_info'] ?? [];
+            $otherDetails = $raw['other_details'] ?? [];
+
+            // Clean personal_info to match the mobile specification exactly
+            $cleanedPersonalInfo = [
+                'id'              => (string) ($personalInfo['id'] ?? $learnerId),
+                'learner_no'      => (string) ($personalInfo['learner_no'] ?? ''),
+                'name'            => (string) ($personalInfo['name'] ?? ''),
+                'mobile'          => (string) ($personalInfo['mobile'] ?? ''),
+                'email'           => (string) ($personalInfo['email'] ?? ''),
+                'dob'             => (string) ($personalInfo['dob'] ?? ''),
+                'father_name'     => (string) ($personalInfo['father_name'] ?? ''),
+                'profile_picture' => (string) ($personalInfo['profile_picture'] ?? ''),
+            ];
+
+            // Clean detail_info to match the mobile specification exactly
+            $cleanedDetailInfo = [
+                'seat_id'                  => (int) ($personalInfo['seat_id'] ?? ($detailInfo['seat_id'] ?? 0)),
+                'seat_no'                  => (string) ($personalInfo['seat_no'] ?? ($detailInfo['seat_no'] ?? '')),
+                'seat_with_floor'          => (string) ($personalInfo['seat_with_floor'] ?? ($detailInfo['seat_with_floor'] ?? '')),
+                'plan'                     => (string) ($detailInfo['plan'] ?? ''),
+                'plan_type'                => (string) ($detailInfo['plan_type'] ?? ''),
+                'plan_id'                  => (int) ($detailInfo['plan_id'] ?? 0),
+                'plan_type_id'             => (int) ($detailInfo['plan_type_id'] ?? 0),
+                'price'                    => (float) ($detailInfo['price'] ?? 0),
+                'monthdays'                => (string) ($detailInfo['monthdays'] ?? 'Calendar wise'),
+                'start_date'               => (string) ($detailInfo['start_date'] ?? ''),
+                'end_date'                 => (string) ($detailInfo['end_date'] ?? ''),
+                'start_time'               => (string) ($detailInfo['start_time'] ?? ''),
+                'end_time'                 => (string) ($detailInfo['end_time'] ?? ''),
+                'status'                   => (string) ($detailInfo['status'] ?? ''),
+                'mainstatus'               => (string) ($detailInfo['mainstatus'] ?? ''),
+                'next_plan'                => (int) ($detailInfo['next_plan'] ?? 0),
+                'frozen_status'            => (int) ($detailInfo['frozen_status'] ?? 0),
+                'freeze_date'              => $detailInfo['freeze_date'] ?? null,
+                'deleted_at'               => (string) ($detailInfo['deleted_at'] ?? ''),
+                'locker'                   => (string) ($detailInfo['locker'] ?? 'No'),
+                'locker_no'                => (string) ($detailInfo['locker_no'] ?? ''),
+                'days_left'                => (int) ($detailInfo['days_left'] ?? 0),
+                'extend_days_left'         => (int) ($detailInfo['extend_days_left'] ?? 0),
+                'current_days_left'        => (int) ($detailInfo['current_days_left'] ?? 0),
+                'current_extend_days_left' => (int) ($detailInfo['current_extend_days_left'] ?? 0),
+                'plan_days'                => (int) ($detailInfo['plan_days'] ?? 0),
+                'plantype_detail'          => $detailInfo['plantype_detail'] ?? null,
+                'total_gift_days'          => (int) ($detailInfo['total_gift_days'] ?? 0),
+            ];
+
+            // Clean other_details to match the mobile specification exactly
+            $cleanedOtherDetails = [
+                'alternate_mobile' => (string) ($otherDetails['alternate_mobile'] ?? ''),
+                'id_proof_id'      => (string) ($otherDetails['id_proof_id'] ?? ''),
+                'id_proof_name'    => (string) ($otherDetails['id_proof_name'] ?? ''),
+                'id_proof_image'   => (string) ($otherDetails['id_proof_image'] ?? ''),
+                'id_proof_no'      => (string) ($otherDetails['id_proof_no'] ?? ''),
+                'address'          => (string) ($otherDetails['address'] ?? ''),
+                'remark'           => (string) ($otherDetails['remark'] ?? ''),
+            ];
 
             return response()->json([
                 'status' => true,
-                'data'   => $data,
+                'data'   => [
+                    'personal_info' => $cleanedPersonalInfo,
+                    'plan_info'   => $cleanedDetailInfo,
+                    'other_details' => $cleanedOtherDetails,
+                ],
             ], 200);
         } catch (\Throwable $e) {
             return response()->json([
