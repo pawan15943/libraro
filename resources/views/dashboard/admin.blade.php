@@ -1085,7 +1085,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <ul class="d-flex inner">
                                     <li>
                                         <a target="_blank"
-                                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                            href="https://wa.me/+91{{ $value->mobile }}?text={{ rawurlencode(
                                                 "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
                                             ) }}">
                                             <i class="fab fa-whatsapp"
@@ -1170,10 +1170,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 </div>
 
                                 <ul class="d-flex inner">
-                                    <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
+                                    <!-- <li><a href="https://wa.me/+91{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
                                     <li>
                                         <a target="_blank"
-                                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                            href="https://wa.me/+91{{ $seat->mobile }}?text={{ urlencode(
                                                 "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
                                         ) }}">
                                             <i class="fab fa-whatsapp"
