@@ -125,6 +125,7 @@ class LearnerAppController extends Controller
             return response()->json([
                 'status' => true,
                 'data'   => [
+                    'qr_key'        => (string) ($raw['qr_key'] ?? ($cleanedPersonalInfo['qr_key'] ?? '')),
                     'personal_info' => $cleanedPersonalInfo,
                     'plan_info'     => $cleanedDetailInfo,
                     'other_details' => $cleanedOtherDetails,
@@ -210,7 +211,12 @@ class LearnerAppController extends Controller
         $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
 
         // QR Code Payload for 3D ID Card (AES Encrypted with Library ID & Learner No)
-        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no);
+        $branchWithLib = Branch::with('library')->where('id', $learner->branch_id)->first();
+        $libraryNo = $branchWithLib?->library?->library_no ?? ($branchWithLib?->library_no ?? '');
+        $qrKey = function_exists('generateLearnerQrKey')
+            ? generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name)
+            : generateLearnerQrPayload($learner->branch_id, $learner->learner_no);
+        $qrPayload = $qrKey;
 
         // Name split
         $nameParts = explode(' ', trim($learner->name ?? ''));
@@ -277,6 +283,7 @@ class LearnerAppController extends Controller
                         'address' => $branch?->address ?? '',
                     ],
                     'qrPayload'       => $qrPayload,
+                    'qr_key'          => $qrKey,
                 ],
             ],
         ], 200);
