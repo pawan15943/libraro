@@ -127,28 +127,31 @@ if (!function_exists('decryptData')) {
 if (!function_exists('generateLearnerQrPayload')) {
     function generateLearnerQrPayload($libraryId, $learnerNo, $mobile = null, $learnerName = null, $libraryNo = null)
     {
+        $legacyJson = json_encode([
+            'lib_id' => (string)$libraryId,
+            'l_no'   => (string)$learnerNo,
+            'time'   => time()
+        ]);
+        $legacyPayload = encryptData($legacyJson);
+
         if (!empty($mobile) && !empty($learnerName)) {
             if (empty($libraryNo)) {
                 $branch = Branch::with('library')->find($libraryId);
                 $libraryNo = $branch?->library?->library_no ?? ($branch?->library_no ?? '');
             }
-            return generateLearnerQrKey($libraryNo, $mobile, $learnerNo, $learnerName);
+            $qrKey = generateLearnerQrKey($libraryNo, $mobile, $learnerNo, $learnerName);
+            return $qrKey . $legacyPayload;
         }
 
         $learner = Learner::where('learner_no', $learnerNo)->first();
         if ($learner) {
             $branch = Branch::with('library')->find($learner->branch_id ?? $libraryId);
             $libraryNo = $branch?->library?->library_no ?? ($branch?->library_no ?? '');
-            return generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name);
+            $qrKey = generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name);
+            return $qrKey . $legacyPayload;
         }
 
-        $data = json_encode([
-            'lib_id' => (string)$libraryId,
-            'l_no'   => (string)$learnerNo,
-            'time'   => time()
-        ]);
-
-        return encryptData($data);
+        return $legacyPayload;
     }
 }
 
@@ -159,6 +162,33 @@ if (!function_exists('decryptLearnerQrPayload')) {
             $payload = trim((string)$encryptedPayload);
             if (empty($payload)) {
                 return null;
+            }
+
+            // Case A: Concatenated Payload ($qrKey . $legacyPayload)
+            // e.g. "EpEmUutVpWs8rxenSXKy5vZYvD21PbaHJDmoozB3tCE=..."
+            if (preg_match('/^([^=]+=)(.+)$/', $payload, $matches)) {
+                $firstPart  = $matches[1];
+                $secondPart = $matches[2];
+
+                // Check if second part is valid legacy JSON payload
+                $decryptedSecond = decryptData($secondPart);
+                if ($decryptedSecond) {
+                    $decodedSecond = json_decode($decryptedSecond, true);
+                    if (is_array($decodedSecond) && isset($decodedSecond['l_no'])) {
+                        $decodedSecond['qr_key'] = $firstPart;
+                        $decodedSecond['raw_key'] = decryptData($firstPart);
+                        return $decodedSecond;
+                    }
+                }
+
+                // Or check first part as LIBRARO key
+                $decryptedFirst = decryptData($firstPart);
+                if ($decryptedFirst && str_starts_with($decryptedFirst, 'LIBRARO')) {
+                    $result = decryptLearnerQrPayload($firstPart);
+                    if ($result) {
+                        return $result;
+                    }
+                }
             }
 
             $decryptedRaw = decryptData($payload);

@@ -210,13 +210,8 @@ class LearnerAppController extends Controller
         $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
         $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
 
-        // QR Code Payload for 3D ID Card (AES Encrypted with Library ID & Learner No)
-        $branchWithLib = Branch::with('library')->where('id', $learner->branch_id)->first();
-        $libraryNo = $branchWithLib?->library?->library_no ?? ($branchWithLib?->library_no ?? '');
-        $qrKey = function_exists('generateLearnerQrKey')
-            ? generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name)
-            : generateLearnerQrPayload($learner->branch_id, $learner->learner_no);
-        $qrPayload = $qrKey;
+        // QR Code Payload for 3D ID Card (Combined Key & Payload)
+        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no, $learner->mobile, $learner->name);
 
         // Name split
         $nameParts = explode(' ', trim($learner->name ?? ''));
@@ -282,8 +277,8 @@ class LearnerAppController extends Controller
                         'name'    => $branch?->library_name ?? '',
                         'address' => $branch?->address ?? '',
                     ],
+                    
                     'qrPayload'       => $qrPayload,
-                    'qr_key'          => $qrKey,
                 ],
             ],
         ], 200);

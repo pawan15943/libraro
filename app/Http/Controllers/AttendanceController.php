@@ -657,14 +657,21 @@ public function scan(Request $request)
     \Log::info('SCAN HIT', $request->all());
 
     
-    $learnerNo = trim($request->qr);
+    $qrPayload = trim($request->qr ?? '');
 
-    if (!$learnerNo) {
+    if (!$qrPayload) {
         \Log::warning('learnerNo failed');
         return response()->json([
         'status'  => 'error',
         'message' => 'Invalid QR'
     ], 403);
+    }
+
+    $decryptedData = decryptLearnerQrPayload($qrPayload);
+    if ($decryptedData && isset($decryptedData['l_no'])) {
+        $learnerNo = $decryptedData['l_no'];
+    } else {
+        $learnerNo = $qrPayload;
     }
 
     /* 3️⃣ Learner validation */
