@@ -401,7 +401,7 @@ Allows a learner to change their login mobile / password.
 ---
 
 #### 7. Learner Home Dashboard
-Fetch primary dashboard data including student details, active 3D ID Card information, shift slot, days left until plan expiry, pending fee dues, promotional banners, and unread notification badge count.
+Fetch primary dashboard data including student details, active 3D ID Card information, shift slot, days left until plan expiry, pending fee dues, promotional slider banners, and unread notification badge count.
 
 - **Method:** `POST`
 - **Endpoint:** `/learner/dashboard`
@@ -413,63 +413,31 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
   "status": true,
   "message": "Home dashboard data fetched successfully.",
   "data": {
-
     "unreadNotificationCount": 2,
     "banners": [
       {
-        "type": "other_wishes",
-        "tital": "Wish you happy Diwali",
-        "description": "May this festival of lights bring success and joy.",
-        "birthday_user": "",
-        "seat_no": "",
-        "subscription_type": "",
-        "subscription_status": "",
-        "days_in_left": "",
-        "dob": "",
-        "mobile": "",
-        "image_resource": "",
-        "banner_link": "",
-        "progress_percentage": 0,
-        "branch_id": 2
+        "tital": "Welcome to Libraro",
+        "description": "",
+        "image": "https://your-domain.com/public/img/slider/last_banner_1.webp",
+        "link": ""
       },
       {
-        "type": "birthday_wishes",
-        "tital": "Wish you happy birthay",
+        "tital": "Libraro top features",
         "description": "",
-        "birthday_user": "RAHUL SHARMA",
-        "seat_no": "A-12",
-        "subscription_type": "",
-        "subscription_status": "",
-        "days_in_left": "",
-        "dob": "2000-01-15",
-        "mobile": "9876543210",
-        "image_resource": "",
-        "banner_link": "",
-        "progress_percentage": 0,
-        "branch_id": 2
+        "image": "https://your-domain.com/public/img/slider/last_banner_4.webp",
+        "link": ""
       },
       {
-        "type": "subscription",
-        "tital": "subscription",
+        "tital": "Why fear Libraro is here",
         "description": "",
-        "birthday_user": "",
-        "seat_no": "A-12",
-        "subscription_type": "Monthly Full Day",
-        "subscription_status": "ACTIVE",
-        "days_in_left": 15,
-        "dob": "",
-        "mobile": "",
-        "image_resource": "",
-        "banner_link": "",
-        "progress_percentage": 50,
-        "branch_id": 2
+        "image": "https://your-domain.com/public/img/slider/last_banner_5.webp",
+        "link": ""
       }
     ],
-   
     "idCard": {
-       "id": "15",
+      "id": "15",
       "learner_no": "LBR-2026-001",
-       "fullName": "RAHUL SHARMA",
+      "fullName": "RAHUL SHARMA",
       "status": "ACTIVE",
       "planName": "Monthly Full Day",
       "planType": "Full Day Slot",
@@ -477,26 +445,24 @@ Fetch primary dashboard data including student details, active 3D ID Card inform
       "planStartDate": "2026-08-01",
       "planExpiryDate": "2026-08-31",
       "daysLeft": 1,
-      "extend_days":5,
-       "profileImageUrl": "https://your-domain.com/upload/profile_picture/avatar.jpg",
+      "extend_days": 5,
+      "profileImageUrl": "https://your-domain.com/upload/profile_picture/avatar.jpg",
       "pendingPayment": {
         "hasPending": false,
         "amount": 0,
-        "dueDate": "",
-       
+        "dueDate": ""
       },
       "library": {
         "id": "2",
         "name": "Libraro Central Branch",
         "address": "Plot 45, Sector 5, City Center"
       },
-      "qrPayload": "LIBRARO:UID:LBR-2026-001|NAME:RAHUL SHARMA|PLAN:Monthly Full Day|EXP:1788134400"
+      "qrPayload": "T0XMHHkbZPKdW84aELp2tjrlR6LEgcQ9CZ fQZOEO4TgwGTHSR**fPPfQkYP3uAvFj 7bQOYUNBIG*spW4pzqA=="
     }
   }
 }
 ```
 
----
 
 #### 8. Learner Profile & Complete Details
 Fetch complete details including seat number, active plan, transaction history, locker allocation, and uploaded ID proofs.
@@ -511,6 +477,7 @@ Fetch complete details including seat number, active plan, transaction history, 
 {
   "status": true,
   "data": {
+   
     "personal_info": {
        "id": "15",
       "learner_no": "LBR-2026-001",
@@ -565,9 +532,84 @@ Fetch complete details including seat number, active plan, transaction history, 
       "id_proof_no": "1234 5678 9012",
       "address": "Flat 201, Green Heights",
       "remark": ""
-    }
+    },
+     "library": {
+        "id": "2",
+        "name": "Libraro Central Branch",
+        "address": "Plot 45, Sector 5, City Center"
+      },
+      "qr_key":"",
   }
 }
+
+---
+
+#### 8.1 Learner Profile Setting
+Fetch profile setting banners (including festival wishes, birthday wishes, subscription status, and promotional image banners).
+
+- **Method:** `POST` / `GET`
+- **Endpoint:** `/learner/profile-setting` or `/learner/profile/setting`
+- **Auth Required:** Yes (`Bearer`)
+
+##### Success Response (`200 OK`):
+```json
+{
+  "status": true,
+  "message": "Profile setting data fetched successfully.",
+  "data": {
+    "banners": [
+      {
+        "type": "other_wishes",
+        "tital": "Wish you happy Diwali",
+        "description": "May this festival of lights bring success and joy.",
+        "days_in_left": "",
+        "image_resource": "",
+        "banner_link": ""
+      },
+      {
+        "type": "birthday_wishes",
+        "tital": "Wish you happy birthay",
+        "description": "",
+        "days_in_left": "",
+        "image_resource": "",
+        "banner_link": ""
+      },
+      {
+        "type": "subscription",
+        "tital": "Monthly Full Day",
+        "description": "",
+        "days_in_left": 15,
+        "image_resource": "",
+        "banner_link": ""
+      },
+      {
+        "type": "image",
+        "tital": "Welcome to Libraro",
+        "description": "",
+        "image_resource": "https://your-domain.com/public/img/slider/last_banner_1.webp",
+        "days_in_left": "",
+        "banner_link": ""
+      },
+      {
+        "type": "image",
+        "tital": "Libraro top features",
+        "description": "",
+        "image_resource": "https://your-domain.com/public/img/slider/last_banner_4.webp",
+        "days_in_left": "",
+        "banner_link": ""
+      },
+      {
+        "type": "image",
+        "tital": "Why fear Libraro is here",
+        "description": "",
+        "image_resource": "https://your-domain.com/public/img/slider/last_banner_5.webp",
+        "days_in_left": "",
+        "banner_link": ""
+      }
+    ]
+  }
+}
+```
 
 ---
 
@@ -1026,11 +1068,11 @@ Learner scans the rotating dynamic QR code displayed on the library screen/wall 
 }
 ```
 
-##### Error Response (Invalid or Expired QR - `403 Forbidden`):
+##### Error Response (Invalid  QR - `403 Forbidden`):
 ```json
 {
   "status": false,
-  "message": "QR expired or invalid"
+  "message": "QR invalid"
 }
 ```
 
@@ -1063,6 +1105,7 @@ Revokes all active auth tokens for the learner and unregisters the device token.
 | `POST` | `/api/v1/learner/dashboard` | 🔒 `learner_api` | Main home dashboard, 3D ID card data & unread notifications |
 | `GET` | `/api/v1/learner/profile` | 🔒 `learner_api` | Quick learner profile summary |
 | `POST` | `/api/v1/learner/detail` | 🔒 `learner_api` | Comprehensive profile, seat, plan, transactions & ID proofs |
+| `GET/POST`| `/api/v1/learner/profile-setting` | 🔒 `learner_api` | Profile setting banners (wishes, subscription, image banners) |
 | `POST` | `/api/v1/learner/profile/update` | 🔒 `learner_api` | Update profile information & avatar photo |
 | `GET/POST`| `/api/v1/learner/notifications` | 🔒 `learner_api` | Notification list with tabs (`all`, `active`, `expired`) & unread count |
 | `POST` | `/api/v1/learner/notifications/read` | 🔒 `learner_api` | Mark single or all notifications as read |

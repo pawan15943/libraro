@@ -216,7 +216,220 @@ class LearnerAppController extends Controller
         $nameParts = explode(' ', trim($learner->name ?? ''));
         $firstName = $nameParts[0] ?? $learner->name;
 
-        // Top Banners (Referencing DashboardService::topBanner)
+        // Unread Notification Count
+        $unreadCount = DB::table('notifications')
+            ->where('notifiable_id', $learner->id)
+            ->where('notifiable_type', get_class($learner))
+            ->whereNull('read_at')
+            ->count();
+
+        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+        $profileImageUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+
+        $banners = [
+            [
+                'tital'       => 'Welcome to Libraro',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_1.webp'),
+                'link'        => '',
+            ],
+            [
+                'tital'       => 'Libraro top features',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_4.webp'),
+                'link'        => '',
+            ],
+            [
+                'tital'       => 'Why fear Libraro is here',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_5.webp'),
+                'link'        => '',
+            ],
+        ];
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Home dashboard data fetched successfully.',
+            'data'    => [
+                'unreadNotificationCount' => $unreadCount,
+                'banners'                 => $banners,
+                'idCard'                  => [
+                    'id'              => (string) $learner->id,
+                    'learner_no'      => $learner->learner_no ?? '',
+                    'fullName'        => strtoupper($learner->name ?? ''),
+                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
+                    'planName'        => $activeDetail?->plan_name ?? 'No Active Plan',
+                    'planType'        => $activeDetail?->plan_type_name ?? 'N/A',
+                    'shiftTime'       => $shiftTime,
+                    'planStartDate'   => $activeDetail?->plan_start_date ?? '',
+                    'planExpiryDate'  => $activeDetail?->plan_end_date ?? '',
+                    'daysLeft'        => $daysLeft,
+                    'extend_days'     => $extendDays,
+                    'profileImageUrl' => $profileImageUrl,
+                    'pendingPayment'  => [
+                        'hasPending'      => $hasPending,
+                        'amount'          => $pendingAmount,
+                        'dueDate'         => $dueDate,
+                    ],
+                    'library'         => [
+                        'id'      => (string) ($branch?->id ?? ''),
+                        'name'    => $branch?->library_name ?? '',
+                        'address' => $branch?->address ?? '',
+                    ],
+                    'qrPayload'       => $qrPayload,
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * Learner Profile Setting API
+     * Returns learner profile settings data including formatted banners.
+     */
+    public function profileSetting(Request $request)
+    {
+        try {
+            $learner = auth('learner_api')->user();
+
+            if (!$learner) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthenticated learner session.',
+                ], 401);
+            }
+
+            $activeDetail = LearnerDetail::withoutGlobalScopes()
+                ->where('learner_id', $learner->id)
+                ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+                ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                ->select(
+                    'learner_detail.*',
+                    'plans.name as plan_name',
+                    'plan_types.name as plan_type_name'
+                )
+                ->orderBy('learner_detail.id', 'DESC')
+                ->first();
+
+            $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
+            $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+
+            $today = Carbon::today();
+            $festival = DB::table('india_festivals')
+                ->whereDate('festival_date', $today->toDateString())
+                ->select('festival_name', 'description')
+                ->first();
+
+            $banners = [];
+
+            // 1. Festival / Other Wishes Banner
+            if ($festival) {
+                $banners[] = [
+                    'type'           => 'other_wishes',
+                    'tital'          => 'Wish you happy ' . $festival->festival_name,
+                    'description'    => (string) ($festival->description ?? ''),
+                    'days_in_left'   => '',
+                    'image_resource' => '',
+                    'banner_link'    => '',
+                ];
+            }
+
+            // 2. Birthday Wishes Banner
+            if (!empty($learner->dob)) {
+                try {
+                    $dob = Carbon::parse($learner->dob);
+                    if ((int) $dob->month === (int) $today->month && (int) $dob->day === (int) $today->day) {
+                        $banners[] = [
+                            'type'           => 'birthday_wishes',
+                            'tital'          => 'Wish you happy birthay',
+                            'description'    => '',
+                            'days_in_left'   => '',
+                            'image_resource' => '',
+                            'banner_link'    => '',
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore parse error
+                }
+            }
+
+            // 3. Subscription Banner
+            $subscriptionName = $activeDetail?->plan_name ?? 'No Active Plan';
+            $banners[] = [
+                'type'           => 'subscription',
+                'tital'          => (string) $subscriptionName,
+                'description'    => '',
+                'days_in_left'   => $daysLeft,
+                'image_resource' => '',
+                'banner_link'    => '',
+            ];
+
+            // 4. Image Banners (Top Banner / Slider Images)
+            $topBannerImage = asset('public/img/slider/topbanner.jpeg');
+            $imageBanners = [
+                [
+                    'tital' => '',
+                    'image' => asset('public/img/slider/last_banner_4.webp'),
+                ],
+            ];
+
+            if (file_exists(public_path('img/slider/topbanner.jpeg'))) {
+                array_unshift($imageBanners, [
+                    'tital' => '',
+                    'image' => $topBannerImage,
+                ]);
+            }
+
+            foreach ($imageBanners as $imgBanner) {
+                $banners[] = [
+                    'type'           => 'image',
+                    'tital'          => (string) ($imgBanner['tital'] ?? ''),
+                    'description'    => '',
+                    'days_in_left'   => '',
+                    'image_resource' => (string) ($imgBanner['image'] ?? ''),
+                    'banner_link'    => '',
+                ];
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Profile setting data fetched successfully.',
+                'data'    => [
+                    'banners' => $banners,
+                ],
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage(),
+            ], 200);
+        }
+    }
+
+    /**
+     * Generate banners for a learner (Festival, Birthday, Subscription).
+     */
+    protected function getBannersForLearner($learner)
+    {
+        if (!$learner) {
+            return [];
+        }
+
+        $activeDetail = LearnerDetail::withoutGlobalScopes()
+            ->where('learner_id', $learner->id)
+            ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->select(
+                'learner_detail.*',
+                'plans.name as plan_name',
+                'plan_types.name as plan_type_name'
+            )
+            ->orderBy('learner_detail.id', 'DESC')
+            ->first();
+
+        $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
+        $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+
         $today = Carbon::today();
         $festival = DB::table('india_festivals')
             ->whereDate('festival_date', $today->toDateString())
@@ -249,7 +462,7 @@ class LearnerAppController extends Controller
             try {
                 $dob = Carbon::parse($learner->dob);
                 if ((int) $dob->month === (int) $today->month && (int) $dob->day === (int) $today->day) {
-                    $decryptedMobile = decryptData($learner->mobile);
+                    $decryptedMobile = function_exists('decryptData') ? decryptData($learner->mobile) : $learner->mobile;
                     $banners[] = [
                         'type'                => 'birthday_wishes',
                         'tital'               => 'Wish you happy birthay',
@@ -298,49 +511,7 @@ class LearnerAppController extends Controller
             'branch_id'           => $branchId,
         ];
 
-        // Unread Notification Count
-        $unreadCount = DB::table('notifications')
-            ->where('notifiable_id', $learner->id)
-            ->where('notifiable_type', get_class($learner))
-            ->whereNull('read_at')
-            ->count();
-
-        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
-        $profileImageUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Home dashboard data fetched successfully.',
-            'data'    => [
-                'unreadNotificationCount' => $unreadCount,
-                'banners'                 => $banners,
-                'idCard'                  => [
-                    'id'              => (string) $learner->id,
-                    'learner_no'      => $learner->learner_no ?? '',
-                    'fullName'        => strtoupper($learner->name ?? ''),
-                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
-                    'planName'        => $activeDetail?->plan_name ?? 'No Active Plan',
-                    'planType'        => $activeDetail?->plan_type_name ?? 'N/A',
-                    'shiftTime'       => $shiftTime,
-                    'planStartDate'   => $activeDetail?->plan_start_date ?? '',
-                    'planExpiryDate'  => $activeDetail?->plan_end_date ?? '',
-                    'daysLeft'        => $daysLeft,
-                    'extend_days'     => $extendDays,
-                    'profileImageUrl' => $profileImageUrl,
-                    'pendingPayment'  => [
-                        'hasPending'      => $hasPending,
-                        'amount'          => $pendingAmount,
-                        'dueDate'         => $dueDate,
-                    ],
-                    'library'         => [
-                        'id'      => (string) ($branch?->id ?? ''),
-                        'name'    => $branch?->library_name ?? '',
-                        'address' => $branch?->address ?? '',
-                    ],
-                    'qrPayload'       => $qrPayload,
-                ],
-            ],
-        ], 200);
+        return $banners;
     }
 
     /**

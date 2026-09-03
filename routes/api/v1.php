@@ -237,6 +237,8 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
     Route::post('reset-password', [LearnerAuthController::class, 'resetPassword'])->middleware('throttle:10,1');
     Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
+    Route::match(['get', 'post'], 'profile/setting', [LearnerAppController::class, 'profileSetting']);
+    
     Route::post('upload/temp-images', [LearnerAppController::class, 'uploadTempImages']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);
 
