@@ -1092,9 +1092,9 @@ class LearnerService
         
 
         $branchModel = Branch::with('library')->where('id', $learner->branch_id)->first();
-        $libraryNo = $branchModel?->library?->library_no ?? ($branchModel?->library_no ?? '');
-        $qrKey = function_exists('generateLearnerQrKey')
-            ? generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name)
+        $libraryName = $branchModel?->library?->library_name ?? ($branchModel?->display_name ?? ($branchModel?->name ?? ''));
+        $qrKey = function_exists('generateLearnerProfileQrKey')
+            ? generateLearnerProfileQrKey($libraryName)
             : '';
 
         return [

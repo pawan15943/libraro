@@ -124,6 +124,33 @@ if (!function_exists('decryptData')) {
     }
 }
 
+if (!function_exists('generateLearnerProfileQrKey')) {
+    /**
+     * Requirement 1: Learner App profile API qr_key
+     * Encrypted string format: LIBRARO-LibraryName=-
+     */
+    function generateLearnerProfileQrKey($libraryName)
+    {
+        $cleanLibraryName = trim((string)$libraryName);
+        $rawKey = "LIBRARO-{$cleanLibraryName}=-";
+        return encryptData($rawKey);
+    }
+}
+
+if (!function_exists('generateLibraryAppQrKey')) {
+    /**
+     * Requirement 2: Library App profile API qr_key
+     * Encrypted string format: LIBRARO-LibraryName-LEARNER-LibraryNumber=Attendance=*-
+     */
+    function generateLibraryAppQrKey($libraryName, $libraryNo)
+    {
+        $cleanLibraryName = trim((string)$libraryName);
+        $cleanLibraryNo   = trim((string)$libraryNo);
+        $rawKey = "LIBRARO-{$cleanLibraryName}-LEARNER-{$cleanLibraryNo}=Attendance=*-";
+        return encryptData($rawKey);
+    }
+}
+
 if (!function_exists('generateLearnerQrPayload')) {
     function generateLearnerQrPayload($libraryId, $learnerNo, $mobile = null, $learnerName = null, $libraryNo = null)
     {
@@ -134,24 +161,21 @@ if (!function_exists('generateLearnerQrPayload')) {
         ]);
         $legacyPayload = encryptData($legacyJson);
 
-        if (!empty($mobile) && !empty($learnerName)) {
-            if (empty($libraryNo)) {
-                $branch = Branch::with('library')->find($libraryId);
-                $libraryNo = $branch?->library?->library_no ?? ($branch?->library_no ?? '');
+        $branch = Branch::with('library')->find($libraryId);
+        if (!$branch && !empty($learnerNo)) {
+            $learner = Learner::where('learner_no', $learnerNo)->first();
+            if ($learner && $learner->branch_id) {
+                $branch = Branch::with('library')->find($learner->branch_id);
             }
-            $qrKey = generateLearnerQrKey($libraryNo, $mobile, $learnerNo, $learnerName);
-            return $qrKey . $legacyPayload;
         }
 
-        $learner = Learner::where('learner_no', $learnerNo)->first();
-        if ($learner) {
-            $branch = Branch::with('library')->find($learner->branch_id ?? $libraryId);
-            $libraryNo = $branch?->library?->library_no ?? ($branch?->library_no ?? '');
-            $qrKey = generateLearnerQrKey($libraryNo, $learner->mobile, $learner->learner_no, $learner->name);
-            return $qrKey . $legacyPayload;
-        }
+        $libName = $branch?->library?->library_name ?? ($branch?->display_name ?? ($branch?->name ?? ''));
+        $libNo   = $libraryNo ?: ($branch?->library?->library_no ?? ($branch?->library_no ?? ''));
 
-        return $legacyPayload;
+        // Requirement 3: Concatenate Library App's qr_key with legacy payload
+        $libraryAppQrKey = generateLibraryAppQrKey($libName, $libNo);
+
+        return $libraryAppQrKey . $legacyPayload;
     }
 }
 

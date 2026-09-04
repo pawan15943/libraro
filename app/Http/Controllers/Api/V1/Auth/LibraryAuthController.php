@@ -918,6 +918,12 @@ class LibraryAuthController extends Controller
                 ->select('id', 'name')
                 ->get();
 
+            $libraryName = $user->library_name ?? '';
+            $libraryNo   = $user->library_no ?? '';
+            $qrKey       = function_exists('generateLibraryAppQrKey')
+                ? generateLibraryAppQrKey($libraryName, $libraryNo)
+                : '';
+
             return [
                 'user_id' => $user->id,
                 'name' => $user->library_owner ?? '',
@@ -925,7 +931,8 @@ class LibraryAuthController extends Controller
                 'email' => $user->email ?? $user->library_email ?? '',
                 'mobile' => $user->library_mobile ?? '',
                 'library_id' => $user->id,
-                'library_name' => $user->library_name ?? '',
+                'library_name' => $libraryName,
+                'qr_key' => $qrKey,
                 'allowed_branch' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
             ];
@@ -938,6 +945,12 @@ class LibraryAuthController extends Controller
             ->select('id', 'name')
             ->get();
 
+        $libraryName = $library->library_name ?? '';
+        $libraryNo   = $library->library_no ?? '';
+        $qrKey       = function_exists('generateLibraryAppQrKey')
+            ? generateLibraryAppQrKey($libraryName, $libraryNo)
+            : '';
+
         return [
             'user_id' => $user->id,
             'name' => $user->name ?? '',
@@ -945,7 +958,8 @@ class LibraryAuthController extends Controller
             'email' => $user->email ?? '',
             'mobile' => $user->mobile ?? '',
             'library_id' => $user->library_id,
-            'library_name' => $library->library_name ?? '',
+            'library_name' => $libraryName,
+            'qr_key' => $qrKey,
             'allowed_branch' => $branches,
             'status' => $user->status ? 'Active' : 'Inactive',
         ];

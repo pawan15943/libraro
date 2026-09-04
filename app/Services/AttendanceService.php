@@ -23,19 +23,34 @@ class AttendanceService
 
     public static function attendanceQrTokens(int $branchId): array
     {
+        $branch = Branch::with('library')->find($branchId);
+        $libName = $branch?->library?->library_name ?? ($branch?->display_name ?? ($branch?->name ?? ''));
+        $learnerAppQrKey = function_exists('generateLearnerProfileQrKey')
+            ? generateLearnerProfileQrKey($libName)
+            : '';
+
         $slot = self::currentQrSlot();
 
         return [
-            'primary' => self::makeQrToken($branchId, (string) $slot),
-            'fallback' => self::makeQrToken($branchId, (string) ($slot + 1)),
-            'for_download' => self::makeQrToken($branchId, self::QR_STATIC_SLOT),
-            'expires_in' => self::QR_SLOT_SECONDS,
+            'primary'      => $learnerAppQrKey . self::makeQrToken($branchId, (string) $slot),
+            'fallback'     => $learnerAppQrKey . self::makeQrToken($branchId, (string) ($slot + 1)),
+            'for_download' => $learnerAppQrKey . self::makeQrToken($branchId, self::QR_STATIC_SLOT),
+            'expires_in'   => self::QR_SLOT_SECONDS,
         ];
     }
 
     public static function validateQrToken(string $qrToken): int|false
     {
-        $decoded = base64_decode($qrToken, true);
+        $token = trim($qrToken);
+        if (empty($token)) {
+            return false;
+        }
+
+        if (preg_match('/^([^=]+=)(.+)$/', $token, $matches)) {
+            $token = $matches[2];
+        }
+
+        $decoded = base64_decode($token, true);
         if (!$decoded) {
             return false;
         }

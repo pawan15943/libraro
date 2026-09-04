@@ -477,7 +477,7 @@ Fetch complete details including seat number, active plan, transaction history, 
 {
   "status": true,
   "data": {
-   
+    "qr_key": "EpEmUutV...",
     "personal_info": {
        "id": "15",
       "learner_no": "LBR-2026-001",
@@ -538,7 +538,7 @@ Fetch complete details including seat number, active plan, transaction history, 
         "name": "Libraro Central Branch",
         "address": "Plot 45, Sector 5, City Center"
       },
-      "qr_key":"",
+      
   }
 }
 

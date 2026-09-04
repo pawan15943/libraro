@@ -640,6 +640,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | data.mobile | string | library_mobile for a Library, mobile for a LibraryUser |
 | data.library_id | integer | |
 | data.library_name | string | |
+| data.qr_key | string | encrypted key format: `LIBRARO-{LibraryName}-LEARNER-{LibraryNumber}=Attendance=*-` |
 | data.allowed_branch[] | array | library owner: every branch under the library; library_user: only branches in their `branch_id` grant |
 | data.allowed_branch[].id | integer | |
 | data.allowed_branch[].name | string | |
