@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Learner;
 use Illuminate\Http\Request;
 use App\Services\AttendanceService;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -73,6 +74,7 @@ class AttendanceController extends Controller
 
         if (!$branchId) {
             $decryptedLearnerQr = decryptLearnerQrPayload($request->qr);
+            Log::info(['afer qr'=>$decryptedLearnerQr['l_no']]);
             if ($decryptedLearnerQr && isset($decryptedLearnerQr['l_no'])) {
                 $branchId = $learner->branch_id;
             } else {
