@@ -1298,11 +1298,7 @@ class LearnerAppController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'FAQs fetched successfully.',
-            'data'    => [
-                'title' => 'Frequently Asked Questions',
-                'faqs'  => $faqs,
-                'items' => $faqs,
-            ],
+            'data'    =>$faqs,
         ], 200);
     }
 }
