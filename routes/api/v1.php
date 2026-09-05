@@ -255,4 +255,6 @@ Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle
     Route::post('attendance/summary', [AttendanceController::class, 'summary']);
     Route::post('attendance/logs', [LearnerAppController::class, 'attendanceLogs']);
     Route::post('attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
+
+    Route::match(['get', 'post'], 'faq', [LearnerAppController::class, 'faq']);
 });

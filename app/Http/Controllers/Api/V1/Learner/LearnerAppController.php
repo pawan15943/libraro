@@ -1250,4 +1250,59 @@ class LearnerAppController extends Controller
             ],
         ], 200);
     }
+
+    /**
+     * Learner self-service Frequently Asked Questions (FAQ) API endpoint.
+     */
+    public function faq(Request $request)
+    {
+        $faqs = [
+            [
+                'id'          => 1,
+                'question'    => 'How do I check my seat details and plan duration?',
+                'answer'      => 'View your assigned seat number, plan name, shift details, and subscription end date directly on your Learner App dashboard home screen.',
+                'category'    => 'General',
+            ],
+            [
+                'id'          => 2,
+                'question'    => 'How can I renew my subscription plan?',
+                'answer'      => 'Tap on the Renew button on your dashboard or navigate to the Subscriptions tab to choose your plan and complete your renewal.',
+                'category'    => 'Subscription & Billing',
+            ],
+            [
+                'id'          => 3,
+                'question'    => 'How do I mark daily attendance?',
+                'answer'      => 'Go to the Attendance section in the app and scan the QR code displayed at your library branch entrance to mark your attendance.',
+                'category'    => 'Attendance',
+            ],
+            [
+                'id'          => 4,
+                'question'    => 'How do I update my profile or password?',
+                'answer'      => 'Navigate to Profile Settings from the app menu where you can update your contact information, upload a profile picture, or change your password.',
+                'category'    => 'Account',
+            ],
+            [
+                'id'          => 5,
+                'question'    => 'How can I view my payment history and receipts?',
+                'answer'      => 'Go to the Transactions tab in the app to view all your previous payments, pending dues, and download payment receipts.',
+                'category'    => 'Subscription & Billing',
+            ],
+            [
+                'id'          => 6,
+                'question'    => 'Who do I contact if I face an issue at the library?',
+                'answer'      => 'You can reach out directly to your library administration or branch manager using the support details provided in your profile.',
+                'category'    => 'Support',
+            ],
+        ];
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'FAQs fetched successfully.',
+            'data'    => [
+                'title' => 'Frequently Asked Questions',
+                'faqs'  => $faqs,
+                'items' => $faqs,
+            ],
+        ], 200);
+    }
 }
