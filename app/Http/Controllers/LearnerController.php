@@ -4820,6 +4820,9 @@ class LearnerController extends Controller
 
         $shift_timing = $start . ' to ' . $end;
 
+        $rawSeatNo = ($learnerDetail ? $learnerDetail->seat_no : null) ?? ($user ? $user->seat_no : null);
+        $seat_no = $rawSeatNo ? (getSeatDisplayByMainNo($rawSeatNo) ?? $rawSeatNo) : 'GEN';
+
         $send_data = [
             'branch_logo'      => $branch_logo ?? '',
             'subscription'     => $learnerDetail->planType->name ?? 'NA',
@@ -4840,7 +4843,9 @@ class LearnerController extends Controller
             'library_mobile'   => $library->library_mobile ?? '',
             'library_address'  => $library->library_address ?? '',
             'branch_slug'      => $branch_slug ?? '',
-            'shift_timing'=>$shift_timing
+            'shift_timing'     => $shift_timing,
+            'seat_no'          => $seat_no,
+            'receipt_type'     => 'learner'
         ];
 
         

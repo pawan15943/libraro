@@ -58,6 +58,8 @@ class Controller extends BaseController
             $branch_logo = null;
             $branch_slug = null;
             $shift_timing=null;
+            $seat_no = null;
+            $receipt_type = 'library';
         }
         if ($request->type == 'learner') {
             // id is tran id and learner_id 
@@ -98,7 +100,9 @@ class Controller extends BaseController
 
             $shift_timing = $start . ' to ' . $end;
 
-
+            $rawSeatNo = ($learnerDeatail ? $learnerDeatail->seat_no : null) ?? ($user ? $user->seat_no : null);
+            $seat_no = $rawSeatNo ? (getSeatDisplayByMainNo($rawSeatNo) ?? $rawSeatNo) : 'GEN';
+            $receipt_type = 'learner';
         }
 
 
@@ -123,7 +127,9 @@ class Controller extends BaseController
             'library_address' => $library->library_address,
             'branch_logo' => $branch_logo,
             'branch_slug' => $branch_slug,
-            'shift_timing'=>$shift_timing
+            'shift_timing'=>$shift_timing,
+            'seat_no' => $seat_no ?? null,
+            'receipt_type' => $receipt_type ?? $request->type
         ];
 
 

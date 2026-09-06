@@ -224,7 +224,19 @@
                 <th>End Date</th>
                 <td>{{ $end_date ?? '' }}</td>
             </tr>
-            @if($shift_timing)
+            @if(($receipt_type ?? '') === 'learner' || (isset($seat_no) && $seat_no !== null))
+            <tr>
+                @if($shift_timing)
+                <th>Shift Timing</th>
+                <td>{{ $shift_timing ?? 'Not Available' }}</td>
+                <th>Seat No.</th>
+                <td>{{ $seat_no ?? 'GEN' }}</td>
+                @else
+                <th>Seat No.</th>
+                <td colspan="3">{{ $seat_no ?? 'GEN' }}</td>
+                @endif
+            </tr>
+            @elseif($shift_timing)
             <tr>
                 <th>Shift Timing</th>
                 <td colspan="3">{{ $shift_timing ?? 'Not Available' }}</td>
