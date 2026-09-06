@@ -74,7 +74,7 @@ class AttendanceController extends Controller
 
         if (!$branchId) {
             $decryptedLearnerQr = decryptLearnerQrPayload($request->qr);
-            Log::info(['afer qr'=>$decryptedLearnerQr['l_no']]);
+            
             if ($decryptedLearnerQr && isset($decryptedLearnerQr['l_no'])) {
                 $branchId = $learner->branch_id;
             } else {

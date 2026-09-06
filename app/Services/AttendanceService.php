@@ -820,7 +820,8 @@ public function processAttendance($learnerId, $branchId, $source)
 {
     if (!$branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'QR expired or invalid',
             'code'    => 403
         ];
@@ -850,7 +851,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'deleteSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been deleted',
                     'code'    => 403
                 ];
@@ -858,7 +860,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'closeSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been closed',
                     'code'    => 403
                 ];
@@ -866,7 +869,8 @@ public function processAttendance($learnerId, $branchId, $source)
         }
 
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -874,7 +878,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
     if ($learnerDetail->branch_id != $branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Ohh, it seems like you scanned the wrong library QR code.',
             'code'    => 403
         ];
@@ -906,7 +911,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
     if ($diffExtendDay < 0) {
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -956,7 +962,8 @@ public function processAttendance($learnerId, $branchId, $source)
         DB::commit();
 
         return [
-            'status'  => $extension ? 'extension' : 'success',
+            'status'  => true,
+            'type'    => $extension ? 'extension' : 'success',
             'message' => 'Thank You! Attendance marked',
             'code'    => 200
         ];
@@ -970,7 +977,8 @@ public function processAttendance($learnerId, $branchId, $source)
         ]);
 
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Attendance not marked. Please try again.',
             'code'    => 500
         ];
