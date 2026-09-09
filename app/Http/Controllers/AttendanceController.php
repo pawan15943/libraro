@@ -505,7 +505,16 @@ private function processAttendance($learnerId, $branchId, $source)
     $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
         ->orderBy('plan_end_date', 'DESC')
         ->first();
-    $learner=Learner::where('id',$learnerId)->withTrashed()->select('status')->first();
+    $learner = Learner::where('id', $learnerId)->withTrashed()->select('status', 'frozen_status')->first();
+
+    if ($learner && (int) $learner->frozen_status === 1) {
+        return [
+            'status'  => false,
+            'type'    => 'error',
+            'message' => 'Your plan is currently frozen',
+            'code'    => 403
+        ];
+    }
 
     if (!$learnerDetail || $learner->status != 1) {
          
