@@ -150,25 +150,37 @@ class AppServiceProvider extends ServiceProvider
                 'Activities Logs' => route('activities.all')
             ],
             'profile' => [
-                'Dashboard' => route('home'),
+                'Dashboard' => route('library.home'),
                 'Library Profile' => route('profile')
+            ],
+            'library.feedback' => [
+                'Dashboard' => route('library.home'),
+                'Feedback' => route('library.feedback')
+            ],
+            'library.video-training' => [
+                'Dashboard' => route('library.home'),
+                'Video Tutorials' => route('library.video-training')
+            ],
+            'library.settings' => [
+                'Dashboard' => route('library.home'),
+                'Library Settings' => route('library.settings')
             ],
 
 
             'get.learner.attendance' => [
-                'Dashboard' => route('home'),
+                'Dashboard' => route('library.home'),
                 'Daily Attendance Summary' => route('get.learner.attendance')
             ],
             'subscriptions.choosePlan' => [
-                'Dashboard' => route('home'),
+                'Dashboard' => route('library.home'),
                 'Choose Plan' => route('subscriptions.choosePlan')
             ],
             'subscriptions.payment' => [
-                'Dashboard' => route('home'),
+                'Dashboard' => route('library.home'),
                 'Make Payment' => route('subscriptions.payment')
             ],
             'library.master' => [
-                'Dashboard' => route('home'),
+                'Dashboard' => route('library.home'),
                 'Configure Library' => route('library.master')
             ],
             'seats' => [
@@ -188,6 +200,11 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
                 'Make Payment' => route('learner.pending.payment', $parameters)
+            ],
+            'learner.pending.payment.list' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Pending Payment' => route('learner.pending.payment.list')
             ],
             'learners.edit' => [
                 'Dashboard' => route('library.home'),
@@ -360,6 +377,10 @@ class AppServiceProvider extends ServiceProvider
                 'Add Plantype Price' => route('planPrice.create', $parameters),
             ],
 
+            'add.expense.list' => [
+                'Dashboard' => route('library.home'),
+                'Daily Expenses' => route('add.expense.list'),
+            ],
             'expense.create' => [
                 'Dashboard' => route('library.home'),
                 'Expense List' => route('expense.index'),
@@ -420,7 +441,10 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'Renew Delete' => route('create.renew.delete.index'),
             ],
-           
+            'toggle.feature' => [
+                'Dashboard' => route('library.home'),
+                'Feature Setting' => route('toggle.feature'),
+            ],
             'notifications.subscription' => [
                 'Dashboard' => route('library.home'),
                 'Buy Message Subscription' => route('notifications.subscription'),
@@ -432,6 +456,11 @@ class AppServiceProvider extends ServiceProvider
             'notification.dashboard' => [
                 'Dashboard' => route('library.home'),
                 'Notification Dashboard' => route('notification.dashboard'),
+            ],
+            'message.templates' => [
+                'Dashboard' => route('library.home'),
+                'Notification Console' => route('notifications.settings'),
+                'Message Templates' => route('message.templates'),
             ],
             'general.seat.history' => [
                 'Dashboard' => route('library.home'),
@@ -489,7 +518,10 @@ class AppServiceProvider extends ServiceProvider
                 'Daily Demo inquiries' => route('demo-users.index'),
                 'Add Demo inquiry' => route('demo-users.create'),
             ],
-
+            'change.password' => [
+                'Dashboard' => route('library.home'),
+                'Change Password' => '#',
+            ],
 
             // Learner Bread crumb
 
@@ -695,13 +727,16 @@ class AppServiceProvider extends ServiceProvider
             'upcoming.payment.report' => 'Upcoming Payment Report',
             'expired.learner.report' => 'Expired Learners Report',
             'list.notification' => 'Notifications List',
+            'notifications.settings' => 'Notification Console',
+            'message.templates' => 'Message Templates',
             'activities.all' => 'Activities Logs',
             'library.master' => 'Configure Library',
             'learners.reactive' => 'Reactive Learner',
             'learnerHistory' => 'Learner History',
-            'learner.payment' => 'Make Payment',
+            'learner.pending.payment' => 'Make Payment',
+            'learner.pending.payment.list' => 'Pending Payment',
             'learners.list.view' => 'Library Counts Details',
-            'library.settings' => 'Library Setting',
+            'library.settings' => 'Library Settings',
             'library.upload.form' => 'Import Learners',
             'report.expense' => 'Manage Expanse',
             'library.feedback' => 'Library Feedback',
@@ -730,6 +765,7 @@ class AppServiceProvider extends ServiceProvider
             'branch.list' => 'Branche List',
             'plantype.index' => 'Plantype | Shifts List',
             'planPrice.index' => 'Plan Type | Shifts Price List',
+            'add.expense.list' => 'Daily Expense Records',
             'expense.index' => 'Expense List',
             'exam.index' => 'Exams List',
             'learner.search' => 'Find a Learner',
@@ -741,6 +777,7 @@ class AppServiceProvider extends ServiceProvider
             'library-users.create' => 'Create Library User',
             'library-users.index' => 'Library Users List',
             'learner.checklist' => 'Print ID card in bulk',
+            'toggle.feature' => 'Toggle Feature',
             'notifications.subscription' =>  'Buy Message Subscription',
             'notifications.settings' =>  'Notification Console',
             'notification.dashboard' =>  'Notification Dashbaord',
@@ -762,6 +799,7 @@ class AppServiceProvider extends ServiceProvider
             'blog.edit' => 'Edit Blog Post',
             'blog' => 'Blog & Articles',
             'blog-detail' => 'Blog Details',
+            'change.password' => 'Change Password',
 
         ];
 

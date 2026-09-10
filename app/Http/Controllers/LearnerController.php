@@ -1696,15 +1696,21 @@ class LearnerController extends Controller
                 }
             }
 
-            // Filter by Pending Payment (any status), listing active learners first and expired ones last
-            if (!empty($filters['payment_filter']) && $filters['payment_filter'] === 'pending_payment') {
-                $query->whereExists(function ($sub) {
-                    $sub->selectRaw('1')
-                        ->from('learner_transactions')
-                        ->whereColumn('learner_transactions.learner_detail_id', 'learner_detail.id')
-                        ->where('learner_transactions.pending_amount', '>', 0);
-                });
-                $query->orderByRaw('CASE WHEN learner_detail.status = 0 THEN 1 ELSE 0 END ASC');
+            // Filter by Payment Status (paid, pending_payment, failed_payment)
+            if (!empty($filters['payment_filter'])) {
+                if ($filters['payment_filter'] === 'pending_payment') {
+                    $query->whereExists(function ($sub) {
+                        $sub->selectRaw('1')
+                            ->from('learner_transactions')
+                            ->whereColumn('learner_transactions.learner_detail_id', 'learner_detail.id')
+                            ->where('learner_transactions.pending_amount', '>', 0);
+                    });
+                    $query->orderByRaw('CASE WHEN learner_detail.status = 0 THEN 1 ELSE 0 END ASC');
+                } elseif ($filters['payment_filter'] === 'paid') {
+                    $query->where('learner_detail.is_paid', 1);
+                } elseif ($filters['payment_filter'] === 'failed_payment') {
+                    $query->where('learner_detail.is_paid', 0);
+                }
             }
 
             if (!empty($filters['seat_no'])) {
@@ -1788,8 +1794,11 @@ class LearnerController extends Controller
 
     public function fetchLearnerData($customerId = null, $isRenew = false, $status, $detailStatus, $filters = [], $perPage = 5, $paginate = true)
     {
+        $includeExpired = !empty($filters['include_expired']);
 
-        $query = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $query = $includeExpired ? Learner::withTrashed() : Learner::query();
+
+        $query->leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id');
 
@@ -1801,6 +1810,25 @@ class LearnerController extends Controller
                 ->where('learner_detail.branch_id', getCurrentBranch())
                 ->where('learners.library_id', getLibraryId())
                 ->where('learner_detail.library_id', getLibraryId());
+        }
+
+        if (!$includeExpired && empty($filters['status'])) {
+            $extendDay = getExtendDays();
+            $today = date('Y-m-d');
+            $query->whereNull('learners.deleted_at')
+                ->whereIn('learners.status', [1, 2])
+                ->whereIn('learner_detail.status', [1, 2])
+                ->where(function ($q) use ($extendDay, $today) {
+                    $q->where('learners.no_expiry', 1)
+                        ->orWhere('learners.frozen_status', 1)
+                        ->orWhere('learner_detail.plan_end_date', '>=', $today)
+                        ->orWhereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?", [$extendDay, $today]);
+                })
+                ->whereRaw("NOT EXISTS (
+                    SELECT 1 FROM learner_operations_log lo 
+                    WHERE lo.learner_detail_id = learner_detail.id 
+                    AND lo.operation IN ('closeSeat', 'deleteSeat')
+                )");
         }
 
         // Show only one learner_detail row per learner:
@@ -1835,46 +1863,32 @@ class LearnerController extends Controller
         )->orderBy('learner_detail_status', 'DESC');
 
 
-        $filters = array_filter($filters ?? []);
-
-        if (!empty($filters)) {
-
-            // Filter by Plan ID
-            if (!empty($filters['plan_id'])) {
-
-                $query->where('learner_detail.plan_id', $filters['plan_id']);
-            }
-
-            // Filter by Payment Status
-
-            if (isset($filters['is_paid'])) {
-
-                $query->where('learner_detail.is_paid', $filters['is_paid']);
-            }
-
-
-            if (!empty($filters['seat_no'])) {
-
-                $query->where('learner_detail.seat_no', $filters['seat_no']);
-            }
-            // Search by Name, Mobile, or Email
-            if (!empty($filters['search'])) {
-
-                $search = $filters['search'];
-                $encryptdata = encryptData($search);
-                $query->where(function ($q) use ($search, $encryptdata) {
-                    $q->where('learners.name', 'LIKE', "%{$search}%")
-                        ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
-                        ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
-                        ->orWhere('learners.email', $encryptdata);
-                });
-            }
-
-
-            return $paginate
-                ? $query->paginate($perPage)
-                : $query->get();
+        if (!empty($filters['plan_id'])) {
+            $query->where('learner_detail.plan_id', $filters['plan_id']);
         }
+
+        if (isset($filters['is_paid']) && $filters['is_paid'] !== '') {
+            $query->where('learner_detail.is_paid', $filters['is_paid']);
+        }
+
+        if (!empty($filters['seat_no'])) {
+            $query->where('learner_detail.seat_no', $filters['seat_no']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $encryptdata = encryptData($search);
+            $query->where(function ($q) use ($search, $encryptdata) {
+                $q->where('learners.name', 'LIKE', "%{$search}%")
+                    ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
+                    ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
+                    ->orWhere('learners.email', $encryptdata);
+            });
+        }
+
+        return $paginate
+            ? $query->paginate($perPage)
+            : $query->get();
     }
 
      public function userUpdate(Request $request, $id = null)
@@ -2044,7 +2058,42 @@ class LearnerController extends Controller
 
         $rowContext = $this->learnerService->buildLearnerListRowContext($learners->getCollection());
 
-        return view('learner.learner', compact('learners', 'rowContext'));
+        $today = Carbon::today()->format('Y-m-d');
+        $extendDay = (int) getExtendDays();
+        $hasPendingSyncLearners = LearnerDetail::where('library_id', getLibraryId())
+            ->when(getCurrentBranch(), function ($q) {
+                $q->where('branch_id', getCurrentBranch());
+            })
+            ->where(function ($q) use ($today, $extendDay) {
+                $q->where(function ($sub) use ($today, $extendDay) {
+                    $sub->where('status', 1)
+                        ->whereRaw("DATE_ADD(plan_end_date, INTERVAL ? DAY) <= ?", [$extendDay, $today]);
+                })->orWhere(function ($sub) use ($today) {
+                    $sub->where('status', 0)
+                        ->where('plan_start_date', '<=', $today)
+                        ->where('plan_end_date', '>', $today);
+                });
+            })
+            ->exists();
+
+        return view('learner.learner', compact('learners', 'rowContext', 'hasPendingSyncLearners'));
+    }
+
+    public function syncStatus()
+    {
+        try {
+            $this->dataUpdate();
+            return response()->json([
+                'success' => true,
+                'message' => 'Learner statuses recalculated and synchronized successfully!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Sync Learner Status Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to sync learner statuses.'
+            ], 500);
+        }
     }
 
     public function learnerListPdf(Request $request)
@@ -2068,20 +2117,28 @@ class LearnerController extends Controller
     }
     public function learnerSearch(Request $request)
     {
+        $search = trim((string)$request->get('search'));
+        $includeExpired = $request->boolean('include_expired');
+
+        // If nothing in search bar, do not query or return records
+        if ($search === '') {
+            $learners = null;
+            $rowContext = [];
+            return view('learner.learner-search', compact('learners', 'rowContext'));
+        }
 
         $filters = [
-            'search'  => $request->get('search'),
+            'search'          => $search,
+            'include_expired' => $includeExpired,
         ];
 
-        if ($filters) {
-            $paginate = true;
-        } else {
-            $paginate = false;
-        }
+        $paginate = true;
 
         $learners = $this->fetchLearnerData(null, false, 1, 1, $filters, $perPage = 10, $paginate);
 
-        return view('learner.learner-search', compact('learners'));
+        $rowContext = $this->learnerService->buildLearnerListRowContext($learners->getCollection());
+
+        return view('learner.learner-search', compact('learners', 'rowContext'));
     }
 
     public function learnerHistory(Request $request)
@@ -2284,6 +2341,15 @@ class LearnerController extends Controller
         }
         $customer['floor_seat_no'] = getSeatDisplayShortFloorName($customer->seat_no);
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
+        $customer['pending_amount_num'] = isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0;
+
+        $planStatusDetails = getPlanStatusDetails($customer->plan_end_date);
+        $customer['diff_in_days'] = $planStatusDetails['diff_in_days'] ?? 999;
+        $customer['diff_extend_day'] = $planStatusDetails['diff_extend_day'] ?? 999;
+
+        $startDateStr = $customer->plan_start_date ?? $customer->join_date ?? $customer->created_at;
+        $startDate = $startDateStr ? \Carbon\Carbon::parse($startDateStr)->startOfDay() : \Carbon\Carbon::today();
+        $customer['days_since_start'] = (int) $startDate->diffInDays(\Carbon\Carbon::today(), false);
 
         $learner_request = DB::table('learner_request')->where('learner_id', $customerId)->get();
 
@@ -2948,51 +3014,50 @@ class LearnerController extends Controller
 
     public function learnerAttendence(Request $request)
     {
-        if ($request->has('date')) {
-            $learners =  Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-                ->where('learners.library_id', getLibraryId())
-                ->where('learners.branch_id', getCurrentBranch())
-                ->whereNull('learner_detail.deleted_at')
-                ->leftJoin('attendances', function ($join) use ($request) {
-                    $join->on('learners.id', '=', 'attendances.learner_id')
-                        ->whereDate('attendances.date', '=', $request->date);
-                })
-                ->where('learners.status', 1)
-                ->where('learner_detail.status', 1)
-                ->when($request->filled('search'), function ($query) use ($request) {
-                    $query->where('learners.name', 'like', '%' . $request->search . '%');
-                })
-                ->with(['planType'])
-                ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 2) as attendance'), 'attendances.in_time', 'attendances.out_time')
-                ->get();
-        } else {
-            $learners = collect();
-        }
+        $selectedDate = $request->get('date', date('Y-m-d'));
 
+        $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->where('learners.library_id', getLibraryId())
+            ->where('learners.branch_id', getCurrentBranch())
+            ->whereNull('learner_detail.deleted_at')
+            ->leftJoin('attendances', function ($join) use ($selectedDate) {
+                $join->on('learners.id', '=', 'attendances.learner_id')
+                    ->whereDate('attendances.date', '=', $selectedDate);
+            })
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('learners.name', 'like', '%' . $request->search . '%');
+            })
+            ->with(['planType'])
+            ->select('learners.*', 'learner_detail.*', DB::raw('COALESCE(attendances.attendance, 0) as attendance'), 'attendances.in_time', 'attendances.out_time')
+            ->orderByRaw('CAST(learners.seat_no AS UNSIGNED) ASC')
+            ->get();
 
-        return view('learner.attendance', compact('learners'));
+        return view('learner.attendance', compact('learners', 'selectedDate'));
     }
 
-    public function  updateAttendance(Request $request, AttendanceService $service)
+    public function updateAttendance(Request $request, AttendanceService $service)
     {
-
         $request->validate([
             'learner_id' => 'required|integer',
             'attendance' => 'required|integer',
             'date' => 'required|date',
             'time' => 'required|in:in,out',
+            'custom_time' => 'nullable|string',
         ]);
 
         $learnerId = $request->learner_id;
         $attendance = $request->attendance;
         $date = $request->date;
-        $type=$request->time;
+        $type = $request->time;
+        $punchTime = ($attendance == 1 && $request->filled('custom_time')) ? $request->custom_time : $type;
 
         $service->manualAttendance(
             $learnerId,
             $attendance,
             $date,
-            $request->time,
+            $punchTime,
             $type,
             getLibraryId(),
             getCurrentBranch()
@@ -3000,13 +3065,78 @@ class LearnerController extends Controller
 
         $learner = Learner::where('id', $learnerId)->select('name')->first();
 
+        $attendanceRecord = Attendance::where('learner_id', $learnerId)
+            ->whereDate('date', $date)
+            ->first();
+
+        $durationText = '—';
+        $isInside = false;
+        $inTimeFormatted = null;
+        $outTimeFormatted = null;
+        $inTime24 = null;
+        $outTime24 = null;
+        $inTimeRaw = null;
+        $outTimeRaw = null;
+
+        if ($attendanceRecord && !empty($attendanceRecord->in_time) && (int)$attendanceRecord->attendance === 1) {
+            $inCarbon = Carbon::parse($attendanceRecord->in_time);
+            $inTimeFormatted = $inCarbon->format('h:i A');
+            $inTime24 = $inCarbon->format('H:i');
+            $inTimeRaw = $inCarbon->format('Y-m-d H:i:s');
+
+            if (!empty($attendanceRecord->out_time)) {
+                $outCarbon = Carbon::parse($attendanceRecord->out_time);
+                $outTimeFormatted = $outCarbon->format('h:i A');
+                $outTime24 = $outCarbon->format('H:i');
+                $outTimeRaw = $outCarbon->format('Y-m-d H:i:s');
+
+                if ($outCarbon->lt($inCarbon)) {
+                    $outCarbon = $outCarbon->copy()->addDay();
+                }
+
+                $diffMinutes = $inCarbon->diffInMinutes($outCarbon);
+                $hrs = floor($diffMinutes / 60);
+                $mins = $diffMinutes % 60;
+                $durationText = ($hrs > 0 ? "{$hrs} hr " : "") . "{$mins} min";
+                $isInside = false;
+            } elseif ($date === date('Y-m-d')) {
+                $diffMinutes = $inCarbon->diffInMinutes(now());
+                $hrs = floor($diffMinutes / 60);
+                $mins = $diffMinutes % 60;
+                $durationText = ($hrs > 0 ? "{$hrs} hr " : "") . "{$mins} min";
+                $isInside = true;
+            } else {
+                $durationText = 'In: ' . $inCarbon->format('h:i A');
+                $isInside = false;
+            }
+        }
+
         if ($attendance == 1) {
-            $message = 'Attendance of ' . $learner->name . ' has been marked Present!';
-            return response()->json(['present' => true, 'message' => $message]);
+            $formattedTime = ($type === 'in' ? $inTimeFormatted : $outTimeFormatted) 
+                ?: Carbon::parse($date . ' ' . ($request->filled('custom_time') ? $request->custom_time : now()->format('H:i:s')))->format('h:i A');
+
+            $message = 'Attendance of ' . ($learner->name ?? 'Learner') . ' (' . strtoupper($type) . ' at ' . $formattedTime . ') saved successfully!';
+            return response()->json([
+                'present' => true,
+                'message' => $message,
+                'punch_time' => $formattedTime,
+                'duration' => $durationText,
+                'is_inside' => $isInside,
+                'in_time_formatted' => $inTimeFormatted,
+                'out_time_formatted' => $outTimeFormatted,
+                'in_time_24' => $inTime24,
+                'out_time_24' => $outTime24,
+                'in_time_raw' => $inTimeRaw,
+                'out_time_raw' => $outTimeRaw,
+            ]);
         } else {
-            $message = '';
-            $message = 'Attendance of ' . $learner->name . ' has been marked Absent!';
-            return response()->json(['absent' => true, 'message' => $message]);
+            $message = 'Attendance of ' . ($learner->name ?? 'Learner') . ' marked Absent!';
+            return response()->json([
+                'absent' => true,
+                'message' => $message,
+                'duration' => '—',
+                'is_inside' => false,
+            ]);
         }
     }
 
@@ -3045,78 +3175,103 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
+        $selectedDate = $request->get('date', date('Y-m-d'));
+
         // Dropdown data
-    $data = Learner::where('branch_id', getCurrentBranch())
-        ->where('status', 1)
-        ->pluck('name', 'id');
+        $data = Learner::where('branch_id', getCurrentBranch())
+            ->where('status', 1)
+            ->pluck('name', 'id');
 
-    // Base Query
-    $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
-        ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
-        ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-        ->leftJoin('attendances', function ($join) use ($request) {
-            $join->on('learners.id', '=', 'attendances.learner_id');
+        // Base Query
+        $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->leftJoin('attendances', function ($join) use ($selectedDate) {
+                $join->on('learners.id', '=', 'attendances.learner_id')
+                    ->whereDate('attendances.date', '=', $selectedDate);
+            })
+            ->where('learners.library_id', getLibraryId())
+            ->where('learners.branch_id', getCurrentBranch())
+            ->where('learners.status', 1)
+            ->where('learner_detail.status', 1)
+            ->whereNull('learner_detail.deleted_at')
+            ->orderByRaw('CAST(learners.seat_no AS UNSIGNED) ASC');
 
-            // Apply date filter inside join (important)
-            if ($request->filled('date')) {
-                $join->whereDate('attendances.date', '=', $request->date);
-            }
-        })
-        ->where('learners.library_id', getLibraryId())
-        ->where('learners.branch_id', getCurrentBranch())
-        ->where('learners.status', 1)
-        ->where('learner_detail.status', 1);
+        // Filter by learner or search
+        if ($request->filled('learner_id')) {
+            $learners->where('learners.id', $request->learner_id);
+        }
 
-    // Filter by learner
-    if ($request->filled('learner_id')) {
-        $learners->where('learners.id', $request->learner_id);
-    }
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $learners->where(function ($q) use ($search) {
+                $q->where('learners.name', 'like', "%{$search}%")
+                  ->orWhere('learners.mobile', 'like', "%{$search}%")
+                  ->orWhere('learners.seat_no', 'like', "%{$search}%")
+                  ->orWhere('learners.email', 'like', "%{$search}%")
+                  ->orWhere('learners.learner_no', 'like', "%{$search}%");
+            });
+        }
 
-    // Select required columns
-    $learners = $learners->select(
-        'learners.id as learner_id',
-        'learners.name as name',
-        'learners.email as email',
-        'learners.dob as dob',
-        'learners.mobile',
-        'learners.seat_no',
-        'learner_detail.plan_start_date',
-        'learner_detail.plan_end_date',
-        'learners.library_id',
-        'learners.status',
-        'plans.name as plan_name',
-        'plan_types.name as plan_type_name',
-        'attendances.in_time',
-        'attendances.out_time',
-        'attendances.attendance',
-        'attendances.date'
-    )->get();
+        // Select required columns
+        $learners = $learners->select(
+            'learners.id as learner_id',
+            'learners.learner_no',
+            'learners.name as name',
+            'learners.email as email',
+            'learners.dob as dob',
+            'learners.mobile',
+            'learners.seat_no',
+            'learners.profile_picture',
+            'learner_detail.plan_start_date',
+            'learner_detail.plan_end_date',
+            'learners.library_id',
+            'learners.status',
+            'plans.name as plan_name',
+            'plan_types.name as plan_type_name',
+            'plan_types.start_time as shift_start_time',
+            'plan_types.end_time as shift_end_time',
+            'plan_types.slot_hours as shift_slot_hours',
+            'attendances.in_time',
+            'attendances.out_time',
+            'attendances.attendance',
+            'attendances.date'
+        )->get();
 
-    /* =========================
-       COUNTS
-    ========================= */
+        /* =========================
+           COUNTS
+        ========================= */
 
-    $totalStudents = $learners->unique('learner_id')->count();
+        $totalStudents = $learners->unique('learner_id')->count();
 
-    $presentStudents = $learners
-        ->where('attendance', 1)
-        ->unique('learner_id')
-        ->count();
+        $presentStudents = $learners
+            ->filter(function ($row) {
+                return (int)$row->attendance === 1 || !empty($row->in_time);
+            })
+            ->unique('learner_id')
+            ->count();
 
-    $absentStudents = $learners
-        ->filter(function ($row) {
-            return $row->attendance == 0 || $row->attendance === null;
-        })
-        ->unique('learner_id')
-        ->count();
+        $absentStudents = max(0, $totalStudents - $presentStudents);
 
+        $selectedStatus = $request->get('status', 'all');
+        if ($selectedStatus === 'present') {
+            $learners = $learners->filter(function ($row) {
+                return (int)$row->attendance === 1 || !empty($row->in_time);
+            });
+        } elseif ($selectedStatus === 'absent') {
+            $learners = $learners->filter(function ($row) {
+                return (int)$row->attendance === 0 && empty($row->in_time);
+            });
+        }
 
         return view('library.learner-attendance', compact(
             'learners',
             'data',
             'totalStudents',
             'presentStudents',
-            'absentStudents'
+            'absentStudents',
+            'selectedDate',
+            'selectedStatus'
         ));
     }
 
@@ -3326,6 +3481,14 @@ class LearnerController extends Controller
         $learners = $this->learnerService->getLearnersList($filters);
         $summary = $dashboardService->pendingPaymentSummary(getCurrentBranch());
         $planTypes = $this->learnerService->getPlanTypes();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('learner.partials.pending-payment-table', compact('learners', 'summary'))->render(),
+                'summary' => $summary,
+                'total' => $learners->total(),
+            ]);
+        }
 
         return view('learner.pending-payment-list', compact('learners', 'summary', 'planTypes'));
     }

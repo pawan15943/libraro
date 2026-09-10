@@ -1,0 +1,814 @@
+/* ==========================================================================
+   Learner Edit Form Styling
+   Strictly Scoped under .learner-edit-module
+   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f
+   ========================================================================== */
+
+.learner-edit-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+.learner-edit-module .learner-edit-wrapper {
+    max-width: 780px;
+    width: 100%;
+    margin: 1.25rem auto 2.5rem auto;
+}
+
+/* Card Styling */
+.learner-edit-module .edit-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.learner-edit-module .edit-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+/* Card Headers */
+.learner-edit-module .edit-card-header {
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid transparent;
+}
+
+/* Header Colors */
+.learner-edit-module .edit-card-header.header-purple {
+    background-color: #f5f3ff;
+    border-bottom-color: #ede9fe;
+}
+
+.learner-edit-module .edit-card-header.header-blue {
+    background-color: #eff6ff;
+    border-bottom-color: #dbeafe;
+}
+
+.learner-edit-module .edit-card-header.header-green {
+    background-color: #ecfdf5;
+    border-bottom-color: #d1fae5;
+}
+
+.learner-edit-module .edit-card-header.header-amber {
+    background-color: #fffbeb;
+    border-bottom-color: #fef3c7;
+}
+
+
+/* Header Left (Icon + Text) */
+.learner-edit-module .edit-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.learner-edit-module .edit-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.learner-edit-module .header-purple .edit-header-icon {
+    background-color: #ede9fe;
+    color: #7c3aed;
+}
+
+.learner-edit-module .header-blue .edit-header-icon {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.learner-edit-module .header-green .edit-header-icon {
+    background-color: #d1fae5;
+    color: #16a34a;
+}
+
+.learner-edit-module .header-amber .edit-header-icon {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.learner-edit-module .edit-header-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.3;
+    font-family: 'Outfit', sans-serif;
+}
+
+.learner-edit-module .edit-header-subtitle {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.3;
+    font-weight: 400;
+}
+
+.learner-edit-module .edit-header-badge {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.learner-edit-module .edit-header-toggle {
+    font-size: 0.95rem;
+    color: #18225f;
+    transition: transform 0.25s ease;
+}
+
+.learner-edit-module .edit-header-toggle.expanded {
+    transform: rotate(180deg);
+}
+
+/* Card Body */
+.learner-edit-module .edit-card-body {
+    padding: 1.35rem 1.45rem;
+}
+
+/* 1. Upload Profile Photo Card */
+.learner-edit-module .upload-photo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0;
+    text-align: center;
+}
+
+.learner-edit-module .upload-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    margin-bottom: 0.6rem;
+}
+
+.learner-edit-module .upload-avatar-circle {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: 3px solid #ede9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+    transition: all 0.22s ease;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+}
+
+.learner-edit-module .upload-avatar-wrapper:hover .upload-avatar-circle {
+    border-color: #7c3aed;
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2);
+}
+
+.learner-edit-module .upload-avatar-circle i.avatar-icon-placeholder {
+    font-size: 2.8rem;
+    color: #94a3b8;
+    transition: opacity 0.2s ease;
+}
+
+.learner-edit-module .upload-avatar-circle img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+    z-index: 2;
+}
+
+.learner-edit-module .avatar-hover-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-size: 0.72rem;
+    font-weight: 500;
+    gap: 2px;
+    z-index: 3;
+    border-radius: 50%;
+}
+
+.learner-edit-module .upload-avatar-wrapper:hover .avatar-hover-overlay {
+    opacity: 1;
+}
+
+.learner-edit-module .avatar-hover-overlay i {
+    font-size: 1.15rem;
+}
+
+.learner-edit-module .avatar-camera-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #7c3aed;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    z-index: 4;
+}
+
+.learner-edit-module .upload-avatar-wrapper:hover .avatar-camera-badge {
+    background: #6d28d9;
+    transform: scale(1.08);
+}
+
+.learner-edit-module .upload-avatar-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+    margin-bottom: 0.2rem;
+    transition: color 0.15s ease;
+}
+
+.learner-edit-module .upload-avatar-wrapper:hover ~ div .upload-avatar-title {
+    color: #7c3aed;
+}
+
+.learner-edit-module .upload-avatar-subtext {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.learner-edit-module .avatar-view-existing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #7c3aed;
+    text-decoration: none;
+    background: #ede9fe;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.learner-edit-module .avatar-view-existing:hover {
+    background: #7c3aed;
+    color: #ffffff;
+}
+
+/* Ensure background cropper preview elements remain completely hidden */
+.learner-edit-module .preview-img,
+.learner-edit-module .upload-photo-container .preview-img,
+.learner-edit-module .preview-img.one {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+/* Form Controls */
+
+.learner-edit-module .form-group {
+    margin-bottom: 0.35rem;
+}
+
+.learner-edit-module .form-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.25rem;
+    display: block;
+    font-family: 'Outfit', sans-serif;
+}
+
+.learner-edit-module .form-label .required-star {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.learner-edit-module .form-hint {
+    font-size: 0.74rem;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+    display: block;
+    line-height: 1.25;
+}
+
+.learner-edit-module .form-control,
+.learner-edit-module .form-select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.52rem 0.85rem;
+    font-size: 0.88rem;
+    color: #1e293b;
+    background-color: #ffffff;
+    min-height: 40px;
+    font-family: 'Outfit', sans-serif;
+    box-shadow: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.learner-edit-module .form-control:focus,
+.learner-edit-module .form-select:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+    outline: none;
+}
+
+.learner-edit-module .form-control[readonly],
+.learner-edit-module .form-select[disabled] {
+    background-color: #f8fafc;
+    color: #64748b;
+    cursor: default;
+}
+
+/* ==========================================================================
+   Top Seat No Header Card (Positioned Outside Form Cards as a Hero Header)
+   ========================================================================== */
+.learner-edit-module .learner-seat-header-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ecfdf5 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    padding: 1.2rem 1.45rem;
+    margin-bottom: 1.35rem;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.learner-edit-module .learner-seat-header-card:hover {
+    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.12);
+}
+
+.learner-edit-module .learner-seat-header-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 6px;
+    background: #10b981;
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+}
+
+.learner-edit-module .seat-header-actions {
+    position: absolute;
+    top: 1.15rem;
+    right: 1.35rem;
+    z-index: 5;
+}
+
+.learner-edit-module .btn-seat-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #18225f;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.38rem 0.95rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.18s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.learner-edit-module .btn-seat-back:hover {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.15);
+}
+
+.learner-edit-module .seat-header-main {
+    display: flex;
+    align-items: center;
+    gap: 1.35rem;
+}
+
+
+.learner-edit-module .seat-header-avatar-box {
+    width: 76px;
+    height: 76px;
+    background: #ffffff;
+    border: 3px solid #a7f3d0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    flex-shrink: 0;
+    padding: 3px;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.learner-edit-module .seat-header-avatar-box:hover {
+    transform: scale(1.06);
+    border-color: #10b981;
+}
+
+.learner-edit-module .seat-header-avatar-box img {
+    border-radius: 50%;
+    display: block;
+}
+
+.learner-edit-module .seat-header-avatar-box img.avatar-user-photo {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.learner-edit-module .seat-header-avatar-box img.avatar-seat-chair {
+    max-width: 72% !important;
+    max-height: 72% !important;
+    object-fit: contain !important;
+    margin: auto;
+}
+
+
+.learner-edit-module .seat-header-info {
+    flex-grow: 1;
+}
+
+.learner-edit-module .seat-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.learner-edit-module .seat-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.learner-edit-module .seat-status-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.learner-edit-module .seat-title {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #065f46 !important;
+    margin: 0 0 0.35rem 0;
+    line-height: 1.25;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.3px;
+}
+
+.learner-edit-module .seat-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+.learner-edit-module .seat-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid #d1fae5;
+}
+
+.learner-edit-module .seat-meta-item i {
+    color: #059669;
+}
+
+
+/* Document Drag and Drop Zone */
+.learner-edit-module .doc-dropzone {
+    border: 2px dashed #94a3b8;
+    border-radius: 10px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    min-height: 105px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+}
+
+.learner-edit-module .doc-dropzone:hover:not(.disabled) {
+    border-color: #18225f;
+    background: #f0f4ff;
+}
+
+.learner-edit-module .doc-dropzone.dragover {
+    border-color: #18225f;
+    background: #dbeafe;
+    border-style: solid;
+}
+
+.learner-edit-module .doc-dropzone.disabled {
+    opacity: 0.65;
+    background: #f1f5f9;
+    border: 2px dashed #cbd5e1;
+    cursor: not-allowed;
+}
+
+.learner-edit-module .doc-dropzone.disabled .doc-dropzone-icon {
+    color: #94a3b8;
+}
+
+.learner-edit-module .doc-dropzone.disabled .doc-dropzone-text {
+    color: #64748b;
+}
+
+.learner-edit-module .doc-dropzone.disabled .browse-link {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.learner-edit-module .doc-dropzone-content {
+    pointer-events: none;
+}
+
+.learner-edit-module .doc-dropzone-icon {
+    font-size: 1.85rem;
+    color: #2563eb;
+    margin-bottom: 0.35rem;
+    transition: color 0.15s ease;
+}
+
+.learner-edit-module .doc-dropzone-text {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.learner-edit-module .doc-dropzone-text .browse-link {
+    color: #18225f;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.learner-edit-module .doc-dropzone-hint {
+    font-size: 0.76rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.learner-edit-module .doc-dropzone-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.84rem;
+    padding: 0.5rem 1rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.learner-edit-module .doc-file-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.learner-edit-module .doc-file-name {
+    font-weight: 600;
+    color: #1e293b;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.86rem;
+}
+
+.learner-edit-module .doc-file-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 3px;
+}
+
+.learner-edit-module .doc-file-action {
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.76rem;
+    pointer-events: auto;
+    text-decoration: none;
+}
+
+.learner-edit-module .doc-file-action:hover {
+    text-decoration: underline;
+}
+
+/* Action Bar */
+.learner-edit-module .form-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.35rem;
+    padding-top: 0.5rem;
+}
+
+.learner-edit-module .btn-back-form {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 0.55rem 1.6rem;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    font-family: 'Outfit', sans-serif;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.learner-edit-module .btn-back-form:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.learner-edit-module .btn-submit-edit {
+    background: #18225f !important;
+    border: 1px solid #18225f;
+    color: #ffffff !important;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 0.55rem 2.25rem;
+    min-width: 170px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    font-family: 'Outfit', sans-serif;
+    box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.learner-edit-module .btn-submit-edit:hover {
+    background: #0f172a !important;
+    border-color: #0f172a;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25);
+}
+
+/* Image Modal Popup */
+.learner-edit-module .image-modal {
+    position: fixed;
+    z-index: 999999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(15, 23, 42, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+}
+
+.learner-edit-module .image-modal-content {
+    margin: auto;
+    display: block;
+    position: relative;
+    max-width: 85%;
+    max-height: 85%;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.learner-edit-module .image-modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    display: block;
+    border-radius: 8px;
+}
+
+.learner-edit-module .close-modal {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    color: #ffffff;
+    background: #ef4444;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: background 0.15s ease;
+}
+
+.learner-edit-module .close-modal:hover {
+    background: #dc2626;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .learner-edit-module .learner-edit-wrapper {
+        margin: 0.5rem auto 1.5rem auto;
+    }
+    .learner-edit-module .edit-card-body {
+        padding: 1.1rem 1rem;
+    }
+    .learner-edit-module .seat-header-actions {
+        position: static;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+    }
+    .learner-edit-module .btn-seat-back {
+        width: auto;
+    }
+    .learner-edit-module .seat-header-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.85rem;
+    }
+
+    .learner-edit-module .seat-badge-row {
+        justify-content: center;
+    }
+    .learner-edit-module .seat-meta-row {
+        justify-content: center;
+    }
+    .learner-edit-module .form-action-bar {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+    .learner-edit-module .btn-back-form,
+    .learner-edit-module .btn-submit-edit {
+        width: 100%;
+        text-align: center;
+    }
+}
+

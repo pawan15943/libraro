@@ -66,8 +66,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
 
     <div class="dashboard learner">
-        <div class="row">
-            <div class="col-lg-8">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
 
                 @if($festival)
                     <div class="greeting-container">
@@ -85,11 +85,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 @endif
 
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-6">
 
-                <ul class="QuickAction">
-
-                    
+                <ul class="QuickAction flex-wrap">
+                    <li><a href="{{ route('library.dashboard.v2') }}" style="background: #34939F;"><i class="fa-solid fa-sparkles"></i> Switch to Modern V2</a></li>
                     <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
                 </ul>
             </div>
@@ -490,10 +489,12 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <div class="row g-4 mb-2">
             {{-- @can('has-permission', 'Monthly Revenues') --}}
             <div class="col-lg-8">
-                <h4 class="my-4">Online / QR Bookings</h4>
+                <div class="heading-list my-4">
+                    <h5 class="mb-0">Online / QR Bookings</h5>
+                </div>
                 <div class="table-responsive" id="requests">
                     @can('has-permission', 'QR Seat Booking')
-                    <table class="table table-boredred" id="onlineRequest">
+                    <table class="table" id="onlineRequest">
                         <thead>
                             <tr>
                                 <th class="text-center">Booking Type</th>
@@ -504,114 +505,169 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
-                        @if($qrbookings?->count() > 0)
-                        @php
-                        $x = 1;
-                        @endphp
                         <tbody>
-                            @foreach($qrbookings as $key => $value)
-
-                            <tr>
-                                <td>
-                                    @if($value->type=='qr_seat_book')
-                                    SEAT BOOK
-                                    @elseif($value->type=='learner_book')
-                                    SEAT BOOK (APP)
-                                    @elseif($value->type=='qr_renew')
-                                    RENEW SEAT
-                                    @elseif($value->type=='demo-bookings')
-                                    Demo Bookings
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>{{$value->name}}<br>{{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</td>
-                                <td>{{$value->mobile ? '+91-'.decryptData($value->mobile) : ''}}</td>
-                                <td>{{ $value->planType->name ?? 'N/A' }} | {{ number_format($value->total_amount ?? 0, 0) }} <br> {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</td>
-
-                                @if($value->payment_screenshot)
-                                <td>
-                                    <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success text-decoration-none">
-                                        Paid
-                                    </a>
-                                </td>
-                                @else
-                                <td>
-                                    <span class="badge bg-danger">Unpaid</span>
-                                </td>
-                                @endif
-
-                                <td>
-                                    <ul class="actions-icons">
-                                        {{-- @if( $value->payment_screenshot && $value->payment_mode=='online' && \Carbon\Carbon::parse($value->plan_start_date)->isToday()) --}}
-                                        @if( $value->payment_screenshot && $value->payment_mode=='online' )
-                                        <li>
-                                            <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
-                                                @csrf
-                                                <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                                <input type="hidden" name="direct_validate" value="1"> <!-- skip validation -->
-                                                <button type="submit" class="btn btn-success noLoader" ><i class="fa fa-check"></i></button>
-                                            </form>
-
-                                        </li>
+                            @if($qrbookings?->count() > 0)
+                                @foreach($qrbookings as $key => $value)
+                                <tr>
+                                    <td class="text-center">
+                                        @if($value->type=='qr_seat_book')
+                                            SEAT BOOK
+                                        @elseif($value->type=='learner_book')
+                                            SEAT BOOK (APP)
+                                        @elseif($value->type=='qr_renew')
+                                            RENEW SEAT
+                                        @elseif($value->type=='demo-bookings')
+                                            Demo Bookings
+                                        @else
+                                            -
                                         @endif
-                                        {{-- <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-check"></i> </a></li> --}}
-                                        <li><a href="{{ route('booking.details', $value->id) }}"><i class="fa fa-eye"></i></a></li>
-                                        <li>
-                                            <a href="javascript:void(0)"
-                                                class="delete-booking"
-                                                data-id="{{ $value->id }}">
-                                                <i class="fa fa-trash"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-
-
-                            @endforeach
-
-
+                                    </td>
+                                    <td class="text-center">
+                                        {{$value->name}}
+                                        <span>Seat No. - {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</span>
+                                    </td>
+                                    <td class="text-center">{{$value->mobile ? '+91-'.decryptData($value->mobile) : '-'}}</td>
+                                    <td class="text-center">
+                                        {{ $value->planType->name ?? 'N/A' }}
+                                        <span>₹{{ $value->total_amount ?? 0 }}</span>
+                                        <span>{{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($value->payment_screenshot)
+                                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success">Paid</a>
+                                        @else
+                                            <span class="badge bg-danger">Unpaid</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <ul class="actionalbls">
+                                            @if( $value->payment_screenshot && $value->payment_mode=='online' )
+                                            <li>
+                                                <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                                    @csrf
+                                                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                                    <input type="hidden" name="direct_validate" value="1">
+                                                    <button type="submit" class="btn btn-sm btn-primary py-0 noLoader" data-bs-toggle="tooltip" title="Direct Approve">
+                                                        <i class="fa-solid fa-check"></i>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            @endif
+                                            <li>
+                                                <a href="{{ route('booking.details', $value->id) }}" data-bs-toggle="tooltip" title="View Details">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" title="Delete Booking">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                @endforeach
                             @else
-                            <tr>
-                                <th colspan="6" class="text-center" style="height: 230px;">No Booking Found yet</th>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center">No Booking Found</td>
+                                </tr>
                             @endif
                         </tbody>
                     </table>
                     @else
-                    <span class="text-danger d-flex justify-content-center align-items-center" style="height: 265px;">You don't have permission to view QR / Online Bookings</span>
+                    <p class="text-danger">You don't have permission to view this.</p>
                     @endcan
                 </div>
-
-
             </div>
             
             @can('has-permission', 'Recent Activity')
             <div class="col-lg-4">
-                <div class="d-flex justify-content-between align-items-center my-4">
-                    <h4 class="mb-0">Recent Activity</h4>
-                    <a href="{{ route('activities.all') }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i></a>
+                <div class="dashboard-recent-activity-card my-4">
+                    <div class="activity-card-header d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="activity-header-icon">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                            <div>
+                                <h5 class="activity-header-title mb-0">Recent Activity</h5>
+                                <span class="activity-header-subtitle">{{ $recent_activitys->count() }} updates in last 5 days</span>
+                            </div>
+                        </div>
+                        <a href="{{ route('activities.all') }}" class="activity-view-all">
+                            View All <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+
+                    <div class="activity-items-scroll">
+                        @if($recent_activitys->count() > 0)
+                            @foreach($recent_activitys as $value)
+                                @php
+                                    $operationDetails = HelperService::getOperationDetails($value);
+                                    $meta = HelperService::activityMeta($value->operation);
+                                    $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
+                                    $activityLearnerName = $value->learner?->name ?? 'Learner';
+                                    $color = $meta['color_code'] ?? '#18225f';
+
+                                    $iconMap = [
+                                        'renewSeat'      => 'fa-arrows-rotate',
+                                        'renewDelete'    => 'fa-rotate-left',
+                                        'learnerUpgrade' => 'fa-arrow-trend-up',
+                                        'changePlan'     => 'fa-sliders',
+                                        'swapseat'       => 'fa-right-left',
+                                        'reactive'       => 'fa-user-check',
+                                        'closeSeat'      => 'fa-door-closed',
+                                        'deleteSeat'     => 'fa-trash-can',
+                                        'restoreSeat'    => 'fa-trash-arrow-up',
+                                        'freezePlan'     => 'fa-snowflake',
+                                        'unfreezePlan'   => 'fa-sun',
+                                        'giftDays'       => 'fa-gift',
+                                        'edit'           => 'fa-pen-to-square',
+                                    ];
+                                    $actionIcon = $iconMap[$value->operation] ?? 'fa-bolt';
+
+                                    // Extract pure action message without duplicate "Seat No. ... : Learner" prefix
+                                    $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
+                                    if (empty(trim(strip_tags($actionMessage)))) {
+                                        $actionMessage = $operationDetails['message'];
+                                    }
+
+                                    $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
+                                    $timeAgo = $createdAt->diffForHumans();
+                                @endphp
+
+                                <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
+                                    <div class="activity-icon-badge">
+                                        <i class="fa-solid {{ $actionIcon }}"></i>
+                                    </div>
+                                    <div class="activity-content-box">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
+                                            <span class="activity-timestamp" title="{{ $createdAt->format('d M Y, h:i A') }}">
+                                                <i class="fa-regular fa-clock me-1"></i>{{ $timeAgo }}
+                                            </span>
+                                        </div>
+
+                                        <div class="activity-target mb-1">
+                                            <span class="activity-learner-name">{{ $activityLearnerName }}</span>
+                                            <span class="activity-seat-tag">
+                                                <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
+                                            </span>
+                                        </div>
+
+                                        <div class="activity-desc">
+                                            {!! $actionMessage !!}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="activity-empty-state text-center py-4">
+                                <i class="fa-regular fa-bell-slash fa-2x mb-2 text-muted"></i>
+                                <p class="mb-0 text-muted">No recent activity recorded yet.</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-                <ul class="activity contents">
-                    @if($recent_activitys->count() > 0)
-                    @foreach($recent_activitys as $value)
-                    @php
-                    $operationDetails = HelperService::getOperationDetails($value);
-                    $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
-                    $activityLearnerName = $value->learner?->name ?? 'Learner';
-                    @endphp
-
-                    <li class="">
-                        <strong>{{ $activityLearnerName }} (Seat {{ $activitySeat }}):</strong>
-                        {!! $operationDetails['message'] !!}
-                    </li>
-                    @endforeach
-                    @else
-                    <div class="bg-white p-2 rounded-2">No Activity Found yet</div>
-                    @endif
-                </ul>
-
             </div>
             @endcan
         </div>
@@ -1129,46 +1185,38 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         <!-- End -->
         @can('has-permission', 'Plan wise count')
-        <h4 class="my-4">Plan-Wise Booking Overview</h4>
+        <h4 class="mt-4 mb-3" id="planWiseHeading">Plan-Wise Booking Overview</h4>
         <!-- Plan Wise Booking Counts -->
-        <div class="row g-4 planwisecount"></div>
+        <div class="row g-4 planwisecount mb-3" style="display: none;"></div>
         <!-- End -->
         @endcan
         <!-- Dahboard Charts -->
 
         @can('has-permission', 'Library Analytics')
-        <div class="row mt-4 g-4">
+        <div class="row g-4 mb-4">
             <div class="col-lg-8">
                 <div class="card chart">
-                    <h5 class="mb-3">Planwise Revenue</h5>
+                    <h5 class="mb-2">Planwise Revenue</h5>
                     <div class="record-not-found">
-
-                        <canvas id="revenueChart" style="max-height:340px;"></canvas>
+                        <canvas id="revenueChart" style="max-height:340px; display: none;"></canvas>
 
                         <div class="not-data" style="display: none;" id="no-data2">
-                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
                             <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
                             <span>No Data Available</span>
                         </div>
-
                     </div>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="card chart">
-                    <h5 class="mb-3">Planwise Booking</h5>
+                    <h5 class="mb-2">Planwise Booking</h5>
                     <div class="record-not-found">
-                        <canvas id="bookingCountChart" style="max-height:340px;"></canvas>
+                        <canvas id="bookingCountChart" style="max-height:340px; display: none;"></canvas>
 
-
-                        <div class="not-data" style="display: none; " id="no-data3">
-                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
+                        <div class="not-data" style="display: none;" id="no-data3">
                             <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
                             <span>No Data Available</span>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -1437,6 +1485,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             flatpickr("#dateRange", {
@@ -1579,64 +1628,66 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     },
                     success: function(response) {
                         console.log(response.revenu_expense);
-                        if (response.revenu_expense.length === 0) {
+                        if (!response.revenu_expense || response.revenu_expense.length === 0) {
                             $('#no-data').show();
-
                         } else {
                             $('#no-data').hide();
                             updateRevenue(response.revenu_expense);
-
-
-
-
                         }
-                        if (response.planTypeWiseRevenue.data.length == 0) {
-                            $('#no-data2').show();
+
+                        // Planwise Revenue Chart vs Empty Box
+                        var hasRevenueData = response.planTypeWiseRevenue && 
+                            Array.isArray(response.planTypeWiseRevenue.data) && 
+                            response.planTypeWiseRevenue.data.length > 0 && 
+                            response.planTypeWiseRevenue.data.some(val => Number(val) > 0);
+
+                        if (!hasRevenueData) {
+                            $('#revenueChart').hide();
+                            $('#no-data2').css('display', 'flex').show();
                         } else {
                             $('#no-data2').hide();
+                            $('#revenueChart').show();
+                            renderRevenueChart(response.planTypeWiseRevenue.labels, response.planTypeWiseRevenue.data);
                         }
-                        if (response.planTypeWiseCount.data.length == 0) {
-                            $('#no-data3').show();
+
+                        // Planwise Booking Count Chart vs Empty Box
+                        var hasCountData = response.planTypeWiseCount && 
+                            Array.isArray(response.planTypeWiseCount.data) && 
+                            response.planTypeWiseCount.data.length > 0 && 
+                            response.planTypeWiseCount.data.some(val => Number(val) > 0);
+
+                        if (!hasCountData) {
+                            $('#bookingCountChart').hide();
+                            $('#no-data3').css('display', 'flex').show();
                         } else {
                             $('#no-data3').hide();
+                            $('#bookingCountChart').show();
+                            renderBookingCountChart(response.planTypeWiseCount.labels, response.planTypeWiseCount.data);
                         }
 
                         updateHighlights(response.highlights);
 
-
-                        var planWiseBookings = response.plan_wise_booking;
-
+                        var planWiseBookings = response.plan_wise_booking || [];
                         $('.row.g-4.planwisecount').empty(); // Clear existing data
 
-                        planWiseBookings.forEach(function(booking) {
-                            var html = `
-                            <div class="col-lg-2">
-                                <div class="booking-count bg-4">
-                                    <h6>${booking.plan_type_name}</h6>
-                                    <div class="d-flex">
-                                        <h4>${booking.booking}</h4>
+                        if (planWiseBookings.length === 0) {
+                            $('.row.g-4.planwisecount').hide();
+                        } else {
+                            $('.row.g-4.planwisecount').show();
+                            planWiseBookings.forEach(function(booking) {
+                                var html = `
+                                <div class="col-lg-2">
+                                    <div class="booking-count bg-4">
+                                        <h6>${booking.plan_type_name}</h6>
+                                        <div class="d-flex">
+                                            <h4>${booking.booking}</h4>
+                                        </div>
+                                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                                     </div>
-                                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                                </div>
-                            </div>`;
-                            $('.row.g-4.planwisecount').append(html);
-                        });
-
-                        // Render charts for Revenue and Booking Count
-                        if (response.planTypeWiseRevenue && Array.isArray(response.planTypeWiseRevenue.labels) && Array.isArray(response.planTypeWiseRevenue.data)) {
-                            renderRevenueChart(response.planTypeWiseRevenue.labels, response.planTypeWiseRevenue.data);
-                        } else {
-
-                            console.error('Invalid data format for planTypeWiseRevenue:', response.planTypeWiseRevenue);
+                                </div>`;
+                                $('.row.g-4.planwisecount').append(html);
+                            });
                         }
-
-                        if (response.planTypeWiseCount && Array.isArray(response.planTypeWiseCount.labels) && Array.isArray(response.planTypeWiseCount.data)) {
-                            renderBookingCountChart(response.planTypeWiseCount.labels, response.planTypeWiseCount.data);
-                        } else {
-                            console.error('Invalid data format for planTypeWiseCount:', response.planTypeWiseCount);
-                        }
-
-
                     },
                     error: function(xhr) {
                         console.error(xhr);

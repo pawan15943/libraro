@@ -945,48 +945,47 @@
         });
     });
 
-    // Get Plan Type seatwise at All Forms wherever is needed
-    function getTypeSeatwise(seatId) {
-        
-        $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
-        $.ajax({
-            url: '{{ route('gettypeSeatwise') }}',
-            type: 'GET',
-            data: {
-                "_token": "{{ csrf_token() }}",
-                "seatNo": seatId,
-            },
-            dataType: 'json',
-            success: function (html) {
-                
-                if (html) {
+        // Get Plan Type seatwise at All Forms wherever is needed
+        function getTypeSeatwise(seatId, selectedPlanTypeId = null) {
+            
+            $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
+            $.ajax({
+                url: '{{ route('gettypeSeatwise') }}',
+                type: 'GET',
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "seatNo": seatId,
+                },
+                dataType: 'json',
+                success: function (html) {
                     
-                    let selectedOption = $("#plan_type_id").find("option:selected");
+                    if (html) {
+                        let selectedVal = selectedPlanTypeId || $("#plan_type_id").find("option:selected").val();
 
-                    $("#plan_type_id").empty();
-                    $("#plan_type_id").append('<option value="">Choose Shift</option>');
+                        $("#plan_type_id").empty();
+                        $("#plan_type_id").append('<option value="">Choose Shift</option>');
 
-                    if (selectedOption.val() !== "") {
-                        $("#plan_type_id").append('<option value="'+selectedOption.val()+'" selected>'+selectedOption.text()+'</option>');
-                    }
+                        $.each(html, function(index, planType) {
+                            if (planType && planType.id) {
+                                let isSelected = (selectedVal && String(planType.id) === String(selectedVal)) ? ' selected' : '';
+                                $("#plan_type_id").append('<option value="'+planType.id+'"'+isSelected+'>'+planType.name+'</option>');
+                            }
+                        });
 
-                    $.each(html, function(index, planType) {
-                        // Avoid adding the option that is already selected
-                        if (planType.id != selectedOption.val()) {
-                            $("#plan_type_id").append('<option value="'+planType.id+'">'+planType.name+'</option>');
+                        if (selectedVal) {
+                            $("#plan_type_id").val(selectedVal).trigger('change');
                         }
-                    });
-                } else {
-                    $("#plan_type_id").empty();
-                    $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                    } else {
+                        $("#plan_type_id").empty();
+                        $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error); // Log any errors
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error("AJAX error:", status, error); // Log any errors
-            }
-        });
-        
-    }
+            });
+           
+        }
 
 
         // auto calculate amount and used at multiple places
@@ -1131,15 +1130,41 @@
         }
     }
 
-        // Get Plan Price at All Forms wherever is needed [booking form,]
+    const _planPriceCache = {};
+    const _chargeableDaysCache = {};
+
+    // Get Plan Price at All Forms wherever is needed [booking form,]
     function getPlanPrice(plan_type_id, plan_id, start_date = null) {
         if (!plan_type_id || !plan_id) return;
 
-        // ✅ Auto-detect start date if not passed
+        // Auto-detect start date if not passed
         if (!start_date) {
             if ($('#plan_start_date').length && $('#plan_start_date').val()) {
                 start_date = $('#plan_start_date').val();
             }
+        }
+
+        const cacheKey = `${plan_id}_${plan_type_id}_${start_date || ''}`;
+
+        function applyPrice(html) {
+            if (html !== undefined && html !== null && html !== '') {
+                $('#pending_amt3').html('');
+                if ($("#plan_price_id").length) {
+                    $("#plan_price_id").val(html);
+                    autoCalculatePaidAmount();
+                    $("#error-message").hide();
+                }
+                $("#error-message").hide();
+            } else {
+                $("#plan_price_id").val("");
+                $("#pending_amt").html("No Plan Price Added Yet.");
+                $("#paid_amount").val("");
+            }
+        }
+
+        if (_planPriceCache.hasOwnProperty(cacheKey)) {
+            applyPrice(_planPriceCache[cacheKey]);
+            return;
         }
 
         let data = {
@@ -1148,44 +1173,20 @@
             "plan_id": plan_id
         };
 
-        // ✅ Send only when available
         if (start_date) {
             data.plan_start_date = start_date;
         }
 
-       
-        if (plan_type_id && plan_id) {
-                $.ajax({
-                    url: '{{ route('getPricePlanwise') }}',
-                    type: 'GET',
-                    data: data,
-                    dataType: 'json',
-                    success: function(html) {
-                        
-                        if (html !== undefined && html !== null && html !== '') {
-                                $('#pending_amt3').html('');
-                            if ($("#plan_price_id").length) {
-                               
-                                $("#plan_price_id").val(html);
-                                autoCalculatePaidAmount();
-                                $("#error-message").hide();
-                            }
-                            $("#error-message").hide();
-                        } else {
-                            $("#plan_price_id").val("");
-                            
-                            $("#pending_amt").html("No Plan Price Added Yet.");
-                            $("#paid_amount").val("");
-                        }
-                    }
-
-                });
-        } else {
-            $("#plan_price_id").empty();
-            
-            $("#paid_amount").empty();
-        
-        }
+        $.ajax({
+            url: '{{ route('getPricePlanwise') }}',
+            type: 'GET',
+            data: data,
+            dataType: 'json',
+            success: function(html) {
+                _planPriceCache[cacheKey] = html;
+                applyPrice(html);
+            }
+        });
     }
 
     function formatDate(dateString) {
@@ -1193,7 +1194,28 @@
         const options = { day: '2-digit', month: 'short', year: 'numeric' };
         return date.toLocaleDateString('en-GB', options);
     }
-    function addChargeableDays(plan_id,plan_start_date) {
+
+    function addChargeableDays(plan_id, plan_start_date) {
+        if (!plan_id || !plan_start_date) return;
+
+        const cacheKey = `${plan_id}_${plan_start_date}`;
+
+        function applyDays(res) {
+            if (res.fixedBillingDate == 'true') {
+                $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
+                $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
+            }
+            if (res.fixedBillingDate == 'false') {
+                $('#plan_end_date_edit').val(res.end_date);
+                $('#end_date_show').text('End date ' + res.end_date );
+            }
+        }
+
+        if (_chargeableDaysCache.hasOwnProperty(cacheKey)) {
+            applyDays(_chargeableDaysCache[cacheKey]);
+            return;
+        }
+
         $.ajax({
             url: "{{ route('getChargeableDays') }}",
             type: "GET",
@@ -1202,68 +1224,55 @@
                 plan_start_date: plan_start_date
             },
             success: function (res) {
-                    
-                if (res.fixedBillingDate == 'true') {
-
-                     $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
-                    $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
-                   
-                    
-
-                    // if(res.chargeable_days < 31){
-                    //     $('#chargeable_days').text('Billed for ' + res.chargeable_days + ' Days');
-                    //     $('#chargeable_days10').text('Billed for ' + res.chargeable_days + ' Days');
-                    // }else{
-                    //     $('#chargeable_days').text('Billed Monthly');
-                    // }
- 
-                }
-                if(res.fixedBillingDate == 'false'){
-                     $('#plan_end_date_edit').val(res.end_date);
-                     $('#end_date_show').text('End date ' + res.end_date );
-                    
-                }
+                _chargeableDaysCache[cacheKey] = res;
+                applyDays(res);
             }
         });
     }
 
     // change plan and upgrade
-    function getPlanPriceAmount(plan_type_id10,plan_id10,plan_start_date10){
-        
-        if (plan_type_id10 && plan_id10) {
-                $.ajax({
-                    url: '{{ route('getPricePlanwise') }}',
-                    type: 'GET',
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        "plan_type_id": plan_type_id10,
-                        "plan_id": plan_id10,
-                        "plan_start_date": plan_start_date10,
-                    },
-                    dataType: 'json',
-                    success: function(html) {
-                    
-                        if (html !== undefined && html !== null && html !== '') {
-                            
-                            $('#pending_amt10').html('');
-                            $("#plan_price10").val(html);
-                            calculatePaidAmount(); 
-                            $("#error-message").hide();
-                        } else {
-                            $("#plan_price10").val("");
-                            
-                            $("#pending_amt10").html("No Plan Price Added Yet.");
-                            $("#total_amount10").val("");
-                        }
-                    }
-
-                });
-        } else {
+    function getPlanPriceAmount(plan_type_id10, plan_id10, plan_start_date10){
+        if (!plan_type_id10 || !plan_id10) {
             $("#plan_price10").empty();
-            
             $("#total_amount10").empty();
-        
+            return;
         }
+
+        const cacheKey = `op_${plan_id10}_${plan_type_id10}_${plan_start_date10 || ''}`;
+
+        function applyOperationPrice(html) {
+            if (html !== undefined && html !== null && html !== '') {
+                $('#pending_amt10').html('');
+                $("#plan_price10").val(html);
+                calculatePaidAmount(); 
+                $("#error-message").hide();
+            } else {
+                $("#plan_price10").val("");
+                $("#pending_amt10").html("No Plan Price Added Yet.");
+                $("#total_amount10").val("");
+            }
+        }
+
+        if (_planPriceCache.hasOwnProperty(cacheKey)) {
+            applyOperationPrice(_planPriceCache[cacheKey]);
+            return;
+        }
+
+        $.ajax({
+            url: '{{ route('getPricePlanwise') }}',
+            type: 'GET',
+            data: {
+                "_token": "{{ csrf_token() }}",
+                "plan_type_id": plan_type_id10,
+                "plan_id": plan_id10,
+                "plan_start_date": plan_start_date10,
+            },
+            dataType: 'json',
+            success: function(html) {
+                _planPriceCache[cacheKey] = html;
+                applyOperationPrice(html);
+            }
+        });
     }
 
     function lockerAmountGet(plan_id10){
@@ -1514,7 +1523,7 @@
 
         // For Booking Popup form
 
-          // In Booking form manage Genral or Normal Seat 
+        // In Booking form manage Genral or Normal Seat 
         $('.noseat_popup, .first_popup').on('click', function (e) {
             var currentBranch = @json(getCurrentBranch());
           
@@ -1523,8 +1532,9 @@
                 return false; 
             }
             
-            var seatId = $(this).data('id');
-            var seatNo = $(this).data('seat_no');
+            var seatId = $(this).data('id') || $(this).attr('data-id');
+            var seatNo = $(this).data('seat_no') || $(this).attr('data-seat_no');
+            var planTypeId = $(this).data('plan_type_id') || $(this).attr('data-plan_type_id') || $('#shift_id').val() || '';
             var seatDisplayMap = @json(
                 collect(generateSeatNumbers())->mapWithKeys(function($seat) {
                     // If floor info exists, show "floor-seat (floor name)"
@@ -1575,21 +1585,21 @@
             
             $('#seatAllotmentModal').modal('show');
             if ($('#general_seat').val() === 'yes') {
-                // getTypeSeatwise(''); 
+                getTypeSeatwise('', planTypeId); 
                 $('#general_seat').val('yes');
             } else if (seatId) {
-                getTypeSeatwise(seatId); 
+                getTypeSeatwise(seatId, planTypeId); 
+            } else {
+                getTypeSeatwise($('#seat_id').val() || '', planTypeId);
             }         
         });
        
         // Enable / Disable Seat No Field on Booking Form
         $('#general_seat').on('change', function () {
-            
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
             } else {
-                $('#seat_id').val($('#seat_id option:first').val()); 
-                $('#seat_id').prop('disabled', true);
+                $('#seat_id').val('').prop('disabled', true);
                 getTypeSeatwise('');
             }
         });
@@ -1602,70 +1612,65 @@
             $('#paid_amount').val("");
         });
 
-         // Manage Locaker in Booking Form
+        const _lockerPriceCache = {};
+
+        // Manage Locker in Booking Form
         $('#toggleFieldCheckbox2, #plan_id3').on('change', function () {
-           
             var needLocker = $('#toggleFieldCheckbox2').val();
             var planId     = $('#plan_id3').val();
-             var planTypeID  = $('#plan_type_id').val(); // important
+            var planTypeID = $('#plan_type_id').val();
             
-          
             if (needLocker === 'yes') {
                 $('#locker_no').removeAttr('readonly');
-                $.get("{{ route('locker.price') }}", { plan_id: planId ,plan_type_id: planTypeID})
-                .done(function(json) {
-                    console.log('lockeamount',json.price);
-                    $('#locker_amount_book').val(json.price);
-                    // ✅ call here AFTER value is set
-                    autoCalculatePaidAmount(); 
-                })
-                .fail(function() {
-                    $('#locker_amount_book').val('').prop('readonly', true);
-                    autoCalculatePaidAmount(); 
-                });
-
-               
+                var cacheKey = `${planId}_${planTypeID}`;
+                if (_lockerPriceCache.hasOwnProperty(cacheKey)) {
+                    $('#locker_amount_book').val(_lockerPriceCache[cacheKey]);
+                    autoCalculatePaidAmount();
+                } else {
+                    $.get("{{ route('locker.price') }}", { plan_id: planId, plan_type_id: planTypeID })
+                    .done(function(json) {
+                        _lockerPriceCache[cacheKey] = json.price;
+                        $('#locker_amount_book').val(json.price);
+                        autoCalculatePaidAmount(); 
+                    })
+                    .fail(function() {
+                        $('#locker_amount_book').val('').prop('readonly', true);
+                        autoCalculatePaidAmount(); 
+                    });
+                }
             } else {
                 $('#locker_amount_book').attr('readonly', true);
                 $('#locker_no').attr('readonly', true);
                 $('#discount_amount').val('');
                 $('#locker_amount_book').val('');
                 $('#locker_no').val('');
-                // ✅ call here when locker is disabled
                 autoCalculatePaidAmount(); 
             }
         });
 
-         // Oncahnge of Plantype get Plan Price and use at each form wherever is needed 
+        // Onchange of Plantype get Plan Price in Booking Form
         $('#plan_type_id').on('change', function(event) {
-          
             var plan_type_id = $(this).val();
-            var plan_id = $('#plan_id').val();
-            var change_plan_plan_id = $('#change_plan_plan_id').val();
-            var plan_id2 = $('#plan_id2').val();
-            var plan_id3 = $('#plan_id3').val();
-            var plan_id4 = $('#plan_id4').val();
-           
-          
-            if((plan_type_id && plan_id4)||(plan_type_id && plan_id)||(plan_type_id && plan_id2)||(plan_type_id && plan_id3)||(plan_type_id && change_plan_plan_id)){
-             
-                getPlanPrice(plan_type_id,plan_id);
-                getPlanPrice(plan_type_id,plan_id2);
-                getPlanPrice(plan_type_id,plan_id3);
-                getPlanPrice(plan_type_id,plan_id4);
-                getPlanPrice(plan_type_id,change_plan_plan_id);
-            }else{
-                $("#plan_price_id").val('');
-            }
-           
-        });
-        $('#plan_start_date').on('change', function(event) {
-          var plan_start_date = $(this).val();
-          var plan_id = $('#plan_id3').val();
-          var plan_type_id = $('#plan_type_id').val();
-          getPlanPrice(plan_type_id,plan_id,plan_start_date);
-          addChargeableDays(plan_id,plan_start_date);
+            var plan_id = $('#plan_id3').val() || $('#plan_id').val() || $('#plan_id2').val() || $('#plan_id4').val() || $('#change_plan_plan_id').val();
             
+            if (plan_type_id && plan_id) {
+                getPlanPrice(plan_type_id, plan_id);
+            } else {
+                $("#plan_price_id").val('');
+                autoCalculatePaidAmount();
+            }
+        });
+
+        $('#plan_start_date').on('change', function(event) {
+            var plan_start_date = $(this).val();
+            var plan_id = $('#plan_id3').val() || $('#plan_id').val();
+            var plan_type_id = $('#plan_type_id').val();
+            if (plan_type_id && plan_id) {
+                getPlanPrice(plan_type_id, plan_id, plan_start_date);
+            }
+            if (plan_id && plan_start_date) {
+                addChargeableDays(plan_id, plan_start_date);
+            }
         });
 
         // If user manually updates paid_amount, update pending as well [booking form]
@@ -2101,7 +2106,7 @@
     $('#refund_pay_timing10').on('change', function () {
         const timing = $(this).val();
         const $diffField = $('#diffrence_amount10');
-        const $diffCol = $diffField.closest('.col-lg-4');
+        const $diffCol = $diffField.closest('.diff-amount-col, .form-group, .col-lg-4');
 
         syncPaymentModeOptionsForTiming(timing);
 
@@ -2232,8 +2237,8 @@
         }
     }
     // Used in View Details Popup on Seat Assignment Page
-    $('.second_popup').on('click', function() {
-        $('#upgrade').hide();
+    $(document).on('click', '.second_popup', function() {
+        $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
         var userId = $(this).data('userid');
         var seatId = $(this).data('id');
         var seatNo=$(this).data('seat_no');
@@ -2296,27 +2301,20 @@
                             'Booking Details of Seat No. : ' +
                             html.floor_seat_no + 
                             ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
-                            '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
+                            '<span class="badge rounded-pill" style="background-color: #18225f; color: #ffffff;">' + html.pending + '</span>'
                         );
                     }else{
                         $('#seat_details_info').text('Booking Details of Seat No. : General');
                     }
                     
-                    var planEndDateStr = html.plan_end_date;
-                    var isRenew=html.is_renew;
-                    var is_renew_update=html.renew_update;
-                    var today = new Date();
-                    var planEndDate = new Date(planEndDateStr);
-                    var timeDiff = planEndDate - today;
-                    var daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                    
-                    if(daysRemaining <= 5 && isRenew==0) {
-                        $('#upgrade').show();
-                    }else{
-                        $('#upgrade').hide();
-                    }
-                    
                     $('#extendday').html(html.seat_status);
+
+                    // Apply Seat Map Action Menu Conditional Rules
+                    if (typeof window.setupSeatMapModalActionRules === 'function') {
+                        window.setupSeatMapModalActionRules(html);
+                    } else if (typeof setupSeatMapModalActionRules === 'function') {
+                        setupSeatMapModalActionRules(html);
+                    }
                 }
             });
         }
@@ -2857,41 +2855,27 @@
        
         
         $('#plan_type_id2').on('change', function(event) {
-            
             var plan_type_id = $(this).val();
-            var plan_id = $('#plan_id').val();
-            var change_plan_plan_id = $('#change_plan_plan_id').val();
-            var plan_id2 = $('#plan_id2').val();
-            var plan_id3 = $('#plan_id3').val();
-            var plan_id4 = $('#plan_id4').val();
-           
-          
-            if((plan_type_id && plan_id4)||(plan_type_id && plan_id)||(plan_type_id && plan_id2)||(plan_type_id && plan_id3)||(plan_type_id && change_plan_plan_id)){
-             
-                getPlanPrice2(plan_type_id,plan_id);
-                getPlanPrice(plan_type_id,plan_id2);
-                getPlanPrice(plan_type_id,plan_id3);
-                getPlanPrice(plan_type_id,plan_id4);
-                getPlanPrice(plan_type_id,change_plan_plan_id);
-            }else{
+            var plan_id = $('#plan_id2').val() || $('#plan_id').val() || $('#plan_id3').val() || $('#plan_id4').val() || $('#change_plan_plan_id').val();
+            
+            if (plan_type_id && plan_id) {
+                getPlanPrice2(plan_type_id, plan_id);
+            } else {
                 $("#plan_price").val('');
             }
-           
         });
+
         $('#plan_type_id_renew').on('change', function(event) {
-            
             var plan_type_id = $(this).val();
             var plan_id2 = $('#plan_id2').val();
-            if((plan_type_id && plan_id2)){
-                getPlanPriceRenew(plan_type_id,plan_id2);
-            }else{
+            if (plan_type_id && plan_id2) {
+                getPlanPriceRenew(plan_type_id, plan_id2);
+            } else {
                 $("#plan_price").val('');
             }
-           
         });
 
-
-        // Oncahnge of Plan get Plan Price and use at each form wherever is needed 
+        // Onchange of Plan get Plan Price and use at each form wherever is needed 
         $('#plan_id,#plan_id2,#plan_id3').on('change', function(event) {
             event.preventDefault();
             var plan_id = $(this).val();
@@ -2899,21 +2883,15 @@
             var plan_type_id2 = $('#plan_type_id2').val();
             var plan_start_date = $('#plan_start_date').val();
           
-            if(plan_type_id && plan_id){
-                getPlanPrice(plan_type_id,plan_id);
-                
-            }
-            if(plan_type_id2 && plan_id){
-                getPlanPrice(plan_type_id2,plan_id);
-            }else{
-                $("#plan_price_id").val('');
+            if (plan_type_id && plan_id) {
+                getPlanPrice(plan_type_id, plan_id);
+            } else if (plan_type_id2 && plan_id) {
+                getPlanPrice(plan_type_id2, plan_id);
             }
 
-            if(plan_start_date && plan_id){
-                addChargeableDays(plan_id,plan_start_date);
+            if (plan_start_date && plan_id) {
+                addChargeableDays(plan_id, plan_start_date);
             }
-
-            
         });
 
 
@@ -3052,15 +3030,13 @@
             popupautoCalculatePaidAmount();
         });
 
-
         // View Booked Seat Details on Seat Assignment Page
-        $('.second_popup_without_seat').on('click', function() {
-            $('#upgrade').hide();
+        $(document).on('click', '.second_popup_without_seat', function() {
+            $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
             var userId = $(this).data('userid');
             $('#user_id').val(userId);
             $('#seatAllotmentModal2').modal('show');
            
-          
             if (userId) {
                 $.ajax({
                     url: '{{ route('learners.show')}}',
@@ -3110,34 +3086,432 @@
                                 'Booking Details of Seat No. : ' +
                                 html.seat_no + 
                                 ' <span class="badge rounded-pill bg-danger">' + html.overdue + '</span> ' +
-                                '<span class="badge rounded-pill bg-primary">' + html.pending + '</span>'
+                                '<span class="badge rounded-pill" style="background-color: #18225f; color: #ffffff;">' + html.pending + '</span>'
                             );
                         }else{
                             $('#seat_details_info').text('Booking Details of Seat No. : General');
                         }
-                        var planEndDateStr = html.plan_end_date;
-                        var isRenew=html.is_renew;
-                        var is_renew_update=html.renew_update;
-                        var today = new Date();
-                        var planEndDate = new Date(planEndDateStr);
-                        var timeDiff = planEndDate - today;
-                        var daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                       
-                        if(daysRemaining <= 5 && isRenew==0) {
-                            $('#upgrade').show();
-                        }else{
-                            $('#upgrade').hide();
-                        }
-                       
 
                         $('#extendday').html(html.seat_status);
+
+                        // Apply Seat Map Action Menu Conditional Rules
+                        if (typeof window.setupSeatMapModalActionRules === 'function') {
+                            window.setupSeatMapModalActionRules(html);
+                        } else if (typeof setupSeatMapModalActionRules === 'function') {
+                            setupSeatMapModalActionRules(html);
+                        }
                     }
                 });
             }
 
         });
 
-       
+        // Explicit click handlers for Seat Map View Details Modal action items
+        $(document).on('click', '#modalBtnEditProfile, #headerEditProfileBtn', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.edit", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnEditPlan, #headerEditPlanBtn', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.edit.plan", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnChangePlan', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learner.change.plan", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnUpgradePlan', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.upgrade", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnSwap', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.swap", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnTransactions', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.transactions", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnProfile', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("learners.show", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnHistory', function(e) {
+            e.preventDefault();
+            var learnerId = $('#user_id').val();
+            if (learnerId) {
+                window.location.href = '{{ route("seats.history.show", ":id") }}'.replace(':id', learnerId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnMiscPayment', function(e) {
+            e.preventDefault();
+            var learnerDetailId = $('#learner_detail_id').val();
+            if (learnerDetailId) {
+                window.location.href = '{{ route("learner.other.payment", ":id") }}'.replace(':id', learnerDetailId);
+            }
+        });
+
+        $(document).on('click', '#modalBtnIdCard', function(e) {
+            e.preventDefault();
+            var learnerDetailId = $('#learner_detail_id').val();
+            if (learnerDetailId) {
+                window.open('{{ route("idCard", ":id") }}'.replace(':id', learnerDetailId), '_blank');
+            }
+        });
+
+        $(document).on('click', '#modalBtnReceipt', function(e) {
+            e.preventDefault();
+            var learnerDetailId = $('#learner_detail_id').val();
+            if (learnerDetailId) {
+                window.open('{{ route("idCard", ":id") }}'.replace(':id', learnerDetailId), '_blank');
+            }
+        });
+
+        $(document).on('click', '#modalBtnWhatsapp', function(e) {
+            e.preventDefault();
+            var mobile = $('#learner_mobile').text().trim();
+            if (mobile) {
+                var cleanMobile = mobile.replace(/\D/g, '');
+                window.open('https://wa.me/91' + cleanMobile, '_blank');
+            }
+        });
+
+        // Left & Right Scroll Arrow Click Handlers for Seat Map Action Slider
+        $(document).on('click', '#opScrollLeftBtn', function(e) {
+            e.preventDefault();
+            var $container = $('#modalOpContainer');
+            $container.animate({ scrollLeft: $container.scrollLeft() - 220 }, 250);
+        });
+
+        $(document).on('click', '#opScrollRightBtn', function(e) {
+            e.preventDefault();
+            var $container = $('#modalOpContainer');
+            $container.animate({ scrollLeft: $container.scrollLeft() + 220 }, 250);
+        });
+
+        // Helper: Robust Date Parser for YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, ISO, etc.
+        function parseSeatModalSafeDate(dateStr) {
+            if (!dateStr) return null;
+            if (typeof dateStr !== 'string') dateStr = String(dateStr);
+            dateStr = dateStr.trim();
+            if (!dateStr || dateStr === 'NA') return null;
+
+            // Check DD-MM-YYYY or DD/MM/YYYY
+            var dmyMatch = dateStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+            if (dmyMatch) {
+                var day = parseInt(dmyMatch[1], 10);
+                var month = parseInt(dmyMatch[2], 10) - 1;
+                var year = parseInt(dmyMatch[3], 10);
+                var d = new Date(year, month, day);
+                d.setHours(0, 0, 0, 0);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            // Check YYYY-MM-DD or YYYY/MM/DD
+            var ymdMatch = dateStr.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (ymdMatch) {
+                var year = parseInt(ymdMatch[1], 10);
+                var month = parseInt(ymdMatch[2], 10) - 1;
+                var day = parseInt(ymdMatch[3], 10);
+                var d = new Date(year, month, day);
+                d.setHours(0, 0, 0, 0);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            var parsed = new Date(dateStr);
+            if (!isNaN(parsed.getTime())) {
+                parsed.setHours(0, 0, 0, 0);
+                return parsed;
+            }
+            return null;
+        }
+
+        // Helper function for Seat Map Action Menu Conditional Rules & Route Data Assignment
+        function setupSeatMapModalActionRules(html) {
+            var learnerId = html.learner_id || html.id || $('#user_id').val();
+            var learnerDetailId = html.learner_detail_id || $('#learner_detail_id').val();
+
+            // Populate links & attributes for modal action items
+            if (learnerId) {
+                var editUrl = '{{ route("learners.edit", ":id") }}'.replace(':id', learnerId);
+                var changePlanUrl = '{{ route("learner.change.plan", ":id") }}'.replace(':id', learnerId);
+                var upgradePlanUrl = '{{ route("learners.upgrade", ":id") }}'.replace(':id', learnerId);
+                var swapUrl = '{{ route("learners.swap", ":id") }}'.replace(':id', learnerId);
+                var transactionsUrl = '{{ route("learners.transactions", ":id") }}'.replace(':id', learnerId);
+                var profileUrl = '{{ route("learners.show", ":id") }}'.replace(':id', learnerId);
+                var expireUrl = '{{ route("learner.expire", ":id") }}'.replace(':id', learnerId);
+                var activityUrl = '{{ route("activities.all") }}' + '?learner_id=' + learnerId;
+                var historyUrl = '{{ route("seats.history.show", ":id") }}'.replace(':id', html.seat_id || learnerId);
+
+                $('#modalBtnEditProfile, #headerEditProfileBtn').attr('href', editUrl);
+                $('#modalBtnEditPlan, #headerEditPlanBtn').attr('href', '{{ route("learners.edit.plan", ":id") }}'.replace(':id', learnerId));
+                $('#modalBtnChangePlan').attr('href', changePlanUrl);
+                $('#modalBtnUpgradePlan').attr('href', upgradePlanUrl);
+                $('#modalBtnSwap').attr('href', swapUrl);
+                $('#modalBtnTransactions').attr('href', transactionsUrl);
+                $('#modalBtnProfile').attr('href', profileUrl);
+                $('#modalBtnExpire').attr('href', expireUrl);
+                $('#modalBtnActivity').attr('href', activityUrl);
+                $('#modalBtnHistory').attr('href', historyUrl);
+            }
+
+            if (learnerDetailId) {
+                var miscPaymentUrl = '{{ route("learner.other.payment", ":id") }}'.replace(':id', learnerDetailId);
+                var idCardUrl = '{{ route("idCard", ":id") }}'.replace(':id', learnerDetailId);
+                var receiptUrl = '{{ route("idCard", ":id") }}'.replace(':id', learnerDetailId);
+
+                $('#modalBtnMiscPayment').attr('href', miscPaymentUrl);
+                $('#modalBtnIdCard').attr('href', idCardUrl);
+                $('#modalBtnReceipt').attr('href', receiptUrl);
+            }
+
+            // WhatsApp link
+            if (html.mobile) {
+                var cleanMobile = String(html.mobile).replace(/\D/g, '');
+                $('#modalBtnWhatsapp').attr('href', 'https://wa.me/91' + cleanMobile);
+            } else {
+                $('#modalBtnWhatsapp').attr('href', 'javascript:void(0)');
+            }
+
+            // Gift button data attributes
+            $('#modalBtnGift')
+                .attr('data-learner_id', learnerId)
+                .data('learner_id', learnerId);
+
+            // Freeze button data attributes & label toggle
+            var isFrozen = parseInt(html.frozen_status || 0) === 1;
+            $('#modalBtnFreeze')
+                .attr('data-learner_id', learnerId)
+                .data('learner_id', learnerId)
+                .attr('data-learnerdetail', learnerDetailId)
+                .data('learnerdetail', learnerDetailId)
+                .attr('data-status', isFrozen ? 1 : 0)
+                .data('status', isFrozen ? 1 : 0);
+
+            if (isFrozen) {
+                $('#modalBtnFreeze .op-icon-label').text('Unfreeze');
+                $('#modalBtnFreeze .op-icon-circle').html('<i class="fa-solid fa-pause"></i>');
+                $('#modalBtnFreeze').attr('title', 'Unfreeze Plan');
+            } else {
+                $('#modalBtnFreeze .op-icon-label').text('Freeze');
+                $('#modalBtnFreeze .op-icon-circle').html('<i class="fa-solid fa-snowflake"></i>');
+                $('#modalBtnFreeze').attr('title', 'Freeze Plan');
+            }
+
+            // Settlement button data attributes
+            $('#modalBtnSettlement')
+                .attr('data-id', learnerId)
+                .data('id', learnerId)
+                .attr('data-learnerdetail', learnerDetailId)
+                .data('learnerdetail', learnerDetailId);
+
+            // Delete button data attributes
+            $('#modalBtnDelete')
+                .attr('data-id', learnerId)
+                .data('id', learnerId)
+                .attr('data-learnerdetail', learnerDetailId)
+                .data('learnerdetail', learnerDetailId)
+                .attr('data-seat', html.seat_no || '')
+                .data('seat', html.seat_no || '')
+                .attr('data-payblerefund', 0)
+                .data('payblerefund', 0);
+
+            // Close seat data attributes
+            $('#modalBtnCloseSeat')
+                .attr('data-id', learnerId)
+                .data('id', learnerId)
+                .attr('data-learnerdetail', learnerDetailId)
+                .data('learnerdetail', learnerDetailId)
+                .attr('data-learner_detail_id', learnerDetailId)
+                .data('learner_detail_id', learnerDetailId)
+                .attr('data-plan_end_date', html.plan_end_date || '')
+                .data('plan_end_date', html.plan_end_date || '')
+                .attr('data-payblerefund', 0)
+                .data('payblerefund', 0);
+
+            // Bind Renew button click on modal icon
+            $('#modalBtnRenew').off('click').on('click', function(e) {
+                e.preventDefault();
+                $('#upgrade').trigger('click');
+            });
+
+            // Days & status calculations
+            var daysRemaining = (html.diff_in_days !== undefined && html.diff_in_days !== null) ? parseInt(html.diff_in_days) : 999;
+            var extendDaysRemaining = (html.diff_extend_day !== undefined && html.diff_extend_day !== null) ? parseInt(html.diff_extend_day) : 999;
+
+            var todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+
+            if (isNaN(daysRemaining) || daysRemaining === 999) {
+                var parsedEndDate = parseSeatModalSafeDate(html.plan_end_date);
+                if (parsedEndDate) {
+                    daysRemaining = Math.ceil((parsedEndDate - todayDate) / (1000 * 3600 * 24));
+                    if (isNaN(extendDaysRemaining) || extendDaysRemaining === 999) {
+                        extendDaysRemaining = daysRemaining;
+                    }
+                }
+            }
+
+            // Calculate exact days since booking/start (using minimum non-negative difference)
+            var diffList = [];
+
+            if (html.created_at) {
+                var cDate = parseSeatModalSafeDate(html.created_at);
+                if (cDate) {
+                    var d1 = Math.floor((todayDate - cDate) / (1000 * 3600 * 24));
+                    if (d1 >= 0) diffList.push(d1);
+                }
+            }
+
+            if (html.join_date) {
+                var jDate = parseSeatModalSafeDate(html.join_date);
+                if (jDate) {
+                    var d2 = Math.floor((todayDate - jDate) / (1000 * 3600 * 24));
+                    if (d2 >= 0) diffList.push(d2);
+                }
+            }
+
+            if (html.plan_start_date) {
+                var pDate = parseSeatModalSafeDate(html.plan_start_date);
+                if (pDate) {
+                    var d3 = Math.floor((todayDate - pDate) / (1000 * 3600 * 24));
+                    if (d3 >= 0) diffList.push(d3);
+                }
+            }
+
+            if (html.days_since_start !== undefined && html.days_since_start !== null) {
+                var backendDiff = parseInt(html.days_since_start);
+                if (!isNaN(backendDiff) && backendDiff >= 0) diffList.push(backendDiff);
+            }
+
+            var daysSinceStart = diffList.length > 0 ? Math.min.apply(null, diffList) : 0;
+
+            var pendingAmount = parseFloat(html.pending_amount_num !== undefined ? html.pending_amount_num : (html.pending || 0)) || 0;
+            var isLearnerActive = parseInt(html.status !== undefined ? html.status : 1) !== 0;
+
+            // --- STRICT LEARNER LIST & REQUESTED CONDITIONAL RULES ---
+
+            // 1. Edit Profile: Shown when not frozen
+            if (!isFrozen) {
+                $('#modalBtnEditProfile').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnEditProfile').hide();
+            }
+
+            // 2. Edit Plan: Seat booking ke 3 days me Edit Plan wala Icons Show krwao (daysSinceStart <= 3) & not frozen
+            if (daysSinceStart >= 0 && daysSinceStart <= 3 && !isFrozen) {
+                $('#modalBtnEditPlan, #headerEditPlanBtn').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnEditPlan, #headerEditPlanBtn').hide();
+            }
+
+            // 3. Swap Seat: Shown when not frozen
+            if (!isFrozen) {
+                $('#modalBtnSwap').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnSwap').hide();
+            }
+
+            // 4. Change Plan: Seat booking ke 7 days me Change Plan ka icon Aayega (daysSinceStart <= 7) & not frozen
+            if (daysSinceStart >= 0 && daysSinceStart <= 7 && !isFrozen) {
+                $('#modalBtnChangePlan').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnChangePlan').hide();
+            }
+
+            // 5. Upgrade Plan: Seat expire se 5 days me upgrade plan ka icon show kro (daysRemaining <= 5) & not frozen
+            if (daysRemaining <= 5 && !isFrozen) {
+                $('#modalBtnUpgradePlan').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnUpgradePlan').hide();
+            }
+
+            // 6. Close Seat / Close Plan: Shown when not frozen
+            if (!isFrozen) {
+                $('#modalBtnCloseSeat').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnCloseSeat').hide();
+            }
+
+            // 7. Reactivate: Shown ONLY if learner is inactive (status == 0) and not frozen
+            if (!isLearnerActive && !isFrozen) {
+                $('#modalBtnReactive').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnReactive').hide();
+            }
+
+            // 8. Miscellaneous Payment, Transactions, ID Card, Profile, Expire, Activity, History, Receipt, WhatsApp: Always shown
+            $('#modalBtnMiscPayment, #modalBtnTransactions, #modalBtnIdCard, #modalBtnProfile, #modalBtnExpire, #modalBtnActivity, #modalBtnHistory, #modalBtnReceipt, #modalBtnWhatsapp')
+                .css('display', 'inline-flex').show();
+
+            // 9. Gift Days: Shown when not frozen
+            if (!isFrozen) {
+                $('#modalBtnGift').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnGift').hide();
+            }
+
+            // 10. Freeze Days: Shown if frozen OR active plan (diff_in_days >= 0)
+            if (isFrozen || daysRemaining >= 0) {
+                $('#modalBtnFreeze').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnFreeze').hide();
+            }
+
+            // 11. Settlement: Shown if pending amount > 0
+            if (pendingAmount > 0) {
+                $('#modalBtnSettlement').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnSettlement').hide();
+            }
+
+            // 12. Delete Learner: Always shown for seat map action
+            if (learnerId) {
+                $('#modalBtnDelete').css('display', 'inline-flex').show();
+            } else {
+                $('#modalBtnDelete').hide();
+            }
+
+            // 13. Renew Button: Shown 5 days before expiration until extension
+            if (daysRemaining <= 5 && !isFrozen && parseInt(html.is_renew || 0) == 0 && isLearnerActive) {
+                $('#modalBtnRenew').css('display', 'inline-flex').show();
+                $('#upgrade').show();
+            } else {
+                $('#modalBtnRenew').hide();
+                $('#upgrade').hide();
+            }
+        }
+
+        window.parseSeatModalSafeDate = parseSeatModalSafeDate;
+        window.setupSeatMapModalActionRules = setupSeatMapModalActionRules;
       
     });
         

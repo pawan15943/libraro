@@ -1,72 +1,85 @@
 @extends('layouts.library')
 @section('content')
 
-<!-- Modal -->
-<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<link rel="stylesheet" href="{{ asset('public/css/library-expense.css') }}?v={{ time() }}">
+
+<!-- Expense Modal -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="modalExpenseTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Add Expense</h1>
+                <h5 class="modal-title" id="modalExpenseTitle">
+                    <i class="fa-solid fa-receipt"></i> Add New Expense
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="expenseForm">
                 @csrf
                 <div class="modal-body">
-                    <div class="row g-4">
-
-                        <input type="hidden" id="expense_id" name="expense_id" value="">
+                    <div class="row g-3">
+                        <input type="hidden" id="expense_id" name="id" value="">
 
                         <div class="col-lg-12">
-                            <label>Date <span>*</span></label>
-                            <input type="date" class="form-control" name="date" id="dateInput">
+                            <label>Expense Date <span>*</span></label>
+                            <input type="date" class="form-control" name="date" id="dateInput" required>
                         </div>
+
                         <div class="col-lg-6">
-                            <label>Expense Name <span>*</span></label>
-                            <select class="form-select" name="expense_id" id="expenseNameSelect">
-                                <option value="">Choose</option>
+                            <label>Expense Category <span>*</span></label>
+                            <select class="form-select" name="expense_id" id="expenseNameSelect" required>
+                                <option value="">Select Category</option>
                                 @foreach($data as $key => $value)
                                 <option value="{{$value->id}}">{{$value->name}}</option>
                                 @endforeach
                                 <option value="other">Other</option>
-
                             </select>
+                        </div>
 
-                        </div>
                         <div class="col-lg-6">
-                            <label>Amount <span>*</span></label>
-                            <input type="number" class="form-control" name="amount">
+                            <label>Amount (₹) <span>*</span></label>
+                            <input type="number" class="form-control" name="amount" min="1" step="any" placeholder="0.00" required>
                         </div>
+
                         <div class="col-lg-12">
                             <label>Payment Mode <span>*</span></label>
-                            <select name="payment_mode" class="form-control form-select">
-                                <option value="">Choose</option>
+                            <select name="payment_mode" class="form-select" required>
+                                <option value="">Select Mode</option>
                                 <option value="1">Online</option>
                                 <option value="2">Offline</option>
                                 <option value="3">Pay Later</option>
                             </select>
                         </div>
+
                         <div class="col-lg-12" id="remarkGroup" style="display:none;">
-                            <label>Remark</label>
-                            <textarea name="remark" class="form-control" style="height: 100px !important;" placeholder="Enter expense description"></textarea>
+                            <label>Description / Particulars <span>*</span></label>
+                            <textarea name="remark" class="form-control" placeholder="Enter specific description for this expense..."></textarea>
                         </div>
-
-
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary button noLoader">Add Expense</button>
+                    <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-submit-expense noLoader">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Expense
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div id="expensePageDynamic">
-    @if($showEmptyState)
-        @include('master.partials.expense-list-empty-state')
-    @else
-        @include('master.partials.expense-list-non-empty-body', ['expences' => $expences, 'data' => $data])
-    @endif
+<div class="library-expense-module">
+    <div id="expensePageDynamic">
+        @if($showEmptyState)
+            @include('master.partials.expense-list-empty-state')
+        @else
+            @include('master.partials.expense-list-non-empty-body', [
+                'expences' => $expences, 
+                'data' => $data,
+                'totalExpenseAmount' => $totalExpenseAmount ?? 0,
+                'thisMonthExpense' => $thisMonthExpense ?? 0
+            ])
+        @endif
+    </div>
 </div>
 
 <script>
@@ -148,7 +161,8 @@
 
     $(document).on('click', '#expensePageDynamic .expense-toolbar-filter-toggle', function (e) {
         e.preventDefault();
-        $('#expensePageDynamic #filterContainer').toggle();
+        $('#expensePageDynamic #filterContainer').slideToggle(200);
+        $(this).toggleClass('active');
     });
 
     $(document).on('submit', '#expensePageDynamic #expenseFilterForm', function (e) {
@@ -183,14 +197,26 @@
     function expenseToggleRemark() {
         var selectedText = $('#expenseNameSelect option:selected').text().trim().toLowerCase();
         if (selectedText === 'other') {
-            $('#remarkGroup').show();
+            $('#remarkGroup').slideDown(150);
+            $('#remarkGroup textarea').prop('required', true);
         } else {
-            $('#remarkGroup').hide();
-            $('#remarkGroup textarea').val('');
+            $('#remarkGroup').slideUp(150);
+            $('#remarkGroup textarea').prop('required', false).val('');
         }
     }
 
     $(document).on('change', '#expenseNameSelect', expenseToggleRemark);
+
+    // Reset modal state on opening
+    $(document).on('click', '[data-bs-target="#expenseModal"]', function() {
+        if (!$(this).hasClass('editExpense')) {
+            $('#modalExpenseTitle').html('<i class="fa-solid fa-receipt"></i> Add New Expense');
+            $('#expenseForm')[0].reset();
+            $('#expense_id').val('');
+            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+            expenseToggleRemark();
+        }
+    });
 
     $(document).on('submit', '#expenseForm', function (e) {
         e.preventDefault();
@@ -215,8 +241,6 @@
             success: function (response) {
                 $(".is-invalid").removeClass("is-invalid");
                 $(".invalid-feedback").remove();
-                $("#error-message").hide().text('');
-                $("#success-message").hide().text('');
 
                 if (response.success) {
                     $('#expenseModal').modal('hide');
@@ -230,10 +254,10 @@
                     $.each(response.errors, function (key, value) {
                         var element = $("[name='" + key + "']");
                         element.addClass("is-invalid");
-                        element.after('<span class="invalid-feedback" role="alert">' + value + '</span>');
+                        element.after('<span class="invalid-feedback d-block mt-1 font-12" role="alert">' + value + '</span>');
                     });
                 } else {
-                    $("#error-message").text(response.message).show();
+                    toastr.error(response.message || 'Could not save expense.');
                 }
             },
             error: function (xhr) {
@@ -249,37 +273,26 @@
                             field = $(`[name="${parts[0]}[]"]`).eq(parts[1]);
                         }
                         field.addClass('is-invalid');
-                        field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
+                        field.after(`<span class="invalid-feedback d-block mt-1 font-12" role="alert"><strong>${value[0]}</strong></span>`);
                     });
                 } else {
-                    alert('An unexpected error occurred.');
+                    toastr.error('An unexpected error occurred.');
                 }
             }
         });
-    });
-
-    $(document).on('click', '.editExpense', function () {
-        var expense = $(this).data('expense');
-        $('#expense_id').val(expense.id);
-        $('[name="date"]').val(expense.date);
-        $('[name="name"]').val(expense.name);
-        $('[name="amount"]').val(expense.amount);
-        $('[name="payment_mode"]').val(expense.payment_mode);
-        $('[name="remark"]').val(expense.remark);
-        expenseToggleRemark();
-        $('#expenseModal').modal('show');
     });
 </script>
 <script>
     function confirmDelete(id) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "This expense will be permanently deleted.",
+            title: 'Delete Expense Record?',
+            text: "This expense record will be permanently deleted.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, delete it',
+            cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({

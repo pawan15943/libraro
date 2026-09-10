@@ -33,6 +33,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
     <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 </head>
@@ -139,100 +140,91 @@
         </div>
 
 
-        @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
-        <div class="right-sidebar">
-            <h4> QUICK ACTION</h4>
-            <ul>
+        @php
+        $lib = getLibrary();
+        $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+        @endphp
+
+        @if(optional($lib)->is_paid == 1 && optional($lib)->status == 1 && !$isPlanExpired)
+        <div class="right-sidebar libraro-right-sidebar">
+            <div class="right-sidebar-header">
+                <div class="quick-action-badge">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span>ACTIONS</span>
+                </div>
+            </div>
+            <ul class="quick-action-list">
 
                 @can('has-permission', 'Book Seat')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat" class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
-                    <a href="javascript:;" class="noseat_popup">
-                        <i class="fa fa-chair fa-2x"></i>
+                    <a href="javascript:;" class="quick-action-btn noseat_popup" aria-label="Book Seat">
+                        <i class="fa fa-chair"></i>
                     </a>
                 </li>
                 @endcan
 
                 @can('has-permission', 'Search Learner')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat" class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
-                    <a href="{{ route('learner.search') }}">
-                        <i class="fa fa-search fa-2x"></i>
+                    <a href="{{ route('learner.search') }}" class="quick-action-btn" aria-label="Search Seat">
+                        <i class="fa fa-search"></i>
                     </a>
                 </li>
                 @endcan
 
                 @can('has-permission','QR Seat Booking')
                 @if(getBranch()?->uuid && getBranch()?->upi_id)
-                <li>
-                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" data-bs-title="Seat Booking QR"><i class="fa fa-qrcode fa-2x"></i></a>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Seat Booking QR">
+                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="quick-action-btn" aria-label="Seat Booking QR">
+                        <i class="fa fa-qrcode"></i>
+                    </a>
                 </li>
                 @endif
                 @endcan
 
                 @can('has-permission', 'Add Daily Expense')
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense" class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
-                    <a href="{{ route('add.expense.list') }}">
-                        <i class="fa fa-plus fa-2x"></i>
+                    <a href="{{ route('add.expense.list') }}" class="quick-action-btn" aria-label="Add Expense">
+                        <i class="fa fa-plus"></i>
                     </a>
                 </li>
                 @endcan
 
-                <!-- <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Learner List"
-                    class="{{ $current_route == 'seats.history' ? 'active' : '' }}">
-                    <a href="{{ route('seats.history') }}">
-                        <i class="fa fa-list-check fa-2x"></i>
-                    </a>
-                </li> -->
-
                 @can('has-permission', 'Genrate ID Card')
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID CARD" class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
-                    <a href="{{ route('learner.checklist') }}">
-                        <i class="fa fa-id-card-clip fa-2x"></i>
+                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID Card" class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
+                    <a href="{{ route('learner.checklist') }}" class="quick-action-btn" aria-label="Print Bulk ID Card">
+                        <i class="fa fa-id-card-clip"></i>
                     </a>
                 </li>
                 @endcan
 
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}" class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
-                    <a href="{{ route('library.video-training') }}">
-                        <i class="fa fa-video fa-2x"></i>
+                    <a href="{{ route('library.video-training') }}" class="quick-action-btn" aria-label="Video Tutorial">
+                        <i class="fa fa-video"></i>
                     </a>
                 </li>
 
                 @if(!in_array('28', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback" class="{{ $current_route == 'library.feedback' ? 'active' : '' }}">
-                    <a href="{{ route('library.feedback') }}">
-                        <i class="fa fa-comment fa-2x"></i>
+                    <a href="{{ route('library.feedback') }}" class="quick-action-btn" aria-label="Feedback">
+                        <i class="fa fa-comment"></i>
                     </a>
                 </li>
                 @endif
 
                 @if(!in_array('21', toggleHideField()))
                 <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings" class="{{ $current_route == 'library.settings' ? 'active' : '' }}">
-                    <a href="{{ route('library.settings') }}">
-                        <i class="fa fa-cog fa-2x fa-spin"></i>
+                    <a href="{{ route('library.settings') }}" class="quick-action-btn" aria-label="Settings">
+                        <i class="fa fa-cog fa-spin"></i>
                     </a>
                 </li>
                 @endif
             </ul>
 
-            <div class="control-right-sidebar">
+            <div class="control-right-sidebar" title="Toggle Quick Actions">
                 <i class="fa fa-angle-right" id="sidebar_mob"></i>
             </div>
         </div>
         @endif
-
-        <style>
-            /* Highlight active quick action */
-            .right-sidebar ul li.active a {
-                color: #0d6efd;
-                /* Bootstrap primary */
-            }
-
-            .right-sidebar ul li.active i {
-                color: #0d6efd;
-                transform: scale(1.1);
-                transition: all 0.3s ease;
-            }
-        </style>
 
     </div>
 

@@ -1,0 +1,469 @@
+/* ==========================================================================
+   Libraro Daily Attendance Summary Stylesheet
+   Strictly scoped under .learner-attendance-summary-module
+   Primary Color: #18225f (Navy Blue)
+   ========================================================================== */
+
+.learner-attendance-summary-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    margin-bottom: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Breadcrumb & Header
+   -------------------------------------------------------------------------- */
+.learner-attendance-summary-module .summary-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.learner-attendance-summary-module .summary-header-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+}
+
+.learner-attendance-summary-module .breadcrumb-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.learner-attendance-summary-module .breadcrumb-wrap a {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.learner-attendance-summary-module .breadcrumb-wrap a:hover {
+    color: #18225f;
+}
+
+.learner-attendance-summary-module .breadcrumb-wrap .current-crumb {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Filter Box (Date & Search)
+   -------------------------------------------------------------------------- */
+.learner-attendance-summary-module .summary-filter-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.learner-attendance-summary-module .filter-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.learner-attendance-summary-module .date-input-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.learner-attendance-summary-module .control-date-input {
+    height: 42px;
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 13.5px;
+    color: #1e293b;
+    background: #ffffff;
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.learner-attendance-summary-module .control-date-input:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+}
+
+.learner-attendance-summary-module .btn-search-action {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 8px;
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(24, 34, 95, 0.15);
+}
+
+.learner-attendance-summary-module .btn-search-action:hover {
+    background: #111a4a !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Section Heading & KPI Summary Cards
+   -------------------------------------------------------------------------- */
+.learner-attendance-summary-module .summary-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0 0 16px 0;
+    font-family: 'Outfit', sans-serif;
+}
+
+.learner-attendance-summary-module .summary-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.learner-attendance-summary-module .summary-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.learner-attendance-summary-module .summary-kpi-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+}
+
+.learner-attendance-summary-module .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+}
+
+.learner-attendance-summary-module .kpi-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Note Alert Banner
+   -------------------------------------------------------------------------- */
+.learner-attendance-summary-module .attendance-note-banner {
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 10px;
+    padding: 12px 18px;
+    color: #ef4444;
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.learner-attendance-summary-module .attendance-note-banner .note-prefix {
+    font-weight: 700;
+    color: #dc2626;
+    margin-right: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Learner Attendance Records List
+   -------------------------------------------------------------------------- */
+.learner-attendance-summary-module .attendance-records-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.learner-attendance-summary-module .attendance-record-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: grid;
+    grid-template-columns: 46px 1.4fr 1.5fr 1.1fr 1.1fr 1.3fr 1.7fr;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.learner-attendance-summary-module .attendance-record-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+
+/* Avatar Column */
+.learner-attendance-summary-module .record-avatar-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.learner-attendance-summary-module .record-avatar-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+/* Data Column */
+.learner-attendance-summary-module .record-field-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.learner-attendance-summary-module .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.learner-attendance-summary-module .field-value {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.learner-attendance-summary-module .field-value.text-navy {
+    color: #18225f;
+    font-size: 14px;
+}
+
+/* Status colors */
+.learner-attendance-summary-module .status-present {
+    color: #16a34a !important;
+    font-weight: 700;
+}
+
+.learner-attendance-summary-module .status-absent {
+    color: #ef4444 !important;
+    font-weight: 700;
+}
+
+.learner-attendance-summary-module .status-none {
+    color: #d97706 !important;
+    font-weight: 700;
+}
+
+/* Empty State */
+.learner-attendance-summary-module .empty-state-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.learner-attendance-summary-module .empty-state-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #18225f;
+    margin-bottom: 6px;
+}
+
+.learner-attendance-summary-module .empty-state-text {
+    font-size: 13.5px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   Responsive Design (Tablets & Mobile)
+   ========================================================================== */
+
+/* Tablet (< 992px) */
+@media (max-width: 991.98px) {
+    .learner-attendance-summary-module .attendance-record-card {
+        grid-template-columns: 44px 1.4fr 1.5fr 1.1fr 1.1fr;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    .learner-attendance-summary-module .plan-date-col {
+        grid-column: span 2;
+    }
+}
+
+/* Mobile Screens (< 768px) */
+@media (max-width: 768px) {
+    .learner-attendance-summary-module .summary-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .learner-attendance-summary-module .summary-filter-card {
+        padding: 14px 16px;
+        margin-bottom: 16px;
+    }
+
+    .learner-attendance-summary-module .filter-controls-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .learner-attendance-summary-module .date-input-wrap {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .learner-attendance-summary-module .btn-search-action {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .learner-attendance-summary-module .summary-kpi-row {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .learner-attendance-summary-module .summary-kpi-card {
+        padding: 12px 10px;
+        text-align: center;
+        align-items: center;
+    }
+
+    .learner-attendance-summary-module .kpi-value {
+        font-size: 22px;
+    }
+
+    .learner-attendance-summary-module .kpi-label {
+        font-size: 11px;
+    }
+
+    .learner-attendance-summary-module .attendance-record-card {
+        display: grid;
+        grid-template-columns: 44px 1fr auto;
+        grid-template-areas:
+            "avatar name status"
+            "avatar seat seat"
+            "punchin punchout plandate";
+        gap: 10px 12px;
+        padding: 14px 16px;
+    }
+
+    .learner-attendance-summary-module .record-avatar-col {
+        grid-area: avatar;
+        align-self: flex-start;
+    }
+
+    .learner-attendance-summary-module .name-col {
+        grid-area: name;
+    }
+
+    .learner-attendance-summary-module .status-col {
+        grid-area: status;
+        text-align: right;
+        align-items: flex-end;
+    }
+
+    .learner-attendance-summary-module .seat-col {
+        grid-area: seat;
+    }
+
+    .learner-attendance-summary-module .punch-in-col {
+        grid-area: punchin;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+    }
+
+    .learner-attendance-summary-module .punch-out-col {
+        grid-area: punchout;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+    }
+
+    .learner-attendance-summary-module .plan-date-col {
+        grid-area: plandate;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+    }
+}
+
+/* Mobile Phones (< 576px) */
+@media (max-width: 576px) {
+    .learner-attendance-summary-module .summary-kpi-row {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+    }
+
+    .learner-attendance-summary-module .summary-kpi-card {
+        padding: 10px 6px;
+    }
+
+    .learner-attendance-summary-module .kpi-value {
+        font-size: 20px;
+    }
+
+    .learner-attendance-summary-module .kpi-label {
+        font-size: 10.5px;
+    }
+
+    .learner-attendance-summary-module .attendance-record-card {
+        grid-template-columns: 40px 1fr auto;
+        grid-template-areas:
+            "avatar name status"
+            "avatar seat seat"
+            "punchin punchout punchout"
+            "plandate plandate plandate";
+        gap: 8px 10px;
+        padding: 12px 14px;
+    }
+
+    .learner-attendance-summary-module .name-col .field-value {
+        font-size: 14px;
+    }
+
+    .learner-attendance-summary-module .seat-col .field-value {
+        font-size: 12.5px;
+    }
+}

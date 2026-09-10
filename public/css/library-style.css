@@ -39,9 +39,9 @@ td span.actives {
 }
 
 .seat-info.bg-white .aboutToExpire {
-    color: orange !important;
+    color: #d97706 !important;
     font-size: .875rem !important;
-    font-weight: 500;
+    font-weight: 600 !important;
 }
 
 
@@ -300,13 +300,34 @@ a.w-auto.px-2:hover .fa {
 }
 
 .seat-info.bg-white .plan-info ul {
-    gap: 2rem;
+    gap: 1.25rem;
     justify-content: flex-end;
     flex: 1;
 }
 
 .seat-info.bg-white .plan-info ul li {
-    width: calc(100% / 6);
+    width: auto;
+    flex: 1 1 auto;
+}
+
+.seat-info.bg-white .plan-info ul li:nth-child(1) {
+    flex: 1.25 1 28%;
+    min-width: 130px;
+}
+
+.seat-info.bg-white .plan-info ul li:nth-child(2) {
+    flex: 1.45 1 34%;
+    min-width: 180px;
+}
+
+.seat-info.bg-white .plan-info ul li:nth-child(3) {
+    flex: 0.85 1 20%;
+    min-width: 90px;
+}
+
+.seat-info.bg-white .plan-info ul li:nth-child(4) {
+    flex: 0.6 1 14%;
+    min-width: 60px;
 }
 
 .seat-info.bg-white .plan-info button {
@@ -1126,4 +1147,1141 @@ ul.d-flex.inner i {
     color: #42a319;
     margin-right: 1rem;
     justify-content: flex-end;
+}
+
+/* ==========================================================================
+   Dashboard Recent Activity Module (Scoped under .dashboard-recent-activity-card)
+   ========================================================================== */
+.dashboard-recent-activity-card {
+    background: transparent;
+    font-family: 'Outfit', sans-serif;
+}
+
+.dashboard-recent-activity-card .activity-card-header {
+    padding: 0.25rem 0;
+}
+
+.dashboard-recent-activity-card .activity-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #18225f 0%, #34939F 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.2);
+}
+
+.dashboard-recent-activity-card .activity-header-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #18225f;
+    line-height: 1.2;
+}
+
+.dashboard-recent-activity-card .activity-header-subtitle {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.dashboard-recent-activity-card .activity-view-all {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #18225f;
+    text-decoration: none;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    background: #f1f5f9;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.dashboard-recent-activity-card .activity-view-all:hover {
+    background: #18225f;
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+.dashboard-recent-activity-card .activity-items-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dashboard-recent-activity-card .activity-items-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.dashboard-recent-activity-card .activity-items-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.dashboard-recent-activity-card .activity-items-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dashboard-recent-activity-card .activity-items-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dashboard-recent-activity-card .recent-activity-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--activity-accent, #18225f);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.03);
+    transition: all 0.2s ease;
+}
+
+.dashboard-recent-activity-card .recent-activity-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+    transform: translateY(-1px);
+}
+
+.dashboard-recent-activity-card .activity-icon-badge {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    background: color-mix(in srgb, var(--activity-accent, #18225f) 12%, transparent);
+    color: var(--activity-accent, #18225f);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-top: 2px;
+}
+
+.dashboard-recent-activity-card .activity-content-box {
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard-recent-activity-card .activity-type-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--activity-accent, #18225f);
+}
+
+.dashboard-recent-activity-card .activity-timestamp {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.dashboard-recent-activity-card .activity-target {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.15rem;
+}
+
+.dashboard-recent-activity-card .activity-learner-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #18225f;
+    letter-spacing: -0.1px;
+}
+
+.dashboard-recent-activity-card .activity-seat-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #e6f5f7;
+    color: #34939F;
+    border: 1px solid rgba(52, 147, 159, 0.25);
+    padding: 0.12rem 0.5rem;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.dashboard-recent-activity-card .activity-desc {
+    font-size: 0.82rem;
+    color: #475569;
+    font-weight: 400;
+    line-height: 1.4;
+    word-break: break-word;
+    margin-top: 0.25rem;
+    font-style: normal !important;
+}
+
+.dashboard-recent-activity-card .activity-desc strong {
+    font-weight: 600;
+    color: #1e293b;
+    font-style: normal !important;
+}
+
+.dashboard-recent-activity-card .activity-empty-state {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    color: #64748b;
+}
+
+a#headerEditPlanBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ==========================================================================
+   Modern Plan Price Cards Module (Libraro Navy Blue Theme)
+   ========================================================================== */
+.plan-price-module {
+    font-family: 'Outfit', sans-serif;
+}
+
+.plan-price-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem 1rem;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.plan-price-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(24, 34, 95, 0.08);
+    border-color: #cbd5e1;
+}
+
+.plan-price-card .plan-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.plan-price-card .plan-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.2px;
+}
+
+.plan-status-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    padding: 0.15rem 0.55rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Outfit', sans-serif;
+    text-transform: uppercase;
+}
+
+.plan-status-badge.active {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.plan-status-badge.inactive {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecdd3;
+}
+
+.plan-status-badge .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.plan-status-badge.active .status-dot {
+    background-color: #16a34a;
+}
+
+.plan-status-badge.inactive .status-dot {
+    background-color: #dc2626;
+}
+
+.plan-duration-badge {
+    background: #eff6ff;
+    color: #18225f;
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    letter-spacing: 0.3px;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 0.75rem;
+}
+
+.plan-price-card .plan-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.plan-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem 0.85rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.plan-meta-grid.single-col {
+    grid-template-columns: 1fr;
+}
+
+.plan-meta-item {
+    min-width: 0;
+}
+
+.plan-meta-item .plan-meta-label,
+.plan-meta-section .plan-meta-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0.1rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.plan-meta-item .plan-meta-value,
+.plan-meta-section .plan-meta-value {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.3;
+}
+
+.plan-meta-value.highlight-val {
+    font-size: 1.15rem;
+    color: #18225f;
+}
+
+.plan-price-section {
+    margin-top: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.plan-price-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0.1rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.plan-price-amount {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #18225f;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+}
+
+.plan-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-plan-action {
+    border-radius: 6px;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.btn-plan-action.btn-action-deactivate {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    flex: 1.2;
+}
+
+.btn-plan-action.btn-action-deactivate:hover {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+.btn-plan-action.btn-action-activate {
+    background-color: #fef2f2;
+    border: 1px solid #fecdd3;
+    color: #dc2626;
+    flex: 1.2;
+}
+
+.btn-plan-action.btn-action-activate:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.btn-plan-action.btn-action-edit {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    flex: 1;
+}
+
+.btn-plan-action.btn-action-edit:hover {
+    background-color: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+}
+
+.btn-plan-action.btn-action-delete {
+    background-color: #fef2f2;
+    border: 1px solid #fecdd3;
+    color: #dc2626;
+    flex: 1;
+}
+
+.btn-plan-action.btn-action-delete:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.plan-price-card .text-center.py-2.text-danger.small.font-outfit.fw-bold.mt-auto.border-top.pt-2,
+.plan-locked-notice {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500 !important;
+    margin-bottom: -0.8rem;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Branch Card Module UI Redesign
+   ========================================================================== */
+.branch-card-module {
+    font-family: 'Outfit', sans-serif;
+}
+
+.branch-main-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 1.35rem 1.4rem 1.15rem;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.branch-main-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(24, 34, 95, 0.08);
+    border-color: #cbd5e1;
+}
+
+/* Header Top */
+.branch-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+
+.branch-top-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.branch-building-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #f0f4ff;
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.branch-title-group h4 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #18225f;
+    margin: 0;
+    line-height: 1.15;
+    font-family: 'Outfit', sans-serif;
+}
+
+.branch-status-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 0.12rem 0.55rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Outfit', sans-serif;
+    text-transform: uppercase;
+    margin-top: 3px;
+}
+
+.branch-status-pill.active {
+    background-color: #eefbf3;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.branch-status-pill.inactive {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecdd3;
+}
+
+.branch-status-pill .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.branch-status-pill.active .status-dot {
+    background-color: #16a34a;
+}
+
+.branch-status-pill.inactive .status-dot {
+    background-color: #dc2626;
+}
+
+.branch-menu-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+}
+
+.branch-menu-btn:hover,
+.branch-menu-btn:focus {
+    background: #f1f5f9;
+    color: #18225f;
+    border-color: #cbd5e1;
+}
+
+/* Uniform Dropdown Menu */
+.branch-card-module ul.dropdown-menu,
+.branch-dropdown-menu,
+ul.branch-dropdown-menu.show {
+    min-width: 220px !important;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0 !important;
+    box-shadow: 0 10px 30px rgba(24, 34, 95, 0.12) !important;
+    font-family: 'Outfit', sans-serif !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+}
+
+.branch-card-module ul.dropdown-menu li,
+.branch-dropdown-menu li,
+ul.branch-dropdown-menu.show li {
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+}
+
+.branch-card-module ul.dropdown-menu li + li,
+.branch-dropdown-menu li + li,
+ul.branch-dropdown-menu.show li + li {
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+.branch-card-module ul.dropdown-menu a.dropdown-item,
+.branch-dropdown-menu .dropdown-item,
+ul.branch-dropdown-menu.show li a,
+ul.branch-dropdown-menu.show li + li a,
+ul.branch-dropdown-menu.show a.dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.8rem 1.2rem !important;
+    font-weight: 600 !important;
+    font-size: 0.86rem !important;
+    color: #1e293b !important;
+    transition: all 0.15s ease !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    line-height: 1.3 !important;
+}
+
+.branch-card-module ul.dropdown-menu a.dropdown-item:hover,
+.branch-dropdown-menu .dropdown-item:hover,
+ul.branch-dropdown-menu.show li a:hover,
+ul.branch-dropdown-menu.show a.dropdown-item:hover,
+.branch-card-module ul.dropdown-menu a.dropdown-item:focus,
+.branch-dropdown-menu .dropdown-item:focus {
+    background-color: #f8fafc !important;
+    color: #18225f !important;
+}
+
+.branch-dropdown-menu .dropdown-icon-box {
+    width: 26px !important;
+    height: 26px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.92rem !important;
+    flex-shrink: 0 !important;
+}
+
+
+/* Branch Info Banner Box */
+.branch-info-banner {
+    background: #f3f6fc;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.branch-info-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.branch-info-title {
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.3rem;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.branch-info-address {
+    font-size: 0.82rem;
+    color: #475569;
+    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.35;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 0.5rem;
+}
+
+.branch-info-address i {
+    color: #18225f;
+    font-size: 0.95rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.branch-info-contact-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+
+.branch-info-contact-pill {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.22rem 0.55rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Outfit', sans-serif;
+    max-width: 100%;
+}
+
+.branch-info-contact-pill i {
+    font-size: 0.75rem;
+    color: #18225f;
+    flex-shrink: 0;
+}
+
+.branch-info-contact-pill.phone i {
+    color: #16a34a;
+}
+
+.branch-info-contact-pill.email i {
+    color: #2563eb;
+}
+
+.branch-qr-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.branch-qr-box svg,
+.branch-qr-box img {
+    width: 72px;
+    height: 72px;
+    display: block;
+}
+
+.branch-qr-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 3px;
+    text-align: center;
+    white-space: nowrap;
+    font-family: 'Outfit', sans-serif;
+}
+
+
+/* Stats Row (4 Cards: Seats, Extend, Locker, Token) */
+.branch-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.branch-stat-box {
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.branch-stat-box.stat-seats {
+    background: #f5f3ff;
+}
+
+.branch-stat-box.stat-extend {
+    background: #f0fdf4;
+}
+
+.branch-stat-box.stat-locker {
+    background: #fff5f5;
+}
+
+.branch-stat-box.stat-token {
+    background: #f8f6ff;
+}
+
+.branch-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.branch-stat-box.stat-seats .branch-stat-icon {
+    background: #ede9fe;
+    color: #6366f1;
+}
+
+.branch-stat-box.stat-extend .branch-stat-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.branch-stat-box.stat-locker .branch-stat-icon {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.branch-stat-box.stat-token .branch-stat-icon {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.branch-stat-info {
+    min-width: 0;
+}
+
+.branch-stat-label {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 2px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.branch-stat-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    font-family: 'Outfit', sans-serif;
+}
+
+.branch-stat-value .stat-unit {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* Collapsible Box Headers */
+.branch-card-collapse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    text-align: left;
+}
+
+.branch-card-collapse-header .collapse-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.branch-card-collapse-header .collapse-count {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-left: 2px;
+}
+
+.branch-card-collapse-header .collapse-icon {
+    font-size: 0.75rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.branch-card-collapse-header:not(.collapsed) .collapse-icon {
+    transform: rotate(180deg);
+}
+
+/* 1. Plan Details Card (Cool Indigo / Soft Blue Theme) */
+.branch-plans-card {
+    background: #f8faff;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    padding: 0.85rem 0.95rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.branch-plans-card .collapse-title {
+    color: #18225f;
+}
+
+.branch-plans-card .collapse-title i {
+    color: #2563eb;
+    font-size: 0.95rem;
+}
+
+.branch-plans-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem 0.75rem;
+    padding-top: 0.65rem;
+}
+
+@media (max-width: 576px) {
+    .branch-plans-grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.branch-plan-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    gap: 6px;
+}
+
+.branch-plan-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.branch-plan-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+.branch-plan-sub {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #64748b;
+    font-family: 'Outfit', sans-serif;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+.branch-plan-badge {
+    background: #eff6ff;
+    color: #18225f;
+    border: 1px solid #bfdbfe;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.18rem 0.45rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    font-family: 'Outfit', sans-serif;
+    text-transform: uppercase;
+}
+
+/* 2. Shift Details Card (Warm Amber Theme) */
+.branch-shifts-card {
+    background: #fffdf8;
+    border: 1px solid #fef3c7;
+    border-radius: 14px;
+    padding: 0.85rem 0.95rem;
+    margin-bottom: 1.15rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.branch-shifts-card .collapse-title {
+    color: #18225f;
+}
+
+.branch-shifts-card .collapse-title i {
+    color: #b45309;
+    font-size: 0.95rem;
+}
+
+.branch-shifts-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem 0.75rem;
+    padding-top: 0.65rem;
+}
+
+@media (max-width: 576px) {
+    .branch-shifts-grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.branch-shift-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    background: #ffffff;
+    border: 1px solid #f3ebd8;
+    border-radius: 8px;
+    gap: 6px;
+}
+
+.branch-shift-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.branch-shift-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+.branch-shift-time {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #64748b;
+    font-family: 'Outfit', sans-serif;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+.branch-shift-price {
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    font-family: 'Outfit', sans-serif;
+}
+
+
+/* Footer Action Buttons */
+.branch-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+}
+
+.branch-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.branch-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-branch-outline {
+    padding: 0.38rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none !important;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+.btn-branch-outline:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #18225f;
+}
+
+.btn-branch-edit {
+    padding: 0.38rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none !important;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+.btn-branch-edit:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.btn-branch-delete {
+    padding: 0.38rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 8px;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #e11d48;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none !important;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.btn-branch-delete:hover {
+    background: #e11d48;
+    border-color: #e11d48;
+    color: #ffffff;
 }

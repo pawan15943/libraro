@@ -2487,12 +2487,61 @@ div#datatable_length {
 
 .card.chart {
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #dedede !important;
+    border-radius: 1.5rem !important;
 }
 
 .card.chart h5 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
     text-align: center;
-    color: #3F51B5 ! IMPORTANT;
+    color: #18225f !important;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 0.75rem;
+}
+
+.card.chart .record-not-found {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 220px;
+    width: 100%;
+}
+
+.card.chart .record-not-found canvas {
+    width: 100% !important;
+}
+
+.card.chart .not-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin: auto;
+    padding: 1.25rem 0.5rem;
+}
+
+.card.chart .not-data dotlottie-wc {
+    width: 130px;
+    height: 130px;
+    margin: 0 auto;
+    display: block;
+}
+
+.card.chart .not-data span {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 0.5rem;
+    display: block;
 }
 
 label.permission {
@@ -2696,7 +2745,7 @@ ul.btn-toggle-nav.list-unstyled.fw-normal.pb-1.small li a {
     font-weight: 500;
     font-size: 1rem;
     margin: 0;
-    padding: 0 1rem;
+    padding: 0 0rem;
 }
 
 h6.text-center.text-danger.mb-4 {
@@ -5822,9 +5871,12 @@ h5.role-category-heading {
     padding: .5rem .8rem;
 }
 
-.form-select:disabled {
-    background-color: #f5f5f5;
-
+.form-select:disabled,
+.form-control:disabled {
+    background-color: #f5f5f5 !important;
+    color: #495057 !important;
+    -webkit-text-fill-color: #495057 !important;
+    opacity: 1 !important;
 }
 
 .form-select,
@@ -7182,3 +7234,31 @@ span.close-modal {
         border-radius: .8rem;
     }
 }
+
+.activity-mini-item * {
+    font-size: 1rem;
+    font-family: 'outfit', 'sans-sarif';
+    font-weight: 600;
+    color: #494949;
+}
+
+.transaction-history-body h6 {
+    margin-bottom: 1rem ! IMPORTANT;
+    margin-top: 2rem ! IMPORTANT;
+}
+
+.txn-edit-form button.btn.btn-primary.px-4 {
+    background-color: #18225f !important;
+}
+
+.txn-edit-form small.text-muted {
+    font-size: .75rem;
+    color: #666666 !important;
+}
+
+a#headerEditPlanBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+

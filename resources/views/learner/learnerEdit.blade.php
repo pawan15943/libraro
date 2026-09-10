@@ -1,151 +1,276 @@
 @extends('layouts.library')
+
 @section('content')
 @php
-
 $current_route = Route::currentRouteName();
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
-$class=$planDetails['class'];
+$class = $planDetails['class'];
 if($customer->locker_no){
-    $locker_read='';
-}else{
-    $locker_read='readonly';
+    $locker_read = '';
+} else {
+    $locker_read = 'readonly';
 }
 @endphp
 
+<link rel="stylesheet" href="{{ asset('public/css/learner-edit.css') }}?v={{ time() }}" />
 
+{{-- Modal for Viewing Images --}}
 <div id="imageViewModal" class="image-modal" style="display:none;">
     <div class="image-modal-content">
         <span class="close-modal">&times;</span>
-        <img src="" id="modalImage">
+        <img src="" id="modalImage" alt="Document Preview">
     </div>
 </div>
 
+<div class="learner-edit-module">
+    <div class="learner-edit-wrapper">
 
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
-<div class="row g-4">
-    <div class="col-lg-9 order-2 order-md-1">
-        <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        {{-- SEAT NO TOP HEADER HERO CARD (OUTSIDE FORM CARDS) --}}
+        <div class="learner-seat-header-card">
+            <div class="seat-header-actions">
+                <a href="{{ route('learners') }}" class="btn-seat-back">
+                    <i class="fa-solid fa-arrow-left"></i> Go Back
+                </a>
+            </div>
+            <div class="seat-header-main">
+
+                <div class="seat-header-avatar-box">
+                    @if($customer->profile_picture)
+                        <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                    @else
+                        <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
+                    @endif
+                </div>
+                <div class="seat-header-info">
+                    <div class="seat-badge-row">
+                        <span class="seat-tag-pill">
+                            <i class="fa-solid fa-chair"></i> Allocated Seat
+                        </span>
+                        <span class="seat-status-badge">
+                            {{ $planDetails['status'] ?? 'Allocated' }}
+                        </span>
+                    </div>
+                    <h3 class="seat-title">
+                        @if($customer->seat_no)
+                            Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no) }} : {{ $customer->name }}
+                        @else
+                            General Seat : {{ $customer->name }}
+                        @endif
+                    </h3>
+
+                    <div class="seat-meta-row">
+                        <span class="seat-meta-item">
+                            <i class="fa-regular fa-clock"></i> <strong>Shift / Plan:</strong> {{ $customer->plan_type_name }}
+                        </span>
+                        @if($customer->plan_end_date)
+                        <span class="seat-meta-item">
+                            <i class="fa-regular fa-calendar-check"></i> <strong>Valid Till:</strong> {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') }}
+                        </span>
+                        @endif
+                        @if($customer->id)
+                        <span class="seat-meta-item">
+                            <i class="fa-regular fa-id-badge"></i> <strong>Learner ID:</strong> #{{ $customer->id }}
+                        </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data" id="editLearnerForm">
+
             @csrf
             @method('PUT')
             <input id="edit_seat" type="hidden" name="seat_no" value="{{ old('seat_no', $customer->seat_no) }}">
-            <input name="user_id" type="hidden" value="{{$customer->id}}">
-            <input name="learner_id" type="hidden" value="{{$customer->id}}">
-            <input name="plan_id" type="hidden" value="{{$customer->plan_id}}" id="plan_id10">
-            <input name="plan_type_id" type="hidden" value="{{$customer->plan_type_id}}" id="plan_type_id10">
-            {{-- <input name="plan_price_id" type="hidden" value="{{$customer->plan_price_id}}" id="plan_price10"> --}}
+            <input name="user_id" type="hidden" value="{{ $customer->id }}">
+            <input name="learner_id" type="hidden" value="{{ $customer->id }}">
+            <input name="plan_id" type="hidden" value="{{ $customer->plan_id }}" id="plan_id10">
+            <input name="plan_type_id" type="hidden" value="{{ $customer->plan_type_id }}" id="plan_type_id10">
             <input type="hidden" name="payment_type" value="EDITLEARNER" id="payment_type_operation">
-            {{-- <input name="plan_start_date" type="hidden" value="{{$customer->plan_start_date}}"> --}}
-        
-            <div class="library-operations mt-4">
-                <div class="info__section">
-                    <h4 class="inner-heading">Learner Info</h4>
-                    <div class="row g-4">
-                        <div class="col-lg-6">
-                            <label for="" class="text-white">Seat Owner Name <span>*</span></label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror " placeholder="Full Name" name="name" id="name" value="{{ old('name', $customer->name) }}">
+
+            {{-- 1. UPLOAD PROFILE PHOTO CARD --}}
+            @if(!in_array('8', toggleHideField()))
+            <div class="edit-card">
+                <div class="edit-card-header header-purple">
+                    <div class="edit-header-left">
+                        <div class="edit-header-icon">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div>
+                            <h4 class="edit-header-title">Upload Profile Photo</h4>
+                            <p class="edit-header-subtitle">Update learner's profile photo (optional).</p>
+                        </div>
+                    </div>
+                    <span class="edit-header-badge">JPG, PNG, WEBP (Max 5 MB)</span>
+                </div>
+                <div class="edit-card-body">
+                    <div class="upload-photo-container">
+                        <div class="upload-avatar-wrapper" id="avatarUploadTrigger" title="Click to upload/change profile photo">
+                            <div class="upload-avatar-circle" id="avatarCircle">
+                                @if($customer->profile_picture)
+                                    <i class="fa-solid fa-user avatar-icon-placeholder" id="avatarDefaultIcon" style="display:none;"></i>
+                                    <img id="avatarCroppedPreview" src="{{ asset($customer->profile_picture) }}" alt="Profile Photo">
+                                @else
+                                    <i class="fa-solid fa-user avatar-icon-placeholder" id="avatarDefaultIcon"></i>
+                                    <img id="avatarCroppedPreview" src="" alt="Profile Photo" style="display:none;">
+                                @endif
+                                <div class="avatar-hover-overlay">
+                                    <i class="fa-solid fa-camera"></i>
+                                    <span>{{ $customer->profile_picture ? 'Change' : 'Upload' }}</span>
+                                </div>
+                            </div>
+                            <div class="avatar-camera-badge">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="upload-avatar-title" id="avatarStatusTitle">
+                                {{ $customer->profile_picture ? 'Photo uploaded (Click to change)' : 'Click avatar to upload photo' }}
+                            </div>
+                            <p class="upload-avatar-subtext" id="avatarSubtext">
+                                {{ $customer->profile_picture ? 'Click on the avatar circle to select a new photo.' : 'Upload a clear photo for identification (optional).' }}
+                            </p>
+                            @if($customer->profile_picture)
+                                <a href="{{ asset($customer->profile_picture) }}" class="avatar-view-existing view-image" id="viewExistingAvatar">
+                                    <i class="fa-regular fa-eye"></i> View Current Photo
+                                </a>
+                            @endif
+                        </div>
+
+                        {{-- Hidden File Input --}}
+                        <input
+                            type="file"
+                            class="d-none image-cropper @error('profile_picture_image') is-invalid @enderror"
+                            name="profile_picture_image"
+                            id="profile_picture_image"
+                            autocomplete="off"
+                            accept=".jpeg, .jpg, .png, .webp" />
+                        <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
+                    </div>
+
+                    @error('profile_picture_image')
+                        <div class="text-danger small mt-1 text-center">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+            @endif
+
+            {{-- 2. BASIC INFORMATION CARD --}}
+            <div class="edit-card">
+                <div class="edit-card-header header-blue">
+                    <div class="edit-header-left">
+                        <div class="edit-header-icon">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 class="edit-header-title">Basic Information</h4>
+                            <p class="edit-header-subtitle">Learner's primary contact and personal details.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="edit-card-body">
+                    <div class="row g-3">
+                        {{-- Seat Owner Name --}}
+                        <div class="col-md-6 form-group">
+                            <label for="name" class="form-label">Seat Owner Name <span class="required-star">*</span></label>
+                            <input
+                                type="text"
+                                class="form-control @error('name') is-invalid @enderror"
+                                placeholder="Full Name"
+                                name="name"
+                                id="name"
+                                value="{{ old('name', $customer->name) }}"
+                                required>
                             @error('name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-lg-6">
-                            <label for="" class="text-white">DOB <span>*</span></label>
-                            <input type="date" class="form-control @error('dob') is-invalid @enderror" placeholder="DOB" name="dob" id="dob" value="{{ old('dob', $customer->dob) }}">
+
+                        {{-- DOB --}}
+                        <div class="col-md-6 form-group">
+                            <label for="dob" class="form-label">DOB <span class="required-star">*</span></label>
+                            <input
+                                type="date"
+                                class="form-control @error('dob') is-invalid @enderror"
+                                placeholder="DOB"
+                                name="dob"
+                                id="dob"
+                                value="{{ old('dob', $customer->dob) }}"
+                                required>
                             @error('dob')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-lg-6">
-                            <label for="" class="text-white">Mobile Number <span>*</span></label>
-                            <input type="text" class="form-control @error('mobile') is-invalid @enderror digit-only" maxlength="10" minlength="10" placeholder="Mobile Number" name="mobile" id="mobile" value="{{ old('mobile', $customer->mobile) }}">
+
+                        {{-- Mobile Number --}}
+                        <div class="col-md-6 form-group">
+                            <label for="mobile" class="form-label">Mobile Number <span class="required-star">*</span></label>
+                            <input
+                                type="text"
+                                class="form-control @error('mobile') is-invalid @enderror digit-only"
+                                maxlength="10"
+                                minlength="10"
+                                placeholder="Mobile Number"
+                                name="mobile"
+                                id="mobile"
+                                value="{{ old('mobile', $customer->mobile) }}"
+                                required>
                             @error('mobile')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-lg-6 ">
-                            <label for="" class="text-white">Email Id </label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email Id" name="email" id="email" value="{{ old('email', $customer->email) }}">
+
+                        {{-- Email Id --}}
+                        <div class="col-md-6 form-group">
+                            <label for="email" class="form-label">Email Id</label>
+                            <input
+                                type="email"
+                                class="form-control @error('email') is-invalid @enderror"
+                                placeholder="Email Id"
+                                name="email"
+                                id="email"
+                                value="{{ old('email', $customer->email) }}">
                             @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                 </div>
-               
+            </div>
 
-                <div class="form-input mb-4">
-                    <h4 class="inner-heading">Learner Other Info</h4>
-                    <p class="text-danger">Note : These details are optional. You may fill them in if you wish, or leave them blank.</p>
-                    <div class="row g-4">
-                     
-                        @if(!in_array('8', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="profile_picture">Upload Profile Photo</label>
-                                <input type="file" class="form-control image-cropper @error('profile_picture_image') is-invalid @enderror" name="profile_picture_image"   value="{{ old('profile_picture', $customer->profile_picture) }}"
-                                    autocomplete="off" accept=".jpeg, .jpg, .png, .webp">  
-                                <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
-
-
-                                @error('profile_picture_image')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            @if($customer->profile_picture)
-                                <a href="{{ asset($customer->profile_picture) }}" class="view-image">View</a>
-                            @endif
-                            </div>
-                        @endif
-
-                        @if(!in_array('30', toggleHideField()))
-                        <div class="col-lg-6 ">
-                            <label for="alternate_mobile">Alternate Mobile No.</label>
-                            <input type="text" class="form-control @error('alternate_mobile') is-invalid @enderror digit-only" name="alternate_mobile"  maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No." value="{{ old('alternate_mobile', $customer->alternate_mobile) }}">
-                            @error('alternate_mobile')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+            {{-- 3. REMINDER & EXPIRY SETTINGS CARD --}}
+            <div class="edit-card">
+                <div class="edit-card-header header-green">
+                    <div class="edit-header-left">
+                        <div class="edit-header-icon">
+                            <i class="fa-solid fa-bell"></i>
                         </div>
-                        @endif
-
-                        @if(!in_array('29', toggleHideField()))
-                        <div class="col-lg-6 ">
-                            <label for="father_name">Father Name</label>
-                            <input type="text" class="form-control @error('father_name') is-invalid @enderror char-only" name="father_name"  placeholder="Enter Father name" value="{{ old('father_name', $customer->father_name) }}">
-                            @error('father_name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                        <div>
+                            <h4 class="edit-header-title">Reminder & Expiry Settings</h4>
+                            <p class="edit-header-subtitle">Configure message reminder channels and seat expiry options.</p>
                         </div>
-                        @endif
-
-                        @if(!in_array('4', toggleHideField()))
-                        <div class="col-lg-6 ">
-                            <label for="prepareFor">Prepare For</label>
-                            <select name="exam_id"  class="form-select @error('exam_id') is-invalid @enderror">
-                                <option value="">Learner is Prepare For Exam</option>
-                                @foreach($exams as $key => $value)
-                                <option value="{{$value->id}}" {{ old('exam_id', $customer->exam_id) == $value->id ? 'selected' : '' }}>{{$value->name}}</option>   
-                                @endforeach
-                            </select>
-                            @error('exam_id')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        @endif
-                           <div class="col-lg-6">
-                            <label for="sended_message_type">Send Reminders Via (Optional)</label>
+                    </div>
+                </div>
+                <div class="edit-card-body">
+                    <div class="row g-3">
+                        {{-- Send Reminders Via --}}
+                        <div class="col-md-6 form-group">
+                            <label for="sended_message_type" class="form-label">Send Reminders Via (Optional)</label>
                             <select id="sended_message_type" class="form-select" name="sended_message_type">
                                 <option value="">Select Type</option>
                                 @if($hasFreeWaba ?? false)
@@ -160,174 +285,434 @@ if($customer->locker_no){
                                 <option value="no" {{ old('sended_message_type', $customer->sended_message_type) == 'no' ? 'selected' : '' }}>No</option>
                             </select>
                         </div>
-                        <div class="col-lg-6">
-                            <label for="no_expiry">No Expiry Seat (Optional)</label>
+
+                        {{-- No Expiry Seat --}}
+                        <div class="col-md-6 form-group">
+                            <label for="no_expiry" class="form-label">No Expiry Seat (Optional)</label>
                             <select name="no_expiry" id="no_expiry" class="form-select @error('no_expiry') is-invalid @enderror">
                                 <option value="">Select Expiry Mode</option>
                                 <option value="1" {{ old('no_expiry', $customer->no_expiry) == 1 ? 'selected' : '' }}>Yes, Make it non expired seat.</option>
                                 <option value="0" {{ old('no_expiry', $customer->no_expiry) == 0 ? 'selected' : '' }}>No</option>
                             </select>
                             @error('no_expiry')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
+                                <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
-
-                        @if(!in_array('5', toggleHideField()))
-                        <div class="col-lg-4">
-                            <label for="">ID Proof Name(Optional)</label>
-                            <select  class="form-select @error('id_proof_name') is-invalid @enderror" name="id_proof_name" value="{{ old('id_proof_name', $customer->id_proof_name) }}">
-                                <option value="">Select Id Proof</option>
-                               
-                                <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>
-                                    Aadhar Card
-                                </option>
-
-                                <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>
-                                    Driving License
-                                </option>
-
-                                <option value="4" {{ old('id_proof_name', $customer->id_proof_name) == 4 ? 'selected' : '' }}>
-                                    Pan Card
-                                </option>
-
-                                <option value="5" {{ old('id_proof_name', $customer->id_proof_name) == 5 ? 'selected' : '' }}>
-                                    Voter Id
-                                </option>
-
-                                <option value="3" {{ old('id_proof_name', $customer->id_proof_name) == 3 ? 'selected' : '' }}>
-                                    Other
-                                </option>
-                            </select>
-                            @error('id_proof_name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                         <div class="col-lg-4">
-                            <label for="address">ID Proof No.</label>
-                            <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12" value="{{ old('id_proof_number', $customer->id_proof_number) }}">
-                        </div>
-
-                        <div class="col-lg-4">
-                            <label for="">Upload Scan Copy of Proof (Optional)</label>
-                            <input type="file" class="form-control id_proof_file image-cropper @error('id_proof') is-invalid @enderror" name="id_proof" autocomplete="off">
-                            <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
-                            @error('id_proof')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                            @if($customer->id_proof_file)
-                            <a href="{{ asset($customer->id_proof_file) }}" class="view-image">View</a>
-
-                            @endif
-                            <span class="text-danger">*Upload front side of document.</span>
-                        </div>
-                        @endif
-
-                        @if(!in_array('32', toggleHideField()))
-                        <div class="col-lg-12 ">
-                            <label for="address">Address</label>
-                            <textarea class="form-control h-auto @error('address') is-invalid @enderror" name="address"  rows="3" placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
-                            @error('address')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        @endif
-
-                        @if(!in_array('31', toggleHideField()))
-                        <div class="col-lg-12 ">
-                            <label for="remark">Remark</label>
-                            <textarea class="form-control h-auto @error('remark') is-invalid @enderror" name="remark"  rows="3" placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
-                            @error('remark')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        @endif
-                    
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-lg-3">
-                            <button type="submit" class="btn btn-primary btn-block button">Update Seat Info</button>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
+            {{-- 4. ADDITIONAL INFORMATION CARD (ALWAYS VISIBLE - NO COLLAPSE) --}}
+            <div class="edit-card">
+                <div class="edit-card-header header-amber">
+                    <div class="edit-header-left">
+                        <div class="edit-header-icon">
+                            <i class="fa-regular fa-id-card"></i>
+                        </div>
+                        <div>
+                            <h4 class="edit-header-title">Additional Information</h4>
+                            <p class="edit-header-subtitle">Optional details such as alternate contact, ID proof, and address.</p>
+                        </div>
+                    </div>
+                    <span class="edit-header-badge">Optional</span>
+                </div>
+                <div class="edit-card-body">
+
+                    <div class="row g-3">
+                        {{-- Alternate Mobile No. --}}
+                        @if(!in_array('30', toggleHideField()))
+                        <div class="col-md-6 form-group">
+                            <label for="alternate_mobile" class="form-label">Alternate Mobile No.</label>
+                            <input
+                                type="text"
+                                class="form-control @error('alternate_mobile') is-invalid @enderror digit-only"
+                                name="alternate_mobile"
+                                id="alternate_mobile"
+                                maxlength="10"
+                                minlength="10"
+                                placeholder="Enter Alternate Mobile No."
+                                value="{{ old('alternate_mobile', $customer->alternate_mobile) }}">
+                            @error('alternate_mobile')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
+
+                        {{-- Father Name --}}
+                        @if(!in_array('29', toggleHideField()))
+                        <div class="col-md-6 form-group">
+                            <label for="father_name" class="form-label">Father Name</label>
+                            <input
+                                type="text"
+                                class="form-control @error('father_name') is-invalid @enderror char-only"
+                                name="father_name"
+                                id="father_name"
+                                placeholder="Enter Father name"
+                                value="{{ old('father_name', $customer->father_name) }}">
+                            @error('father_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
+
+                        {{-- Prepare For --}}
+                        @if(!in_array('4', toggleHideField()))
+                        <div class="col-12 form-group">
+                            <label for="exam_id" class="form-label">Prepare For</label>
+                            <select name="exam_id" id="exam_id" class="form-select @error('exam_id') is-invalid @enderror">
+                                <option value="">Learner is Prepare For Exam</option>
+                                @foreach($exams as $key => $value)
+                                <option value="{{ $value->id }}" {{ old('exam_id', $customer->exam_id) == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('exam_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
+
+                        {{-- ID Proof Details (Row 1: Dropdown & No, Row 2: Bordered Drag & Drop) --}}
+                        @if(!in_array('5', toggleHideField()))
+                        <div class="col-md-6 form-group">
+                            <label for="edit_id_proof_name" class="form-label">ID Proof Name (Optional)</label>
+                            <select class="form-select @error('id_proof_name') is-invalid @enderror" name="id_proof_name" id="edit_id_proof_name">
+                                <option value="">Select Id Proof</option>
+                                <option value="1" {{ old('id_proof_name', $customer->id_proof_name) == 1 ? 'selected' : '' }}>Aadhar Card</option>
+                                <option value="2" {{ old('id_proof_name', $customer->id_proof_name) == 2 ? 'selected' : '' }}>Driving License</option>
+                                <option value="4" {{ old('id_proof_name', $customer->id_proof_name) == 4 ? 'selected' : '' }}>Pan Card</option>
+                                <option value="5" {{ old('id_proof_name', $customer->id_proof_name) == 5 ? 'selected' : '' }}>Voter Id</option>
+                                <option value="3" {{ old('id_proof_name', $customer->id_proof_name) == 3 ? 'selected' : '' }}>Other</option>
+                            </select>
+                            @error('id_proof_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label for="edit_id_proof_number" class="form-label">ID Proof No.</label>
+                            <input
+                                type="text"
+                                class="form-control @error('id_proof_number') is-invalid @enderror"
+                                name="id_proof_number"
+                                id="edit_id_proof_number"
+                                placeholder="Enter ID proof no."
+                                maxlength="12"
+                                value="{{ old('id_proof_number', $customer->id_proof_number) }}">
+                            @error('id_proof_number')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- Row 2: Bordered Drag and Drop Document Upload --}}
+                        <div class="col-12 form-group">
+                            <label for="edit_id_proof_file" class="form-label">Upload Scan Copy of Proof (Optional)</label>
+                            <div class="doc-dropzone disabled" id="docDropzone" title="Select Id Proof type above to enable upload">
+                                {{-- Placeholder state --}}
+                                <div class="doc-dropzone-content" id="docDropzoneContent" style="{{ $customer->id_proof_file ? 'display:none;' : '' }}">
+                                    <i class="fa-solid fa-cloud-arrow-up doc-dropzone-icon"></i>
+                                    <div class="doc-dropzone-text">Drag & drop file here or <span class="browse-link">browse</span></div>
+                                    <div class="doc-dropzone-hint" id="docDropzoneHint">Select ID proof type above to enable upload</div>
+                                </div>
+
+                                {{-- Preview state --}}
+                                <div class="doc-dropzone-preview" id="docDropzonePreview" style="{{ $customer->id_proof_file ? 'display:flex;' : 'display:none;' }}">
+                                    <i class="fa-solid fa-file-circle-check text-success fs-3"></i>
+                                    <div class="doc-file-info">
+                                        <span class="doc-file-name" id="docFileName">
+                                            {{ $customer->id_proof_file ? basename($customer->id_proof_file) : '' }}
+                                        </span>
+                                        <div class="doc-file-actions-row">
+                                            @if($customer->id_proof_file)
+                                                <a href="{{ asset($customer->id_proof_file) }}" class="doc-file-action text-primary view-image" id="viewExistingDoc">
+                                                    <i class="fa-regular fa-eye"></i> View File
+                                                </a>
+                                            @endif
+                                            <span class="doc-file-action text-danger" id="removeDocFile" title="Change or remove file">
+                                                <i class="fa-solid fa-arrow-rotate-left"></i> Change File
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input
+                                type="file"
+                                class="d-none id_proof_file image-cropper @error('id_proof') is-invalid @enderror"
+                                name="id_proof"
+                                id="edit_id_proof_file"
+                                autocomplete="off"
+                                accept=".jpeg, .jpg, .png, .webp, .pdf">
+                            <img class="preview-img one d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Doc Preview">
+                            @error('id_proof')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            <span class="form-hint text-danger mt-1">* Upload front side of document (JPG, PNG, WEBP, PDF).</span>
+                        </div>
+                        @endif
+
+                        {{-- Address --}}
+                        @if(!in_array('32', toggleHideField()))
+                        <div class="col-12 form-group">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea
+                                class="form-control @error('address') is-invalid @enderror"
+                                name="address"
+                                id="address"
+                                rows="3"
+                                placeholder="Enter address">{{ old('address', $customer->address) }}</textarea>
+                            @error('address')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
+
+                        {{-- Remark --}}
+                        @if(!in_array('31', toggleHideField()))
+                        <div class="col-12 form-group">
+                            <label for="remark" class="form-label">Remark</label>
+                            <textarea
+                                class="form-control @error('remark') is-invalid @enderror"
+                                name="remark"
+                                id="remark"
+                                rows="3"
+                                placeholder="Enter Remark">{{ old('remark', $customer->remark) }}</textarea>
+                            @error('remark')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- 5. ACTION BUTTON BAR --}}
+            <div class="form-action-bar">
+                <a href="{{ route('learners') }}" class="btn-back-form">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Learners
+                </a>
+                <button type="submit" class="btn-submit-edit">
+                    <i class="fa-solid fa-floppy-disk"></i> Update Seat Info
+                </button>
+            </div>
+
         </form>
-    </div>
-    <div class="col-lg-3 order-1 order-md-2">
-        <div class="seatnumber">
-            <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$class}}" style="width:60px; display:block; margin:0 auto;">
-            @if($customer->seat_no)
-            <span class="d-block ">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no)}}</span>
-            @else
-            <span class="d-block ">General</span>
-            @endif
-            <div class="seat--plan">{{ $customer->plan_type_name}}</div>
-        </div>
     </div>
 </div>
 
-
-
 <script>
 $(document).ready(function () {
 
-    $("#plan_start_date_edit").on("change", function () {
-
-        let startDate = $(this).val();
-        let totalDays = parseInt($("#total_days").val()); // inclusive days
-
-        // If missing data, do nothing
-        if (!startDate || !totalDays || totalDays < 1) return;
-
-        let start = new Date(startDate);
-
-        // Inclusive means: add (days - 1)
-        start.setDate(start.getDate() + (totalDays - 1));
-
-        // Format to yyyy-mm-dd
-        let yyyy = start.getFullYear();
-        let mm = ("0" + (start.getMonth() + 1)).slice(-2);
-        let dd = ("0" + start.getDate()).slice(-2);
-
-        let formatted = `${yyyy}-${mm}-${dd}`;
-
-        // UPDATE THE END DATE
-        $("#plan_end_date_edit").val(formatted).trigger("change");
-
+    // 1. Profile Picture Avatar Upload Trigger & Preview
+    $('#avatarUploadTrigger').on('click', function (e) {
+        e.preventDefault();
+        $('#profile_picture_image').trigger('click');
     });
 
-});
+    function setAvatarPreview(src, title) {
+        if (src) {
+            $('#avatarCroppedPreview').attr('src', src).show();
+            $('#avatarDefaultIcon').hide();
+            $('#avatarStatusTitle').text(title || 'Photo selected');
+            $('#avatarSubtext').text('Click on avatar circle to change.');
+            if ($('#topSeatAvatarImg').length) {
+                $('#topSeatAvatarImg').attr('src', src).removeClass('avatar-seat-chair').addClass('avatar-user-photo');
+            }
+        }
+    }
+
+    // Live update student name in top seat header when name input changes
+    $('#name').on('input', function () {
+        const newName = $(this).val();
+        const seatPrefix = "{{ $customer->seat_no ? 'Seat No : ' . getSeatDisplayShortFloorName($customer->seat_no) : 'General Seat' }}";
+        $('.seat-title').text(seatPrefix + (newName ? ' : ' + newName : ''));
+    });
+
+    // Direct change event on profile_picture_image
+    $('#profile_picture_image').on('change', function () {
+        const file = this.files && this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                setAvatarPreview(e.target.result, 'New photo selected');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
 
-</script>
+    // Observer for Cropper image changes if cropper modifies sibling
+    const profileSibling = document.querySelector('#profile_picture_image ~ .preview-img');
+    if (profileSibling) {
+        const profileObserver = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                    const src = profileSibling.getAttribute('src') || profileSibling.src;
+                    if (src && src !== window.location.href) {
+                        setAvatarPreview(src, 'Photo uploaded');
+                    }
+                }
+            });
+            profileSibling.style.setProperty('display', 'none', 'important');
+        });
+        profileObserver.observe(profileSibling, { attributes: true, attributeFilter: ['src', 'style'] });
+    }
 
-<script>
-$(document).ready(function () {
+    // Fast update and hide on crop button click
+    $(document).on('click', '.cropbtn', function () {
+        setTimeout(function () {
+            const pImg = document.querySelector('#profile_picture_image ~ .preview-img');
+            if (pImg) {
+                pImg.style.setProperty('display', 'none', 'important');
+                if (pImg.src && pImg.src !== window.location.href) {
+                    setAvatarPreview(pImg.src, 'Photo uploaded');
+                }
+            }
+            const dImg = document.querySelector('.preview-img.one');
+            if (dImg) {
+                dImg.style.setProperty('display', 'none', 'important');
+                if (dImg.src && dImg.src !== window.location.href) {
+                    $('#docFileName').text('Document Attached');
+                    $('#docDropzoneContent').hide();
+                    $('#docDropzonePreview').css('display', 'flex');
+                }
+            }
+        }, 100);
+    });
 
-    // Intercept all "View" image links
-    $(document).on("click", 'a.view-image, a[target="_blank"]', function (e) {
 
-        const imageUrl = $(this).attr("href");
+    // 2. ID Proof Document Drag & Drop and Enable/Disable Logic
 
-        // Only handle image links
-        if (!imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+    function updateIdProofUploadState() {
+        const proofSelected = $('#edit_id_proof_name').val();
+        const $dropzone = $('#docDropzone');
+        const $fileInput = $('#edit_id_proof_file');
+        const $hint = $('#docDropzoneHint');
+
+        if (proofSelected && proofSelected !== '') {
+            $dropzone.removeClass('disabled').attr('title', 'Click or drag file to upload');
+            $fileInput.prop('disabled', false);
+            $hint.text('Supports JPG, PNG, WEBP, PDF (Max 5 MB)');
+        } else {
+            $dropzone.addClass('disabled').attr('title', 'Select Id Proof type above to enable upload');
+            $fileInput.prop('disabled', true);
+            $hint.text('Select ID proof type above to enable upload');
+            
+            // Only hide preview if no existing file on record
+            @if(!$customer->id_proof_file)
+                $('#docDropzoneContent').show();
+                $('#docDropzonePreview').hide();
+                $fileInput.val('');
+            @endif
+        }
+    }
+
+    // Initialize state on page load
+    updateIdProofUploadState();
+
+    // Listen to changes on id_proof_name
+    $(document).on('change', '#edit_id_proof_name', function () {
+        updateIdProofUploadState();
+    });
+
+    // Dropzone click handler
+    $('#docDropzone').on('click', function (e) {
+        if ($(e.target).closest('#removeDocFile').length || $(e.target).closest('#viewExistingDoc').length) {
             return;
         }
 
-        e.preventDefault();
+        if ($(this).hasClass('disabled')) {
+            $('#edit_id_proof_name').focus().addClass('is-invalid');
+            setTimeout(function () {
+                $('#edit_id_proof_name').removeClass('is-invalid');
+            }, 1500);
+            return;
+        }
 
-        $("#modalImage").attr("src", imageUrl);
-        $("#imageViewModal").fadeIn(200);
+        $('#edit_id_proof_file').trigger('click');
+    });
+
+    // Remove or change document file
+    $('#removeDocFile').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('#edit_id_proof_file').val('');
+        $('#docDropzoneContent').show();
+        $('#docDropzonePreview').hide();
+        $('.preview-img.one').hide().removeAttr('src');
+    });
+
+    // File input change event
+    $(document).on('change', '#edit_id_proof_file', function () {
+        const file = this.files && this.files[0];
+        if (file) {
+            $('#docFileName').text(file.name);
+            $('#docDropzoneContent').hide();
+            $('#docDropzonePreview').css('display', 'flex');
+        }
+    });
+
+    // Drag & Drop handlers for docDropzone
+    const docDropzoneEl = document.getElementById('docDropzone');
+    if (docDropzoneEl) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            docDropzoneEl.addEventListener(eventName, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!$('#docDropzone').hasClass('disabled')) {
+                    $('#docDropzone').addClass('dragover');
+                }
+            }, false);
+        });
+
+        ['dragleave', 'dragend'].forEach(eventName => {
+            docDropzoneEl.addEventListener(eventName, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $('#docDropzone').removeClass('dragover');
+            }, false);
+        });
+
+        docDropzoneEl.addEventListener('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $('#docDropzone').removeClass('dragover');
+
+            if ($('#docDropzone').hasClass('disabled')) {
+                $('#edit_id_proof_name').focus().addClass('is-invalid');
+                setTimeout(function () {
+                    $('#edit_id_proof_name').removeClass('is-invalid');
+                }, 1500);
+                return;
+            }
+
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                const fileInput = document.getElementById('edit_id_proof_file');
+                if (fileInput) {
+                    const transfer = new DataTransfer();
+                    transfer.items.add(files[0]);
+                    fileInput.files = transfer.files;
+                    $(fileInput).trigger('change');
+                }
+            }
+        }, false);
+    }
+
+    // 4. Modal Image Viewer for view-image links
+    $(document).on("click", 'a.view-image', function (e) {
+        const imageUrl = $(this).attr("href");
+
+        // If it's a PDF, allow normal browser view/download
+        if (imageUrl.match(/\.pdf$/i)) {
+            return true;
+        }
+
+        if (imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            e.preventDefault();
+            $("#modalImage").attr("src", imageUrl);
+            $("#imageViewModal").fadeIn(200);
+        }
     });
 
     // Close modal
@@ -346,7 +731,5 @@ $(document).ready(function () {
 
 });
 </script>
-
-
 
 @endsection

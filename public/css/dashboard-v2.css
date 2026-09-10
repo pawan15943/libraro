@@ -1,0 +1,718 @@
+/**
+ * Libraro Next-Gen Dashboard (V2) Stylesheet
+ * Brand Primary: #18225f (Navy Blue)
+ * Brand Accents: #34939F (Teal), #22c55e (Green), #f59e0b (Amber), #ef4444 (Red), #6366f1 (Indigo)
+ * Typography: 'Outfit', sans-serif
+ * Strictly Scoped under .libraro-dashboard-v2
+ */
+
+.libraro-dashboard-v2 {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+/* ==========================================================================
+   1. Dashboard Top Header & Mode Switcher
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding: 0.5rem 0 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.libraro-dashboard-v2 .v2-greeting-title {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #18225f;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.libraro-dashboard-v2 .v2-greeting-subtitle {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin-bottom: 0;
+}
+
+.libraro-dashboard-v2 .v2-mode-switcher-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 50px;
+    color: #18225f;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.libraro-dashboard-v2 .v2-mode-switcher-btn:hover {
+    background: #18225f;
+    color: #ffffff;
+    border-color: #18225f;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.18);
+}
+
+.libraro-dashboard-v2 .v2-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.libraro-dashboard-v2 .v2-badge-v2 {
+    background: linear-gradient(135deg, #34939F 0%, #18225f 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(52, 147, 159, 0.25);
+}
+
+/* ==========================================================================
+   2. KPI Command Ribbon (Top 4 Metrics)
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.libraro-dashboard-v2 .v2-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(24, 34, 95, 0.07);
+    border-color: #cbd5e1;
+}
+
+.libraro-dashboard-v2 .v2-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+}
+
+.libraro-dashboard-v2 .v2-kpi-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #64748b;
+}
+
+.libraro-dashboard-v2 .v2-kpi-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.libraro-dashboard-v2 .v2-kpi-val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #18225f;
+    line-height: 1.1;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.5px;
+}
+
+.libraro-dashboard-v2 .v2-kpi-subtext {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Color Themes for KPI Cards */
+.libraro-dashboard-v2 .kpi-teal .v2-kpi-icon {
+    background: #e6f5f7;
+    color: #34939F;
+}
+
+.libraro-dashboard-v2 .kpi-navy .v2-kpi-icon {
+    background: #eff6ff;
+    color: #18225f;
+}
+
+.libraro-dashboard-v2 .kpi-green .v2-kpi-icon {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.libraro-dashboard-v2 .kpi-amber .v2-kpi-icon {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.libraro-dashboard-v2 .kpi-red .v2-kpi-icon {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+/* Progress bar inside KPI */
+.libraro-dashboard-v2 .v2-mini-progress {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0.5rem 0 0.4rem;
+}
+
+.libraro-dashboard-v2 .v2-mini-progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #34939F, #18225f);
+}
+
+/* ==========================================================================
+   3. Quick Operational Launchpad
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-launchpad-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+}
+
+.libraro-dashboard-v2 .v2-launchpad-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.libraro-dashboard-v2 .v2-launchpad-row::-webkit-scrollbar {
+    height: 4px;
+}
+
+.libraro-dashboard-v2 .v2-launchpad-row::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.libraro-dashboard-v2 .v2-launch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #18225f;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.libraro-dashboard-v2 .v2-launch-btn:hover {
+    background: #18225f;
+    color: #ffffff !important;
+    border-color: #18225f;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2);
+    transform: translateY(-1px);
+}
+
+.libraro-dashboard-v2 .v2-launch-btn.btn-primary-action {
+    background: #18225f;
+    color: #ffffff !important;
+    border-color: #18225f;
+}
+
+.libraro-dashboard-v2 .v2-launch-btn.btn-primary-action:hover {
+    background: #101744;
+}
+
+/* ==========================================================================
+   4. Urgent Action Hub (Do This Today)
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+    margin-bottom: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.libraro-dashboard-v2 .v2-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.libraro-dashboard-v2 .v2-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.libraro-dashboard-v2 .v2-section-title i {
+    color: #34939F;
+    font-size: 15px;
+}
+
+.libraro-dashboard-v2 .v2-action-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 380px;
+}
+
+.libraro-dashboard-v2 .v2-action-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.libraro-dashboard-v2 .v2-action-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.libraro-dashboard-v2 .v2-action-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.libraro-dashboard-v2 .v2-action-item:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.06);
+    transform: translateY(-1px);
+}
+
+.libraro-dashboard-v2 .v2-action-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.libraro-dashboard-v2 .v2-action-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #18225f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.libraro-dashboard-v2 .v2-action-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.libraro-dashboard-v2 .v2-pill-tag {
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 10.5px;
+}
+
+.libraro-dashboard-v2 .v2-pill-tag.seat {
+    background: #eff6ff;
+    color: #18225f;
+    border: 1px solid #dbeafe;
+}
+
+.libraro-dashboard-v2 .v2-pill-tag.due {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.libraro-dashboard-v2 .v2-pill-tag.expiry {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+/* WhatsApp Reminder Button */
+.libraro-dashboard-v2 .v2-btn-whatsapp {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.libraro-dashboard-v2 .v2-btn-whatsapp:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.libraro-dashboard-v2 .v2-btn-action-small {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none !important;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.libraro-dashboard-v2 .v2-btn-action-small.primary {
+    background: #18225f;
+    color: #ffffff;
+    border: 1px solid #18225f;
+}
+
+.libraro-dashboard-v2 .v2-btn-action-small.primary:hover {
+    background: #101744;
+}
+
+/* Empty State inside Action Card */
+.libraro-dashboard-v2 .v2-empty-state-card {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #64748b;
+}
+
+.libraro-dashboard-v2 .v2-empty-state-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.6rem;
+    font-size: 18px;
+}
+
+/* ==========================================================================
+   5. Shift & Slot Availability Board
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-shift-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.libraro-dashboard-v2 .v2-shift-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.libraro-dashboard-v2 .v2-shift-card:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.05);
+    transform: translateY(-2px);
+}
+
+.libraro-dashboard-v2 .v2-shift-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.libraro-dashboard-v2 .v2-shift-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+}
+
+.libraro-dashboard-v2 .v2-shift-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: #e6f5f7;
+    color: #34939F;
+    border: 1px solid rgba(52, 147, 159, 0.3);
+}
+
+.libraro-dashboard-v2 .v2-shift-vacant-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #10b981;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.libraro-dashboard-v2 .v2-shift-vacant-label {
+    font-size: 11px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ==========================================================================
+   6. Financial Snapshot Cards & Tabs
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-finance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.05);
+}
+
+.libraro-dashboard-v2 .v2-finance-tile-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #18225f;
+    line-height: 1.1;
+    margin: 0;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile-val.green {
+    color: #10b981;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile-val.red {
+    color: #ef4444;
+}
+
+.libraro-dashboard-v2 .v2-finance-tile-val.amber {
+    color: #f59e0b;
+}
+
+/* Navigation Tabs inside Section */
+.libraro-dashboard-v2 .v2-nav-tabs {
+    border-bottom: none;
+    gap: 6px;
+    display: flex;
+}
+
+.libraro-dashboard-v2 .v2-tab-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 5px 12px;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.libraro-dashboard-v2 .v2-tab-link.active,
+.libraro-dashboard-v2 .v2-tab-link:hover {
+    background: #18225f;
+    color: #ffffff !important;
+    border-color: #18225f;
+}
+
+/* ==========================================================================
+   7. Live Operational Activity Feed
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+    font-size: 12.5px;
+}
+
+.libraro-dashboard-v2 .v2-feed-item:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+.libraro-dashboard-v2 .v2-feed-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+
+.libraro-dashboard-v2 .v2-feed-content {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+}
+
+.libraro-dashboard-v2 .v2-feed-time {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   8. Dynamic Year/Month Filter Bar
+   ========================================================================== */
+
+.libraro-dashboard-v2 .v2-dynamic-filter-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.libraro-dashboard-v2 .v2-filter-select {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 12.5px !important;
+    font-weight: 600;
+    color: #18225f;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    height: 36px;
+    padding: 0 28px 0 10px;
+    cursor: pointer;
+}
+
+.libraro-dashboard-v2 .v2-filter-select:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+    outline: none;
+}
+
+/* ==========================================================================
+   9. Mobile Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 991px) {
+    .libraro-dashboard-v2 .v2-kpi-val {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .libraro-dashboard-v2 .v2-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .libraro-dashboard-v2 .v2-greeting-title {
+        font-size: 1.25rem;
+    }
+
+    .libraro-dashboard-v2 .v2-shift-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .libraro-dashboard-v2 .v2-finance-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .libraro-dashboard-v2 .v2-shift-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .libraro-dashboard-v2 .v2-finance-grid {
+        grid-template-columns: 1fr;
+    }
+}

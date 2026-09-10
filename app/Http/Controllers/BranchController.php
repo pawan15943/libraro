@@ -65,20 +65,26 @@ class BranchController extends Controller
 
           $branches = [];
 
-            if (Auth::guard('library')->check()) {
-                $user = Auth::guard('library')->user();
-                $branches = $user->branches; // Assuming a 'branches' relationship exists
-            }elseif (Auth::guard('library_user')->check()) {
-                $user = Auth::guard('library_user')->user();
+        if (Auth::guard('library')->check()) {
+            $user = Auth::guard('library')->user();
+            $branches = Branch::where('library_id', $user->id)
+                ->with(['hour', 'planTypes.price'])
+                ->get();
+        } elseif (Auth::guard('library_user')->check()) {
+            $user = Auth::guard('library_user')->user();
 
-                // Assuming $user->branch_id is already an array
-                $branchIds = $user->branch_id;
+            // Assuming $user->branch_id is already an array
+            $branchIds = $user->branch_id;
 
-                if (is_array($branchIds)) {
-                    $branches = Branch::whereIn('id', $branchIds)->get();
-                }
+            if (is_array($branchIds)) {
+                $branches = Branch::whereIn('id', $branchIds)
+                    ->with(['hour', 'planTypes.price'])
+                    ->get();
             }
-        return view('register.branch-list',compact('branches'));
+        }
+        $libraryId = getLibraryId();
+        $plans = Plan::where('library_id', $libraryId)->get();
+        return view('register.branch-list', compact('branches', 'plans'));
     }
     public function branchForm($id = null)
     {

@@ -32,23 +32,68 @@ class QrEntryController extends Controller
 {
     public function downloadBranchQR($uuid)
     {
-        
         $url = route('qr.branch', $uuid);
 
-        // Generate QR as SVG       
-     
-        $qrCode = base64_encode(
-        QrCode::format('png')
-            ->size(550)
-            ->margin(2)
-            ->generate($url)
-            );
-        $branch=Branch::where('uuid', $uuid)->select('name','display_name','mobile','library_id','library_address','mobile')->first();
-        $library_name=Library::where('id',$branch->library_id)->select('library_name')->first();
-        $pdf = PDF::loadView('library.branch-qr', compact('qrCode', 'uuid','branch','library_name'))
-                ->setPaper('a4', 'portrait');
+        // Generate sharp PNG QR code using BaconQrCode matrix + GD (100% compatible, no Imagick required)
+        $qr = \BaconQrCode\Encoder\Encoder::encode($url, \BaconQrCode\Common\ErrorCorrectionLevel::M());
+        $matrix = $qr->getMatrix();
+        $matrixWidth = $matrix->getWidth();
+        $matrixHeight = $matrix->getHeight();
+        $scale = 10;
+        $quietZone = 2;
+        $targetWidth = ($matrixWidth + ($quietZone * 2)) * $scale;
+        $targetHeight = ($matrixHeight + ($quietZone * 2)) * $scale;
 
-        return $pdf->download("branch-qr-{$uuid}.pdf");
+        $img = imagecreatetruecolor($targetWidth, $targetHeight);
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        imagefilledrectangle($img, 0, 0, $targetWidth, $targetHeight, $white);
+
+        for ($y = 0; $y < $matrixHeight; ++$y) {
+            for ($x = 0; $x < $matrixWidth; ++$x) {
+                if ($matrix->get($x, $y) === 1) {
+                    $startX = ($x + $quietZone) * $scale;
+                    $startY = ($y + $quietZone) * $scale;
+                    imagefilledrectangle($img, $startX, $startY, $startX + $scale - 1, $startY + $scale - 1, $black);
+                }
+            }
+        }
+
+        ob_start();
+        imagepng($img);
+        $pngData = ob_get_clean();
+        imagedestroy($img);
+
+        $qrCode = base64_encode($pngData);
+
+        $branch = Branch::where('uuid', $uuid)
+            ->with([
+                'hour',
+                'planTypes' => function ($query) {
+                    $query->withoutGlobalScope('branch')->with('price');
+                },
+                'library'
+            ])
+            ->firstOrFail();
+
+        $library_name = $branch->library->library_name ?? (Library::where('id', $branch->library_id)->value('library_name') ?? $branch->name);
+
+        $plans = Plan::withoutGlobalScopes()
+            ->where('library_id', $branch->library_id)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $pdf = Pdf::loadView('library.branch-qr', compact('qrCode', 'uuid', 'branch', 'library_name', 'plans'))
+            ->setPaper('a4', 'portrait')
+            ->setOption(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true]);
+
+        $fileName = 'Branch-' . \Illuminate\Support\Str::slug($branch->display_name ?? $branch->name) . '-Poster.pdf';
+
+        if (request()->query('download')) {
+            return $pdf->download($fileName);
+        }
+
+        return $pdf->stream($fileName);
     }
    public function showOptions($uuid)
     {

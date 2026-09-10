@@ -382,34 +382,48 @@ class LibraryController extends Controller
                 return redirect($redirectUrl);
             }
     }
-    public function choosePlan()
+    public function choosePlan(Request $request)
     {
+        $premiumSub = Subscription::orderBy('id', 'DESC')->first();
+        $features = DB::table('subscription_plan_features')->where('feature_status', 1)->get();
+        $library = getLibrary();
         
-        
-      
-        $premiumSub=Subscription::orderBy('id','DESC')->first();
-        $features=DB::table('subscription_plan_features')->where('feature_status',1)->get();
-        $library=getLibrary();
-        
-        if($library->library_type){
-              $subscriptions = Subscription::where('id','>=',$library->library_type)->with('permissions')->get();
-        }else{
-              $subscriptions = Subscription::with('permissions')->get();
+        $action = $request->get('action', 'upgrade');
+
+        if ($action === 'renew') {
+            // Renewal Mode: Show ONLY current plan for renewal
+            if ($library && $library->library_type) {
+                $subscriptions = Subscription::where('id', $library->library_type)->with('permissions')->get();
+            } else {
+                $subscriptions = Subscription::with('permissions')->get();
+            }
+        } else {
+            // Upgrade Mode: Show ONLY higher plans (id > library_type)
+            if ($library && $library->library_type) {
+                $subscriptions = Subscription::where('id', '>', $library->library_type)->with('permissions')->get();
+                // If library is already on highest plan (ID 3), fallback to current plan
+                if ($subscriptions->isEmpty()) {
+                    $subscriptions = Subscription::where('id', $library->library_type)->with('permissions')->get();
+                }
+            } else {
+                $subscriptions = Subscription::with('permissions')->get();
+            }
         }
 
-        if($library->library_type==2 || $library->library_type==1){
-               $month=[2=>'1 YEARLY',5=>'2 YEARLY'];
-        }else{
-            $month=[1=>'1 MONTHLY',3=>'3 MONTHLY',4=>'6 MONTHLY',2=>'1 YEARLY',5=>'2 YEARLY'];
+        // Billing duration logic: keep existing renewal vs new subscription behavior
+        $hasPaidBefore = $library ? LibraryTransaction::where('library_id', $library->id)->where('is_paid', 1)->exists() : false;
+        if ($library && ($library->library_type == 2 || $library->library_type == 1) && $hasPaidBefore) {
+            $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+        } else {
+            $month = [1 => '1 MONTHLY', 3 => '3 MONTHLY', 4 => '6 MONTHLY', 2 => '1 YEARLY', 5 => '2 YEARLY'];
         }
-       
-      
-         if($library->is_paid==1 && (Branch::where('library_id',$library->id)->count()==0)){
-             $redirectUrl = $this->libraryService->checkLibraryStatus();
-         
+
+        if ($library && $library->is_paid == 1 && (Branch::where('library_id', $library->id)->count() == 0)) {
+            $redirectUrl = $this->libraryService->checkLibraryStatus();
             return redirect($redirectUrl);
         }
-        return view('register.plan', compact('subscriptions','premiumSub','features','month'));
+
+        return view('register.plan', compact('subscriptions', 'premiumSub', 'features', 'month', 'action'));
     }
 
     // public function store(Request $request,RegisterLibrary $action)
@@ -1464,7 +1478,7 @@ class LibraryController extends Controller
         ->with('subscription.permissions')  // Fetch associated subscription and permissions
         ->first();
         $plan=Subscription::where('id',$data->library_type)->first();
-        $transaction=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1)->get();
+        $transaction=LibraryTransaction::where('library_id',getAuthenticatedUser()->id)->where('is_paid',1)->orderBy('id', 'desc')->get();
         return view('library.transaction',compact('transaction','plan','data'));
     }
     public function myplan(){
@@ -1976,7 +1990,7 @@ class LibraryController extends Controller
         }
 
         // Include library_id
-        $validatedData['library_id'] = auth()->id(); // or replace with the relevant library ID source
+        $validatedData['library_id'] = getLibraryId() ?? auth()->id();
 
         // Save data to the database
         LibrarySetting::updateOrCreate(
@@ -2054,10 +2068,16 @@ class LibraryController extends Controller
     public function expenceList(Request $request)
     {
         $data = Expense::all();
-        $expences = $this->expenseListBaseQuery($request)->paginate(10);
+        $query = $this->expenseListBaseQuery($request);
+        $totalExpenseAmount = (clone $query)->sum('amount');
+        $thisMonthExpense = LearnerTransactionActivity::where('payment_type', 'EXPENSE')
+            ->whereMonth('date', date('m'))
+            ->whereYear('date', date('Y'))
+            ->sum('amount');
+        $expences = $query->paginate(10);
         $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
 
-        return view('master.expense-list', compact('expences', 'data', 'showEmptyState'));
+        return view('master.expense-list', compact('expences', 'data', 'showEmptyState', 'totalExpenseAmount', 'thisMonthExpense'));
     }
 
     /**
@@ -2066,13 +2086,19 @@ class LibraryController extends Controller
     public function expenceListPage(Request $request)
     {
         $data = Expense::all();
-        $expences = $this->expenseListBaseQuery($request)->paginate(10);
+        $query = $this->expenseListBaseQuery($request);
+        $totalExpenseAmount = (clone $query)->sum('amount');
+        $thisMonthExpense = LearnerTransactionActivity::where('payment_type', 'EXPENSE')
+            ->whereMonth('date', date('m'))
+            ->whereYear('date', date('Y'))
+            ->sum('amount');
+        $expences = $query->paginate(10);
         $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
 
         if ($showEmptyState) {
             $html = view('master.partials.expense-list-empty-state', compact('data'))->render();
         } else {
-            $html = view('master.partials.expense-list-non-empty-body', compact('expences', 'data'))->render();
+            $html = view('master.partials.expense-list-non-empty-body', compact('expences', 'data', 'totalExpenseAmount', 'thisMonthExpense'))->render();
         }
 
         return response()->json(['html' => $html]);

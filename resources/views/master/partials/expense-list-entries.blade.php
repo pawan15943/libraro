@@ -1,96 +1,152 @@
-<div class="row">
-    <div class="col-lg-12 ">
-        <p>
-            <b><span id="expenseRecordsMeta">{{ $expences->total() }} Records — showing {{ $expences->perPage() }} per page</span></b>
-        </p>
-    </div>
-</div>
-
-<div class="row g-2 mb-4" id="expenseRowsContainer">
-    @forelse($expences as $exp)
-    <div class="col-lg-12">
-        <div class="revenue-info">
-            <ul>
-                <li style="width: 5%;">
-                    <div class="icon">
-                        <i class="fa fa-long-arrow-left text-danger"></i>
-                    </div>
-                </li>
-                <li style="width: 20%;">
-                    <span>Expense Name</span>
-                    <p class="uppercase truncate">{{ $exp->particular }}</p>
-                </li>
-                <li>
-                    <span>Amount</span>
-                    <p>{{ number_format($exp->amount, 2) }}</p>
-                </li>
-                <li>
-                    <span>Payment Mode</span>
-                    <p>{{ $exp->payment_mode }}</p>
-                </li>
-                <li>
-                    <span>Paid On</span>
-                    <p>{{ \Carbon\Carbon::parse($exp->date)->format('d M, Y') }}</p>
-                </li>
-                <li style="width:8%;">
-                    <span>Action</span>
-                    <p>
-                    <form id="delete-form-{{ $exp->id }}"
-                        action="{{ route('add.expenses.destroy', $exp->id) }}"
-                        method="POST"
-                        style="display: none;">
-                        @csrf
-                        @method('DELETE')
-                    </form>
-
-                    <a type="button" href="javascript:;"
-                        onclick="confirmDelete({{ $exp->id }})">
-                        Delete
-                    </a>
-
-                    </p>
-                </li>
-
-            </ul>
-        </div>
+<div class="expense-table-card mb-4">
+    <div class="table-card-header">
+        <h4 class="table-card-title">
+            <i class="fa-solid fa-list-check"></i> Expense History
+        </h4>
+        <span class="table-card-meta">
+            Showing <b>{{ $expences->firstItem() ?? 0 }} - {{ $expences->lastItem() ?? 0 }}</b> of <b>{{ $expences->total() }}</b> records
+        </span>
     </div>
 
-    @empty
+    <div class="table-responsive">
+        <table class="table expense-custom-table text-center" id="datatable">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">S.No.</th>
+                    <th style="text-align: left; padding-left: 20px;">Expense / Particular</th>
+                    <th>Amount</th>
+                    <th>Payment Mode</th>
+                    <th>Paid On</th>
+                    <th style="width: 100px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($expences as $key => $exp)
+                @php
+                    $mode = strtoupper($exp->payment_mode ?? '');
+                @endphp
+                <tr>
+                    {{-- S.No --}}
+                    <td data-label="S.No.">
+                        <span class="sno-pill">{{ ($expences->currentPage() - 1) * $expences->perPage() + $loop->iteration }}</span>
+                    </td>
 
-    <div class="col-lg-12 text-center">
-        <p>No expense records found.</p>
+                    {{-- Particulars --}}
+                    <td data-label="Expense / Particular" style="text-align: left; padding-left: 20px;">
+                        <div class="expense-particular-wrap">
+                            <div class="expense-avatar-icon">
+                                <i class="fa-solid fa-arrow-trend-down"></i>
+                            </div>
+                            <div>
+                                <p class="expense-name-text">{{ $exp->particular }}</p>
+                                @if(!empty($exp->transaction_id))
+                                    <small class="text-muted font-11">Ref: {{ $exp->transaction_id }}</small>
+                                @endif
+                            </div>
+                        </div>
+                    </td>
+
+                    {{-- Amount --}}
+                    <td data-label="Amount">
+                        <span class="expense-amount-badge">
+                            ₹{{ number_format($exp->amount, 2) }}
+                        </span>
+                    </td>
+
+                    {{-- Payment Mode --}}
+                    <td data-label="Payment Mode">
+                        @if($mode === 'ONLINE' || $mode === '1')
+                            <span class="mode-pill-badge mode-badge-online">
+                                <i class="fa-solid fa-globe"></i> Online
+                            </span>
+                        @elseif($mode === 'OFFLINE' || $mode === '2')
+                            <span class="mode-pill-badge mode-badge-offline">
+                                <i class="fa-solid fa-money-bill-wave"></i> Offline
+                            </span>
+                        @elseif($mode === 'PAYLATER' || $mode === '3')
+                            <span class="mode-pill-badge mode-badge-paylater">
+                                <i class="fa-regular fa-clock"></i> Pay Later
+                            </span>
+                        @else
+                            <span class="mode-pill-badge mode-badge-default">
+                                {{ $exp->payment_mode }}
+                            </span>
+                        @endif
+                    </td>
+
+                    {{-- Paid On --}}
+                    <td data-label="Paid On">
+                        <span class="expense-date-text">
+                            <i class="fa-regular fa-calendar-days"></i> {{ \Carbon\Carbon::parse($exp->date)->format('d M, Y') }}
+                        </span>
+                    </td>
+
+                    {{-- Action --}}
+                    <td data-label="Action">
+                        <ul class="action-btn-group">
+                            <li>
+                                <button type="button" 
+                                    class="action-btn action-btn-delete" 
+                                    onclick="confirmDelete({{ $exp->id }})" 
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="top"
+                                    title="Delete Expense">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="py-5 text-center text-muted">
+                        <i class="fa-solid fa-folder-open fa-2x mb-2 d-block text-secondary"></i>
+                        <span>No expense records found matching the criteria.</span>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
-    @endforelse
-</div>
-
-@if ($expences->lastPage() > 1)
-<ul class="paginations mt-4 expense-pagination">
-    {{-- Prev --}}
-    <li>
-        <a href="{{ $expences->onFirstPage() ? '#' : $expences->previousPageUrl() }}" class="w-auto px-3 text-muted expense-page-link">Prev</a>
-    </li>
-
-    @if ($expences->currentPage() > 3)
-    <li><a href="{{ $expences->url(1) }}" class="expense-page-link">1</a></li>
-    <li><span>...</span></li>
-    @endif
-
-    @for ($i = max(1, $expences->currentPage() - 2); $i <= min($expences->lastPage(), $expences->currentPage() + 2); $i++)
+    {{-- Pagination --}}
+    @if ($expences->lastPage() > 1)
+    <ul class="expense-pagination">
+        {{-- Prev --}}
         <li>
-            <a href="{{ $expences->url($i) }}" class="expense-page-link {{ $expences->currentPage() == $i ? 'active' : '' }}">
-                {{ $i }}
+            <a href="{{ $expences->onFirstPage() ? '#' : $expences->previousPageUrl() }}" 
+               class="expense-page-link {{ $expences->onFirstPage() ? 'disabled' : '' }}"
+               aria-label="Previous">
+               <i class="fa-solid fa-chevron-left"></i>
             </a>
         </li>
-    @endfor
 
-    @if ($expences->currentPage() < $expences->lastPage() - 2)
+        @if ($expences->currentPage() > 3)
+            <li><a href="{{ $expences->url(1) }}" class="expense-page-link">1</a></li>
+            <li><span>...</span></li>
+        @endif
+
+        @for ($i = max(1, $expences->currentPage() - 2); $i <= min($expences->lastPage(), $expences->currentPage() + 2); $i++)
+            <li>
+                <a href="{{ $expences->url($i) }}" class="expense-page-link {{ $expences->currentPage() == $i ? 'active' : '' }}">
+                    {{ $i }}
+                </a>
+            </li>
+        @endfor
+
+        @if ($expences->currentPage() < $expences->lastPage() - 2)
             <li><span>...</span></li>
             <li><a href="{{ $expences->url($expences->lastPage()) }}" class="expense-page-link">{{ $expences->lastPage() }}</a></li>
-    @endif
+        @endif
 
-    <li>
-        <a href="{{ $expences->hasMorePages() ? $expences->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted expense-page-link">Next</a>
-    </li>
-</ul>
-@endif
+        {{-- Next --}}
+        <li>
+            <a href="{{ $expences->hasMorePages() ? $expences->nextPageUrl() : '#' }}" 
+               class="expense-page-link {{ !$expences->hasMorePages() ? 'disabled' : '' }}"
+               aria-label="Next">
+               <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+    @endif
+</div>

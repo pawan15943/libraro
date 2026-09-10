@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* Libraro AI Assistant Chat Widget Styles - Scoped strictly under .custom-libraro-ai-widget */
+
+.custom-libraro-ai-widget {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    z-index: 999999 !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', system-ui, -apple-system, sans-serif !important;
+    pointer-events: auto !important;
+}
+
+/* Floating Trigger Button */
+.custom-libraro-ai-widget .ai-trigger-btn {
+    width: 62px !important;
+    height: 62px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #18225f 0%, #2b3990 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 8px 25px rgba(24, 34, 95, 0.45) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.65rem !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    position: relative !important;
+}
+
+.custom-libraro-ai-widget .ai-trigger-btn:hover {
+    transform: scale(1.08) translateY(-3px) !important;
+    box-shadow: 0 12px 32px rgba(24, 34, 95, 0.55) !important;
+}
+
+.custom-libraro-ai-widget .ai-trigger-badge {
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    background: #34939F !important;
+    color: #ffffff !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    padding: 3px 7px !important;
+    border-radius: 12px !important;
+    border: 2px solid #ffffff !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Chat Drawer Container */
+.custom-libraro-ai-widget .ai-chat-box {
+    display: none;
+    position: fixed !important;
+    bottom: 96px !important;
+    right: 24px !important;
+    width: 440px !important;
+    max-width: calc(100vw - 32px) !important;
+    height: 620px !important;
+    max-height: calc(100vh - 110px) !important;
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28) !important;
+    border: 1px solid #cbd5e1 !important;
+    overflow: hidden !important;
+    flex-direction: column !important;
+    z-index: 9999999 !important;
+    animation: aiSlideUp 0.3s ease forwards;
+}
+
+.custom-libraro-ai-widget .ai-chat-box.active {
+    display: flex !important;
+}
+
+@keyframes aiSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Chat Header */
+.custom-libraro-ai-widget .ai-chat-header {
+    background: linear-gradient(135deg, #18225f 0%, #1e296b 100%) !important;
+    color: #ffffff !important;
+    padding: 14px 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.custom-libraro-ai-widget .ai-chat-header-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.custom-libraro-ai-widget .ai-chat-header-title h5 {
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-header-sub {
+    font-size: 0.76rem !important;
+    color: #cbd5e1 !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-header-btn {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    transition: all 0.2s !important;
+    padding: 6px 10px !important;
+}
+
+.custom-libraro-ai-widget .ai-header-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Collapsible Top Wizard Bar */
+.custom-libraro-ai-widget .ai-wizard-bar {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    transition: all 0.3s ease !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-bar.collapsed {
+    padding: 8px 16px !important;
+    background: #f1f5f9 !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-bar.collapsed .ai-wizard-step {
+    display: none !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-step-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-step-title {
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    color: #18225f !important;
+    line-height: 1.4 !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-label {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    color: #334155 !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-select {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    background-color: #ffffff !important;
+    padding: 8px 12px !important;
+    outline: none !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-select option {
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+    padding: 6px 10px !important;
+}
+
+.custom-libraro-ai-widget .ai-wizard-select:focus {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
+}
+
+.custom-libraro-ai-widget .ai-lang-wizard-btn {
+    border-color: #18225f !important;
+    color: #18225f !important;
+    font-weight: 700 !important;
+    border-radius: 18px !important;
+    padding: 6px 12px !important;
+    font-size: 0.88rem !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+    transition: all 0.2s !important;
+}
+
+.custom-libraro-ai-widget .ai-lang-wizard-btn:hover {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+}
+
+/* Chat Body / Messages */
+.custom-libraro-ai-widget .ai-chat-body {
+    flex: 1 !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-msg {
+    max-width: 92% !important;
+    padding: 12px 16px !important;
+    border-radius: 16px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.65 !important;
+    word-break: break-word !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-msg.user {
+    align-self: flex-end !important;
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-bottom-right-radius: 4px !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2) !important;
+}
+
+.custom-libraro-ai-widget .ai-msg.assistant {
+    align-self: flex-start !important;
+    width: 95% !important;
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+    border-bottom-left-radius: 4px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Action Buttons below response */
+.custom-libraro-ai-widget .ai-action-pills {
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+    flex-wrap: wrap !important;
+}
+
+.custom-libraro-ai-widget .ai-action-pill-btn {
+    background: #ffffff !important;
+    color: #18225f !important;
+    border: 1px solid #18225f !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    padding: 4px 12px !important;
+    border-radius: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-action-pill-btn:hover {
+    background: #18225f !important;
+    color: #ffffff !important;
+}
+
+/* Footer Input */
+.custom-libraro-ai-widget .ai-chat-footer {
+    padding: 10px 14px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.custom-libraro-ai-widget .ai-input {
+    flex: 1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 20px !important;
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+    outline: none !important;
+    height: 42px !important;
+    background: #f8fafc !important;
+    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+}
+
+.custom-libraro-ai-widget .ai-input:focus {
+    border-color: #18225f !important;
+    background: #ffffff !important;
+}
+
+.custom-libraro-ai-widget .ai-send-btn {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
+    transition: background 0.2s !important;
+}
+
+.custom-libraro-ai-widget .ai-send-btn:hover {
+    background: #2b3990 !important;
+}
+
+/* Typing Indicator Animation */
+.custom-libraro-ai-widget .ai-typing {
+    display: flex !important;
+    gap: 5px !important;
+    padding: 10px 14px !important;
+    align-self: flex-start !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+}
+
+.custom-libraro-ai-widget .ai-typing span {
+    width: 7px !important;
+    height: 7px !important;
+    background: #18225f !important;
+    border-radius: 50% !important;
+    animation: aiBounce 1.4s infinite ease-in-out both !important;
+}
+
+.custom-libraro-ai-widget .ai-typing span:nth-child(1) { animation-delay: -0.32s !important; }
+.custom-libraro-ai-widget .ai-typing span:nth-child(2) { animation-delay: -0.16s !important; }
+
+@keyframes aiBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}

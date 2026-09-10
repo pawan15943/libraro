@@ -15,9 +15,31 @@ use Illuminate\Support\Facades\Log;
 
 class DemoUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $qrbookings = Booking::where('branch_id', getCurrentBranch())->with(['plan', 'planType'])->where('type', 'demo-bookings')->get();
+        $query = Booking::where('branch_id', getCurrentBranch())
+            ->with(['plan', 'planType'])
+            ->where('type', 'demo-bookings');
+
+        if ($request->filled('search')) {
+            $search = trim($request->get('search'));
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('mobile', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->get('status') === 'paid') {
+                $query->whereNotNull('payment_screenshot');
+            } elseif ($request->get('status') === 'unpaid') {
+                $query->whereNull('payment_screenshot');
+            }
+        }
+
+        $qrbookings = $query->orderByDesc('id')->get();
         return view('library.demo-enquery', compact('qrbookings'));
     }
 

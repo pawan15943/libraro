@@ -29,6 +29,11 @@ class Branch extends Model
         return $this->hasOne(Hour::class, 'branch_id'); // or hasMany if needed
     }
 
+    public function planTypes()
+    {
+        return $this->hasMany(PlanType::class, 'branch_id')->withoutGlobalScope('branch');
+    }
+
      public function library()
     {
         return $this->belongsTo(Library::class, 'library_id');

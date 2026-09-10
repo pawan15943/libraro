@@ -230,12 +230,20 @@
 </section>
 
 <div class="our-plan" id="pricing">
-    <div class="container-fluid">
-        <!-- Dynamic 3 -->
-        <div class="heading mb-5 text-center">
+    <div class="container">
+        <!-- Heading & Refund Guarantee Banner -->
+        <div class="heading mb-4 text-center">
             <span class="text-white">Libraro Plans & Pricing</span>
             <h2>Choose the Best Plan for You</h2>
+            
+            <div class="mt-3">
+                <div class="refund-guarantee-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span><strong>7 Days No-Questions-Asked Refund Policy</strong> — 100% Risk Free</span>
+                </div>
+            </div>
         </div>
+
         <div class="row g-4 justify-content-center">
             <div class="col-lg-4 payment-mode">
                 <select name="plan_mode" id="plan_mode" class="form-select">
@@ -245,84 +253,59 @@
             </div>
         </div>
 
-
-        {{-- <div class="row mt-4 g-4 justify-content-center mb-4">
-
+        <div class="row mt-4 g-4 justify-content-center mb-4 pricing-grid">
             @foreach($subscriptions as $subscription)
-            @php
-
-            $subscribedPermissions = $subscription->permissions->pluck('name')->toArray();
-            @endphp
-
-            <div class="col-lg-3">
-                <div class="plan-box">
-                    <div class="plan-content">
-                        <h4>{{$subscription->name}}</h4>
-                        <span class="d-block mb-4" id="planDescription_{{$subscription->id}}"></span>
-                        <h4 id="before_discount_fees_{{$subscription->id}}"></h4>
-                        <h1 id="subscription_fees_{{$subscription->id}}"></h1>
-
-                        <button class="btn btn-primary buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">Buy Now</button>
-                        <span class="expiry">*Offer Valid Till 31-12-2025</span>
-                    </div>
-                    <ul class="plan-features contents">
-                        @foreach($premiumSub->permissions as $permission)
-                        @if(in_array($permission->name, $subscribedPermissions))
-                        <li>
-                            <div class="d-flex">
-                                <i class="fa-solid fa-check text-success me-2"></i> {{ $permission->name }}
-                            </div>
-                        </li>
-                        @else
-                        <li>
-                            <div class="d-flex">
-                                <i class="fa-solid fa-xmark text-danger me-2"></i> {{ $permission->name }}
-                            </div>
-                        </li>
-                        @endif
-                        @endforeach
-                    </ul>
-
-
-
-                </div>
-            </div>
-            @endforeach
-        </div> --}}
-
-         <div class="row mt-4 g-4 justify-content-center mb-4">
-
-            @foreach($subscriptions as $subscription)
-          
                 @php
                 // Features of current subscription
                 $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
 
                 // All unique features
                 $allFeatures = $features->pluck('name')->unique()->toArray();
-               
+                $checkedFeatureCount = count($subscriptionFeatures);
+
+                $professionalDesc = match((int)$subscription->id) {
+                    1 => 'Up to 100 seats & 1 Branch with essential features',
+                    2 => 'Up to 200 seats & 2 Branches with smart features',
+                    3 => 'Unlimited seats & 3 Branches with all pro features',
+                    default => $subscription->plan_description ?? ''
+                };
                 @endphp
 
-                <div class="col-lg-3">
-                    <div class="plan-box">
-                        <div class="plan-content">
-                            <h4>{{$subscription->name}}</h4>
-                            <span class="d-block mb-4" id="planDescription_{{$subscription->id}}"></span>
-                            <h4 id="before_discount_fees_{{$subscription->id}}"></h4>
-                            <h1 id="subscription_fees_{{$subscription->id}}"></h1>
+                <div class="col-lg-4 col-md-6">
+                    <div class="plan-box {{ $loop->index === 1 ? 'plan-box--popular' : '' }}">
+                        @if($loop->index === 1)
+                            <span class="plan-badge"><i class="fa-solid fa-star"></i> Most Popular</span>
+                        @endif
 
-                            <button class="btn btn-primary buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">Buy Now</button>
-                            {{-- <span class="expiry">*Offer Valid Till 31-12-2025</span> --}}
+                        <div class="plan-content">
+                            <h4 class="plan-name">{{$subscription->name}}</h4>
+                            <span class="d-block plan-subtitle" id="planDescription_{{$subscription->id}}">{{ $professionalDesc }}</span>
+
+                            <div class="plan-price-row">
+                                <h1 id="subscription_fees_{{$subscription->id}}" class="plan-fees">--</h1>
+                                <span class="plan-period" id="plan_period_{{$subscription->id}}"></span>
+                            </div>
+                            <div class="plan-slash-row" id="before_discount_fees_{{$subscription->id}}"></div>
+
+                            <button class="btn btn-primary button plan-cta buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">
+                                Buy Now <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </button>
                         </div>
-                        <ul class="plan-features contents mt-4">
-                        
+
+                        <div class="features-header-box d-flex justify-content-between align-items-center mt-4 mb-2 px-3">
+                            <span class="features-title font-outfit fw-bold" style="font-size: 0.88rem; color: #18225f;">Included Features</span>
+                            <span class="features-count-badge font-outfit fw-bold">
+                                <i class="fa-solid fa-circle-check me-1 text-success"></i>{{ $checkedFeatureCount }} Features
+                            </span>
+                        </div>
+
+                        <ul class="plan-features contents">
                             @foreach($allFeatures as $featureName)
-                        
                                 @if(in_array($featureName, $subscriptionFeatures))
                                     <li>
                                         <div class="d-flex">
                                             <i class="fa-solid fa-check text-success me-2"></i>
-                                        {{ $featureName }}
+                                            {{ $featureName }}
                                         </div>
                                     </li>
                                 @else
@@ -335,15 +318,200 @@
                                 @endif
                             @endforeach
                         </ul>
-
                     </div>
                 </div>
             @endforeach
         </div>
-        <!-- Dynamic 3 -->
     </div>
-
 </div>
+
+<style>
+    .our-plan .refund-guarantee-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: #ffffff;
+        color: #18225f;
+        padding: 0.55rem 1.4rem;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(24, 34, 95, 0.12);
+        border: 1.5px solid #cbd5e1;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+    }
+
+    .our-plan .refund-guarantee-badge i {
+        color: #16a34a;
+        font-size: 1.1rem;
+    }
+
+    .our-plan .pricing-grid {
+        align-items: stretch;
+    }
+
+    .our-plan .pricing-grid > [class*="col-"] {
+        display: flex;
+    }
+
+    .our-plan .plan-box {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        border-radius: 1rem;
+        background: #fff;
+        border: 1px solid #efefef;
+        padding: 2.25rem 0 1.75rem;
+        transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+    }
+
+    .our-plan .plan-box:hover {
+        box-shadow: 1px 0 20px #00000021;
+        border-color: transparent;
+        transform: translateY(-6px);
+    }
+
+    .our-plan .plan-box--popular {
+        border: 2px solid #f7a600;
+        box-shadow: 0 10px 26px #f7a60026;
+    }
+
+    .our-plan .plan-badge {
+        position: absolute;
+        top: -.9rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ffd166, #f7a600);
+        color: #3a2600;
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        padding: .4rem 1rem;
+        border-radius: 2rem;
+        box-shadow: 0 4px 10px #00000030;
+        white-space: nowrap;
+    }
+
+    .our-plan .plan-content {
+        padding: 0 1.75rem;
+    }
+
+    .our-plan .plan-name {
+        font-weight: 800 !important;
+        color: #18225f !important;
+        text-align: left !important;
+        margin: 0 0 .35rem !important;
+        padding-bottom: 0 !important;
+    }
+
+    .our-plan .plan-subtitle {
+        display: block;
+        font-size: .84rem;
+        font-weight: 600 !important;
+        color: #34939F !important;
+        margin-bottom: 1.15rem !important;
+        line-height: 1.35;
+        min-height: 2.4rem;
+    }
+
+    .our-plan .plan-price-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        gap: .35rem;
+        margin-bottom: .2rem;
+    }
+
+    .our-plan .plan-fees {
+        margin: 0 !important;
+        font-size: 2.6rem;
+        font-weight: 800;
+        color: #18225f !important;
+        text-align: left !important;
+        padding-bottom: 0 !important;
+        line-height: 1;
+    }
+
+    .our-plan .plan-period {
+        font-size: .95rem;
+        font-weight: 600;
+        color: #6c757d;
+        padding-bottom: .3rem;
+    }
+
+    .our-plan .plan-slash-row {
+        min-height: 1.4rem;
+        margin-bottom: 1.25rem;
+        font-size: .85rem;
+    }
+
+    .our-plan .plan-slash-row .slash {
+        text-decoration: line-through;
+        font-weight: 500;
+        color: #9a9a9a;
+        margin-right: .5rem;
+    }
+
+    .our-plan .plan-slash-row .save {
+        display: inline-block;
+        background: #e6f7ee;
+        color: #1a7f4b;
+        font-weight: 700;
+        padding: .15rem .6rem;
+        border-radius: 2rem;
+    }
+
+    .our-plan .plan-cta {
+        border-radius: 2.5rem !important;
+        background: #fff !important;
+        color: #18225f !important;
+        font-weight: 700 !important;
+        letter-spacing: .02em;
+        border: 1.5px solid #18225f !important;
+        transition: all .2s ease !important;
+        width: 100% !important;
+        padding: 0.6rem 1.5rem !important;
+    }
+
+    .our-plan .plan-cta:hover {
+        background: #18225f !important;
+        color: #fff !important;
+        transform: translateY(-2px);
+    }
+
+    .our-plan .plan-box--popular .plan-cta {
+        background: linear-gradient(45deg, #1b2458, #232d6a) !important;
+        color: #fff !important;
+        border-color: transparent !important;
+    }
+
+    .our-plan .plan-box--popular .plan-cta:hover {
+        background: linear-gradient(45deg, #151c45, #1d2657) !important;
+    }
+
+    .our-plan .features-header-box {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.5rem;
+    }
+
+    .our-plan .features-count-badge {
+        background: #e6f7ee !important;
+        color: #16a34a !important;
+        border: 1px solid #bbf7d0 !important;
+        border-radius: 50px !important;
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.78rem !important;
+    }
+
+    .our-plan ul.plan-features {
+        margin: 0;
+        padding: 1.25rem 1.75rem 0;
+        list-style: none;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+</style>
 
 <!-- Customer's Feedback -->
 <section class="customer-feedback">

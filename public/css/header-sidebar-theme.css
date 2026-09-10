@@ -1,0 +1,875 @@
+/**
+ * Libraro Header & Right Sidebar Theme Stylesheet
+ * Brand Primary: #18225f (Navy Blue)
+ * Brand Accents: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
+ * Typography: 'Outfit', sans-serif
+ */
+
+/* ==========================================================================
+   1. GLOBAL HEADER OVERRIDES & ENHANCEMENTS
+   ========================================================================== */
+
+.content-area .header.libraro-main-header,
+.content-area .header {
+    position: sticky;
+    top: 0;
+    z-index: 100 !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 4px 0 rgba(24, 34, 95, 0.04), 0 2px 8px -2px rgba(24, 34, 95, 0.02) !important;
+    min-height: 64px;
+    height: auto;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Ensure Modals & Backdrop ALWAYS sit above Header & Sidebars */
+.modal-backdrop,
+.modal-backdrop.fade.show {
+    z-index: 1040 !important;
+}
+
+.modal,
+.modal.fade.show,
+#seatAllotmentModal,
+#seatAllotmentModal2,
+#seatAllotmentModal3 {
+    z-index: 1050 !important;
+}
+
+/* When any modal is active/open, lower header and right sidebar stacking context */
+body.modal-open .content-area .header,
+body.modal-open .content-area .header.libraro-main-header,
+body.modal-open .header,
+body.modal-open .right-sidebar {
+    z-index: 1 !important;
+}
+
+.libraro-main-header .header-inner-flex,
+.header .header-inner-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+    box-shadow: none !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   Left Zone (Hamburger & Plan Expiry Status)
+   -------------------------------------------------------------------------- */
+
+.header-left-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+/* Modern Hamburger Toggle Button */
+.header-sidebar-toggle-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    outline: none;
+}
+
+.header-sidebar-toggle-btn:hover {
+    background: #18225f;
+    color: #ffffff;
+    border-color: #18225f;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.18);
+    transform: translateY(-1px);
+}
+
+.header-sidebar-toggle-btn:active {
+    transform: translateY(0);
+}
+
+/* Plan Expiry Pill Badges */
+.libraro-plan-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 12.5px;
+    font-weight: 500;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+}
+
+.libraro-plan-pill strong {
+    font-weight: 700;
+}
+
+.libraro-plan-pill .plan-pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Status variants */
+.libraro-plan-pill.active {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.libraro-plan-pill.active .plan-pill-dot {
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    animation: libraroPillPulse 2s infinite;
+}
+
+.libraro-plan-pill.warning {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.libraro-plan-pill.warning .plan-pill-dot {
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.libraro-plan-pill.danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.libraro-plan-pill.danger .plan-pill-dot {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    animation: libraroPillPulse 1.5s infinite;
+}
+
+.libraro-plan-pill.info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.libraro-plan-pill.info .plan-pill-dot {
+    background: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+@keyframes libraroPillPulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.95);
+        opacity: 0.85;
+    }
+}
+
+/* Header Plan Action Buttons */
+.btn-header-upgrade,
+.btn-header-renew {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.btn-header-upgrade {
+    background: #34939F;
+    color: #ffffff !important;
+}
+
+.btn-header-upgrade:hover {
+    background: #2b7c87;
+    box-shadow: 0 4px 12px rgba(52, 147, 159, 0.28);
+    transform: translateY(-1px);
+}
+
+.btn-header-renew {
+    background: #18225f;
+    color: #ffffff !important;
+}
+
+.btn-header-renew:hover {
+    background: #101744;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.28);
+    transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Right Zone (Branch Switcher, Notifications, User Profile)
+   -------------------------------------------------------------------------- */
+
+.header-right-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Sleek Branch Selector */
+.libraro-branch-switcher {
+    position: relative;
+}
+
+.branch-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.branch-select-icon {
+    position: absolute;
+    left: 11px;
+    color: #18225f;
+    font-size: 12.5px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.branch-select-input {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 38px;
+    padding-left: 31px;
+    padding-right: 28px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #18225f;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 175px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    outline: none;
+}
+
+.branch-select-input:hover {
+    background-color: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.branch-select-input:focus {
+    background-color: #ffffff;
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.12);
+}
+
+.branch-select-arrow {
+    position: absolute;
+    right: 11px;
+    color: #94a3b8;
+    font-size: 9px;
+    pointer-events: none;
+    z-index: 2;
+    transition: transform 0.2s ease;
+}
+
+.branch-select-wrapper:focus-within .branch-select-arrow {
+    transform: rotate(180deg);
+    color: #18225f;
+}
+
+/* --------------------------------------------------------------------------
+   Header User Profile Component
+   -------------------------------------------------------------------------- */
+
+.libraro-header-profile {
+    position: relative;
+}
+
+/* Desktop profile pill trigger */
+.profile-pill-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 12px 3px 4px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 50px;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 40px;
+}
+
+.profile-pill-trigger:hover,
+.profile-pill-trigger[aria-expanded="true"] {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.06);
+}
+
+.profile-avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #18225f 0%, #2b3a9c 100%);
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.22);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.profile-pill-meta {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    max-width: 140px;
+}
+
+.profile-pill-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #18225f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    font-family: 'Outfit', sans-serif;
+}
+
+.profile-pill-role {
+    font-size: 10px;
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+    margin-top: 1px;
+}
+
+.profile-pill-arrow {
+    font-size: 9px;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+    margin-left: 2px;
+}
+
+.profile-pill-trigger[aria-expanded="true"] .profile-pill-arrow {
+    transform: rotate(180deg);
+    color: #18225f;
+}
+
+/* Mobile profile trigger */
+.profile-mobile-trigger {
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+}
+
+.profile-avatar-mini {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #18225f 0%, #2b3a9c 100%);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.2);
+}
+
+/* Enhanced Profile Dropdown Menu Card */
+.libraro-profile-menu {
+    width: 270px;
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 14px 35px -5px rgba(24, 34, 95, 0.15), 0 6px 14px -3px rgba(24, 34, 95, 0.05) !important;
+    margin-top: 8px !important;
+    border-style: solid;
+    animation: libraroDropdownAnim 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes libraroDropdownAnim {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.profile-menu-header {
+    padding: 10px 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 6px;
+    list-style: none;
+}
+
+.profile-header-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #18225f 0%, #2b3a9c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.2);
+    overflow: hidden;
+}
+
+.profile-avatar-lg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-avatar-initials-lg {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.profile-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Outfit', sans-serif;
+}
+
+.profile-subname {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-badge-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    color: #18225f;
+    font-size: 10.5px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.profile-menu-link {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    transition: all 0.18s ease;
+    font-family: 'Outfit', sans-serif;
+    text-decoration: none;
+    border: none !important;
+}
+
+.profile-menu-link:hover {
+    background: #f8fafc !important;
+    color: #18225f !important;
+    transform: translateX(3px);
+}
+
+.profile-icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+}
+
+.profile-menu-link:hover .profile-icon-box {
+    background: #18225f;
+    color: #ffffff;
+}
+
+.profile-menu-link.logout-link {
+    color: #dc2626 !important;
+    margin-top: 2px;
+}
+
+.profile-menu-link.logout-link .profile-icon-box {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.profile-menu-link.logout-link:hover {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+.profile-menu-link.logout-link:hover .profile-icon-box {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+
+/* ==========================================================================
+   2. RIGHT SIDEBAR REDESIGN (QUICK ACTIONS TOOLBAR)
+   ========================================================================== */
+
+.right-sidebar.libraro-right-sidebar,
+.right-sidebar {
+    width: 74px !important;
+    background: #ffffff !important;
+    border-left: 1px solid #e2e8f0 !important;
+    box-shadow: -2px 0 12px rgba(24, 34, 95, 0.03) !important;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 20px !important;
+    z-index: 99;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Top Header Badge */
+.right-sidebar-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 10px;
+}
+
+.quick-action-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.quick-action-badge i {
+    font-size: 11px;
+    color: #34939F;
+}
+
+.quick-action-badge span {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-family: 'Outfit', sans-serif;
+    color: #18225f;
+    text-transform: uppercase;
+}
+
+.right-sidebar:hover .quick-action-badge {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+/* Quick Action List */
+.quick-action-list,
+.right-sidebar ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 9px !important;
+}
+
+.quick-action-list li,
+.right-sidebar ul li {
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    position: relative !important;
+}
+
+/* Quick Action Button Tiles */
+.quick-action-btn,
+.right-sidebar li a {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+}
+
+.quick-action-btn i,
+.right-sidebar li a i,
+.right-sidebar ul li .fa {
+    font-size: 16px !important;
+    color: #475569 !important;
+    transition: all 0.22s ease !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0 !important;
+}
+
+/* Hover State */
+.quick-action-list li:hover .quick-action-btn,
+.right-sidebar ul li:hover a {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.25) !important;
+    transform: translateY(-2px);
+}
+
+.quick-action-list li:hover .quick-action-btn i,
+.right-sidebar ul li:hover a i,
+.right-sidebar ul li:hover .fa {
+    color: #ffffff !important;
+    background: transparent !important;
+}
+
+/* Active State (strictly Navy Blue, zero #0d6efd) */
+.quick-action-list li.active .quick-action-btn,
+.right-sidebar ul li.active a {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.3) !important;
+}
+
+.quick-action-list li.active .quick-action-btn i,
+.right-sidebar ul li.active a i,
+.right-sidebar ul li.active .fa {
+    color: #ffffff !important;
+    background: transparent !important;
+    transform: scale(1.05) !important;
+}
+
+/* Left Indicator Notch for Active Item */
+.quick-action-list li.active::before,
+.right-sidebar ul li.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3.5px;
+    height: 22px;
+    border-radius: 0 4px 4px 0;
+    background: #18225f;
+}
+
+/* Mobile Toggle Arrow Button */
+.control-right-sidebar {
+    position: absolute !important;
+    left: -26px !important;
+    bottom: 85px !important;
+    width: 26px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 10px 0 0 10px !important;
+    background: linear-gradient(135deg, #18225f 0%, #2b3a9c 100%) !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: -3px 3px 10px rgba(24, 34, 95, 0.22) !important;
+    transition: all 0.2s ease !important;
+    z-index: 105 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: none;
+}
+
+.control-right-sidebar:hover {
+    width: 30px !important;
+    left: -30px !important;
+    background: linear-gradient(135deg, #101744 0%, #222f80 100%) !important;
+}
+
+.control-right-sidebar i {
+    font-size: 13px !important;
+    color: #ffffff !important;
+    transition: transform 0.3s ease;
+}
+
+.rotate-180 {
+    transform: rotate(180deg) !important;
+}
+
+
+/* ==========================================================================
+   3. MOBILE RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media screen and (max-width: 991px) {
+    .right-sidebar.libraro-right-sidebar,
+    .right-sidebar {
+        position: fixed !important;
+        right: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        z-index: 1050 !important;
+        border-left: 1px solid #e2e8f0 !important;
+        box-shadow: -4px 0 25px rgba(24, 34, 95, 0.12) !important;
+        margin-right: 0 !important;
+    }
+
+    .right-sidebar.libraro-right-sidebar.hide-right-sidebar,
+    .right-sidebar.hide-right-sidebar {
+        right: -76px !important;
+        margin-right: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .control-right-sidebar {
+        top: 25% !important;
+        bottom: auto !important;
+    }
+
+    .content-area .header.libraro-main-header,
+    .content-area .header {
+        padding: 0.5rem 1rem;
+    }
+
+    .branch-select-input {
+        max-width: 140px;
+    }
+
+    .libraro-plan-pill {
+        font-size: 11.5px;
+        padding: 4px 10px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .header-left-zone {
+        gap: 8px;
+    }
+
+    .libraro-plan-pill span {
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .branch-select-input {
+        max-width: 120px;
+        font-size: 11.5px;
+        padding-left: 28px;
+        padding-right: 22px;
+        height: 36px;
+    }
+
+    .branch-select-icon {
+        left: 9px;
+        font-size: 11px;
+    }
+
+    .branch-select-arrow {
+        right: 8px;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .libraro-plan-pill {
+        display: none; /* Keep header clean on small phone screens */
+    }
+    
+    .libraro-branch-switcher {
+        display: none;
+    }
+}

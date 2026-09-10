@@ -806,7 +806,16 @@ if (!function_exists('countWithoutSeatNo')) {
     {
         $branchId = getCurrentBranch();
         if ($branchId) {
-            $count = Learner::where('branch_id', $branchId)->whereNull('seat_no')->count();
+            $count = Learner::where('branch_id', $branchId)
+                ->where('status', 1)
+                ->where(function ($q) {
+                    $q->whereNull('seat_no')
+                      ->orWhere('seat_no', '')
+                      ->orWhere('seat_no', '0')
+                      ->orWhere('seat_no', 0)
+                      ->orWhere('seat_no', 'GEN');
+                })
+                ->count();
         }
 
         return $count ?? 0;
@@ -876,11 +885,11 @@ if (!function_exists('getUserStatusWithSpan')) {
             return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
             if ($diffInDays == 0) {
-                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire today</span>';
+                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire today</span>';
             } elseif ($diffInDays == 1) {
-                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire 1 day left</span>';
+                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire 1 day left</span>';
             } else {
-                return '<span style="color: #d97706 !important; font-weight: 700;">About to expire ' . $diffInDays . ' days left</span>';
+                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire ' . $diffInDays . ' days left</span>';
             }
         } elseif ($diffInDays > 0) {
             return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
@@ -2909,6 +2918,22 @@ function getBranchShiftTiming($branchId = false)
     }
 
     return round($minStart->diffInMinutes($maxEnd) / 60, 2);
+    }
+}
+
+if (!function_exists('get_profile_picture_url')) {
+    function get_profile_picture_url($path) {
+        if (empty($path)) {
+            return asset('public/img/student_profile.jpeg');
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        $normalized = ltrim($path, '/');
+        if (!str_starts_with($normalized, 'public/')) {
+            $normalized = 'public/' . $normalized;
+        }
+        return asset($normalized);
     }
 }
 

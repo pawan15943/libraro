@@ -1,0 +1,575 @@
+/* Library Seat Module Stylesheet - Scoped strictly under .library-seat-module */
+
+@keyframes seatBlink {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.25;
+        transform: scale(0.8);
+    }
+}
+
+.library-seat-module .seat-avatar-dot {
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    position: absolute !important;
+    bottom: -1px !important;
+    right: -1px !important;
+    z-index: 10 !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+    pointer-events: auto !important;
+}
+
+.library-seat-module .seat-avatar-dot.seatBlink {
+    animation: seatBlink 1.2s infinite ease-in-out !important;
+}
+
+.library-seat-module .seat-avatar-dot.due-dot {
+    background-color: #ef4444 !important;
+}
+
+.library-seat-module .seat-avatar-dot.extension-dot {
+    background-color: #800000 !important;
+}
+
+.library-seat-module .seat-avatar-dot.active-dot {
+    background-color: #22c55e !important;
+}
+
+/* Seat Due / Pay Later Amount Pill Badge on Avatar Circle */
+.library-seat-module .seat-due-amount-pill {
+    position: absolute !important;
+    bottom: -8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 1px 7px !important;
+    border-radius: 999px !important;
+    border: 1.5px solid #ffffff !important;
+    white-space: nowrap !important;
+    line-height: 1.25 !important;
+    z-index: 15 !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45) !important;
+    pointer-events: auto !important;
+    letter-spacing: 0.2px !important;
+}
+
+.library-seat-module .seat {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+/* Extension Seat Icon Styling */
+.library-seat-module i.fa-solid.fa-check-circle.booked.extedned,
+.library-seat-module i.fa-solid.fa-check-circle.booked.extended,
+.library-seat-module .seat i.fa-check-circle.extedned,
+.library-seat-module .seat i.fa-check-circle.extended,
+.library-seat-module img.extedned,
+.library-seat-module img.extended,
+.library-seat-module .extedned,
+.library-seat-module .extended {
+    color: #800000 !important;
+    animation: seatBlink 1.2s infinite ease-in-out !important;
+}
+
+/* Fee Overdue / Due Pending Seat Icon Styling */
+.library-seat-module i.fa-solid.fa-check-circle.booked.due_pending_class,
+.library-seat-module .seat i.fa-check-circle.due_pending_class,
+.library-seat-module .due_pending_class {
+    color: #2E3ECD !important;
+    animation: seatBlink 1.2s infinite ease-in-out !important;
+}
+
+/* About to Expire Seat Icon Styling */
+.library-seat-module i.fa-solid.fa-check-circle.booked.aboutToExpire,
+.library-seat-module .seat i.fa-check-circle.aboutToExpire,
+.library-seat-module .aboutToExpire {
+    color: #d97706 !important;
+    font-weight: 600 !important;
+}
+
+/* Non-Expiry Seat Styling */
+.library-seat-module i.fa-solid.fa-check-circle.booked.non_expiry_class,
+.library-seat-module .seat i.fa-check-circle.non_expiry_class,
+.library-seat-module .non_expired_class,
+.library-seat-module span.non-expired-status {
+    color: #c8009d !important;
+}
+
+/* 60x60 Circular Icon of Dark Navy Blue (#18225f) and White Icon Color (#ffffff) */
+.library-seat-module .modal-op-items,
+#seatAllotmentModal2 .modal-op-items {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    scroll-behavior: smooth !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 6px 4px !important;
+}
+
+.library-seat-module .modal-op-items::-webkit-scrollbar,
+#seatAllotmentModal2 .modal-op-items::-webkit-scrollbar {
+    display: none !important;
+}
+
+.library-seat-module .modal-op-scroll-wrapper,
+#seatAllotmentModal2 .modal-op-scroll-wrapper {
+    position: relative !important;
+    padding-left: 36px !important;
+    padding-right: 36px !important;
+}
+
+.library-seat-module .modal-op-item,
+#seatAllotmentModal2 .modal-op-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none !important;
+    transition: transform 0.2s ease;
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+    flex: 0 0 64px !important;
+}
+
+.library-seat-module .modal-op-item:hover,
+#seatAllotmentModal2 .modal-op-item:hover {
+    transform: translateY(-2px);
+}
+
+.library-seat-module .op-icon-circle,
+#seatAllotmentModal2 .op-icon-circle {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    font-size: 1.05rem !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.2) !important;
+    margin: 0 auto !important;
+}
+
+.library-seat-module .op-icon-circle i,
+#seatAllotmentModal2 .op-icon-circle i {
+    color: #ffffff !important;
+    font-size: 1.05rem !important;
+}
+
+.library-seat-module .modal-op-item:hover .op-icon-circle,
+#seatAllotmentModal2 .modal-op-item:hover .op-icon-circle {
+    background-color: #34939F !important;
+    transform: scale(1.08) !important;
+    box-shadow: 0 6px 14px rgba(52, 147, 159, 0.4) !important;
+}
+
+.library-seat-module .op-icon-label,
+#seatAllotmentModal2 .op-icon-label {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    margin-top: 6px !important;
+    width: 64px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.library-seat-module .op-scroll-arrow-btn,
+#seatAllotmentModal2 .op-scroll-arrow-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    color: #18225f !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+}
+
+.library-seat-module .op-scroll-arrow-btn:hover,
+#seatAllotmentModal2 .op-scroll-arrow-btn:hover {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+}
+
+/* Seat Modal Header Action Buttons */
+.library-seat-module #headerEditProfileBtn,
+#seatAllotmentModal2 #headerEditProfileBtn {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border: 1px solid #1e293b !important;
+    font-size: 0.78rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    border-radius: 50rem !important;
+    padding: 0.35rem 0.9rem !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+.library-seat-module #headerEditProfileBtn:hover,
+#seatAllotmentModal2 #headerEditProfileBtn:hover {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+a#headerEditPlanBtn,
+.library-seat-module #headerEditPlanBtn,
+#seatAllotmentModal2 #headerEditPlanBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border: 1px solid #18225f !important;
+    font-size: 0.78rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    border-radius: 50rem !important;
+    padding: 0.35rem 0.9rem !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+a#headerEditPlanBtn:hover,
+.library-seat-module #headerEditPlanBtn:hover,
+#seatAllotmentModal2 #headerEditPlanBtn:hover {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
+}
+
+/* Floor Collapsible Header Styling */
+.library-seat-module .floor-collapsible-card {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1rem !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.library-seat-module .floor-collapsible-card:hover {
+    border-color: #cbd5e1 !important;
+}
+
+.library-seat-module .floor-header-bar {
+    transition: background-color 0.2s ease;
+}
+
+.library-seat-module .floor-header-bar:hover {
+    background-color: #f8fafc !important;
+}
+
+.library-seat-module .floor-header-bar[aria-expanded="false"] .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.library-seat-module .floor-header-bar[aria-expanded="true"] .collapse-icon {
+    transform: rotate(0deg);
+}
+
+/* Seat Card & Grid Layout - 5 seats per row */
+.library-seat-module .seat-booking {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+}
+
+@media (max-width: 1400px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+}
+
+.library-seat-module .seat-card-item {
+    transition: all 0.25s ease-in-out !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+.library-seat-module .seat-card-item:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 24px rgba(24, 34, 95, 0.09) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.library-seat-module .shift-prev-btn:hover,
+.library-seat-module .shift-next-btn:hover {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+}
+
+.library-seat-module .shift-dots-row {
+    gap: 0.25rem !important;
+}
+
+.library-seat-module button.btn.btn-sm.btn-light.border.rounded-circle.p-0.shift-prev-btn.shadow-none,
+.library-seat-module button.btn.btn-sm.btn-light.border.rounded-circle.p-0.shift-next-btn.shadow-none {
+    height: 26px !important;
+}
+
+.library-seat-module .first_popup,
+.library-seat-module .second_popup {
+    height: auto !important;
+}
+
+/* Executive Control Panel Styling */
+.library-seat-module .seat-search-filter-panel {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+.library-seat-module .seat-search-input-group {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 50rem !important;
+    padding: 0.25rem 1rem !important;
+    transition: all 0.2s ease;
+}
+
+.library-seat-module .seat-search-input-group:focus-within {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
+    background: #ffffff !important;
+}
+
+.library-seat-module .seat-search-input-group input {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 0.88rem !important;
+    outline: none !important;
+}
+
+.library-seat-module .seat-shift-select {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 50rem !important;
+    background-color: #f8fafc !important;
+    font-size: 0.84rem !important;
+    padding: 0.45rem 1rem !important;
+    color: #18225f !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+}
+
+.library-seat-module .seat-shift-select:focus {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
+    background-color: #ffffff !important;
+}
+
+.library-seat-module .seat-status-filter-btn {
+    border-radius: 50rem !important;
+    padding: 0.28rem 0.9rem !important;
+    font-size: 0.78rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    height: auto !important;
+    gap: 0.35rem;
+    box-shadow: none;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.library-seat-module input#seatSearchInput {
+    height: 36px !important;
+}
+
+.library-seat-module .seat-status-filter-btn:hover {
+    background-color: #f1f5f9 !important;
+    color: #18225f !important;
+    border-color: #94a3b8 !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.22) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active .filter-dot {
+    background-color: #ffffff !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="all"] {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="booked"] {
+    background-color: #34939F !important;
+    color: #ffffff !important;
+    border-color: #34939F !important;
+    box-shadow: 0 3px 8px rgba(52, 147, 159, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="available"] {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+    border-color: #16a34a !important;
+    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="expiring"] {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+    border-color: #d97706 !important;
+    box-shadow: 0 3px 8px rgba(217, 119, 6, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="extended"] {
+    background-color: #800000 !important;
+    color: #ffffff !important;
+    border-color: #800000 !important;
+    box-shadow: 0 3px 8px rgba(128, 0, 0, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="future"] {
+    background-color: #b45309 !important;
+    color: #ffffff !important;
+    border-color: #b45309 !important;
+    box-shadow: 0 3px 8px rgba(180, 83, 9, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="non_expired"] {
+    background-color: #c8009d !important;
+    color: #ffffff !important;
+    border-color: #c8009d !important;
+    box-shadow: 0 3px 8px rgba(200, 0, 157, 0.25) !important;
+}
+
+.library-seat-module .seat-status-filter-btn.active[data-filter="due"] {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Legend Chip Animations & Hover */
+.library-seat-module .legend-chip {
+    transition: all 0.2s ease !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    cursor: default;
+    user-select: none;
+}
+
+.library-seat-module .legend-chip:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Fee Due Amount Pill Badge on Seat Avatar */
+.library-seat-module .seat-due-amount-pill {
+    position: absolute !important;
+    bottom: -9px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 12 !important;
+    background-color: #ffffff !important;
+    color: #ef4444 !important;
+    border: 1.5px solid #ef4444 !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.72rem !important;
+    padding: 1px 7px !important;
+    border-radius: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Circular Scroll Arrow Buttons in Seat View Modal */
+.modal-op-scroll-wrapper .op-scroll-arrow-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    border-radius: 50% !important;
+    top: 41px !important;
+    transform: translateY(-50%) !important;
+    bottom: auto !important;
+    background: #ffffff !important;
+    color: #18225f !important;
+    border: 1.5px solid #cbd5e1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.15) !important;
+    z-index: 10 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.modal-op-scroll-wrapper .op-scroll-arrow-btn:hover {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    transform: translateY(-50%) scale(1.08) !important;
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.25) !important;
+}
+
+

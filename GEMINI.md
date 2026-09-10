@@ -64,5 +64,6 @@ All list views and CRUD modules in Libraro WebGuard MUST follow this identical l
 ---
 
 ## Strict CSS Scoping & File Organization Rules
-- **Unique Parent Wrapper Scoping**: ALWAYS wrap custom module UI elements inside a unique parent container class (e.g., `.custom-notification-module`, `.library-dashboard-section`) and scope all CSS selectors under this unique parent class (e.g., `.custom-notification-module .btn-action`). NEVER write un-scoped global selectors like `.btn`, `button`, `a`, or `.header` that can cause styling conflicts with existing UI elsewhere in the codebase.
-- **Separate CSS Files**: ALWAYS write custom CSS in a dedicated separate CSS file (e.g., `public/css/custom-styles.css` or module-specific CSS file) instead of inline styles or embedding inline `<style>` tags directly inside Blade views.
+- **Unique Parent Wrapper Scoping**: ALWAYS wrap custom module UI elements inside a unique parent container class (e.g., `.custom-notification-module`, `.library-dashboard-section`, `.learner-edit-module`) and scope all CSS selectors under this unique parent class (e.g., `.custom-notification-module .btn-action`). NEVER write un-scoped global selectors like `.btn`, `button`, `a`, or `.header` that can cause styling conflicts with existing UI elsewhere in the codebase.
+- **Separate CSS Files for Each New Change / Module**: For EVERY new feature, UI update, or redesign, ALL new CSS MUST be saved in a dedicated, separate CSS file (e.g., `public/css/learner-edit.css`, `public/css/demo-inquiry.css`). NEVER embed inline styles or inline `<style>` tags directly inside Blade views. Always link the dedicated stylesheet at the top of the Blade template with versioning (e.g., `{{ asset('css/module-name.css') }}?v={{ time() }}`).
+

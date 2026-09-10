@@ -72,48 +72,66 @@
     <h4>No plan prices added for this branch yet.</h4>
 </div>
 @else
-<div class="row g-4">
+<div class="row g-4 mb-4">
     @foreach($prices as $key => $price)
+    @php
+        $isInactive = (bool) $price->deleted_at;
+        $planDuration = optional($price->plan)->name ?? '1 MONTH';
+        $shiftName = optional($price->planType)->name ?? '—';
+        $priceFormatted = number_format((float)($price->price ?? 0));
+    @endphp
     <div class="col-lg-4 col-md-6">
-        <div class="planBox">
-            <div class="heading d-flex justify-content-between align-items-center">
-                <h4 class="m-0">Price {{ $key + 1 }}</h4>
-                @if($price->deleted_at)
-                <span class="inactive text-danger">Inactive</span>
-                @else
-                <span class="active">Active</span>
-                @endif
+        <div class="plan-price-card">
+            <div>
+                <!-- Card Header: Title & Status -->
+                <div class="plan-card-header">
+                    <h4 class="plan-card-title">Plan {{ $key + 1 }} Price</h4>
+                    @if($isInactive)
+                    <span class="plan-status-badge inactive">
+                        <span class="status-dot"></span> INACTIVE
+                    </span>
+                    @else
+                    <span class="plan-status-badge active">
+                        <span class="status-dot"></span> ACTIVE
+                    </span>
+                    @endif
+                </div>
+
+                <!-- Plan Duration Badge -->
+                <div class="plan-duration-badge mb-3">
+                    <i class="fa-regular fa-calendar me-1.5" style="color: #18225f;"></i> {{ strtoupper($planDuration) }}
+                </div>
+
+                <!-- Shift Name Meta -->
+                <div class="plan-meta-section">
+                    <div class="plan-meta-label">Shift Name</div>
+                    <div class="plan-meta-value text-truncate" title="{{ $shiftName }}">{{ $shiftName }}</div>
+                </div>
+
+                <!-- Plan Price Meta -->
+                <div class="plan-price-section">
+                    <div class="plan-price-label">Plan Price</div>
+                    <div class="plan-price-amount">₹{{ $priceFormatted }}</div>
+                </div>
             </div>
-            <div class="plan border-top">
-                <ul>
-                    <li><span>ID</span><p class="m-0">{{ $price->id }}</p></li>
-                    <li><span>Library ID</span><p class="m-0">{{ $price->library_id }}</p></li>
-                    <li><span>Branch ID</span><p class="m-0">{{ $price->branch_id }}</p></li>
-                    <li><span>Plan ID</span><p class="m-0">{{ $price->plan_id }}</p></li>
-                    <li><span>Plan</span><p class="m-0">{{ optional($price->plan)->name ?? '—' }}</p></li>
-                    <li><span>Plan Type ID</span><p class="m-0">{{ $price->plan_type_id }}</p></li>
-                    <li><span>Plan Type</span><p class="m-0">{{ optional($price->planType)->name ?? '—' }}</p></li>
-                    <li><span>Price</span><p class="m-0">₹{{ $price->price }}</p></li>
-                    <li><span>Created At</span><p class="m-0">{{ optional($price->created_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                    <li><span>Updated At</span><p class="m-0">{{ optional($price->updated_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                    <li><span>Deleted At</span><p class="m-0">{{ optional($price->deleted_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                </ul>
+
+            <!-- Bottom Action Buttons Row -->
+            <div class="plan-card-actions">
+                <a href="javascript:void(0)" class="btn-plan-action btn-action-edit price-edit"
+                    data-id="{{ $price->id }}"
+                    data-plan-id="{{ $price->plan_id }}"
+                    data-plan-type-id="{{ $price->plan_type_id }}"
+                    data-price="{{ $price->price }}"
+                    title="Edit Plan Price">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                </a>
+
+                <a href="javascript:void(0)" class="btn-plan-action btn-action-delete price-delete"
+                    data-url="{{ route('library.branch.prices.delete', $price->id) }}"
+                    title="Delete Plan Price">
+                    <i class="fa-solid fa-trash me-1"></i> Delete
+                </a>
             </div>
-            <ul class="actionalbles">
-                <li>
-                    <a href="javascript:void(0)" class="price-edit"
-                        data-id="{{ $price->id }}"
-                        data-plan-id="{{ $price->plan_id }}"
-                        data-plan-type-id="{{ $price->plan_type_id }}"
-                        data-price="{{ $price->price }}"
-                        title="Edit"><i class="fas fa-edit"></i></a>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" class="price-delete"
-                        data-url="{{ route('library.branch.prices.delete', $price->id) }}"
-                        title="Delete"><i class="fa fa-trash"></i></a>
-                </li>
-            </ul>
         </div>
     </div>
     @endforeach

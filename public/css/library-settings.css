@@ -1,0 +1,398 @@
+/* ==========================================================================
+   Libraro - Library Settings Module
+   Strictly scoped under .library-settings-module
+   Primary Color: #18225f (Navy Blue)
+   Accents: #34939F (Teal), #16a34a (Green), #ef4444 (Red)
+   ========================================================================== */
+
+.library-settings-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+    width: 100%;
+}
+
+/* Reduced Width Centered Card Shell */
+.library-settings-module .settings-compact-shell {
+    max-width: 520px;
+    margin: 0.5rem auto 0 auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 18px -2px rgba(24, 34, 95, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   Form Groups (Label on top, Field below)
+   -------------------------------------------------------------------------- */
+.library-settings-module .settings-form-group {
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+}
+
+.library-settings-module .form-group-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.library-feedback-module .form-group-label .req-star,
+.library-settings-module .form-group-label .req-star {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+/* --------------------------------------------------------------------------
+   Form Controls
+   -------------------------------------------------------------------------- */
+.library-settings-module .form-control-custom,
+.library-settings-module .form-select-custom {
+    height: 42px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    width: 100%;
+}
+
+.library-settings-module .form-control-custom:focus,
+.library-settings-module .form-select-custom:focus {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.12) !important;
+}
+
+.library-settings-module .form-control-custom::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.library-settings-module textarea.form-control-custom {
+    height: auto;
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* --------------------------------------------------------------------------
+   Drag and Drop Favicon Dropzone
+   -------------------------------------------------------------------------- */
+.library-settings-module .favicon-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 16px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    user-select: none;
+}
+
+.library-settings-module .favicon-dropzone:hover,
+.library-settings-module .favicon-dropzone.drag-over {
+    border-color: #18225f;
+    background: #f0f4ff;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+}
+
+.library-settings-module .dropzone-idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.library-settings-module .dropzone-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #18225f;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.library-settings-module .favicon-dropzone:hover .dropzone-icon,
+.library-settings-module .favicon-dropzone.drag-over .dropzone-icon {
+    transform: scale(1.1);
+}
+
+.library-settings-module .dropzone-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.library-settings-module .dropzone-primary-text {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.library-settings-module .dropzone-browse-text {
+    color: #18225f;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.library-settings-module .dropzone-hint-text {
+    font-size: 11px;
+    color: #94a3b8;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Dropzone Preview Selected State */
+.library-settings-module .dropzone-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    gap: 10px;
+    text-align: left;
+}
+
+.library-settings-module .dropzone-preview-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.library-settings-module .dropzone-file-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.library-settings-module .dropzone-thumb-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #ffffff;
+}
+
+.library-settings-module .dropzone-file-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.library-settings-module .dropzone-file-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.library-settings-module .dropzone-file-size {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.library-settings-module .dropzone-remove-btn {
+    border: none;
+    background: #fee2e2;
+    color: #ef4444;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.library-settings-module .dropzone-remove-btn:hover {
+    background: #fecaca;
+    color: #dc2626;
+}
+
+/* Current Saved Favicon Bar */
+.library-settings-module .current-favicon-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+}
+
+.library-settings-module .current-favicon-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.library-settings-module .current-favicon-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 2px;
+}
+
+.library-settings-module .current-favicon-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #18225f;
+    background: #e0e7ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Color Picker Control
+   -------------------------------------------------------------------------- */
+.library-settings-module .color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.library-settings-module .color-input-swatch {
+    width: 44px;
+    height: 42px;
+    padding: 3px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #ffffff;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease;
+}
+
+.library-settings-module .color-input-swatch::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.library-settings-module .color-input-swatch::-webkit-color-swatch {
+    border: none;
+    border-radius: 5px;
+}
+
+.library-settings-module .color-hex-input {
+    flex: 1;
+    height: 42px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.library-settings-module .color-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.library-settings-module .color-preset-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #cbd5e1;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    padding: 0;
+}
+
+.library-settings-module .color-preset-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px #18225f;
+}
+
+/* --------------------------------------------------------------------------
+   Submit Button
+   -------------------------------------------------------------------------- */
+.library-settings-module .btn-save-settings {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 8px;
+    height: 42px;
+    padding: 0 24px;
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.library-settings-module .btn-save-settings:hover {
+    background: #101740 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Validation / Feedback Alerts
+   -------------------------------------------------------------------------- */
+.library-settings-module .field-error-text {
+    font-size: 11.5px;
+    color: #ef4444;
+    margin-top: 4px;
+    display: block;
+    font-weight: 500;
+}
+
+.library-settings-module .field-help-text {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+    display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Responsive (< 576px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 575px) {
+    .library-settings-module .settings-compact-shell {
+        padding: 20px 16px;
+        margin: 0;
+        border-radius: 12px;
+    }
+}

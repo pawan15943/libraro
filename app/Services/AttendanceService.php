@@ -1015,6 +1015,16 @@ public function manualAttendance(
 
     if ($timeType == 'in') {
 
+        if ($attendance == 0) {
+            if ($attendanceRecord) {
+                $attendanceRecord->update([
+                    'in_time' => null,
+                    'out_time' => null,
+                    'attendance' => 0,
+                ]);
+            }
+            return true;
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -1028,7 +1038,7 @@ public function manualAttendance(
 
                 'learner_id' => $learnerId,
 
-                'attendance' => $attendance,
+                'attendance' => 1,
 
                 'date' => $date,
 
@@ -1051,7 +1061,7 @@ public function manualAttendance(
 
                 'in_time' => $currentTime,
 
-                'attendance' => $attendance,
+                'attendance' => 1,
             ]);
         }
 
@@ -1083,6 +1093,15 @@ public function manualAttendance(
 
     if ($timeType == 'out') {
 
+        if ($attendance == 0) {
+            if ($attendanceRecord) {
+                $attendanceRecord->update([
+                    'out_time' => null,
+                ]);
+            }
+            return true;
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Attendance Must Exist
@@ -1107,7 +1126,7 @@ public function manualAttendance(
 
             'out_time' => $currentTime,
 
-            'attendance' => $attendance,
+            'attendance' => 1,
         ]);
 
         /*

@@ -53,81 +53,90 @@
 </div>
 
 @else
-@can('has-permission','Add Plan Master')
-<div class="heading-list justify-content-end mb-4">
-    <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
-        <i class="fa-solid fa-plus "></i> Add Plan
-    </a>
-</div>
-@endcan
-<div class="row g-4 mb-4">
-    @foreach($data as $key => $value)
-    <div class="col-lg-4 col-md-6">
-        <div class="planBox">
-            <div class="heading d-flex justify-content-between align-items-center">
-                <h4 class="m-0">Plan {{ $key + 1 }}</h4>
-                @if($value->deleted_at)
-                <span class="inactive text-danger">Inactive</span>
+<div class="plan-price-module">
+    @can('has-permission','Add Plan Master')
+    <div class="heading-list justify-content-end mb-4">
+        <a href="{{ route('plan.create') }}" class="btn btn-primary export m-0">
+            <i class="fa-solid fa-plus "></i> Add Plan
+        </a>
+    </div>
+    @endcan
+
+    <div class="row g-4 mb-4">
+        @foreach($data as $key => $value)
+        @php
+            $isInactive = (bool) $value->deleted_at;
+            $hasActiveLearners = ($value->active_learners_count ?? 0) > 0;
+        @endphp
+        <div class="col-lg-4 col-md-6">
+            <div class="plan-price-card">
+                <div class="plan-card-body">
+                    <!-- Card Header: Title & Status -->
+                    <div class="plan-card-header">
+                        <h4 class="plan-card-title">Plan {{ $key + 1 }}</h4>
+                        @if($isInactive)
+                        <span class="plan-status-badge inactive">
+                            <span class="status-dot"></span> INACTIVE
+                        </span>
+                        @else
+                        <span class="plan-status-badge active">
+                            <span class="status-dot"></span> ACTIVE
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Plan Duration Pill Badge -->
+                    <div class="plan-duration-badge mb-3">
+                        <i class="fa-regular fa-calendar me-1.5" style="color: #18225f;"></i> {{ strtoupper($value->name) }}
+                    </div>
+
+                    <!-- Metadata Grid -->
+                    <div class="plan-meta-grid">
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Name</div>
+                            <div class="plan-meta-value text-truncate" title="{{ $value->name }}">{{ $value->name }}</div>
+                        </div>
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Duration</div>
+                            <div class="plan-meta-value">{{ $value->plan_id }} {{ $value->type }}</div>
+                        </div>
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Days</div>
+                            <div class="plan-meta-value">{{ $value->monthdays ? ($value->monthdays . ' Days') : 'Calendar-wise' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Buttons Row -->
+                @if($hasActiveLearners)
+                <div class="text-center py-2 text-danger small font-outfit fw-bold mt-auto border-top pt-2 plan-locked-notice">
+                    <i class="fa-solid fa-users me-1"></i> Active learners assigned
+                </div>
                 @else
-                <span class="active">Active</span>
+                <div class="plan-card-actions">
+                    @if($isInactive)
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-activate active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Activate Plan">
+                        <i class="fa-solid fa-check me-1"></i> Activate
+                    </a>
+                    @else
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-deactivate active-deactive" data-id="{{ $value->id }}" data-table="Plan" title="Deactivate Plan">
+                        <i class="fa-solid fa-check me-1"></i> Deactivate
+                    </a>
+                    @endif
+
+                    <a href="{{ route('plan.create', $value->id) }}" class="btn-plan-action btn-action-edit" title="Edit Plan">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                    </a>
+
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-delete delete-btn" data-id="{{ $value->id }}" data-route="{{ route('master.delete', $value->id) }}" data-table="Plan" title="Delete Plan">
+                        <i class="fa-solid fa-trash me-1"></i> Delete
+                    </a>
+                </div>
                 @endif
             </div>
-
-            <div class="plan border-top">
-                <ul>
-                    <li>
-                        <span>Plan Name</span>
-                        <p class="m-0">{{ $value->name }}</p>
-                    </li>
-                    
-                    
-                    <li>
-                        <span>Plan Days</span>
-                        @if($value->monthdays) 
-                        <p class="m-0">{{ $value->monthdays }}</p>
-                        @else
-                        <p class="m-0">Automatic (Calendar Wise)</p>
-                         @endif
-                    </li>
-                   
-                </ul>
-            </div>
-
-            @if(($value->active_learners_count ?? 0) > 0)
-            <div class="text-center py-3 border-top text-danger">
-                Active learners assigned
-            </div>
-            @else
-            <ul class="actionalbles">
-                <li>
-                    <a href="javascript:void(0)" class="active-deactive"
-                        data-id="{{ $value->id }}" data-table="Plan"
-                        title="Active/Deactive">
-                        @if($value->deleted_at)
-                        <i class="fas fa-ban"></i>
-                        @else
-                        <i class="fa fa-check"></i>
-                        @endif
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('plan.create', $value->id) }}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" class="delete-btn"
-                        data-id="{{ $value->id }}"
-                        data-route="{{ route('master.delete', $value->id) }}"
-                        data-table="Plan" title="Delete">
-                        <i class="fa fa-trash"></i>
-                    </a>
-                </li>
-            </ul>
-            @endif
         </div>
+        @endforeach
     </div>
-    @endforeach
 </div>
 @endif
 
