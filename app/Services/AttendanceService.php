@@ -23,19 +23,34 @@ class AttendanceService
 
     public static function attendanceQrTokens(int $branchId): array
     {
+        $branch = Branch::with('library')->find($branchId);
+        $libName = $branch?->library?->library_name ?? ($branch?->display_name ?? ($branch?->name ?? ''));
+        $learnerAppQrKey = function_exists('generateLearnerProfileQrKey')
+            ? generateLearnerProfileQrKey($libName)
+            : '';
+
         $slot = self::currentQrSlot();
 
         return [
-            'primary' => self::makeQrToken($branchId, (string) $slot),
-            'fallback' => self::makeQrToken($branchId, (string) ($slot + 1)),
-            'for_download' => self::makeQrToken($branchId, self::QR_STATIC_SLOT),
-            'expires_in' => self::QR_SLOT_SECONDS,
+            'primary'      => $learnerAppQrKey . self::makeQrToken($branchId, (string) $slot),
+            'fallback'     => $learnerAppQrKey . self::makeQrToken($branchId, (string) ($slot + 1)),
+            'for_download' => $learnerAppQrKey . self::makeQrToken($branchId, self::QR_STATIC_SLOT),
+            'expires_in'   => self::QR_SLOT_SECONDS,
         ];
     }
 
     public static function validateQrToken(string $qrToken): int|false
     {
-        $decoded = base64_decode($qrToken, true);
+        $token = trim($qrToken);
+        if (empty($token)) {
+            return false;
+        }
+
+        if (preg_match('/^([^=]+=)(.+)$/', $token, $matches)) {
+            $token = $matches[2];
+        }
+
+        $decoded = base64_decode($token, true);
         if (!$decoded) {
             return false;
         }
@@ -805,7 +820,8 @@ public function processAttendance($learnerId, $branchId, $source)
 {
     if (!$branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'QR expired or invalid',
             'code'    => 403
         ];
@@ -814,7 +830,16 @@ public function processAttendance($learnerId, $branchId, $source)
     $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
         ->orderBy('plan_end_date', 'DESC')
         ->first();
-    $learner=Learner::where('id',$learnerId)->withTrashed()->select('status')->first();
+    $learner = Learner::where('id', $learnerId)->withTrashed()->select('status', 'frozen_status')->first();
+
+    if ($learner && (int) $learner->frozen_status === 1) {
+        return [
+            'status'  => false,
+            'type'    => 'error',
+            'message' => 'Your plan is currently frozen',
+            'code'    => 403
+        ];
+    }
 
     if (!$learnerDetail || $learner->status != 1) {
          
@@ -835,7 +860,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'deleteSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been deleted',
                     'code'    => 403
                 ];
@@ -843,7 +869,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'closeSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been closed',
                     'code'    => 403
                 ];
@@ -851,7 +878,8 @@ public function processAttendance($learnerId, $branchId, $source)
         }
 
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -859,7 +887,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
     if ($learnerDetail->branch_id != $branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Ohh, it seems like you scanned the wrong library QR code.',
             'code'    => 403
         ];
@@ -891,7 +920,8 @@ public function processAttendance($learnerId, $branchId, $source)
 
     if ($diffExtendDay < 0) {
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -941,7 +971,8 @@ public function processAttendance($learnerId, $branchId, $source)
         DB::commit();
 
         return [
-            'status'  => $extension ? 'extension' : 'success',
+            'status'  => true,
+            'type'    => $extension ? 'extension' : 'success',
             'message' => 'Thank You! Attendance marked',
             'code'    => 200
         ];
@@ -955,7 +986,8 @@ public function processAttendance($learnerId, $branchId, $source)
         ]);
 
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Attendance not marked. Please try again.',
             'code'    => 500
         ];
@@ -987,6 +1019,13 @@ public function manualAttendance(
     $libraryId,
     $branchId
 ) {
+
+    $learner = Learner::where('id', $learnerId)->withTrashed()->select('frozen_status')->first();
+    if ($learner && (int) $learner->frozen_status === 1) {
+        throw ValidationException::withMessages([
+            'learner_id' => 'Learner plan is currently frozen.',
+        ]);
+    }
 
     /*
     |--------------------------------------------------------------------------

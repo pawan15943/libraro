@@ -306,7 +306,8 @@ class AttendanceController extends Controller
             if (!$branchId) {
                 
                 return response()->json([
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'QR expired or invalid'
                 ], 403);
             }
@@ -494,7 +495,8 @@ private function processAttendance($learnerId, $branchId, $source)
 {
     if (!$branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'QR expired or invalid',
             'code'    => 403
         ];
@@ -503,7 +505,16 @@ private function processAttendance($learnerId, $branchId, $source)
     $learnerDetail = LearnerDetail::where('learner_id', $learnerId)
         ->orderBy('plan_end_date', 'DESC')
         ->first();
-    $learner=Learner::where('id',$learnerId)->withTrashed()->select('status')->first();
+    $learner = Learner::where('id', $learnerId)->withTrashed()->select('status', 'frozen_status')->first();
+
+    if ($learner && (int) $learner->frozen_status === 1) {
+        return [
+            'status'  => false,
+            'type'    => 'error',
+            'message' => 'Your plan is currently frozen',
+            'code'    => 403
+        ];
+    }
 
     if (!$learnerDetail || $learner->status != 1) {
          
@@ -524,7 +535,8 @@ private function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'deleteSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been deleted',
                     'code'    => 403
                 ];
@@ -532,7 +544,8 @@ private function processAttendance($learnerId, $branchId, $source)
 
             if ($operation === 'closeSeat') {
                 return [
-                    'status'  => 'error',
+                    'status'  => false,
+                    'type'    => 'error',
                     'message' => 'Your plan has been closed',
                     'code'    => 403
                 ];
@@ -540,7 +553,8 @@ private function processAttendance($learnerId, $branchId, $source)
         }
 
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -548,7 +562,8 @@ private function processAttendance($learnerId, $branchId, $source)
 
     if ($learnerDetail->branch_id != $branchId) {
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Ohh, it seems like you scanned the wrong library QR code.',
             'code'    => 403
         ];
@@ -580,7 +595,8 @@ private function processAttendance($learnerId, $branchId, $source)
 
     if ($diffExtendDay < 0) {
         return [
-            'status'  => 'expired',
+            'status'  => false,
+            'type'    => 'expired',
             'message' => 'Plan expired',
             'code'    => 403
         ];
@@ -630,7 +646,8 @@ private function processAttendance($learnerId, $branchId, $source)
         DB::commit();
 
         return [
-            'status'  => $extension ? 'extension' : 'success',
+            'status'  => true,
+            'type'    => $extension ? 'extension' : 'success',
             'message' => 'Thank You! Attendance marked',
             'code'    => 200
         ];
@@ -644,7 +661,8 @@ private function processAttendance($learnerId, $branchId, $source)
         ]);
 
         return [
-            'status'  => 'error',
+            'status'  => false,
+            'type'    => 'error',
             'message' => 'Attendance not marked. Please try again.',
             'code'    => 500
         ];
@@ -657,14 +675,21 @@ public function scan(Request $request)
     \Log::info('SCAN HIT', $request->all());
 
     
-    $learnerNo = trim($request->qr);
+    $qrPayload = trim($request->qr ?? '');
 
-    if (!$learnerNo) {
+    if (!$qrPayload) {
         \Log::warning('learnerNo failed');
         return response()->json([
         'status'  => 'error',
         'message' => 'Invalid QR'
     ], 403);
+    }
+
+    $decryptedData = decryptLearnerQrPayload($qrPayload);
+    if ($decryptedData && isset($decryptedData['l_no'])) {
+        $learnerNo = $decryptedData['l_no'];
+    } else {
+        $learnerNo = $qrPayload;
     }
 
     /* 3️⃣ Learner validation */

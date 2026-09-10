@@ -7,12 +7,20 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LearnerRenewRequest;
 use App\Models\Branch;
 use App\Models\Feature;
+use App\Models\Learner;
 use App\Models\LearnerDetail;
+use App\Models\LearnerTransaction;
 use App\Services\AttendanceService;
+use App\Services\FileUploadService;
 use App\Services\LearnerOperationService;
 use App\Services\LearnerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class LearnerAppController extends Controller
 {
@@ -24,15 +32,111 @@ class LearnerAppController extends Controller
     public function detail(LearnerService $service)
     {
         try {
+            $learner = auth('learner_api')->user();
+            $learnerId = $learner?->id;
+
+            if (!$learnerId) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthenticated learner session.',
+                ], 401);
+            }
+
+            $raw = $service->getLearnerDetails($learnerId);
+
+            $personalInfo = $raw['personal_info'] ?? [];
+            $detailInfo   = $raw['detail_info'] ?? [];
+            $otherDetails = $raw['other_details'] ?? [];
+
+            // Clean personal_info to match the mobile specification exactly
+            $cleanedPersonalInfo = [
+                'id'              => (string) ($personalInfo['id'] ?? $learnerId),
+                'learner_no'      => (string) ($personalInfo['learner_no'] ?? ''),
+                'name'            => (string) ($personalInfo['name'] ?? ''),
+                'mobile'          => (string) ($personalInfo['mobile'] ?? ''),
+                'email'           => (string) ($personalInfo['email'] ?? ''),
+                'dob'             => (string) ($personalInfo['dob'] ?? ''),
+                'father_name'     => (string) ($personalInfo['father_name'] ?? ''),
+                'profile_picture' => (string) ($personalInfo['profile_picture'] ?? ''),
+            ];
+
+            // Clean detail_info to match the mobile specification exactly
+            $cleanedDetailInfo = [
+                'seat_id'                  => (int) ($personalInfo['seat_id'] ?? ($detailInfo['seat_id'] ?? 0)),
+                'seat_no'                  => (string) ($personalInfo['seat_no'] ?? ($detailInfo['seat_no'] ?? '')),
+                'seat_with_floor'          => (string) ($personalInfo['seat_with_floor'] ?? ($detailInfo['seat_with_floor'] ?? '')),
+                'plan'                     => (string) ($detailInfo['plan'] ?? ''),
+                'plan_type'                => (string) ($detailInfo['plan_type'] ?? ''),
+                'plan_id'                  => (int) ($detailInfo['plan_id'] ?? 0),
+                'plan_type_id'             => (int) ($detailInfo['plan_type_id'] ?? 0),
+                'price'                    => (float) ($detailInfo['price'] ?? 0),
+                'monthdays'                => (string) ($detailInfo['monthdays'] ?? 'Calendar wise'),
+                'start_date'               => (string) ($detailInfo['start_date'] ?? ''),
+                'end_date'                 => (string) ($detailInfo['end_date'] ?? ''),
+                'start_time'               => (string) ($detailInfo['start_time'] ?? ''),
+                'end_time'                 => (string) ($detailInfo['end_time'] ?? ''),
+                'status'                   => (string) ($detailInfo['status'] ?? ''),
+                'mainstatus'               => (string) ($detailInfo['mainstatus'] ?? ''),
+                'next_plan'                => (int) ($detailInfo['next_plan'] ?? 0),
+                'frozen_status'            => (int) ($detailInfo['frozen_status'] ?? 0),
+                'freeze_date'              => $detailInfo['freeze_date'] ?? null,
+                'deleted_at'               => (string) ($detailInfo['deleted_at'] ?? ''),
+                'locker'                   => (string) ($detailInfo['locker'] ?? 'No'),
+                'locker_no'                => (string) ($detailInfo['locker_no'] ?? ''),
+                'days_left'                => (int) ($detailInfo['days_left'] ?? 0),
+                'extend_days_left'         => (int) ($detailInfo['extend_days_left'] ?? 0),
+                'current_days_left'        => (int) ($detailInfo['current_days_left'] ?? 0),
+                'current_extend_days_left' => (int) ($detailInfo['current_extend_days_left'] ?? 0),
+                'plan_days'                => (int) ($detailInfo['plan_days'] ?? 0),
+                'plantype_detail'          => $detailInfo['plantype_detail'] ?? null,
+                'total_gift_days'          => (int) ($detailInfo['total_gift_days'] ?? 0),
+            ];
+
+            // Clean other_details to match the mobile specification exactly
+            $cleanedOtherDetails = [
+                'alternate_mobile' => (string) ($otherDetails['alternate_mobile'] ?? ''),
+                'id_proof_id'      => (string) ($otherDetails['id_proof_id'] ?? ''),
+                'id_proof_name'    => (string) ($otherDetails['id_proof_name'] ?? ''),
+                'id_proof_image'   => (string) ($otherDetails['id_proof_image'] ?? ''),
+                'id_proof_no'      => (string) ($otherDetails['id_proof_no'] ?? ''),
+                'address'          => (string) ($otherDetails['address'] ?? ''),
+                'remark'           => (string) ($otherDetails['remark'] ?? ''),
+            ];
+
+            // Clean library info to match the mobile specification
+            $libraryRaw = $raw['library'] ?? [];
+            if (empty($libraryRaw['id']) && !empty($learner?->branch_id)) {
+                $branch = Branch::where('id', $learner->branch_id)
+                    ->select('id', 'name', 'display_name', 'library_address as address')
+                    ->first();
+                $libraryRaw = [
+                    'id'      => (string) ($branch?->id ?? ''),
+                    'name'    => (string) ($branch?->display_name ?? ($branch?->name ?? '')),
+                    'address' => (string) ($branch?->address ?? ''),
+                ];
+            }
+
+            $cleanedLibrary = [
+                'id'      => (string) ($libraryRaw['id'] ?? ''),
+                'name'    => (string) ($libraryRaw['name'] ?? ''),
+                'address' => (string) ($libraryRaw['address'] ?? ''),
+            ];
+
             return response()->json([
                 'status' => true,
-                'data' => $service->getLearnerDetails(auth('learner_api')->id()),
-            ]);
+                'data'   => [
+                    'qr_key'        => (string) ($raw['qr_key'] ?? ($cleanedPersonalInfo['qr_key'] ?? '')),
+                    'personal_info' => $cleanedPersonalInfo,
+                    'plan_info'     => $cleanedDetailInfo,
+                    'other_details' => $cleanedOtherDetails,
+                    'library'       => $cleanedLibrary,
+                ],
+            ], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => $e->getMessage(),
-            ], 404);
+            ], 200);
         }
     }
 
@@ -56,34 +160,360 @@ class LearnerAppController extends Controller
     {
         $learner = auth('learner_api')->user();
 
-        $learners = LearnerDetail::withoutGlobalScopes()
+        if (!$learner) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $activeDetail = LearnerDetail::withoutGlobalScopes()
             ->where('learner_id', $learner->id)
             ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
             ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->select('learner_detail.*', 'plans.name as plan_name', 'plan_types.name as plan_type_name')
-            ->get();
-
-        $branch = Branch::where('id', $learner->branch_id)
-            ->select('name as library_name', 'features')
+            ->select(
+                'learner_detail.*',
+                'plans.name as plan_name',
+                'plan_types.name as plan_type_name',
+                'plan_types.start_time',
+                'plan_types.end_time'
+            )
+            ->orderBy('learner_detail.id', 'DESC')
             ->first();
 
-        $learnerRequest = DB::table('learner_request')->where('learner_id', $learner->id)->get();
+        $shiftTime = 'N/A';
+        if ($activeDetail && !empty($activeDetail->start_time) && !empty($activeDetail->end_time)) {
+            try {
+                $start = Carbon::parse($activeDetail->start_time)->format('h:i A');
+                $end = Carbon::parse($activeDetail->end_time)->format('h:i A');
+                $shiftTime = "{$start} - {$end}";
+            } catch (\Throwable $e) {
+                $shiftTime = "{$activeDetail->start_time} - {$activeDetail->end_time}";
+            }
+        }
 
-        $featuresArray = $branch && $branch->features
-            ? (is_array($branch->features) ? $branch->features : json_decode($branch->features, true))
-            : [];
+        $branch = Branch::where('id', $learner->branch_id)
+            ->select('id', 'name as library_name', 'features', 'library_address as address', 'extend_days')
+            ->first();
 
-        $features = Feature::whereIn('id', $featuresArray)->get();
+        // Pending Payment Status
+        $txnStatus = learnerTransactionStatus($learner->id);
+        $pendingAmount = (float) ($txnStatus['pending_amount'] ?? 0);
+        $hasPending = $pendingAmount > 0;
+        $dueDate = $txnStatus['due_date'] ?? '';
+
+        $formattedNotice = $hasPending && !empty($dueDate)
+            ? "Pending Payment {$pendingAmount} due on " . Carbon::parse($dueDate)->format('j M Y')
+            : ($hasPending ? "Pending Payment {$pendingAmount}" : "No Pending Payment");
+
+        // Days Remaining
+        $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
+        $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+
+        // QR Code Payload for 3D ID Card (Combined Key & Payload)
+        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no, $learner->mobile, $learner->name);
+
+        // Name split
+        $nameParts = explode(' ', trim($learner->name ?? ''));
+        $firstName = $nameParts[0] ?? $learner->name;
+
+        // Unread Notification Count
+        $unreadCount = DB::table('notifications')
+            ->where('notifiable_id', $learner->id)
+            ->where('notifiable_type', get_class($learner))
+            ->whereNull('read_at')
+            ->count();
+
+        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+        $profileImageUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+
+        $banners = [
+            [
+                'tital'       => 'Welcome to Libraro',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_1.webp'),
+                'link'        => '',
+            ],
+            [
+                'tital'       => 'Libraro top features',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_4.webp'),
+                'link'        => '',
+            ],
+            [
+                'tital'       => 'Why fear Libraro is here',
+                'description' => '',
+                'image'       => asset('public/img/slider/last_banner_5.webp'),
+                'link'        => '',
+            ],
+        ];
 
         return response()->json([
-            'status' => true,
-            'data' => [
-                'learner_details' => $learners,
-                'library_name' => optional($branch)->library_name,
-                'features' => $features,
-                'learner_requests' => $learnerRequest,
+            'status'  => true,
+            'message' => 'Home dashboard data fetched successfully.',
+            'data'    => [
+                'unreadNotificationCount' => $unreadCount,
+                'banners'                 => $banners,
+                'idCard'                  => [
+                    'id'              => (string) $learner->id,
+                    'learner_no'      => $learner->learner_no ?? '',
+                    'fullName'        => strtoupper($learner->name ?? ''),
+                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
+                    'planName'        => $activeDetail?->plan_name ?? 'No Active Plan',
+                    'planType'        => $activeDetail?->plan_type_name ?? 'N/A',
+                    'shiftTime'       => $shiftTime,
+                    'planStartDate'   => $activeDetail?->plan_start_date ?? '',
+                    'planExpiryDate'  => $activeDetail?->plan_end_date ?? '',
+                    'daysLeft'        => $daysLeft,
+                    'extend_days'     => $extendDays,
+                    'profileImageUrl' => $profileImageUrl,
+                    'pendingPayment'  => [
+                        'hasPending'      => $hasPending,
+                        'amount'          => $pendingAmount,
+                        'dueDate'         => $dueDate,
+                    ],
+                    'library'         => [
+                        'id'      => (string) ($branch?->id ?? ''),
+                        'name'    => $branch?->library_name ?? '',
+                        'address' => $branch?->address ?? '',
+                    ],
+                    
+                    'qrPayload'       => $qrPayload,
+                ],
             ],
-        ]);
+        ], 200);
+    }
+
+    /**
+     * Learner Profile Setting API
+     * Returns learner profile settings data including formatted banners.
+     */
+    public function profileSetting(Request $request)
+    {
+        try {
+            $learner = auth('learner_api')->user();
+
+            if (!$learner) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthenticated learner session.',
+                ], 401);
+            }
+
+            $activeDetail = LearnerDetail::withoutGlobalScopes()
+                ->where('learner_id', $learner->id)
+                ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+                ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+                ->select(
+                    'learner_detail.*',
+                    'plans.name as plan_name',
+                    'plan_types.name as plan_type_name'
+                )
+                ->orderBy('learner_detail.id', 'DESC')
+                ->first();
+
+            $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
+            $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+
+            $today = Carbon::today();
+            $festival = DB::table('india_festivals')
+                ->whereDate('festival_date', $today->toDateString())
+                ->select('festival_name', 'description')
+                ->first();
+
+            $banners = [];
+
+            // 1. Festival / Other Wishes Banner
+            if ($festival) {
+                $banners[] = [
+                    'type'           => 'other_wishes',
+                    'tital'          => 'Wish you happy ' . $festival->festival_name,
+                    'description'    => (string) ($festival->description ?? ''),
+                    'days_in_left'   => '',
+                    'image_resource' => '',
+                    'banner_link'    => '',
+                ];
+            }
+
+            // 2. Birthday Wishes Banner
+            if (!empty($learner->dob)) {
+                try {
+                    $dob = Carbon::parse($learner->dob);
+                    if ((int) $dob->month === (int) $today->month && (int) $dob->day === (int) $today->day) {
+                        $banners[] = [
+                            'type'           => 'birthday_wishes',
+                            'tital'          => 'Wish you happy birthay',
+                            'description'    => '',
+                            'days_in_left'   => '',
+                            'image_resource' => '',
+                            'banner_link'    => '',
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore parse error
+                }
+            }
+
+            // 3. Subscription Banner
+            $subscriptionName = $activeDetail?->plan_name ?? 'No Active Plan';
+            $banners[] = [
+                'type'           => 'subscription',
+                'tital'          => (string) $subscriptionName,
+                'description'    => '',
+                'days_in_left'   => $daysLeft,
+                'image_resource' => '',
+                'banner_link'    => '',
+            ];
+
+            // 4. Image Banners (Top Banner / Slider Images)
+            $topBannerImage = asset('public/img/slider/topbanner.jpeg');
+            $imageBanners = [
+                [
+                    'tital' => '',
+                    'image' => asset('public/img/slider/last_banner_4.webp'),
+                ],
+            ];
+
+            if (file_exists(public_path('img/slider/topbanner.jpeg'))) {
+                array_unshift($imageBanners, [
+                    'tital' => '',
+                    'image' => $topBannerImage,
+                ]);
+            }
+
+            foreach ($imageBanners as $imgBanner) {
+                $banners[] = [
+                    'type'           => 'image',
+                    'tital'          => (string) ($imgBanner['tital'] ?? ''),
+                    'description'    => '',
+                    'days_in_left'   => '',
+                    'image_resource' => (string) ($imgBanner['image'] ?? ''),
+                    'banner_link'    => '',
+                ];
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Profile setting data fetched successfully.',
+                'data'    => [
+                    'banners' => $banners,
+                ],
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage(),
+            ], 200);
+        }
+    }
+
+    /**
+     * Generate banners for a learner (Festival, Birthday, Subscription).
+     */
+    protected function getBannersForLearner($learner)
+    {
+        if (!$learner) {
+            return [];
+        }
+
+        $activeDetail = LearnerDetail::withoutGlobalScopes()
+            ->where('learner_id', $learner->id)
+            ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->select(
+                'learner_detail.*',
+                'plans.name as plan_name',
+                'plan_types.name as plan_type_name'
+            )
+            ->orderBy('learner_detail.id', 'DESC')
+            ->first();
+
+        $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
+        $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+
+        $today = Carbon::today();
+        $festival = DB::table('india_festivals')
+            ->whereDate('festival_date', $today->toDateString())
+            ->select('festival_name', 'description')
+            ->first();
+
+        $branchId = (int) ($learner->branch_id ?? (function_exists('getCurrentBranch') ? getCurrentBranch() : 0));
+        $seatDisplay = $learner->seat_no ? (string) getSeatDisplayShortFloorName($learner->seat_no) : '';
+
+        // 1. Festival / Other Wishes Banner
+        $banners = [[
+            'type'                => $festival ? 'other_wishes' : '',
+            'tital'               => $festival ? ('Wish you happy ' . $festival->festival_name) : '',
+            'description'         => $festival->description ?? '',
+            'birthday_user'       => '',
+            'seat_no'             => '',
+            'subscription_type'   => '',
+            'subscription_status' => '',
+            'days_in_left'        => '',
+            'dob'                 => '',
+            'mobile'              => '',
+            'image_resource'      => '',
+            'banner_link'         => '',
+            'progress_percentage' => 0,
+            'branch_id'           => $branchId,
+        ]];
+
+        // 2. Birthday Wishes Banner (If today is learner's birthday)
+        if (!empty($learner->dob)) {
+            try {
+                $dob = Carbon::parse($learner->dob);
+                if ((int) $dob->month === (int) $today->month && (int) $dob->day === (int) $today->day) {
+                    $decryptedMobile = function_exists('decryptData') ? decryptData($learner->mobile) : $learner->mobile;
+                    $banners[] = [
+                        'type'                => 'birthday_wishes',
+                        'tital'               => 'Wish you happy birthay',
+                        'description'         => '',
+                        'birthday_user'       => (string) ($learner->name ?? ''),
+                        'seat_no'             => $seatDisplay,
+                        'subscription_type'   => '',
+                        'subscription_status' => '',
+                        'days_in_left'        => '',
+                        'dob'                 => (string) $learner->dob,
+                        'mobile'              => !empty($decryptedMobile) ? (string) $decryptedMobile : (string) $learner->mobile,
+                        'image_resource'      => '',
+                        'banner_link'         => '',
+                        'progress_percentage' => 0,
+                        'branch_id'           => $branchId,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Ignore parse error
+            }
+        }
+
+        // 3. Subscription Banner
+        $subscriptionName = $activeDetail?->plan_name ?? 'No Active Plan';
+        $subscriptionStatus = ($activeDetail && (int) $learner->status === 1) ? 'Active' : 'Inactive';
+        $startDate = !empty($activeDetail?->plan_start_date) ? Carbon::parse($activeDetail->plan_start_date)->startOfDay() : null;
+        $endDate   = !empty($activeDetail?->plan_end_date) ? Carbon::parse($activeDetail->plan_end_date)->startOfDay() : null;
+        $totalDays = ($startDate && $endDate) ? max(1, $startDate->diffInDays($endDate) + 1) : 0;
+        $usedDays  = ($startDate && $endDate) ? min($totalDays, max(0, $startDate->diffInDays($today) + 1)) : 0;
+        $progressPercentage = ($totalDays > 0) ? (int) min(100, round(($usedDays / $totalDays) * 100)) : 0;
+
+        $banners[] = [
+            'type'                => 'subscription',
+            'tital'               => 'subscription',
+            'description'         => '',
+            'birthday_user'       => '',
+            'seat_no'             => $seatDisplay,
+            'subscription_type'   => $subscriptionName,
+            'subscription_status' => $subscriptionStatus,
+            'days_in_left'        => (string) $daysLeft,
+            'dob'                 => '',
+            'mobile'              => '',
+            'image_resource'      => '',
+            'banner_link'         => '',
+            'progress_percentage' => $progressPercentage,
+            'branch_id'           => $branchId,
+        ];
+
+        return $banners;
     }
 
     /**
@@ -98,5 +528,777 @@ class LearnerAppController extends Controller
         ]);
 
         return $service->attendanceLogs($request);
+    }
+
+    /**
+     * Learner self-service notifications list with tab filtering (all, active, expired),
+     * unread indicators, and attachment support matching mobile UI.
+     */
+    public function notifications(Request $request)
+    {
+        $learner = auth('learner_api')->user();
+
+        if (!$learner) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $today = Carbon::today()->toDateString();
+        $tab   = strtolower((string) $request->input('tab', $request->input('status', 'all')));
+        $page  = max(1, (int) $request->input('page', 1));
+        $limit = max(1, (int) $request->input('limit', $request->input('per_page', 20)));
+
+        $baseQuery = DB::table('notifications')
+            ->where(function ($q) use ($learner) {
+                $q->where(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('notifiable_type', get_class($learner));
+                })->orWhere(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('guard', 'learner');
+                });
+            });
+
+        // Tab counts
+        $totalCount   = (clone $baseQuery)->count();
+        $activeCount  = (clone $baseQuery)->where(function ($q) use ($today) {
+            $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+        })->count();
+        $expiredCount = (clone $baseQuery)->whereNotNull('end_date')->whereDate('end_date', '<', $today)->count();
+        $unreadCount  = (clone $baseQuery)->whereNull('read_at')->count();
+
+        // Apply Tab Filter
+        $query = clone $baseQuery;
+        if ($tab === 'active') {
+            $query->where(function ($q) use ($today) {
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+            });
+        } elseif ($tab === 'expired') {
+            $query->whereNotNull('end_date')->whereDate('end_date', '<', $today);
+        }
+
+        $totalFiltered = $query->count();
+
+        $notifications = $query->orderBy('created_at', 'DESC')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
+            ->get()
+            ->map(function ($notif) use ($today) {
+                $data = is_string($notif->data) ? json_decode($notif->data, true) : (array) $notif->data;
+                $isExpired = !empty($notif->end_date) && Carbon::parse($notif->end_date)->startOfDay()->lt(Carbon::parse($today));
+                $attachmentUrl = $data['link'] ?? ($data['image'] ?? ($data['attachment'] ?? null));
+
+                $attachmentArray = [];
+                if (!empty($attachmentUrl)) {
+                    $attachmentArray[] = [
+                        'has_attachment' => true,
+                        'url'            => $attachmentUrl,
+                        'name'           => basename($attachmentUrl),
+                    ];
+                }
+
+                return [
+                    'id'                => (string) $notif->id,
+                    'batch_id'          => $notif->batch_id ?? null,
+                    'title'             => $data['title'] ?? 'Notification',
+                    'description'       => $data['description'] ?? ($data['message'] ?? ($data['body'] ?? '')),
+                    'message'           => $data['description'] ?? ($data['message'] ?? ($data['body'] ?? '')),
+                    'notification_type' => $data['notification_type'] ?? ($data['type'] ?? 'general'),
+                    'type'              => $data['notification_type'] ?? ($data['type'] ?? 'general'),
+                    'is_read'           => !is_null($notif->read_at),
+                    'isRead'            => !is_null($notif->read_at),
+                    'read_at'           => $notif->read_at ? Carbon::parse($notif->read_at)->format('d-m-Y H:i:s') : null,
+                    'status'            => $isExpired ? 'expired' : 'active',
+                    'is_active'         => !$isExpired,
+                    'start_date'        => $notif->start_date ?? null,
+                    'end_date'          => $notif->end_date ?? null,
+                    'date_time'         => Carbon::parse($notif->created_at)->format('d-m-Y H:i:s'),
+                    'createdAt'         => Carbon::parse($notif->created_at)->toISOString(),
+                    'attachment'        => $attachmentArray,
+                    'link'              => $data['link'] ?? null,
+                    'image'             => $data['image'] ?? null,
+                ];
+            });
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Notifications retrieved successfully.',
+            'data'    => [
+                'current_tab'   => $tab,
+                'totalUnread'   => $unreadCount,
+                'unread_count'  => $unreadCount,
+                'counts'        => [
+                    'all'     => $totalCount,
+                    'active'  => $activeCount,
+                    'expired' => $expiredCount,
+                    'unread'  => $unreadCount,
+                ],
+                'notifications' => $notifications,
+                'pagination'    => [
+                    'current_page' => $page,
+                    'per_page'     => $limit,
+                    'total'        => $totalFiltered,
+                    'last_page'    => (int) ceil($totalFiltered / $limit),
+                    'has_more'     => ($page * $limit) < $totalFiltered,
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * Mark single notification or all notifications as read for the authenticated learner.
+     */
+    public function markNotificationRead(Request $request)
+    {
+        $learner = auth('learner_api')->user();
+
+        if (!$learner) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $notificationId = $request->input('id', $request->input('notification_id'));
+
+        $query = DB::table('notifications')
+            ->where(function ($q) use ($learner) {
+                $q->where(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('notifiable_type', get_class($learner));
+                })->orWhere(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('guard', 'learner');
+                });
+            });
+
+        if (!empty($notificationId) && $notificationId !== 'all') {
+            $query->where('id', $notificationId);
+        }
+
+        $affected = $query->whereNull('read_at')->update([
+            'read_at'    => now(),
+            'updated_at' => now(),
+        ]);
+
+        $unreadCount = DB::table('notifications')
+            ->where(function ($q) use ($learner) {
+                $q->where(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('notifiable_type', get_class($learner));
+                })->orWhere(function ($sub) use ($learner) {
+                    $sub->where('notifiable_id', $learner->id)
+                        ->where('guard', 'learner');
+                });
+            })
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json([
+            'status'  => true,
+            'message' => $affected > 0 ? 'Notification marked as read successfully.' : 'Notification already marked as read.',
+            'data'    => [
+                'unread_count' => $unreadCount,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Upload temporary images for learner profile picture or attachments.
+     * Returns temp_path and url for use in profile/update API.
+     */
+    public function uploadTempImages(Request $request)
+    {
+        // 1. Gather all files sent under any key (file, file[], files, files[], image, profile_picture, etc.)
+        $allFiles = $request->allFiles();
+
+        $fileList = [];
+        foreach ($allFiles as $key => $fileOrArray) {
+            if (is_array($fileOrArray)) {
+                foreach ($fileOrArray as $f) {
+                    if ($f instanceof \Illuminate\Http\UploadedFile) {
+                        $fileList[] = $f;
+                    }
+                }
+            } elseif ($fileOrArray instanceof \Illuminate\Http\UploadedFile) {
+                $fileList[] = $fileOrArray;
+            }
+        }
+
+        if (empty($fileList)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'No image file provided for upload. Please select a valid file.',
+            ], 422);
+        }
+
+        // 2. Validate each file extension & size (max 3MB)
+        $maxSize = 3072 * 1024; // 3MB
+        foreach ($fileList as $file) {
+            $extension = strtolower((string) $file->getClientOriginalExtension());
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'The file must be an image of type: jpeg, png, jpg, webp.',
+                ], 422);
+            }
+
+            if ($file->getSize() > $maxSize) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'The image size cannot exceed 3MB.',
+                ], 422);
+            }
+        }
+
+        // 3. Store in storage/app/public/temp/
+        $uploadedFiles = [];
+        foreach ($fileList as $file) {
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('temp', $fileName, 'public');
+
+            $uploadedFiles[] = [
+                'temp_path' => $path,
+                'url'       => asset('storage/' . $path),
+            ];
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'File(s) uploaded successfully.',
+            'data'    => [
+                'files' => $uploadedFiles,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Learner self-service profile update.
+     * Supports updating personal info (name, email, mobile, dob, father_name, address)
+     * and adding, updating, or removing profile picture.
+     */
+    public function updateProfile(Request $request, LearnerService $learnerService)
+    {
+        try {
+            $learner = auth('learner_api')->user() ?? $request->user('learner_api');
+
+            if (!$learner) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Unauthenticated learner session.',
+                ], 401);
+            }
+
+            // Standardize field inputs
+            $email = $request->has('email') ? trim((string) $request->input('email')) : null;
+            $mobile = $request->has('mobile') ? trim((string) $request->input('mobile')) : ($request->has('phone') ? trim((string) $request->input('phone')) : null);
+            $name = $request->has('name') ? trim((string) $request->input('name')) : null;
+            $dob = $request->has('dob') ? trim((string) $request->input('dob')) : null;
+            $fatherName = $request->has('father_name') ? trim((string) $request->input('father_name')) : null;
+            $alternateMobile = $request->has('alternate_mobile') ? trim((string) $request->input('alternate_mobile')) : null;
+            $address = $request->has('address') ? trim((string) $request->input('address')) : null;
+
+            // Validator
+            $validator = Validator::make($request->all(), [
+                'name'                   => 'nullable|string|max:255',
+                'email'                  => 'nullable|email|max:255',
+                'mobile'                 => 'nullable|digits:10',
+                'phone'                  => 'nullable|digits:10',
+                'dob'                    => 'nullable|date',
+                'father_name'            => 'nullable|string|max:255',
+                'alternate_mobile'       => 'nullable|string|max:20',
+                'address'                => 'nullable|string|max:500',
+                'profile_picture'        => 'nullable',
+                'profile_picture_image'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
+                'image'                  => 'nullable',
+                'avatar'                 => 'nullable',
+                'remove_profile_picture' => 'nullable',
+                'remove_image'           => 'nullable',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => $validator->errors()->first(),
+                ], 422);
+            }
+
+            // Email uniqueness check (excluding current learner)
+            if (!empty($email)) {
+                $encryptedEmail = encryptData($email);
+                $emailExists = Learner::withoutGlobalScopes()
+                    ->where('id', '!=', $learner->id)
+                    ->where(function ($q) use ($email, $encryptedEmail) {
+                        $q->where('email', $encryptedEmail)
+                          ->orWhere('email', $email);
+                    })
+                    ->exists();
+
+                if ($emailExists) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Email address is already in use by another learner.',
+                    ], 200);
+                }
+                $learner->email = $encryptedEmail;
+            }
+
+            // Mobile uniqueness check (excluding current learner)
+            if (!empty($mobile)) {
+                $encryptedMobile = encryptData($mobile);
+                $mobileExists = Learner::withoutGlobalScopes()
+                    ->where('id', '!=', $learner->id)
+                    ->where(function ($q) use ($mobile, $encryptedMobile) {
+                        $q->where('mobile', $encryptedMobile)
+                          ->orWhere('mobile', $mobile);
+                    })
+                    ->exists();
+
+                if ($mobileExists) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Mobile number is already in use by another learner.',
+                    ], 200);
+                }
+                $learner->mobile = $encryptedMobile;
+            }
+
+            if ($request->has('name') && !empty($name)) {
+                $learner->name = $name;
+            }
+
+            if ($request->has('dob')) {
+                if (!empty($dob)) {
+                    $learner->dob = Carbon::parse($dob)->format('Y-m-d');
+                } else {
+                    $learner->dob = null;
+                }
+            }
+
+            if ($request->has('father_name')) {
+                $learner->father_name = $fatherName;
+            }
+
+            if ($request->has('alternate_mobile')) {
+                $learner->alternate_mobile = $alternateMobile;
+            }
+
+            if ($request->has('address')) {
+                $learner->address = $address;
+            }
+
+            // Profile Picture add, update, remove handling (matching LearnerOperationService)
+            $removeRequested = $request->boolean('remove_profile_picture') 
+                || $request->boolean('remove_image')
+                || $request->input('action') === 'remove_image'
+                || $request->input('profile_picture') === 'remove'
+                || ($request->has('profile_picture') && (is_null($request->input('profile_picture')) || $request->input('profile_picture') === ''));
+
+            $imageFile = $request->file('profile_picture_image') 
+                ?? $request->file('profile_picture') 
+                ?? $request->file('image') 
+                ?? $request->file('avatar');
+
+            $imageString = $request->input('profile_picture') 
+                ?? $request->input('profile_picture_image') 
+                ?? $request->input('image') 
+                ?? $request->input('avatar') 
+                ?? $request->input('temp_path');
+
+            if ($imageFile) {
+                // Delete existing old profile picture from disk
+                if ($learner->profile_picture) {
+                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    if (File::exists($oldPath)) {
+                        @File::delete($oldPath);
+                    }
+                }
+                $newPath = app(FileUploadService::class)->moveTempFileToPublic($imageFile, 'profile_picture', 'upload/profile_picture');
+                if ($newPath) {
+                    $learner->profile_picture = $newPath;
+                }
+            } elseif ($removeRequested) {
+                // Delete existing profile picture from disk
+                if ($learner->profile_picture) {
+                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    if (File::exists($oldPath)) {
+                        @File::delete($oldPath);
+                    }
+                }
+                $learner->profile_picture = null;
+            } elseif (!empty($imageString) && is_string($imageString) && $imageString !== 'remove') {
+                // String path / temp image path / URL passed
+                $newPath = app(FileUploadService::class)->moveTempFileToPublic($imageString, 'profile_picture', 'upload/profile_picture');
+                if ($newPath) {
+                    if ($learner->profile_picture && $learner->profile_picture !== $newPath) {
+                        $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                        if (File::exists($oldPath)) {
+                            @File::delete($oldPath);
+                        }
+                    }
+                    $learner->profile_picture = $newPath;
+                }
+            }
+
+            $learner->save();
+
+            // Reload fresh record
+            $learner = $learner->fresh();
+
+            $profilePictureUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+            $learnerDetails = null;
+
+            try {
+                $learnerDetails = $learnerService->getLearnerDetails($learner->id);
+            } catch (\Throwable $th) {
+                // Ignore if details not available
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Profile updated successfully.',
+                'data'    => [
+                    'student' => [
+                        'id'               => (string) $learner->id,
+                        'learner_no'       => $learner->learner_no ?? '',
+                        'name'             => $learner->name ?? '',
+                        'email'            => !empty($learner->email) ? (string) $learner->email : '',
+                        'mobile'           => !empty($learner->mobile) ? (string) $learner->mobile : '',
+                        'dob'              => $learner->dob ?? '',
+                        'father_name'      => $learner->father_name ?? '',
+                        'alternate_mobile' => $learner->alternate_mobile ?? '',
+                        'address'          => $learner->address ?? '',
+                        'profile_picture'  => $profilePictureUrl,
+                    ],
+                ],
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('Learner Profile Update Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to update profile: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Learner self-service My Subscriptions list with tab filtering (all, active, upcoming, expired),
+     * progress metrics, days used, and receipt downloads.
+     */
+    public function subscriptions(Request $request)
+    {
+        $learner = auth('learner_api')->user();
+
+        if (!$learner) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $today = Carbon::today();
+        $tab   = strtolower((string) $request->input('tab', $request->input('status', 'all')));
+        $page  = max(1, (int) $request->input('page', 1));
+        $limit = max(1, (int) $request->input('limit', $request->input('per_page', 20)));
+
+        $branch = Branch::find($learner->branch_id);
+
+        $details = LearnerDetail::withoutGlobalScopes()
+            ->where('learner_id', $learner->id)
+            ->with(['plan', 'planType'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        // Color palettes for subscription cards
+        $colorPalette = ['#eab308', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f97316'];
+
+        $allCards = $details->map(function ($detail, $index) use ($today, $learner, $colorPalette) {
+            $startDate = !empty($detail->plan_start_date) ? Carbon::parse($detail->plan_start_date)->startOfDay() : null;
+            $endDate   = !empty($detail->plan_end_date) ? Carbon::parse($detail->plan_end_date)->startOfDay() : null;
+
+            // Determine status
+            if ($startDate && $startDate->isFuture()) {
+                $status = 'upcoming';
+                $statusLabel = 'Upcoming';
+                $statusColor = '#0ea5e9'; // cyan / light blue
+            } elseif ($endDate && $endDate->lt($today)) {
+                $status = 'expired';
+                $statusLabel = 'Expired';
+                $statusColor = '#ef4444'; // red
+            } else {
+                $status = 'active';
+                $statusLabel = 'Active';
+                $statusColor = '#22c55e'; // green
+            }
+
+            // Progress & Days Used
+            $totalDays = 0;
+            $usedDays  = 0;
+            $daysLeft  = 0;
+            $progressPercentage = 0;
+            $progressLabel = 'Not start yet';
+
+            if ($startDate && $endDate) {
+                $totalDays = max(1, $startDate->diffInDays($endDate) + 1);
+                if ($status === 'upcoming') {
+                    $usedDays = 0;
+                    $progressPercentage = 0;
+                    $progressLabel = 'Not start yet';
+                } elseif ($status === 'expired') {
+                    $usedDays = $totalDays;
+                    $progressPercentage = 100;
+                    $progressLabel = "Expired ($totalDays of $totalDays days used)";
+                } else {
+                    $usedDays = min($totalDays, max(0, $startDate->diffInDays($today) + 1));
+                    $daysLeft = max(0, $today->diffInDays($endDate, false));
+                    $progressPercentage = (int) min(100, round(($usedDays / $totalDays) * 100));
+                    $progressLabel = "{$usedDays} of {$totalDays} days used";
+                }
+            }
+
+            // Transaction associated
+            $txn = LearnerTransaction::withoutGlobalScopes()
+                ->where('learner_detail_id', $detail->id)
+                ->latest('id')
+                ->first();
+
+            $amtPaid = (float) ($txn->paid_amount ?? ($detail->plan_price_id ?? 0));
+            $downloadReceiptUrl = '';
+            if ($txn && (int) ($txn->is_paid ?? 0) === 1) {
+                try {
+                    $downloadReceiptUrl = app(\App\Services\ReceiptService::class)->receiptOpenLink((int) $txn->id);
+                } catch (\Throwable $e) {}
+            }
+
+            $planColor = $colorPalette[$index % count($colorPalette)];
+
+            return [
+                'id'                   => (int) $detail->id,
+                'plan_id'              => $detail->plan_id,
+                'plan_type_id'         => $detail->plan_type_id,
+                'plan_name'            => $detail->plan?->name ?? 'Membership Plan',
+                'plan_type'            => $detail->planType?->name ?? ($detail->plan?->monthdays ?? 'Monthly'),
+                'plan_color'           => $planColor,
+                'status'               => $status,
+                'status_label'         => $statusLabel,
+                'status_color'         => $statusColor,
+                'start_date'           => $detail->plan_start_date ?? '',
+                'end_date'             => $detail->plan_end_date ?? '',
+                'formatted_start_date' => $startDate ? $startDate->format('d M Y') : '',
+                'formatted_end_date'   => $endDate ? $endDate->format('d M Y') : '',
+                'amount_paid'          => $amtPaid,
+                'formatted_amount_paid'=> '₹' . number_format($amtPaid, 0),
+                'total_days'           => $totalDays,
+                'used_days'            => $usedDays,
+                'days_left'            => $daysLeft,
+                'progress_percentage'  => $progressPercentage,
+                'progress_label'       => $progressLabel,
+                'can_renew'            => in_array($status, ['active', 'expired']),
+                'download_receipt_url' => $downloadReceiptUrl,
+                'seat_no'              => $learner->seat_no ? (string) getSeatDisplayShortFloorName($learner->seat_no) : 'GEN',
+            ];
+        });
+
+        // Counts
+        $counts = [
+            'all'      => $allCards->count(),
+            'active'   => $allCards->where('status', 'active')->count(),
+            'upcoming' => $allCards->where('status', 'upcoming')->count(),
+            'expired'  => $allCards->where('status', 'expired')->count(),
+        ];
+
+        // Filter by tab
+        if ($tab === 'active') {
+            $filtered = $allCards->where('status', 'active')->values();
+        } elseif ($tab === 'upcoming') {
+            $filtered = $allCards->where('status', 'upcoming')->values();
+        } elseif ($tab === 'expired') {
+            $filtered = $allCards->where('status', 'expired')->values();
+        } else {
+            $filtered = $allCards->values();
+        }
+
+        $paginated = $filtered->slice(($page - 1) * $limit, $limit)->values();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Subscriptions fetched successfully.',
+            'data'    => [
+                'current_tab'   => $tab,
+                'counts'        => $counts,
+                'subscriptions' => $paginated,
+                'subscribe_cta' => [
+                    'branch_uuid' => $branch?->uuid ?? '',
+                    'button_text' => 'Subscribe',
+                ],
+                'pagination'    => [
+                    'current_page' => $page,
+                    'per_page'     => $limit,
+                    'total'        => $filtered->count(),
+                    'last_page'    => (int) ceil($filtered->count() / $limit),
+                    'has_more'     => ($page * $limit) < $filtered->count(),
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * Learner self-service My Transactions list matching the mobile payment transaction history screen.
+     */
+    public function transactions(Request $request)
+    {
+        $learner = auth('learner_api')->user();
+
+        if (!$learner) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthenticated learner session.',
+            ], 401);
+        }
+
+        $page  = max(1, (int) $request->input('page', 1));
+        $limit = max(1, (int) $request->input('limit', $request->input('per_page', 20)));
+
+        $txns = LearnerTransaction::withoutGlobalScopes()
+            ->where('learner_id', $learner->id)
+            ->with(['learnerDetail.plan', 'learnerDetail.planType'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $receiptService = app(\App\Services\ReceiptService::class);
+
+        $items = $txns->map(function ($tx) use ($receiptService) {
+            $isPaid = (int) ($tx->is_paid ?? 1) === 1 && (float) ($tx->paid_amount ?? 0) > 0;
+            $hasPending = (float) ($tx->pending_amount ?? 0) > 0;
+
+            if ($isPaid) {
+                $status = 'SUCCESS';
+                $statusColor = '#22c55e'; // green
+            } elseif ($hasPending) {
+                $status = 'PENDING';
+                $statusColor = '#f59e0b'; // orange
+            } else {
+                $status = 'FAILED';
+                $statusColor = '#ef4444'; // red
+            }
+
+            $paidDate = !empty($tx->paid_date) ? Carbon::parse($tx->paid_date)->format('d/m/Y') : ($tx->created_at ? Carbon::parse($tx->created_at)->format('d/m/Y') : '');
+            $amountPaid = (float) ($tx->paid_amount ?? 0);
+
+            $paymentModeCode = (int) ($tx->payment_mode ?? 0);
+            if ($paymentModeCode === 1) {
+                $paymentMode = 'Online';
+            } elseif ($paymentModeCode === 2) {
+                $paymentMode = 'Offline';
+            } elseif ($paymentModeCode === 3) {
+                $paymentMode = 'Paylater';
+            } else {
+                $paymentMode = !empty($tx->payment_mode) ? (string) $tx->payment_mode : 'Online';
+            }
+
+            $trxnDisplayId = !empty($tx->transaction_id) ? (string) $tx->transaction_id : (string) $tx->id;
+
+            $downloadReceiptUrl = '';
+            if ($isPaid) {
+                try {
+                    $downloadReceiptUrl = $receiptService->receiptOpenLink((int) $tx->id);
+                } catch (\Throwable $e) {}
+            }
+
+            return [
+                'id'                    => (int) $tx->id,
+                'trxn_id'               => $trxnDisplayId,
+                'transaction_id'        => $trxnDisplayId,
+                'amt_paid'              => $amountPaid,
+                'amount_paid'           => $amountPaid,
+                'formatted_amount_paid' => '₹' . number_format($amountPaid, 0),
+                'payment_mode'          => $paymentMode,
+                'trxn_date'             => $paidDate,
+                'transaction_date'      => $paidDate,
+                'status'                => $status,
+                'status_color'          => $statusColor,
+                'plan_name'             => $tx->learnerDetail?->plan?->name ?? 'Membership Plan',
+                'plan_type'             => $tx->learnerDetail?->planType?->name ?? '',
+                'total_amount'          => (float) ($tx->total_amount ?? $amountPaid),
+                'pending_amount'        => (float) ($tx->pending_amount ?? 0),
+                'download_receipt_url'  => $downloadReceiptUrl,
+                'created_at'            => $tx->created_at ? Carbon::parse($tx->created_at)->toISOString() : null,
+            ];
+        });
+
+        $paginated = $items->slice(($page - 1) * $limit, $limit)->values();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Transactions fetched successfully.',
+            'data'    => [
+                'transactions' => $paginated,
+                'pagination'   => [
+                    'current_page' => $page,
+                    'per_page'     => $limit,
+                    'total'        => $items->count(),
+                    'last_page'    => (int) ceil($items->count() / $limit),
+                    'has_more'     => ($page * $limit) < $items->count(),
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * Learner self-service Frequently Asked Questions (FAQ) API endpoint.
+     */
+    public function faq(Request $request)
+    {
+        $faqs = [
+            [
+                'id'          => 1,
+                'question'    => 'How do I check my seat details and plan duration?',
+                'answer'      => 'View your assigned seat number, plan name, shift details, and subscription end date directly on your Learner App dashboard home screen.',
+                'category'    => 'General',
+            ],
+            [
+                'id'          => 2,
+                'question'    => 'How can I renew my subscription plan?',
+                'answer'      => 'Tap on the Renew button on your dashboard or navigate to the Subscriptions tab to choose your plan and complete your renewal.',
+                'category'    => 'Subscription & Billing',
+            ],
+            [
+                'id'          => 3,
+                'question'    => 'How do I mark daily attendance?',
+                'answer'      => 'Go to the Attendance section in the app and scan the QR code displayed at your library branch entrance to mark your attendance.',
+                'category'    => 'Attendance',
+            ],
+            [
+                'id'          => 4,
+                'question'    => 'How do I update my profile or password?',
+                'answer'      => 'Navigate to Profile Settings from the app menu where you can update your contact information, upload a profile picture, or change your password.',
+                'category'    => 'Account',
+            ],
+            [
+                'id'          => 5,
+                'question'    => 'How can I view my payment history and receipts?',
+                'answer'      => 'Go to the Transactions tab in the app to view all your previous payments, pending dues, and download payment receipts.',
+                'category'    => 'Subscription & Billing',
+            ],
+            [
+                'id'          => 6,
+                'question'    => 'Who do I contact if I face an issue at the library?',
+                'answer'      => 'You can reach out directly to your library administration or branch manager using the support details provided in your profile.',
+                'category'    => 'Support',
+            ],
+        ];
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'FAQs fetched successfully.',
+            'data'    =>$faqs,
+        ], 200);
     }
 }

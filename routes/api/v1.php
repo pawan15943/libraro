@@ -22,7 +22,6 @@ use App\Http\Controllers\Api\V1\Learner\LearnerBranchController;
 
 
 
-Route::middleware(['device.check'])->group(function () {
 Route::middleware(['api_key','throttle:60,1'])->group(function () {
     Route::get('library/app-settings', [LibraryAuthController::class, 'setting']);
     Route::get('library/subscription/plan', [LibraryAuthController::class, 'libraryPlan']);
@@ -60,17 +59,15 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
     // web QR booking form). Creates a pending Booking for staff to verify.
     Route::post('learner/book-seat/{uuid}', [LearnerBookingController::class, 'store']);
 
-    // Learner login
-    Route::post('learner/login', [LearnerAuthController::class, 'login']);
+    // Learner app settings, branch browsing, login
+    Route::middleware(['device.check'])->group(function () {
+        Route::get('learner/app-settings', [LearnerAuthController::class, 'setting']);
+       
+        Route::post('learner/login', [LearnerAuthController::class, 'login'])->middleware('throttle:10,1');
 
-    // Branch browsing (multi-branch app: pick a library branch, view seat
-    // map/plans, then book) — keyed by the branch's public uuid throughout
-    // (same identifier as learner/book-seat/{uuid} above, which already
-    // covers the booking step for this flow — no separate route needed).
-    // shift-plan-types, plan-price, chargeable-days, and get-seat above now
-    // also accept uuid (in addition to branch_id, for existing callers).
-    Route::post('learner/branch/seat-map', [LearnerBranchController::class, 'seatMap']);
-    Route::post('learner/branch/plans', [LearnerBranchController::class, 'plans']);
+        Route::post('learner/branch/seat-map', [LearnerBranchController::class, 'seatMap']);
+        Route::post('learner/branch/plans', [LearnerBranchController::class, 'plans']);
+    });
 
 });
 
@@ -235,20 +232,29 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
 
 });
 
-});
-
 // Learner-app self-service (learner's own device, distinct from the
 // staff/library_api app above). Data is scoped to the authenticated
-// learner via getLibraryId()/getCurrentBranch() (learner_api branch).
-Route::middleware(['auth:learner_api', 'api_key', 'throttle:learner_api'])->prefix('learner')->group(function () {
-    Route::get('profile', [LearnerAuthController::class, 'profile']);
+Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle:60,1'])->prefix('learner')->group(function () {
+    Route::post('reset-password', [LearnerAuthController::class, 'resetPassword'])->middleware('throttle:10,1');
+    Route::post('profile/update', [LearnerAppController::class, 'updateProfile']);
+    Route::match(['get', 'post'], 'profile/setting', [LearnerAppController::class, 'profileSetting']);
+    
+    Route::post('upload/temp-images', [LearnerAppController::class, 'uploadTempImages']);
     Route::post('logout', [LearnerAuthController::class, 'logout']);
 
     Route::post('detail', [LearnerAppController::class, 'detail']);
     Route::post('renew', [LearnerAppController::class, 'renew']);
     Route::post('dashboard', [LearnerAppController::class, 'dashboard']);
 
+    Route::match(['get', 'post'], 'notifications', [LearnerAppController::class, 'notifications']);
+    Route::post('notifications/read', [LearnerAppController::class, 'markNotificationRead']);
+
+    Route::match(['get', 'post'], 'subscriptions', [LearnerAppController::class, 'subscriptions']);
+    Route::match(['get', 'post'], 'transactions', [LearnerAppController::class, 'transactions']);
+
     Route::post('attendance/summary', [AttendanceController::class, 'summary']);
     Route::post('attendance/logs', [LearnerAppController::class, 'attendanceLogs']);
     Route::post('attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
+
+    Route::match(['get', 'post'], 'faq', [LearnerAppController::class, 'faq']);
 });

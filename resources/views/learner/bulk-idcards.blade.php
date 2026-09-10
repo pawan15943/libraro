@@ -341,7 +341,7 @@
                         <p class="m-0">{{ $startTime }} to {{ $endTime }}</p>
                     </li>
                 </ul>
-                <div class="barcode">{!! QrCode::size(100)->generate($learner_detail->learner->learner_no) !!}</div>
+                <div class="barcode">{!! QrCode::size(100)->generate(generateLearnerQrPayload($branch->library_id ?? $learner_detail->branch_id, $learner_detail->learner->learner_no)) !!}</div>
             </div>
             <div class="library-name">{{$branch->display_name ?? $branch->name}}</div>
         </div>

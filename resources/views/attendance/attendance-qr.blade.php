@@ -189,13 +189,14 @@
             .then(res => res.json())
             .then(res => {
 
-                const scanMsg = document.getElementById('scanMsg');
-                if (res.status === 'success' || res.status === 'extension') {
+                const statusType = res.type || res.status;
+                const isSuccess = res.status === true || statusType === 'success' || statusType === 'extension';
+
+                if (isSuccess) {
                     setScanMessage(res.message, 'success');
                 } else {
                     setScanMessage(res.message, 'danger');
                 }
-
 
                 // Hide all animations
                 successAnimation.style.display = 'none';
@@ -205,20 +206,16 @@
                 let animation;
                 let audio;
 
-                if (res.status === 'success') {
+                if (statusType === 'success' || (res.status === true && statusType !== 'extension')) {
                     animation = successAnimation;
                     audio = audioSuccess;
-                } 
-                else if (res.status === 'expired') {
+                } else if (statusType === 'expired') {
                     animation = failedAnimation;
                     audio = audioExpired;
-                }
-                 else if (res.status === 'extension') {
+                } else if (statusType === 'extension') {
                     animation = successAnimation;
                     audio = audioExtension;
-                }
-                 
-                else {
+                } else {
                     animation = errorAnimation;
                     audio = audioError;
                 }

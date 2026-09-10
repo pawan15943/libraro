@@ -157,6 +157,9 @@ class LibraryController extends Controller
                'library_mobile' => $library->library_mobile,
                'library_no'=> $library->library_no ?? '',
                'library_owner'=> $library->library_owner ?? '',
+               'qr_key' => function_exists('generateLibraryAppQrKey')
+                   ? generateLibraryAppQrKey($library->library_name, $library->library_no ?? '')
+                   : '',
                'pyment_upi'     => $getPaymentUpi->upi_id ?? '',
                'branches'       => $branches,
                'active_plan'    => $planData,

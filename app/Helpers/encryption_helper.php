@@ -123,6 +123,245 @@ if (!function_exists('decryptData')) {
         return $decrypted;
     }
 }
+
+if (!function_exists('generateLearnerProfileQrKey')) {
+    /**
+     * Requirement 1: Learner App profile API qr_key
+     * Encrypted string format: LIBRARO-LibraryName=-
+     */
+    function generateLearnerProfileQrKey($libraryName)
+    {
+        $cleanLibraryName = trim((string)$libraryName);
+        $rawKey = "LIBRARO-{$cleanLibraryName}=-";
+        return encryptData($rawKey);
+    }
+}
+
+if (!function_exists('generateLibraryAppQrKey')) {
+    /**
+     * Requirement 2: Library App profile API qr_key
+     * Encrypted string format: LIBRARO-LibraryName-LEARNER-LibraryNumber=Attendance=*-
+     */
+    function generateLibraryAppQrKey($libraryName, $libraryNo)
+    {
+        $cleanLibraryName = trim((string)$libraryName);
+        $cleanLibraryNo   = trim((string)$libraryNo);
+        $rawKey = "LIBRARO-{$cleanLibraryName}-LEARNER-{$cleanLibraryNo}=Attendance=*-";
+        return encryptData($rawKey);
+    }
+}
+
+if (!function_exists('generateLearnerQrPayload')) {
+    function generateLearnerQrPayload($libraryId, $learnerNo, $mobile = null, $learnerName = null, $libraryNo = null)
+    {
+        $legacyJson = json_encode([
+            'lib_id' => (string)$libraryId,
+            'l_no'   => (string)$learnerNo,
+            'time'   => time()
+        ]);
+        $legacyPayload = encryptData($legacyJson);
+
+        $branch = Branch::with('library')->find($libraryId);
+        if (!$branch && !empty($learnerNo)) {
+            $learner = Learner::where('learner_no', $learnerNo)->first();
+            if ($learner && $learner->branch_id) {
+                $branch = Branch::with('library')->find($learner->branch_id);
+            }
+        }
+
+        $libName = $branch?->library?->library_name ?? ($branch?->display_name ?? ($branch?->name ?? ''));
+        $libNo   = $libraryNo ?: ($branch?->library?->library_no ?? ($branch?->library_no ?? ''));
+
+        // Requirement 3: Concatenate Library App's qr_key with legacy payload
+        $libraryAppQrKey = generateLibraryAppQrKey($libName, $libNo);
+
+        return $libraryAppQrKey . $legacyPayload;
+    }
+}
+
+if (!function_exists('decryptLearnerQrPayload')) {
+    function decryptLearnerQrPayload($encryptedPayload)
+    {
+        try {
+            $payload = trim((string)$encryptedPayload);
+            if (empty($payload)) {
+                return null;
+            }
+
+            // Case A: Concatenated Payload ($qrKey . $legacyPayload)
+            // e.g. "EpEmUutVpWs8rxenSXKy5vZYvD21PbaHJDmoozB3tCE=..."
+            if (preg_match('/^([^=]+=)(.+)$/', $payload, $matches)) {
+                $firstPart  = $matches[1];
+                $secondPart = $matches[2];
+
+                // Check if second part is valid legacy JSON payload
+                $decryptedSecond = decryptData($secondPart);
+                if ($decryptedSecond) {
+                    $decodedSecond = json_decode($decryptedSecond, true);
+                    if (is_array($decodedSecond) && isset($decodedSecond['l_no'])) {
+                        $decodedSecond['qr_key'] = $firstPart;
+                        $decodedSecond['raw_key'] = decryptData($firstPart);
+                        return $decodedSecond;
+                    }
+                }
+
+                // Or check first part as LIBRARO key
+                $decryptedFirst = decryptData($firstPart);
+                if ($decryptedFirst && str_starts_with($decryptedFirst, 'LIBRARO')) {
+                    $result = decryptLearnerQrPayload($firstPart);
+                    if ($result) {
+                        return $result;
+                    }
+                }
+            }
+
+            $decryptedRaw = decryptData($payload);
+            if (!$decryptedRaw) {
+                $decryptedRaw = $payload;
+            }
+
+            // 1. JSON payload
+            $decoded = json_decode($decryptedRaw, true);
+            if (is_array($decoded) && isset($decoded['l_no'])) {
+                return $decoded;
+            }
+
+            // 2. Structured LIBRARO key (e.g., LIBRARO059001Rahul)
+            if (str_starts_with($decryptedRaw, 'LIBRARO') && strlen($decryptedRaw) >= 13) {
+                $libPart      = substr($decryptedRaw, 7, 2);
+                $mobilePart   = substr($decryptedRaw, 9, 2);
+                $learnerNoEnd = substr($decryptedRaw, 11, 2);
+                $namePart     = substr($decryptedRaw, 13);
+
+                $learners = Learner::where('learner_no', 'LIKE', '%' . $learnerNoEnd)
+                    ->where(function($q) use ($namePart) {
+                        if (!empty($namePart)) {
+                            $q->where('name', 'LIKE', $namePart . '%');
+                        }
+                    })
+                    ->get();
+
+                $matchedLearner = $learners->first(function($l) use ($mobilePart) {
+                    $cleanMobile = preg_replace('/\D/', '', (string)$l->mobile);
+                    if (strlen($cleanMobile) > 10) {
+                        $cleanMobile = substr($cleanMobile, -10);
+                    }
+                    $mPart = (strlen($cleanMobile) >= 2)
+                        ? $cleanMobile[0] . substr($cleanMobile, -1)
+                        : str_pad($cleanMobile, 2, '0', STR_PAD_LEFT);
+                    return $mPart === $mobilePart;
+                });
+
+                if (!$matchedLearner && $learners->isNotEmpty()) {
+                    $matchedLearner = $learners->first();
+                }
+
+                if ($matchedLearner) {
+                    return [
+                        'lib_id'     => (string)$matchedLearner->branch_id,
+                        'l_no'       => (string)$matchedLearner->learner_no,
+                        'learner_id' => (string)$matchedLearner->id,
+                        'raw_key'    => $decryptedRaw,
+                    ];
+                }
+
+                return [
+                    'lib_id'     => '',
+                    'l_no'       => $learnerNoEnd,
+                    'learner_id' => '',
+                    'name'       => $namePart,
+                    'raw_key'    => $decryptedRaw,
+                ];
+            }
+
+            // 3. Fallback direct match with learner_no
+            $directLearner = Learner::where('learner_no', $decryptedRaw)->first();
+            if ($directLearner) {
+                return [
+                    'lib_id'     => (string)$directLearner->branch_id,
+                    'l_no'       => (string)$directLearner->learner_no,
+                    'learner_id' => (string)$directLearner->id,
+                    'raw_key'    => $decryptedRaw,
+                ];
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
+if (!function_exists('generateLearnerQrKey')) {
+    /**
+     * Generate encrypted QR key for learner:
+     * - Prefix: LIBRARO
+     * - Library No: last 2 digits/characters (e.g. LIB05 -> 05)
+     * - Learner Mobile: first & last digit (e.g. 9876543210 -> 90)
+     * - Learner No: last 2 digits/characters (e.g. LBR-2026-001 -> 01)
+     * - Learner Name: first word (e.g. Rahul Sharma -> Rahul)
+     * - Encrypted with encryptData()
+     *
+     * @param string|null $libraryNo
+     * @param string|null $mobile
+     * @param string|null $learnerNo
+     * @param string|null $learnerName
+     * @return string
+     */
+    function generateLearnerQrKey($libraryNo, $mobile, $learnerNo, $learnerName)
+    {
+        $prefix = 'LIBRARO';
+
+        // 1. Library No (last 2 digits)
+        $cleanLibNo = trim((string)$libraryNo);
+        $libPart = substr($cleanLibNo, -2);
+        if (strlen($libPart) < 2) {
+            $libPart = str_pad($libPart, 2, '0', STR_PAD_LEFT);
+        }
+
+        // 2. Learner Mobile (first & last digit)
+        $cleanMobile = preg_replace('/\D/', '', (string)$mobile);
+        if (strlen($cleanMobile) > 10) {
+            $cleanMobile = substr($cleanMobile, -10);
+        }
+        $mobilePart = (strlen($cleanMobile) >= 2)
+            ? $cleanMobile[0] . substr($cleanMobile, -1)
+            : str_pad($cleanMobile, 2, '0', STR_PAD_LEFT);
+
+        // 3. Learner No (last 2 digits)
+        $cleanLearnerNo = trim((string)$learnerNo);
+        $learnerNoPart = substr($cleanLearnerNo, -2);
+        if (strlen($learnerNoPart) < 2) {
+            $learnerNoPart = str_pad($learnerNoPart, 2, '0', STR_PAD_LEFT);
+        }
+
+        // 4. Learner Name (first word)
+        $nameParts = preg_split('/\s+/', trim((string)$learnerName));
+        $namePart = $nameParts[0] ?? '';
+
+        $rawKey = "{$prefix}{$libPart}{$mobilePart}{$learnerNoPart}{$namePart}";
+
+        return encryptData($rawKey);
+    }
+}
+
+if (!function_exists('decryptLearnerQrKey')) {
+    /**
+     * Decrypt learner QR key back to raw string.
+     *
+     * @param string $encryptedKey
+     * @return string|null
+     */
+    function decryptLearnerQrKey($encryptedKey)
+    {
+        try {
+            return decryptData(trim((string)$encryptedKey));
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
 if (!function_exists('getBranch')) {
     function getBranch()
     {

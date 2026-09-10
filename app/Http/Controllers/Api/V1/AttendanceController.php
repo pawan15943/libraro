@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Learner;
 use Illuminate\Http\Request;
 use App\Services\AttendanceService;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -68,14 +69,20 @@ class AttendanceController extends Controller
             ], 401);
         }
 
-        // ✅ Validate Branch QR (your existing logic)
+        // ✅ Validate Branch QR or Learner Encrypted QR (Permanent ID Card QR)
         $branchId = AttendanceService::validateQrToken($request->qr);
 
         if (!$branchId) {
-            return response()->json([
-                'status' => false,
-                'message' => 'QR expired or invalid'
-            ], 403);
+            $decryptedLearnerQr = decryptLearnerQrPayload($request->qr);
+            
+            if ($decryptedLearnerQr && isset($decryptedLearnerQr['l_no'])) {
+                $branchId = $learner->branch_id;
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'QR expired or invalid'
+                ], 403);
+            }
         }
 
         // ✅ Duplicate protection
@@ -115,8 +122,15 @@ class AttendanceController extends Controller
 
         $branchId = $owner->current_branch;
 
-        // ✅ Decode learner QR
-        $learnerNo = trim($request->qr);
+        // ✅ Decode learner QR (AES Decrypt payload or fallback to plain learner_no)
+        $qrPayload = trim($request->qr);
+        $decryptedData = decryptLearnerQrPayload($qrPayload);
+
+        if ($decryptedData && isset($decryptedData['l_no'])) {
+            $learnerNo = $decryptedData['l_no'];
+        } else {
+            $learnerNo = $qrPayload;
+        }
 
         $learner = Learner::where('learner_no', $learnerNo)->first();
 
@@ -124,7 +138,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Learner not found'
-            ], );
+            ], 404);
         }
 
         // ✅ Security: same branch

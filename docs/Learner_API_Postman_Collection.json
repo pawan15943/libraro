@@ -1,7 +1,8 @@
 {
     "info": {
-        "name": "Libraro - Learner App",
-        "description": "Learner-facing mobile app API: branch browsing, seat booking, learner login/account, attendance. Two groups: Public (device-type/device-id + X-API-KEY only) and Learner Account (adds Authorization: Bearer <learner_token> from /learner/login).",
+        "_postman_id": "c1f72b22-86c2-4b2a-9e11-learner-api-v1",
+        "name": "Libraro Learner API Collection",
+        "description": "Complete Postman collection for Libraro Learner App endpoints. Features automatic bearer token extraction upon successful login.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
@@ -76,55 +77,14 @@
             "type": "string"
         }
     ],
-    "event": [
-        {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                "exec": [
-                    "// Auto-generate Security Headers & HMAC Signature for every request",
-                    "const timestamp = Date.now().toString();",
-                    "const nonce = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
-                    "    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
-                    "    return v.toString(16);",
-                    "});",
-                    "",
-                    "const method = pm.request.method.toUpperCase();",
-                    "const path = pm.request.url.getPathWithQuery();",
-                    "let body = '';",
-                    "if (pm.request.body && pm.request.body.mode === 'raw' && pm.request.body.raw) {",
-                    "    body = pm.request.body.raw;",
-                    "}",
-                    "",
-                    "const secret = pm.collectionVariables.get(\"hmac_secret\") || \"9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3\";",
-                    "const payload = method + \"|\" + path + \"|\" + timestamp + \"|\" + nonce + \"|\" + body;",
-                    "const signature = CryptoJS.HmacSHA256(payload, secret).toString(CryptoJS.enc.Hex);",
-                    "",
-                    "// Set collection variables so {{x_timestamp}}, {{x_nonce}}, {{x_signature}} resolve automatically",
-                    "pm.collectionVariables.set('x_timestamp', timestamp);",
-                    "pm.collectionVariables.set('x_nonce', nonce);",
-                    "pm.collectionVariables.set('x_signature', signature);",
-                    "",
-                    "// Upsert request headers directly",
-                    "pm.request.headers.upsert({ key: 'X-Timestamp', value: timestamp });",
-                    "pm.request.headers.upsert({ key: 'X-Nonce', value: nonce });",
-                    "pm.request.headers.upsert({ key: 'X-Signature', value: signature });",
-                    "pm.request.headers.upsert({ key: 'X-App-Version', value: pm.collectionVariables.get('app_version') || '1.0.0' });",
-                    "pm.request.headers.upsert({ key: 'X-Platform', value: pm.collectionVariables.get('device_type') || 'android' });",
-                    "pm.request.headers.upsert({ key: 'X-Device-Id', value: pm.collectionVariables.get('device_id') || 'android-test-device-001' });",
-                    "pm.request.headers.upsert({ key: 'X-API-KEY', value: pm.collectionVariables.get('api_key') || pm.collectionVariables.get('x_api_key') || '' });"
-                ]
-            }
-        }
-    ],
     "item": [
         {
-            "name": "Public - Branch Browsing & Booking",
+            "name": "1. Authentication & App Config",
             "item": [
                 {
-                    "name": "Seat map (by branch uuid)",
+                    "name": "Get Learner App Settings",
                     "request": {
-                        "method": "POST",
+                        "method": "GET",
                         "header": [
                             {
                                 "key": "Content-Type",
@@ -159,12 +119,8 @@
                                 "value": "{{api_key}}"
                             }
                         ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_type_id\": null\n}"
-                        },
                         "url": {
-                            "raw": "{{base_url}}/api/v1/learner/branch/seat-map",
+                            "raw": "{{base_url}}/api/v1/learner/app-settings",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -172,452 +128,27 @@
                                 "api",
                                 "v1",
                                 "learner",
-                                "branch",
-                                "seat-map"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Plans (by branch uuid)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/learner/branch/plans",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "learner",
-                                "branch",
-                                "plans"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Shift / plan types (by branch uuid)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"seat_no\": \"\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/shift-plan-types",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "shift-plan-types"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Plan price calc (by branch uuid)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_id\": {{plan_id}},\n  \"plan_type_id\": {{plan_type_id}},\n  \"plan_start_date\": \"2026-08-10\",\n  \"locker_amount\": 0,\n  \"discount_type\": null,\n  \"discount_value\": 0,\n  \"paid_amount\": 0\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/plan-price",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "plan-price"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Chargeable days (by branch uuid)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"plan_id\": {{plan_id}},\n  \"plan_start_date\": \"2026-08-10\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/chargeable-days",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "chargeable-days"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Available seats (by branch uuid)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"uuid\": \"{{branch_uuid}}\",\n  \"search\": \"\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/get-seat",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "get-seat"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Book seat (creates pending Booking)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "formdata",
-                            "formdata": [
-                                {
-                                    "key": "name",
-                                    "value": "Postman Test Learner",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "mobile",
-                                    "value": "9876543210",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "email",
-                                    "value": "test@example.com",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "dob",
-                                    "value": "2000-01-01",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "general_seat",
-                                    "value": "yes",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "seat_no",
-                                    "value": "",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "plan_id",
-                                    "value": "{{plan_id}}",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "plan_type_id",
-                                    "value": "{{plan_type_id}}",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "plan_price_id",
-                                    "value": "{{plan_price_id}}",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "plan_start_date",
-                                    "value": "2026-08-10",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "payment_mode",
-                                    "value": "offline",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "id_proof_name",
-                                    "value": "1",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "id_proof_file",
-                                    "type": "file",
-                                    "src": []
-                                },
-                                {
-                                    "key": "id_proof_number",
-                                    "value": "",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "address",
-                                    "value": "123 Test Street",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "profile_picture",
-                                    "type": "file",
-                                    "src": []
-                                },
-                                {
-                                    "key": "learner_transaction_id",
-                                    "value": "",
-                                    "type": "text"
-                                }
+                                "app-settings"
                             ]
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/learner/book-seat/{{branch_uuid}}",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "learner",
-                                "book-seat",
-                                "{{branch_uuid}}"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Public - Learner Login",
-            "item": [
+                        "description": "Fetches general learner app settings including app versions, force update, terms, privacy policy, and support contact information."
+                    },
+                    "response": []
+                },
                 {
-                    "name": "Login",
+                    "name": "Learner Login (Auto-saves Bearer Token)",
                     "event": [
                         {
                             "listen": "test",
                             "script": {
-                                "type": "text/javascript",
                                 "exec": [
-                                    "if (pm.response.code === 200) {",
-                                    "    const json = pm.response.json();",
-                                    "    if (json.token) {",
-                                    "        pm.collectionVariables.set('learner_token', json.token);",
-                                    "    }",
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set('learner_token', jsonData.token);",
+                                    "    console.log('Learner token automatically saved to learner_token: ' + jsonData.token);",
                                     "}"
-                                ]
+                                ],
+                                "type": "text/javascript"
                             }
                         }
                     ],
@@ -659,7 +190,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"identifier\": \"LN000001\",\n  \"password\": \"9876543210\",\n  \"deviceInfo\": {\n    \"deviceId\": \"{{device_id}}\",\n    \"osVersion\": \"Android 14\"\n  }\n}"
+                            "raw": "{\n    \"identifier\": \"LN000001\",\n    \"password\": \"9876543210\",\n    \"deviceInfo\": {\n        \"deviceId\": \"{{device_token}}\",\n        \"osVersion\": \"Android 14\"\n    }\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/login",
@@ -672,23 +203,425 @@
                                 "learner",
                                 "login"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Self-service learner login. Username ('uid'): UID or Email. Password ('mobile'): Registered mobile number. Requires device-type and device-token headers. Enforces single-device login."
+                    },
+                    "response": []
                 }
             ]
         },
         {
-            "name": "Learner Account (auth:learner_api)",
-            "auth": {
-                "type": "bearer",
-                "bearer": [
-                    {
-                        "key": "token",
-                        "value": "{{learner_token}}",
-                        "type": "string"
-                    }
-                ]
-            },
+            "name": "2. Public Branch & Seat Discovery",
+            "item": [
+                {
+                    "name": "Get Branch Plans",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/branch/plans",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "branch",
+                                "plans"
+                            ]
+                        },
+                        "description": "Fetch available plans for a specific branch using its public UUID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Seat Map",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"uuid\": \"{{branch_uuid}}\",\n    \"plan_type_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/branch/seat-map",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "branch",
+                                "seat-map"
+                            ]
+                        },
+                        "description": "Browse branch seat map. Occupants PII/financial data is sanitized for privacy."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Shift Plan Types",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"uuid\": \"{{branch_uuid}}\",\n    \"seat_no\": \"101\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/shift-plan-types",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "shift-plan-types"
+                            ]
+                        },
+                        "description": "Get available shifts/plan types for a branch or specific seat."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Calculate Plan Price",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"uuid\": \"{{branch_uuid}}\",\n    \"plan_start_date\": \"2026-09-01\",\n    \"locker_amount\": 0,\n    \"discount_type\": \"amount\",\n    \"discount_value\": 0,\n    \"paid_amount\": 1000\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/plan-price",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "plan-price"
+                            ]
+                        },
+                        "description": "Calculate pricing, discounts, and breakdown for a seat booking."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Calculate Chargeable Days",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"plan_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/chargeable-days",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "chargeable-days"
+                            ]
+                        },
+                        "description": "Calculate chargeable days and calculated plan end date."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Available Seats",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"uuid\": \"{{branch_uuid}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/get-seat",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "get-seat"
+                            ]
+                        },
+                        "description": "List remaining available seats with open shifts."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Book Seat (Public Guest Booking)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"mobile\": \"9876543210\",\n    \"email\": \"johndoe@example.com\",\n    \"dob\": \"2000-01-15\",\n    \"general_seat\": \"no\",\n    \"seat_no\": 101,\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"plan_price_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"payment_mode\": \"online\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/book-seat/{{branch_uuid}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "book-seat",
+                                "{{branch_uuid}}"
+                            ]
+                        },
+                        "description": "Public guest booking endpoint. Creates a pending booking row awaiting staff verification."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "3. Authenticated Learner Self-Service",
             "item": [
                 {
                     "name": "Learner Reset Password",
@@ -751,11 +684,79 @@
                                 "learner",
                                 "reset-password"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Allows an authenticated learner to change their login mobile / password credentials."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Profile Update",
+                    "name": "Upload Temporary Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "",
+                                    "description": "Image file (jpg, jpeg, png, webp - max 3MB). Can also use 'image' or 'profile_picture'."
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/upload/temp-images",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "upload",
+                                "temp-images"
+                            ]
+                        },
+                        "description": "Uploads a photo to temporary storage and returns temp_path and url. Pass the returned temp_path to profile/update API."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Learner Profile",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -794,7 +795,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"Student Name\",\n    \"email\": \"student@example.com\",\n    \"phone\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Father Name\",\n    \"address\": \"123 Main Street\",\n    \"profile_picture\": \"temp/profile_123.jpg\",\n    \"remove_profile_picture\": false\n}"
+                            "raw": "{\n    \"name\": \"Rahul Sharma\",\n    \"email\": \"rahul@example.com\",\n    \"mobile\": \"9876543210\",\n    \"dob\": \"2000-01-15\",\n    \"father_name\": \"Suresh Sharma\",\n    \"alternate_mobile\": \"9123456780\",\n    \"address\": \"New Delhi, India\",\n    \"profile_picture\": \"upload/temp/photo_123.jpg\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/profile/update",
@@ -809,63 +810,12 @@
                                 "update"
                             ]
                         },
-                        "description": "Learner profile update API. Supports updating name, email, mobile/phone, dob, father_name, address, and profile picture (add, update, or remove)."
-                    }
+                        "description": "Update profile details and avatar. Matches library/learners/operation process:\n- Binary File Upload: Send multipart/form-data with profile_picture_image (file)\n- Temp Path String: Send JSON with profile_picture: 'upload/temp/...'\n- Remove Image: Send remove_profile_picture: true or profile_picture: '' / null"
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Detail",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/learner/detail",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "learner",
-                                "detail"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Dashboard",
+                    "name": "Get Learner Dashboard",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -913,11 +863,67 @@
                                 "learner",
                                 "dashboard"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Fetch learner dashboard data (full plan history, branch features, learner requests)."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Notifications",
+                    "name": "Get Learner Detail",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/detail",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "detail"
+                            ]
+                        },
+                        "description": "Get detailed history, transaction history, and seat allocations for authenticated learner."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Notifications",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -955,7 +961,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/api/v1/learner/notifications?page=1&limit=20",
+                            "raw": "{{base_url}}/api/v1/learner/notifications?page=1&limit=20&tab=all",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -973,13 +979,19 @@
                                 {
                                     "key": "limit",
                                     "value": "20"
+                                },
+                                {
+                                    "key": "tab",
+                                    "value": "all"
                                 }
                             ]
-                        }
-                    }
+                        },
+                        "description": "Fetch notifications list supporting tabs ('all', 'active', 'expired'), unread counts, and attachment URLs."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Notifications Mark Read",
+                    "name": "Mark Notification Read",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1018,7 +1030,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"id\": \"all\"\n}"
+                            "raw": "{\n    \"id\": \"all\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/notifications/read",
@@ -1032,11 +1044,13 @@
                                 "notifications",
                                 "read"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Mark a single notification by UUID or all notifications ('all') as read for the authenticated learner."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Subscriptions",
+                    "name": "Get Subscriptions",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -1098,11 +1112,13 @@
                                     "value": "all"
                                 }
                             ]
-                        }
-                    }
+                        },
+                        "description": "Fetch learner's seat subscriptions and membership plans with tab filtering ('all', 'active', 'upcoming', 'expired'), progress bars, days used, and receipt links."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Transactions",
+                    "name": "Get Payment Transactions",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -1160,67 +1176,13 @@
                                     "value": "20"
                                 }
                             ]
-                        }
-                    }
-                },
-                {
-                    "name": "Renew",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Timestamp",
-                                "value": "{{x_timestamp}}"
-                            },
-                            {
-                                "key": "X-Nonce",
-                                "value": "{{x_nonce}}"
-                            },
-                            {
-                                "key": "X-Signature",
-                                "value": "{{x_signature}}"
-                            },
-                            {
-                                "key": "X-App-Version",
-                                "value": "1.0.0"
-                            },
-                            {
-                                "key": "X-Platform",
-                                "value": "android"
-                            },
-                            {
-                                "key": "X-Device-Id",
-                                "value": "{{device_id}}"
-                            },
-                            {
-                                "key": "X-API-KEY",
-                                "value": "{{api_key}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"plan_id\": {{plan_id}},\n  \"plan_type_id\": {{plan_type_id}},\n  \"plan_price_id\": {{plan_price_id}},\n  \"plan_start_date\": \"2026-09-01\",\n  \"paid_amount\": {{plan_price_id}},\n  \"payment_mode\": 1,\n  \"due_date\": \"2026-09-05\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/learner/renew",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "learner",
-                                "renew"
-                            ]
-                        }
-                    }
+                        "description": "Fetch payment transactions history with status badges ('SUCCESS', 'PENDING', 'FAILED') and receipt download URLs."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Attendance summary",
+                    "name": "Attendance Summary",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1259,7 +1221,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"from_date\": \"2026-08-01\",\n  \"to_date\": \"2026-08-02\"\n}"
+                            "raw": "{\n    \"from_date\": \"2026-08-01\",\n    \"to_date\": \"2026-08-25\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/attendance/summary",
@@ -1273,11 +1235,13 @@
                                 "attendance",
                                 "summary"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Fetch attendance summary for date range."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Attendance logs",
+                    "name": "Daily Attendance Logs",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1316,7 +1280,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"date\": \"2026-08-02\"\n}"
+                            "raw": "{\n    \"date\": \"2026-08-25\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/attendance/logs",
@@ -1330,11 +1294,13 @@
                                 "attendance",
                                 "logs"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Fetch punch in/out timestamps log for specified date."
+                    },
+                    "response": []
                 },
                 {
-                    "name": "Attendance QR scan",
+                    "name": "Scan Attendance QR",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1373,7 +1339,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"qr\": \"PASTE_QR_TOKEN_FROM_STAFF_attendance_qr-token\"\n}"
+                            "raw": "{\n    \"qr\": \"SAMPLE_ROTATING_QR_TOKEN\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/v1/learner/attendance/qr-scan",
@@ -1387,8 +1353,68 @@
                                 "attendance",
                                 "qr-scan"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Punch IN or OUT by scanning the library's live rotating attendance QR code."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Renew Plan / Seat",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Timestamp",
+                                "value": "{{x_timestamp}}"
+                            },
+                            {
+                                "key": "X-Nonce",
+                                "value": "{{x_nonce}}"
+                            },
+                            {
+                                "key": "X-Signature",
+                                "value": "{{x_signature}}"
+                            },
+                            {
+                                "key": "X-App-Version",
+                                "value": "1.0.0"
+                            },
+                            {
+                                "key": "X-Platform",
+                                "value": "android"
+                            },
+                            {
+                                "key": "X-Device-Id",
+                                "value": "{{device_id}}"
+                            },
+                            {
+                                "key": "X-API-KEY",
+                                "value": "{{api_key}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"plan_id\": 1,\n    \"plan_type_id\": 1,\n    \"plan_price_id\": 1,\n    \"plan_start_date\": \"2026-09-01\",\n    \"paid_amount\": 1200,\n    \"payment_mode\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/learner/renew",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "learner",
+                                "renew"
+                            ]
+                        },
+                        "description": "Renew current seat/subscription plan. Payment modes: 1=online, 2=offline, 3=paylater."
+                    },
+                    "response": []
                 },
                 {
                     "name": "Logout",
@@ -1439,10 +1465,63 @@
                                 "learner",
                                 "logout"
                             ]
-                        }
-                    }
+                        },
+                        "description": "Revoke active Sanctum tokens across all devices and log out."
+                    },
+                    "response": []
                 }
-            ]
+            ],
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{learner_token}}",
+                        "type": "string"
+                    }
+                ]
+            }
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Auto-generate Security Headers & HMAC Signature for every request",
+                    "const timestamp = Date.now().toString();",
+                    "const nonce = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+                    "    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
+                    "    return v.toString(16);",
+                    "});",
+                    "",
+                    "const method = pm.request.method.toUpperCase();",
+                    "const path = pm.request.url.getPathWithQuery();",
+                    "let body = '';",
+                    "if (pm.request.body && pm.request.body.mode === 'raw' && pm.request.body.raw) {",
+                    "    body = pm.request.body.raw;",
+                    "}",
+                    "",
+                    "const secret = pm.collectionVariables.get(\"hmac_secret\") || \"9fK#7vQ2@Lm8!Xr4$Np6^Zt1&Ws5*Hy3\";",
+                    "const payload = method + \"|\" + path + \"|\" + timestamp + \"|\" + nonce + \"|\" + body;",
+                    "const signature = CryptoJS.HmacSHA256(payload, secret).toString(CryptoJS.enc.Hex);",
+                    "",
+                    "// Set collection variables so {{x_timestamp}}, {{x_nonce}}, {{x_signature}} resolve automatically",
+                    "pm.collectionVariables.set('x_timestamp', timestamp);",
+                    "pm.collectionVariables.set('x_nonce', nonce);",
+                    "pm.collectionVariables.set('x_signature', signature);",
+                    "",
+                    "// Upsert request headers directly",
+                    "pm.request.headers.upsert({ key: 'X-Timestamp', value: timestamp });",
+                    "pm.request.headers.upsert({ key: 'X-Nonce', value: nonce });",
+                    "pm.request.headers.upsert({ key: 'X-Signature', value: signature });",
+                    "pm.request.headers.upsert({ key: 'X-App-Version', value: pm.collectionVariables.get('app_version') || '1.0.0' });",
+                    "pm.request.headers.upsert({ key: 'X-Platform', value: pm.collectionVariables.get('device_type') || 'android' });",
+                    "pm.request.headers.upsert({ key: 'X-Device-Id', value: pm.collectionVariables.get('device_id') || 'android-test-device-001' });",
+                    "pm.request.headers.upsert({ key: 'X-API-KEY', value: pm.collectionVariables.get('api_key') || pm.collectionVariables.get('x_api_key') || '' });"
+                ]
+            }
         }
     ]
 }

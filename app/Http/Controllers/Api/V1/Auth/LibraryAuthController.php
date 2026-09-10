@@ -64,8 +64,10 @@ class LibraryAuthController extends Controller
             'status' => true,
             'message' => 'Settings fetched successfully.',
             'data' => [
-                'app_version' => '1.0',
-                'force_update' => false,
+                'app_version'     => (string) config('app.min_versions.android', '1.0.0'),
+                'android_version' => (string) config('app.min_versions.android', '1.0.0'),
+                'ios_version'     => (string) config('app.min_versions.ios', '1.0.0'),
+                'force_update'    => filter_var(config('app.force_update', false), FILTER_VALIDATE_BOOLEAN),
                 'youtube' => 'https://www.youtube.com/@Libraroindia',
                 'linkedin' => 'https://www.linkedin.com/in/libraro/',
                 'instagram' => 'https://www.instagram.com/libraro.in/',
@@ -77,7 +79,7 @@ class LibraryAuthController extends Controller
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
-                'isMaintenance'=>false,
+                'isMaintenance' => filter_var(env('APP_MAINTENANCE') ?? config('app.is_maintenance', false), FILTER_VALIDATE_BOOLEAN),
                 // 'address' => '955, Vinoba Bhave Nagar, Kota, Landmark: New Balaji Computer Classes'
             ]
         ], 200);
@@ -916,6 +918,12 @@ class LibraryAuthController extends Controller
                 ->select('id', 'name')
                 ->get();
 
+            $libraryName = $user->library_name ?? '';
+            $libraryNo   = $user->library_no ?? '';
+            $qrKey       = function_exists('generateLibraryAppQrKey')
+                ? generateLibraryAppQrKey($libraryName, $libraryNo)
+                : '';
+
             return [
                 'user_id' => $user->id,
                 'name' => $user->library_owner ?? '',
@@ -923,7 +931,8 @@ class LibraryAuthController extends Controller
                 'email' => $user->email ?? $user->library_email ?? '',
                 'mobile' => $user->library_mobile ?? '',
                 'library_id' => $user->id,
-                'library_name' => $user->library_name ?? '',
+                'library_name' => $libraryName,
+                'qr_key' => $qrKey,
                 'allowed_branch' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
             ];
@@ -936,6 +945,12 @@ class LibraryAuthController extends Controller
             ->select('id', 'name')
             ->get();
 
+        $libraryName = $library->library_name ?? '';
+        $libraryNo   = $library->library_no ?? '';
+        $qrKey       = function_exists('generateLibraryAppQrKey')
+            ? generateLibraryAppQrKey($libraryName, $libraryNo)
+            : '';
+
         return [
             'user_id' => $user->id,
             'name' => $user->name ?? '',
@@ -943,7 +958,8 @@ class LibraryAuthController extends Controller
             'email' => $user->email ?? '',
             'mobile' => $user->mobile ?? '',
             'library_id' => $user->library_id,
-            'library_name' => $library->library_name ?? '',
+            'library_name' => $libraryName,
+            'qr_key' => $qrKey,
             'allowed_branch' => $branches,
             'status' => $user->status ? 'Active' : 'Inactive',
         ];
