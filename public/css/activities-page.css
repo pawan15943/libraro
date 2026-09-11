@@ -1,213 +1,422 @@
-/* ==========================================================================
-   Libraro Activities Page Styles (Strictly Scoped under .libraro-activities-page)
-   ========================================================================== */
+/**
+ * Libraro Activities Logs Page Stylesheet (Mobile-First & Optimized)
+ * Brand Primary: #18225f (Navy Blue)
+ * Brand Accents: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
+ * Typography: 'Outfit', sans-serif
+ * Strictly Scoped under .libraro-activities-page
+ */
 
 .libraro-activities-page {
     width: 100%;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
 }
 
-/* Header Section */
-.libraro-activities-page .activity-page-header {
-    padding: 0.5rem 0;
-    margin-bottom: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
+/* ==========================================================================
+   1. Compact Filter Bar (Mobile-First)
+   ========================================================================== */
 
-.libraro-activities-page .activity-page-title {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 1.3rem !important;
-    color: #18225f !important;
-    margin-bottom: 0 !important;
-    letter-spacing: -0.2px !important;
-}
-
-/* Top Right Breadcrumb */
-.libraro-activities-page .activity-top-breadcrumb {
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 0.85rem !important;
-    color: #475569 !important;
-    font-weight: 500 !important;
-}
-
-.libraro-activities-page .activity-top-breadcrumb a {
-    color: #34939F !important;
-    text-decoration: none !important;
-    transition: color 0.2s ease !important;
-}
-
-.libraro-activities-page .activity-top-breadcrumb a:hover {
-    color: #18225f !important;
-}
-
-.libraro-activities-page .activity-top-breadcrumb span {
-    color: #18225f !important;
-    font-weight: 700 !important;
-}
-
-/* Filter Box Card */
 .libraro-activities-page .activity-filter-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 14px !important;
-    padding: 1.25rem 1.5rem !important;
-    margin-bottom: 1.5rem !important;
-    box-shadow: 0 4px 16px rgba(24, 34, 95, 0.03) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.02) !important;
 }
 
-.libraro-activities-page .activity-filter-card .form-label {
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 0.78rem !important;
-    font-weight: 700 !important;
-    color: #18225f !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.3px !important;
-    margin-bottom: 0.35rem !important;
+.libraro-activities-page .activity-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
 }
 
-.libraro-activities-page .activity-filter-card .form-control,
-.libraro-activities-page .activity-filter-card .form-select {
+.libraro-activities-page .activity-input-icon {
+    position: absolute;
+    left: 11px;
+    color: #94a3b8;
+    font-size: 12.5px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.libraro-activities-page .activity-input-control {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.85rem !important;
+    font-size: 0.82rem !important;
+    height: 38px !important;
     border-radius: 8px !important;
     border: 1px solid #cbd5e1 !important;
-    padding: 0.45rem 0.75rem !important;
-    color: #1e293b !important;
+    padding-left: 32px !important;
+    padding-right: 10px !important;
+    color: #18225f !important;
+    background-color: #f8fafc !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    width: 100%;
 }
 
-.libraro-activities-page .activity-filter-card .form-control:focus,
-.libraro-activities-page .activity-filter-card .form-select:focus {
-    border-color: #34939F !important;
-    box-shadow: 0 0 0 3px rgba(52, 147, 159, 0.15) !important;
+.libraro-activities-page .activity-input-control:hover {
+    background-color: #ffffff !important;
+    border-color: #94a3b8 !important;
+}
+
+.libraro-activities-page .activity-input-control:focus {
+    background-color: #ffffff !important;
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
+    outline: none !important;
 }
 
 .libraro-activities-page .btn-filter-submit {
     font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
     background-color: #18225f !important;
     border: 1px solid #18225f !important;
     color: #ffffff !important;
     border-radius: 8px !important;
-    padding: 0.48rem 1.25rem !important;
-    width: 100% !important;
-    transition: all 0.2s ease !important;
+    padding: 0 1rem !important;
+    height: 38px !important;
+    transition: all 0.15s ease !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0.4rem !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    width: 100%;
+    white-space: nowrap;
 }
 
 .libraro-activities-page .btn-filter-submit:hover {
-    background-color: #0f1743 !important;
-    border-color: #0f1743 !important;
+    background-color: #101744 !important;
+    border-color: #101744 !important;
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.22) !important;
+}
+
+.libraro-activities-page .btn-filter-reset {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    border-radius: 8px !important;
+    padding: 0 0.75rem !important;
+    height: 38px !important;
+    transition: all 0.15s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.3rem !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+
+.libraro-activities-page .btn-filter-reset:hover {
+    background-color: #e2e8f0 !important;
+    color: #18225f !important;
+}
+
+/* ==========================================================================
+   2. Active Learner Filter Note (Single Line)
+   ========================================================================== */
+
+.libraro-activities-page .activity-filter-note {
+    background-color: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    border-left: 3px solid #18225f !important;
+    border-radius: 10px !important;
+    padding: 0.5rem 0.85rem !important;
+    color: #18225f !important;
+    font-size: 0.82rem !important;
+    margin-bottom: 0.85rem !important;
+}
+
+.libraro-activities-page .btn-clear-filter {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    padding: 3px 10px !important;
+    border-radius: 50px !important;
+    background: #ffffff !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transition: all 0.15s ease !important;
+}
+
+.libraro-activities-page .btn-clear-filter:hover {
+    background: #dc2626 !important;
     color: #ffffff !important;
 }
 
-/* Learner Filter Active Note */
-.libraro-activities-page .activity-filter-note {
-    background-color: #e6f5f7 !important;
-    border: 1px solid #34939F !important;
-    border-left: 4px solid #34939F !important;
-    border-radius: 10px !important;
-    padding: 0.75rem 1.1rem !important;
-    color: #18225f !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 0.85rem !important;
+/* ==========================================================================
+   3. Date Separator Divider
+   ========================================================================== */
+
+.libraro-activities-page .activity-date-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.15rem 0 0.65rem;
+    position: relative;
 }
 
-/* Date Timeline Header */
-.libraro-activities-page .activity-date-header {
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 0.82rem !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    color: #18225f !important;
-    margin-bottom: 0.85rem !important;
-    padding-bottom: 0.4rem !important;
-    border-bottom: 2px solid #e2e8f0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
+.libraro-activities-page .activity-date-divider::before,
+.libraro-activities-page .activity-date-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed #cbd5e1;
 }
 
-/* Activity Card Item */
+.libraro-activities-page .activity-date-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #18225f;
+    text-transform: uppercase;
+    box-shadow: 0 1px 4px rgba(24, 34, 95, 0.03);
+    margin: 0 8px;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   4. Activity Card (All Labels & Chips in Single Line)
+   ========================================================================== */
+
 .libraro-activities-page .activity-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 12px !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 0.85rem !important;
+    padding: 0.8rem 1rem !important;
+    margin-bottom: 0.65rem !important;
     border-left-width: 4px !important;
     border-left-style: solid !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.02) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+    box-shadow: 0 1px 4px rgba(24, 34, 95, 0.02) !important;
 }
 
 .libraro-activities-page .activity-card:hover {
     border-color: #cbd5e1 !important;
-    box-shadow: 0 6px 20px rgba(24, 34, 95, 0.06) !important;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.06) !important;
     transform: translateY(-1px) !important;
 }
 
-.libraro-activities-page .activity-title {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 800 !important;
-    font-size: 0.92rem !important;
+/* Header Row: All Labels Inline */
+.libraro-activities-page .activity-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.45rem;
 }
 
-.libraro-activities-page .activity-seat-badge {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.72rem !important;
-    background-color: #e6f5f7 !important;
-    color: #34939F !important;
-    border: 1px solid rgba(52, 147, 159, 0.3) !important;
-    padding: 0.2rem 0.6rem !important;
-    border-radius: 20px !important;
+.libraro-activities-page .activity-labels-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-.libraro-activities-page .activity-learner-name {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    color: #18225f !important;
-    font-size: 0.88rem !important;
+/* Operation Badge */
+.libraro-activities-page .activity-operation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
-.libraro-activities-page .activity-message {
-    font-family: 'Mulish', sans-serif !important;
-    font-size: 0.84rem !important;
-    color: #475569 !important;
+/* Seat & Learner Chips */
+.libraro-activities-page .activity-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
 }
 
-.libraro-activities-page .activity-user-badge {
-    font-size: 0.76rem !important;
-    color: #64748b !important;
-    font-weight: 600 !important;
+.libraro-activities-page .seat-chip {
+    background-color: #e6f5f7;
+    color: #34939F;
+    border: 1px solid rgba(52, 147, 159, 0.25);
 }
 
-/* Empty State Card */
+.libraro-activities-page .learner-chip {
+    background-color: #eff6ff;
+    color: #18225f;
+    border: 1px solid #dbeafe;
+}
+
+/* Time Pill */
+.libraro-activities-page .activity-time-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+/* Body: Message & Operator in Single Inline Flow */
+.libraro-activities-page .activity-card-body {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.libraro-activities-page .activity-message-text {
+    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    color: #334155 !important;
+    margin: 0;
+}
+
+.libraro-activities-page .activity-message-text strong {
+    color: #18225f;
+    font-weight: 700;
+}
+
+.libraro-activities-page .activity-operator-dot {
+    color: #cbd5e1;
+    font-size: 12px;
+    user-select: none;
+}
+
+.libraro-activities-page .activity-operator-info {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.libraro-activities-page .activity-operator-info strong {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   5. Empty State Card
+   ========================================================================== */
+
 .libraro-activities-page .activity-empty-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 14px !important;
-    padding: 3rem 1.5rem !important;
+    border-radius: 12px !important;
+    padding: 2.5rem 1rem !important;
     text-align: center !important;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.02) !important;
 }
 
 .libraro-activities-page .activity-empty-icon {
-    width: 68px !important;
-    height: 68px !important;
+    width: 54px !important;
+    height: 54px !important;
     border-radius: 50% !important;
-    background-color: #e6f5f7 !important;
-    color: #34939F !important;
+    background-color: #eff6ff !important;
+    color: #18225f !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    margin: 0 auto 1rem !important;
-    font-size: 1.8rem !important;
+    margin: 0 auto 0.75rem !important;
+    font-size: 1.5rem !important;
+    border: 1px solid #dbeafe;
+}
+
+/* ==========================================================================
+   6. Pagination
+   ========================================================================== */
+
+.libraro-activities-page .pagination {
+    margin-top: 1.25rem;
+    gap: 3px;
+    justify-content: center;
+}
+
+.libraro-activities-page .page-link {
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px !important;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 5px 11px;
+}
+
+.libraro-activities-page .page-link:hover {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #18225f;
+}
+
+.libraro-activities-page .page-item.active .page-link {
+    background-color: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   7. Desktop Responsive Enhancements (>= 992px)
+   ========================================================================== */
+
+@media (min-width: 992px) {
+    .libraro-activities-page .filter-row-desktop {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .libraro-activities-page .filter-search-col {
+        flex: 2;
+    }
+
+    .libraro-activities-page .filter-op-col {
+        flex: 1.3;
+    }
+
+    .libraro-activities-page .filter-date-col {
+        flex: 1.1;
+    }
+
+    .libraro-activities-page .filter-btn-col {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 6px;
+    }
+
+    .libraro-activities-page .activity-card {
+        padding: 0.75rem 1.15rem !important;
+    }
 }

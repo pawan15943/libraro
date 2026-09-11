@@ -88,48 +88,39 @@ class LibraryService
     }
     public function checkLibraryStatus()
     {
-        if (Auth::check()) {
-           
-            $library_id = Auth::user()->id;
+        $user = getAuthenticatedUser();
+        if ($user) {
+            $library_id = getLibraryId();
 
             $isEmailVeri = Library::where('id', $library_id)->whereNotNull('email_verified_at')->exists();
-            $checkSub = LibraryTransaction::where('library_id', $library_id)->where('status',1)->exists();
+            $checkSub = LibraryTransaction::where('library_id', $library_id)->where('status', 1)->exists();
             $ispaid = Library::where('id', $library_id)->where('is_paid', 1)->exists();
             $isProfile = Library::where('id', $library_id)->where('is_profile', 1)->exists();
-            $isBranch =Branch::where('library_id',$library_id)->where('status',1)->exists();
+            $isBranch = Branch::where('library_id', $library_id)->where('status', 1)->exists();
             $iscomp = Library::where('id', $library_id)->where('status', 1)->exists();
-     
 
-            if (($checkSub && $ispaid && $isBranch)) {
-           
-               
+            if ($checkSub && $ispaid && $isBranch) {
                 return route('library.configration');
             }
 
             if ($checkSub && $ispaid) {
-           
                 return route('branch.configure.create');
             }
 
             if ($isEmailVeri) {
-             
                 $planId = session('selected_plan_id');
                 $planMode = session('selected_plan_mode');
-                if($planId && $planMode){
-                    
+                if ($planId && $planMode) {
                     return route('payment.store');
-                }else{
-                    
-                     return route('subscriptions.choosePlan');
+                } else {
+                    return route('subscriptions.choosePlan');
                 }
-               
-               
             }
- 
+
             return route('verification.notice');
         }
 
-        return null;
+        return route('subscriptions.choosePlan');
     }
 
     

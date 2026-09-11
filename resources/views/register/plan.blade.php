@@ -30,9 +30,37 @@
 
 <div class="choose-plan-page">
 
+    @php
+    $libUser = getLibrary();
+    $hasPaidBefore = $libUser ? \App\Models\LibraryTransaction::where('library_id', $libUser->id)->where('is_paid', 1)->exists() : false;
+    $isFirstTime = !$hasPaidBefore && (optional($libUser)->is_paid != 1);
+    @endphp
+
+    @if(!$isFirstTime)
+        {{-- Navigation & Support Header (Only for existing library owners) --}}
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <a href="{{ route('library.myplan') }}" class="plan-back-btn">
+                <i class="fa fa-arrow-left me-1"></i> Back to My Plan
+            </a>
+
+            <div class="quick-support-chip">
+                <i class="fa-solid fa-headset support-icon"></i>
+                <span class="support-text">Quick Support: <a href="tel:+919876543210" class="support-link">+91-9876543210</a></span>
+            </div>
+        </div>
+    @endif
+
     <div class="pricing-head text-center">
-        <h2 class="pricing-title">Pick the plan that fits you best</h2>
-        <p class="pricing-subtitle">Simple, transparent pricing — switch or upgrade anytime.</p>
+        @if($isFirstTime)
+            <h2 class="pricing-title">Pick the plan that fits you best</h2>
+            <p class="pricing-subtitle">Simple, transparent pricing — select a plan to activate your library.</p>
+        @elseif(($action ?? 'upgrade') === 'renew')
+            <h2 class="pricing-title">Renew Your Current Plan</h2>
+            <p class="pricing-subtitle">Select your renewal duration below to keep your library active.</p>
+        @else
+            <h2 class="pricing-title">Upgrade Your Plan</h2>
+            <p class="pricing-subtitle">Unlock advanced features by upgrading to a higher tier plan.</p>
+        @endif
     </div>
 
     <div class="row g-4 justify-content-center">
@@ -84,7 +112,15 @@
                     @endif
 
                     <h4 class="plan-name">{{$subscription->name}}</h4>
-                    <span class="d-block plan-subtitle" id="planDescription_{{$subscription->id}}">{{$subscription->plan_description}}</span>
+                    @php
+                        $professionalDesc = match((int)$subscription->id) {
+                            1 => 'Up to 100 seats & 1 Branch with essential features',
+                            2 => 'Up to 200 seats & 2 Branches with smart features',
+                            3 => 'Unlimited seats & 3 Branches with all pro features',
+                            default => $subscription->plan_description ?? ''
+                        };
+                    @endphp
+                    <span class="d-block plan-subtitle" id="planDescription_{{$subscription->id}}">{{ $professionalDesc }}</span>
 
                     <div class="plan-price-row">
                         <h1 id="subscription_fees_{{$subscription->id}}" class="plan-fees">--</h1>
@@ -104,7 +140,14 @@
                     </form>
                 </div>
 
-                <ul class="plan-features contents mt-4">
+                <div class="features-header-box d-flex justify-content-between align-items-center mt-4 mb-2 px-3">
+                    <span class="features-title font-outfit fw-bold" style="font-size: 0.88rem; color: #18225f;">Included Features</span>
+                    <span class="features-count-badge font-outfit fw-bold">
+                        <i class="fa-solid fa-circle-check me-1 text-success"></i>{{ count($subscriptionFeatures) }} Features
+                    </span>
+                </div>
+
+                <ul class="plan-features contents">
                      @foreach($allFeatures as $featureName)
 
                         @if(in_array($featureName, $subscriptionFeatures))
@@ -133,6 +176,78 @@
 </div>
 
 <style>
+    .choose-plan-page .plan-back-btn {
+        background-color: #18225f !important;
+        color: #ffffff !important;
+        border: 1px solid #18225f !important;
+        border-radius: 50px !important;
+        padding: 0.45rem 1.25rem !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        transition: all 0.25s ease !important;
+        box-shadow: 0 2px 6px rgba(24, 34, 95, 0.15) !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+    }
+
+    .choose-plan-page .plan-back-btn:hover {
+        background-color: #0f1742 !important;
+        color: #ffffff !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
+    }
+
+    .choose-plan-page .quick-support-chip {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 50px !important;
+        padding: 0.45rem 1.25rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        font-family: 'Outfit', sans-serif !important;
+    }
+
+    .choose-plan-page .quick-support-chip .support-icon {
+        color: #34939F !important;
+        font-size: 1.05rem !important;
+    }
+
+    .choose-plan-page .quick-support-chip .support-text {
+        font-size: 0.85rem !important;
+        color: #1e293b !important;
+        font-weight: 600 !important;
+    }
+
+    .choose-plan-page .quick-support-chip .support-link {
+        color: #18225f !important;
+        font-weight: 700 !important;
+        text-decoration: none !important;
+        transition: color 0.2s ease !important;
+    }
+
+    .choose-plan-page .quick-support-chip .support-link:hover {
+        color: #34939F !important;
+    }
+
+    .choose-plan-page .features-header-box {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.5rem;
+    }
+
+    .choose-plan-page .features-count-badge {
+        background: #e6f7ee !important;
+        color: #16a34a !important;
+        border: 1px solid #bbf7d0 !important;
+        border-radius: 50px !important;
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.78rem !important;
+    }
+
     .choose-plan-page .pricing-head {
         margin-bottom: .5rem;
     }
@@ -220,11 +335,12 @@
 
     .choose-plan-page .plan-subtitle {
         display: block;
-        font-size: .85rem;
-        font-weight: 500 !important;
-        color: #6c757d !important;
-        margin-bottom: 1.25rem !important;
-        min-height: 1.2rem;
+        font-size: .84rem;
+        font-weight: 600 !important;
+        color: #34939F !important;
+        margin-bottom: 1.15rem !important;
+        line-height: 1.35;
+        min-height: 2.4rem;
     }
 
     .choose-plan-page .plan-price-row {

@@ -81,50 +81,76 @@
     <h4>No plans added for this library yet.</h4>
 </div>
 @else
-<div class="row g-4">
-    @foreach($branchPlans as $key => $plan)
-    <div class="col-lg-4 col-md-6">
-        <div class="planBox">
-            <div class="heading d-flex justify-content-between align-items-center">
-                <h4 class="m-0">Plan {{ $key + 1 }}</h4>
-                @if($plan->deleted_at)
-                <span class="inactive text-danger">Inactive</span>
-                @else
-                <span class="active">Active</span>
-                @endif
-            </div>
-            <div class="plan border-top">
-                <ul>
-                    <li><span>ID</span><p class="m-0">{{ $plan->id }}</p></li>
-                    <li><span>Library ID</span><p class="m-0">{{ $plan->library_id }}</p></li>
-                    <li><span>Branch ID</span><p class="m-0">{{ $plan->branch_id ?? '—' }}</p></li>
-                    <li><span>Plan Name</span><p class="m-0">{{ $plan->name }}</p></li>
-                    <li><span>Type</span><p class="m-0">{{ $plan->type }}</p></li>
-                    <li><span>Plan Number</span><p class="m-0">{{ $plan->plan_id }}</p></li>
-                    <li><span>Plan Days</span><p class="m-0">{{ $plan->monthdays ?: 'Automatic (Calendar Wise)' }}</p></li>
-                    <li><span>Created At</span><p class="m-0">{{ optional($plan->created_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                    <li><span>Updated At</span><p class="m-0">{{ optional($plan->updated_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                    <li><span>Deleted At</span><p class="m-0">{{ optional($plan->deleted_at)->format('d-m-Y H:i') ?? '—' }}</p></li>
-                </ul>
-            </div>
-            <ul class="actionalbles">
-                <li>
-                    <a href="javascript:void(0)" class="plan-edit"
+<div class="plan-price-module">
+    <div class="row g-4 mb-4">
+        @foreach($branchPlans as $key => $plan)
+        @php
+            $isInactive = (bool) $plan->deleted_at;
+        @endphp
+        <div class="col-lg-4 col-md-6">
+            <div class="plan-price-card">
+                <div class="plan-card-body">
+                    <!-- Card Header: Title & Status -->
+                    <div class="plan-card-header">
+                        <h4 class="plan-card-title">{{ $plan->name }}</h4>
+                        @if($isInactive)
+                        <span class="plan-status-badge inactive">
+                            <span class="status-dot"></span> INACTIVE
+                        </span>
+                        @else
+                        <span class="plan-status-badge active">
+                            <span class="status-dot"></span> ACTIVE
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Duration Pill Badge -->
+                    <div class="plan-duration-badge mb-3">
+                        <i class="fa-regular fa-clock me-1.5" style="color: #18225f;"></i> {{ $plan->plan_id }} {{ $plan->type }}{{ (int)$plan->plan_id > 1 ? 'S' : '' }}
+                    </div>
+
+                    <!-- Metadata Grid -->
+                    <div class="plan-meta-grid">
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Name</div>
+                            <div class="plan-meta-value text-truncate" title="{{ $plan->name }}">{{ $plan->name }}</div>
+                        </div>
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Type</div>
+                            <div class="plan-meta-value">{{ $plan->type }}</div>
+                        </div>
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Number</div>
+                            <div class="plan-meta-value">{{ $plan->plan_id }}</div>
+                        </div>
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Plan Days</div>
+                            <div class="plan-meta-value">{{ $plan->monthdays ?: 'Automatic (Calendar)' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Buttons Row -->
+                <div class="plan-card-actions">
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-edit plan-edit"
                         data-id="{{ $plan->id }}"
                         data-type="{{ $plan->type }}"
                         data-plan-id="{{ $plan->plan_id }}"
                         data-monthdays="{{ $plan->monthdays }}"
-                        title="Edit"><i class="fas fa-edit"></i></a>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" class="plan-delete"
+                        title="Edit Plan">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                    </a>
+
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-delete plan-delete"
                         data-url="{{ route('library.branch.plans.delete', $plan->id) }}"
-                        title="Delete"><i class="fa fa-trash"></i></a>
-                </li>
-            </ul>
+                        title="Delete Plan">
+                        <i class="fa-solid fa-trash me-1"></i> Delete
+                    </a>
+                </div>
+            </div>
         </div>
+        @endforeach
     </div>
-    @endforeach
 </div>
 @endif
 

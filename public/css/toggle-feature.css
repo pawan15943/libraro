@@ -1,0 +1,174 @@
+/* ==========================================================================
+   Toggle Feature Module Stylesheet
+   Theme: Libraro Navy Blue (#18225f) & Teal (#34939F)
+   ========================================================================== */
+
+.toggle-info-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%) !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 5px solid #18225f !important;
+    border-radius: 12px !important;
+    padding: 1.1rem 1.35rem !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    box-shadow: 0 3px 12px rgba(24, 34, 95, 0.06) !important;
+}
+
+.toggle-info-card .info-icon-badge {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #18225f 0%, #34939F 100%) !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
+    flex-shrink: 0 !important;
+}
+
+.toggle-info-card .info-content {
+    flex: 1 1 auto !important;
+    display: block !important;
+    font-family: 'Outfit', sans-serif !important;
+}
+
+.toggle-info-card .info-title {
+    color: #18225f !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 0.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
+.toggle-info-card .info-desc {
+    color: #334155 !important;
+    font-size: 0.86rem !important;
+    line-height: 1.55 !important;
+    margin: 0 !important;
+}
+
+.toggle-info-card .info-badge {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    padding: 0.15rem 0.5rem !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+.toggle-info-card .info-highlight {
+    color: #18225f !important;
+    font-weight: 700 !important;
+}
+
+/* Card & Table Wrapper */
+.toggle-feature-module .toggle-table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    overflow: hidden;
+}
+
+.toggle-feature-module .table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.toggle-feature-module .table thead th {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.9rem 1.2rem;
+    border: none;
+}
+
+.toggle-feature-module .table tbody tr {
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.toggle-feature-module .table tbody tr:hover:not(.category-row) {
+    background-color: #f8fafc;
+}
+
+/* Category Section Header */
+.toggle-feature-module .category-row td {
+    background: #f1f5f9 !important;
+    color: #18225f !important;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 0.75rem 1.2rem !important;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    border-left: 4px solid #18225f !important;
+}
+
+/* Feature Option Details */
+.toggle-feature-module .feature-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #0f172a;
+    margin-bottom: 0.2rem;
+}
+
+.toggle-feature-module .feature-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.toggle-feature-module .serial-col {
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.86rem;
+    width: 80px;
+    text-align: center;
+}
+
+.toggle-feature-module .switch-col {
+    width: 110px;
+    text-align: center;
+}
+
+/* Custom Styled Modern Switch */
+.toggle-feature-module .form-check-input.toggle_hide {
+    width: 2.85rem;
+    height: 1.45rem;
+    cursor: pointer;
+    background-color: #cbd5e1;
+    border-color: #94a3b8;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.2s ease;
+}
+
+.toggle-feature-module .form-check-input.toggle_hide:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 0.2rem rgba(24, 34, 95, 0.15);
+}
+
+.toggle-feature-module .form-check-input.toggle_hide:checked {
+    background-color: #18225f !important;
+    border-color: #18225f !important;
+}
+
+.toggle-feature-module .toggle-updating {
+    opacity: 0.6;
+    pointer-events: none;
+}

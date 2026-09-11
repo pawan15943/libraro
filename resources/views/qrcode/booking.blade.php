@@ -158,8 +158,8 @@ h4.py-4.m-0 {
 
                             <div class="col-lg-6">
                                 <label for="seat_id">Choose Seat No. <span>*</span></label>
-                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id">
-                                    <option value="">Choose Seat No</option>
+                                <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id" disabled>
+                                    <option value="" selected>Choose Seat No</option>
                                  
                                     @foreach($newAvailableSeat  as $key => $value)
 

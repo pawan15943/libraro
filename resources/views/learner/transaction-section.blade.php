@@ -263,12 +263,6 @@
                 <div class="payment-card text-muted">No transaction recorded.</div>
             @endif
 
-            <div class="section-title">Recent Activity</div>
-            @forelse(collect($apiOverview['recent_activities'] ?? [])->take(5) as $activity)
-                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt])
-            @empty
-                <div class="payment-card text-muted">No recent activity recorded.</div>
-            @endforelse
         </div>
 
         <div class="tab-pane fade" id="subscription">

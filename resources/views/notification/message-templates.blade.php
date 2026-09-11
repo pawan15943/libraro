@@ -3,267 +3,300 @@
 @section('content')
 
 <style>
-    .msg-tpl-container {
-        max-width: 1100px;
-        margin: 0 auto 3.5rem;
+    .custom-notification-module {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 2.5rem 0;
+        font-family: 'Outfit', sans-serif;
     }
 
-    .msg-tpl-header {
-        background: #fff;
-        border: 1px solid #e7e9f0;
-        border-radius: 14px;
-        padding: 22px 26px;
-        margin-bottom: 24px;
+    /* Tabs Styling (Real Tab folder design, no bottom separator) */
+    .custom-notification-module .msg-tabs-wrap {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        box-shadow: 0 2px 10px rgba(17, 24, 63, .03);
-    }
-
-    .msg-tpl-header h4 {
-        margin: 0;
-        color: #07156f;
-        font-size: 1.35rem;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .msg-tpl-header p {
-        margin: 4px 0 0;
-        color: #6b7280;
-        font-size: .88rem;
-    }
-
-    /* Tabs Styling */
-    .msg-tabs-wrap {
-        display: flex;
-        gap: 12px;
+        gap: 6px;
         margin-bottom: 20px;
-        border-bottom: 2px solid #eef0f6;
-        padding-bottom: 4px;
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
     }
 
-    .msg-tab-btn {
-        border: 0;
-        background: #f4f6fb;
-        color: #555b6d;
-        border-radius: 10px 10px 0 0;
-        padding: 12px 24px;
-        font-weight: 700;
-        font-size: .95rem;
-        display: flex;
+    .custom-notification-module .msg-tab-btn {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 18px;
+        font-weight: 500;
+        font-size: 0.88rem;
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         cursor: pointer;
-        transition: all .2s ease;
-        position: relative;
+        transition: all 0.15s ease-in-out;
+        user-select: none;
+        box-shadow: none !important;
     }
 
-    .msg-tab-btn:hover {
-        background: #eaeffa;
-        color: #07156f;
+    .custom-notification-module .msg-tab-btn:hover {
+        background: #f1f5f9;
+        color: #18225f;
+        border-color: #94a3b8;
     }
 
-    .msg-tab-btn.active {
-        background: #fff;
-        color: #07156f;
-        box-shadow: 0 -3px 12px rgba(17, 24, 63, .04);
-        border: 1px solid #e7e9f0;
-        border-bottom-color: #fff;
-        margin-bottom: -6px;
-        padding-bottom: 16px;
+    .custom-notification-module .msg-tab-btn.active {
+        background: #18225f !important;
+        color: #ffffff !important;
+        border-color: #18225f !important;
+        font-weight: 500 !important;
+        box-shadow: none !important;
     }
 
-    .msg-tab-btn.active::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #07156f;
-        border-radius: 10px 10px 0 0;
+    .custom-notification-module .msg-tab-btn.active i {
+        color: #ffffff !important;
     }
 
-    /* Template Cards */
-    .msg-card {
-        background: #fff;
-        border: 1px solid #e7e9f0;
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 10px rgba(17, 24, 63, .03);
-        transition: box-shadow .2s ease, border-color .2s ease;
+    /* Template Cards (No shadow, clean border) */
+    .custom-notification-module .msg-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 22px;
+        margin-bottom: 20px;
+        box-shadow: none !important;
+        transition: border-color 0.2s ease;
     }
 
-    .msg-card:hover {
-        box-shadow: 0 6px 20px rgba(17, 24, 63, .06);
-        border-color: #d2d7e8;
+    .custom-notification-module .msg-card:hover {
+        box-shadow: none !important;
+        border-color: #cbd5e1;
     }
 
-    .msg-card-header {
+    .custom-notification-module .msg-card-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 14px;
         margin-bottom: 16px;
         padding-bottom: 14px;
-        border-bottom: 1px solid #f1f3f8;
+        border-bottom: 1px solid #f1f5f9;
     }
 
-    .msg-card-title-wrap {
+    .custom-notification-module .msg-card-title-wrap {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
     }
 
-    .msg-card-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+    .custom-notification-module .msg-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
         display: grid;
         place-items: center;
         font-size: 1.15rem;
         flex-shrink: 0;
+        box-shadow: none !important;
     }
 
-    .msg-card-title-wrap h5 {
+    .custom-notification-module .msg-card-title-wrap h5 {
         margin: 0;
-        color: #1a1d2e;
+        color: #18225f;
         font-size: 1.05rem;
-        font-weight: 700;
+        font-weight: 600;
+        font-family: 'Outfit', sans-serif;
     }
 
-    .msg-card-title-wrap small {
-        color: #71778e;
-        font-size: .82rem;
+    .custom-notification-module .msg-card-title-wrap small {
+        color: #64748b;
+        font-size: 0.82rem;
         display: block;
         margin-top: 2px;
+        font-weight: 400;
     }
 
-    .msg-card-badge {
-        font-size: .75rem;
-        font-weight: 700;
+    .custom-notification-module .msg-card-badge {
+        font-size: 0.78rem;
+        font-weight: 500;
         padding: 4px 12px;
-        border-radius: 20px;
-        background: #f0f2f9;
-        color: #4b526d;
+        border-radius: 50rem;
+        background: #f1f5f9;
+        color: #18225f;
+        border: 1px solid #cbd5e1;
         text-transform: uppercase;
-        letter-spacing: .4px;
+        letter-spacing: 0.3px;
     }
 
     /* Textarea & Counter */
-    .msg-textarea-wrap {
+    .custom-notification-module .msg-textarea-wrap {
         position: relative;
         margin-bottom: 14px;
     }
 
-    .msg-textarea {
+    .custom-notification-module .msg-textarea-wrap label {
+        color: #18225f !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 0.88rem;
+    }
+
+    .custom-notification-module .msg-textarea {
         width: 100%;
-        border: 1.5px solid #dfe3ee;
-        border-radius: 10px;
-        padding: 14px 16px;
-        font-size: .95rem;
-        line-height: 1.6;
-        color: #1f2438;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.65rem;
+        padding: 12px 14px;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        color: #1e293b;
         background: #fafbfe;
-        resize: vertical;
-        min-height: 125px;
-        transition: all .2s ease;
+        resize: none;
+        overflow-y: hidden;
+        min-height: 70px;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease-in-out;
         font-family: inherit;
     }
 
-    .msg-textarea:focus {
+    .custom-notification-module .msg-textarea:focus {
         outline: none;
-        background: #fff;
-        border-color: #07156f;
-        box-shadow: 0 0 0 4px rgba(7, 21, 111, .08);
+        background: #ffffff;
+        border-color: #18225f !important;
+        box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08) !important;
     }
 
-    .msg-char-counter {
+    .custom-notification-module .msg-char-counter {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        font-size: .78rem;
-        color: #838a99;
+        font-size: 0.78rem;
+        color: #64748b;
         margin-top: 5px;
+        font-weight: 400;
     }
 
-    .msg-char-counter.warning {
-        color: #d97706;
-        font-weight: 700;
+    .custom-notification-module .msg-char-counter.warning {
+        color: #d97706 !important;
+        font-weight: 500;
     }
 
-    .msg-char-counter.danger {
-        color: #dc2626;
-        font-weight: 700;
+    .custom-notification-module .msg-char-counter.danger {
+        color: #dc2626 !important;
+        font-weight: 500;
     }
 
     /* Variables Section */
-    .msg-vars-panel {
+    .custom-notification-module .msg-vars-panel {
         background: #f8fafc;
         border: 1px dashed #cbd5e1;
-        border-radius: 10px;
-        padding: 14px 16px;
+        border-radius: 0.65rem;
+        padding: 14px;
     }
 
-    .msg-vars-heading {
-        font-size: .82rem;
-        font-weight: 700;
-        color: #334155;
+    .custom-notification-module .msg-vars-heading {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #18225f;
         margin-bottom: 10px;
         display: flex;
         align-items: center;
         gap: 6px;
     }
 
-    .msg-vars-grid {
+    .custom-notification-module .msg-vars-grid {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
     }
 
-    .msg-var-btn {
+    .custom-notification-module .msg-var-btn {
         border: 1px solid #cbd5e1;
-        background: #fff;
-        color: #0f172a;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: .82rem;
+        background: #ffffff;
+        color: #18225f;
+        padding: 5px 11px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 400;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        transition: all .15s ease;
+        transition: all 0.15s ease-in-out;
         user-select: none;
+        box-shadow: none !important;
     }
 
-    .msg-var-btn code {
-        font-weight: 700;
-        color: #07156f;
-        background: #eef2ff;
-        padding: 2px 6px;
+    .custom-notification-module .msg-var-btn code {
+        font-weight: 500;
+        color: #18225f;
+        background: #f1f5f9;
+        padding: 2px 5px;
         border-radius: 4px;
-        font-size: .8rem;
+        font-size: 0.78rem;
     }
 
-    .msg-var-btn .var-desc {
+    .custom-notification-module .msg-var-btn .var-desc {
         color: #64748b;
-        font-size: .78rem;
+        font-size: 0.76rem;
+        font-weight: 400;
     }
 
-    .msg-var-btn:hover {
-        border-color: #07156f;
-        background: #f0f3ff;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(7, 21, 111, .1);
+    .custom-notification-module .msg-var-btn:hover {
+        border-color: #18225f;
+        background: #f1f5f9;
+        box-shadow: none !important;
     }
 
-    .msg-var-btn:active {
-        transform: translateY(0);
+    .custom-notification-module .msg-var-btn:active {
+        background: #e2e8f0;
+    }
+
+    /* Save Bar (Aligned right, no shadow, clean border) */
+    .custom-notification-module .msg-save-bar {
+        position: sticky;
+        bottom: 20px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.65rem;
+        padding: 12px 20px;
+        box-shadow: none !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        z-index: 100;
+        margin-top: 20px;
+    }
+
+    .custom-notification-module .msg-save-bar p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.84rem;
+        font-weight: 400;
+    }
+
+    /* Primary Button (Size equal to text, right-aligned, reduced font weight, no shadow) */
+    .custom-notification-module .btn-primary.button {
+        background: #18225f !important;
+        color: #ffffff !important;
+        border: 1px solid #18225f !important;
+        border-radius: 6px !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 0.88rem !important;
+        padding: 7px 18px !important;
+        width: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        box-shadow: none !important;
+        margin-left: auto;
+        transition: background-color 0.15s ease-in-out !important;
+        white-space: nowrap !important;
+    }
+
+    .custom-notification-module .btn-primary.button:hover {
+        background: #121947 !important;
+        border-color: #121947 !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     /* Toast Notification */
@@ -271,20 +304,22 @@
         position: fixed;
         bottom: 24px;
         right: 24px;
-        background: #07156f;
-        color: #fff;
-        padding: 12px 20px;
-        border-radius: 10px;
-        font-size: .88rem;
-        font-weight: 600;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+        background: #18225f;
+        color: #ffffff;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 500;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         display: flex;
         align-items: center;
         gap: 8px;
         z-index: 9999;
         transform: translateY(100px);
         opacity: 0;
-        transition: all .25s ease;
+        transition: all 0.25s ease-in-out;
     }
 
     .var-toast.show {
@@ -292,53 +327,27 @@
         opacity: 1;
     }
 
-    .msg-save-bar {
-        position: sticky;
-        bottom: 20px;
-        background: #fff;
-        border: 1px solid #e7e9f0;
-        border-radius: 12px;
-        padding: 14px 22px;
-        box-shadow: 0 6px 24px rgba(17, 24, 63, .08);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        z-index: 100;
-        margin-top: 24px;
-    }
-
-    .msg-save-bar p {
-        margin: 0;
-        color: #6b7280;
-        font-size: .85rem;
-    }
-
     @media (max-width: 768px) {
-        .msg-tpl-header { flex-direction: column; align-items: flex-start; }
-        .msg-card-header { flex-direction: column; align-items: flex-start; }
-        .msg-save-bar { flex-direction: column; align-items: stretch; text-align: center; }
+        .custom-notification-module .msg-card-header { flex-direction: column; align-items: flex-start; }
+        .custom-notification-module .msg-save-bar { flex-direction: column; align-items: flex-end; text-align: right; }
     }
 </style>
 
-<div class="msg-tpl-container">
-    {{-- Page Header --}}
-    <div class="msg-tpl-header">
-        <div>
-            <h4><i class="fa-solid fa-comments text-primary"></i> Message Templates</h4>
-            <p>Customize automated and manual notification templates for WhatsApp & SMS messages.</p>
-        </div>
-        <div class="d-none d-md-block">
-            <span class="badge bg-primary px-3 py-2" style="font-size: .82rem;"><i class="fa-solid fa-sliders me-1"></i> 3 Core Templates</span>
-        </div>
+<div class="custom-notification-module">
+    {{-- Subheader Block (Page Title and Breadcrumb are rendered by AppServiceProvider via partials.breadcrumbs) --}}
+    <div class="d-flex justify-content-between align-items-center mb-3 pt-1">
+        <p class="text-muted small mb-0 font-outfit" style="font-weight: 400;">Customize automated and manual notification templates for WhatsApp &amp; SMS messages.</p>
+        <span class="badge rounded-pill px-3 py-1 font-outfit" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1; font-size: 0.8rem; font-weight: 500;">
+            <i class="fa-solid fa-sliders me-1" style="color: #34939F;"></i> 3 Core Templates
+        </span>
     </div>
 
-    {{-- Alerts --}}
+    {{-- Alerts (Shadows removed) --}}
     @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3 border" role="alert">
             <div class="d-flex align-items-center gap-2">
-                <i class="fa-solid fa-triangle-exclamation fs-5"></i>
-                <div>
+                <i class="fa-solid fa-triangle-exclamation fs-5 text-danger"></i>
+                <div style="font-weight: 400;">
                     @foreach ($errors->all() as $error)
                         <div>{{ $error }}</div>
                     @endforeach
@@ -349,22 +358,22 @@
     @endif
 
     @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-4 rounded-3 border" role="alert">
             <div class="d-flex align-items-center gap-2">
-                <i class="fa-solid fa-circle-check fs-5"></i>
-                <div>{{ session('success') }}</div>
+                <i class="fa-solid fa-circle-check fs-5 text-success"></i>
+                <div style="font-weight: 400;">{{ session('success') }}</div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
-    {{-- Tabs Navigation --}}
+    {{-- Tabs Navigation (Real Tab Look, No Bottom Separator) --}}
     <div class="msg-tabs-wrap" id="msgTabs" role="tablist">
         <button class="msg-tab-btn active" id="waba-tab" data-bs-toggle="tab" data-bs-target="#waba-pane" type="button" role="tab">
-            <i class="fab fa-whatsapp" style="color: #25D366; font-size: 1.15rem;"></i> WhatsApp Templates
+            <i class="fab fa-whatsapp" style="color: #25D366; font-size: 1.1rem;"></i> WhatsApp Templates
         </button>
         <button class="msg-tab-btn" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">
-            <i class="fa-solid fa-message" style="color: #0d6efd; font-size: 1.05rem;"></i> Text (SMS) Templates
+            <i class="fa-solid fa-message" style="color: #34939F; font-size: 1rem;"></i> Text (SMS) Templates
         </button>
     </div>
 
@@ -393,7 +402,7 @@
 
                         {{-- Message Textarea --}}
                         <div class="msg-textarea-wrap">
-                            <label class="form-label fw-bold text-dark mb-1">Message Content <span>*</span></label>
+                            <label class="form-label mb-1">Message Content <span>*</span></label>
                             <textarea class="msg-textarea"
                                       id="waba_msg_{{ $index }}"
                                       name="templates[{{ $index }}][template_message]"
@@ -408,8 +417,8 @@
                         {{-- Variables Badges Section --}}
                         <div class="msg-vars-panel">
                             <div class="msg-vars-heading">
-                                <i class="fa-solid fa-code text-primary"></i>
-                                <span>Available Dynamic Variables (Click badge to copy & insert):</span>
+                                <i class="fa-solid fa-code" style="color: #34939F;"></i>
+                                <span>Available Dynamic Variables (Click badge to copy):</span>
                             </div>
                             <div class="msg-vars-grid">
                                 @foreach ($template->variables as $var)
@@ -422,8 +431,8 @@
                                             data-target="waba_msg_{{ $index }}"
                                             data-var="{{ $varTag }}"
                                             data-name="{{ $var }}"
-                                            title="Click to copy & insert {{ $varTag }}">
-                                        <i class="fa-regular fa-copy text-muted"></i>
+                                            title="Click to copy {{ $varTag }}">
+                                        <i class="fa-regular fa-copy text-muted var-icon"></i>
                                         <code>{{ $varTag }}</code>
                                         @if($desc)
                                             <span class="var-desc">({{ $desc }})</span>
@@ -437,7 +446,7 @@
 
                 <div class="msg-save-bar">
                     <p><i class="fa-solid fa-circle-info text-info me-1"></i> Make sure to test your templates before sending bulk reminders.</p>
-                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold"><i class="fa-solid fa-floppy-disk me-2"></i> Save WhatsApp Templates</button>
+                    <button type="submit" class="btn btn-primary button font-outfit"><i class="fa-solid fa-floppy-disk me-1"></i> Save WhatsApp Templates</button>
                 </div>
             </form>
         </div>
@@ -458,7 +467,7 @@
                                     <small>{{ $template->sub_title }}</small>
                                 </div>
                             </div>
-                            <span class="msg-card-badge"><i class="fa-solid fa-message me-1" style="color: #0d6efd;"></i> SMS Text</span>
+                            <span class="msg-card-badge"><i class="fa-solid fa-message me-1" style="color: #34939F;"></i> SMS Text</span>
                         </div>
 
                         <input type="hidden" name="templates[{{ $index }}][operation_id]" value="{{ $template->operation_id }}">
@@ -466,7 +475,7 @@
 
                         {{-- Message Textarea --}}
                         <div class="msg-textarea-wrap">
-                            <label class="form-label fw-bold text-dark mb-1">Message Content <span>*</span></label>
+                            <label class="form-label mb-1">Message Content <span>*</span></label>
                             <textarea class="msg-textarea"
                                       id="text_msg_{{ $index }}"
                                       name="templates[{{ $index }}][template_message]"
@@ -481,8 +490,8 @@
                         {{-- Variables Badges Section --}}
                         <div class="msg-vars-panel">
                             <div class="msg-vars-heading">
-                                <i class="fa-solid fa-code text-primary"></i>
-                                <span>Available Dynamic Variables (Click badge to copy & insert):</span>
+                                <i class="fa-solid fa-code" style="color: #34939F;"></i>
+                                <span>Available Dynamic Variables (Click badge to copy):</span>
                             </div>
                             <div class="msg-vars-grid">
                                 @foreach ($template->variables as $var)
@@ -495,8 +504,8 @@
                                             data-target="text_msg_{{ $index }}"
                                             data-var="{{ $varTag }}"
                                             data-name="{{ $var }}"
-                                            title="Click to copy & insert {{ $varTag }}">
-                                        <i class="fa-regular fa-copy text-muted"></i>
+                                            title="Click to copy {{ $varTag }}">
+                                        <i class="fa-regular fa-copy text-muted var-icon"></i>
                                         <code>{{ $varTag }}</code>
                                         @if($desc)
                                             <span class="var-desc">({{ $desc }})</span>
@@ -510,7 +519,7 @@
 
                 <div class="msg-save-bar">
                     <p><i class="fa-solid fa-circle-info text-info me-1"></i> Max text message length is 400 characters.</p>
-                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold"><i class="fa-solid fa-floppy-disk me-2"></i> Save Text Templates</button>
+                    <button type="submit" class="btn btn-primary button font-outfit"><i class="fa-solid fa-floppy-disk me-1"></i> Save Text Templates</button>
                 </div>
             </form>
         </div>
@@ -525,6 +534,13 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Auto-fit textarea height to its content
+        function autoResizeTextarea(textarea) {
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight + 4) + 'px';
+        }
+
         // Character counter update
         function updateCounter(textarea) {
             const wrap = textarea.closest('.msg-textarea-wrap');
@@ -545,10 +561,26 @@
             }
         }
 
+        // Initialize all textareas
         document.querySelectorAll('.msg-textarea').forEach(function (textarea) {
             updateCounter(textarea);
+            autoResizeTextarea(textarea);
             textarea.addEventListener('input', function () {
                 updateCounter(this);
+                autoResizeTextarea(this);
+            });
+        });
+
+        // Recalculate textarea heights when switching tabs
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (tabBtn) {
+            tabBtn.addEventListener('shown.bs.tab', function (e) {
+                const targetSelector = e.target.getAttribute('data-bs-target');
+                const targetPane = document.querySelector(targetSelector);
+                if (targetPane) {
+                    targetPane.querySelectorAll('.msg-textarea').forEach(function (ta) {
+                        autoResizeTextarea(ta);
+                    });
+                }
             });
         });
 
@@ -566,13 +598,12 @@
             }, 2500);
         }
 
-        // Variable copy and insert into textarea
+        // Variable copy option (Copies to clipboard for pasting anywhere; does not insert into textarea)
         document.querySelectorAll('.msg-var-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const varText = this.getAttribute('data-var');
-                const targetId = this.getAttribute('data-target');
-                const textarea = document.getElementById(targetId);
+                const icon = this.querySelector('.var-icon');
 
                 // Copy to clipboard
                 if (navigator.clipboard && window.isSecureContext) {
@@ -586,21 +617,15 @@
                     document.body.removeChild(temp);
                 }
 
-                // Insert into textarea at cursor position
-                if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(end, text.length);
-
-                    textarea.value = before + varText + after;
-                    textarea.selectionStart = textarea.selectionEnd = start + varText.length;
-                    textarea.focus();
-                    updateCounter(textarea);
+                // Temporary visual checkmark feedback on the button
+                if (icon) {
+                    icon.className = 'fa-solid fa-check text-success var-icon';
+                    setTimeout(function () {
+                        icon.className = 'fa-regular fa-copy text-muted var-icon';
+                    }, 1200);
                 }
 
-                showToast('Copied ' + varText + ' & inserted into template!');
+                showToast('Copied ' + varText + ' to clipboard! You can paste it anywhere.');
             });
         });
     });

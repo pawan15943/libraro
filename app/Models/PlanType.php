@@ -33,7 +33,7 @@ class PlanType extends Model
     }
     public function price()
     {
-        return $this->hasOne(PlanPrice::class, 'plan_type_id');
+        return $this->hasOne(PlanPrice::class, 'plan_type_id')->withoutGlobalScope('branch');
     }
    
 }

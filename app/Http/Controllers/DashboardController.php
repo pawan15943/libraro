@@ -255,57 +255,58 @@ class DashboardController extends Controller
             $bookingcount = $plan_wise_booking->pluck('booking')->toArray(); 
            
           
-            // for dropdown year and month
-            $dates = LearnerDetail::withTrashed()->select('plan_start_date', 'plan_end_date')->get();
+            // for dropdown year and month (efficient branch-scoped min/max query with safe lower bound)
+            $minMaxDates = LearnerDetail::where('branch_id', getCurrentBranch())
+                ->selectRaw('MIN(plan_start_date) as min_date, MAX(plan_end_date) as max_date')
+                ->first();
 
             $months = [];
-            foreach ($dates as $date) {
-                $start = Carbon::parse($date->plan_start_date)->startOfMonth();
-                $end = Carbon::parse($date->plan_end_date)->startOfMonth();
-        
-                // Loop through the months within the start and end date range
+            if ($minMaxDates && $minMaxDates->min_date && $minMaxDates->max_date) {
+                $start = Carbon::parse($minMaxDates->min_date)->startOfMonth();
+                $end = Carbon::parse($minMaxDates->max_date)->startOfMonth();
+
+                $minAllowedYear = Carbon::now()->year - 3;
+                if ($start->year < $minAllowedYear) {
+                    $start = Carbon::create($minAllowedYear, 1, 1);
+                }
+
                 while ($start <= $end) {
                     $year = $start->year;
                     $monthNumber = $start->month;
                     $monthName = $start->format('F');
-        
-                    // Add month to the respective year in the months array
+
                     $months[$year][$monthNumber] = $monthName;
-        
+
                     $start->addMonth();
                 }
+            } else {
+                $currentYr = date('Y');
+                $months[$currentYr][(int)date('m')] = date('F');
             }
 
-              //Daily Transaction
-              
-              
-            $todayCollection = LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())
-            ->where(function($q) {
-                $q->whereIn('payment_type', ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE','UPGRADE'])
-                ->orWhere(function($sub) {
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Cr');
-                });
-            })->sum('amount');
-            
-            $today_other_amt=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->whereIn('payment_type',['TOKEN MONEY','MISCELLANEOUS'])->where('dr_cr','Cr')->sum('amount');
+            // Daily Transactions (Optimized single aggregate query)
+            $todayDate = now()->toDateString();
+            $dailyStats = LearnerTransactionActivity::where('branch_id', getCurrentBranch())
+                ->whereDate('date', $todayDate)
+                ->selectRaw("
+                    SUM(CASE WHEN payment_type IN ('SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE') OR (payment_type = 'CHANGE PLAN' AND dr_cr = 'Cr') THEN amount ELSE 0 END) as today_collection,
+                    SUM(CASE WHEN payment_type IN ('TOKEN MONEY', 'MISCELLANEOUS') AND dr_cr = 'Cr' THEN amount ELSE 0 END) as today_other_amt,
+                    SUM(CASE WHEN payment_type = 'EXPENSE' THEN amount ELSE 0 END) as today_expense,
+                    SUM(CASE WHEN payment_type = 'PENDING' THEN amount ELSE 0 END) as today_pending,
+                    SUM(CASE WHEN payment_type = 'REFUND' OR (payment_type = 'CHANGE PLAN' AND dr_cr = 'Dr') THEN amount ELSE 0 END) as today_refund,
+                    SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
+                    SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr
+                ")
+                ->first();
 
-            $todayExpense =LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','EXPENSE')->sum('amount');
-            $today_pending=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('payment_type','PENDING')->sum('amount');
-             $today_refund = LearnerTransactionActivity::where('branch_id', getCurrentBranch())
-            ->whereDate('date', now()->toDateString())
-            ->where(function($q) {
-                $q->where('payment_type', 'REFUND')
-                ->orWhere(function($sub) {
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Dr');
-                });
-            })
-            ->sum('amount');
-             $total_cr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Cr')->sum('amount');
-            $total_dr=LearnerTransactionActivity::where('branch_id', getCurrentBranch())->whereDate('date', now()->toDateString())->where('dr_cr','Dr')->sum('amount');
-           
-            $todayBalance = $total_cr-$total_dr;
+            $todayCollection = (float) ($dailyStats->today_collection ?? 0);
+            $today_other_amt  = (float) ($dailyStats->today_other_amt ?? 0);
+            $todayExpense     = (float) ($dailyStats->today_expense ?? 0);
+            $today_pending    = (float) ($dailyStats->today_pending ?? 0);
+            $today_refund     = (float) ($dailyStats->today_refund ?? 0);
+            $total_cr         = (float) ($dailyStats->total_cr ?? 0);
+            $total_dr         = (float) ($dailyStats->total_dr ?? 0);
+            $todayBalance     = $total_cr - $total_dr;
            
          
             $recent_activitys=LearnerOperationsLog::with(['learner' => fn ($q) => $q->withoutGlobalScopes()->select('id','name','seat_no')])
@@ -332,13 +333,10 @@ class DashboardController extends Controller
             }
             $pendingDueCount = method_exists($pendingDueMembers, 'total') ? $pendingDueMembers->total() : $pendingDueMembers->count();
 
-            if($is_expire && $user->hasRole('admin')){
-               
+            if ($is_expire) {
                 return redirect()->route('library.myplan');
-            }elseif($iscomp){
-                
-               if (getCurrentBranch() === null || getCurrentBranch() == 0 || $user->current_branch==null) {
-               
+            } elseif ($iscomp) {
+                if (getCurrentBranch() === null || getCurrentBranch() == 0 || $user->current_branch == null) {
                     $firstBranch = Branch::where('library_id', getLibraryId())->select('id')->first();
 
                     if ($firstBranch && $firstBranch->id) {
@@ -349,20 +347,27 @@ class DashboardController extends Controller
                 }
 
                 $festival = DB::table('india_festivals')
-                ->whereDate('festival_date', Carbon::today())
-                ->first();   // object or null
+                    ->whereDate('festival_date', Carbon::today())
+                    ->first();
 
+                $viewName = ($request->get('view') === 'v2' || $request->routeIs('library.dashboard.v2')) 
+                    ? 'dashboard.admin-v2' 
+                    : 'dashboard.admin';
 
-               
-                return view('dashboard.admin',compact('plans','available_seats','renewSeats','plan','features_count','check','extend_sets','bookingcount','bookinglabels','months','recent_activitys','todayBalance','todayExpense','todayCollection','today_other_amt','today_refund','today_pending','qrbookings','branch','festival','pendingDueMembers','pendingDueCount'));
-            }else{
-             
-                return redirect($redirectUrl);
+                return view($viewName, compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount'));
+            } else {
+                return redirect($redirectUrl ?: route('subscriptions.choosePlan'));
             }
            
       
       
        
+    }
+
+    public function libraryDashboardV2(Request $request)
+    {
+        $request->merge(['view' => 'v2']);
+        return $this->libraryDashboard($request);
     }
 
     public function librar_UserDashboard(Request $request){

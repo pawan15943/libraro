@@ -49,3 +49,4 @@
     </ul>
 </div>
 @endif
+@include('partials.ai-chat-widget')

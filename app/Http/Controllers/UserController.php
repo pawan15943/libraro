@@ -89,7 +89,8 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'Password updated successfully');
     }
 
-    public function changePasswordView(){
+    public function changePasswordView()
+    {
         return view('auth.passwords.reset-password');
     }
    

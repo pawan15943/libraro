@@ -51,68 +51,75 @@
     
 </div>
 @else
-<!-- Masters -->
-@can('has-permission','Add Exam Master')
-<div class="heading-list justify-content-end mb-1">
-    <a href="{{ route('exam.create') }}" class="btn btn-primary export">
-        <i class="fa-solid fa-plus "></i> Add Exam
-    </a>
-</div>
-@endcan
-<div class="row g-4 mb-4">
-    @foreach($data as $key => $value)
-        <div class="col-lg-4 col-md-6">
-            <div class="planBox">
-                <div class="heading d-flex justify-content-between align-items-center">
-                    <h4>Exam</h4>
-                    @if($value->deleted_at)
-                        <span class="inactive text-danger">Inactive</span>
-                    @else
-                        <span class="active">Active</span>
-                    @endif
-                </div>
+<div class="plan-price-module">
+    @can('has-permission','Add Exam Master')
+    <div class="heading-list justify-content-end mb-4">
+        <a href="{{ route('exam.create') }}" class="btn btn-primary export m-0">
+            <i class="fa-solid fa-plus "></i> Add Exam
+        </a>
+    </div>
+    @endcan
 
-                <div class="plan border-top">
-                    <ul>
-                        <li>
-                            <span>Exam Name</span>
-                            <p class="m-0">{{ $value->name }}</p>
-                        </li>
-                    </ul>
-                </div>
-
-                <ul class="actionalbles">
-                    <li>
-                        <a href="javascript:void(0)" 
-                           class="delete m-0" 
-                           data-id="{{ $value->id }}" 
-                           data-table="Exam" 
-                           title="Active/Deactive">
-                            @if($value->deleted_at)
-                                <i class="fas fa-ban"></i>
+    <div class="row g-4 mb-4">
+        @foreach($data as $key => $value)
+            @php
+                $isInactive = (bool) $value->deleted_at;
+            @endphp
+            <div class="col-lg-4 col-md-6">
+                <div class="plan-price-card">
+                    <div class="plan-card-body">
+                        <!-- Card Header: Title & Status -->
+                        <div class="plan-card-header">
+                            <h4 class="plan-card-title">{{ $value->name }}</h4>
+                            @if($isInactive)
+                            <span class="plan-status-badge inactive">
+                                <span class="status-dot"></span> INACTIVE
+                            </span>
                             @else
-                                <i class="fa fa-check"></i>
+                            <span class="plan-status-badge active">
+                                <span class="status-dot"></span> ACTIVE
+                            </span>
                             @endif
+                        </div>
+
+                        <!-- Pill Badge -->
+                        <div class="plan-duration-badge mb-3">
+                            <i class="fa-solid fa-graduation-cap me-1.5" style="color: #18225f;"></i> EXAM / COMPETITION
+                        </div>
+
+                        <!-- Metadata Grid -->
+                        <div class="plan-meta-grid single-col">
+                            <div class="plan-meta-item">
+                                <div class="plan-meta-label">Exam Name</div>
+                                <div class="plan-meta-value text-truncate" title="{{ $value->name }}">{{ $value->name }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Action Buttons Row -->
+                    <div class="plan-card-actions">
+                        @if($isInactive)
+                        <a href="javascript:void(0)" class="btn-plan-action btn-action-activate active-deactive" data-id="{{ $value->id }}" data-table="Exam" title="Activate Exam">
+                            <i class="fa-solid fa-check me-1"></i> Activate
                         </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('exam.create', $value->id) }}" title="Edit">
-                            <i class="fas fa-edit"></i>
+                        @else
+                        <a href="javascript:void(0)" class="btn-plan-action btn-action-deactivate active-deactive" data-id="{{ $value->id }}" data-table="Exam" title="Deactivate Exam">
+                            <i class="fa-solid fa-check me-1"></i> Deactivate
                         </a>
-                    </li>
-                    {{-- <li>
-                        <a href="javascript:void(0)" 
-                           class="delete-btn" 
-                           data-id="{{ $value->id }}" 
-                           data-table="Exam" 
-                           title="Delete">
-                            <i class="fa fa-trash"></i>
+                        @endif
+
+                        <a href="{{ route('exam.create', $value->id) }}" class="btn-plan-action btn-action-edit" title="Edit Exam">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                         </a>
-                    </li> --}}
-                </ul>
+
+                        <a href="javascript:void(0)" class="btn-plan-action btn-action-delete delete-btn" data-id="{{ $value->id }}" data-table="Exam" title="Delete Exam">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
-    @endforeach
+        @endforeach
+    </div>
 </div>
 @endif
 

@@ -1,0 +1,348 @@
+/* ==========================================================================
+   Libraro - Bulk ID Card Checklist Module
+   Strictly scoped under .learner-checklist-module
+   Primary Color: #18225f (Navy Blue)
+   Secondary / Accents: #34939F (Teal), #16a34a (Green), #ef4444 (Red)
+   ========================================================================== */
+
+.learner-checklist-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Top Action Bar (Right-aligned, no extra heading)
+   -------------------------------------------------------------------------- */
+.learner-checklist-module .checklist-toolbar-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 1.25rem;
+}
+
+.learner-checklist-module .toolbar-controls-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.learner-checklist-module .print-type-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 3px 12px;
+    height: 40px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.learner-checklist-module .print-type-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #18225f;
+    white-space: nowrap;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.learner-checklist-module .print-type-select {
+    border: none !important;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1e293b;
+    background: transparent;
+    padding: 2px 20px 2px 4px;
+    cursor: pointer;
+    outline: none !important;
+}
+
+.learner-checklist-module .btn-print-bulk {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 8px;
+    height: 40px;
+    padding: 0 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.learner-checklist-module .btn-print-bulk:hover {
+    background: #101740 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(24, 34, 95, 0.3);
+}
+
+.learner-checklist-module .selected-count-pill {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Table Card & Layout
+   -------------------------------------------------------------------------- */
+.learner-checklist-module .checklist-table-card {
+    background: #ffffff;
+    border: 1px solid #e9eef4;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 14px -2px rgba(24, 34, 95, 0.04);
+}
+
+.learner-checklist-module .table-card-header {
+    padding: 16px 22px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.learner-checklist-module .table-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.learner-checklist-module .table-card-meta {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.learner-checklist-module .table-card-meta b {
+    color: #18225f;
+    font-weight: 600;
+}
+
+.learner-checklist-module .table-responsive {
+    margin: 0;
+}
+
+.learner-checklist-module .checklist-custom-table {
+    width: 100%;
+    margin-bottom: 0;
+    vertical-align: middle;
+    border-collapse: collapse;
+}
+
+.learner-checklist-module .checklist-custom-table thead {
+    background: #18225f !important;
+}
+
+.learner-checklist-module .checklist-custom-table thead th {
+    background: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 12px 14px;
+    border: none;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.learner-checklist-module .checklist-custom-table tbody tr {
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.learner-checklist-module .checklist-custom-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.learner-checklist-module .checklist-custom-table tbody tr.row-selected {
+    background-color: #eff6ff;
+}
+
+.learner-checklist-module .checklist-custom-table tbody td {
+    padding: 11px 14px;
+    font-size: 12.5px;
+    color: #334155;
+    border-color: #f1f5f9;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Custom Checkbox */
+.learner-checklist-module .custom-checkbox-input {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #18225f;
+}
+
+/* Profile Photo */
+.learner-checklist-module .learner-avatar-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* UID Code Badge */
+.learner-checklist-module .uid-badge {
+    background: #f1f5f9;
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Learner Name */
+.learner-checklist-module .learner-name-text {
+    font-weight: 600;
+    color: #18225f;
+    font-size: 13px;
+    margin: 0;
+    text-align: left;
+}
+
+/* Mobile */
+.learner-checklist-module .learner-mobile-text {
+    font-weight: 500;
+    color: #475569;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* Father Name */
+.learner-checklist-module .learner-father-text {
+    font-weight: 500;
+    color: #64748b;
+    font-size: 12px;
+}
+
+/* Payment Status Chips */
+.learner-checklist-module .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+}
+
+.learner-checklist-module .status-chip-paid {
+    background: #ecfdf5;
+    color: #16a34a;
+    border: 1px solid #d1fae5;
+}
+
+.learner-checklist-module .status-chip-unpaid {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+}
+
+/* Plan End Date */
+.learner-checklist-module .plan-date-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    color: #475569;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.learner-checklist-module .plan-date-text i {
+    color: #94a3b8;
+    font-size: 11.5px;
+}
+
+/* Bottom Action Bar */
+.learner-checklist-module .checklist-bottom-bar {
+    padding: 16px 22px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Empty State
+   -------------------------------------------------------------------------- */
+.learner-checklist-module .checklist-empty-card {
+    background: #ffffff;
+    border: 1px solid #e9eef4;
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    box-shadow: 0 2px 14px -2px rgba(24, 34, 95, 0.04);
+}
+
+.learner-checklist-module .checklist-empty-card h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #18225f;
+    margin: 16px 0 6px 0;
+}
+
+.learner-checklist-module .checklist-empty-card p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .learner-checklist-module .checklist-toolbar-bar {
+        justify-content: flex-start;
+    }
+
+    .learner-checklist-module .toolbar-controls-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .learner-checklist-module .print-type-select-wrap {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .learner-checklist-module .btn-print-bulk {
+        width: 100%;
+        justify-content: center;
+    }
+}

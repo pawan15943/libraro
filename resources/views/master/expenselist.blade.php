@@ -48,69 +48,75 @@
     
 </div>
 @else
-<!-- Masters -->
-@can('has-permission','Add Expense Master')
-<div class="heading-list justify-content-end mb-1">
-    <a href="{{ route('expense.create') }}" class="btn btn-primary export">
-        <i class="fa-solid fa-plus "></i> Add Expense
-    </a>
-</div>
-@endcan
-
-<div class="row g-4 mb-4">
-    @foreach($data as $key => $value)
-    <div class="col-lg-4 col-md-6">
-        <div class="planBox">
-            <div class="heading d-flex justify-content-between align-items-center">
-                <h4>Expense</h4>
-                @if($value->deleted_at)
-                <span class="inactive text-danger">Inactive</span>
-                @else
-                <span class="active">Active</span>
-                @endif
-            </div>
-
-            <div class="plan border-top">
-                <ul>
-                    <li>
-                        <span>Expense Name</span>
-                        <p class="m-0">{{ $value->name }}</p>
-                    </li>
-                </ul>
-            </div>
-
-            <ul class="actionalbles">
-                {{-- <li>
-                    <a href="javascript:void(0)"
-                        class="delete"
-                        data-id="{{ $value->id }}"
-                        data-table="Expense"
-                        title="Active/Deactive">
-                        @if($value->deleted_at)
-                        <i class="fas fa-ban"></i>
-                        @else
-                        <i class="fa fa-check"></i>
-                        @endif
-                    </a>
-                </li> --}}
-                <li>
-                    <a href="{{ route('expense.create', $value->id) }}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                </li>
-                {{-- <li>
-                    <a href="javascript:void(0)"
-                        class="delete-btn"
-                        data-id="{{ $value->id }}"
-                        data-table="Expense"
-                        title="Delete">
-                        <i class="fa fa-trash"></i>
-                    </a>
-                </li> --}}
-            </ul>
-        </div>
+<div class="plan-price-module">
+    @can('has-permission','Add Expense Master')
+    <div class="heading-list justify-content-end mb-4">
+        <a href="{{ route('expense.create') }}" class="btn btn-primary export m-0">
+            <i class="fa-solid fa-plus "></i> Add Expense
+        </a>
     </div>
-    @endforeach
+    @endcan
+
+    <div class="row g-4 mb-4">
+        @foreach($data as $key => $value)
+        @php
+            $isInactive = (bool) $value->deleted_at;
+        @endphp
+        <div class="col-lg-4 col-md-6">
+            <div class="plan-price-card">
+                <div class="plan-card-body">
+                    <!-- Card Header: Title & Status -->
+                    <div class="plan-card-header">
+                        <h4 class="plan-card-title">{{ $value->name }}</h4>
+                        @if($isInactive)
+                        <span class="plan-status-badge inactive">
+                            <span class="status-dot"></span> INACTIVE
+                        </span>
+                        @else
+                        <span class="plan-status-badge active">
+                            <span class="status-dot"></span> ACTIVE
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Pill Badge -->
+                    <div class="plan-duration-badge mb-3">
+                        <i class="fa-solid fa-receipt me-1.5" style="color: #18225f;"></i> EXPENSE CATEGORY
+                    </div>
+
+                    <!-- Metadata Grid -->
+                    <div class="plan-meta-grid single-col">
+                        <div class="plan-meta-item">
+                            <div class="plan-meta-label">Expense Name</div>
+                            <div class="plan-meta-value text-truncate" title="{{ $value->name }}">{{ $value->name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Buttons Row -->
+                <div class="plan-card-actions">
+                    @if($isInactive)
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-activate active-deactive" data-id="{{ $value->id }}" data-table="Expense" title="Activate Expense">
+                        <i class="fa-solid fa-check me-1"></i> Activate
+                    </a>
+                    @else
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-deactivate active-deactive" data-id="{{ $value->id }}" data-table="Expense" title="Deactivate Expense">
+                        <i class="fa-solid fa-check me-1"></i> Deactivate
+                    </a>
+                    @endif
+
+                    <a href="{{ route('expense.create', $value->id) }}" class="btn-plan-action btn-action-edit" title="Edit Expense">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                    </a>
+
+                    <a href="javascript:void(0)" class="btn-plan-action btn-action-delete delete-btn" data-id="{{ $value->id }}" data-table="Expense" title="Delete Expense">
+                        <i class="fa-solid fa-trash me-1"></i> Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
 </div>
 @endif
 

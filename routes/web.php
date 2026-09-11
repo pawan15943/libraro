@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -194,6 +195,11 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::post('library/learners/log', [LearnerController::class, 'learnerLog'])->name('learner.log');
 
   Route::prefix('library')->group(function () {
+    // AI Chat Assistant routes
+    Route::post('/ai-chat/send', [AiAssistantController::class, 'sendQuery'])->name('ai.chat.send');
+    Route::get('/ai-chat/history', [AiAssistantController::class, 'getHistory'])->name('ai.chat.history');
+    Route::post('/ai-chat/clear', [AiAssistantController::class, 'clearHistory'])->name('ai.chat.clear');
+
     Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan')->middleware('library.owner');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
     Route::get('/payment/store', [LibraryController::class, 'payment'])->name('payment.show');
@@ -204,6 +210,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
     Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
+    Route::get('/dashboard-v2', [DashboardController::class, 'libraryDashboardV2'])->name('library.dashboard.v2');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan')->middleware('library.owner');
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
@@ -317,6 +324,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/store', [LearnerController::class, 'learnerStore'])->name('learners.store');
     Route::post('/generallearner/store', [LearnerController::class, 'generallearnerStore'])->name('genral.learners.store');
     Route::get('/list', [LearnerController::class, 'learnerList'])->name('learners');
+    Route::post('/sync-status', [LearnerController::class, 'syncStatus'])->name('learners.sync.status');
     Route::get('/list/pdf', [LearnerController::class, 'learnerListPdf'])->name('learners.list.pdf');
     Route::get('/search', [LearnerController::class, 'learnerSearch'])->name('learner.search');
     Route::get('/renew-delete', [RenewDeleteController::class, 'index'])->name('create.renew.delete.index');
