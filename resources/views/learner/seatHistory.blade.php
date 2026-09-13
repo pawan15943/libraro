@@ -60,6 +60,9 @@
                 $operationDate = optional(getLearnerOperation($learner_detail_id))->created_at;
                 $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
                 $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
+                $shIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
+                $shDotColor = $shIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
+                $shDotTitle = $shIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
             @endphp
 
             <div class="row">
@@ -79,6 +82,8 @@
                                                 <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                                             @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
                                                 <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                            @elseif($shIsNonExpiry)
+                                                <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                             @else
                                                 {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
                                             @endif
@@ -103,7 +108,7 @@
                                         <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                             <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                         </a>
-                                        <span class="avatar-status-dot {{ $planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active' }}"></span>
+                                        <span class="avatar-status-dot {{ $shDotColor }}" title="{{ $shDotTitle }}"></span>
                                     </div>
                                     <div class="learner-details-text">
                                         <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
@@ -214,7 +219,7 @@
                                         <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                             <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                         </a>
-                                        <span class="avatar-status-dot {{ ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active' }}" title="{{ $planStatus['status'] ?? '' }}"></span>
+                                        <span class="avatar-status-dot {{ $shIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $shDotTitle }}"></span>
                                     </div>
                                     <div class="mobile-details-text">
                                         <div class="mobile-name-row">
@@ -253,7 +258,15 @@
                             </div>
 
                             {{-- Collapsible Banner --}}
-                            <div class="mobile-expiry-banner banner-warning js-mobile-collapsible-toggle" role="button" tabindex="0">
+                            @php
+                                $shBannerClass = 'banner-warning';
+                                if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
+                                    $shBannerClass = 'banner-danger';
+                                } elseif ($shIsNonExpiry) {
+                                    $shBannerClass = 'banner-pink';
+                                }
+                            @endphp
+                            <div class="mobile-expiry-banner {{ $shBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
                                 <div class="mobile-expiry-text">
                                     <i class="fa-regular fa-clock"></i>
                                     <span>
@@ -261,6 +274,8 @@
                                             Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
                                         @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
                                             Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                        @elseif($shIsNonExpiry)
+                                            Non-Expired
                                         @else
                                             {{ $planStatus['status'] ?? '' }}
                                         @endif
@@ -392,6 +407,9 @@
         }
         $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
         $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
+        $genIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
+        $genDotColor = $genIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
+        $genDotTitle = $genIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
     @endphp
 
     <div class="row">
@@ -411,6 +429,8 @@
                                         <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
                                     @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
                                         <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                                    @elseif($genIsNonExpiry)
+                                        <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                     @else
                                         {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
                                     @endif
@@ -435,7 +455,7 @@
                                 <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                     <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot {{ $planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active' }}"></span>
+                                <span class="avatar-status-dot {{ $genDotColor }}" title="{{ $genDotTitle }}"></span>
                             </div>
                             <div class="learner-details-text">
                                 <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
@@ -546,7 +566,7 @@
                                 <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                     <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot {{ ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active' }}" title="{{ $planStatus['status'] ?? '' }}"></span>
+                                <span class="avatar-status-dot {{ $genIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $genDotTitle }}"></span>
                             </div>
                             <div class="mobile-details-text">
                                 <div class="mobile-name-row">
@@ -585,7 +605,15 @@
                     </div>
 
                     {{-- Collapsible Banner --}}
-                    <div class="mobile-expiry-banner banner-warning js-mobile-collapsible-toggle" role="button" tabindex="0">
+                    @php
+                        $genBannerClass = 'banner-warning';
+                        if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
+                            $genBannerClass = 'banner-danger';
+                        } elseif ($genIsNonExpiry) {
+                            $genBannerClass = 'banner-pink';
+                        }
+                    @endphp
+                    <div class="mobile-expiry-banner {{ $genBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
                         <div class="mobile-expiry-text">
                             <i class="fa-regular fa-clock"></i>
                             <span>
@@ -593,6 +621,8 @@
                                     Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
                                 @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
                                     Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
+                                @elseif($genIsNonExpiry)
+                                    Non-Expired
                                 @else
                                     {{ $planStatus['status'] ?? '' }}
                                 @endif

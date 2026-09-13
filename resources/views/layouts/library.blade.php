@@ -72,8 +72,11 @@
     </div>
     @php
     $current_route = Route::currentRouteName();
+    $lib = getLibrary();
+    $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+    $hasRightSidebar = (optional($lib)->is_paid == 1 && optional($lib)->status == 1 && !$isPlanExpired);
     @endphp
-    <div class="library-dashbaord">
+    <div class="library-dashbaord {{ $hasRightSidebar ? 'has-right-sidebar' : '' }}">
         <!-- Sidebar -->
         @include('partials.library-sidebar')
 
@@ -219,6 +222,17 @@
                 </li>
                 @endif
             </ul>
+
+            <!-- AI Assistant Trigger in Right Sidebar Bottom -->
+            <div class="right-sidebar-bottom">
+                <div class="right-sidebar-ai-divider"></div>
+                <button type="button" class="right-sidebar-ai-btn ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Libraro AI Assistant" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Libraro AI Assistant">
+                    <div class="ai-btn-inner">
+                        <i class="fa-solid fa-robot"></i>
+                        <span class="ai-trigger-badge">AI</span>
+                    </div>
+                </button>
+            </div>
 
             <div class="control-right-sidebar" title="Toggle Quick Actions">
                 <i class="fa fa-angle-right" id="sidebar_mob"></i>

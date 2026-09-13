@@ -599,8 +599,25 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         <div class="shift-slides-wrapper w-100 position-relative my-2">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended'));
+                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
                                                 $hasDue = !empty($shift['has_due']);
+                                                $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
+                                                $isNonExpiry = !empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class');
+                                                $isFuture = ($shift['type'] === 'future' || !empty($shift['is_future']));
+
+                                                if ($hasDue) {
+                                                    $shiftStatusColor = '#ef4444'; // Pending Fee / Due
+                                                } elseif ($isExt) {
+                                                    $shiftStatusColor = '#800000'; // Extended
+                                                } elseif ($isExpiring) {
+                                                    $shiftStatusColor = '#d97706'; // About to Expire
+                                                } elseif ($isNonExpiry) {
+                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry
+                                                } elseif ($isFuture) {
+                                                    $shiftStatusColor = '#c09600'; // Future Booking
+                                                } else {
+                                                    $shiftStatusColor = '#34939F'; // Booked
+                                                }
                                             @endphp
                                             <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" data-shift-idx="{{ $sIdx }}">
                                                 
@@ -622,9 +639,9 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                     @else
                                                     @php
                                                         $initials = strtoupper(substr($shift['name'], 0, 2));
-                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f'));
-                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : 'seat-avatar-dot active-dot');
-                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : 'Active Booking');
+                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f')));
+                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
+                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking'));
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
@@ -733,9 +750,9 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                         Book
                                                     </button>
                                                     @else
-                                                    <button type="button" class="btn btn-primary btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
+                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-userid="{{ $shift['user_id'] }}" 
-                                                            style="background-color: #18225f; border: none; font-size: 0.78rem; height: auto !important;">
+                                                            style="background-color: {{ $shiftStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
                                                         View
                                                     </button>
                                                     @endif
@@ -747,9 +764,12 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         <!-- Bottom Indicator Dots Row -->
                                         <div class="w-100 pt-2 mt-2 border-top border-dashed d-flex align-items-center justify-content-center gap-1.5 shift-dots-row" style="border-top: 1px dashed #e2e8f0;">
                                             @foreach($seatShifts as $sIdx => $shift)
+                                            @php
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#34939F')))));
+                                            @endphp
                                             <span class="shift-dot rounded-circle cursor-pointer transition-all {{ $sIdx === 0 ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="width: 8px; height: 8px; background-color: {{ $shift['type'] === 'available' ? '#22c55e' : ($shift['type'] === 'future' ? '#c09600' : '#34939F') }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
+                                                  style="width: 8px; height: 8px; background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
                                             @endforeach
                                         </div>
 
@@ -1031,8 +1051,25 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         <div class="shift-slides-wrapper w-100 position-relative my-2">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended'));
+                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
                                                 $hasDue = !empty($shift['has_due']);
+                                                $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
+                                                $isNonExpiry = !empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class');
+                                                $isFuture = ($shift['type'] === 'future' || !empty($shift['is_future']));
+
+                                                if ($hasDue) {
+                                                    $shiftStatusColor = '#ef4444'; // Pending Fee / Due
+                                                } elseif ($isExt) {
+                                                    $shiftStatusColor = '#800000'; // Extended
+                                                } elseif ($isExpiring) {
+                                                    $shiftStatusColor = '#d97706'; // About to Expire
+                                                } elseif ($isNonExpiry) {
+                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry
+                                                } elseif ($isFuture) {
+                                                    $shiftStatusColor = '#c09600'; // Future Booking
+                                                } else {
+                                                    $shiftStatusColor = '#34939F'; // Booked
+                                                }
                                             @endphp
                                             <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" data-shift-idx="{{ $sIdx }}">
                                                 
@@ -1054,9 +1091,9 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                     @else
                                                     @php
                                                         $initials = strtoupper(substr($shift['name'], 0, 2));
-                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f'));
-                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : 'seat-avatar-dot active-dot');
-                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : 'Active Booking');
+                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f')));
+                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
+                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking'));
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
@@ -1136,9 +1173,9 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                         Book
                                                     </button>
                                                     @else
-                                                    <button type="button" class="btn btn-primary btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
+                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-userid="{{ $shift['user_id'] }}" 
-                                                            style="background-color: #18225f; border: none; font-size: 0.78rem; height: auto !important;">
+                                                            style="background-color: {{ $shiftStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
                                                         View
                                                     </button>
                                                     @endif
@@ -1150,9 +1187,12 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         <!-- Bottom Indicator Dots Row -->
                                         <div class="w-100 pt-2 mt-2 border-top border-dashed d-flex align-items-center justify-content-center gap-1.5 shift-dots-row" style="border-top: 1px dashed #e2e8f0;">
                                             @foreach($seatShifts as $sIdx => $shift)
+                                            @php
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#34939F')))));
+                                            @endphp
                                             <span class="shift-dot rounded-circle cursor-pointer transition-all {{ $sIdx === 0 ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="width: 8px; height: 8px; background-color: {{ $shift['type'] === 'available' ? '#22c55e' : ($shift['type'] === 'future' ? '#c09600' : '#34939F') }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
+                                                  style="width: 8px; height: 8px; background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
                                             @endforeach
                                         </div>
 
@@ -1207,10 +1247,25 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                         $isExt = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
                         $isFuture = (!empty($user->plan_start_date) && \Carbon\Carbon::parse($user->plan_start_date)->isFuture());
                         $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
-                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isNonExpiry ? '#c8009d' : '#18225f'));
+                        
+                        if ($hasDue) {
+                            $genStatusColor = '#ef4444'; // Red (Due)
+                        } elseif ($isExt) {
+                            $genStatusColor = '#800000'; // Maroon (Extended)
+                        } elseif ($isExpiring) {
+                            $genStatusColor = '#d97706'; // Amber/Orange (Expiring)
+                        } elseif ($isNonExpiry) {
+                            $genStatusColor = '#c8009d'; // Pink/Magenta (Non-Expiry)
+                        } elseif ($isFuture) {
+                            $genStatusColor = '#c09600'; // Yellow/Gold (Future)
+                        } else {
+                            $genStatusColor = '#0284c7'; // Sky Blue (General Booked)
+                        }
+
+                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($isNonExpiry ? '#c8009d' : ($isFuture ? '#c09600' : '#0284c7'))));
                         $initials = strtoupper(substr($user->name, 0, 2));
-                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : 'seat-avatar-dot active-dot');
-                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : 'Active Booking');
+                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
+                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : ($isFuture ? 'Future Booking' : 'Active Booking')));
                         $hasPhoto = !empty($user->profile_picture);
                         @endphp
 
@@ -1283,7 +1338,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                             <div class="w-100 text-center mt-2">
                                 <button type="button" class="btn btn-primary btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup_without_seat shadow-none" 
                                         data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}" 
-                                        style="background-color: #18225f; border: none; font-size: 0.78rem; height: auto !important;">
+                                        style="background-color: {{ $genStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
                                     View Details
                                 </button>
                             </div>
@@ -1303,9 +1358,10 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                 </div>
             </div>
         </div>
-
+                    
     </div>
 </div>
+
 @else
 <p class="info-message mt-4 mb-0">
     you dont select any branch
@@ -1313,111 +1369,152 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 @endif
 @can('has-permission', 'View Seat')
 <div class="modal fade library-seat-module" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="seat_details_info">Book Seat</h1>
-                <span id="seat_name" style="display: none;"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-bottom py-3 px-3 px-md-4 bg-white">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="modal-seat-icon-badge d-inline-flex align-items-center justify-content-center">
+                        <i class="fa-solid fa-couch"></i>
+                    </span>
+                    <h1 class="modal-title fs-5 mb-0 fw-bold font-outfit" id="seat_details_info">Book Seat</h1>
+                    <span id="seat_name" style="display: none;"></span>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-3 p-md-4">
                 <div class="row">
                     <div class="col-lg-12">
-                        <div class="actions">
+                        <div class="actions border-0 shadow-none p-0 bg-transparent mb-0">
+                            <!-- Top Card: Learners Info (Navy Gradient Theme) -->
                             <div class="upper-box">
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <h4 class="mb-0">Learners Info</h4>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-user-graduate" style="color: #38bdf8; font-size: 1rem;"></i>
+                                        <h4 class="mb-0 fw-bold font-outfit text-white" style="font-size: 0.95rem;">Learners Info</h4>
+                                    </div>
                                     @if(Auth::user()->can('has-permission', 'Edit Seat') || Auth::user()->can('has-permission', 'Learner Edit'))
-                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-profile-btn" id="headerEditProfileBtn" style="font-size: 0.78rem; background-color: #1e293b; color: #ffffff; border: 1px solid #1e293b;">
+                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-profile-btn" id="headerEditProfileBtn">
                                          <i class="fa-solid fa-user-pen me-1"></i> Edit Profile
                                      </a>
                                     @endif
                                 </div>
-                                <div class="row g-4">
-                                    <div class="col-lg-6 col-6">
-                                        <span>Seat Owner Name</span>
-                                        <h5 id="owner" class="uppercase">NA</h5>
+                                <div class="row gy-3 gx-2 gx-md-3">
+                                    <div class="col-sm-6 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Seat Owner Name</span>
+                                            <h5 id="owner" class="uppercase modal-info-val">NA</h5>
+                                        </div>
                                     </div>
                                     @if(!in_array('2', toggleHideField()))
-                                    <div class="col-lg-6 col-6">
-                                        <span>Date Of Birth </span>
-                                        <h5 id="learner_dob">NA</h5>
+                                    <div class="col-sm-6 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Date Of Birth</span>
+                                            <h5 id="learner_dob" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
                                     @endif
 
-                                    <div class="col-lg-6 col-6">
-                                        <span>Mobile Number</span>
-                                        <h5 id="learner_mobile">NA</h5>
+                                    <div class="col-sm-6 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Mobile Number</span>
+                                            <h5 id="learner_mobile" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
                                     @if(!in_array('1', toggleHideField()))
-                                    <div class="col-lg-6 col-6">
-                                        <span>Email Id</span>
-                                        <h5 id="learner_email">NA</h5>
+                                    <div class="col-sm-6 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Email Id</span>
+                                            <h5 id="learner_email" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
                                     @endif
-
-                                    
                                 </div>
                             </div>
-                            <div class="action-box">
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <h4 class="mb-0">Other Seat Info</h4>
-                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-plan-btn" id="headerEditPlanBtn" style="font-size: 0.78rem; background-color: #18225f; color: #ffffff; border: 1px solid #18225f; display:none;">
+
+                            <!-- Middle Card: Other Seat Info (Clean Card on Slate Background) -->
+                            <div class="action-box mt-3">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-circle-info" style="color: #34939F; font-size: 1rem;"></i>
+                                        <h4 class="mb-0 fw-bold font-outfit" style="color: #18225f; font-size: 0.95rem;">Other Seat Info</h4>
+                                    </div>
+                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-plan-btn" id="headerEditPlanBtn" style="display:none;">
                                          <i class="fa-solid fa-pen-to-square me-1"></i> Edit Plan
                                      </a>
                                 </div>
-                                <div class="row g-4">
-                                    <div class="col-lg-4 col-6">
-                                        <span>Plan</span>
-                                        <h5 id="planName">NA</h5>
+                                <div class="row gy-3 gx-2 gx-md-3">
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Plan</span>
+                                            <h5 id="planName" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Plan Type</span>
-                                        <h5 id="planTypeName">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Plan Type</span>
+                                            <h5 id="planTypeName" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Plan Price</span>
-                                        <h5 id="price">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Plan Price</span>
+                                            <h5 id="price" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Seat Booked On</span>
-                                        <h5 id="joinOn">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Seat Booked On</span>
+                                            <h5 id="joinOn" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Plan Starts On</span>
-                                        <h5 id="startOn">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Plan Starts On</span>
+                                            <h5 id="startOn" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Plan Ends On</span>
-                                        <h5 id="endOn">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Plan Ends On</span>
+                                            <h5 id="endOn" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Payment Mode</span>
-                                        <h5 id="paymentmode">NA</h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Payment Mode</span>
+                                            <h5 id="paymentmode" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4 col-6">
-                                        <span>Id Proof</span>
-                                        <h5 id="proof"><a class="">View Docuemnt</a></h5>
+                                    <div class="col-md-4 col-6">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Id Proof</span>
+                                            <h5 id="proof" class="modal-info-val"><a class="">View Document</a></h5>
+                                        </div>
                                     </div>
-                                    <div class="col-lg-4">
-                                        <span>Seat Timings</span>
-                                        <h5 id="planTiming">NA</h5>
-                                    </div>
-                                    <div>
-                                        <h5 id="extendday" class="text-center"></h5>
+                                    <div class="col-md-4 col-12">
+                                        <div class="modal-info-item">
+                                            <span class="modal-info-label">Seat Timings</span>
+                                            <h5 id="planTiming" class="modal-info-val">NA</h5>
+                                        </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Status Badge Container -->
+                                <div class="w-100 text-center mt-3 pt-2.5 border-top border-dashed" style="border-top-color: #e2e8f0 !important;">
+                                    <h5 id="extendday" class="text-center mb-0 d-inline-block"></h5>
+                                </div>
+                            </div>
 
-                                <!-- Single Row Circular Dark Navy Blue Operations Icons with Left/Right Scroll Arrows -->
-                                <div class="modal-op-scroll-wrapper position-relative w-100 mt-3 pt-2 px-4">
-                                    <button type="button" class="btn btn-sm btn-light border shadow-sm op-scroll-arrow-btn position-absolute start-0 top-50 translate-middle-y" 
-                                            id="opScrollLeftBtn" title="Scroll Left" style="z-index: 10;">
-                                        <i class="fa-solid fa-chevron-left"></i>
-                                    </button>
+                            <!-- Single Row Circular Dark Navy Blue Operations Icons with Left/Right Scroll Arrows -->
+                            <div class="modal-op-scroll-wrapper position-relative w-100 mt-3 px-4">
+                                <button type="button" class="btn btn-sm btn-light border shadow-sm op-scroll-arrow-btn position-absolute start-0 top-50 translate-middle-y" 
+                                        id="opScrollLeftBtn" title="Scroll Left" style="z-index: 10;">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
 
-                                    <div class="modal-op-items d-flex align-items-center gap-2.5 overflow-hidden flex-nowrap w-100 py-2" id="modalOpContainer" style="scroll-behavior: smooth; white-space: nowrap;">
-                                        <!-- 1. Edit Profile -->
-                                        <a href="javascript:void(0)" class="modal-op-item" id="modalBtnEditProfile" data-bs-toggle="tooltip" title="Edit Learner Profile">
+                                <div class="modal-op-items d-flex align-items-center gap-2 overflow-hidden flex-nowrap w-100 py-1" id="modalOpContainer" style="scroll-behavior: smooth; white-space: nowrap;">
+                                    <!-- 1. Edit Profile -->
+                                    <a href="javascript:void(0)" class="modal-op-item" id="modalBtnEditProfile" data-bs-toggle="tooltip" title="Edit Learner Profile">
                                             <div class="op-icon-circle shadow-sm"><i class="fa-solid fa-user-pen"></i></div>
                                             <span class="op-icon-label">Edit Profile</span>
                                         </a>
@@ -1594,7 +1691,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 
         // Modal Operations Horizontal Scroll Navigation (One-by-One Icon Step)
         var $opContainer = $('#modalOpContainer');
-        var itemStep = 74; // 64px item width + 10px gap
+        var itemStep = 60; // 52px item width + 8px gap
         $('#opScrollLeftBtn').on('click', function() {
             $opContainer.animate({ scrollLeft: '-=' + itemStep + 'px' }, 200);
         });
@@ -1882,6 +1979,6 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
     </div>
 </div>
 
-</div> <!-- End .library-seat-module -->
+ <!-- End .library-seat-module -->
 
 @endsection

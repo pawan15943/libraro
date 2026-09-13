@@ -50,6 +50,13 @@
     color: #94a3b8;
     font-size: 14px;
     pointer-events: none;
+    z-index: 2;
+}
+
+.attendance-module .control-date-input {
+    width: 140px;
+    cursor: pointer;
+    background-color: #ffffff !important;
 }
 
 .attendance-module .control-date-input,
@@ -1345,5 +1352,48 @@
     .attendance-module .punch-time-pill {
         font-size: 12px !important;
     }
+}
+
+/* --------------------------------------------------------------------------
+   Libraro Flatpickr Theme Customization (#18225f)
+   -------------------------------------------------------------------------- */
+.flatpickr-calendar {
+    font-family: 'Outfit', sans-serif !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px rgba(24, 34, 95, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.flatpickr-day.selected, 
+.flatpickr-day.startRange, 
+.flatpickr-day.endRange, 
+.flatpickr-day.selected.inRange, 
+.flatpickr-day.selected:focus, 
+.flatpickr-day.selected:hover, 
+.flatpickr-day.prevMonthDay.selected, 
+.flatpickr-day.nextMonthDay.selected {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+}
+
+.flatpickr-day.today {
+    border-color: #34939F !important;
+}
+
+.flatpickr-day.today:hover {
+    background: #e0f2fe !important;
+    color: #18225f !important;
+}
+
+.flatpickr-months .flatpickr-month {
+    color: #18225f !important;
+    fill: #18225f !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+    font-weight: 700 !important;
+    color: #18225f !important;
 }
 

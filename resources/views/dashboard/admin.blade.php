@@ -10,6 +10,9 @@
 use App\Helpers\HelperService;
 @endphp
 
+<!-- Dedicated Dashboard Mobile Responsiveness Stylesheet -->
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-mobile.css') }}?v={{ time() }}">
+
 <!-- SUCCESS MODAL -->
 <div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -88,7 +91,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <div class="col-lg-6">
 
                 <ul class="QuickAction flex-wrap">
-                    <li><a href="{{ route('library.dashboard.v2') }}" style="background: #34939F;"><i class="fa-solid fa-sparkles"></i> Switch to Modern V2</a></li>
                     <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
                 </ul>
             </div>
@@ -743,144 +745,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         @endif
         <!-- End -->
 
-        <style>
-            .due-count-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 26px;
-                height: 26px;
-                padding: 0 8px;
-                border-radius: 50%;
-                background: #e9ecef;
-                color: #495057;
-                font-size: .8rem;
-                font-weight: 600;
-                vertical-align: middle;
-            }
 
-            .payment-due-scroll {
-                display: flex;
-                gap: 14px;
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding: 4px 4px 14px;
-                scroll-snap-type: x proximity;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .payment-due-scroll::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            .payment-due-scroll::-webkit-scrollbar-thumb {
-                background: #d0d0e6;
-                border-radius: 6px;
-            }
-
-            .payment-due-card {
-                flex: 0 0 auto;
-                scroll-snap-align: start;
-                width: 190px;
-                background: #fde8e8;
-                border-radius: 16px;
-                padding: 14px;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .due-seat-tag {
-                color: #c1121f;
-                font-weight: 600;
-                font-size: .8rem;
-            }
-
-            .due-wa-icon {
-                color: #25d366;
-                background: #fff;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: .8rem;
-            }
-
-            .due-avatar {
-                width: 76px;
-                height: 76px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                font-size: 1.5rem;
-                color: #1a1a2e;
-                margin: 10px 0 8px;
-                overflow: hidden;
-            }
-
-            .due-avatar img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-
-            .due-name {
-                margin: 0 0 8px;
-                font-weight: 700;
-                font-size: .95rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 100%;
-            }
-
-            .due-name a {
-                color: #14213d;
-                text-decoration: none;
-            }
-
-            .due-badge {
-                background: #fff;
-                color: #c1121f;
-                font-size: .72rem;
-                font-weight: 600;
-                padding: 4px 10px;
-                border-radius: 20px;
-                margin-bottom: 10px;
-            }
-
-            .due-pay-btn {
-                background: #9b0f1f;
-                color: #fff;
-                border: none;
-                border-radius: 20px;
-                padding: 6px 26px;
-                font-weight: 600;
-                font-size: .85rem;
-                text-decoration: none;
-            }
-
-            .due-pay-btn:hover {
-                background: #7a0c18;
-                color: #fff;
-            }
-
-            .due-view-all-link {
-                color: #0d6e6e;
-                font-weight: 600;
-                text-decoration: none;
-                font-size: .95rem;
-            }
-
-            .due-view-all-link:hover {
-                color: #0a5555;
-            }
-        </style>
 
         @php
             $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');

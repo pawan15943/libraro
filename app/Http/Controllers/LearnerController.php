@@ -3014,7 +3014,20 @@ class LearnerController extends Controller
 
     public function learnerAttendence(Request $request)
     {
-        $selectedDate = $request->get('date', date('Y-m-d'));
+        $rawDate = $request->get('date');
+        $selectedDate = date('Y-m-d');
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $selectedDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                } else {
+                    $selectedDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                $selectedDate = date('Y-m-d');
+            }
+        }
+        $selectedDateFormatted = \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
 
         $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.library_id', getLibraryId())
@@ -3034,11 +3047,26 @@ class LearnerController extends Controller
             ->orderByRaw('CAST(learners.seat_no AS UNSIGNED) ASC')
             ->get();
 
-        return view('learner.attendance', compact('learners', 'selectedDate'));
+        return view('learner.attendance', compact('learners', 'selectedDate', 'selectedDateFormatted'));
     }
 
     public function updateAttendance(Request $request, AttendanceService $service)
     {
+        $rawDate = $request->date;
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $rawDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                    $request->merge(['date' => $rawDate]);
+                } else {
+                    $rawDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                    $request->merge(['date' => $rawDate]);
+                }
+            } catch (\Exception $e) {
+                // Keep original
+            }
+        }
+
         $request->validate([
             'learner_id' => 'required|integer',
             'attendance' => 'required|integer',
@@ -3175,7 +3203,20 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
-        $selectedDate = $request->get('date', date('Y-m-d'));
+        $rawDate = $request->get('date');
+        $selectedDate = date('Y-m-d');
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $selectedDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                } else {
+                    $selectedDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                $selectedDate = date('Y-m-d');
+            }
+        }
+        $selectedDateFormatted = \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
 
         // Dropdown data
         $data = Learner::where('branch_id', getCurrentBranch())
@@ -3253,16 +3294,8 @@ class LearnerController extends Controller
 
         $absentStudents = max(0, $totalStudents - $presentStudents);
 
-        $selectedStatus = $request->get('status', 'all');
-        if ($selectedStatus === 'present') {
-            $learners = $learners->filter(function ($row) {
-                return (int)$row->attendance === 1 || !empty($row->in_time);
-            });
-        } elseif ($selectedStatus === 'absent') {
-            $learners = $learners->filter(function ($row) {
-                return (int)$row->attendance === 0 && empty($row->in_time);
-            });
-        }
+        // Default active tab filter is 'present'
+        $selectedStatus = $request->get('status', 'present');
 
         return view('library.learner-attendance', compact(
             'learners',
@@ -3271,6 +3304,7 @@ class LearnerController extends Controller
             'presentStudents',
             'absentStudents',
             'selectedDate',
+            'selectedDateFormatted',
             'selectedStatus'
         ));
     }

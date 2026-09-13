@@ -350,11 +350,7 @@ class DashboardController extends Controller
                     ->whereDate('festival_date', Carbon::today())
                     ->first();
 
-                $viewName = ($request->get('view') === 'v2' || $request->routeIs('library.dashboard.v2')) 
-                    ? 'dashboard.admin-v2' 
-                    : 'dashboard.admin';
-
-                return view($viewName, compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount'));
+                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount'));
             } else {
                 return redirect($redirectUrl ?: route('subscriptions.choosePlan'));
             }
@@ -362,12 +358,6 @@ class DashboardController extends Controller
       
       
        
-    }
-
-    public function libraryDashboardV2(Request $request)
-    {
-        $request->merge(['view' => 'v2']);
-        return $this->libraryDashboard($request);
     }
 
     public function librar_UserDashboard(Request $request){

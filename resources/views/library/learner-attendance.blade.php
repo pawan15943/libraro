@@ -5,8 +5,9 @@
 
 @php
     $selectedDate = $selectedDate ?? (request('date') ?: date('Y-m-d'));
+    $selectedDateFormatted = $selectedDateFormatted ?? \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
     $today = \Carbon\Carbon::today();
-    $activeFilter = $selectedStatus ?? (request('status') ?: 'all');
+    $activeFilter = $selectedStatus ?? (request('status') ?: 'present');
 @endphp
 
 <div class="attendance-module">
@@ -16,15 +17,16 @@
             <input type="hidden" name="status" id="filter_status_input" value="{{ $activeFilter }}">
             <div class="attendance-controls-row">
                 <div class="attendance-filter-group">
-                    {{-- Date Picker --}}
+                    {{-- Date Picker (DD/MM/YYYY) --}}
                     <div class="filter-input-wrap">
                         <i class="fa-regular fa-calendar-days"></i>
-                        <input type="date" 
+                        <input type="text" 
                                name="date" 
                                id="attendance_date" 
                                class="control-date-input" 
-                               value="{{ $selectedDate }}" 
-                               onchange="$('#attendanceFilterForm').submit();">
+                               value="{{ $selectedDateFormatted }}" 
+                               placeholder="DD/MM/YYYY" 
+                               readonly>
                     </div>
 
                     {{-- Search Input --}}
@@ -45,7 +47,12 @@
                             <i class="fa-solid fa-magnifying-glass"></i> Search
                         </button>
 
-                        @if(request()->filled('search') || (request()->filled('date') && request('date') != date('Y-m-d')) || (request()->filled('status') && request('status') != 'all'))
+                        @php
+                            $isFiltered = request()->filled('search') 
+                                || (request()->filled('date') && $selectedDate !== date('Y-m-d')) 
+                                || (request()->filled('status') && request('status') !== 'present');
+                        @endphp
+                        @if($isFiltered)
                         <a href="{{ route('get.learner.attendance') }}" class="btn-reset-action">
                             <i class="fa-solid fa-rotate-right"></i> Reset
                         </a>
@@ -157,7 +164,8 @@
         @endphp
         <div class="clean-attendance-row" 
              id="attendance_row_{{ $value->learner_id }}" 
-             data-status="{{ $isPresent ? 'present' : 'absent' }}">
+             data-status="{{ $isPresent ? 'present' : 'absent' }}"
+             @if($activeFilter === 'present' && !$isPresent) style="display: none;" @elseif($activeFilter === 'absent' && $isPresent) style="display: none;" @endif>
             
             {{-- Top Identity & Status Section --}}
             <div class="card-identity-header">
@@ -268,9 +276,35 @@
     </div>
 
     {{-- Fallback Empty Message for JS Filtering --}}
-    <div class="attendance-header-card text-center py-5 d-none" id="noFilterMatchState">
-        <h5 class="fw-bold mb-2" style="color: #18225f;">No Learners Match This Filter</h5>
-        <p class="text-muted mb-0">No learners found under the selected attendance status.</p>
+    @php
+        $showEmptyFilterState = false;
+        if ($activeFilter === 'present' && $presentStudents === 0) {
+            $showEmptyFilterState = true;
+        } elseif ($activeFilter === 'absent' && $absentStudents === 0) {
+            $showEmptyFilterState = true;
+        } elseif ($activeFilter === 'all' && $totalStudents === 0) {
+            $showEmptyFilterState = true;
+        }
+    @endphp
+    <div class="attendance-header-card text-center py-5 {{ $showEmptyFilterState ? '' : 'd-none' }}" id="noFilterMatchState">
+        <h5 class="fw-bold mb-2" style="color: #18225f;" id="noFilterMatchTitle">
+            @if($activeFilter === 'present' && $presentStudents === 0)
+                No Learners Marked Present
+            @elseif($activeFilter === 'absent' && $absentStudents === 0)
+                No Learners Marked Absent
+            @else
+                No Learners Match This Filter
+            @endif
+        </h5>
+        <p class="text-muted mb-0" id="noFilterMatchDesc">
+            @if($activeFilter === 'present' && $presentStudents === 0)
+                No learners have punched in or been marked present for the selected date.
+            @elseif($activeFilter === 'absent' && $absentStudents === 0)
+                All learners are marked present for the selected date.
+            @else
+                No learners found under the selected attendance status.
+            @endif
+        </p>
     </div>
 
     @else
@@ -284,9 +318,25 @@
     @endif
 </div>
 
-{{-- Instant Interactive 3-Filter JavaScript --}}
+{{-- Flatpickr & Instant Interactive 3-Filter JavaScript --}}
 <script>
 $(document).ready(function() {
+    // 1. Initialize Flatpickr for Date Picker (DD/MM/YYYY)
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#attendance_date", {
+            dateFormat: "d/m/Y",
+            allowInput: false,
+            disableMobile: "true",
+            defaultDate: "{{ $selectedDateFormatted }}",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (dateStr) {
+                    $('#attendanceFilterForm').submit();
+                }
+            }
+        });
+    }
+
+    // 2. Filter Pills click handler
     $('.filter-btn').on('click', function() {
         var filterType = $(this).data('filter');
 
@@ -316,6 +366,16 @@ $(document).ready(function() {
 
         // Show empty message if no rows match
         if (visibleCount === 0) {
+            if (filterType === 'present') {
+                $('#noFilterMatchTitle').text('No Learners Marked Present');
+                $('#noFilterMatchDesc').text('No learners have punched in or been marked present for the selected date.');
+            } else if (filterType === 'absent') {
+                $('#noFilterMatchTitle').text('No Learners Marked Absent');
+                $('#noFilterMatchDesc').text('All learners are marked present for the selected date.');
+            } else {
+                $('#noFilterMatchTitle').text('No Learners Match This Filter');
+                $('#noFilterMatchDesc').text('No learners found under the selected attendance status.');
+            }
             $('#noFilterMatchState').removeClass('d-none');
         } else {
             $('#noFilterMatchState').addClass('d-none');
@@ -323,7 +383,7 @@ $(document).ready(function() {
 
         // Update URL query state without full reload
         var currentUrl = new URL(window.location.href);
-        if (filterType === 'all') {
+        if (filterType === 'present') {
             currentUrl.searchParams.delete('status');
         } else {
             currentUrl.searchParams.set('status', filterType);

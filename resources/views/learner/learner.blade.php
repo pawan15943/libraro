@@ -601,6 +601,9 @@ if ($operation == 'closeSeat') {
 } elseif ($value->frozen_status == 1) {
     $dotColorClass = 'dot-frozen';
     $dotTitle = 'Frozen';
+} elseif ((int)($value->no_expiry ?? 0) === 1 || ($statusPrecomputed['no_expiry_active'] ?? false)) {
+    $dotColorClass = 'dot-non-expiry';
+    $dotTitle = 'Non-Expired';
 } elseif ((!empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isFuture() && (int)($value->status ?? 0) === 0) || (($statusPrecomputed['has_future_start'] ?? false) && !($statusPrecomputed['has_past_plan'] ?? false))) {
     $dotColorClass = 'dot-upcoming';
     $dotTitle = 'Upcoming';
@@ -628,7 +631,11 @@ if ($operation == 'closeSeat') {
     $rawExpiry = getUserStatusWithSpan($value->plan_end_date, $learner_id, $statusPrecomputed);
     $expiryTextOnly = trim(strip_tags($rawExpiry));
     $lowerExpiry = strtolower($expiryTextOnly);
-    if (str_contains($lowerExpiry, 'extension') || str_contains($lowerExpiry, 'expired')) {
+    if (str_contains($lowerExpiry, 'non-expired') || str_contains($lowerExpiry, 'non expired') || (int)($value->no_expiry ?? 0) === 1 || ($statusPrecomputed['no_expiry_active'] ?? false)) {
+        $bannerClass = 'banner-pink';
+        $expiryHtml = '<span style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>';
+        $expiryTextOnly = 'Non-Expired';
+    } elseif (str_contains($lowerExpiry, 'extension') || str_contains($lowerExpiry, 'expired')) {
         $bannerClass = 'banner-danger';
         $expiryHtml = '<span class="text-danger"><i class="fa-regular fa-clock me-1"></i> ' . $expiryTextOnly . '</span>';
     } elseif (str_contains($lowerExpiry, 'about to expire') || str_contains($lowerExpiry, 'today')) {

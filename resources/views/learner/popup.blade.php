@@ -552,11 +552,13 @@
                                 <label for="">Operation Name<span>*</span></label>
                                 <select id="waba_template_select" class="form-select" name="template_id">
                                     <option value="">Select Template</option>
+                                    @if(isset($wabaTemplates) && !empty($wabaTemplates))
                                     @foreach($wabaTemplates as $t)
                                     <option value="{{ $t->id }}">
                                         {{ $t->operation_name }} - {{ $t->template_name }}
                                     </option>
                                     @endforeach
+                                    @endif
                                 </select>
                             </div>
                             <div class="col-lg-12">
@@ -605,11 +607,13 @@
                                 <label for="">Operation Name<span>*</span></label>
                                 <select id="text_template_select" class="form-select" name="template_id">
                                     <option value="">Select Template</option>
+                                    @if(isset($textTemplates) && !empty($textTemplates))
                                     @foreach($textTemplates as $t)
                                     <option value="{{ $t->id }}">
                                         {{ $t->operation_name }} - {{ $t->template_name }}
                                     </option>
                                     @endforeach
+                                    @endif
                                 </select>
                             </div>
                             <div class="col-lg-12">

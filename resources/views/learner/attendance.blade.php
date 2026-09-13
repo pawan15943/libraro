@@ -5,6 +5,7 @@
 
 @php
     $selectedDate = $selectedDate ?? (request('date') ?: date('Y-m-d'));
+    $selectedDateFormatted = $selectedDateFormatted ?? \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
     $today = \Carbon\Carbon::today();
 
     $totalStudents = $learners->count();
@@ -20,15 +21,16 @@
         <form action="{{ route('attendance') }}" method="GET" id="attendanceFilterForm">
             <div class="attendance-controls-row">
                 <div class="attendance-filter-group">
-                    {{-- Date Picker --}}
+                    {{-- Date Picker (DD/MM/YYYY) --}}
                     <div class="filter-input-wrap">
                         <i class="fa-regular fa-calendar-days"></i>
-                        <input type="date" 
+                        <input type="text" 
                                name="date" 
                                id="attendance_date" 
                                class="control-date-input" 
-                               value="{{ $selectedDate }}" 
-                               onchange="$('#attendanceFilterForm').submit();">
+                               value="{{ $selectedDateFormatted }}" 
+                               placeholder="DD/MM/YYYY" 
+                               readonly>
                     </div>
 
                     {{-- Search Input --}}
@@ -49,7 +51,11 @@
                             <i class="fa-solid fa-magnifying-glass"></i> Search
                         </button>
 
-                        @if(request()->filled('search') || (request()->filled('date') && request('date') != date('Y-m-d')))
+                        @php
+                            $isFiltered = request()->filled('search') 
+                                || (request()->filled('date') && $selectedDate !== date('Y-m-d'));
+                        @endphp
+                        @if($isFiltered)
                         <a href="{{ route('attendance') }}" class="btn-reset-action">
                             <i class="fa-solid fa-rotate-right"></i> Reset
                         </a>
@@ -252,6 +258,21 @@
 
 <script>
 $(document).ready(function() {
+    // Initialize Flatpickr for Date Picker (DD/MM/YYYY)
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#attendance_date", {
+            dateFormat: "d/m/Y",
+            allowInput: false,
+            disableMobile: "true",
+            defaultDate: "{{ $selectedDateFormatted }}",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (dateStr) {
+                    $('#attendanceFilterForm').submit();
+                }
+            }
+        });
+    }
+
     function getCurrentTime24() {
         var d = new Date();
         var hours = d.getHours();
