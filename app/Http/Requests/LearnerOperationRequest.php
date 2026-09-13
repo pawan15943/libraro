@@ -60,6 +60,21 @@ class LearnerOperationRequest extends FormRequest
             $data['locker_amount'] = $lockerAmount === '' ? null : $lockerAmount;
         }
 
+        if ($this->exists('refund_pay_timing')) {
+            $timing = is_string($this->refund_pay_timing) ? trim($this->refund_pay_timing) : $this->refund_pay_timing;
+            if ($timing === '') {
+                $data['refund_pay_timing'] = null;
+            }
+        }
+
+        if (! $this->filled('refund_pay_timing')) {
+            if ((int) $this->input('payment_mode') === 3) {
+                $data['refund_pay_timing'] = 'later';
+            } elseif ($this->filled('payment_mode')) {
+                $data['refund_pay_timing'] = 'now';
+            }
+        }
+
         if ($data !== []) {
             $this->merge($data);
         }
