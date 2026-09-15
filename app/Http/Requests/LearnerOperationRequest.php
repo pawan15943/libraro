@@ -256,8 +256,8 @@ class LearnerOperationRequest extends FormRequest
             'id_proof_number' => 'nullable|string|max:255',
 
             'profile_picture' => 'nullable|string',
-            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
-            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:3072',
+            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp,pdf|max:5120',
             'id_proof_file' => 'nullable|string',
 
             'no_expiry' => 'nullable|in:0,1',

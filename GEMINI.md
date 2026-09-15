@@ -67,3 +67,14 @@ All list views and CRUD modules in Libraro WebGuard MUST follow this identical l
 - **Unique Parent Wrapper Scoping**: ALWAYS wrap custom module UI elements inside a unique parent container class (e.g., `.custom-notification-module`, `.library-dashboard-section`, `.learner-edit-module`) and scope all CSS selectors under this unique parent class (e.g., `.custom-notification-module .btn-action`). NEVER write un-scoped global selectors like `.btn`, `button`, `a`, or `.header` that can cause styling conflicts with existing UI elsewhere in the codebase.
 - **Separate CSS Files for Each New Change / Module**: For EVERY new feature, UI update, or redesign, ALL new CSS MUST be saved in a dedicated, separate CSS file (e.g., `public/css/learner-edit.css`, `public/css/demo-inquiry.css`). NEVER embed inline styles or inline `<style>` tags directly inside Blade views. Always link the dedicated stylesheet at the top of the Blade template with versioning (e.g., `{{ asset('css/module-name.css') }}?v={{ time() }}`).
 
+---
+
+## Report Modules & Font-Weight Uniformity Rules
+- **No Redundant Page Headings in Reports**: Do NOT include page title/subtitle heading blocks (`<h4>...</h4>` / `<p>...</p>`) in report modules. The top bar should cleanly contain the action buttons (Filters toggle, Export CSV, Print) aligned to the right (`d-flex justify-content-end align-items-center gap-2 mb-3`).
+- **Strict Font-Weight Uniformity (`font-weight: 600`)**:
+  - ALL prominent and emphasized elements—including desktop header row columns, learner names, KPI values & labels, status pills, payment mode badges, action buttons, and record count tags—MUST strictly use uniform **`font-weight: 600`** (semi-bold).
+  - NEVER mix random heavy weights (`700`, `800`, or browser `bold`) across modules.
+  - Secondary/body text (contact links, dates, fee chips, muted labels) uses `font-weight: 400` / `500`.
+- **Seat No. Position**: Display the seat number tag directly above the student name in uppercase block letters (`0.68rem`, `font-weight: 600`, teal accent `#34939F`).
+
+

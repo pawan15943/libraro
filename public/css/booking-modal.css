@@ -109,7 +109,8 @@
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     margin-bottom: 0.75rem;
-    overflow: hidden;
+    position: relative;
+    z-index: 1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
@@ -119,6 +120,19 @@
     border-color: #cbd5e1;
 }
 
+/* Elevate card & column when dropdown is open/focused to prevent overlapping next cards */
+.booking-modal-module .edit-card:focus-within,
+.booking-modal-module .edit-card:has(.choices.is-open),
+.booking-modal-module .edit-card:has(.choices.is-focused) {
+    z-index: 40 !important;
+}
+
+.booking-modal-module .col-lg-6:has(.choices.is-open),
+.booking-modal-module .col-lg-6:has(.choices.is-focused) {
+    z-index: 50 !important;
+    position: relative;
+}
+
 /* Card Header */
 .booking-modal-module .edit-card-header {
     padding: 0.7rem 1rem;
@@ -126,6 +140,7 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid transparent;
+    border-radius: 11px 11px 0 0;
     user-select: none;
     transition: background-color 0.18s ease;
 }
@@ -595,6 +610,92 @@
     color: #64748b;
     margin-top: 0.2rem;
     display: block;
+}
+
+/* Choices.js Dropdown Integration inside Booking Modal */
+.booking-modal-module .choices {
+    margin-bottom: 0;
+    font-family: 'Outfit', sans-serif;
+    position: relative;
+    font-size: 0.84rem;
+}
+
+.booking-modal-module .choices.is-open {
+    z-index: 100 !important;
+}
+
+.booking-modal-module .choices__inner {
+    background-color: #ffffff;
+    border: 1.2px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    min-height: 38px;
+    padding: 0.35rem 0.75rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s ease-in-out;
+    font-family: 'Outfit', sans-serif;
+}
+
+.booking-modal-module .choices.is-focused .choices__inner,
+.booking-modal-module .choices.is-open .choices__inner {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08) !important;
+    outline: none !important;
+}
+
+.booking-modal-module .choices__list--dropdown {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 14px 34px rgba(24, 34, 95, 0.18) !important;
+    margin-top: 4px !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__list {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__input {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-size: 0.82rem !important;
+    padding: 7px 12px !important;
+    margin: 8px 10px !important;
+    width: calc(100% - 20px) !important;
+    box-sizing: border-box !important;
+    color: #1e293b !important;
+    height: 34px !important;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__input:focus {
+    border-color: #18225f !important;
+    background: #ffffff !important;
+    outline: none !important;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__item {
+    padding: 8px 14px !important;
+    font-size: 0.84rem !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: #eff6ff !important;
+    color: #18225f !important;
+    font-weight: 600 !important;
+}
+
+.booking-modal-module .choices__list--dropdown .choices__item--selectable.is-selected {
+    background-color: #f1f5f9 !important;
+    font-weight: 600 !important;
 }
 
 /* ==========================================================================

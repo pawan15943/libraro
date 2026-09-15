@@ -359,7 +359,18 @@
                     $(popup).find('.v2NetAmount').text('₹' + netAbs.toFixed(0));
                     $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel,.v2SettlementOptionWrap').hide();
 
-                    if (net > 0) {
+                    if (totals.ids.length === 0) {
+                        $(popup).find('.v2SettlementCase').val('none');
+                        $(popup).find('.v2SettledPanel').hide();
+                        $(popup).find('.v2PaymentModeWrap').hide();
+                        const confirmBtn = Swal.getConfirmButton();
+                        if (confirmBtn) {
+                            confirmBtn.textContent = 'Select a record to settle';
+                            confirmBtn.disabled = true;
+                        }
+                    } else if (net > 0) {
+                        const confirmBtn = Swal.getConfirmButton();
+                        if (confirmBtn) confirmBtn.disabled = false;
                         $(popup).find('.v2SettlementCase').val('pending');
                         $(popup).find('.v2SettlementOptionWrap,.v2PendingPanel,.v2PaymentModeWrap').show();
                         $(popup).find('.v2PayAmount').val(net.toFixed(0));
@@ -367,6 +378,8 @@
                         updatePendingHelp();
                         updateSettlementOption();
                     } else if (net < 0) {
+                        const confirmBtn = Swal.getConfirmButton();
+                        if (confirmBtn) confirmBtn.disabled = false;
                         $(popup).find('.v2SettlementCase').val('extra');
                         $(popup).find('.v2SettlementOptionWrap,.v2ExtraPanel,.v2PaymentModeWrap').show();
                         $(popup).find('.v2ExtraTitleAmount').text(netAbs.toFixed(0));
@@ -374,6 +387,8 @@
                         Swal.getConfirmButton().textContent = `Settle extra amount.`;
                         updateSettlementOption();
                     } else {
+                        const confirmBtn = Swal.getConfirmButton();
+                        if (confirmBtn) confirmBtn.disabled = false;
                         $(popup).find('.v2SettlementCase').val('settled');
                         $(popup).find('.v2SettledPanel').show();
                         $(popup).find('.v2PaymentModeWrap').hide();
@@ -1728,8 +1743,10 @@
         $('#general_seat').on('change', function () {
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
+                $('#seat_no').val($('#seat_id').val() || '');
             } else {
                 $('#seat_id').val('').prop('disabled', true);
+                $('#seat_no').val('');
                 getTypeSeatwise('');
             }
         });
@@ -1738,6 +1755,7 @@
         // OnChange of Seat No Dropdown get PlanType in Booking Form
         $('#seat_id').on('change', function () {
             let newSeatId = $(this).val();
+            $('#seat_no').val(newSeatId);
             getTypeSeatwise(newSeatId);
             $('#paid_amount').val("");
         });

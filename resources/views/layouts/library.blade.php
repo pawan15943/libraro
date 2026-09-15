@@ -610,12 +610,21 @@
             const generalSeat = document.getElementById('general_seat');
             const seatSelect = document.getElementById('seat_id');
 
-            const seatChoices = new Choices(seatSelect, {
-                removeItemButton: true,
-                shouldSort: false,
-            });
+            let seatChoices = null;
+            if (seatSelect) {
+                seatChoices = new Choices(seatSelect, {
+                    removeItemButton: false,
+                    shouldSort: false,
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search seat number...',
+                    itemSelectText: '',
+                    placeholder: true,
+                    placeholderValue: 'Choose Seat No.'
+                });
+            }
 
             function toggleSeat() {
+                if (!seatChoices) return;
                 if (generalSeat.value === 'yes') {
                     seatChoices.disable(); // ✅ disable Choices UI
                     seatChoices.removeActiveItems(); // removes selected value
@@ -798,6 +807,10 @@
                     cropper.destroy();
                     cropper = null;
 
+                    if (document.querySelector('.modal.show')) {
+                        document.body.classList.add('modal-open');
+                    }
+
                 }, "image/jpeg", 0.8);
             });
 
@@ -807,6 +820,10 @@
                 cropper = null;
                 activeInput = null;
                 activePreview = null;
+
+                if (document.querySelector('.modal.show')) {
+                    document.body.classList.add('modal-open');
+                }
             });
 
         });

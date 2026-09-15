@@ -38,10 +38,10 @@ class StoreLearnerRequest extends FormRequest
 
 
             "id_proof_name"=>'nullable',
-            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp,pdf|max:5120',
             'id_proof_file' => 'nullable|string',
             "id_proof_number"=>'nullable',
-            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:3072',
             'profile_picture' => 'nullable|string',
 
             

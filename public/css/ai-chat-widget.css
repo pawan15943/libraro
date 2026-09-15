@@ -11,6 +11,11 @@
     pointer-events: auto !important;
 }
 
+/* Hide floating fallback trigger when sidebar trigger is present */
+body:has(#libraroAiTriggerSidebar) .custom-libraro-ai-widget #libraroAiTrigger {
+    display: none !important;
+}
+
 /* Floating Trigger Button */
 .custom-libraro-ai-widget .ai-trigger-btn {
     width: 62px !important;

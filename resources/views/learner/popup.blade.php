@@ -101,7 +101,7 @@
                                     {{-- Show Only Available Slots or Seat No. --}}
                                     <div class="col-lg-6">
                                         <label for="seat_id" class="form-label">Choose Seat No. <span class="required-star">*</span></label>
-                                        <select name="seat_no" class="form-select" id="seat_id" disabled>
+                                        <select class="form-select" id="seat_id" disabled>
                                             <option value="" selected>Choose Seat No.</option>
                                             @foreach($newAvailableSeats as $key => $value)
                                             <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
@@ -538,16 +538,38 @@ $(document).ready(function() {
         });
     });
 
-    // Reset previews on modal close
+    // Reset form, validation states, and previews on modal close
     $('#seatAllotmentModal').on('hidden.bs.modal', function() {
+        // Reset raw form fields
+        if ($('#seatAllotmentForm').length && $('#seatAllotmentForm')[0]) {
+            $('#seatAllotmentForm')[0].reset();
+        }
+        $('#seatAllotmentForm .is-invalid').removeClass('is-invalid');
+        $('#seatAllotmentForm .invalid-feedback').remove();
+        $('#error-message, #validation-error-message').hide().text('');
+
+        // Reset Profile Avatar
+        $('#profile_picture').val('');
         $('#bookingAvatarPreview').attr('src', '').hide();
         $('#bookingAvatarDefaultIcon').show();
         $('#bookingAvatarTitle').text('Click avatar to upload photo');
         $('#bookingAvatarSubtext').text('Upload a clear photo for identification (optional).');
+
+        // Reset ID Proof dropzone
         $('#id_proof_file_input').val('');
         $('#bookingDocDropContent').show();
         $('#bookingDocDropPreview').hide();
+        $('#bookingDocFileName').text('Document Attached');
         $('.preview-img.one').removeAttr('src');
+
+        // Reset seat fields
+        $('#seat_no').val('');
+        $('#seat_id').val('').prop('disabled', true);
+        $('#general_seat').val('yes');
+
+        // Reset collapsible states
+        $('#bookingPhotoCollapse').hide();
+        $('.booking-collapsible-header[data-target="#bookingPhotoCollapse"] .edit-header-toggle').removeClass('expanded');
     });
 });
 </script>
