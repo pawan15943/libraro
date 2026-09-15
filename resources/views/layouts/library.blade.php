@@ -34,6 +34,8 @@
     <meta name="format-detection" content="telephone=no">
     <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
     <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 </head>

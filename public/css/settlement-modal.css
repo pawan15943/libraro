@@ -1,0 +1,696 @@
+/**
+ * Libraro Modern Settlement Modal Stylesheet (Mobile-First & Optimized)
+ * Strictly scoped under .settlement-popup & SweetAlert container
+ * Primary Color: #18225f (Navy Blue)
+ * Secondary / Accent: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
+ * Typography: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif
+ */
+
+/* ==========================================================================
+   1. SWEETALERT BASE POPUP & ANIMATIONS
+   ========================================================================== */
+
+.swal2-popup.settlement-popup-modal {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    width: min(700px, 94vw) !important;
+    max-width: 94vw !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 0.95rem 0.85rem !important;
+    border-radius: 18px !important;
+    box-shadow: 0 20px 60px rgba(24, 34, 95, 0.2) !important;
+    border: 1px solid #e2e8f0 !important;
+    animation: settlementModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.swal2-popup.settlement-popup-modal.settlement-loader-popup {
+    width: min(320px, 88vw) !important;
+    max-width: 320px !important;
+    padding: 1.25rem 1rem !important;
+    border-radius: 16px !important;
+}
+
+@keyframes settlementModalIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.swal2-popup.settlement-popup-modal::-webkit-scrollbar {
+    width: 5px;
+}
+.swal2-popup.settlement-popup-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+.swal2-popup.settlement-popup-modal::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   2. MODAL HEADER & TITLES
+   ========================================================================== */
+
+.settlement-popup .settlement-modal-title {
+    color: #18225f;
+    font-size: 1.18rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.settlement-popup .settlement-modal-title i {
+    color: #18225f;
+    font-size: 1.15rem;
+}
+
+.settlement-popup .settlement-modal-subtitle {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+/* ==========================================================================
+   3. ULTRA SMOOTH LOADER
+   ========================================================================== */
+
+.settlement-smooth-loader {
+    padding: 0.85rem 0.5rem;
+    text-align: center;
+}
+
+.settlement-smooth-loader .smooth-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 0.75rem;
+    border: 3.5px solid #f1f5f9;
+    border-top: 3.5px solid #18225f;
+    border-right: 3.5px solid #34939F;
+    border-radius: 50%;
+    animation: smoothSpin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    filter: drop-shadow(0 2px 6px rgba(24, 34, 95, 0.15));
+}
+
+@keyframes smoothSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.settlement-smooth-loader .smooth-loader-text {
+    font-family: 'Outfit', sans-serif;
+    color: #18225f;
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin: 0;
+    animation: loaderPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes loaderPulse {
+    0% { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+
+/* ==========================================================================
+   4. SCROLLABLE TRANSACTION CARDS CONTAINER
+   ========================================================================== */
+
+.settlement-popup .settlement-cards-container {
+    max-height: 165px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.settlement-popup .settlement-cards-container::-webkit-scrollbar {
+    width: 4px;
+}
+.settlement-popup .settlement-cards-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.settlement-popup .settlement-cards-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   5. INDIVIDUAL PLAN CARDS & METRICS
+   ========================================================================== */
+
+.settlement-popup .settlement-plan-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 9px 11px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    user-select: none;
+    text-align: left;
+}
+
+.settlement-popup .settlement-plan-card:hover {
+    border-color: #34939F;
+    box-shadow: 0 3px 12px rgba(24, 34, 95, 0.06);
+    transform: translateY(-1px);
+}
+
+.settlement-popup .settlement-plan-card.selected {
+    border-color: #18225f;
+    background: #f8faff;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+}
+
+.settlement-popup .settlement-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.settlement-popup .settlement-plan-badge {
+    background: #18225f;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+}
+
+.settlement-popup .settlement-seat-badge {
+    background: #eff6ff;
+    color: #18225f;
+    border: 1px solid #bfdbfe;
+    font-size: 0.70rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+}
+
+.settlement-popup .settlement-date-badge {
+    color: #64748b;
+    font-size: 0.70rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.settlement-popup .settlement-check-circle {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    color: transparent;
+    font-size: 10px;
+}
+
+.settlement-popup .settlement-plan-card.selected .settlement-check-circle {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(24, 34, 95, 0.22);
+}
+
+/* Card Metrics Grid (Mobile-First: 2-column on small screens) */
+.settlement-popup .settlement-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px 8px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    padding: 6px 9px;
+    margin-top: 7px;
+}
+
+.settlement-popup .settlement-plan-card.selected .settlement-card-metrics {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: #e2e8f0;
+}
+
+.settlement-popup .metric-item {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.settlement-popup .metric-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.settlement-popup .metric-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: #1e293b;
+    margin-top: 1px;
+    line-height: 1.2;
+}
+
+/* ==========================================================================
+   6. DYNAMIC SUMMARY STATISTICS CARDS
+   ========================================================================== */
+
+.settlement-popup .settlement-summary-grid {
+    margin-top: 7px;
+}
+
+.settlement-popup .settlement-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.18s ease;
+}
+
+.settlement-popup .settlement-stat-card .stat-label {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.settlement-popup .settlement-stat-card .stat-val {
+    font-size: 0.98rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    color: #1e293b;
+    line-height: 1.15;
+}
+
+.settlement-popup .settlement-stat-card.card-pending {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+.settlement-popup .settlement-stat-card.card-pending .stat-label,
+.settlement-popup .settlement-stat-card.card-pending .stat-val {
+    color: #ef4444;
+}
+
+.settlement-popup .settlement-stat-card.card-extra {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.settlement-popup .settlement-stat-card.card-extra .stat-label,
+.settlement-popup .settlement-stat-card.card-extra .stat-val {
+    color: #16a34a;
+}
+
+.settlement-popup .settlement-stat-card.card-net {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+.settlement-popup .settlement-stat-card.card-net .stat-label,
+.settlement-popup .settlement-stat-card.card-net .stat-val {
+    color: #18225f;
+}
+
+/* ==========================================================================
+   7. NOTE BANNER
+   ========================================================================== */
+
+.settlement-popup .settlement-note-banner {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: #64748b;
+    margin-top: 7px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-align: left;
+}
+
+.settlement-popup .settlement-note-banner i {
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    color: #18225f !important;
+}
+
+/* ==========================================================================
+   8. CHOICE SEGMENT TOGGLE CARDS
+   ========================================================================== */
+
+.settlement-popup .settlement-choice-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.settlement-popup .settlement-choice-card {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+    padding: 7px 11px;
+    font-weight: 600;
+    font-size: 0.80rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    text-align: left;
+    margin-bottom: 0;
+}
+
+.settlement-popup .settlement-choice-card:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.settlement-popup .settlement-choice-card:has(.form-check-input:checked),
+.settlement-popup .settlement-choice-card.active {
+    border-color: #18225f !important;
+    background: #ffffff !important;
+    color: #18225f !important;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.07) !important;
+}
+
+.settlement-popup .settlement-choice-card .form-check-input {
+    margin: 0;
+    width: 15px;
+    height: 15px;
+    min-width: 15px;
+    cursor: pointer;
+}
+
+.settlement-popup .settlement-choice-card .form-check-input:checked {
+    background-color: #18225f;
+    border-color: #18225f;
+}
+
+/* ==========================================================================
+   9. ACTION PANELS & INPUTS
+   ========================================================================== */
+
+.settlement-popup .settlement-action-panel {
+    border-radius: 11px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    text-align: left;
+}
+
+.settlement-popup .settlement-action-panel.pending {
+    background: #fff8f8;
+    border: 1.5px solid #fca5a5;
+}
+
+.settlement-popup .settlement-action-panel.extra {
+    background: #f4fbf5;
+    border: 1.5px solid #86efac;
+}
+
+.settlement-popup .settlement-action-panel .form-check {
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.settlement-popup .settlement-action-panel .form-check-label {
+    font-size: 0.77rem;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.settlement-popup .settlement-action-panel .form-check-input {
+    margin: 0;
+    width: 15px;
+    height: 15px;
+    min-width: 15px;
+    cursor: pointer;
+}
+
+.settlement-popup .settlement-action-panel .form-check-input:checked {
+    background-color: #18225f;
+    border-color: #18225f;
+}
+
+.settlement-popup .settlement-amount-input-wrap {
+    max-width: 145px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.settlement-popup .settlement-amount-input-wrap .currency-symbol {
+    position: absolute;
+    left: 10px;
+    font-weight: 700;
+    color: #64748b;
+    font-size: 0.82rem;
+    pointer-events: none;
+}
+
+.settlement-popup .settlement-amount-input-wrap .form-control {
+    padding-left: 23px;
+    height: 35px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border: 1.5px solid #cbd5e1;
+    font-family: 'Outfit', sans-serif;
+}
+
+.settlement-popup .settlement-amount-input-wrap .form-control:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+}
+
+/* ==========================================================================
+   10. PAYMENT MODE BOX
+   ========================================================================== */
+
+.settlement-popup .settlement-mode-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 7px 11px;
+    background: #ffffff;
+    margin-top: 8px;
+    text-align: left;
+}
+
+.settlement-popup .settlement-mode-box label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #18225f;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 3px;
+    display: block;
+}
+
+.settlement-popup .settlement-mode-box select {
+    border-radius: 7px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.82rem;
+    height: 35px;
+}
+
+/* ==========================================================================
+   11. SWEETALERT ACTION BUTTONS (MOBILE FIRST)
+   ========================================================================== */
+
+.swal2-actions {
+    width: 100% !important;
+    margin-top: 0.85rem !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+}
+
+.swal2-confirm.settlement-confirm-btn {
+    width: 100% !important;
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-radius: 40px !important;
+    padding: 9px 18px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.86rem !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.25) !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+    justify-content: center !important;
+}
+
+.swal2-confirm.settlement-confirm-btn:hover {
+    background: #0f1642 !important;
+    box-shadow: 0 5px 16px rgba(24, 34, 95, 0.35) !important;
+}
+
+.swal2-cancel.settlement-cancel-btn {
+    width: 100% !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-radius: 40px !important;
+    padding: 8px 18px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.84rem !important;
+    border: 1px solid #cbd5e1 !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+    justify-content: center !important;
+}
+
+.swal2-cancel.settlement-cancel-btn:hover {
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+/* ==========================================================================
+   12. TABLET & DESKTOP ENHANCEMENTS (>= 576px & >= 768px)
+   ========================================================================== */
+
+@media (min-width: 576px) {
+    .settlement-popup .settlement-card-metrics {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 6px 10px;
+    }
+
+    .settlement-popup .settlement-choice-row {
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .settlement-popup .settlement-choice-card {
+        flex: 1 1 180px;
+        width: auto;
+    }
+
+    .swal2-actions {
+        flex-direction: row !important;
+        justify-content: center !important;
+        width: auto !important;
+    }
+
+    .swal2-confirm.settlement-confirm-btn {
+        width: auto !important;
+        min-width: 190px !important;
+    }
+
+    .swal2-cancel.settlement-cancel-btn {
+        width: auto !important;
+        min-width: 100px !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .swal2-popup.settlement-popup-modal {
+        width: 700px !important;
+        max-width: 700px !important;
+        padding: 1.25rem 1.4rem !important;
+        border-radius: 20px !important;
+    }
+
+    .settlement-popup .settlement-modal-title {
+        font-size: 1.32rem;
+    }
+
+    .settlement-popup .settlement-modal-subtitle {
+        font-size: 0.82rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .settlement-popup .settlement-cards-container {
+        max-height: 185px;
+        gap: 8px;
+    }
+
+    .settlement-popup .settlement-plan-card {
+        padding: 10px 13px;
+        border-radius: 13px;
+    }
+
+    .settlement-popup .metric-label {
+        font-size: 0.65rem;
+    }
+
+    .settlement-popup .metric-value {
+        font-size: 0.86rem;
+    }
+
+    .settlement-popup .settlement-stat-card {
+        padding: 8px 10px;
+        border-radius: 11px;
+    }
+
+    .settlement-popup .settlement-stat-card .stat-label {
+        font-size: 0.70rem;
+    }
+
+    .settlement-popup .settlement-stat-card .stat-val {
+        font-size: 1.1rem;
+    }
+
+    .settlement-popup .settlement-note-banner {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+        margin-top: 8px;
+    }
+
+    .settlement-popup .settlement-action-panel {
+        padding: 12px 14px;
+        margin-top: 10px;
+        border-radius: 12px;
+    }
+
+    .swal2-actions {
+        margin-top: 1.1rem !important;
+        gap: 10px !important;
+    }
+}

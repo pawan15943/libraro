@@ -1,322 +1,556 @@
+<link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}" />
+
 @can('has-permission', 'Book Seat')
 
-<div class="modal fade" id="seatAllotmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade booking-modal-module" id="seatAllotmentModal" tabindex="-1" aria-labelledby="seat_no_head" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title px-2 fs-5" id="seat_no_head"></h1>
+                <h1 class="modal-title fs-5" id="seat_no_head">
+                    <i class="fa-solid fa-chair"></i>
+                    <span>Booking Form</span>
+                </h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div id="error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
-                <div id="validation-error-message" class="alert alert-danger mb-4 mt-0" style="display:none;"></div>
-                <form id="seatAllotmentForm">
-                    @csrf
+            <form id="seatAllotmentForm">
+                @csrf
+                <div class="modal-body">
+                    <div id="error-message" class="alert alert-danger mb-3 mt-0" style="display:none;"></div>
+                    <div id="validation-error-message" class="alert alert-danger mb-3 mt-0" style="display:none;"></div>
                     <div class="detailes">
 
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no" autocomplete="off">
 
-                        <div class="row g-3">
-
-                            {{--Seat Concept======================================================================  --}}
-                            <div class="col-lg-6">
-                                <label for="general_seat">Assign Seat No ?</label>
-                                <select name="general_seat" id="general_seat" class="form-select">
-
-                                    <option value="yes">No</option>
-                                    <option value="no">Yes, Allot a Seat No.</option>
-                                </select>
+                        {{-- 1. UPLOAD PROFILE PHOTO CARD (COLLAPSIBLE, CLOSED BY DEFAULT) --}}
+                        @if(!in_array('8', toggleHideField()))
+                        <div class="edit-card booking-collapsible-card">
+                            <div class="edit-card-header header-purple booking-collapsible-header" data-target="#bookingPhotoCollapse">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Upload Profile Photo</h4>
+                                        <p class="edit-header-subtitle">Add learner's profile photo (optional).</p>
+                                    </div>
+                                </div>
+                                <div class="edit-header-right">
+                                    <span class="edit-header-badge badge-optional">Optional</span>
+                                    <i class="fa-solid fa-chevron-down edit-header-toggle"></i>
+                                </div>
                             </div>
-                            {{-- Show Only Available Slots or Seat No. --}}
-                            <div class="col-lg-6">
-                                <label for="seat_id">Choose Seat No. <span>*</span></label>
+                            <div class="booking-card-collapse" id="bookingPhotoCollapse" style="display: none;">
+                                <div class="edit-card-body">
+                                    <div class="upload-photo-container">
+                                        <div class="upload-avatar-wrapper" id="bookingAvatarTrigger" title="Click to upload profile photo">
+                                            <div class="upload-avatar-circle" id="bookingAvatarCircle">
+                                                <i class="fa-solid fa-user avatar-icon-placeholder" id="bookingAvatarDefaultIcon"></i>
+                                                <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
+                                                <div class="avatar-hover-overlay">
+                                                    <i class="fa-solid fa-camera"></i>
+                                                    <span>Upload</span>
+                                                </div>
+                                            </div>
+                                            <div class="avatar-camera-badge">
+                                                <i class="fa-solid fa-camera"></i>
+                                            </div>
+                                        </div>
+                                        <div class="upload-avatar-title" id="bookingAvatarTitle">Click avatar to upload photo</div>
+                                        <p class="upload-avatar-subtext" id="bookingAvatarSubtext">Upload a clear photo for identification (optional).</p>
 
-                                <select name="seat_no" class="form-select" id="seat_id" disabled>
-                                    <option value="" selected>Choose Seat No.</option>
-                                    @foreach($newAvailableSeats as $key => $value)
-                                    <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
-                                    @endforeach
-                                </select>
+                                        {{-- Hidden File Input for Cropper & Form --}}
+                                        <input
+                                            type="file"
+                                            class="d-none image-cropper"
+                                            name="profile_picture_image"
+                                            id="profile_picture"
+                                            autocomplete="off"
+                                            accept=".jpeg, .jpg, .png, .webp" />
+                                        <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
+                                    </div>
+                                </div>
                             </div>
-
-                            {{-- ================================================================== --}}
-                            <div class="col-lg-6">
-                                <label for="">Full Name <span>*</span></label>
-                                <input type="text" class="form-control " name="name" id="name">
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Mobile Number <span>*</span></label>
-                                <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile">
-                            </div>
-
-                            @if(!in_array('2', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="">DOB (Optional)</label>
-                                <input type="date" class="form-control " name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
-                            </div>
-                            @endif
-                            @if(!in_array('1', toggleHideField()))
-                            <div class="col-lg-6">
-                                <label for="">Email Id (Optional)</label>
-                                <input type="text" class="form-control" name="email" id="email">
-                                <span class="text-danger" id="email-error"></span>
-                            </div>
-                            @endif
-
-                            <div class="col-lg-4">
-                                <label for="">Plan <span>*</span></label>
-                                <select name="plan_id" id="plan_id3" class="form-select" name="plan_id">
-
-                                    <option value="">Choose</option>
-                                    @foreach($plans as $key => $value)
-                                    <option value="{{$value->id}}">{{$value->name}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-lg-4">
-                                <label for="">Plan Type / Shift <span>*</span></label>
-                                <select id="plan_type_id" class="form-select" name="plan_type_id">
-                                    <option value="">Choose</option>
-
-                                </select>
-                            </div>
-
-                            <div class="col-lg-4">
-                                <label for="">Plan Starts On <span>*</span></label>
-                                <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
-                                <span id="chargeable_days" class="text-info"></span>
-                                <span id="end_date_show" class="text-danger"></span>
-                            </div>
-
-                            <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                         </div>
+                        @endif
+
+                        {{-- 2. SEAT & BASIC INFORMATION CARD --}}
+                        <div class="edit-card">
+                            <div class="edit-card-header header-blue">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-regular fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Basic Information</h4>
+                                        <p class="edit-header-subtitle">Seat allocation and learner contact details.</p>
+                                    </div>
+                                </div>
+                                <span class="edit-header-badge badge-required">Required</span>
+                            </div>
+                            <div class="edit-card-body">
+                                <div class="row g-3">
+                                    {{-- Seat Concept --}}
+                                    <div class="col-lg-6">
+                                        <label for="general_seat" class="form-label">Assign Seat No ?</label>
+                                        <select name="general_seat" id="general_seat" class="form-select">
+                                            <option value="yes">No</option>
+                                            <option value="no">Yes, Allot a Seat No.</option>
+                                        </select>
+                                    </div>
+                                    {{-- Show Only Available Slots or Seat No. --}}
+                                    <div class="col-lg-6">
+                                        <label for="seat_id" class="form-label">Choose Seat No. <span class="required-star">*</span></label>
+                                        <select name="seat_no" class="form-select" id="seat_id" disabled>
+                                            <option value="" selected>Choose Seat No.</option>
+                                            @foreach($newAvailableSeats as $key => $value)
+                                            <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <label for="name" class="form-label">Full Name <span class="required-star">*</span></label>
+                                        <input type="text" class="form-control" name="name" id="name" placeholder="Enter Full Name">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label for="mobile" class="form-label">Mobile Number <span class="required-star">*</span></label>
+                                        <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10-digit mobile number">
+                                    </div>
+
+                                    @if(!in_array('2', toggleHideField()))
+                                    <div class="col-lg-6">
+                                        <label for="dob" class="form-label">DOB (Optional)</label>
+                                        <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
+                                    </div>
+                                    @endif
+                                    @if(!in_array('1', toggleHideField()))
+                                    <div class="col-lg-6">
+                                        <label for="email" class="form-label">Email Id (Optional)</label>
+                                        <input type="text" class="form-control" name="email" id="email" placeholder="example@domain.com">
+                                        <span class="text-danger small" id="email-error"></span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 3. PLAN & SHIFT SELECTION CARD --}}
+                        <div class="edit-card">
+                            <div class="edit-card-header header-green">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-regular fa-calendar-check"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Plan & Shift Selection</h4>
+                                        <p class="edit-header-subtitle">Select study plan, shift timing, and start date.</p>
+                                    </div>
+                                </div>
+                                <span class="edit-header-badge badge-required">Required</span>
+                            </div>
+                            <div class="edit-card-body">
+                                <div class="row g-3">
+                                    <div class="col-lg-4">
+                                        <label for="plan_id3" class="form-label">Plan <span class="required-star">*</span></label>
+                                        <select name="plan_id" id="plan_id3" class="form-select">
+                                            <option value="">Choose</option>
+                                            @foreach($plans as $key => $value)
+                                            <option value="{{$value->id}}">{{$value->name}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <label for="plan_type_id" class="form-label">Plan Type / Shift <span class="required-star">*</span></label>
+                                        <select id="plan_type_id" class="form-select" name="plan_type_id">
+                                            <option value="">Choose</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <label for="plan_start_date" class="form-label">Plan Starts On <span class="required-star">*</span></label>
+                                        <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                        <span id="chargeable_days" class="text-info info-hint"></span>
+                                        <span id="end_date_show" class="text-danger info-hint"></span>
+                                    </div>
+
+                                    <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 4. PLAN ADDON'S CARD (COLLAPSIBLE) --}}
                         @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
-
-
-                        <h4 class="my-3">Your Plan Addon's <i class="fa fa-plus toggleIcon1" style="cursor: pointer;"></i></h4>
-                        <div class="idProofFields1">
-                            <div class="row g-3">
-                                @if(!in_array('3', toggleHideField()))
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                    <label for="toggleFieldCheckbox">Need a Locker ?</label>
-                                    <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes, I Need a Locker</option>
-                                    </select>
+                        <div class="edit-card booking-collapsible-card">
+                            <div class="edit-card-header header-teal booking-collapsible-header" data-target="#bookingAddonFields">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-solid fa-layer-group"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Plan Addon's</h4>
+                                        <p class="edit-header-subtitle">Locker facility and promotional discounts.</p>
+                                    </div>
                                 </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
-                                    <label for="locker_amount">Locker Amount</label>
-                                    <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
+                                <div class="edit-header-right">
+                                    <span class="edit-header-badge badge-optional">Optional</span>
+                                    <i class="fa-solid fa-chevron-down edit-header-toggle toggleIcon1"></i>
                                 </div>
-                                <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
-                                    <label for="locker_no">Locker No.</label>
-                                    <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                            </div>
+                            <div class="booking-card-collapse idProofFields1" id="bookingAddonFields" style="display: none;">
+                                <div class="edit-card-body">
+                                    <div class="row g-3">
+                                        @if(!in_array('3', toggleHideField()))
+                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
+                                            <label for="toggleFieldCheckbox2" class="form-label">Need a Locker ?</label>
+                                            <select name="toggleFieldCheckbox" id="toggleFieldCheckbox2" class="form-select">
+                                                <option value="no">No</option>
+                                                <option value="yes">Yes, I Need a Locker</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer" readonly>
+                                            <label for="locker_amount_book" class="form-label">Locker Amount</label>
+                                            <input type="text" class="form-control digit-only" name="locker_amount" id="locker_amount_book" placeholder="Locker Amt." readonly>
+                                        </div>
+                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                            <label for="locker_no" class="form-label">Locker No.</label>
+                                            <input type="text" class="form-control digit-only" name="locker_no" id="locker_no" placeholder="Enter Locker No." readonly>
+                                        </div>
+                                        @endif
+                                        @if(!in_array('6', toggleHideField()))
+                                        <div class="col-lg-6">
+                                            <label for="discountType" class="form-label">Discount Type</label>
+                                            <select id="discountType" class="form-select" name="discountType">
+                                                <option value="">Discount Type</option>
+                                                <option value="amount">Amount</option>
+                                                <option value="percentage">Percentage</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label for="discount_amount" class="form-label">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
+                                            <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
+                                        </div>
+                                        @endif
+                                    </div>
                                 </div>
-                                @endif
-                                @if(!in_array('6', toggleHideField()))
-                                <div class="col-lg-6">
-                                    <label for="discountType">Discount Type</label>
-                                    <select id="discountType" class="form-select" name="discountType">
-                                        <option value="">Discount Type</option>
-                                        <option value="amount">Amount</option>
-                                        <option value="percentage">Percentage</option>
-                                    </select>
-                                </div>
-                                <div class="col-lg-6">
-                                    <label for="discount_amount">Discount Amount ( <span id="typeVal">INR / %</span> )</label>
-                                    <input type="text" class="form-control digit-only" name="discount_amount" id="discount_amount" placeholder="Enter Discount Amount">
-                                </div>
-                                @endif
                             </div>
                         </div>
                         @endif
-                        <div class="row g-3 mt-0">
-                            <div class="col-lg-4">
-                                <label for="">Final Payble Amount (INR)<span>*</span></label>
-                                <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
-                                <span id="pending_amt" class="text-danger"></span>
+
+                        {{-- 5. PAYMENT & REMINDER SETTINGS CARD --}}
+                        <div class="edit-card">
+                            <div class="edit-card-header header-blue">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-solid fa-wallet"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Payment & Reminder Settings</h4>
+                                        <p class="edit-header-subtitle">Fee payment, due date, mode, and notification channels.</p>
+                                    </div>
+                                </div>
+                                <span class="edit-header-badge badge-required">Required</span>
                             </div>
+                            <div class="edit-card-body">
+                                <div class="row g-3">
+                                    <div class="col-lg-4">
+                                        <label for="paid_amount" class="form-label">Final Payable Amount (INR) <span class="required-star">*</span></label>
+                                        <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
+                                        <span id="pending_amt" class="text-danger info-hint"></span>
+                                    </div>
 
-                            <div class="col-lg-4">
-                                <label for="">Choose Due Date<span>*</span></label>
-                                <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
-                            </div>
+                                    <div class="col-lg-4">
+                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star">*</span></label>
+                                        <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
+                                    </div>
 
-
-
-                            <div class="col-lg-4">
-                                <label for="">Payment Mode <span>*</span></label>
-                                <select name="payment_mode" id="payment_mode" class="form-select">
-                                    <option value="">Choose</option>
-                                    <option value="1">Online</option>
-                                    <option value="2">Offline</option>
-                                    <option value="3">Pay Later</option>
-
-                                    {{-- <optgroup label="Cash">
-                                        <option value="CASH">CASH</option>
-                                    </optgroup>
-
-                                    <optgroup label="Bank Transfers">
-                                        <option value="BANK TRANSFER">BANK TRANSFER</option>
-                                        <option value="ONLINE BANKING">ONLINE BANKING</option>
-                                        <option value="UPI">UPI</option>
-                                    </optgroup>
-
-                                    <optgroup label="Digital Wallets">
-                                        <option value="PHONE PAY">PHONE PAY</option>
-                                        <option value="GOOGLE PAY">GOOGLE PAY</option>
-                                        <option value="BHARAT PAY">BHARAT PAY</option>
-                                        <option value="PAYTM">PAYTM</option>
-                                        <option value="AMAZON PAY">AMAZON PAY</option>
-                                        <option value="WHATSAPP PAY">WHATSAPP PAY</option>
-                                    </optgroup>
-
-                                    <optgroup label="Other">
-                                        <option value="MANUAL">MANUAL</option>
-                                        <option value="OTHER">OTHER</option>
-                                    </optgroup> --}}
-                                </select>
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">Send Reminders Via (Optional)</label>
-                                <select id="sended_message_type" class="form-select" name="sended_message_type">
-                                    <option value="">Select Type</option>
-                                    @if($hasFreeWaba ?? false)
-                                    <option value="whatsapp">WhatsApp Message Only</option>
-                                    @endif
-                                    @if($hasFreeText ?? false)
-                                    <option value="text">Text Message Only</option>
-                                    @endif
-                                    @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
-                                    <option value="both">Both (WhatsApp & Text Message)</option>
-                                    @endif
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-6">
-                                <label for="">No Expiry Seat (Optional)</label>
-                                <select name="no_expiry" id="no_expiry" class="form-select">
-                                    <option value="">Select Expiry Mode</option>
-                                    <option value="1">Yes, Make it non expired seat.</option>
-                                    <option value="0" selected>No</option>
-
-                                </select>
+                                    <div class="col-lg-4">
+                                        <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>
+                                        <select name="payment_mode" id="payment_mode" class="form-select">
+                                            <option value="">Choose</option>
+                                            <option value="1">Online</option>
+                                            <option value="2">Offline</option>
+                                            <option value="3">Pay Later</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label for="sended_message_type" class="form-label">Send Reminders Via (Optional)</label>
+                                        <select id="sended_message_type" class="form-select" name="sended_message_type">
+                                            <option value="">Select Type</option>
+                                            @if($hasFreeWaba ?? false)
+                                            <option value="whatsapp">WhatsApp Message Only</option>
+                                            @endif
+                                            @if($hasFreeText ?? false)
+                                            <option value="text">Text Message Only</option>
+                                            @endif
+                                            @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
+                                            <option value="both">Both (WhatsApp & Text Message)</option>
+                                            @endif
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label for="no_expiry" class="form-label">No Expiry Seat (Optional)</label>
+                                        <select name="no_expiry" id="no_expiry" class="form-select">
+                                            <option value="">Select Expiry Mode</option>
+                                            <option value="1">Yes, Make it non expired seat.</option>
+                                            <option value="0" selected>No</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        {{-- 6. OTHER OPTIONAL FIELDS CARD (COLLAPSIBLE) --}}
                         @if(!in_array('7', toggleHideField()))
-                        <h4 class="py-4 m-0">Other Optional Fields
-                            <i id="toggleIcon" class="fa fa-plus" style="cursor: pointer;"></i>
-                        </h4>
-
-                        <div id="idProofFields" style="display: none;">
-                            <div class="row g-3">
-                                @if(!in_array('8', toggleHideField()))
-                                <div class="col-lg-6">
-                                    <label class="form-label">Upload Profile Photo</label>
-                                    <input
-                                        type="file"
-                                        class="form-control image-cropper"
-                                        name="profile_picture_image" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
-                                    <img class="preview-img" style="display:none; max-width:100px; margin-top:1rem;">
+                        <div class="edit-card booking-collapsible-card">
+                            <div class="edit-card-header header-amber booking-collapsible-header" data-target="#idProofFields">
+                                <div class="edit-header-left">
+                                    <div class="edit-header-icon">
+                                        <i class="fa-regular fa-id-card"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="edit-header-title">Other Optional Fields</h4>
+                                        <p class="edit-header-subtitle">Alternate contact, ID proof, address, and remarks.</p>
+                                    </div>
                                 </div>
-                                @endif
-                                @if(!in_array('30', toggleHideField()))
-                                <div class="col-lg-6 ">
-                                    <label for="alternate_mobile">Alternate Mobile No.</label>
-                                    <input type="text" class="form-control digit-only" name="alternate_mobile" id="alternate_mobile" maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No.">
+                                <div class="edit-header-right">
+                                    <span class="edit-header-badge badge-optional">Optional</span>
+                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="toggleIcon"></i>
                                 </div>
-                                @endif
-
-                                @if(!in_array('29', toggleHideField()))
-                                <div class="col-lg-6 ">
-                                    <label for="father_name">Father Name</label>
-                                    <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name">
-                                </div>
-                                @endif
-
-                                @if(!in_array('4', toggleHideField()))
-                                <div class="col-lg-6 ">
-                                    <label for="prepareFor">Prepare For</label>
-                                    <select name="exam_id" id="prepareFor" class="form-select">
-                                        <option value="">Learner is Prepare For Exam</option>
-                                        @foreach($exams as $key => $value)
-                                        <option value="{{$value->id}}">{{$value->name}}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @endif
-                               
-
-
-
-                                @if(!in_array('5', toggleHideField()))
-                                <div class="col-lg-4">
-                                    <label for="">ID Proof Name(Optional)</label>
-                                    <select id="id_proof_name" class="form-select" name="id_proof_name">
-                                        <option value="">Select Id Proof</option>
-                                        <option value="1">Aadhar Card</option>
-                                        <option value="2">Driving License</option>
-                                        <option value="4">Pan Card</option>
-                                        <option value="5">Voter Id</option>
-                                        <option value="3">Other</option>
-                                        
-                                    </select>
-                                    <span class="text-danger">Uploading ID proof is optional do it later.</span>
-                                </div>
-                                
-                                <div class="col-lg-4">
-                                    <label for="address">ID Proof No.</label>
-                                    <input type="text" class="form-control  @error('id_proof_number') is-invalid @enderror" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">  
-                                </div>
-                                <div class="col-lg-4">
-                                    <label for="id_proof_file">Upload Scan Copy of Proof</label>
-                                    <input type="file" class="form-control image-cropper id_proof_file" name="id_proof" autocomplete="off">
-                                    <img class="preview-img one" style="display:none; max-width:250px; margin-top:1rem;">
-
-                                    <!-- <a href="javascript:;" id="viewButton" style="display: none;">
-                                        <i class="fa fa-eye"></i> View Uploaded File
-                                    </a>
-                                    <div id="filePopup" class="file-popup" style="display: none;">
-                                        <img src="" id="imagePreview" style="display: none;" alt="Selected Image">
-                                        <iframe id="pdfPreview" style="display: none;" frameborder="0"></iframe>
-                                    </div> -->
-                                </div>
-                               
-                                @endif
-
-
-                                @if(!in_array('32', toggleHideField()))
-                                <div class="col-lg-12 ">
-                                    <label for="address">Address</label>
-                                    <textarea class="form-control" name="address" id="address" rows="3" placeholder="Enter address"></textarea>
-                                </div>
-                                @endif
-                                @if(!in_array('31', toggleHideField()))
-                                <div class="col-lg-12 ">
-                                    <label for="remark">Remark</label>
-                                    <textarea class="form-control" name="remark" id="remark" rows="3" placeholder="Enter Remark"></textarea>
-                                </div>
-                                @endif
                             </div>
 
+                            <div class="booking-card-collapse" id="idProofFields" style="display: none;">
+                                <div class="edit-card-body">
+                                    <div class="row g-3">
+                                        @if(!in_array('30', toggleHideField()))
+                                        <div class="col-lg-6">
+                                            <label for="alternate_mobile" class="form-label">Alternate Mobile No.</label>
+                                            <input type="text" class="form-control digit-only" name="alternate_mobile" id="alternate_mobile" maxlength="10" minlength="10" placeholder="Enter Alternate Mobile No.">
+                                        </div>
+                                        @endif
+
+                                        @if(!in_array('29', toggleHideField()))
+                                        <div class="col-lg-6">
+                                            <label for="father_name" class="form-label">Father Name</label>
+                                            <input type="text" class="form-control char-only" name="father_name" id="father_name" placeholder="Enter Father name">
+                                        </div>
+                                        @endif
+
+                                        @if(!in_array('4', toggleHideField()))
+                                        <div class="col-lg-6">
+                                            <label for="prepareFor" class="form-label">Prepare For</label>
+                                            <select name="exam_id" id="prepareFor" class="form-select">
+                                                <option value="">Learner is Prepare For Exam</option>
+                                                @foreach($exams as $key => $value)
+                                                <option value="{{$value->id}}">{{$value->name}}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @endif
+
+                                        @if(!in_array('5', toggleHideField()))
+                                        <div class="col-lg-6">
+                                            <label for="id_proof_name" class="form-label">ID Proof Name (Optional)</label>
+                                            <select id="id_proof_name" class="form-select" name="id_proof_name">
+                                                <option value="">Select Id Proof</option>
+                                                <option value="1">Aadhar Card</option>
+                                                <option value="2">Driving License</option>
+                                                <option value="4">Pan Card</option>
+                                                <option value="5">Voter Id</option>
+                                                <option value="3">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <label for="id_proof_number" class="form-label">ID Proof No.</label>
+                                            <input type="text" class="form-control @error('id_proof_number') is-invalid @enderror" id="id_proof_number" name="id_proof_number" placeholder="Enter ID proof no." maxlength="12">
+                                        </div>
+
+                                        {{-- Match Edit Details Page Document Upload UI --}}
+                                        <div class="col-12">
+                                            <label class="form-label">Upload Scan Copy of Proof (Optional)</label>
+                                            <div class="doc-dropzone" id="bookingDocDropzone" title="Click or drag file to upload">
+                                                {{-- Placeholder state --}}
+                                                <div class="doc-dropzone-content" id="bookingDocDropContent">
+                                                    <i class="fa-solid fa-cloud-arrow-up doc-dropzone-icon"></i>
+                                                    <div class="doc-dropzone-text">Drag & drop file here or <span class="browse-link">browse</span></div>
+                                                    <div class="doc-dropzone-hint" id="bookingDocDropHint">Supports JPG, PNG, WEBP, PDF (Max 5 MB)</div>
+                                                </div>
+
+                                                {{-- Preview state --}}
+                                                <div class="doc-dropzone-preview" id="bookingDocDropPreview" style="display:none;">
+                                                    <i class="fa-solid fa-file-circle-check text-success fs-4"></i>
+                                                    <div class="doc-file-info">
+                                                        <span class="doc-file-name" id="bookingDocFileName">Document attached</span>
+                                                        <div class="doc-file-actions-row">
+                                                            <span class="doc-file-action text-danger" id="bookingRemoveDocFile" title="Change or remove file">
+                                                                <i class="fa-solid fa-arrow-rotate-left"></i> Change File
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <input
+                                                type="file"
+                                                class="d-none id_proof_file image-cropper @error('id_proof') is-invalid @enderror"
+                                                name="id_proof"
+                                                id="id_proof_file_input"
+                                                autocomplete="off"
+                                                accept=".jpeg, .jpg, .png, .webp, .pdf">
+                                            <img class="preview-img one d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Doc Preview">
+                                            <span class="info-hint text-danger mt-1">* Upload front side of document (JPG, PNG, WEBP, PDF).</span>
+                                        </div>
+                                        @endif
+
+                                        @if(!in_array('32', toggleHideField()))
+                                        <div class="col-lg-12">
+                                            <label for="address" class="form-label">Address</label>
+                                            <textarea class="form-control" name="address" id="address" rows="3" placeholder="Enter full address"></textarea>
+                                        </div>
+                                        @endif
+                                        @if(!in_array('31', toggleHideField()))
+                                        <div class="col-lg-12">
+                                            <label for="remark" class="form-label">Remark</label>
+                                            <textarea class="form-control" name="remark" id="remark" rows="3" placeholder="Enter Remark"></textarea>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         @endif
-                        
-                        <div class="row mt-4">
-                            <div class="col-lg-4">
-                                <button type="submit" class="btn btn-primary btn-block button">Book Seat Now</button>
-                            </div>
-                        </div>
 
                     </div>
-                </form>
-            </div>
+                </div>
 
+                {{-- MODAL FOOTER ACTIONS (FIXED AT BOTTOM OF MODAL) --}}
+                <div class="modal-footer booking-modal-footer">
+                    <button type="button" class="btn btn-cancel-booking" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-book-seat" id="bookSeatSubmitBtn">
+                        <i class="fa-solid fa-check-circle"></i> Book Seat Now
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    // 1. Profile Picture Avatar Upload Trigger & Live Preview
+    $('#bookingAvatarTrigger').on('click', function(e) {
+        e.preventDefault();
+        $('#profile_picture').trigger('click');
+    });
+
+    $('#profile_picture').on('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#bookingAvatarPreview').attr('src', e.target.result).show();
+                $('#bookingAvatarDefaultIcon').hide();
+                $('#bookingAvatarTitle').text('Photo selected');
+                $('#bookingAvatarSubtext').text('Click avatar to change.');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Observer for Cropper image changes if cropper updates sibling preview-img
+    const cropperSibling = document.querySelector('#profile_picture ~ .preview-img');
+    if (cropperSibling) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                    const src = cropperSibling.getAttribute('src') || cropperSibling.src;
+                    if (src && src !== window.location.href) {
+                        $('#bookingAvatarPreview').attr('src', src).show();
+                        $('#bookingAvatarDefaultIcon').hide();
+                        $('#bookingAvatarTitle').text('Photo uploaded');
+                    }
+                }
+            });
+        });
+        observer.observe(cropperSibling, { attributes: true, attributeFilter: ['src'] });
+    }
+
+    // 2. Document Dropzone Upload & Live Preview
+    $('#bookingDocDropzone').on('click', function(e) {
+        if ($(e.target).closest('#bookingRemoveDocFile').length) return;
+        $('#id_proof_file_input').trigger('click');
+    });
+
+    $('#id_proof_file_input').on('change', function() {
+        const file = this.files && this.files[0];
+        if (file) {
+            $('#bookingDocFileName').text(file.name);
+            $('#bookingDocDropContent').hide();
+            $('#bookingDocDropPreview').css('display', 'flex');
+        }
+    });
+
+    $('#bookingRemoveDocFile').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('#id_proof_file_input').val('');
+        $('#bookingDocDropContent').show();
+        $('#bookingDocDropPreview').hide();
+        $('.preview-img.one').removeAttr('src');
+    });
+
+    // Observer for ID Proof Cropper
+    const docSibling = document.querySelector('#id_proof_file_input ~ .preview-img.one');
+    if (docSibling) {
+        const docObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                    const src = docSibling.getAttribute('src') || docSibling.src;
+                    if (src && src !== window.location.href) {
+                        $('#bookingDocFileName').text('Document Attached');
+                        $('#bookingDocDropContent').hide();
+                        $('#bookingDocDropPreview').css('display', 'flex');
+                    }
+                }
+            });
+        });
+        docObserver.observe(docSibling, { attributes: true, attributeFilter: ['src'] });
+    }
+
+    // 3. Collapsible header toggle handler
+    $(document).on('click', '.booking-modal-module .booking-collapsible-header', function(e) {
+        if ($(e.target).is('input, select, textarea, button, a, label')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const target = $(this).data('target');
+        const $body = $(target);
+        const $toggle = $(this).find('.edit-header-toggle');
+
+        $body.stop(true, true).slideToggle(220, function() {
+            if ($body.is(':visible')) {
+                $toggle.addClass('expanded');
+            } else {
+                $toggle.removeClass('expanded');
+            }
+        });
+    });
+
+    // Reset previews on modal close
+    $('#seatAllotmentModal').on('hidden.bs.modal', function() {
+        $('#bookingAvatarPreview').attr('src', '').hide();
+        $('#bookingAvatarDefaultIcon').show();
+        $('#bookingAvatarTitle').text('Click avatar to upload photo');
+        $('#bookingAvatarSubtext').text('Upload a clear photo for identification (optional).');
+        $('#id_proof_file_input').val('');
+        $('#bookingDocDropContent').show();
+        $('#bookingDocDropPreview').hide();
+        $('.preview-img.one').removeAttr('src');
+    });
+});
+</script>
 @endcan
 
 

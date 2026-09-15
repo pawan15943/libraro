@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -63,21 +64,50 @@
             return Number.isFinite(parsed) ? parsed : 0;
         };
 
+        // Smooth modern initial loader
+        Swal.fire({
+            html: `
+                <div class="settlement-smooth-loader">
+                    <div class="smooth-spinner"></div>
+                    <p class="smooth-loader-text">Loading settlement details...</p>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: false,
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'settlement-popup-modal settlement-loader-popup'
+            }
+        });
+
         let detailsResponse = null;
         try {
             detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
         } catch (xhr) {
-            Swal.fire('Error', xhr?.responseJSON?.error || 'Unable to load learner details.', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: xhr?.responseJSON?.error || 'Unable to load learner details.',
+                confirmButtonColor: '#18225f',
+                customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
+            });
             return false;
         }
 
         const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
         if (!detailRows.length) {
-            Swal.fire('Info', 'No active details found for this learner.', 'info');
+            Swal.fire({
+                icon: 'info',
+                title: 'No Records',
+                text: 'No active transaction details found for this learner.',
+                confirmButtonColor: '#18225f',
+                customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
+            });
             return false;
         }
 
-        const detailsHtml = detailRows.map((row) => {
+        const learnerName = detailsResponse?.learner?.name || '';
+        const cardsHtml = detailRows.map((row) => {
             const total = toNumber(row.total_amount || row.paid_amount);
             const paid = toNumber(row.paid_amount);
             const pending = toNumber(row.pending_amount);
@@ -87,141 +117,190 @@
                 : (fallbackDetailId && Number(row.id) === Number(fallbackDetailId) ? 'checked' : '');
 
             return `
-                <tr>
-                    <td><input type="checkbox" class="v2DetailSelector" value="${row.id}" ${checked}></td>
-                    <td>${row.plan_name || ''}</td>
-                    <td>${row.plan_start_date || ''} to ${row.plan_end_date || ''}</td>
-                    <td>${total.toFixed(0)}</td>
-                    <td>${paid.toFixed(0)}</td>
-                    <td class="text-danger">${pending.toFixed(0)}</td>
-                    <td class="text-success">${extra.toFixed(0)}</td>
-                </tr>
+                <div class="settlement-plan-card ${checked ? 'selected' : ''}" data-id="${row.id}">
+                    <input type="checkbox" class="v2DetailSelector d-none" value="${row.id}" ${checked}>
+                    <div class="settlement-card-header">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="settlement-plan-badge">${row.plan_name || 'Plan'}</span>
+                            ${row.seat_no ? `<span class="settlement-seat-badge"><i class="fa-solid fa-chair me-1"></i>Seat ${row.seat_no}</span>` : ''}
+                            ${row.plan_type_name && row.plan_type_name !== 'N/A' ? `<span class="badge bg-white text-dark border font-outfit px-2 py-1" style="font-size:0.72rem;">${row.plan_type_name}</span>` : ''}
+                            <span class="settlement-date-badge font-outfit">
+                                <i class="fa-regular fa-calendar me-1"></i>${row.plan_start_date || ''} &rarr; ${row.plan_end_date || ''}
+                            </span>
+                        </div>
+                        <div class="settlement-check-circle">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                    <div class="settlement-card-metrics">
+                        <div class="metric-item">
+                            <span class="metric-label">Plan Price</span>
+                            <span class="metric-value">₹${total.toFixed(0)}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Paid</span>
+                            <span class="metric-value text-dark">₹${paid.toFixed(0)}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Pending</span>
+                            <span class="metric-value ${pending > 0 ? 'text-danger fw-bold' : ''}">₹${pending.toFixed(0)}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Extra</span>
+                            <span class="metric-value ${extra > 0 ? 'text-success fw-bold' : ''}">₹${extra.toFixed(0)}</span>
+                        </div>
+                    </div>
+                </div>
             `;
         }).join('');
 
         const result = await Swal.fire({
-            title: 'Settlement',
-            width: 760,
+            title: '',
+            customClass: {
+                popup: 'settlement-popup-modal',
+                confirmButton: 'settlement-confirm-btn',
+                cancelButton: 'settlement-cancel-btn'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Pay the pending amount.',
+            cancelButtonText: 'Cancel',
+            buttonsStyling: false,
             html: `
-                <style>
-                    .settlement-popup { font-size:13px; }
-                    .settlement-popup .swal2-html-container { margin: 0.75rem 1.25rem 0; }
-                    .settlement-row-table { max-height: 190px; overflow:auto; border:1px solid #d8ddff; border-radius:12px; }
-                    .settlement-row-table table { margin:0; }
-                    .settlement-summary-box { min-height:48px; border:1px solid #dcdcdc; border-radius:7px; padding:8px 10px; background:#fff; }
-                    .settlement-summary-box strong { display:block; font-size:18px; line-height:1.1; margin-top:3px; }
-                    .settlement-summary-box.pending { color:#d80000; border-color:#ff4d4d; background:#fff2f2; }
-                    .settlement-summary-box.extra { color:#4a7f00; border-color:#87ad45; background:#f5ffe9; }
-                    .settlement-summary-box.net { color:#001578; border-color:#cbd3ff; background:#eef1ff; }
-                    .settlement-action-panel { border-radius:12px; padding:14px; }
-                    .settlement-action-panel.pending { background:#fff2f2; border:1px solid #b50000; }
-                    .settlement-action-panel.extra { background:#efffe9; border:1px solid #5f8f1f; }
-                    .settlement-action-panel .form-check-input:checked { background-color:#001578; border-color:#001578; }
-                    .settlement-action-panel .form-control { max-width:130px; height:38px; border-radius:7px; }
-                    .settlement-mode-box { border:1px solid #e0e0e0; border-radius:7px; padding:8px 12px; }
-                    .settlement-choice-row { display:flex; gap:12px; flex-wrap:wrap; }
-                    .settlement-choice-card { flex:1 1 220px; min-height:56px; display:flex; align-items:center; gap:9px; border:1px solid #e4e4e4; border-radius:7px; background:#eee; color:#15155d; padding:10px 14px; font-weight:700; cursor:pointer; }
-                    .settlement-choice-card:has(.form-check-input:checked) { border-color:#1a39ff; background:#fff; }
-                    .settlement-choice-card .form-check-input { margin:0; }
-                    .settlement-primary-btn { width:100%; border:0; border-radius:7px; background:#050a78; color:#fff; font-weight:700; padding:12px; }
-                </style>
                 <div class="settlement-popup">
-                <div class="settlement-row-table text-start">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th></th><th>Plan</th><th>Duration</th><th>Plan Price</th><th>Paid</th><th>Pending</th><th>Extra</th>
-                            </tr>
-                        </thead>
-                        <tbody>${detailsHtml}</tbody>
-                    </table>
-                </div>
-                <div class="row g-2 text-start mt-1">
-                    <div class="col-3"><div class="settlement-summary-box">Total Paid Amt.<strong class="v2Paid">0</strong></div></div>
-                    <div class="col-3"><div class="settlement-summary-box pending">Pending Amt.<strong class="v2Pending">0</strong></div></div>
-                    <div class="col-3"><div class="settlement-summary-box extra">Extra Amt.<strong class="v2Extra">0</strong></div></div>
-                    <div class="col-3"><div class="settlement-summary-box net">Net Amt.<strong class="v2NetAmount">0</strong></div></div>
-                </div>
-                <div class="form-check text-start mt-2 ${detailRows.length > 1 ? '' : 'd-none'}">
-                    <input type="checkbox" class="form-check-input" id="v2FullLearnerDelete">
-                    <label class="form-check-label" for="v2FullLearnerDelete">Select all transactions</label>
-                </div>
-                <div class="small text-muted text-start mt-2 fw-semibold">
-                    Note: The above amounts change according to the selected transaction. Please check carefully before settling.
-                </div>
+                    <div class="settlement-modal-title">
+                        <i class="fa-solid fa-scale-balanced" style="color: #18225f; font-size: 1.25rem;"></i>
+                        <span>Settlement</span>
+                    </div>
+                    ${learnerName ? `<div class="settlement-modal-subtitle">${learnerName}</div>` : ''}
 
-                <input type="hidden" class="v2SettlementCase" value="settled">
-                <div class="mt-3 text-start">
-                    <div class="settlement-choice-row mb-3 v2SettlementOptionWrap" style="display:none;">
-                        <label class="settlement-choice-card" for="v2SettleWithAmount">
-                            <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="amount" id="v2SettleWithAmount" checked>
-                            <span>Settle with Amount</span>
+                    <!-- Interactive Transaction Cards -->
+                    <div class="settlement-cards-container text-start">
+                        ${cardsHtml}
+                    </div>
+
+                    <!-- Select All Toggle -->
+                    <div class="d-flex align-items-center justify-content-between mt-2 px-1 ${detailRows.length > 1 ? '' : 'd-none'}">
+                        <label class="form-check d-inline-flex align-items-center gap-2 cursor-pointer mb-0 user-select-none">
+                            <input type="checkbox" class="form-check-input" id="v2FullLearnerDelete" style="width:16px;height:16px;cursor:pointer;">
+                            <span class="small font-outfit fw-bold text-dark">Select all transactions</span>
                         </label>
-                        <label class="settlement-choice-card" for="v2AdjustFullAmount">
-                            <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust_full" id="v2AdjustFullAmount">
-                            <span>Adjust full Amount</span>
-                        </label>
+                        <span class="small text-muted font-outfit">${detailRows.length} transaction${detailRows.length > 1 ? 's' : ''}</span>
                     </div>
 
-                    <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" checked>
-                            <label class="form-check-label fw-semibold text-danger">Pay pending amount</label>
+                    <!-- Dynamic Summary Grid -->
+                    <div class="row g-2 settlement-summary-grid text-start">
+                        <div class="col-6 col-md-3">
+                            <div class="settlement-stat-card">
+                                <span class="stat-label"><i class="fa-solid fa-receipt me-1"></i> Total Paid</span>
+                                <strong class="stat-val v2Paid">₹0</strong>
+                            </div>
                         </div>
-                        <input type="text" class="form-control form-control-sm v2PayAmount mb-2" placeholder="Enter pay amount">
-                        <div class="form-check mt-2">
-                            <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="future" id="v2PendingFuture" checked>
-                            <label class="form-check-label" for="v2PendingFuture">The remaining amount will be collected in the future.</label>
+                        <div class="col-6 col-md-3">
+                            <div class="settlement-stat-card card-pending">
+                                <span class="stat-label"><i class="fa-solid fa-clock-rotate-left me-1"></i> Pending</span>
+                                <strong class="stat-val v2Pending">₹0</strong>
+                            </div>
                         </div>
-                        <div class="form-check mt-2">
-                            <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="adjust" id="v2PendingAdjust">
-                            <label class="form-check-label" for="v2PendingAdjust">Or, adjust / settle remaining amt. now</label>
+                        <div class="col-6 col-md-3">
+                            <div class="settlement-stat-card card-extra">
+                                <span class="stat-label"><i class="fa-solid fa-circle-plus me-1"></i> Extra</span>
+                                <strong class="stat-val v2Extra">₹0</strong>
+                            </div>
                         </div>
-                        <div class="small text-muted mt-2 v2PendingHelp"></div>
-                    </div>
-
-                    <div class="v2ExtraPanel settlement-action-panel extra" style="display:none;">
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" checked>
-                            <label class="form-check-label fw-semibold text-success">Settle extra <span class="v2ExtraTitleAmount">0</span></label>
-                        </div>
-                        <input type="text" class="form-control form-control-sm v2RefundAmount mb-2" placeholder="Enter refund amount">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="refund_pending_future" id="v2ExtraFuture" checked>
-                            <label class="form-check-label" for="v2ExtraFuture">The remaining amount will be refunded in the future.</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="adjust" id="v2ExtraAdjust">
-                            <label class="form-check-label" for="v2ExtraAdjust">Or, adjust / settle remaining amount now.</label>
+                        <div class="col-6 col-md-3">
+                            <div class="settlement-stat-card card-net">
+                                <span class="stat-label"><i class="fa-solid fa-wallet me-1"></i> Net Amount</span>
+                                <strong class="stat-val v2NetAmount">₹0</strong>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="v2SettledPanel settlement-action-panel" style="display:none;background:#eef1ff;border:1px solid #cbd3ff;">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" checked>
-                            <label class="form-check-label fw-semibold text-primary">No pending, no extra. Selected transactions are already settled.</label>
-                        </div>
+                    <!-- Dynamic Note -->
+                    <div class="settlement-note-banner text-start">
+                        <i class="fa-solid fa-circle-info text-primary"></i>
+                        <span>The above amounts change according to the selected transaction. Please check carefully before settling.</span>
                     </div>
 
-                    <div class="mt-3 v2PaymentModeWrap settlement-mode-box">
-                        <label class="form-label mb-1">Payment Mode</label>
-                        <select class="form-control form-control-sm v2PaymentMode">
-                            <option value="">Choose</option>
-                            <option value="1">Online</option>
-                            <option value="2">Offline</option>
-                        </select>
+                    <input type="hidden" class="v2SettlementCase" value="settled">
+                    <div class="mt-2 text-start">
+                        <!-- Settle with Amount vs Adjust full Amount -->
+                        <div class="settlement-choice-row mb-2 v2SettlementOptionWrap" style="display:none;">
+                            <label class="settlement-choice-card active" for="v2SettleWithAmount">
+                                <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="amount" id="v2SettleWithAmount" checked>
+                                <span>Settle with Amount</span>
+                            </label>
+                            <label class="settlement-choice-card" for="v2AdjustFullAmount">
+                                <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust_full" id="v2AdjustFullAmount">
+                                <span>Adjust full Amount</span>
+                            </label>
+                        </div>
+
+                        <!-- Pending Panel -->
+                        <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" checked>
+                                <label class="form-check-label fw-bold font-outfit text-danger">Pay pending amount</label>
+                            </div>
+                            <div class="settlement-amount-input-wrap mb-2">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" class="form-control form-control-sm v2PayAmount" placeholder="0">
+                            </div>
+                            <div class="form-check mt-2 mb-1">
+                                <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="future" id="v2PendingFuture" checked>
+                                <label class="form-check-label font-outfit" for="v2PendingFuture">The remaining amount will be collected in the future.</label>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="adjust" id="v2PendingAdjust">
+                                <label class="form-check-label font-outfit" for="v2PendingAdjust">Or, adjust / settle remaining amt. now</label>
+                            </div>
+                            <div class="small text-muted mt-2 font-outfit fw-medium v2PendingHelp"></div>
+                        </div>
+
+                        <!-- Extra Panel -->
+                        <div class="v2ExtraPanel settlement-action-panel extra" style="display:none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" checked>
+                                <label class="form-check-label fw-bold font-outfit text-success">Settle extra ₹<span class="v2ExtraTitleAmount">0</span></label>
+                            </div>
+                            <div class="settlement-amount-input-wrap mb-2">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" class="form-control form-control-sm v2RefundAmount" placeholder="0">
+                            </div>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="refund_pending_future" id="v2ExtraFuture" checked>
+                                <label class="form-check-label font-outfit" for="v2ExtraFuture">The remaining amount will be refunded in the future.</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="adjust" id="v2ExtraAdjust">
+                                <label class="form-check-label font-outfit" for="v2ExtraAdjust">Or, adjust / settle remaining amount now.</label>
+                            </div>
+                        </div>
+
+                        <!-- Already Settled Panel -->
+                        <div class="v2SettledPanel settlement-action-panel" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                                <span class="fw-bold font-outfit" style="color:#18225f;">No pending, no extra. Selected transactions are already settled.</span>
+                            </div>
+                        </div>
+
+                        <!-- Payment Mode Box -->
+                        <div class="mt-2 v2PaymentModeWrap settlement-mode-box" style="display:none;">
+                            <label class="form-label mb-1">Payment Mode</label>
+                            <select class="form-select form-select-sm v2PaymentMode font-outfit">
+                                <option value="">Choose payment mode</option>
+                                <option value="1">Online</option>
+                                <option value="2">Offline</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
                 </div>
             `,
-            showCancelButton: true,
-            confirmButtonText: 'Settle',
-            confirmButtonColor: '#050a78',
             didOpen: () => {
                 const popup = Swal.getPopup();
-                popup.style.setProperty('width', '760px', 'important');
-                popup.style.setProperty('max-width', '98vw', 'important');
-                popup.style.fontSize = '13px';
+                if (popup) {
+                    popup.style.width = '';
+                }
 
                 const selectedTotals = () => {
                     const ids = $(popup).find('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
@@ -243,7 +322,7 @@
                     const payAmount = toNumber($(popup).find('.v2PayAmount').val());
                     const remaining = Math.max(net - payAmount, 0);
                     const help = remaining > 0
-                        ? `After this payment, Rs ${remaining.toFixed(0)} will remain pending.`
+                        ? `After this payment, ₹${remaining.toFixed(0)} will remain pending.`
                         : 'After this payment, the account will be fully settled.';
                     $(popup).find('.v2PendingHelp').text(help);
                 };
@@ -273,11 +352,11 @@
                     const netAbs = Math.abs(net);
 
                     $(popup).find('#v2FullLearnerDelete').prop('checked', detailRows.length > 0 && totals.ids.length === detailRows.length);
-                    $(popup).find('.v2Total').text(totals.total.toFixed(0));
-                    $(popup).find('.v2Paid').text(totals.paid.toFixed(0));
-                    $(popup).find('.v2Pending').text(totals.pending.toFixed(0));
-                    $(popup).find('.v2Extra').text(totals.extra.toFixed(0));
-                    $(popup).find('.v2NetAmount').text(netAbs.toFixed(0));
+                    $(popup).find('.v2Total').text('₹' + totals.total.toFixed(0));
+                    $(popup).find('.v2Paid').text('₹' + totals.paid.toFixed(0));
+                    $(popup).find('.v2Pending').text('₹' + totals.pending.toFixed(0));
+                    $(popup).find('.v2Extra').text('₹' + totals.extra.toFixed(0));
+                    $(popup).find('.v2NetAmount').text('₹' + netAbs.toFixed(0));
                     $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel,.v2SettlementOptionWrap').hide();
 
                     if (net > 0) {
@@ -302,16 +381,38 @@
                     }
                 };
 
+                // Click on card toggles selection
+                $(popup).on('click', '.settlement-plan-card', function (e) {
+                    if ($(e.target).is('input, select, textarea, label')) return;
+                    const $card = $(this);
+                    const $checkbox = $card.find('.v2DetailSelector');
+                    const isChecked = !$checkbox.prop('checked');
+                    $checkbox.prop('checked', isChecked).trigger('change');
+                });
+
                 $(popup).on('change', '.v2DetailSelector', function () {
+                    const isChecked = $(this).is(':checked');
+                    $(this).closest('.settlement-plan-card').toggleClass('selected', isChecked);
                     const totalRows = $(popup).find('.v2DetailSelector').length;
                     const selectedRows = $(popup).find('.v2DetailSelector:checked').length;
                     $(popup).find('#v2FullLearnerDelete').prop('checked', totalRows > 0 && totalRows === selectedRows);
                     recalc();
                 });
+
                 $(popup).on('change', '#v2FullLearnerDelete', function () {
-                    $(popup).find('.v2DetailSelector').prop('checked', $(this).is(':checked'));
+                    const isAll = $(this).is(':checked');
+                    $(popup).find('.v2DetailSelector').prop('checked', isAll).each(function () {
+                        $(this).closest('.settlement-plan-card').toggleClass('selected', isAll);
+                    });
                     recalc();
                 });
+
+                $(popup).on('click', '.settlement-choice-card', function () {
+                    $(this).find('.v2SettlementOption').prop('checked', true).trigger('change');
+                    $(popup).find('.settlement-choice-card').removeClass('active');
+                    $(this).addClass('active');
+                });
+
                 $(popup).on('input', '.v2PayAmount', updatePendingHelp);
                 $(popup).on('change', '.v2SettlementOption', updateSettlementOption);
                 recalc();
@@ -319,7 +420,7 @@
             preConfirm: () => {
                 const selectedIds = $('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
                 if (!selectedIds.length) {
-                    Swal.showValidationMessage('Please select at least one detail.');
+                    Swal.showValidationMessage('Please select at least one transaction card.');
                     return false;
                 }
 
@@ -375,6 +476,22 @@
             return false;
         }
 
+        // Smooth processing animation on submission
+        Swal.fire({
+            html: `
+                <div class="settlement-smooth-loader">
+                    <div class="smooth-spinner"></div>
+                    <p class="smooth-loader-text">Processing settlement payment...</p>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: false,
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'settlement-popup-modal settlement-loader-popup'
+            }
+        });
+
         $.ajax({
             url: postUrl,
             type: 'POST',
@@ -391,10 +508,23 @@
                 remark: ''
             }),
             success: function (response) {
-                Swal.fire('Success', response.message || 'Settlement completed successfully.', 'success').then(() => location.reload());
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Settlement Complete!',
+                    text: response.message || 'Settlement processed successfully.',
+                    confirmButtonText: 'Great, Done',
+                    confirmButtonColor: '#18225f',
+                    customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
+                }).then(() => location.reload());
             },
             error: function (xhr) {
-                Swal.fire('Error', xhr?.responseJSON?.error || 'Settlement failed.', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Settlement Failed',
+                    text: xhr?.responseJSON?.error || 'Settlement failed. Please try again.',
+                    confirmButtonColor: '#18225f',
+                    customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
+                });
             }
         });
 
