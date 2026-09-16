@@ -43,19 +43,28 @@
     z-index: 10;
 }
 
-.booking-modal-module .modal-header .modal-title {
-    color: #18225f;
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.booking-modal-module .modal-header .modal-title,
+.booking-modal-module .modal-header #seat_no_head,
+.booking-modal-module .modal-header #seat_number_upgrades,
+.booking-modal-module .modal-header h1.modal-title,
+.booking-modal-module .modal-header h4.modal-title,
+.booking-modal-module .modal-header h4#seat_number_upgrades {
+    color: #18225f !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    line-height: 1.25 !important;
+    font-family: 'Outfit', sans-serif !important;
 }
 
-.booking-modal-module .modal-header .modal-title i {
-    color: #18225f;
-    font-size: 1.1rem;
+.booking-modal-module .modal-header .modal-title i,
+.booking-modal-module .modal-header #seat_no_head i,
+.booking-modal-module .modal-header #seat_number_upgrades i {
+    color: #18225f !important;
+    font-size: 1.02rem !important;
 }
 
 .booking-modal-module .modal-header .btn-close {
@@ -69,7 +78,8 @@
     transform: rotate(90deg);
 }
 
-.booking-modal-module form#seatAllotmentForm {
+.booking-modal-module form#seatAllotmentForm,
+.booking-modal-module form#upgradeForm {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -657,6 +667,51 @@
 .booking-modal-module .booking-payment-card .form-label {
     color: #1e293b;
     font-weight: 600;
+}
+
+/* Renew Notice Banner */
+.booking-modal-module .booking-notice-banner {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 9px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.78rem;
+    color: #166534;
+    font-weight: 500;
+}
+
+.booking-modal-module .booking-notice-banner i {
+    font-size: 0.95rem;
+    color: #16a34a;
+}
+
+/* Renew Learner Summary Mini Box */
+.booking-modal-module .renew-learner-summary {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.65rem 0.95rem;
+}
+
+.booking-modal-module .renew-learner-summary .summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-modal-module .renew-learner-summary .summary-item span {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+
+.booking-modal-module .renew-learner-summary .summary-item strong {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
 }
 
 /* Ensure background cropper preview elements remain completely hidden */
