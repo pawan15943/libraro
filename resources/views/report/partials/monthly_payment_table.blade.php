@@ -101,15 +101,22 @@
 
                 {{-- Mobile-Only Top Bar (< 992px) --}}
                 <div class="mobile-top-bar d-flex d-lg-none">
-                    <span class="record-date-text">
-                        <i class="fa-regular fa-calendar me-1"></i>{{ $dateObj->format('d M Y') }}
-                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="record-date-text">
+                            <i class="fa-regular fa-calendar me-1"></i>{{ $dateObj->format('d M Y') }}
+                        </span>
+                        @if($timeStr)
+                            <span class="record-time-tag">
+                                <i class="fa-regular fa-clock me-1"></i>{{ $timeStr }}
+                            </span>
+                        @endif
+                    </div>
                     <span class="badge-payment-mode {{ $modeClass }}">
                         <i class="fa-solid {{ $modeIcon }}"></i> {{ $modeLabel }}
                     </span>
                 </div>
 
-                {{-- Col 1: Date & Time (Desktop) --}}
+                {{-- Col 1: Date & Time (Desktop >= 992px) --}}
                 <div class="col-date d-none d-lg-flex">
                     <span class="record-date-text">{{ $dateObj->format('d M Y') }}</span>
                     <span class="record-time-tag">
@@ -148,17 +155,17 @@
                         </span>
                     @endif
 
-                    <span class="record-staff-tag">
+                    <span class="record-staff-tag d-none d-lg-inline-block">
                         <i class="fa-regular fa-user me-1"></i>{{ $doneBy }}
                     </span>
                 </div>
 
                 {{-- Col 3: Particulars Description (NO Payment Type pill) --}}
                 <div class="col-particulars">
-                    {{ $particularsText }}
+                    <span class="d-inline d-lg-none text-muted small me-1">Note:</span>{{ $particularsText }}
                 </div>
 
-                {{-- Col 4: Flow (Credit / Debit) --}}
+                {{-- Col 4: Flow (Credit / Debit) (Desktop >= 992px) --}}
                 <div class="col-flow d-none d-lg-flex">
                     @if($isCredit)
                         <span class="flow-pill flow-credit" title="Inflow (Credit)">
@@ -171,14 +178,14 @@
                     @endif
                 </div>
 
-                {{-- Col 5: Amount --}}
+                {{-- Col 5: Amount (Desktop >= 992px) --}}
                 <div class="col-amount d-none d-lg-flex">
                     <div class="fin-amount {{ $isCredit ? 'text-success' : 'text-danger' }}">
                         {{ $isCredit ? '+' : '-' }}₹{{ number_format($amount, 0) }}
                     </div>
                 </div>
 
-                {{-- Col 6: Payment Mode --}}
+                {{-- Col 6: Payment Mode (Desktop >= 992px) --}}
                 <div class="col-mode d-none d-lg-flex">
                     <span class="badge-payment-mode {{ $modeClass }}" title="Payment Mode: {{ $modeLabel }}">
                         <i class="fa-solid {{ $modeIcon }}"></i> {{ $modeLabel }}
@@ -187,15 +194,20 @@
 
                 {{-- Mobile-Only Bottom Row (< 992px) --}}
                 <div class="mobile-bottom-row d-flex d-lg-none">
-                    @if($isCredit)
-                        <span class="flow-pill flow-credit">
-                            <i class="fa-solid fa-arrow-down-left"></i> Credit
+                    <div class="d-flex align-items-center gap-2">
+                        @if($isCredit)
+                            <span class="flow-pill flow-credit">
+                                <i class="fa-solid fa-arrow-down-left"></i> Credit
+                            </span>
+                        @else
+                            <span class="flow-pill flow-debit">
+                                <i class="fa-solid fa-arrow-up-right"></i> Debit
+                            </span>
+                        @endif
+                        <span class="record-staff-tag">
+                            <i class="fa-regular fa-user me-1"></i>{{ $doneBy }}
                         </span>
-                    @else
-                        <span class="flow-pill flow-debit">
-                            <i class="fa-solid fa-arrow-up-right"></i> Debit
-                        </span>
-                    @endif
+                    </div>
 
                     <div class="fin-amount {{ $isCredit ? 'text-success' : 'text-danger' }}">
                         {{ $isCredit ? '+' : '-' }}₹{{ number_format($amount, 0) }}

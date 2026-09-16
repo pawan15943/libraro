@@ -214,15 +214,9 @@
                 </select>
             </div>
 
-            {{-- Search --}}
-            <div class="filter-col filter-col-search">
-                <label for="filterSearch" class="filter-inline-label"><i class="fa-solid fa-magnifying-glass"></i> Search</label>
-                <input type="text" class="form-control filter-control" id="filterSearch" name="search" placeholder="Learner name, seat, particulars..." value="{{ request('search') }}">
-            </div>
-
             {{-- Actions --}}
             <div class="filter-col filter-col-actions">
-                <span class="filter-inline-label" aria-hidden="true">&nbsp;</span>
+                <span class="filter-inline-label filter-label-spacer" aria-hidden="true">&nbsp;</span>
                 <div class="filter-actions-inline">
                     <button type="submit" class="btn btn-filter-apply" id="btnApplyFilter">
                         <i class="fa-solid fa-magnifying-glass"></i> Filter

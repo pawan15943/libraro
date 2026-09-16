@@ -113,6 +113,7 @@
     z-index: 1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    overflow: hidden;
 }
 
 .booking-modal-module .edit-card:hover {
@@ -433,6 +434,231 @@
     margin: 0;
 }
 
+/* Inline Avatar Box (Clubbed into Learner Info Card) */
+.booking-modal-module .booking-avatar-inline-box {
+    padding: 0.1rem 0.15rem 0.65rem 0.15rem;
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact {
+    margin-bottom: 0;
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact .upload-avatar-circle {
+    width: 60px;
+    height: 60px;
+    border: 2.5px solid #dbeafe;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.08);
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact:hover .upload-avatar-circle {
+    border-color: #18225f;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.16);
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact .avatar-icon-placeholder {
+    font-size: 1.85rem;
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact .avatar-camera-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.62rem;
+    background: #18225f;
+    border: 1.5px solid #ffffff;
+}
+
+.booking-modal-module .upload-avatar-wrapper.compact:hover .avatar-camera-badge {
+    background: #0f1642;
+}
+
+.booking-modal-module .avatar-inline-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-modal-module .avatar-inline-title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #18225f;
+    line-height: 1.25;
+}
+
+.booking-modal-module .avatar-inline-subtext {
+    font-size: 0.74rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* Shift Timing Inner Divider */
+.booking-modal-module .booking-inner-divider {
+    padding: 0.4rem 0 0.1rem 0;
+}
+
+.booking-modal-module .booking-inner-divider-text {
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #34939F;
+    font-family: 'Outfit', sans-serif;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.booking-modal-module .booking-inner-divider-line {
+    height: 1px;
+    background: linear-gradient(to right, #cbd5e1, transparent);
+}
+
+/* ==========================================================================
+   ADD-ONS & OTHER OPTIONAL FIELDS (CAPS COLLAPSE)
+   ========================================================================== */
+
+.booking-modal-module .booking-caps-collapse-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: all 0.15s ease;
+}
+
+.booking-modal-module .booking-caps-collapse-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.04);
+}
+
+.booking-modal-module .booking-caps-header {
+    width: 100%;
+    padding: 0.55rem 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: none;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.booking-modal-module .booking-caps-header.no-collapse {
+    cursor: default;
+    border-radius: 11px 11px 0 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.booking-modal-module .booking-caps-header:not(.no-collapse):hover {
+    background: #f1f5f9;
+}
+
+.booking-modal-module .booking-caps-header .caps-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    display: flex;
+    align-items: center;
+}
+
+.booking-modal-module .booking-caps-header .caps-title i {
+    color: #34939F;
+    font-size: 0.8rem;
+}
+
+.booking-modal-module .booking-caps-header .caps-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.booking-modal-module .booking-caps-header .caps-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    line-height: 1.2;
+}
+
+.booking-modal-module .booking-caps-header .caps-badge.badge-required {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+
+.booking-modal-module .booking-caps-header .caps-badge.badge-optional {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.booking-modal-module .booking-collapsible-header {
+    cursor: pointer;
+}
+
+.booking-modal-module .booking-collapsible-header * {
+    pointer-events: none;
+}
+
+.booking-modal-module .edit-header-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #64748b;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.booking-modal-module .edit-header-toggle.expanded {
+    transform: rotate(180deg);
+    color: #18225f;
+}
+
+.booking-modal-module .booking-caps-body {
+    padding: 0.85rem 1rem;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+}
+
+.booking-modal-module .booking-subhead-caps {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.booking-modal-module .booking-section-divider {
+    border: 0;
+    border-top: 1px dashed #e2e8f0;
+    opacity: 0.9;
+}
+
+/* ==========================================================================
+   PAYMENT INFO (WHITE BACKGROUND CARD BOX)
+   ========================================================================== */
+
+.booking-modal-module .booking-payment-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    overflow: hidden;
+}
+
+.booking-modal-module .booking-payment-card .form-label {
+    color: #1e293b;
+    font-weight: 600;
+}
+
 /* Ensure background cropper preview elements remain completely hidden */
 .booking-modal-module .preview-img,
 .booking-modal-module .upload-photo-container .preview-img,
@@ -598,6 +824,92 @@
     color: #94a3b8;
     font-weight: 400;
     font-size: 0.80rem;
+}
+
+/* Disabled & Read-Only Fields (Light Gray Color Identification) */
+.booking-modal-module .form-control:disabled,
+.booking-modal-module .form-control[readonly],
+.booking-modal-module .form-select:disabled,
+.booking-modal-module .form-select[readonly],
+.booking-modal-module input:disabled,
+.booking-modal-module input[readonly],
+.booking-modal-module select:disabled,
+.booking-modal-module select[readonly],
+.booking-modal-module textarea:disabled,
+.booking-modal-module textarea[readonly] {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}
+
+.booking-modal-module .form-control:disabled::placeholder,
+.booking-modal-module .form-control[readonly]::placeholder,
+.booking-modal-module input:disabled::placeholder,
+.booking-modal-module input[readonly]::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   DATE PICKER WITH CALENDAR ICON
+   ========================================================================== */
+
+.booking-modal-module .booking-date-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.booking-modal-module .booking-date-group input[type="date"],
+.booking-modal-module .booking-date-group input.form-control {
+    width: 100%;
+    padding-right: 2.35rem;
+    background-color: #ffffff;
+}
+
+/* Make browser native webkit picker indicator full right hit-target with transparent icon */
+.booking-modal-module .booking-date-group input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2.5rem;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+}
+
+.booking-modal-module .booking-date-group input[type="date"]:disabled::-webkit-calendar-picker-indicator,
+.booking-modal-module .booking-date-group input[type="date"][readonly]::-webkit-calendar-picker-indicator {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Custom crisp calendar icon in Navy Blue / Teal */
+.booking-modal-module .booking-date-group .booking-date-icon {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #18225f;
+    font-size: 0.95rem;
+    pointer-events: none;
+    z-index: 2;
+    transition: color 0.15s ease;
+}
+
+.booking-modal-module .booking-date-group:focus-within .booking-date-icon {
+    color: #34939F;
+}
+
+.booking-modal-module .booking-date-group input:disabled ~ .booking-date-icon,
+.booking-modal-module .booking-date-group input[readonly] ~ .booking-date-icon {
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
 }
 
 .booking-modal-module textarea.form-control {

@@ -22,73 +22,51 @@
 
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no" autocomplete="off">
 
-                        {{-- 1. UPLOAD PROFILE PHOTO CARD (COLLAPSIBLE, CLOSED BY DEFAULT) --}}
-                        @if(!in_array('8', toggleHideField()))
-                        <div class="edit-card booking-collapsible-card">
-                            <div class="edit-card-header header-purple booking-collapsible-header" data-target="#bookingPhotoCollapse">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-solid fa-camera"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Upload Profile Photo</h4>
-                                        <p class="edit-header-subtitle">Add learner's profile photo (optional).</p>
-                                    </div>
+                        {{-- 1. CLUBBED LEARNER & SHIFT DETAILS CARD (PHOTO + BASIC INFO + SHIFT INFO) --}}
+                        <div class="edit-card booking-main-card mb-3">
+                            <div class="booking-caps-header no-collapse">
+                                <div class="caps-title">
+                                    <i class="fa-regular fa-user me-1"></i>
+                                    <span>LEARNER & SHIFT DETAILS</span>
                                 </div>
-                                <div class="edit-header-right">
-                                    <span class="edit-header-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle"></i>
+                                <div class="caps-right">
+                                    <span class="caps-badge badge-required">Required</span>
                                 </div>
                             </div>
-                            <div class="booking-card-collapse" id="bookingPhotoCollapse" style="display: none;">
-                                <div class="edit-card-body">
-                                    <div class="upload-photo-container">
-                                        <div class="upload-avatar-wrapper" id="bookingAvatarTrigger" title="Click to upload profile photo">
-                                            <div class="upload-avatar-circle" id="bookingAvatarCircle">
-                                                <i class="fa-solid fa-user avatar-icon-placeholder" id="bookingAvatarDefaultIcon"></i>
-                                                <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
-                                                <div class="avatar-hover-overlay">
-                                                    <i class="fa-solid fa-camera"></i>
-                                                    <span>Upload</span>
-                                                </div>
-                                            </div>
-                                            <div class="avatar-camera-badge">
+                            <div class="edit-card-body">
+
+                                {{-- Compact Inline Profile Avatar Row --}}
+                                @if(!in_array('8', toggleHideField()))
+                                <div class="booking-avatar-inline-box mb-3 pb-3 border-bottom d-flex align-items-center gap-3">
+                                    <div class="upload-avatar-wrapper compact" id="bookingAvatarTrigger" title="Click to upload profile photo">
+                                        <div class="upload-avatar-circle" id="bookingAvatarCircle">
+                                            <i class="fa-solid fa-user avatar-icon-placeholder" id="bookingAvatarDefaultIcon"></i>
+                                            <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
+                                            <div class="avatar-hover-overlay">
                                                 <i class="fa-solid fa-camera"></i>
                                             </div>
                                         </div>
-                                        <div class="upload-avatar-title" id="bookingAvatarTitle">Click avatar to upload photo</div>
-                                        <p class="upload-avatar-subtext" id="bookingAvatarSubtext">Upload a clear photo for identification (optional).</p>
+                                        <div class="avatar-camera-badge">
+                                            <i class="fa-solid fa-camera"></i>
+                                        </div>
+                                    </div>
+                                    <div class="avatar-inline-info">
+                                        <div class="avatar-inline-title fw-semibold text-dark" id="bookingAvatarTitle">Profile Photo</div>
+                                        <p class="avatar-inline-subtext text-muted mb-0" id="bookingAvatarSubtext">Click avatar to upload photo (optional).</p>
+                                    </div>
 
-                                        {{-- Hidden File Input for Cropper & Form --}}
-                                        <input
-                                            type="file"
-                                            class="d-none image-cropper"
-                                            name="profile_picture_image"
-                                            id="profile_picture"
-                                            autocomplete="off"
-                                            accept=".jpeg, .jpg, .png, .webp" />
-                                        <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
-                                    </div>
+                                    {{-- Hidden File Input for Cropper & Form --}}
+                                    <input
+                                        type="file"
+                                        class="d-none image-cropper"
+                                        name="profile_picture_image"
+                                        id="profile_picture"
+                                        autocomplete="off"
+                                        accept=".jpeg, .jpg, .png, .webp" />
+                                    <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
                                 </div>
-                            </div>
-                        </div>
-                        @endif
+                                @endif
 
-                        {{-- 2. SEAT & BASIC INFORMATION CARD --}}
-                        <div class="edit-card">
-                            <div class="edit-card-header header-blue">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-regular fa-user"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Basic Information</h4>
-                                        <p class="edit-header-subtitle">Seat allocation and learner contact details.</p>
-                                    </div>
-                                </div>
-                                <span class="edit-header-badge badge-required">Required</span>
-                            </div>
-                            <div class="edit-card-body">
                                 <div class="row g-3">
                                     {{-- Seat Concept --}}
                                     <div class="col-lg-6">
@@ -121,7 +99,10 @@
                                     @if(!in_array('2', toggleHideField()))
                                     <div class="col-lg-6">
                                         <label for="dob" class="form-label">DOB (Optional)</label>
-                                        <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
+                                        <div class="booking-date-group">
+                                            <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
+                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                        </div>
                                     </div>
                                     @endif
                                     @if(!in_array('1', toggleHideField()))
@@ -131,26 +112,15 @@
                                         <span class="text-danger small" id="email-error"></span>
                                     </div>
                                     @endif
-                                </div>
-                            </div>
-                        </div>
 
-                        {{-- 3. PLAN & SHIFT SELECTION CARD --}}
-                        <div class="edit-card">
-                            <div class="edit-card-header header-green">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-regular fa-calendar-check"></i>
+                                    {{-- Shift Timing Divider --}}
+                                    <div class="col-12 pt-2">
+                                        <div class="booking-inner-divider d-flex align-items-center gap-2">
+                                            <span class="booking-inner-divider-text"><i class="fa-regular fa-calendar-check me-1"></i> Plan & Shift Timing</span>
+                                            <div class="booking-inner-divider-line flex-grow-1"></div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Plan & Shift Selection</h4>
-                                        <p class="edit-header-subtitle">Select study plan, shift timing, and start date.</p>
-                                    </div>
-                                </div>
-                                <span class="edit-header-badge badge-required">Required</span>
-                            </div>
-                            <div class="edit-card-body">
-                                <div class="row g-3">
+
                                     <div class="col-lg-4">
                                         <label for="plan_id3" class="form-label">Plan <span class="required-star">*</span></label>
                                         <select name="plan_id" id="plan_id3" class="form-select">
@@ -170,7 +140,10 @@
 
                                     <div class="col-lg-4">
                                         <label for="plan_start_date" class="form-label">Plan Starts On <span class="required-star">*</span></label>
-                                        <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                        <div class="booking-date-group">
+                                            <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                        </div>
                                         <span id="chargeable_days" class="text-info info-hint"></span>
                                         <span id="end_date_show" class="text-danger info-hint"></span>
                                     </div>
@@ -180,26 +153,21 @@
                             </div>
                         </div>
 
-                        {{-- 4. PLAN ADDON'S CARD (COLLAPSIBLE) --}}
+                        {{-- 2. PLAN ADD-ONS (COLLAPSIBLE WITH VERY SMALL HEADING IN CAPS) --}}
                         @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
-                        <div class="edit-card booking-collapsible-card">
-                            <div class="edit-card-header header-teal booking-collapsible-header" data-target="#bookingAddonFields">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-solid fa-layer-group"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Plan Addon's</h4>
-                                        <p class="edit-header-subtitle">Locker facility and promotional discounts.</p>
-                                    </div>
+                        <div class="booking-caps-collapse-card mb-3">
+                            <div class="booking-caps-header booking-collapsible-header" data-target="#bookingAddonCollapse" role="button" tabindex="0">
+                                <div class="caps-title">
+                                    <i class="fa-solid fa-layer-group me-1"></i>
+                                    <span>ADD-ONS</span>
                                 </div>
-                                <div class="edit-header-right">
-                                    <span class="edit-header-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle toggleIcon1"></i>
+                                <div class="caps-right">
+                                    <span class="caps-badge badge-optional">Optional</span>
+                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="bookingAddonToggleIcon"></i>
                                 </div>
                             </div>
-                            <div class="booking-card-collapse idProofFields1" id="bookingAddonFields" style="display: none;">
-                                <div class="edit-card-body">
+                            <div class="booking-card-collapse" id="bookingAddonCollapse" style="display: none;">
+                                <div class="booking-caps-body">
                                     <div class="row g-3">
                                         @if(!in_array('3', toggleHideField()))
                                         <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
@@ -238,20 +206,8 @@
                         </div>
                         @endif
 
-                        {{-- 5. PAYMENT & REMINDER SETTINGS CARD --}}
-                        <div class="edit-card">
-                            <div class="edit-card-header header-blue">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-solid fa-wallet"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Payment & Reminder Settings</h4>
-                                        <p class="edit-header-subtitle">Fee payment, due date, mode, and notification channels.</p>
-                                    </div>
-                                </div>
-                                <span class="edit-header-badge badge-required">Required</span>
-                            </div>
+                        {{-- 3. PAYMENT & REMINDER SETTINGS (WHITE BACKGROUND BOX LIKE LEARNER & SHIFT BOX) --}}
+                        <div class="edit-card booking-payment-card mb-3">
                             <div class="edit-card-body">
                                 <div class="row g-3">
                                     <div class="col-lg-4">
@@ -262,7 +218,10 @@
 
                                     <div class="col-lg-4">
                                         <label for="due_date" class="form-label">Choose Due Date <span class="required-star">*</span></label>
-                                        <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
+                                        <div class="booking-date-group">
+                                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
+                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                        </div>
                                     </div>
 
                                     <div class="col-lg-4">
@@ -302,27 +261,21 @@
                             </div>
                         </div>
 
-                        {{-- 6. OTHER OPTIONAL FIELDS CARD (COLLAPSIBLE) --}}
+                        {{-- 4. OTHER OPTIONAL FIELDS CARD (COLLAPSIBLE AT BOTTOM WITH VERY SMALL HEADING IN CAPS) --}}
                         @if(!in_array('7', toggleHideField()))
-                        <div class="edit-card booking-collapsible-card">
-                            <div class="edit-card-header header-amber booking-collapsible-header" data-target="#idProofFields">
-                                <div class="edit-header-left">
-                                    <div class="edit-header-icon">
-                                        <i class="fa-regular fa-id-card"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="edit-header-title">Other Optional Fields</h4>
-                                        <p class="edit-header-subtitle">Alternate contact, ID proof, address, and remarks.</p>
-                                    </div>
+                        <div class="booking-caps-collapse-card mb-3">
+                            <div class="booking-caps-header booking-collapsible-header" data-target="#bookingOtherOptionalCollapse" role="button" tabindex="0">
+                                <div class="caps-title">
+                                    <i class="fa-regular fa-id-card me-1"></i>
+                                    <span>OTHER OPTIONAL FIELDS</span>
                                 </div>
-                                <div class="edit-header-right">
-                                    <span class="edit-header-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="toggleIcon"></i>
+                                <div class="caps-right">
+                                    <span class="caps-badge badge-optional">Optional</span>
+                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="bookingOtherOptionalToggleIcon"></i>
                                 </div>
                             </div>
-
-                            <div class="booking-card-collapse" id="idProofFields" style="display: none;">
-                                <div class="edit-card-body">
+                            <div class="booking-card-collapse" id="bookingOtherOptionalCollapse" style="display: none;">
+                                <div class="booking-caps-body">
                                     <div class="row g-3">
                                         @if(!in_array('30', toggleHideField()))
                                         <div class="col-lg-6">
@@ -524,18 +477,40 @@ $(document).ready(function() {
     $(document).on('click', '.booking-modal-module .booking-collapsible-header', function(e) {
         if ($(e.target).is('input, select, textarea, button, a, label')) return;
         e.preventDefault();
-        e.stopImmediatePropagation();
-        const target = $(this).data('target');
-        const $body = $(target);
-        const $toggle = $(this).find('.edit-header-toggle');
+        e.stopPropagation();
 
-        $body.stop(true, true).slideToggle(220, function() {
-            if ($body.is(':visible')) {
-                $toggle.addClass('expanded');
+        const $header = $(this);
+        const target = $header.data('target');
+        const $body = $(target);
+        const $toggle = $header.find('.edit-header-toggle');
+
+        if ($body.is(':visible')) {
+            $toggle.removeClass('expanded');
+            $body.stop(true, true).slideUp(200);
+        } else {
+            $toggle.addClass('expanded');
+            $body.stop(true, true).slideDown(200);
+        }
+    });
+
+    // Keyboard support for collapsible headers (Enter / Space)
+    $(document).on('keydown', '.booking-modal-module .booking-collapsible-header', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            $(this).trigger('click');
+        }
+    });
+
+    // Calendar icon click helper for date pickers
+    $(document).on('click', '.booking-modal-module .booking-date-icon', function(e) {
+        const input = $(this).siblings('input[type="date"]')[0];
+        if (input && !input.disabled && !input.readOnly) {
+            if (typeof input.showPicker === 'function') {
+                try { input.showPicker(); } catch (err) { input.focus(); }
             } else {
-                $toggle.removeClass('expanded');
+                input.focus();
             }
-        });
+        }
     });
 
     // Reset form, validation states, and previews on modal close
@@ -552,8 +527,8 @@ $(document).ready(function() {
         $('#profile_picture').val('');
         $('#bookingAvatarPreview').attr('src', '').hide();
         $('#bookingAvatarDefaultIcon').show();
-        $('#bookingAvatarTitle').text('Click avatar to upload photo');
-        $('#bookingAvatarSubtext').text('Upload a clear photo for identification (optional).');
+        $('#bookingAvatarTitle').text('Profile Photo');
+        $('#bookingAvatarSubtext').text('Click avatar to upload photo (optional).');
 
         // Reset ID Proof dropzone
         $('#id_proof_file_input').val('');
@@ -568,8 +543,10 @@ $(document).ready(function() {
         $('#general_seat').val('yes');
 
         // Reset collapsible states
-        $('#bookingPhotoCollapse').hide();
-        $('.booking-collapsible-header[data-target="#bookingPhotoCollapse"] .edit-header-toggle').removeClass('expanded');
+        $('#bookingAddonCollapse').hide();
+        $('.booking-collapsible-header[data-target="#bookingAddonCollapse"] .edit-header-toggle').removeClass('expanded');
+        $('#bookingOtherOptionalCollapse').hide();
+        $('.booking-collapsible-header[data-target="#bookingOtherOptionalCollapse"] .edit-header-toggle').removeClass('expanded');
     });
 });
 </script>
@@ -692,7 +669,10 @@ $(document).ready(function() {
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Choose Due Date<span>*</span></label>
-                                <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
+                                <div class="booking-date-group">
+                                    <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
+                                    <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                </div>
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Payment Mode <span>*</span></label>
