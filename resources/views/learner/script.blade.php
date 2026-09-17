@@ -1270,8 +1270,12 @@
         // Pay Later always needs a due date, regardless of pending amount.
         if (pendingAmount > 0 || $('#seatAllotmentForm select[name="payment_mode"]').val() === '3') {
             $('#due_date').removeAttr('readonly');
+            $('#due_date_star_booking').show();
         } else {
             $('#due_date').attr('readonly', true);
+            $('#due_date_star_booking').hide();
+            $('#due_date').removeClass('is-invalid');
+            $('#due_date_error').text('').hide();
         }
     }
 
@@ -1455,7 +1459,7 @@
             
         const autoPaid = planPrice + lockerAmount - discountAmount;
  
-        $('#total_amount10').val(autoPaid ?? 0);
+        $('#total_amount10').val(Math.round(autoPaid ?? 0));
 
         // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
         const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
@@ -1470,7 +1474,7 @@
             $('#diffrence_amount10')
                 .attr('data-sign', sign)
                 .attr('data-full-diff', difference)
-                .val(Math.abs(difference).toFixed(2));
+                .val(Math.round(Math.abs(difference)));
             $('#diffrence_amount_label10').text((difference < 0 ? "Amount to Refund" : "Amount to pay") + " *");
 
             // Pay Later ignores the diffrence amount and defers the whole gap (see
@@ -1485,11 +1489,11 @@
         }
     }
 
-    // Pay Later (CHANGE PLAN) mirrors LearnerOperationService: pending_amount = effective -
-    // old_price, i.e. the raw old-vs-new total difference, with diffrence_amount ignored
+    // When refund_pay_timing = 'later', the entire difference is owed/refunded later, so Pending
+    // must equal the full difference. Pay Later also hides the diffrence_amount input
     // entirely - unlike the "Now" path, which nets the entered diffrence_amount against effective.
     function applyPayLaterPending(difference) {
-        $('#pending_amt10').val(Math.abs(difference).toFixed(2));
+        $('#pending_amt10').val(Math.round(Math.abs(difference)));
         $('#pending_amt_error').html('');
         // Pay Later always needs a due date, regardless of pending amount.
         const shouldBeReadonly = (difference == 0 && getOperationPaymentMode() !== '3');
@@ -1554,7 +1558,7 @@
                 pendingAmount = totalDifference - paidNow;
                 overLimit = paidNow > totalDifference;
             }
-            $('#pending_amt10').val(Math.abs(pendingAmount).toFixed(2));
+            $('#pending_amt10').val(Math.round(Math.abs(pendingAmount)));
         } else {
             // RENEW / UPGRADE / REACTIVE keep their original display untouched.
             pendingAmount = effectivePaid - paid_val;
@@ -1874,6 +1878,37 @@
         calculatePendingAmount();
     });
 
+    // Auto-clear due_date validation errors on input/change for Booking and Renew
+    $(document).on('input change', '#due_date', function() {
+        if ($(this).val()) {
+            $(this).removeClass('is-invalid');
+            $('#due_date_error').text('').hide();
+        }
+    });
+
+    $(document).on('input change', '#due_date2', function() {
+        if ($(this).val()) {
+            $(this).removeClass('is-invalid');
+            $('#due_date2_error').text('').hide();
+        }
+    });
+
+    // Calendar icon click triggers the date picker
+    $(document).on('click', '.booking-date-icon', function(e) {
+        var $input = $(this).closest('.booking-date-group').find('input.duedate, input[type="date"]');
+        if ($input.length && !$input.prop('readonly') && !$input.prop('disabled')) {
+            if (typeof $input[0].showPicker === 'function') {
+                try {
+                    $input[0].showPicker();
+                } catch (err) {
+                    $input.focus();
+                }
+            } else {
+                $input.focus();
+            }
+        }
+    });
+
     // Same fix for Renew/Upgrade/Change-Plan/Reactive forms (due_date10).
     $(document).on('change', '#payment_mode10, #payment_mode', function() {
         if (!$('#due_date10').length) {
@@ -1994,14 +2029,19 @@
         
         // Remove previous errors
         $(".is-invalid").removeClass("is-invalid");
-        $(".invalid-feedback").remove();
+        $(".invalid-feedback:not(.booking-date-error-msg)").remove();
+        $("#due_date_error").text('').hide();
         
         // Show new errors
         if (Object.keys(errors).length > 0) {
             $.each(errors, function(key, value) {
                 var inputField = $("#" + key);
                 inputField.addClass("is-invalid");
-                inputField.after('<div class="invalid-feedback">' + value + '</div>');
+                if (key === 'due_date') {
+                    $('#due_date_error').text(value).show();
+                } else {
+                    inputField.after('<div class="invalid-feedback">' + value + '</div>');
+                }
             });
             return;
         }
@@ -2620,18 +2660,42 @@
 
         var renewPaymentMode = $(this).find('select[name="payment_mode"]').val();
         var renewDueDate = $(this).find('input[name="due_date"]').val();
+
+        // Check if there is a pending amount in Renew modal
+        const renewPlanPrice = parseFloat($('#plan_price_id2').val()) || 0;
+        const renewPaidAmount = parseFloat($('#new_plan_price2').val()) || 0;
+        const renewLockerAmount = parseFloat($('#locker_amount2').val()) || 0;
+        const renewDiscountRaw = parseFloat($('#discount_amount3').val()) || 0;
+        const renewDiscountType = $('#discount_type').val();
+        const renewPrevPending = parseFloat($('#previous_pending').val()) || 0;
+        let renewDiscountAmt = 0;
+        if (renewDiscountType === 'percentage') {
+            renewDiscountAmt = ((renewPlanPrice + renewLockerAmount) * renewDiscountRaw) / 100;
+        } else {
+            renewDiscountAmt = renewDiscountRaw;
+        }
+        const renewEffectiveTotal = renewPlanPrice + renewLockerAmount - renewDiscountAmt + renewPrevPending;
+        const renewHasPending = (renewEffectiveTotal - renewPaidAmount) > 0;
+
         if (renewPaymentMode === '3' && !renewDueDate) {
             errors.due_date2 = 'Due Date is required when Payment Mode is Pay Later.';
+        } else if (renewHasPending && !renewDueDate) {
+            errors.due_date2 = 'Due Date is required when there is a pending amount.';
         }
 
         if (Object.keys(errors).length > 0) {
             $(".is-invalid").removeClass("is-invalid");
-            $(".invalid-feedback").remove();
+            $(".invalid-feedback:not(.booking-date-error-msg)").remove();
+            $("#due_date2_error").text('').hide();
 
             $.each(errors, function(key, value) {
                 var inputField = $("#" + key);
                 inputField.addClass("is-invalid");
-                inputField.after('<div class="invalid-feedback">' + value + '</div>');
+                if (key === 'due_date2') {
+                    $('#due_date2_error').text(value).show();
+                } else {
+                    inputField.after('<div class="invalid-feedback">' + value + '</div>');
+                }
             });
             return; 
         }
@@ -3918,8 +3982,12 @@
         // Pay Later always needs a due date, regardless of pending amount.
         if (pendingAmount > 0 || $paymentMode.val() === '3') {
             $('#due_date2').removeAttr('readonly');
+            $('#due_date_star_renew').show();
         } else {
             $('#due_date2').attr('readonly', true);
+            $('#due_date_star_renew').hide();
+            $('#due_date2').removeClass('is-invalid');
+            $('#due_date2_error').text('').hide();
         }
     }
 

@@ -225,7 +225,7 @@ class LearnerOperationRequest extends FormRequest
             'due_date'=>[
                 'nullable',
                 'date',
-                Rule::requiredIf(fn () => (int) $this->payment_mode === 3),
+                Rule::requiredIf(fn () => (int) $this->payment_mode === 3 || $this->refund_pay_timing === 'later' || ((float) ($this->pending_amount ?? 0)) > 0),
             ],
              'diffrence_amount' => [
                     'nullable',
@@ -270,6 +270,7 @@ class LearnerOperationRequest extends FormRequest
     {
         return [
             'refund_pay_timing.required' => 'Please select whether to pay/refund the amount now or later.',
+            'due_date.required' => 'Due date is required when payment mode is Pay Later or pending amount exists.',
         ];
     }
 

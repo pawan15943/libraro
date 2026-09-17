@@ -216,12 +216,13 @@
                                         <span id="pending_amt" class="text-danger info-hint"></span>
                                     </div>
 
-                                    <div class="col-lg-4">
-                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star">*</span></label>
-                                        <div class="booking-date-group">
+                                    <div class="col-lg-4 form-group">
+                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
+                                        <div class="booking-date-group position-relative">
                                             <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
                                             <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                                         </div>
+                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
                                     </div>
 
                                     <div class="col-lg-4">
@@ -710,12 +711,13 @@ $(document).ready(function() {
                                         <span id="pending_amt2" class="text-danger info-hint"></span>
                                         <span id="chargeable_days_renew" class="text-info info-hint"></span>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <label for="due_date2" class="form-label">Choose Due Date <span class="required-star">*</span></label>
-                                        <div class="booking-date-group">
+                                    <div class="col-lg-6 form-group">
+                                        <label for="due_date2" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_renew" style="display: none;">*</span></label>
+                                        <div class="booking-date-group position-relative">
                                             <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
                                             <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                                         </div>
+                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date2_error" style="display: none !important;"></span>
                                     </div>
                                     <div class="col-lg-6">
                                         <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>

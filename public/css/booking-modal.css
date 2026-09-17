@@ -912,8 +912,6 @@
 
 .booking-modal-module .booking-date-group {
     position: relative;
-    display: flex;
-    align-items: center;
     width: 100%;
 }
 
@@ -922,6 +920,7 @@
     width: 100%;
     padding-right: 2.35rem;
     background-color: #ffffff;
+    cursor: pointer;
 }
 
 /* Make browser native webkit picker indicator full right hit-target with transparent icon */
@@ -938,8 +937,7 @@
     z-index: 3;
 }
 
-.booking-modal-module .booking-date-group input[type="date"]:disabled::-webkit-calendar-picker-indicator,
-.booking-modal-module .booking-date-group input[type="date"][readonly]::-webkit-calendar-picker-indicator {
+.booking-modal-module .booking-date-group input[type="date"]:disabled::-webkit-calendar-picker-indicator {
     cursor: not-allowed;
     pointer-events: none;
 }
@@ -952,7 +950,8 @@
     transform: translateY(-50%);
     color: #18225f;
     font-size: 0.95rem;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     z-index: 2;
     transition: color 0.15s ease;
 }
@@ -961,10 +960,19 @@
     color: #34939F;
 }
 
-.booking-modal-module .booking-date-group input:disabled ~ .booking-date-icon,
-.booking-modal-module .booking-date-group input[readonly] ~ .booking-date-icon {
+.booking-modal-module .booking-date-group input:disabled ~ .booking-date-icon {
     color: #94a3b8 !important;
     cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.booking-modal-module .booking-date-error-msg {
+    font-size: 0.80rem;
+    color: #ef4444;
+    margin-top: 0.35rem;
+    display: block;
+    line-height: 1.35;
+    font-weight: 500;
 }
 
 .booking-modal-module textarea.form-control {
