@@ -2387,6 +2387,7 @@
     // Used in View Details Popup on Seat Assignment Page
     $(document).on('click', '.second_popup', function() {
         $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
+        $('#modalOpContainer').html('<div class="py-2 text-center text-muted small w-100" id="modalOpLoadingPlaceholder"><i class="fa-solid fa-spinner fa-spin me-1"></i> Loading actions...</div>');
         var userId = $(this).data('userid');
         var seatId = $(this).data('id');
         var seatNo=$(this).data('seat_no');
@@ -2563,6 +2564,7 @@
                 }
             });
         //learner detail fetch end
+        $('#seatAllotmentModal2').modal('hide');
         $('#seatAllotmentModal3').modal('show');
         $('#update_seat_no').val(seat_no);
         $('#update_user_id').val(user_id);
@@ -3181,6 +3183,7 @@
         // View Booked Seat Details on Seat Assignment Page
         $(document).on('click', '.second_popup_without_seat', function() {
             $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
+            $('#modalOpContainer').html('<div class="py-2 text-center text-muted small w-100" id="modalOpLoadingPlaceholder"><i class="fa-solid fa-spinner fa-spin me-1"></i> Loading actions...</div>');
             var userId = $(this).data('userid');
             $('#user_id').val(userId);
             $('#seatAllotmentModal2').modal('show');
@@ -3406,6 +3409,31 @@
         function setupSeatMapModalActionRules(html) {
             var learnerId = html.learner_id || html.id || $('#user_id').val();
             var learnerDetailId = html.learner_detail_id || $('#learner_detail_id').val();
+
+            // When server returns actions_html matching exact learner list conditions
+            if (html.actions_html) {
+                $('#modalOpContainer').html(html.actions_html);
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('#modalOpContainer [data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl);
+                    });
+                }
+                if (html.can_renew_membership) {
+                    $('#upgrade').show();
+                } else {
+                    $('#upgrade').hide();
+                }
+                if (learnerId) {
+                    $('#headerEditProfileBtn').attr('href', '{{ route("learners.edit", ":id") }}'.replace(':id', learnerId));
+                }
+                if (parseInt(html.frozen_status || 0) === 1) {
+                    $('#headerEditProfileBtn').hide();
+                } else {
+                    $('#headerEditProfileBtn').show();
+                }
+                return;
+            }
 
             // Populate links & attributes for modal action items
             if (learnerId) {
@@ -3657,6 +3685,11 @@
                 $('#upgrade').hide();
             }
         }
+
+        // Close View Detail Modal when any action triggering sweetalert/sub-modal is clicked inside modal action strip
+        $('#seatAllotmentModal2').on('click', '#modalOpContainer .settlement-learner, #modalOpContainer .giftDaysBtn, #modalOpContainer .freezDaysBtn, #modalOpContainer .delete-customer, #modalOpContainer .link-close-plan, #modalOpContainer .renew_extend, #modalOpContainer .open-reminder-chooser, #modalOpContainer .open-waba, #modalOpContainer .open-text, #modalOpContainer .open-reminder-chooser-free', function() {
+            $('#seatAllotmentModal2').modal('hide');
+        });
 
         window.parseSeatModalSafeDate = parseSeatModalSafeDate;
         window.setupSeatMapModalActionRules = setupSeatMapModalActionRules;

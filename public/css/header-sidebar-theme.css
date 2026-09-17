@@ -924,8 +924,8 @@ body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
     }
 
     .control-right-sidebar {
-        top: 25% !important;
-        bottom: auto !important;
+        top: auto !important;
+        bottom: 85px !important;
     }
 
     .content-area .header.libraro-main-header,

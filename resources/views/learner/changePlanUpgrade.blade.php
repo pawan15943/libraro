@@ -2,6 +2,51 @@
 @section('content')
 
 @php
+$planEndDate = $customer->plan_end_date;
+$today = \Carbon\Carbon::today();
+
+if ($planEndDate) {
+    $endDate = \Carbon\Carbon::parse($planEndDate);
+    $diffInDays = $today->diffInDays($endDate, false); // negative if in past
+    $extendDays = function_exists('getExtendDays') ? getExtendDays() : 0;
+    $inextendDate = $endDate->copy()->addDays($extendDays);
+    $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+    if ($diffInDays < 0 && $diffExtendDay < 0) {
+        $statusText = 'Expired ' . abs($diffInDays) . ' days ago';
+        $statusClass = 'status-expired';
+        $statusIcon = 'fa-solid fa-circle-xmark';
+    } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+        $statusText = 'Extension: ' . abs($diffExtendDay) . ' days left';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock-rotate-left';
+    } elseif ($diffInDays < 0 && $diffExtendDay == 0) {
+        $statusText = 'Extension ends today';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-triangle-exclamation';
+    } elseif ($diffInDays == 0) {
+        $statusText = 'Expires today';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-triangle-exclamation';
+    } elseif ($diffInDays == 1) {
+        $statusText = 'Expires in 1 day';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock';
+    } elseif ($diffInDays <= 5) {
+        $statusText = 'Expires in ' . $diffInDays . ' days';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock';
+    } else {
+        $statusText = 'Active (Expires in ' . $diffInDays . ' days)';
+        $statusClass = 'status-active';
+        $statusIcon = 'fa-solid fa-circle-check';
+    }
+} else {
+    $statusText = 'Active';
+    $statusClass = 'status-active';
+    $statusIcon = 'fa-solid fa-circle-check';
+}
+
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class = $planDetails['class'];
 
@@ -44,60 +89,112 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 <div class="learner-change-plan-module">
     <div class="change-plan-wrapper">
 
-        {{-- 1. TOP SEAT HEADER HERO CARD (MATCHING SWAP SEAT) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-actions">
-                <a href="{{ route('learners') }}" class="btn-seat-back">
-                    <i class="fa-solid fa-arrow-left"></i> Go Back
-                </a>
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+        @endif
+
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        {{-- SEAT INFO HERO CARD (GLASSMORPHISM - IDENTICAL TO SWAP SEAT) --}}
+        <div class="learner-seat-header-card">
             <div class="seat-header-main">
-                <div class="seat-header-avatar-box">
-                    @php
-                        $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
-                    @endphp
-                    @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                        <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                    @elseif(isset($customer->image) && $customer->image)
-                        <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                    @else
-                        <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                    @endif
-                </div>
-                <div class="seat-header-info">
-                    <div class="seat-badge-row">
-                        <span class="seat-tag-pill">
-                            <i class="fa-solid fa-chair"></i> Allocated Seat
-                        </span>
-                        <span class="seat-status-badge">
-                            {{ $planDetails['status'] ?? 'Allocated' }}
-                        </span>
-                    </div>
-                    <h3 class="seat-title">
-                        @if($customer->seat_no)
-                            Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no) }} : {{ $customer->name ?? ($customer->learner->name ?? 'Learner') }}
+                <div class="seat-header-identity">
+                    <div class="seat-header-avatar-box">
+                        @php
+                            $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
+                        @endphp
+                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
+                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                        @elseif(isset($customer->image) && $customer->image)
+                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else
-                            General Seat : {{ $customer->name ?? ($customer->learner->name ?? 'Learner') }}
+                            <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @endif
-                    </h3>
-                    <div class="seat-meta-row">
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-clock"></i> <strong>Current Shift / Plan:</strong> {{ $customer->plan_name ?? ($customer->plan_type_name ?? ($customer->plan->name ?? 'N/A')) }}
-                        </span>
-                        @if($customer->plan_end_date)
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-calendar-check"></i> <strong>Valid Till:</strong> {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') }}
-                        </span>
-                        @endif
-                        @if($customer->learner && $customer->learner->learner_no)
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-id-badge"></i> <strong>Learner UID:</strong> {{ $customer->learner->learner_no }}
-                        </span>
-                        @elseif($customer->learner_no)
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-id-badge"></i> <strong>Learner UID:</strong> {{ $customer->learner_no }}
-                        </span>
-                        @endif
+                    </div>
+                    <div class="seat-header-info">
+                        <div class="seat-badge-row">
+                            <span class="seat-status-badge {{ $statusClass }}">
+                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
+                            </span>
+                        </div>
+                        <h3 class="seat-title text-uppercase">
+                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
+                        </h3>
+                        <p class="seat-subtitle">
+                            <span>Learner UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . $customer->id)) }}</strong></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="seat-header-actions">
+                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
+                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
+                    </a>
+                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
+                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
+            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
+                {{-- Tile 1: Plan Type (e.g. Monthly, Quarterly, Yearly) --}}
+                <div class="glass-tile tile-plan">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Plan Type</div>
+                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }}</div>
+                    </div>
+                </div>
+
+                {{-- Tile 2: Shift / Plan --}}
+                <div class="glass-tile tile-shift">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Shift / Plan</div>
+                        <div class="glass-tile-value">{{ $customer->plan_type_name ?? 'N/A' }}</div>
+                    </div>
+                </div>
+
+                {{-- Tile 3: Valid Till --}}
+                <div class="glass-tile tile-date">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Valid Till</div>
+                        <div class="glass-tile-value">
+                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') : 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tile 4: Contact Mobile --}}
+                <div class="glass-tile tile-contact">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Mobile</div>
+                        <div class="glass-tile-value">
+                            @if($customer->mobile)
+                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
+                            @else
+                                <span>Not Provided</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -423,6 +520,29 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                     const sign = parseFloat(diffField.getAttribute('data-sign')) || 1;
                     const absVal = Math.abs(parseFloat(diffField.value) || 0);
                     diffField.value = (sign * absVal).toFixed(2);
+                }
+            });
+        }
+
+        // Mobile info details collapse toggle
+        const btnToggleDetails = document.getElementById('btnToggleDetails');
+        const infoGrid = document.getElementById('glassInfoGrid');
+
+        if (btnToggleDetails && infoGrid) {
+            btnToggleDetails.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isCurrentlyCollapsed = infoGrid.classList.contains('is-collapsed');
+
+                if (isCurrentlyCollapsed) {
+                    infoGrid.classList.remove('is-collapsed');
+                    btnToggleDetails.classList.remove('is-collapsed');
+                    btnToggleDetails.setAttribute('aria-expanded', 'true');
+                } else {
+                    infoGrid.classList.add('is-collapsed');
+                    btnToggleDetails.classList.add('is-collapsed');
+                    btnToggleDetails.setAttribute('aria-expanded', 'false');
                 }
             });
         }

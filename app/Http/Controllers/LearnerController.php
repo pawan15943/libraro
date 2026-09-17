@@ -2355,6 +2355,57 @@ class LearnerController extends Controller
 
         $learnerlog = $this->buildLearnerActivityLog($customerId);
 
+        $rowContext = $this->learnerService->buildLearnerListRowContext(collect([$customer]));
+        $rowContextData = $rowContext[$customer->learner_detail_id] ?? [];
+
+        $value = $customer;
+        $learner_detail_id = $value->learner_detail_id;
+        $planStatus = $planStatusDetails;
+        $transaction = $rowContextData['transaction'] ?? $transaction;
+        $totalPendingAmt = $rowContextData['total_pending'] ?? (isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0);
+        $totalExtraAmt = $rowContextData['total_extra'] ?? 0;
+        $paybleRefundAmt = $rowContextData['payble_refund'] ?? 0;
+        $overdueFlag = $rowContextData['overdue'] ?? false;
+        $canRenewFlag = $rowContextData['can_renew'] ?? (!$is_renew_update);
+
+        $oneWeekLater = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date)->addWeek() : \Carbon\Carbon::now()->addWeek();
+        $due_date = $rowContextData['due_date'] ?? ($transaction->due_date ?? null);
+        $today = \Carbon\Carbon::now();
+        $threeDaysAfterStart = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date)->addDays(3) : \Carbon\Carbon::now()->addDays(3);
+        $learner_id = $value->id;
+
+        $hiddenFields = toggleHideField();
+        $currentBranchName = getCurrentBranchName();
+        $isNotificationActive = notificationActive();
+        $isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
+        $isTextNotificationActive = $isNotificationActive && textNotificationActive();
+
+        $actionsHtml = view('learner.partials.learner-actions', [
+            'isModal' => true,
+            'value' => $value,
+            'learner_id' => $learner_id,
+            'learner_detail_id' => $learner_detail_id,
+            'today' => $today,
+            'oneWeekLater' => $oneWeekLater,
+            'threeDaysAfterStart' => $threeDaysAfterStart,
+            'hiddenFields' => $hiddenFields,
+            'currentBranchName' => $currentBranchName,
+            'isNotificationActive' => $isNotificationActive,
+            'isWabaNotificationActive' => $isWabaNotificationActive,
+            'isTextNotificationActive' => $isTextNotificationActive,
+            'canRenewFlag' => $canRenewFlag,
+            'overdueFlag' => $overdueFlag,
+            'planStatus' => $planStatus,
+            'transaction' => $transaction,
+            'totalPendingAmt' => $totalPendingAmt,
+            'totalExtraAmt' => $totalExtraAmt,
+            'due_date' => $due_date,
+            'paybleRefundAmt' => $paybleRefundAmt,
+        ])->render();
+
+        $customer['actions_html'] = $actionsHtml;
+        $customer['can_renew_membership'] = ($planStatus['diff_extend_day'] >= 0 && $canRenewFlag && (int)($customer->frozen_status ?? 0) !== 1 && $planStatus['diff_in_days'] <= 5 && auth()->user()->can('has-permission', 'Renew Seat'));
+
         if ($request->expectsJson() || $request->has('id')) {
             return response()->json($customer);
         } else {
