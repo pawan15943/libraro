@@ -206,9 +206,17 @@ class LearnerAppController extends Controller
             ? "Pending Payment {$pendingAmount} due on " . Carbon::parse($dueDate)->format('j M Y')
             : ($hasPending ? "Pending Payment {$pendingAmount}" : "No Pending Payment");
 
-        // Days Remaining
-        $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
-        $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+        // Days Remaining (using getPlanStatusDetails concept like LearnerService)
+        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+        $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+        $freezeDate = $activeDetail?->freeze_start_date;
+
+        $planStatus = !empty($activeDetail?->plan_end_date)
+            ? getPlanStatusDetails($activeDetail->plan_end_date, $extendDays, $isFrozen, $freezeDate)
+            : null;
+
+        $daysLeft = $planStatus ? (int) $planStatus['diff_in_days'] : 0;
+        $extendDaysLeft = $planStatus ? (int) $planStatus['diff_extend_day'] : 0;
 
         // QR Code Payload for 3D ID Card (Combined Key & Payload)
         $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no, $learner->mobile, $learner->name);
@@ -258,7 +266,10 @@ class LearnerAppController extends Controller
                     'id'              => (string) $learner->id,
                     'learner_no'      => $learner->learner_no ?? '',
                     'fullName'        => strtoupper($learner->name ?? ''),
-                    'status'          => (int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE',
+                    'status'          => $isFrozen ? 'frozen' : ((int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE'),
+                    'planStatus'      => $planStatus['status'] ?? ($isFrozen ? 'frozen' : 'Active'),
+                    'frozen_status'   => $isFrozen ? 1 : 0,
+                    'freeze_date'     => (string) ($activeDetail?->freeze_start_date ?? ''),
                     'planName'        => $activeDetail?->plan_name ?? 'No Active Plan',
                     'planType'        => $activeDetail?->plan_type_name ?? 'N/A',
                     'shiftTime'       => $shiftTime,
@@ -266,6 +277,7 @@ class LearnerAppController extends Controller
                     'planExpiryDate'  => $activeDetail?->plan_end_date ?? '',
                     'daysLeft'        => $daysLeft,
                     'extend_days'     => $extendDays,
+                    'extendDaysLeft'  => $extendDaysLeft,
                     'profileImageUrl' => $profileImageUrl,
                     'pendingPayment'  => [
                         'hasPending'      => $hasPending,
@@ -312,8 +324,15 @@ class LearnerAppController extends Controller
                 ->orderBy('learner_detail.id', 'DESC')
                 ->first();
 
-            $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
-            $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+            $branch = Branch::where('id', $learner->branch_id)->select('extend_days')->first();
+            $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+            $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+            $freezeDate = $activeDetail?->freeze_start_date;
+
+            $planStatus = !empty($activeDetail?->plan_end_date)
+                ? getPlanStatusDetails($activeDetail->plan_end_date, $extendDays, $isFrozen, $freezeDate)
+                : null;
+            $daysLeft = $planStatus ? (int) $planStatus['diff_in_days'] : 0;
 
             $today = Carbon::today();
             $festival = DB::table('india_festivals')
@@ -429,8 +448,16 @@ class LearnerAppController extends Controller
             ->orderBy('learner_detail.id', 'DESC')
             ->first();
 
-        $expiryDate = $activeDetail?->plan_end_date ? Carbon::parse($activeDetail->plan_end_date) : null;
-        $daysLeft = $expiryDate ? max(0, (int) now()->diffInDays($expiryDate, false)) : 0;
+        $branchId = (int) ($learner->branch_id ?? (function_exists('getCurrentBranch') ? getCurrentBranch() : 0));
+        $branch = Branch::where('id', $branchId)->select('extend_days')->first();
+        $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($branchId) : 0));
+        $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+        $freezeDate = $activeDetail?->freeze_start_date;
+
+        $planStatus = !empty($activeDetail?->plan_end_date)
+            ? getPlanStatusDetails($activeDetail->plan_end_date, $extendDays, $isFrozen, $freezeDate)
+            : null;
+        $daysLeft = $planStatus ? (int) $planStatus['diff_in_days'] : 0;
 
         $today = Carbon::today();
         $festival = DB::table('india_festivals')
@@ -1057,7 +1084,14 @@ class LearnerAppController extends Controller
                     $progressLabel = "Expired ($totalDays of $totalDays days used)";
                 } else {
                     $usedDays = min($totalDays, max(0, $startDate->diffInDays($today) + 1));
-                    $daysLeft = max(0, $today->diffInDays($endDate, false));
+                    $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
+                    $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+                    $freezeDate = $detail->freeze_start_date ?? null;
+
+                    $planStatus = !empty($detail->plan_end_date)
+                        ? getPlanStatusDetails($detail->plan_end_date, $extendDays, $isFrozen, $freezeDate)
+                        : null;
+                    $daysLeft = $planStatus ? (int) $planStatus['diff_in_days'] : 0;
                     $progressPercentage = (int) min(100, round(($usedDays / $totalDays) * 100));
                     $progressLabel = "{$usedDays} of {$totalDays} days used";
                 }
