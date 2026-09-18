@@ -1,73 +1,228 @@
 /* ==========================================================================
-   Learner Other Payment Module Styling
-   Strictly Scoped under .learner-other-payment-module
-   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f
+   Libraro - Learner Other Payment Module Stylesheet
+   Strictly Scoped under: .learner-other-payment-module
+   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f & Teal #34939F
+   Glassmorphism + Unified Single-Column Architecture (Matching Change Plan & Swap Seat)
    ========================================================================== */
 
 .learner-other-payment-module {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
-    padding-bottom: 2.5rem;
+    padding: 0.4rem 0.5rem 1.25rem 0.5rem;
+    position: relative;
+}
+
+/* Ambient glow orbs in background to illuminate glassmorphism */
+.learner-other-payment-module::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 6%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(52, 147, 159, 0.12) 0%, rgba(52, 147, 159, 0) 70%);
+    border-radius: 50%;
+    filter: blur(45px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.learner-other-payment-module::after {
+    content: '';
+    position: absolute;
+    top: 100px;
+    right: 8%;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(24, 34, 95, 0.09) 0%, rgba(24, 34, 95, 0) 70%);
+    border-radius: 50%;
+    filter: blur(55px);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .learner-other-payment-module .learner-other-payment-wrapper {
-    max-width: 780px;
+    max-width: 860px;
     width: 100%;
-    margin: 1.25rem auto 2.5rem auto;
+    margin: 0.5rem auto 0.5rem auto;
+    position: relative;
+    z-index: 1;
 }
 
 /* ==========================================================================
-   Top Seat No Header Hero Card (Outside Form Cards)
+   Top Glassmorphic Seat Info Hero Card (Matching Swap Seat & Change Plan)
    ========================================================================== */
 .learner-other-payment-module .learner-seat-header-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ecfdf5 100%);
-    border: 1px solid #bbf7d0;
-    border-radius: 14px;
-    padding: 1.2rem 1.45rem;
-    margin-bottom: 1.35rem;
-    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
     position: relative;
     overflow: hidden;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .learner-other-payment-module .learner-seat-header-card:hover {
-    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.12);
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12),
+                0 0 0 1px rgba(52, 147, 159, 0.15),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
 }
 
-.learner-other-payment-module .learner-seat-header-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 6px;
-    background: #10b981;
-    border-top-left-radius: 14px;
-    border-bottom-left-radius: 14px;
+/* Header Main Row: Left Identity Cluster & Right Go Back Button */
+.learner-other-payment-module .seat-header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.15rem;
+    margin-bottom: 0.85rem;
 }
 
+.learner-other-payment-module .seat-header-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.learner-other-payment-module .seat-header-avatar-box {
+    width: 66px;
+    height: 66px;
+    min-width: 66px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border: 2px solid rgba(52, 147, 159, 0.3);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+    overflow: hidden;
+    padding: 3px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.learner-other-payment-module .seat-header-avatar-box:hover {
+    transform: scale(1.04);
+    border-color: #34939F;
+}
+
+.learner-other-payment-module .seat-header-avatar-box img.avatar-user-photo {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 14px;
+    object-fit: cover !important;
+}
+
+.learner-other-payment-module .seat-header-avatar-box img.avatar-seat-chair {
+    max-width: 68% !important;
+    max-height: 68% !important;
+    object-fit: contain !important;
+    margin: auto;
+}
+
+.learner-other-payment-module .seat-header-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.learner-other-payment-module .seat-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+/* Professional Status Badges with Dynamic Color */
+.learner-other-payment-module .seat-status-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.learner-other-payment-module .seat-status-badge.status-active {
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.learner-other-payment-module .seat-status-badge.status-warning {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+
+.learner-other-payment-module .seat-status-badge.status-expired {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+}
+
+/* Student Name in Clean Block Letters */
+.learner-other-payment-module .seat-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.25;
+    letter-spacing: 0.5px;
+    text-transform: uppercase !important;
+    word-break: break-word;
+}
+
+.learner-other-payment-module .seat-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.learner-other-payment-module .seat-uid-tag {
+    background: rgba(24, 34, 95, 0.06);
+    color: #18225f;
+    padding: 0.12rem 0.5rem;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.3px;
+}
+
+/* Right-aligned Go Back Button in Hero Card */
 .learner-other-payment-module .seat-header-actions {
-    position: absolute;
-    top: 1.15rem;
-    right: 1.35rem;
-    z-index: 5;
+    flex-shrink: 0;
 }
 
 .learner-other-payment-module .btn-seat-back {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #ffffff;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
     border: 1px solid #cbd5e1;
     color: #18225f;
     font-size: 0.82rem;
     font-weight: 600;
-    padding: 0.38rem 0.95rem;
-    border-radius: 8px;
+    padding: 0.4rem 1.05rem;
+    border-radius: 50px;
     text-decoration: none;
-    transition: all 0.18s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
 }
 
 .learner-other-payment-module .btn-seat-back:hover {
@@ -75,362 +230,424 @@
     border-color: #18225f;
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.15);
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2);
 }
 
-.learner-other-payment-module .seat-header-main {
+.learner-other-payment-module .btn-seat-collapse {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: rgba(24, 34, 95, 0.06);
+    border: 1px solid rgba(24, 34, 95, 0.12);
+    border-radius: 50%;
+    color: #18225f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.learner-other-payment-module .btn-seat-collapse:hover {
+    background: rgba(24, 34, 95, 0.12);
+}
+
+.learner-other-payment-module .btn-seat-collapse .toggle-icon {
+    font-size: 0.85rem;
+    transition: transform 0.25s ease;
+}
+
+.learner-other-payment-module .btn-seat-collapse.is-collapsed .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.learner-other-payment-module .btn-seat-collapse:not(.is-collapsed) .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Detail Tiles Grid (4 Tiles) */
+.learner-other-payment-module .glass-info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+}
+
+.learner-other-payment-module .glass-tile {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
     display: flex;
     align-items: center;
-    gap: 1.35rem;
+    gap: 0.7rem;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.03);
+    transition: all 0.2s ease;
 }
 
-.learner-other-payment-module .seat-header-avatar-box {
-    width: 76px;
-    height: 76px;
-    background: #ffffff;
-    border: 3px solid #a7f3d0;
-    border-radius: 50%;
+.learner-other-payment-module .glass-tile:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(52, 147, 159, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.06);
+}
+
+.learner-other-payment-module .glass-tile-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-    flex-shrink: 0;
-    padding: 3px;
-    overflow: hidden;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    font-size: 0.88rem;
 }
 
-.learner-other-payment-module .seat-header-avatar-box:hover {
-    transform: scale(1.06);
-    border-color: #10b981;
+.learner-other-payment-module .tile-plan .glass-tile-icon {
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
 }
 
-.learner-other-payment-module .seat-header-avatar-box img {
-    border-radius: 50%;
-    display: block;
+.learner-other-payment-module .tile-shift .glass-tile-icon {
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
 }
 
-.learner-other-payment-module .seat-header-avatar-box img.avatar-user-photo {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
+.learner-other-payment-module .tile-date .glass-tile-icon {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
 }
 
-.learner-other-payment-module .seat-header-avatar-box img.avatar-seat-chair {
-    max-width: 72% !important;
-    max-height: 72% !important;
-    object-fit: contain !important;
-    margin: auto;
+.learner-other-payment-module .tile-contact .glass-tile-icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
 }
 
-.learner-other-payment-module .seat-header-info {
+.learner-other-payment-module .glass-tile-content {
     flex-grow: 1;
+    min-width: 0;
 }
 
-.learner-other-payment-module .seat-badge-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.35rem;
-    flex-wrap: wrap;
-}
-
-.learner-other-payment-module .seat-tag-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #dcfce7;
-    color: #15803d;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.22rem 0.65rem;
-    border-radius: 20px;
-    letter-spacing: 0.4px;
+.learner-other-payment-module .glass-tile-label {
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 500;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
 }
 
-.learner-other-payment-module .seat-status-badge {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.22rem 0.65rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    background: #e0f2fe;
-    color: #0369a1;
-}
-
-.learner-other-payment-module .seat-title {
-    font-size: 1.35rem;
+.learner-other-payment-module .glass-tile-value {
+    font-size: 0.84rem;
     font-weight: 600;
-    color: #065f46 !important;
-    margin: 0 0 0.35rem 0;
+    color: #18225f;
     line-height: 1.25;
-    font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.learner-other-payment-module .seat-meta-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    font-size: 0.82rem;
-    color: #475569;
+.learner-other-payment-module .glass-tile-value a {
+    color: #18225f;
+    text-decoration: none;
 }
 
-.learner-other-payment-module .seat-meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(255, 255, 255, 0.85);
-    padding: 0.25rem 0.65rem;
-    border-radius: 6px;
-    border: 1px solid #d1fae5;
-}
-
-.learner-other-payment-module .seat-meta-item i {
-    color: #059669;
+.learner-other-payment-module .glass-tile-value a:hover {
+    color: #34939F;
+    text-decoration: underline;
 }
 
 /* ==========================================================================
-   Card Styling
+   Payment Card (Exact Match with Change Plan Card)
    ========================================================================== */
-.learner-other-payment-module .payment-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 1.25rem;
+.learner-other-payment-module .payment-card,
+.learner-other-payment-module .plan-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    transition: box-shadow 0.2s ease;
+    width: 100%;
 }
 
-.learner-other-payment-module .payment-card:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+.learner-other-payment-module .payment-card:hover,
+.learner-other-payment-module .plan-card:hover {
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12);
 }
 
-.learner-other-payment-module .payment-card-header {
-    padding: 0.85rem 1.25rem;
+.learner-other-payment-module .payment-card-header,
+.learner-other-payment-module .plan-card-header {
+    padding: 0.95rem 1.45rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid transparent;
+    border-bottom: 1px solid rgba(24, 34, 95, 0.06);
+    background: rgba(255, 255, 255, 0.55);
 }
 
-.learner-other-payment-module .payment-card-header.header-green {
-    background-color: #ecfdf5;
-    border-bottom-color: #d1fae5;
-}
-
-.learner-other-payment-module .payment-header-left {
+.learner-other-payment-module .payment-header-left,
+.learner-other-payment-module .plan-header-left {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-.learner-other-payment-module .payment-header-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+.learner-other-payment-module .payment-header-icon,
+.learner-other-payment-module .plan-header-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     flex-shrink: 0;
-    background-color: #d1fae5;
-    color: #16a34a;
+    transition: transform 0.2s ease;
 }
 
-.learner-other-payment-module .payment-header-title {
+.learner-other-payment-module .header-green .payment-header-icon,
+.learner-other-payment-module .header-green .plan-header-icon {
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
+}
+
+.learner-other-payment-module .header-amber .payment-header-icon,
+.learner-other-payment-module .header-amber .plan-header-icon {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.learner-other-payment-module .header-navy .payment-header-icon,
+.learner-other-payment-module .header-navy .plan-header-icon {
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
+}
+
+.learner-other-payment-module .header-blue .payment-header-icon,
+.learner-other-payment-module .header-blue .plan-header-icon {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+}
+
+.learner-other-payment-module .payment-header-title,
+.learner-other-payment-module .plan-header-title {
     font-size: 0.98rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #18225f;
     margin: 0;
     line-height: 1.3;
     font-family: 'Outfit', sans-serif;
 }
 
-.learner-other-payment-module .payment-header-subtitle {
-    font-size: 0.78rem;
+.learner-other-payment-module .payment-header-subtitle,
+.learner-other-payment-module .plan-header-subtitle {
+    font-size: 0.75rem;
     color: #64748b;
     margin: 0;
     line-height: 1.3;
     font-weight: 400;
 }
 
-.learner-other-payment-module .payment-card-body {
-    padding: 1.35rem 1.45rem;
+.learner-other-payment-module .payment-card-body,
+.learner-other-payment-module .plan-card-body {
+    padding: 1.5rem 1.65rem;
 }
 
-/* ==========================================================================
-   Payment Form Elements & Tip Box
-   ========================================================================== */
-.learner-other-payment-module .payment-tip-box {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-left: 4px solid #2563eb;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 0.82rem;
-    color: #1e40af;
-    line-height: 1.4;
-    margin-bottom: 1.25rem;
+/* Tip Box */
+.learner-other-payment-module .payment-tip-box,
+.learner-other-payment-module .plan-tip-box {
+    background: rgba(52, 147, 159, 0.06);
+    border: 1px solid rgba(52, 147, 159, 0.2);
+    border-left: 3px solid #34939F;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.85rem;
     display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.8rem;
+    color: #18225f;
+    line-height: 1.4;
 }
 
-.learner-other-payment-module .payment-tip-box i {
-    margin-top: 2px;
+.learner-other-payment-module .payment-tip-box i,
+.learner-other-payment-module .plan-tip-box i {
+    color: #34939F;
     font-size: 0.95rem;
+    flex-shrink: 0;
 }
 
+/* Form Controls */
 .learner-other-payment-module .form-group {
     margin-bottom: 0.35rem;
 }
 
 .learner-other-payment-module .form-label {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: #334155;
-    margin-bottom: 0.25rem;
+    color: #18225f;
+    margin-bottom: 0.35rem;
     display: block;
     font-family: 'Outfit', sans-serif;
 }
 
-.learner-other-payment-module .form-label .required-star {
+.learner-other-payment-module .required-star {
     color: #ef4444;
-    margin-left: 2px;
+    font-weight: 700;
 }
 
 .learner-other-payment-module .form-control,
 .learner-other-payment-module .form-select {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 0.52rem 0.85rem;
+    padding: 0.5rem 0.85rem;
     font-size: 0.88rem;
     color: #1e293b;
     background-color: #ffffff;
-    min-height: 40px;
+    transition: all 0.18s ease;
     font-family: 'Outfit', sans-serif;
-    box-shadow: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .learner-other-payment-module .form-control:focus,
 .learner-other-payment-module .form-select:focus {
-    border-color: #18225f;
-    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+    border-color: #34939F;
+    box-shadow: 0 0 0 3px rgba(52, 147, 159, 0.15);
     outline: none;
 }
 
-.learner-other-payment-module .form-control[readonly] {
+.learner-other-payment-module .form-control[readonly],
+.learner-other-payment-module .form-select[disabled] {
     background-color: #f8fafc;
-    color: #475569;
-    font-weight: 600;
+    color: #64748b;
     cursor: default;
+    border-color: #e2e8f0;
 }
 
-/* Action Bar */
+.learner-other-payment-module .price-highlight-input {
+    font-weight: 600;
+    color: #18225f !important;
+}
+
+/* ==========================================================================
+   Validation & Error Styling
+   ========================================================================== */
+.learner-other-payment-module .form-control.is-invalid,
+.learner-other-payment-module .form-select.is-invalid {
+    border-color: #ef4444 !important;
+    background-image: none !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.learner-other-payment-module .invalid-feedback {
+    display: block;
+    color: #ef4444 !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    margin-top: 0.35rem !important;
+    line-height: 1.35 !important;
+}
+
+.learner-other-payment-module .alert-danger {
+    background: rgba(254, 242, 242, 0.95);
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+}
+
+/* ==========================================================================
+   Action Button Bar (Cancel Removed, Primary Pill Button)
+   ========================================================================== */
 .learner-other-payment-module .form-action-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 1.35rem;
-    margin-bottom: 2.5rem;
-    padding-top: 0.5rem;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 2rem;
 }
 
-.learner-other-payment-module .btn-back-form {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #334155;
-    font-size: 0.88rem;
-    font-weight: 500;
-    padding: 0.55rem 1.6rem;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.learner-other-payment-module .btn-back-form:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0f172a;
-}
-
+.learner-other-payment-module .btn-submit-operation,
 .learner-other-payment-module .btn-submit-payment {
     background: #18225f !important;
     border: 1px solid #18225f;
     color: #ffffff !important;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    padding: 0.55rem 2.25rem;
-    min-width: 170px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
+    padding: 0.65rem 2.45rem;
+    border-radius: 50px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.25);
+    cursor: pointer;
 }
 
-.learner-other-payment-module .btn-submit-payment:hover:not(:disabled) {
+.learner-other-payment-module .btn-submit-operation:hover,
+.learner-other-payment-module .btn-submit-payment:hover {
     background: #0f172a !important;
     border-color: #0f172a;
-    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(24, 34, 95, 0.35);
 }
 
-.learner-other-payment-module .btn-submit-payment:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    box-shadow: none;
+.learner-other-payment-module .btn-submit-operation:active,
+.learner-other-payment-module .btn-submit-payment:active {
+    transform: translateY(0);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .learner-other-payment-module .learner-other-payment-wrapper {
-        margin: 0.5rem auto 1.5rem auto;
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 991px) {
+    .learner-other-payment-module .glass-info-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
-    .learner-other-payment-module .payment-card-body {
+}
+
+@media (max-width: 768px) {
+    .learner-other-payment-module .seat-header-main {
+        align-items: flex-start;
+    }
+    
+    .learner-other-payment-module .btn-back-desktop {
+        display: none !important;
+    }
+
+    .learner-other-payment-module .btn-seat-collapse {
+        display: flex;
+    }
+
+    .learner-other-payment-module .glass-info-grid.is-collapsed {
+        display: none !important;
+    }
+
+    .learner-other-payment-module .glass-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learner-other-payment-module .payment-card-body,
+    .learner-other-payment-module .plan-card-body {
         padding: 1.1rem 1rem;
     }
-    .learner-other-payment-module .seat-header-actions {
-        position: static;
-        margin-bottom: 0.5rem;
-        display: flex;
-        justify-content: flex-end;
-        width: 100%;
-    }
-    .learner-other-payment-module .btn-seat-back {
-        width: auto;
-    }
-    .learner-other-payment-module .seat-header-main {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.85rem;
-    }
-    .learner-other-payment-module .seat-badge-row {
-        justify-content: center;
-    }
-    .learner-other-payment-module .seat-meta-row {
-        justify-content: center;
-    }
+
     .learner-other-payment-module .form-action-bar {
-        flex-direction: column-reverse;
-        gap: 0.75rem;
+        justify-content: stretch;
     }
-    .learner-other-payment-module .btn-back-form,
+
+    .learner-other-payment-module .btn-submit-operation,
     .learner-other-payment-module .btn-submit-payment {
         width: 100%;
-        text-align: center;
     }
 }

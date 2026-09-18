@@ -3979,13 +3979,23 @@ class LearnerController extends Controller
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
-            'fees'          => 'required|numeric|min:1|max:999',
+            'fees'          => 'required|numeric|min:1',
+            'payment_mode'  => 'required',
+        ], [
+            'learner_id.required'   => 'Learner ID is required.',
+            'learner_id.exists'     => 'Learner transaction record not found.',
+            'payment_type.required' => 'Please select a payment type.',
+            'payment_type.in'       => 'Selected payment type is invalid.',
+            'fees.required'         => 'Please enter fees amount.',
+            'fees.numeric'          => 'Fees must be a valid number.',
+            'fees.min'              => 'Fees must be at least 1.',
+            'payment_mode.required' => 'Please select a payment mode.',
         ]);
 
         $response = $service->handleLearnerOtherPayment($request);
 
         if (!$response['status']) {
-            return redirect()->back()->with('error', $response['message']);
+            return redirect()->back()->with('error', $response['message'])->withInput();
         }
 
         if ($response['payment_type'] === 'REFUND') {

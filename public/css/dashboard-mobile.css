@@ -18,6 +18,11 @@
 }
 
 /* Payment Due Members Cards & Scroll (Extracted from inline styles) */
+.dashboard.learner .d-flex.justify-content-between.align-items-center.mb-3 h4,
+.d-flex.justify-content-between.align-items-center.mb-3 h4 {
+    margin-top: 2rem !important;
+}
+
 .dashboard.learner .due-count-badge {
     display: inline-flex;
     align-items: center;
