@@ -58,6 +58,7 @@ class LearnerAppController extends Controller
                 'dob'             => (string) ($personalInfo['dob'] ?? ''),
                 'father_name'     => (string) ($personalInfo['father_name'] ?? ''),
                 'profile_picture' => (string) ($personalInfo['profile_picture'] ?? ''),
+                'joining_date' => (string) ($personalInfo['joining_date'] ?? ''),
             ];
 
             // Clean detail_info to match the mobile specification exactly
